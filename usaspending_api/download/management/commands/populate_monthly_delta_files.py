@@ -23,7 +23,7 @@ from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 AWARD_MAPPINGS = {
     "Contracts": {

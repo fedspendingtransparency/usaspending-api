@@ -6,12 +6,17 @@ import os
 import signal
 import psutil as ps
 
-import pytest
 from unittest import TestCase
 from random import randint
+
+import pytest
 from botocore.config import Config
 from botocore.exceptions import EndpointConnectionError, ClientError, NoCredentialsError, NoRegionError
-from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
+from usaspending_api.common.sqs.sqs_handler import (
+    get_sqs_queue,
+    FakeSQSMessage,
+    UNITTEST_FAKE_QUEUE_NAME,
+)
 from usaspending_api.common.sqs.sqs_work_dispatcher import (
     SQSWorkDispatcher,
     QueueWorkerProcessError,
@@ -19,14 +24,25 @@ from usaspending_api.common.sqs.sqs_work_dispatcher import (
 )
 from time import sleep
 
+from usaspending_api.conftest_helpers import get_unittest_fake_sqs_queue
 
-@pytest.mark.usefixtures("local_queue_dir")
+
+@pytest.fixture()
+def _patch_get_sqs_queue(fake_sqs_queue, monkeypatch):
+    """
+    Patch the use of get_sqs_queue HERE, in tests in this module (defined by ``__name__``), where the function is
+    imported as a new name in this module.
+
+    Chaining to fixture ``fake_sqs_queue`` will also take care of fake-queue purging and cleanup.
+    """
+    monkeypatch.setattr(f"{__name__}.get_sqs_queue", get_unittest_fake_sqs_queue)
+    should_be_fake = get_sqs_queue()
+    # Check that the patch worked, and the fake unit test queue is returned
+    assert should_be_fake.url.split("/")[-1] == UNITTEST_FAKE_QUEUE_NAME
+
+
+@pytest.mark.usefixtures("_patch_get_sqs_queue")
 class SQSWorkDispatcherTests(TestCase):
-    def tearDown(self):
-        get_sqs_queue().purge()  # clear any lingering messages in the queue between tests
-        get_sqs_queue().reset_instance_state()
-        super().tearDown()
-
     def test_dispatch_with_default_numeric_message_body_succeeds(self):
         """ SQSWorkDispatcher can execute work on a numeric message body successfully
 
@@ -1359,6 +1375,125 @@ class SQSWorkDispatcherTests(TestCase):
                 os.kill(worker.pid, signal.SIGKILL)
                 self.fail("Worker did not complete in timeout as expected. Test fails.")
             self._fail_runaway_processes(logger, dispatcher=parent_dispatcher)
+
+    def test_worker_process_error_exception_data(self):
+        unknown_worker = "Unknown Worker"
+        no_queue_message = "Queue Message None or not provided"
+        queue = get_sqs_queue()
+        fake_queue_message = FakeSQSMessage(queue.url)
+
+        def raise_exc_no_args():
+            raise QueueWorkerProcessError()
+
+        with self.assertRaises(QueueWorkerProcessError) as err_ctx1:
+            raise_exc_no_args()
+        self.assertTrue(
+            (unknown_worker in str(err_ctx1.exception)), f"QueueWorkerProcessError did not mention '{unknown_worker}'."
+        )
+        self.assertTrue(
+            ("Queue Message None or not provided" in str(err_ctx1.exception)),
+            f"QueueWorkerProcessError did not " f"mention '{no_queue_message}'.",
+        )
+        self.assertEqual(err_ctx1.exception.worker_process_name, unknown_worker)
+        self.assertIsNone(err_ctx1.exception.queue_message)
+
+        def raise_exc_with_message():
+            raise QueueWorkerProcessError("A special message")
+
+        with self.assertRaises(QueueWorkerProcessError) as err_ctx2:
+            raise_exc_with_message()
+        self.assertTrue(
+            ("A special message" in str(err_ctx2.exception)),
+            "QueueWorkerProcessError did not mention 'A special message'.",
+        )
+        self.assertEqual(err_ctx2.exception.worker_process_name, unknown_worker)
+        self.assertIsNone(err_ctx2.exception.queue_message)
+
+        def raise_exc_with_qmsg():
+            fake_queue_message.body = 1133
+            raise QueueWorkerProcessError(queue_message=fake_queue_message)
+
+        with self.assertRaises(QueueWorkerProcessError) as err_ctx3:
+            raise_exc_with_qmsg()
+        self.assertEqual(err_ctx3.exception.queue_message.body, 1133)
+        self.assertEqual(err_ctx3.exception.worker_process_name, unknown_worker)
+        self.assertTrue(("1133" in str(err_ctx3.exception)), "QueueWorkerProcessError did not mention '1133'.")
+        self.assertTrue(
+            (unknown_worker in str(err_ctx3.exception)), f"QueueWorkerProcessError did not mention '{unknown_worker}'."
+        )
+
+        def raise_exc_with_qmsg_and_message():
+            fake_queue_message.body = 1144
+            raise QueueWorkerProcessError("Custom Message about THIS", queue_message=fake_queue_message)
+
+        with self.assertRaises(QueueWorkerProcessError) as err_ctx4:
+            raise_exc_with_qmsg_and_message()
+        self.assertTrue(
+            ("Custom Message about THIS" in str(err_ctx4.exception)),
+            "QueueWorkerProcessError did not mention 'Custom Message about THIS'.",
+        )
+        self.assertFalse(
+            ("1144" in str(err_ctx4.exception)),
+            "QueueWorkerProcessError seems to be using the default message, not the given message",
+        )
+        self.assertEqual(err_ctx4.exception.queue_message.body, 1144)
+        self.assertEqual(err_ctx4.exception.worker_process_name, unknown_worker)
+
+        def raise_exc_with_worker_process_name_and_message():
+            raise QueueWorkerProcessError("Custom Message about THIS", worker_process_name="MyJob")
+
+        with self.assertRaises(QueueWorkerProcessError) as err_ctx5:
+            raise_exc_with_worker_process_name_and_message()
+        self.assertTrue(
+            ("Custom Message about THIS" in str(err_ctx5.exception)),
+            "QueueWorkerProcessError did not mention 'Custom Message about THIS'.",
+        )
+        self.assertFalse(
+            ("MyJob" in str(err_ctx5.exception)),
+            "QueueWorkerProcessError seems to be using the default message, not the given message",
+        )
+        self.assertIsNone(err_ctx5.exception.queue_message)
+        self.assertEqual(err_ctx5.exception.worker_process_name, "MyJob")
+
+        def raise_exc_with_qmsg_and_worker_process_name_and_message():
+            fake_queue_message.body = 1166
+            raise QueueWorkerProcessError(
+                "Custom Message about THIS", worker_process_name="MyJob", queue_message=fake_queue_message,
+            )
+
+        with self.assertRaises(QueueWorkerProcessError) as err_ctx6:
+            raise_exc_with_qmsg_and_worker_process_name_and_message()
+        self.assertTrue(
+            ("Custom Message about THIS" in str(err_ctx6.exception)),
+            "QueueWorkerProcessError did not mention 'Custom Message about THIS'.",
+        )
+        self.assertFalse(
+            ("MyJob" in str(err_ctx6.exception)),
+            "QueueWorkerProcessError seems to be using the default message, not the given message",
+        )
+        self.assertFalse(
+            ("1166" in str(err_ctx6.exception)),
+            "QueueWorkerProcessError seems to be using the default message, not the given message",
+        )
+        self.assertEqual(err_ctx6.exception.queue_message.body, 1166)
+        self.assertEqual(err_ctx6.exception.worker_process_name, "MyJob")
+
+        def raise_exc_with_job_id_and_worker_process_name_and_no_message():
+            fake_queue_message.body = 1177
+            raise QueueWorkerProcessError(worker_process_name="MyJob", queue_message=fake_queue_message)
+
+        with self.assertRaises(QueueWorkerProcessError) as err_ctx7:
+            raise_exc_with_job_id_and_worker_process_name_and_no_message()
+        self.assertTrue(
+            ("MyJob" in str(err_ctx7.exception)),
+            "QueueWorkerProcessError seems to be using the default message, not the given message",
+        )
+        self.assertTrue(
+            ("1177" in str(err_ctx7.exception)),
+            "QueueWorkerProcessError seems to be using the default message, not the given message",
+        )
+        self.assertEqual(err_ctx7.exception.queue_message.body, 1177)
+        self.assertEqual(err_ctx7.exception.worker_process_name, "MyJob")
 
     @classmethod
     def _worker_terminator(cls, terminate_queue: mp.Queue, sleep_interval=0, logger=logging.getLogger(__name__)):
