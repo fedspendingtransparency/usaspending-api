@@ -1,5 +1,6 @@
 import copy
 import logging
+
 from calendar import monthrange
 from collections import OrderedDict
 from datetime import datetime, timezone
@@ -22,10 +23,11 @@ from usaspending_api.common.experimental_api_flags import is_experimental_elasti
 from usaspending_api.common.helpers.orm_helpers import FiscalMonth, FiscalQuarter, FiscalYear
 from usaspending_api.common.helpers.generic_helper import (
     bolster_missing_time_periods,
-    generate_fiscal_year,
-    min_and_max_from_date_ranges,
     generate_fiscal_date_range,
     generate_fiscal_month,
+    generate_fiscal_year,
+    get_time_period_message,
+    min_and_max_from_date_ranges,
 )
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
@@ -211,4 +213,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 columns={"aggregated_amount": "aggregated_amount"},
             )
 
-        return Response(OrderedDict([("group", self.group), ("results", results)]))
+        return Response(
+            OrderedDict([("group", self.group), ("results", results), ("messages", [get_time_period_message()])])
+        )

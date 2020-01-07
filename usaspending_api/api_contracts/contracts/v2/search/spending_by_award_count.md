@@ -25,6 +25,8 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (AwardTypeResult)
+        + `messages` (optional, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
 # Data Structures
 
@@ -72,7 +74,11 @@ This endpoint takes award filters, and returns the number of awards in each awar
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
+    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
+    feature on the website or one of our `download` or `bulk_download` API endpoints.
 + `end_date`: `2018-09-30` (required, string)
+    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
+    feature on the website or one of our `download` or `bulk_download` API endpoints.
 + `date_type` (optional, enum[string])
     + Members
         + `action_date`

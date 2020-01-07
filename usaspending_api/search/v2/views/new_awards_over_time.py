@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods
+from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods, get_time_period_message
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile, SummaryAwardRecipient
@@ -111,4 +111,9 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             date_range_type=values[-1],
             columns={"new_award_count_in_period": "count"},
         )
-        return Response({"group": self.groupings[self.json_request["group"]], "results": results})
+        response = {
+            "group": self.groupings[self.json_request["group"]],
+            "results": results,
+            "messages": [get_time_period_message()],
+        }
+        return Response(response)
