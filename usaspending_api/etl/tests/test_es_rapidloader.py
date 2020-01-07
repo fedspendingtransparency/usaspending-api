@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 import tempfile
 
+from usaspending_api import settings
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.rapidloader import Rapidloader
@@ -82,7 +83,7 @@ config = {
     "verbose": False,
     "type": "awards",
     "process_deletes": False,
-    "directory": Path(tempfile.gettempdir()),
+    "directory": Path(settings.CSV_LOCAL_PATH),
     "skip_counts": False,
     "index_name": "test-{}-{}".format(
         datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
@@ -97,20 +98,20 @@ config = {
 
 
 def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index, tmpdir):
-    os.mkdir(config["directory"] / "test")
-    config["directory"] = config["directory"] / "test"
+    # os.mkdir(config["directory"] / "test")
+    # config["directory"] = config["directory"] / "test"
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = Rapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "Rapidloader"
     loader.run_load_steps()
     assert elasticsearch_client.indices.exists(config["index_name"])
     elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
-    os.rmdir(config["directory"])
+    # os.rmdir(config["directory"])
 
 
 def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index, tmpdir):
-    os.mkdir(config["directory"])
-    config["directory"] = config["directory"]
+    # os.mkdir(config["directory"])
+    # config["directory"] = config["directory"]
     config["root_index"] = "transaction-query"
     config["type"] = "transactions"
     elasticsearch_client = instantiate_elasticsearch_client()
@@ -119,7 +120,7 @@ def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_trans
     loader.run_load_steps()
     assert elasticsearch_client.indices.exists(config["index_name"])
     elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
-    os.rmdir(config["directory"])
+    # os.rmdir(config["directory"])
 
 
 def test_configure_sql_strings():
