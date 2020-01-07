@@ -10,7 +10,7 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.download_admin import DownloadAdministrator
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
