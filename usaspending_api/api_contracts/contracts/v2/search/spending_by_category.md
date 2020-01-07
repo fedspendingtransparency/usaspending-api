@@ -48,6 +48,8 @@ This endpoint returns a list of the top results of specific categories sorted by
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
+        + `messages` (optional, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
 # Data Structures
 

@@ -119,5 +119,5 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             date_range_type=values[-1],
             columns={"aggregated_amount": "aggregated_amount"},
         )
-        response = {"group": self.groupings[self.group], "results": results, "message": get_time_period_message()}
+        response = {"group": self.groupings[self.group], "results": results, "messages": [get_time_period_message()]}
         return Response(response)

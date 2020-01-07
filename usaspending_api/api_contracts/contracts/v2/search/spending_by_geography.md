@@ -45,6 +45,8 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
         + `scope`
         + `geo_layer`
         + `results` (array[GeographyTypeResult], fixed-type)
+        + `messages` (optional, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
 # Data Structures
 

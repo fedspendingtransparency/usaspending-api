@@ -57,6 +57,8 @@ This endpoint takes award filters and fields, and returns the fields of the filt
         + `limit` (required, number)
         + `results` (required, array[SpendingByAwardResponse], fixed-type)
         + `page_metadata` (PageMetadataObject)
+        + `messages` (optional, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
 # Data Structures
 

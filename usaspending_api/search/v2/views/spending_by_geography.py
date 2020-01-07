@@ -114,7 +114,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "scope": self.scope,
                 "geo_layer": self.geo_layer,
                 "results": self.state_results(kwargs, fields_list, loc_lookup),
-                "message": get_time_period_message(),
+                "messages": [get_time_period_message()],
             }
 
             return Response(state_response)
@@ -138,7 +138,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "scope": self.scope,
                     "geo_layer": self.geo_layer,
                     "results": self.county_results(state_lookup, county_name_lookup),
-                    "message": get_time_period_message(),
+                    "messages": [get_time_period_message()],
                 }
 
                 return Response(county_response)
@@ -149,7 +149,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "scope": self.scope,
                     "geo_layer": self.geo_layer,
                     "results": self.district_results(state_lookup),
-                    "message": get_time_period_message(),
+                    "messages": [get_time_period_message()],
                 }
 
                 return Response(district_response)

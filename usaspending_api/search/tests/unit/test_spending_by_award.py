@@ -133,7 +133,7 @@ def test_populate_response():
         "limit": 5,
         "results": ["item 1", "item 2"],
         "page_metadata": {"page": 1, "hasNext": True},
-        "message": get_time_period_message(),
+        "messages": [get_time_period_message()],
     }
     assert view.populate_response(results=["item 1", "item 2"], has_next=True) == expected_dictionary
 

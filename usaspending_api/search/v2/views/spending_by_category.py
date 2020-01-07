@@ -179,7 +179,7 @@ class BusinessLogic:
             "page_metadata": page_metadata,
             # alias_response is a workaround for tests instead of applying any aliases in the querysets
             "results": results[: self.limit],
-            "message": get_time_period_message(),
+            "messages": [get_time_period_message()],
         }
         return response
 

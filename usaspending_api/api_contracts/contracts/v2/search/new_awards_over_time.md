@@ -27,6 +27,8 @@ This endpoint returns the count of new awards grouped by time period in ascendin
                 + `quarter`
                 + `month`
         + `results` (array[TimeResult], fixed-type)
+        + `messages` (optional, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
 # Data Structures
 

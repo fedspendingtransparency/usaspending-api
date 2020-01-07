@@ -129,7 +129,7 @@ def test_new_awards_month(add_award_recipients, client):
         expected_results.append(
             {"time_period": {"fiscal_year": "2010", "month": str(i)}, "new_award_count_in_period": new_award_count}
         )
-    expected_response = {"group": "month", "results": expected_results, "message": get_time_period_message()}
+    expected_response = {"group": "month", "results": expected_results, "messages": [get_time_period_message()]}
 
     resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
     assert resp.status_code == 200
@@ -162,7 +162,7 @@ def test_new_awards_month(add_award_recipients, client):
         expected_results.append(
             {"time_period": {"fiscal_year": "2010", "month": str(i)}, "new_award_count_in_period": new_award_count}
         )
-    expected_response = {"group": "month", "results": expected_results, "message": get_time_period_message()}
+    expected_response = {"group": "month", "results": expected_results, "messages": [get_time_period_message()]}
     resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
     assert resp.status_code == 200
     assert resp.data["group"] == "month"
@@ -198,7 +198,7 @@ def test_new_awards_quarter(add_award_recipients, client):
         expected_results.append(
             {"time_period": {"fiscal_year": "2010", "quarter": str(i)}, "new_award_count_in_period": new_award_count}
         )
-    expected_response = {"group": "quarter", "results": expected_results, "message": get_time_period_message()}
+    expected_response = {"group": "quarter", "results": expected_results, "messages": [get_time_period_message()]}
     assert resp.data["group"] == "quarter"
     assert expected_response == resp.data
 
@@ -228,7 +228,7 @@ def test_new_awards_quarter(add_award_recipients, client):
             {"time_period": {"fiscal_year": "2010", "quarter": str(i)}, "new_award_count_in_period": new_award_count}
         )
 
-    expected_response = {"group": "quarter", "results": expected_results, "message": get_time_period_message()}
+    expected_response = {"group": "quarter", "results": expected_results, "messages": [get_time_period_message()]}
 
     test_payload["filters"]["time_period"] = [{"start_date": "2007-10-01", "end_date": "2010-09-30"}]
     resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
@@ -251,7 +251,7 @@ def test_new_awards_fiscal_year(add_award_recipients, client):
             {"time_period": {"fiscal_year": "2009"}, "new_award_count_in_period": 16},
             {"time_period": {"fiscal_year": "2010"}, "new_award_count_in_period": 0},
         ],
-        "message": get_time_period_message(),
+        "messages": [get_time_period_message()],
     }
 
     resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
@@ -268,7 +268,7 @@ def test_new_awards_fiscal_year(add_award_recipients, client):
             {"time_period": {"fiscal_year": "2009"}, "new_award_count_in_period": 16},
             {"time_period": {"fiscal_year": "2010"}, "new_award_count_in_period": 0},
         ],
-        "message": get_time_period_message(),
+        "messages": [get_time_period_message()],
     }
     resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
     assert resp.status_code == 200

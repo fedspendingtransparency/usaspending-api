@@ -25,6 +25,8 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (AwardTypeResult)
+        + `messages` (optional, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
 # Data Structures
 

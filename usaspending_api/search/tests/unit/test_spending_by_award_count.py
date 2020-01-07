@@ -170,7 +170,7 @@ def test_spending_by_award_count(client, db, award_data_fixture, refresh_matview
             "direct_payments": 0,
             "grants": 0,
             "other": 1,
-            "message": get_time_period_message(),
+            "messages": [get_time_period_message()],
         }
     }
 
@@ -200,7 +200,7 @@ def test_spending_by_award_count_idvs(client, db, award_data_fixture, refresh_ma
             "direct_payments": 0,
             "grants": 0,
             "other": 0,
-            "message": get_time_period_message(),
+            "messages": [get_time_period_message()],
         }
     }
 
