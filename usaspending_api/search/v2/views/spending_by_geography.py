@@ -9,7 +9,7 @@ from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
 from django.conf import settings
 
-from usaspending_api.awards.models_matviews import SubawardView
+from usaspending_api.search.models import SubawardView
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
