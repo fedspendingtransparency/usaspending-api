@@ -1,16 +1,16 @@
 import logging
 
-from usaspending_api.awards.models_matviews import AwardSummaryMatview
-from usaspending_api.awards.models_matviews import SummaryCfdaNumbersView
-from usaspending_api.awards.models_matviews import SummaryNaicsCodesView
-from usaspending_api.awards.models_matviews import SummaryPscCodesView
-from usaspending_api.awards.models_matviews import SummaryTransactionFedAcctView
-from usaspending_api.awards.models_matviews import SummaryTransactionGeoView
-from usaspending_api.awards.models_matviews import SummaryTransactionMonthView
-from usaspending_api.awards.models_matviews import SummaryTransactionRecipientView
-from usaspending_api.awards.models_matviews import SummaryTransactionView
-from usaspending_api.awards.models_matviews import SummaryView
-from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.search.models import AwardSummaryMatview
+from usaspending_api.search.models import SummaryCfdaNumbersView
+from usaspending_api.search.models import SummaryNaicsCodesView
+from usaspending_api.search.models import SummaryPscCodesView
+from usaspending_api.search.models import SummaryTransactionFedAcctView
+from usaspending_api.search.models import SummaryTransactionGeoView
+from usaspending_api.search.models import SummaryTransactionMonthView
+from usaspending_api.search.models import SummaryTransactionRecipientView
+from usaspending_api.search.models import SummaryTransactionView
+from usaspending_api.search.models import SummaryView
+from usaspending_api.search.models import UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_total_obligation_enum
 from usaspending_api.awards.v2.filters.filter_helpers import only_action_date_type
