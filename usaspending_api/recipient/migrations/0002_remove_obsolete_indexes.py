@@ -13,6 +13,8 @@ class Migration(migrations.Migration):
         ('recipient', '0001_initial'),
     ]
 
+    # For some reason, these indexes were still created and not dropped if I put this command at the
+    # bottom of 0001_initial
     operations = [
         migrations.RunSQL(
             sql=[

@@ -524,7 +524,6 @@ class Migration(migrations.Migration):
             sql=[
                 'create unique index idx_agency_toptier_agency_id_null_subtier_agency_id_uniq on agency (toptier_agency_id) where subtier_agency_id is null',
                 'CREATE INDEX legal_entity_recipient_name_idx ON legal_entity (recipient_name)',
-                'drop index if exists toptier_agency_toptier_code_8b0eb9cb_like',
             ],
         ),
     ]
