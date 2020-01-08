@@ -9,11 +9,12 @@ from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
 from django.conf import settings
 
-from usaspending_api.awards.models_matviews import SubawardView
+from usaspending_api.search.models import SubawardView
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -113,6 +114,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "scope": self.scope,
                 "geo_layer": self.geo_layer,
                 "results": self.state_results(kwargs, fields_list, loc_lookup),
+                "messages": [get_time_period_message()],
             }
 
             return Response(state_response)
@@ -136,6 +138,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "scope": self.scope,
                     "geo_layer": self.geo_layer,
                     "results": self.county_results(state_lookup, county_name_lookup),
+                    "messages": [get_time_period_message()],
                 }
 
                 return Response(county_response)
@@ -146,6 +149,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "scope": self.scope,
                     "geo_layer": self.geo_layer,
                     "results": self.district_results(state_lookup),
+                    "messages": [get_time_period_message()],
                 }
 
                 return Response(district_response)

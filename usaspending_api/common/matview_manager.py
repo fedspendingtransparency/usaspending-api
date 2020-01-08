@@ -1,9 +1,9 @@
 from collections import OrderedDict
 from django.conf import settings
 
-from usaspending_api.accounts.models import TASAutocompleteMatview
+from usaspending_api.search.models import TASAutocompleteMatview
 
-import usaspending_api.awards.models_matviews as mv
+import usaspending_api.search.models as mv
 
 DEFAULT_MATIVEW_DIR = settings.BASE_DIR.parent / "matviews"
 DEPENDENCY_FILEPATH = settings.APP_DIR / "database_scripts" / "matviews" / "functions_and_enums.sql"

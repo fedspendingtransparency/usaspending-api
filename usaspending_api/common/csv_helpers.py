@@ -44,28 +44,37 @@ def partition_large_delimited_file(
     """
     new_csv_list = []
     output_path = os.path.dirname(file_path)
-    original_csv_file_reader = csv.reader(open(file_path, "r"), delimiter=delimiter)
-    partition_number = 1
-    current_out_path = os.path.join(output_path, output_name_template % partition_number)
-    new_csv_list.append(current_out_path)
-    current_partition_writer = csv.writer(open(current_out_path, "w"), delimiter=delimiter)
-    current_limit = row_limit
+    with open(file_path, "r") as source_csv:
+        original_csv_file_reader = csv.reader(source_csv, delimiter=delimiter)
+        partition_number = 1
+        current_out_path = os.path.join(output_path, output_name_template % partition_number)
+        new_csv_list.append(current_out_path)
+        dest_csv = None
+        try:
+            dest_csv = open(current_out_path, "w")
+            current_partition_writer = csv.writer(dest_csv, delimiter=delimiter)
+            current_limit = row_limit
 
-    if keep_headers:
-        headers = next(original_csv_file_reader)
-        current_partition_writer.writerow(headers)
-
-    for line_number, row in enumerate(original_csv_file_reader, start=1):
-        if line_number > current_limit:  # limit reached, create a new CSV file for the next partition
-            partition_number += 1
-            current_limit = row_limit * partition_number
-            current_out_path = os.path.join(output_path, output_name_template % partition_number)
-            new_csv_list.append(current_out_path)
-            current_partition_writer = csv.writer(open(current_out_path, "w"), delimiter=delimiter)
             if keep_headers:
+                headers = next(original_csv_file_reader)
                 current_partition_writer.writerow(headers)
 
-        current_partition_writer.writerow(row)
+            for line_number, row in enumerate(original_csv_file_reader, start=1):
+                if line_number > current_limit:  # limit reached, create a new CSV file for the next partition
+                    partition_number += 1
+                    current_limit = row_limit * partition_number
+                    current_out_path = os.path.join(output_path, output_name_template % partition_number)
+                    new_csv_list.append(current_out_path)
+                    dest_csv.close()
+                    dest_csv = open(current_out_path, "w")
+                    current_partition_writer = csv.writer(dest_csv, delimiter=delimiter)
+                    if keep_headers:
+                        current_partition_writer.writerow(headers)
+
+                current_partition_writer.writerow(row)
+        finally:
+            if dest_csv and not dest_csv.closed:
+                dest_csv.close()
 
     return new_csv_list
 

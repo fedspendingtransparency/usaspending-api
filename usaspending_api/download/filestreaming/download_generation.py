@@ -2,6 +2,7 @@ import json
 import logging
 import multiprocessing
 import os
+import psutil as ps
 import re
 import shutil
 import subprocess
@@ -38,7 +39,7 @@ MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 
 def generate_download(download_job):
@@ -54,9 +55,13 @@ def generate_download(download_job):
     file_format = json_request.get("file_format")
 
     file_name = start_download(download_job)
+    working_dir = None
     try:
         # Create temporary files and working directory
         zip_file_path = settings.CSV_LOCAL_PATH + file_name
+        if not settings.IS_LOCAL and os.path.exists(zip_file_path):
+            # Clean up a zip file that might exist from a prior attempt at this download
+            os.remove(zip_file_path)
         working_dir = os.path.splitext(zip_file_path)[0]
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
@@ -95,8 +100,9 @@ def generate_download(download_job):
         raise Exception(download_job.error_message) from e
     finally:
         # Remove working directory
-        if os.path.exists(working_dir):
+        if working_dir and os.path.exists(working_dir):
             shutil.rmtree(working_dir)
+        _kill_spawned_processes(download_job)
 
     try:
         # push file to S3 bucket, if not local
@@ -120,6 +126,7 @@ def generate_download(download_job):
         # Remove generated file
         if not settings.IS_LOCAL and os.path.exists(zip_file_path):
             os.remove(zip_file_path)
+        _kill_spawned_processes(download_job)
 
     return finish_download(download_job)
 
@@ -465,7 +472,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     except Exception as e:
         if not settings.IS_LOCAL:
             # Not logging the command as it can contain the database connection string
-            e.cmd = "[redacted]"
+            e.cmd = "[redacted psql command]"
         logger.error(e)
         sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
         logger.error(f"Faulty SQL: {sql}")
@@ -497,3 +504,19 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
     RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
+
+
+def _kill_spawned_processes(download_job=None):
+    """Cleanup (kill) any spawned child processes during this job run"""
+    job = ps.Process(os.getpid())
+    for spawn_of_job in job.children(recursive=True):
+        write_to_log(
+            message=f"Attempting to terminate child process with PID [{spawn_of_job.pid}] and name "
+            f"[{spawn_of_job.name}]",
+            download_job=download_job,
+            is_error=True,
+        )
+        try:
+            spawn_of_job.kill()
+        except ps.NoSuchProcess:
+            pass
