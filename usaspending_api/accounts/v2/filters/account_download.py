@@ -355,8 +355,8 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction__assistance_data__legal_entity_congressional",
     )
     derived_fields["recipient_zip_code"] = Coalesce(
-        "award__latest_transaction__contract_data__legal_entity_zip5",
-        "award__latest_transaction__assistance_data__legal_entity_zip5",
+        "award__latest_transaction__contract_data__legal_entity_zip_last4",
+        "award__latest_transaction__assistance_data__legal_entity_zip_last4",
     )
     derived_fields["usaspending_permalink"] = Case(
         When(
