@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('awards', '0070_move_matview_models'),
+        ('awards', '0069_auto_20191226_1602'),
     ]
 
     # You may notice that the unmanaged models here have no fields.  This is an intentional
