@@ -425,7 +425,7 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
 def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None):
     success, failed = 0, 0
     try:
-        # "doc_type" is set in the index templete file. Don't change this without changing in json file first
+        # "doc_type" is set in the index template file. Don't change this without changing in json file first
         for ok, item in helpers.streaming_bulk(
             client, chunk, index=index_name, doc_type="{}_mapping".format(type[:-1])
         ):
@@ -747,7 +747,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
 
 def get_deleted_award_ids(client, id_list, config, index=None):
     """
-        id_list = [{key:'key1',col:'tranaction_id'},
+        id_list = [{key:'key1',col:'transaction_id'},
                    {key:'key2',col:'generated_unique_transaction_id'}],
                    ...]
      """
