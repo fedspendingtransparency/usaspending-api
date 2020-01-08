@@ -25,7 +25,7 @@ from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.generate_export_query import generate_default_export_query
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
-from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file, write_files_to_zip_file
+from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.helpers import (
     verify_requested_columns_available,
     multipart_upload,
@@ -55,9 +55,13 @@ def generate_download(download_job):
     extension = json_request.get("file_format")
 
     file_name = start_download(download_job)
+    working_dir = None
     try:
         # Create temporary files and working directory
         zip_file_path = settings.CSV_LOCAL_PATH + file_name
+        if not settings.IS_LOCAL and os.path.exists(zip_file_path):
+            # Clean up a zip file that might exist from a prior attempt at this download
+            os.remove(zip_file_path)
         working_dir = os.path.splitext(zip_file_path)[0]
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
@@ -96,7 +100,7 @@ def generate_download(download_job):
         raise Exception(download_job.error_message) from e
     finally:
         # Remove working directory
-        if os.path.exists(working_dir):
+        if working_dir and os.path.exists(working_dir):
             shutil.rmtree(working_dir)
         _kill_spawned_processes(download_job)
 
@@ -296,7 +300,7 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, extensi
         # Zip the split files into one zipfile
         write_to_log(message="Beginning zipping and compression", download_job=download_job)
         log_time = time.perf_counter()
-        write_files_to_zip_file(list_of_files, zip_file_path)
+        append_files_to_zip_file(list_of_files, zip_file_path)
 
         if download_job:
             write_to_log(
