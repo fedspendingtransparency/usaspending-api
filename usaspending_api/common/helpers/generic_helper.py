@@ -4,6 +4,7 @@ import time
 
 from calendar import monthrange, isleap
 from datetime import datetime as dt
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.db import connection
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
@@ -59,9 +60,15 @@ def generate_fiscal_month(date):
     """ Generate fiscal period based on the date provided """
     validate_date(date)
 
-    if date.month in [10, 11, 12, "10", "11", "12"]:
-        return int(date.month) - 9
-    return int(date.month) + 3
+    if date.month in [10, 11, 12]:
+        return date.month - 9
+    return date.month + 3
+
+
+def generate_fiscal_quarter(date):
+    """ Generate fiscal quarter based on the date provided """
+    validate_date(date)
+    return FiscalDate(date.year, date.month, date.day).quarter
 
 
 def generate_fiscal_year_and_quarter(date):
@@ -104,7 +111,7 @@ def dates_are_month_bookends(start, end):
     return False
 
 
-def min_and_max_from_date_ranges(filter_time_periods):
+def min_and_max_from_date_ranges(filter_time_periods: list) -> tuple:
     min_date = min([t.get("start_date", settings.API_MAX_DATE) for t in filter_time_periods])
     max_date = max([t.get("end_date", settings.API_SEARCH_MIN_DATE) for t in filter_time_periods])
     return dt.strptime(min_date, "%Y-%m-%d"), dt.strptime(max_date, "%Y-%m-%d")
@@ -117,12 +124,12 @@ def create_full_time_periods(min_date, max_date, group, columns):
         return [{**cols, **{"time_period": {"fy": str(fy)}}} for fy in fiscal_years]
 
     if group == "month":
-        period = int(generate_fiscal_month(min_date))
-        ending = int(generate_fiscal_month(max_date))
+        period = generate_fiscal_month(min_date)
+        ending = generate_fiscal_month(max_date)
         rollover = 12
-    else:  # Quarters
-        period = int(generate_fiscal_year_and_quarter(min_date).split("-Q")[-1])
-        ending = int(generate_fiscal_year_and_quarter(max_date).split("-Q")[-1])
+    else:  # quarter
+        period = generate_fiscal_quarter(min_date)
+        ending = generate_fiscal_quarter(max_date)
         rollover = 4
 
     results = []
@@ -142,7 +149,7 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
             filter_time_periods: list of time_period objects usually provided by filters
                 - {'start_date':..., 'end_date':...}
             queryset: the resulting data to split into these results
-            data_range_type: how the results are split
+            date_range_type: how the results are split
                 - 'fy', 'quarter', or 'month'
             columns: dictionary of columns to include from the queryset
                 - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
@@ -164,6 +171,33 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
         result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
         del result["time_period"]["fy"]
     return results
+
+
+def generate_fiscal_date_range(min_date: datetime, max_date: datetime, frequency: str) -> list:
+    """
+    Using a min date, max date, and a frequency indicator generates a list of dictionaries that contain
+    the fiscal_year, quarter, and month.
+    """
+    if frequency == "fiscal_year":
+        interval = 12
+    elif frequency == "quarter":
+        interval = 3
+    else:  # month
+        interval = 1
+
+    date_range = []
+    current_date = min_date
+    while current_date <= max_date:
+        date_range.append(
+            {
+                "fiscal_year": generate_fiscal_year(current_date),
+                "fiscal_quarter": generate_fiscal_quarter(current_date),
+                "fiscal_month": generate_fiscal_month(current_date),
+            }
+        )
+        current_date = current_date + relativedelta(months=interval)
+
+    return date_range
 
 
 def within_one_year(d1, d2):
@@ -311,6 +345,15 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
         "hasPrevious": has_previous,
     }
     return page_metadata
+
+
+def get_time_period_message():
+    return (
+        "For searches, time period start and end dates are currently limited to an earliest date of "
+        f"{settings.API_SEARCH_MIN_DATE}.  For data going back to {settings.API_MIN_DATE}, use either the Custom "
+        "Award Download feature on the website or one of our download or bulk_download API endpoints as "
+        "listed on https://api.usaspending.gov/docs/endpoints."
+    )
 
 
 # Raw SQL run during a migration

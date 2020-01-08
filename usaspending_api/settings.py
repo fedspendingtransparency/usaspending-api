@@ -43,6 +43,11 @@ ALLOWED_HOSTS = ["*"]
 # Define local flag to affect location of downloads
 IS_LOCAL = True
 
+# How to handle downloads locally
+# True: process it right away by the API;
+# False: leave the message in the local file-backed queue to be picked up and processed by the bulk-download container
+RUN_LOCAL_DOWNLOAD_IN_PROCESS = os.environ.get("RUN_LOCAL_DOWNLOAD_IN_PROCESS", "").lower() not in ["false", "0", "no"]
+
 # AWS Region for USAspending Infrastructure
 USASPENDING_AWS_REGION = ""
 if not USASPENDING_AWS_REGION:
@@ -286,8 +291,17 @@ LOGGING = {
         "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
     },
     "loggers": {
+        # The root logger; i.e. "all modules"
+        "": {"handlers": ["console", "console_file"], "level": "WARNING", "propagate": False},
+        # Logger for Django API requests via middleware. See logging.py
         "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
+        # Catch-all logger (over)used for non-Django-API commands that output to the console
         "console": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        # Logger used to specifically record exceptions
+        "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
+        # ======== Module-specific loggers ========
+        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
     },
 }
 
