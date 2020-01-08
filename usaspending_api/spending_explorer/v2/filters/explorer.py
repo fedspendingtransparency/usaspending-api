@@ -1,4 +1,5 @@
 from django.db.models import F, Sum, Value, CharField, Q, Case, When
+from django.db.models.functions import Coalesce
 from decimal import Decimal
 from usaspending_api.references.models import Agency
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
@@ -96,29 +97,22 @@ class Explorer(object):
 
     def recipient(self):
         # Recipients Queryset
-        # The two querysets here are identical, other than that the annotation traces differently to either the
-        # transaction_fabs or transaction_fpds table depending on the type of the latest transaction
         alt_set = (
-            self.alt_set.filter(
-                ~Q(transaction_obligated_amount=Decimal("NaN")), award__latest_transaction__is_fpds=False
-            )
+            self.alt_set.filter(~Q(transaction_obligated_amount=Decimal("NaN")))
             .annotate(
-                id=F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
+                id=Coalesce(
+                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
+                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
+                ),
                 type=Value("recipient", output_field=CharField()),
-                name=F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
-                code=F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
-            )
-            .values("id", "type", "name", "code", "amount")
-            .annotate(total=Sum("transaction_obligated_amount"))
-            .order_by("-total")
-            | self.alt_set.filter(
-                ~Q(transaction_obligated_amount=Decimal("NaN")), award__latest_transaction__is_fpds=True
-            )
-            .annotate(
-                id=F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
-                type=Value("recipient", output_field=CharField()),
-                name=F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
-                code=F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
+                name=Coalesce(
+                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
+                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
+                ),
+                code=Coalesce(
+                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
+                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
+                ),
             )
             .values("id", "type", "name", "code", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))
