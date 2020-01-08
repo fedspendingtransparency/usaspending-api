@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import psycopg2
 
-# import subprocess
+import subprocess
 import tempfile
 
 from collections import defaultdict
@@ -181,11 +181,11 @@ FROM {view}
 WHERE {type_fy}fiscal_year={fy}{update_date}
 """
 
-COPY_SQL = """COPY (
+COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
     WHERE {type_fy}fiscal_year={fy}{update_date}
-) TO '{filename}' DELIMITER ',' CSV HEADER
+) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
 CHECK_IDS_SQL = """
@@ -369,8 +369,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
         count = execute_sql_statement(count_sql, True, verbose)[0]["count"]
         printf({"msg": "Writing {} to this file: {}".format(count, filename), "job": job_id, "f": "Download"})
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
-    # subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
-    execute_sql_statement(copy_sql, False, verbose)
+    subprocess.Popen("psql {} -c {}".format(get_database_dsn_string(), copy_sql), shell=True).wait()
 
     if not skip_counts:
         download_count = count_rows_in_delimited_file(filename, has_header=True, safe=False)

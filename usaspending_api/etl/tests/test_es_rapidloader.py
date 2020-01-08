@@ -1,10 +1,7 @@
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 import pytest
-import tempfile
 
-from usaspending_api import settings
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.rapidloader import Rapidloader
@@ -122,11 +119,11 @@ def test_configure_sql_strings():
     config["root_index"] = "award-query"
     config["type"] = "awards"
     copy, id, count = configure_sql_strings(config, "filename", [1])
-    copy_sql = """COPY (
+    copy_sql = """"COPY (
     SELECT *
     FROM award_delta_view
     WHERE fiscal_year=2019 AND update_date >= '2007-10-01'
-) TO 'filename' DELIMITER ',' CSV HEADER
+) TO STDOUT DELIMITER ',' CSV HEADER" > 'filename'
 """
     count_sql = """
 SELECT COUNT(*) AS count
