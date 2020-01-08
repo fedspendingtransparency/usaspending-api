@@ -17,6 +17,7 @@ from usaspending_api.search.models.summary_transaction_month_view import Summary
 from usaspending_api.search.models.summary_transaction_recipient_view import SummaryTransactionRecipientView
 from usaspending_api.search.models.summary_transaction_view import SummaryTransactionView
 from usaspending_api.search.models.summary_view import SummaryView
+from usaspending_api.search.models.tas_autocomplete_matview import TASAutocompleteMatview
 from usaspending_api.search.models.universal_transaction_matview import UniversalTransactionView
 from usaspending_api.search.models.vw_award_search import AwardSearchView
 
@@ -42,5 +43,6 @@ __all__ = [
     "SummaryTransactionRecipientView",
     "SummaryTransactionView",
     "SummaryView",
+    "TASAutocompleteMatview",
     "UniversalTransactionView",
 ]

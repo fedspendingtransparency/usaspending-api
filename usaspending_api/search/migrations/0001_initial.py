@@ -178,6 +178,14 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name='TASAutocompleteMatview',
+            fields=[],
+            options={
+                'db_table': 'tas_autocomplete_matview',
+                'managed': False,
+            },
+        ),
+        migrations.CreateModel(
             name='UniversalTransactionView',
             fields=[],
             options={
