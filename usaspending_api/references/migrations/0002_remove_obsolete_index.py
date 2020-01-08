@@ -10,8 +10,13 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('references', '0001_initial'),
     ]
 
     operations = [
-        # These operations are obsolete and have been squashed.
+        migrations.RunSQL(
+            sql=[
+                'drop index if exists toptier_agency_toptier_code_8b0eb9cb_like',
+            ],
+        ),
     ]
