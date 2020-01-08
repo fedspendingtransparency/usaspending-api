@@ -9,9 +9,18 @@ from usaspending_api.etl.rapidloader import Rapidloader
 from model_mommy import mommy
 from usaspending_api.etl.es_etl_helpers import configure_sql_strings, check_awards_for_deletes, get_deleted_award_ids
 
+
 @pytest.fixture
 def award_data_fixture(db):
-    mommy.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2010-10-01", is_fpds=True, type="A", transaction_unique_id="transaction_id_1")
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=1,
+        award_id=1,
+        action_date="2010-10-01",
+        is_fpds=True,
+        type="A",
+        transaction_unique_id="transaction_id_1",
+    )
     mommy.make(
         "awards.TransactionFPDS",
         detached_award_proc_unique="transaction_id_1",
