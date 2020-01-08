@@ -157,6 +157,22 @@ def test_unreported_data_actual_value_file_c(client):
             "treasury_account_id": -2,
             "transaction_obligated_amount": -1,
         },
+        {
+            "model": FinancialAccountsByAwards,
+            "financial_accounts_by_awards_id": -3,
+            "submission_id": -1,
+            "award__latest_transaction__contract_data__awardee_or_recipient_legal": "random_recipient_name_1",
+            "treasury_account_id": -2,
+            "transaction_obligated_amount": -1,
+        },
+        {
+            "model": FinancialAccountsByAwards,
+            "financial_accounts_by_awards_id": -3,
+            "submission_id": -1,
+            "award__latest_transaction__contract_data__awardee_or_recipient_legal": "random_recipient_name_4",
+            "treasury_account_id": -2,
+            "transaction_obligated_amount": -1,
+        },
     ]
 
     for entry in models_to_mock:
