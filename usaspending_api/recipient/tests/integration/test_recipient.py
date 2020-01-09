@@ -462,7 +462,6 @@ def test_recipient_overview(client, mock_matviews_qs, monkeypatch):
         mommy.make(DUNS, **test_duns_model)
         mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
 
-    # Mock Legal Entity
     expected_business_cat = ["expected", "business", "cat"]
 
     utm_objects = Mock()
