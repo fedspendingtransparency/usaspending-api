@@ -161,15 +161,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "type": "text",
                 "text_type": "search",
                 "required": False,
-                "allow_nulls": True
+                "allow_nulls": True,
             },
-            {
-                "name": "last_value",
-                "key": "last_value",
-                "type": "float",
-                "required": False,
-                "allow_nulls": True
-            }
+            {"name": "last_value", "key": "last_value", "type": "float", "required": False, "allow_nulls": True},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -242,6 +236,21 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return sort_by_fields
 
+    def get_elastic_sort_by_fields(self):
+        if self.pagination["sort_key"] == "Award ID":
+            sort_by_fields = ["display_award_id"]
+        else:
+            if set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
+                sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]
+            elif set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
+                sort_by_fields = [loan_mapping[self.pagination["sort_key"]]]
+            elif set(self.filters["award_type_codes"]) <= set(idv_type_mapping):
+                sort_by_fields = [idv_mapping[self.pagination["sort_key"]]]
+            elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
+                sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
+
+        return sort_by_fields
+
     def get_database_fields(self):
         values = copy.copy(self.constants["minimum_db_fields"])
         for field in self.fields:
@@ -270,28 +279,33 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "results": results,
             "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
             "last_id": last_id,
-            "last_value": last_value
+            "last_value": last_value,
             "messages": [get_time_period_message()],
         }
 
     def query_elasticsearch(self) -> list:
-        filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters)
-        sort_field = self.get_sort_by_fields()
+        filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters, query_type="awards")
+        sort_field = self.get_elastic_sort_by_fields()
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         if self.last_id:
-            sorts.append({"generated_unique_award_id.keyword":"desc"})
+            sorts.append({"generated_unique_award_id.keyword": "desc"})
         search = (
-            Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
-            .filter(filter_query)
-            .sort(*sorts).extra(search_after=[self.last_value, self.last_id])[0: self.pagination["limit"]]
-        ) if self.last_value and self.last_id else (
-            Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
-            .filter(filter_query)
-            .sort(*sorts)[
-                ((self.pagination["page"] - 1) * self.pagination["limit"]) : (
-                    ((self.pagination["page"] - 1) * self.pagination["limit"]) + self.pagination["limit"]
-                )
-            ]
+            (
+                Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
+                .filter(filter_query)
+                .sort(*sorts)
+                .extra(search_after=[self.last_value, self.last_id])[0 : self.pagination["limit"]]
+            )
+            if self.last_value and self.last_id
+            else (
+                Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
+                .filter(filter_query)
+                .sort(*sorts)[
+                    ((self.pagination["page"] - 1) * self.pagination["limit"]) : (
+                        ((self.pagination["page"] - 1) * self.pagination["limit"]) + self.pagination["limit"]
+                    )
+                ]
+            )
         )
         response = es_client_query(search=search)
 
@@ -326,13 +340,22 @@ class SpendingByAwardVisualizationViewSet(APIView):
             row = self.append_recipient_hash_level(row)
             row.pop("parent_recipient_unique_id")
             results.append(row)
-        # print(response.hits.total)
+        last_id = None
+        last_value = None
+        if len(response) > 0:
+            last_id = (response[len(response) - 1].to_dict().get("generated_unique_award_id"),)
+            last_value = (
+                response[len(response) - 1].to_dict().get("total_loan_value")
+                if set(self.filters["award_type_codes"]) <= set(loan_type_mapping)
+                else response[len(response) - 1].to_dict().get("total_obligation"),
+            )
+        print(response.hits.total)
         return self.populate_response(
             results=results,
             has_next=response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
             > self.pagination["limit"],
-            last_id=response[len(response) - 1].to_dict().get("generated_unique_award_id"),
-            last_value=response[len(response) - 1].to_dict().get("total_loan_value") if set(self.filters["award_type_codes"]) <= set(loan_type_mapping) else response[len(response) - 1].to_dict().get("total_obligation")
+            last_id=last_id,
+            last_value=last_value,
         )
 
     def append_recipient_hash_level(self, result) -> dict:
@@ -359,7 +382,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             SQL = sql.format(
                 recipient_id="'" + id + "'",
                 parent_recipient_unique_id=parent_id if parent_id else "null",
-                special_cases="(" + ", ".join(special_cases) + ")")
+                special_cases="(" + ", ".join(special_cases) + ")",
+            )
             row = execute_sql_to_ordered_dictionary(SQL)
             if len(row) > 0:
                 result["recipient_id"] = row[0].get("hash")

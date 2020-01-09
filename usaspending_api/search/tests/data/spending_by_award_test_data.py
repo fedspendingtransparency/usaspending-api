@@ -65,6 +65,9 @@ def spending_by_award_test_data():
         latest_transaction_id=2,
         generated_unique_award_id="CONT_AWD_TESTING_1",
         date_signed="2008-01-01",
+        description="test test test",
+        awarding_agency_id=1,
+        funding_agency_id=1,
     )
     mommy.make(
         "awards.Award",
@@ -88,6 +91,20 @@ def spending_by_award_test_data():
         generated_unique_award_id="CONT_AWD_TESTING_3",
         date_signed="2010-01-01",
     )
+    # Toptier Agency
+    toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
+
+    mommy.make("references.ToptierAgency", **toptier_agency_1)
+
+    # Subtier Agency
+    subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
+    subtier_agency_2 = {"pk": 2, "abbreviation": "SA2", "name": "SUBTIER AGENCY 2", "subtier_code": "1000"}
+
+    mommy.make("references.SubtierAgency", **subtier_agency_1)
+    mommy.make("references.SubtierAgency", **subtier_agency_2)
+
+    # Agency
+    mommy.make("references.Agency", toptier_agency_id=1, subtier_agency_id=1)
 
     mommy.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2014-01-01", is_fpds=True)
     mommy.make("awards.TransactionNormalized", id=2, award_id=1, action_date="2015-01-01", is_fpds=True)
