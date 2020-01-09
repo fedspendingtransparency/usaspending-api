@@ -123,6 +123,7 @@ INSTALLED_APPS = [
     "usaspending_api.bulk_download",
     "usaspending_api.recipient",
     "usaspending_api.search",
+    "usaspending_api.database_scripts.job_archive",
     "django_spaghetti",
     "simple_history",
 ]
