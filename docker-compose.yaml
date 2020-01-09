@@ -36,10 +36,21 @@ services:
       - 8000:8000
     command: python3 -u manage.py runserver 0.0.0.0:8000
     environment:
+      RUN_LOCAL_DOWNLOAD_IN_PROCESS: "False"
       DB_SOURCE: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       DB_R1: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOSTNAME}
+
+  usaspending-bulk-download:
+    build: .
+    restart: on-failure:5 # 5 max attempt, and then it will stop restarting. NOTE: bulk download errors will cause one failure+restart iterations
+    volumes:
+    - .:/dockermount
+    command: python3 manage.py download_sqs_worker
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
   usaspending-es:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4

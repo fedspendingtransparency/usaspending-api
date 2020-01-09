@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 
 import certifi
 import logging
@@ -18,6 +18,7 @@ from elasticsearch_dsl.response import Response
 
 logger = logging.getLogger("console")
 CLIENT = None
+ElasticsearchResponse = Optional[Union[dict, Response]]
 
 
 def instantiate_elasticsearch_client() -> Elasticsearch:
@@ -55,7 +56,7 @@ def create_es_client() -> Elasticsearch:
 
 def es_client_query(
     index: str = None, body: dict = None, timeout: str = "1m", retries: int = 5, search: Search = None
-) -> Union[Elasticsearch, Response]:
+) -> ElasticsearchResponse:
     if CLIENT is None:
         create_es_client()
     if CLIENT is None:  # If CLIENT is still None, don't even attempt to connect to the cluster
@@ -78,7 +79,7 @@ def es_client_query(
 
 def _es_search(
     index: str = None, body: dict = None, search: Search = None, timeout: int = "1m"
-) -> Union[dict, Response]:
+) -> ElasticsearchResponse:
     error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
     result = None
     try:

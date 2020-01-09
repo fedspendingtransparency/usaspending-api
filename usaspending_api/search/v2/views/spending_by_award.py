@@ -44,6 +44,7 @@ from usaspending_api.common.experimental_api_flags import is_experimental_elasti
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -270,6 +271,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
             "last_id": last_id,
             "last_value": last_value
+            "messages": [get_time_period_message()],
         }
 
     def query_elasticsearch(self) -> list:

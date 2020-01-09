@@ -16,6 +16,7 @@ Creates a new download job for the requested award and returns a link to a zippe
             + Members
                 + `csv`
                 + `tsv`
+                + `pstxt`
 + Response 200 (application/json)
     + Attributes (object)
         + `file_name` (required, string)
