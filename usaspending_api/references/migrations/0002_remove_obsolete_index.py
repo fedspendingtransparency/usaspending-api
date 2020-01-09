@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         ('references', '0001_initial'),
     ]
 
-    # For some reason, the index was still created and not dropped if I put this command at the
+    # For some reason, this index was still created and not dropped if I put this command at the
     # bottom of 0001_initial
     operations = [
         migrations.RunSQL(
