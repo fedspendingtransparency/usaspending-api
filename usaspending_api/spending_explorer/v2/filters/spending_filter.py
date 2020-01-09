@@ -129,9 +129,10 @@ def spending_filter(alt_set, queryset, filters, _type):
             # recipient
             elif key == "recipient":
                 and_queryset = queryset.filter(
-                    treasury_account__in=alt_set.filter(award__recipient__recipient_name=value).values_list(
-                        "treasury_account_id", flat=True
-                    )
+                    treasury_account__in=alt_set.filter(
+                        Q(award__latest_transaction__contract_data__awardee_or_recipient_legal=value)
+                        | Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal=value)
+                    ).values_list("treasury_account_id", flat=True)
                 )
                 queryset &= and_queryset
 
