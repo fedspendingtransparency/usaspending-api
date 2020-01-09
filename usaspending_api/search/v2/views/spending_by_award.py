@@ -120,6 +120,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "upper_bound": json_request["page"] * json_request["limit"] + 1,
         }
         self.elasticsearch = is_experimental_elasticsearch_api(request)
+        self.last_id = json_request.get("last_id")
+        self.last_value = json_request.get("last_value")
 
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
             return Response(self.populate_response(results=[], has_next=False))
@@ -152,6 +154,21 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "array_type": "integer",
                 "array_max": maxsize,
             },
+            {
+                "name": "last_id",
+                "key": "last_id",
+                "type": "text",
+                "text_type": "search",
+                "required": False,
+                "allow_nulls": True
+            },
+            {
+                "name": "last_value",
+                "key": "last_value",
+                "type": "float",
+                "required": False,
+                "allow_nulls": True
+            }
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -246,18 +263,26 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return queryset.order_by(*order_by_list)
 
-    def populate_response(self, results: list, has_next: bool) -> dict:
+    def populate_response(self, results: list, has_next: bool, last_id: str = None, last_value: str = None) -> dict:
         return {
             "limit": self.pagination["limit"],
             "results": results,
             "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
+            "last_id": last_id,
+            "last_value": last_value
         }
 
     def query_elasticsearch(self) -> list:
         filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters)
         sort_field = self.get_sort_by_fields()
-        sorts = ["-" + field if self.pagination["sort_order"] == "desc" else field for field in sort_field]
+        sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
+        if self.last_id:
+            sorts.append({"generated_unique_award_id.keyword":"desc"})
         search = (
+            Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
+            .filter(filter_query)
+            .sort(*sorts).extra(search_after=[self.last_value, self.last_id])[0: self.pagination["limit"]]
+        ) if self.last_value and self.last_id else (
             Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
             .filter(filter_query)
             .sort(*sorts)[
@@ -282,50 +307,60 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         field
                     )
                 )
+
+            row["internal_id"] = int(row["internal_id"])
+            if row.get("Loan Value"):
+                row["Loan Value"] = float(row["Loan Value"])
+            if row.get("Subsidy Cost"):
+                row["Subsidy Cost"] = float(row["Subsidy Cost"])
+            if row.get("Award Amount"):
+                row["Award Amount"] = float(row["Award Amount"])
             row["generated_internal_id"] = hit["generated_unique_award_id"]
             row["recipient_id"] = hit.get("recipient_unique_id")
             row["parent_recipient_unique_id"] = hit.get("parent_recipient_unique_id")
 
             if "Award ID" in self.fields:
                 row["Award ID"] = hit["display_award_id"]
+            row = self.append_recipient_hash_level(row)
+            row.pop("parent_recipient_unique_id")
             results.append(row)
-        self.append_recipient_hash_level(results)
+        # print(response.hits.total)
         return self.populate_response(
             results=results,
             has_next=response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
             > self.pagination["limit"],
+            last_id=response[len(response) - 1].to_dict().get("generated_unique_award_id"),
+            last_value=response[len(response) - 1].to_dict().get("total_loan_value") if set(self.filters["award_type_codes"]) <= set(loan_type_mapping) else response[len(response) - 1].to_dict().get("total_obligation")
         )
 
-    def append_recipient_hash_level(self, results):
-        for result in results:
-            id = result.get("recipient_id")
-            parent_id = result.get("parent_recipient_unique_id")
-            if id:
-                sql = """(
-                        select
-                            rp.recipient_hash || '-' ||  rp.recipient_level as hash
-                        from
-                            recipient_profile rp
-                            inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
-                        where
-                            rl.duns = {recipient_id} and
-                            rp.recipient_level = case
-                                when {parent_recipient_unique_id} is null then 'R'
-                                else 'C'
-                            end and
-                        rp.recipient_name not in {special_cases}
-                )"""
+    def append_recipient_hash_level(self, result) -> dict:
 
-                special_cases = ["'" + case + "'" for case in SPECIAL_CASES]
-                SQL = sql.format(
-                    recipient_id="'" + id + "'",
-                    parent_recipient_unique_id=parent_id if parent_id else "null",
-                    special_cases="(" + ", ".join(special_cases) + ")",
-                )
-                row = execute_sql_to_ordered_dictionary(SQL)
-                if len(row) > 0:
-                    result["recipient_id"] = row[0].get("hash")
-                else:
-                    result["recipient_id"] = None
-                result.pop("parent_recipient_unique_id")
-        return results
+        id = result.get("recipient_id")
+        parent_id = result.get("parent_recipient_unique_id")
+        if id:
+            sql = """(
+                    select
+                        rp.recipient_hash || '-' ||  rp.recipient_level as hash
+                    from
+                        recipient_profile rp
+                        inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
+                    where
+                        rl.duns = {recipient_id} and
+                        rp.recipient_level = case
+                            when {parent_recipient_unique_id} is null then 'R'
+                            else 'C'
+                        end and
+                    rp.recipient_name not in {special_cases}
+            )"""
+
+            special_cases = ["'" + case + "'" for case in SPECIAL_CASES]
+            SQL = sql.format(
+                recipient_id="'" + id + "'",
+                parent_recipient_unique_id=parent_id if parent_id else "null",
+                special_cases="(" + ", ".join(special_cases) + ")")
+            row = execute_sql_to_ordered_dictionary(SQL)
+            if len(row) > 0:
+                result["recipient_id"] = row[0].get("hash")
+            else:
+                result["recipient_id"] = None
+        return result
