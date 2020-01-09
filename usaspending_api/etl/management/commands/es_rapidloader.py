@@ -41,7 +41,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--type",
+            "--load_type",
             type=str,
             help="Select which type of load to perform, current options are transactions or awards.",
             choices=["transactions", "awards"],
@@ -109,9 +109,9 @@ class Command(BaseCommand):
         start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
         printf({"msg": start_msg.format(**config)})
 
-        if config["type"] == "transactions":
+        if config["load_type"] == "transactions":
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
-        elif config["type"] == "awards":
+        elif config["load_type"] == "awards":
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
 
         loader = Rapidloader(config, elasticsearch_client)
@@ -133,7 +133,7 @@ def process_cli_parameters(options: dict, es_client) -> dict:
         "index_name",
         "directory",
         "skip_counts",
-        "type",
+        "load_type",
     )
     config = set_config(simple_args, options)
 
@@ -147,7 +147,7 @@ def process_cli_parameters(options: dict, es_client) -> dict:
         config["starting_date"] = default_datetime
         check_new_index_name_is_ok(
             config["index_name"],
-            settings.ES_AWARDS_NAME_SUFFIX if config["type"] == "awards" else settings.ES_TRANSACTIONS_NAME_SUFFIX,
+            settings.ES_AWARDS_NAME_SUFFIX if config["load_type"] == "awards" else settings.ES_TRANSACTIONS_NAME_SUFFIX,
         )
     elif options["start_datetime"]:
         config["starting_date"] = options["start_datetime"]
@@ -157,10 +157,10 @@ def process_cli_parameters(options: dict, es_client) -> dict:
         #      - The earliest records in S3.
         #      - When all transaction records in the USAspending SQL database were updated.
         #   And keep it timezone-award for S3
-        config["starting_date"] = get_last_load_date("es_{}".format(options["type"]), default=default_datetime)
+        config["starting_date"] = get_last_load_date("es_{}".format(options["load_type"]), default=default_datetime)
 
     config["max_query_size"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
-    if options["type"] == "awards":
+    if options["load_type"] == "awards":
         config["max_query_size"] = settings.ES_AWARDS_MAX_RESULT_WINDOW
 
     config["is_incremental_load"] = not bool(config["create_new_index"]) and (
@@ -169,7 +169,7 @@ def process_cli_parameters(options: dict, es_client) -> dict:
 
     if config["is_incremental_load"]:
         write_alias = settings.ES_TRANSACTIONS_WRITE_ALIAS
-        if config["type"] == "awards":
+        if config["load_type"] == "awards":
             write_alias = settings.ES_AWARDS_WRITE_ALIAS
         if config["index_name"]:
             msg = "Ignoring provided index name, using alias '{}' for incremental load"
@@ -199,7 +199,7 @@ def process_cli_parameters(options: dict, es_client) -> dict:
 def set_config(copy_args: list, arg_parse_options: dict) -> dict:
     """Set values based on env vars and when the script started"""
     root_index = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX
-    if arg_parse_options["type"] == "awards":
+    if arg_parse_options["load_type"] == "awards":
         root_index = settings.ES_AWARDS_QUERY_ALIAS_PREFIX
     config = {
         "aws_region": settings.USASPENDING_AWS_REGION,

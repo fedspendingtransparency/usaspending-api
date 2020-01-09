@@ -88,7 +88,7 @@ config = {
     "root_index": "award-query",
     "processing_start_datetime": datetime(2019, 12, 13, 16, 10, 33, 729108, tzinfo=timezone.utc),
     "verbose": False,
-    "type": "awards",
+    "load_type": "awards",
     "process_deletes": False,
     "directory": Path(__file__).resolve().parent,
     "skip_counts": False,
@@ -115,7 +115,7 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
 
 def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index):
     config["root_index"] = "transaction-query"
-    config["type"] = "transactions"
+    config["load_type"] = "transactions"
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = Rapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "Rapidloader"
@@ -127,7 +127,7 @@ def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_trans
 def test_configure_sql_strings():
     config["fiscal_year"] = 2019
     config["root_index"] = "award-query"
-    config["type"] = "awards"
+    config["load_type"] = "awards"
     copy, id, count = configure_sql_strings(config, "filename", [1])
     copy_sql = """"COPY (
     SELECT *
@@ -158,7 +158,7 @@ def test_get_award_ids(db, award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
     id_list = [{"key": 1, "col": "transaction_id"}]
     config["root_index"] = "transaction-query"
-    config["type"] = "transactions"
+    config["load_type"] = "transactions"
     client = elasticsearch_transaction_index.client
     ids = get_deleted_award_ids(client, id_list, config, index=elasticsearch_transaction_index.index_name)
     assert ids == ["CONT_AWD_IND12PB00323"]

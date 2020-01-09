@@ -27,11 +27,11 @@ class TestElasticSearchIndex:
         uniquity, otherwise, we may end up with aliases representing more
         than one index which may throw off our search results.
         """
-        self.type = index_type
+        self.index_type = index_type
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_index_template("{}_template".format(self.type[:-1]))
+        self.template = retrieve_index_template("{}_template".format(self.index_type[:-1]))
         self.mappings = json.loads(self.template)["mappings"]
         self.doc_type = str(list(self.mappings.keys())[0])
 
@@ -45,9 +45,9 @@ class TestElasticSearchIndex:
         for the index, and add contents.
         """
         self.delete_index()
-        self._refresh_materialized_views(self.type)
+        self._refresh_materialized_views(self.index_type)
         self.client.indices.create(self.index_name, self.template)
-        create_aliases(self.client, self.index_name, self.type, True)
+        create_aliases(self.client, self.index_name, self.index_type, True)
         self._add_contents()
 
     def _add_contents(self):
@@ -55,11 +55,11 @@ class TestElasticSearchIndex:
         Get all of the transactions presented in the view and stuff them into the Elasticsearch index.
         The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
         """
-        view_sql_file = "award_delta_view.sql" if self.type == "awards" else "transaction_delta_view.sql"
+        view_sql_file = "award_delta_view.sql" if self.index_type == "awards" else "transaction_delta_view.sql"
         view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
         with connection.cursor() as cursor:
             cursor.execute(view_sql)
-            if self.type == "transactions":
+            if self.index_type == "transactions":
                 view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
             else:
                 view_name = settings.ES_AWARDS_ETL_VIEW_NAME
@@ -67,25 +67,25 @@ class TestElasticSearchIndex:
             transactions = ordered_dictionary_fetcher(cursor)
             cursor.execute(f"DROP VIEW {view_name};")
 
-            for transaction in transactions:
-                self.client.index(
-                    self.index_name,
-                    self.doc_type,
-                    json.dumps(transaction, cls=DjangoJSONEncoder),
-                    transaction["{}_id".format(self.type[:-1])],
-                )
+        for transaction in transactions:
+            self.client.index(
+                self.index_name,
+                self.doc_type,
+                json.dumps(transaction, cls=DjangoJSONEncoder),
+                transaction["{}_id".format(self.index_type[:-1])],
+            )
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)
 
     @staticmethod
-    def _refresh_materialized_views(type):
+    def _refresh_materialized_views(index_type):
         """
         This materialized view is used by the es etl view, so
         we will need to refresh it in order for the view to see
         changes to the underlying tables.
         """
         with connection.cursor() as cursor:
-            if type == "transactions":
+            if index_type == "transactions":
                 cursor.execute("REFRESH MATERIALIZED VIEW universal_transaction_matview;")
             else:
                 cursor.execute("REFRESH MATERIALIZED VIEW mv_contract_award_search;")
