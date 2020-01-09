@@ -14,6 +14,7 @@ def financial_obligations_models():
         id=6969,
         agency_identifier="867",
         main_account_code="5309",
+        federal_account_code="867-5309",
         account_title="Turtlenecks and Chains",
     )
     federal_id_lame = mommy.make(
@@ -21,6 +22,7 @@ def financial_obligations_models():
         id=1234,
         agency_identifier="314",
         main_account_code="1592",
+        federal_account_code="314-1592",
         account_title="Suits and Ties",
     )
     """
