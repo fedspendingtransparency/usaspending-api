@@ -2,7 +2,7 @@ from datetime import date
 from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Aggregate, CharField, Func, IntegerField
 from usaspending_api.common.helpers.sql_helpers import get_connection
-from usaspending_api.awards.models_matviews import (
+from usaspending_api.search.models import (
     ContractAwardSearchMatview,
     DirectPaymentAwardSearchMatview,
     GrantAwardSearchMatview,
