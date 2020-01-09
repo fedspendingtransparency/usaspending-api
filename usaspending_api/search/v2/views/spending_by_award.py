@@ -29,6 +29,7 @@ from usaspending_api.awards.v2.lookups.matview_lookups import (
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
+from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -173,7 +174,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         award_ids = Award.objects.filter(id__in=internal_ids).values_list("id", "generated_unique_award_id")
         award_ids = {internal_id: guai for internal_id, guai in award_ids}
         for record in records:
-            record[dest] = award_ids.get(record[source])  # defensive, in case there is a discrepency
+            record[dest] = award_ids.get(record[source])  # defensive, in case there is a discrepancy
         return records
 
     def get_sort_by_fields(self):
@@ -223,4 +224,5 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "limit": self.pagination["limit"],
             "results": results,
             "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
+            "messages": [get_time_period_message()],
         }

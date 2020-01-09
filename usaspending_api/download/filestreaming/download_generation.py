@@ -2,6 +2,7 @@ import json
 import logging
 import multiprocessing
 import os
+import psutil as ps
 import re
 import shutil
 import subprocess
@@ -20,7 +21,9 @@ from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.download.download_utils import construct_data_date_range
+from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_source import DownloadSource
+from usaspending_api.download.filestreaming.generate_export_query import generate_default_export_query
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.helpers import (
@@ -36,7 +39,7 @@ MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 
 def generate_download(download_job):
@@ -52,9 +55,13 @@ def generate_download(download_job):
     extension = json_request.get("file_format")
 
     file_name = start_download(download_job)
+    working_dir = None
     try:
         # Create temporary files and working directory
         zip_file_path = settings.CSV_LOCAL_PATH + file_name
+        if not settings.IS_LOCAL and os.path.exists(zip_file_path):
+            # Clean up a zip file that might exist from a prior attempt at this download
+            os.remove(zip_file_path)
         working_dir = os.path.splitext(zip_file_path)[0]
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
@@ -93,8 +100,9 @@ def generate_download(download_job):
         raise Exception(download_job.error_message) from e
     finally:
         # Remove working directory
-        if os.path.exists(working_dir):
+        if working_dir and os.path.exists(working_dir):
             shutil.rmtree(working_dir)
+        _kill_spawned_processes(download_job)
 
     try:
         # push file to S3 bucket, if not local
@@ -104,7 +112,7 @@ def generate_download(download_job):
             start_uploading = time.perf_counter()
             multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
             write_to_log(
-                message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job,
+                message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job
             )
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
@@ -118,6 +126,7 @@ def generate_download(download_job):
         # Remove generated file
         if not settings.IS_LOCAL and os.path.exists(zip_file_path):
             os.remove(zip_file_path)
+        _kill_spawned_processes(download_job)
 
     return finish_download(download_job)
 
@@ -176,27 +185,23 @@ def get_download_sources(json_request):
     return download_sources
 
 
-def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
-    """Write to delimited text file(s) and zip file(s) using the source data"""
-    d_map = {
-        "d1": "Contracts",
-        "d2": "Assistance",
-        "treasury_account": "TAS",
-        "federal_account": "FA",
-    }
+def build_data_file_name(source, download_job, piid, assistance_id):
+    d_map = {"d1": "Contracts", "d2": "Assistance", "treasury_account": "TAS", "federal_account": "FA"}
+
     if download_job and download_job.monthly_download:
         # For monthly archives, use the existing detailed zip filename for the data files
         # e.g. FY(All)-012_Contracts_Delta_20191108.zip -> FY(All)-012_Contracts_Delta_20191108_%.csv
-        source_name = strip_file_extension(download_job.file_name)
-    elif source.is_for_idv or source.is_for_contract:
-        file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
-        source_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
-    elif source.is_for_assistance:
-        file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
-        source_name = file_name_pattern.format(assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50))
-    else:
-        file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
+        return strip_file_extension(download_job.file_name)
 
+    file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
+
+    if source.is_for_idv or source.is_for_contract:
+        data_file_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
+    elif source.is_for_assistance:
+        data_file_name = file_name_pattern.format(
+            assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)
+        )
+    else:
         if source.agency_code == "all":
             agency = "All"
         else:
@@ -209,7 +214,8 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         elif source.file_type not in ("treasury_account", "federal_account"):
             agency = f"{agency}_"
         timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
-        source_name = file_name_pattern.format(
+
+        data_file_name = file_name_pattern.format(
             agency=agency,
             data_quarters=construct_data_date_range(filters),
             level=d_map[source.file_type],
@@ -217,14 +223,26 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
             type=d_map[source.file_type],
         )
 
+    return data_file_name
+
+
+def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
+    """Write to delimited text file(s) and zip file(s) using the source data"""
+    export_function = generate_default_export_query
+    if source and source.source_type in VALUE_MAPPINGS:
+        export_function = VALUE_MAPPINGS[source.source_type].get("export_query_function") or export_function
+
+    data_file_name = build_data_file_name(source, download_job, piid, assistance_id)
+
     source_query = source.row_emitter(columns)
-    source.file_name = f"{source_name}.{extension}"
+    source.file_name = f"{data_file_name}.{extension}"
     source_path = os.path.join(working_dir, source.file_name)
 
     write_to_log(message=f"Preparing to download data as {source.file_name}", download_job=download_job)
 
     # Generate the query file; values, limits, dates fixed
-    temp_file, temp_file_path = generate_temp_query_file(source_query, limit, source, download_job, columns, extension)
+    export_query = generate_export_query(source_query, limit, source, columns, extension, export_function)
+    temp_file, temp_file_path = generate_export_query_temp_file(export_query, download_job)
 
     start_time = time.perf_counter()
     try:
@@ -249,7 +267,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
 
         # Create a separate process to split the large data files into smaller file and write to zip; wait
         zip_process = multiprocessing.Process(
-            target=split_and_zip_data_files, args=(zip_file_path, source_path, source_name, extension, download_job)
+            target=split_and_zip_data_files, args=(zip_file_path, source_path, data_file_name, extension, download_job)
         )
         zip_process.start()
         wait_for_process(zip_process, start_time, download_job)
@@ -262,14 +280,14 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         os.remove(temp_file_path)
 
 
-def split_and_zip_data_files(zip_file_path, source_path, source_name, extension, download_job=None):
+def split_and_zip_data_files(zip_file_path, source_path, data_file_name, extension, download_job=None):
     try:
         # Split data files into separate files
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
         log_time = time.perf_counter()
         delim = FILE_FORMATS[extension]["delimiter"]
 
-        output_template = f"{source_name}_%s.{extension}"
+        output_template = f"{data_file_name}_%s.{extension}"
         write_to_log(message="Beginning the delimited text file partition", download_job=download_job)
         list_of_files = partition_large_delimited_file(
             file_path=source_path, delimiter=delim, row_limit=EXCEL_ROW_LIMIT, output_name_template=output_template
@@ -286,8 +304,7 @@ def split_and_zip_data_files(zip_file_path, source_path, source_name, extension,
 
         if download_job:
             write_to_log(
-                message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s".format(),
-                download_job=download_job,
+                message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s", download_job=download_job
             )
 
     except Exception as e:
@@ -340,9 +357,7 @@ def wait_for_process(process, start_time, download_job):
         if process.is_alive():
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
             write_to_log(
-                message=f"Attempting to terminate process (pid {process.pid})",
-                download_job=download_job,
-                is_error=True,
+                message=f"Attempting to terminate process (pid {process.pid})", download_job=download_job, is_error=True
             )
             process.terminate()
             e = TimeoutError(
@@ -357,20 +372,22 @@ def wait_for_process(process, start_time, download_job):
     return time.perf_counter() - log_time
 
 
-def generate_temp_query_file(source_query, limit, source, download_job, columns, extension):
+def generate_export_query(source_query, limit, source, columns, extension, generate_export_query_function):
     if limit:
         source_query = source_query[:limit]
     query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
-
     options = FILE_FORMATS[extension]["options"]
+    return generate_export_query_function(source, query_annotated, options)
 
-    write_to_log(message="Creating PSQL Query: {}".format(query_annotated), download_job=download_job, is_debug=True)
+
+def generate_export_query_temp_file(export_query, download_job):
+    write_to_log(message="Saving PSQL Query: {}".format(export_query), download_job=download_job, is_debug=True)
 
     # Create a unique temporary file to hold the raw query, using \copy
     (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
 
     with open(temp_sql_file_path, "w") as file:
-        file.write(r"\copy ({}) To STDOUT {}".format(query_annotated, options))
+        file.write(export_query)
 
     return temp_sql_file, temp_sql_file_path
 
@@ -403,7 +420,16 @@ def apply_annotations_to_sql(raw_query, aliases):
         f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
     ]
 
-    return raw_query.replace(_top_level_split(raw_query, "FROM")[0], "SELECT " + ", ".join(values_list), 1)
+    sql = raw_query.replace(_top_level_split(raw_query, "FROM")[0], "SELECT " + ", ".join(values_list), 1)
+
+    # Now that we've converted the queryset to SQL, cleaned up aliasing for non-annotated fields, and sorted
+    # the SELECT columns, there's one final step.  The Django ORM does now allow alias names to conflict with
+    # column/field names on the underlying model.  For annotated fields, naming conflict exceptions occur at
+    # the time they are applied to the queryset which means they never get to this function.  To work around
+    # this, we give them a temporary name that cannot conflict with a field name on the model by appending
+    # the suffix specified by NAMING_CONFLICT_DISCRIMINATOR.  Now that we have the "final" SQL, we must remove
+    # that suffix.
+    return sql.replace(NAMING_CONFLICT_DISCRIMINATOR, "")
 
 
 def _select_columns(sql):
@@ -464,31 +490,22 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
 
         cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
         subprocess.check_output(
-            ["psql", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
+            ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
             stdin=cat_command.stdout,
             stderr=subprocess.STDOUT,
         )
 
         duration = time.perf_counter() - log_time
         write_to_log(
-            message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job,
+            message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job
         )
-    except subprocess.CalledProcessError as e:
-        # Not logging the command as it can contain the database connection string
-        if not settings.IS_LOCAL:
-            e.cmd = "[redacted]"
-        logger.error(e)
-        # temp file contains '\copy ([SQL]) To STDOUT  ...' so the SQL is 7 chars in up to ' To STDOUT '
-        sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
-        logger.error(f"Faulty SQL: {sql[7 : sql.find(' To STDOUT ')]}")
-        raise e
     except Exception as e:
         if not settings.IS_LOCAL:
-            e.cmd = "[redacted]"
+            # Not logging the command as it can contain the database connection string
+            e.cmd = "[redacted psql command]"
         logger.error(e)
-        # temp file contains '\copy ([SQL]) To STDOUT ...' so the SQL is 7 chars in up to ' To STDOUT '
         sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
-        logger.error(f"Faulty SQL: {sql[7 : sql.find(' To STDOUT ')]}")
+        logger.error(f"Faulty SQL: {sql}")
         raise e
 
 
@@ -517,3 +534,19 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
     RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
+
+
+def _kill_spawned_processes(download_job=None):
+    """Cleanup (kill) any spawned child processes during this job run"""
+    job = ps.Process(os.getpid())
+    for spawn_of_job in job.children(recursive=True):
+        write_to_log(
+            message=f"Attempting to terminate child process with PID [{spawn_of_job.pid}] and name "
+            f"[{spawn_of_job.name}]",
+            download_job=download_job,
+            is_error=True,
+        )
+        try:
+            spawn_of_job.kill()
+        except ps.NoSuchProcess:
+            pass

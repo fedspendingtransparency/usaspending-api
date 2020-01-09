@@ -5,7 +5,15 @@ from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection, DEFAULT_DB_ALIAS
 from elasticsearch import Elasticsearch
+from pathlib import Path
 from string import Template
+
+from usaspending_api.common.sqs.sqs_handler import (
+    UNITTEST_FAKE_QUEUE_NAME,
+    _FakeUnitTestFileBackedSQSQueue,
+    _FakeStatelessLoggingSQSDeadLetterQueue,
+    UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME,
+)
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.es_etl_helpers import create_aliases
@@ -122,3 +130,28 @@ def ensure_broker_server_dblink_exists():
         # Ensure foreign server setup to point to the broker DB for dblink to work
         broker_server_script_template = Template(broker_server_script)
         cursor.execute(broker_server_script_template.substitute(**db_conn_tokens_dict))
+
+
+def get_unittest_fake_sqs_queue(*args, **kwargs):
+    """Mocks sqs_handler.get_sqs_queue to instead return a fake queue used for unit testing"""
+    if "queue_name" in kwargs and kwargs["queue_name"] == UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME:
+        return _FakeStatelessLoggingSQSDeadLetterQueue()
+    else:
+        return _FakeUnitTestFileBackedSQSQueue.instance()
+
+
+def remove_unittest_queue_data_files(queue_to_tear_down):
+    """Delete any local files created to persist or access file-backed queue data from
+    ``_FakeUnittestFileBackedSQSQueue``
+    """
+    q = queue_to_tear_down
+
+    # Check that it's the unit test queue before removings
+    assert q.url.split("/")[-1] == UNITTEST_FAKE_QUEUE_NAME
+    queue_data_file = q._QUEUE_DATA_FILE
+    lock_file_path = Path(queue_data_file + ".lock")
+    if lock_file_path.exists():
+        lock_file_path.unlink()
+    queue_data_file_path = Path(queue_data_file)
+    if queue_data_file_path.exists():
+        queue_data_file_path.unlink()

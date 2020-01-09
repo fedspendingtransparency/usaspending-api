@@ -135,7 +135,7 @@ def test_download_assistance_status(client, download_test_data, refresh_matviews
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == 88
+    assert resp.json()["total_columns"] == 90
 
     # Test with columns specified
     dl_resp = client.post(
