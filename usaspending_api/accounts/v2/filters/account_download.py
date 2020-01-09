@@ -1,6 +1,6 @@
 import datetime
 
-from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, Value, When, Func, F
+from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, When, Func, F, Value
 from django.db.models.functions import Concat, Coalesce
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
@@ -355,8 +355,11 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction__assistance_data__legal_entity_congressional",
     )
     derived_fields["recipient_zip_code"] = Coalesce(
-        "award__latest_transaction__contract_data__legal_entity_zip_last4",
-        "award__latest_transaction__assistance_data__legal_entity_zip_last4",
+        "award__latest_transaction__contract_data__legal_entity_zip4",
+        Concat(
+            "award__latest_transaction__assistance_data__legal_entity_zip5",
+            "award__latest_transaction__assistance_data__legal_entity_zip_last4",
+        ),
     )
     derived_fields["usaspending_permalink"] = Case(
         When(
