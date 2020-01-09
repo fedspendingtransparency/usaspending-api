@@ -1,3 +1,88 @@
+grant_award_mapping = {
+    "Award ID": "fain",
+    "Recipient Name": "recipient__recipient_name",
+    "Start Date": "period_of_performance_start_date",
+    "End Date": "period_of_performance_current_end_date",
+    "Award Amount": "total_obligation",
+    "Awarding Agency": "awarding_agency__toptier_agency__name",
+    "Awarding Sub Agency": "awarding_agency__subtier_agency__name",
+    "Award Type": "type_description",
+    "Funding Agency": "funding_agency__toptier_agency__name",
+    "Funding Sub Agency": "funding_agency__subtier_agency__name",
+}
+
+loan_award_mapping = {
+    "Award ID": "fain",
+    "Recipient Name": "recipient__recipient_name",
+    "Issued Date": "latest_transaction__action_date",
+    "Loan Value": "latest_transaction__assistance_data__face_value_loan_guarantee",
+    "Subsidy Cost": "latest_transaction__assistance_data__original_loan_subsidy_cost",
+    "Awarding Agency": "awarding_agency__toptier_agency__name",
+    "Awarding Sub Agency": "awarding_agency__subtier_agency__name",
+    "Funding Agency": "funding_agency__toptier_agency__name",
+    "Funding Sub Agency": "funding_agency__subtier_agency__name",
+}
+
+direct_payment_award_mapping = {
+    "Award ID": "fain",
+    "Recipient Name": "recipient__recipient_name",
+    "Start Date": "period_of_performance_start_date",
+    "End Date": "period_of_performance_current_end_date",
+    "Award Amount": "total_obligation",
+    "Awarding Agency": "awarding_agency__toptier_agency__name",
+    "Awarding Sub Agency": "awarding_agency__subtier_agency__name",
+    "Award Type": "type_description",
+    "Funding Agency": "funding_agency__toptier_agency__name",
+    "Funding Sub Agency": "funding_agency__subtier_agency__name",
+}
+
+other_award_mapping = {
+    "Award ID": "fain",
+    "Recipient Name": "recipient__recipient_name",
+    "Start Date": "period_of_performance_start_date",
+    "End Date": "period_of_performance_current_end_date",
+    "Award Amount": "total_obligation",
+    "Awarding Agency": "awarding_agency__toptier_agency__name",
+    "Awarding Sub Agency": "awarding_agency__subtier_agency__name",
+    "Award Type": "type_description",
+    "Funding Agency": "funding_agency__toptier_agency__name",
+    "Funding Sub Agency": "funding_agency__subtier_agency__name",
+}
+
+contract_subaward_mapping = {
+    "Sub-Award ID": "subaward_number",
+    "Sub-Award Type": "award_type",
+    "Sub-Awardee Name": "recipient_name",
+    "Sub-Award Date": "action_date",
+    "Sub-Award Amount": "amount",
+    "Awarding Agency": "awarding_toptier_agency_name",
+    "Awarding Sub Agency": "awarding_subtier_agency_name",
+    "Prime Award ID": "piid",
+    "Prime Recipient Name": "prime_recipient_name",
+    "prime_award_recipient_id": "_prime_award_recipient_id",
+}
+
+grant_subaward_mapping = {
+    "Sub-Award ID": "subaward_number",
+    "Sub-Award Type": "award_type",
+    "Sub-Awardee Name": "recipient_name",
+    "Sub-Award Date": "action_date",
+    "Sub-Award Amount": "amount",
+    "Awarding Agency": "awarding_toptier_agency_name",
+    "Awarding Sub Agency": "awarding_subtier_agency_name",
+    "Prime Award ID": "fain",
+    "Prime Recipient Name": "prime_recipient_name",
+    "prime_award_recipient_id": "_prime_award_recipient_id",
+}
+
+award_assistance_mapping = {
+    **grant_award_mapping,
+    **loan_award_mapping,
+    **direct_payment_award_mapping,
+    **other_award_mapping,
+}
+non_loan_assistance_award_mapping = {**grant_award_mapping, **direct_payment_award_mapping, **other_award_mapping}
+
 # TODO: include IDV mappings in the award_type_mapping and update award_filter.py
 award_type_mapping = {
     "IDV_A": "GWAC Government Wide Acquisition Contract",
