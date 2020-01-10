@@ -169,7 +169,7 @@ def spending_by_award_test_data():
         product_or_service_code="PSC_test",
         type_of_contract_pricing="contract_pricing_test",
         type_set_aside="type_set_aside_test",
-        extent_competed="extent_competed_test"
+        extent_competed="extent_competed_test",
     )
     mommy.make(
         "awards.TransactionFPDS",

@@ -907,12 +907,9 @@ def _test_correct_response_for_naics_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [{
-            "internal_id": 1,
-            "Award ID": "abc111",
-            "generated_internal_id": "CONT_AWD_TESTING_1",
-            "recipient_id": None
-        }]
+    expected_result = [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "NAICS Code filter does not match expected result"
@@ -939,12 +936,9 @@ def _test_correct_response_for_psc_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [{
-        "internal_id": 1,
-        "Award ID": "abc111",
-        "generated_internal_id": "CONT_AWD_TESTING_1",
-        "recipient_id": None
-    }]
+    expected_result = [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
@@ -971,15 +965,14 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [{
-        "internal_id": 1,
-        "Award ID": "abc111",
-        "generated_internal_id": "CONT_AWD_TESTING_1",
-        "recipient_id": None
-    }]
+    expected_result = [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, "Contract Pricing Type Codes filter does not match expected result"
+    assert (
+        resp.json().get("results") == expected_result
+    ), "Contract Pricing Type Codes filter does not match expected result"
 
 
 def _test_correct_response_for_set_aside_type_codes(client):
@@ -1003,12 +996,9 @@ def _test_correct_response_for_set_aside_type_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [{
-        "internal_id": 1,
-        "Award ID": "abc111",
-        "generated_internal_id": "CONT_AWD_TESTING_1",
-        "recipient_id": None
-    }]
+    expected_result = [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
@@ -1035,12 +1025,9 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [{
-        "internal_id": 1,
-        "Award ID": "abc111",
-        "generated_internal_id": "CONT_AWD_TESTING_1",
-        "recipient_id": None
-    }]
+    expected_result = [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert (
@@ -1069,12 +1056,14 @@ def _test_correct_response_for_recipient_id(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [{
+    expected_result = [
+        {
             "internal_id": 4,
             "Award ID": "abc444",
             "generated_internal_id": "ASST_NON_TESTING_4",
-            "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9-R"
-        }]
+            "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9-R",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Recipient ID filter does not match expected result"

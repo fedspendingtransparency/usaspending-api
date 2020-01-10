@@ -278,11 +278,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "limit": self.pagination["limit"],
             "results": results,
             "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
-
             "messages": [get_time_period_message()],
         }
 
-    def populate_elastic_response(self, results: list, has_next: bool, last_id: str = None, last_value: str = None) -> dict:
+    def populate_elastic_response(
+        self, results: list, has_next: bool, last_id: str = None, last_value: str = None
+    ) -> dict:
         return {
             "limit": self.pagination["limit"],
             "results": results,
