@@ -316,9 +316,19 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
         logger.info("broker_db_setup: Skipping execution of broker DB migrations because --nomigrations flag was used.")
         return
 
+    broker_config_env_envvar = "integrationtest"
     broker_docker_image = "dataact-broker-backend:latest"
     broker_src_dir_path_obj = settings.BASE_DIR.parent / "data-act-broker-backend"
-    broker_docker_volume_target = "/data-act/backend"
+    broker_src_target = "/data-act/backend"
+    broker_config_dir = "dataactcore"
+    broker_config_copy_target = "/tmp/" + broker_config_dir + "/"
+    broker_config_mask_target = broker_src_target + "/" + broker_config_dir + "/"
+    broker_example_default_config_file = "config_example.yml"
+    broker_example_env_config_file = "local_config_example.yml"
+    broker_example_env_secrets_file = "local_secrets_example.yml"
+    broker_integrationtest_default_config_file = "config.yml"
+    broker_integrationtest_config_file = f"{broker_config_env_envvar}_config.yml"
+    broker_integrationtest_secrets_file = f"{broker_config_env_envvar}_secrets.yml"
 
     docker_client = docker.from_env()
 
@@ -357,20 +367,62 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
             "Do you have the environment variable set for this database connection string?"
         )
     broker_test_db_name = settings.DATABASES["data_broker"]["NAME"]
-    mounted_src = docker.types.Mount(
-        type="bind", source=str(broker_src_dir_path_obj), target=broker_docker_volume_target
+
+    # Using a combination of mounts to copy the broker source code into the container, and create a modifiable copy
+    # of the broker config dir as a tmpfs, so those modifications are not seen in the host source, but only from
+    # within the container
+    # NOTE: tmpfs layered over the src bind mount makes the config dir empty, so another bind mount is used as the
+    # source to copy the config back into the tmpfs mount
+    mounted_src = docker.types.Mount(type="bind", source=str(broker_src_dir_path_obj), target=broker_src_target)
+    mounted_broker_config_copy = docker.types.Mount(
+        type="bind",
+        source=str(broker_src_dir_path_obj / broker_config_dir),
+        target=broker_config_copy_target,
+        read_only=True,
     )
-    broker_db_setup_command = "python dataactcore/scripts/setup_all_db.py --dbname {}".format(broker_test_db_name)
-    logger.info("Running command `{}` in a container of image {}".format(broker_db_setup_command, broker_docker_image))
-    logger.info("Container will access Broker scripts from mounted source dir: {}".format(broker_src_dir_path_obj))
-    # NOTE: use ofo network_mode="host" applies ONLY when on Linux
+    mounted_broker_config = docker.types.Mount(type="tmpfs", source=None, target=broker_config_mask_target)
+
+    broker_config_file_cmds = rf"""                                                               \
+        cp -a {broker_config_copy_target}* {broker_src_target}/{broker_config_dir}/;              \
+        cp {broker_src_target}/{broker_config_dir}/{broker_example_default_config_file}           \
+           {broker_src_target}/{broker_config_dir}/{broker_integrationtest_default_config_file};  \
+        cp {broker_src_target}/{broker_config_dir}/{broker_example_env_config_file}               \
+           {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};          \
+        cp {broker_src_target}/{broker_config_dir}/{broker_example_env_secrets_file}              \
+           {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};         \
+    """
+
+    # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
+    # This will ensure that when the broker script is run, it uses the same test broker DB
+    broker_db_config_cmds = rf"""                                                                 \
+        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES["data_broker"]["HOST"]}/"             \
+            {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
+        sed -i.bak -E "s/port:.*$/port: {settings.DATABASES["data_broker"]["PORT"]}/"             \
+            {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
+        sed -i.bak -E "s/username:.*$/username: {settings.DATABASES["data_broker"]["USER"]}/"     \
+            {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
+        sed -i.bak -E "s/password:.*$/password: {settings.DATABASES["data_broker"]["PASSWORD"]}/" \
+            {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
+    """
+
+    # Python script in broker-code that will run migrations and other db setup in the broker test DB
+    broker_db_setup_cmd = rf"""                                                                   \
+        python {broker_src_target}/{broker_config_dir}/scripts/setup_all_db.py --dbname {broker_test_db_name};
+    """
+
+    broker_container_command = "sh -cex '" + broker_config_file_cmds + broker_db_config_cmds + broker_db_setup_cmd + "'"
+    logger.info(f"Running following command in a container of image {broker_docker_image}: {broker_container_command}")
+    logger.info(f"Container will access Broker scripts from mounted source dir: {broker_src_dir_path_obj}")
+
+    # NOTE: use of network_mode="host" applies ONLY when on Linux
     # It allows docker to resolve network addresses (like "localhost") as if running from the docker host
     log_gen = docker_client.containers.run(
         broker_docker_image,
-        broker_db_setup_command,
+        broker_container_command,
         remove=True,
         network_mode="host",
-        mounts=[mounted_src],
+        environment={"env": broker_config_env_envvar},
+        mounts=[mounted_src, mounted_broker_config_copy, mounted_broker_config],
         stderr=True,
         stream=True,
     )
