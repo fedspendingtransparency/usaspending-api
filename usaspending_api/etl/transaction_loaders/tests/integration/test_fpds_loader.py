@@ -11,7 +11,6 @@ from usaspending_api.awards.models import Award, TransactionFPDS
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
-    recipient_location_nonboolean_columns,
     place_of_performance_nonboolean_columns,
     transaction_fpds_boolean_columns,
 )
@@ -108,7 +107,6 @@ def _assemble_dummy_broker_data():
     return {
         **transaction_fpds_nonboolean_columns,
         **transaction_normalized_nonboolean_columns,
-        **recipient_location_nonboolean_columns,
         **place_of_performance_nonboolean_columns,
         **{key: str(random.choice([True, False])) for key in transaction_fpds_boolean_columns},
     }

@@ -7,8 +7,6 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     business_categories,
     created_at,
     updated_at,
-    legal_entity_zip5,
-    legal_entity_state_name,
     place_of_performance_state_code,
     place_of_performance_state_description,
     data_source,
