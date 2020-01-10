@@ -273,7 +273,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return queryset.order_by(*order_by_list)
 
-    def populate_response(self, results: list, has_next: bool, last_id: str = None, last_value: str = None) -> dict:
+    def populate_response(self, results: list, has_next: bool) -> dict:
+        return {
+            "limit": self.pagination["limit"],
+            "results": results,
+            "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
+
+            "messages": [get_time_period_message()],
+        }
+
+    def populate_elastic_response(self, results: list, has_next: bool, last_id: str = None, last_value: str = None) -> dict:
         return {
             "limit": self.pagination["limit"],
             "results": results,
@@ -349,8 +358,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 if set(self.filters["award_type_codes"]) <= set(loan_type_mapping)
                 else response[len(response) - 1].to_dict().get("total_obligation"),
             )
-        print(response.hits.total)
-        return self.populate_response(
+        # print(response.hits.total)
+        return self.populate_elastic_response(
             results=results,
             has_next=response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
             > self.pagination["limit"],

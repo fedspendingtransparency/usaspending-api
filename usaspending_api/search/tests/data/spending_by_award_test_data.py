@@ -130,7 +130,7 @@ def spending_by_award_test_data():
     mommy.make("references.SubtierAgency", **subtier_agency_2)
 
     # Agency
-    mommy.make("references.Agency", toptier_agency_id=1, subtier_agency_id=1)
+    mommy.make("references.Agency", pk=1, toptier_agency_id=1, subtier_agency_id=1)
 
     mommy.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2014-01-01", is_fpds=True)
     mommy.make(

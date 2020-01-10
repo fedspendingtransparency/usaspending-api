@@ -23,7 +23,6 @@ SELECT
   vw_award_search.total_loan_value,
   a.update_date,
 
-  vw_award_search.recipient_id,
   vw_award_search.recipient_name,
   vw_award_search.recipient_unique_id,
   recipient_lookup.recipient_hash,
