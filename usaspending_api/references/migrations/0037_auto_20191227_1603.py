@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('awards', '0069_auto_20191227_1603'),
-        ('references', '0036_auto_20191206_1945'),
+        ('references', '0002_remove_obsolete_index'),
     ]
 
     operations = [
