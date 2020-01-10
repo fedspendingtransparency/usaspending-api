@@ -121,7 +121,6 @@ AWARD_VIEW_COLUMNS = [
     "total_subsidy_cost",
     "total_loan_value",
     "update_date",
-    "recipient_id",
     "recipient_name",
     "recipient_hash",
     "recipient_unique_id",
