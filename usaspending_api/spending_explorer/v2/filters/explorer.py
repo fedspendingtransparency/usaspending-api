@@ -101,7 +101,7 @@ class Explorer(object):
             self.alt_set.filter(~Q(transaction_obligated_amount=Decimal("NaN")))
             .filter(
                 Q(award__latest_transaction__contract_data__awardee_or_recipient_legal__isnull=False)
-                | Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal=False)
+                | Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal__isnull=False)
             )
             .annotate(
                 id=Coalesce(

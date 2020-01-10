@@ -139,7 +139,7 @@ def test_unreported_data_actual_value_file_c(client):
             "submission_id": -1,
             "award__latest_transaction__assistance_data__awardee_or_recipient_legal": "random_recipient_name_1",
             "treasury_account_id": -1,
-            "transaction_obligated_amount": -5,
+            "transaction_obligated_amount": -2,
         },
         {
             "model": FinancialAccountsByAwards,
@@ -147,7 +147,7 @@ def test_unreported_data_actual_value_file_c(client):
             "submission_id": -1,
             "award__latest_transaction__assistance_data__awardee_or_recipient_legal": "random_recipient_name_2",
             "treasury_account_id": -1,
-            "transaction_obligated_amount": -10,
+            "transaction_obligated_amount": -3,
         },
         {
             "model": FinancialAccountsByAwards,
@@ -155,7 +155,7 @@ def test_unreported_data_actual_value_file_c(client):
             "submission_id": -1,
             "award__latest_transaction__assistance_data__awardee_or_recipient_legal": "random_recipient_name_1",
             "treasury_account_id": -2,
-            "transaction_obligated_amount": -1,
+            "transaction_obligated_amount": -5,
         },
         {
             "model": FinancialAccountsByAwards,
@@ -163,7 +163,7 @@ def test_unreported_data_actual_value_file_c(client):
             "submission_id": -1,
             "award__latest_transaction__contract_data__awardee_or_recipient_legal": "random_recipient_name_1",
             "treasury_account_id": -1,
-            "transaction_obligated_amount": -1,
+            "transaction_obligated_amount": -7,
         },
         {
             "model": FinancialAccountsByAwards,
@@ -171,7 +171,7 @@ def test_unreported_data_actual_value_file_c(client):
             "submission_id": -1,
             "award__latest_transaction__contract_data__awardee_or_recipient_legal": "random_recipient_name_4",
             "treasury_account_id": -2,
-            "transaction_obligated_amount": -1,
+            "transaction_obligated_amount": -11,
         },
     ]
 
@@ -187,9 +187,9 @@ def test_unreported_data_actual_value_file_c(client):
     json_response = response.json()
 
     expected_results = {
-        "total": -16,
-        "agencies": ["random_recipient_name_1", "random_recipient_name_2"],
-        "amounts": [-6, -10],
+        "total": -12,
+        "agencies": ["random_recipient_name_2", "random_recipient_name_1"],
+        "amounts": [-3, -9],
     }
 
     actual_results = {
