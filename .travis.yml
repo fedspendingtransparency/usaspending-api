@@ -56,18 +56,8 @@ before_script:
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
   - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
-  # Setup Broker config files to work with the same DB configured via Travis env vars
-  # When pytest calls the Broker DB fixtures that invoke a python script via docker run against the checked-out Broker source code, it will use these config values
-  # It will however be running the command from within docker, where "localhost" is not resolvable, so change host to host.docker.internal
-  - cp ${BROKER_REPO_FOLDER}/dataactcore/config_example.yml ${BROKER_REPO_FOLDER}/dataactcore/config.yml
-  - cp ${BROKER_REPO_FOLDER}/dataactcore/local_config_example.yml ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml
-  - cp ${BROKER_REPO_FOLDER}/dataactcore/local_secrets_example.yml ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml
-  - 'sed -i.bak -E "s/host:.*$/host: ${BROKER_DB_HOST}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
-  - 'sed -i.bak -E "s/port:.*$/port: ${BROKER_DB_PORT}/" ${BROKER_REPO_FOLDER}/dataactcore/local_config.yml'
-  - 'sed -i.bak -E "s/username:.*$/username: ${BROKER_DB_USER}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
-  - 'sed -i.bak -E "s/password:.*$/password: ${BROKER_DB_PASSWORD}/" ${BROKER_REPO_FOLDER}/dataactcore/local_secrets.yml'
   - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
-  - sleep 10  # wait for Elasticsearch to be up
+  - sleep 10  # wait for Elasticsearch to be ups
 
 script:
   - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
