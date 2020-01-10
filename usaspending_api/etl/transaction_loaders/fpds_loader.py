@@ -41,8 +41,6 @@ def delete_stale_fpds(date):
     provided detached_award_procurement_id list
     Returns list of awards touched
     """
-    if not date:
-        return []
 
     detached_award_procurement_ids = get_deleted_fpds_data_from_s3(date)
 
