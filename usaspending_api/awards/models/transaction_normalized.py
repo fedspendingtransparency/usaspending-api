@@ -80,7 +80,6 @@ class TransactionNormalized(models.Model):
         null=True,
         help_text="The agency which is funding this transaction",
     )
-    recipient = models.ForeignKey("references.LegalEntity", null=True, help_text="The recipient for this transaction")
     description = models.TextField(null=True, help_text="The description of this transaction")
     place_of_performance = models.ForeignKey(
         "references.Location", null=True, help_text="The location where the work on this transaction was performed"

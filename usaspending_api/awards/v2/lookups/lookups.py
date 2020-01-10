@@ -1,6 +1,6 @@
 grant_award_mapping = {
     "Award ID": "fain",
-    "Recipient Name": "recipient__recipient_name",
+    "Recipient Name": "latest_transaction__assistance_data__awardee_or_recipient_legal",
     "Start Date": "period_of_performance_start_date",
     "End Date": "period_of_performance_current_end_date",
     "Award Amount": "total_obligation",
@@ -13,7 +13,7 @@ grant_award_mapping = {
 
 loan_award_mapping = {
     "Award ID": "fain",
-    "Recipient Name": "recipient__recipient_name",
+    "Recipient Name": "latest_transaction__assistance_data__awardee_or_recipient_legal",
     "Issued Date": "latest_transaction__action_date",
     "Loan Value": "latest_transaction__assistance_data__face_value_loan_guarantee",
     "Subsidy Cost": "latest_transaction__assistance_data__original_loan_subsidy_cost",
@@ -25,7 +25,7 @@ loan_award_mapping = {
 
 direct_payment_award_mapping = {
     "Award ID": "fain",
-    "Recipient Name": "recipient__recipient_name",
+    "Recipient Name": "latest_transaction__assistance_data__awardee_or_recipient_legal",
     "Start Date": "period_of_performance_start_date",
     "End Date": "period_of_performance_current_end_date",
     "Award Amount": "total_obligation",
@@ -38,7 +38,7 @@ direct_payment_award_mapping = {
 
 other_award_mapping = {
     "Award ID": "fain",
-    "Recipient Name": "recipient__recipient_name",
+    "Recipient Name": "latest_transaction__assistance_data__awardee_or_recipient_legal",
     "Start Date": "period_of_performance_start_date",
     "End Date": "period_of_performance_current_end_date",
     "Award Amount": "total_obligation",

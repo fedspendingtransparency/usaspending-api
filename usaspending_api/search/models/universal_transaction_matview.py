@@ -61,7 +61,6 @@ class UniversalTransactionView(models.Model):
     cfda_number = models.TextField()
     cfda_title = models.TextField()
 
-    recipient_id = models.IntegerField()
     recipient_hash = models.UUIDField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()

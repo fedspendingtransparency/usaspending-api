@@ -42,5 +42,4 @@ This endpoint returns a list of recipients and their amounts.
 
         
 ## RecipientObject (object)
-+ `recipient_id`: 346 (required, number)
 + `recipient_name`: `Company Inc.` (required, string)

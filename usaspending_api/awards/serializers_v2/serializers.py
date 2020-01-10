@@ -7,7 +7,6 @@ class AwardTypeAwardSpendingSerializer(serializers.Serializer):
 
 
 class RecipientSerializer(serializers.Serializer):
-    recipient_id = serializers.IntegerField()
     recipient_name = serializers.CharField()
 
 

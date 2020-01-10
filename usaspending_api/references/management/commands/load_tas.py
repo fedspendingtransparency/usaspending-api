@@ -9,15 +9,16 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.etl.management.load_base import load_data_into_model
-from usaspending_api.references.models import ToptierAgency
-from usaspending_api.references.reference_helpers import (
+from usaspending_api.references.account_helpers import (
     insert_federal_accounts,
-    update_federal_accounts,
+    link_treasury_accounts_to_federal_accounts,
     remove_empty_federal_accounts,
+    update_federal_accounts,
 )
-from usaspending_api.common.helpers.timing_helpers import Timer
+from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger("console")
 
@@ -39,7 +40,6 @@ class Command(BaseCommand):
     """
 
     help = "Update TAS records using either DATA Broker or a TAS file if provided."
-    logger = logging.getLogger("console")
 
     def add_arguments(self, parser):
         parser.add_argument("-l", "--location", dest="location", help="(OPTIONAL) location of the TAS file to load")
@@ -76,12 +76,14 @@ class Command(BaseCommand):
             # update TAS fk relationships to federal accounts
             with Timer("Updated TAS FK relationships to Federal Accounts"):
                 logger.info("=== Updating TAS FK relationships to Federal Accounts ===")
-                updates = update_federal_accounts()
-                logger.info("   Updated {} Federal Account Rows".format(updates))
-                inserts = insert_federal_accounts()
-                logger.info("   Created {} Federal Account Rows".format(inserts))
                 deletes = remove_empty_federal_accounts()
-                logger.info("   Removed {} Federal Account Rows".format(deletes))
+                logger.info(f"   Removed {deletes:,} Federal Account Rows")
+                updates = update_federal_accounts()
+                logger.info(f"   Updated {updates:,} Federal Account Rows")
+                inserts = insert_federal_accounts()
+                logger.info(f"   Created {inserts:,} Federal Account Rows")
+                links = link_treasury_accounts_to_federal_accounts()
+                logger.info(f"   Linked {links:,} Treasury Accounts to Federal Accounts")
 
             logger.info("=== TAS loader finished successfully! ===")
 

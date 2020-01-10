@@ -134,19 +134,6 @@ UPPERCASE_UPDATES = {
                 OR UPPER(congressional_code) != congressional_code
                 OR UPPER(zip4) != zip4);
         """,
-    "legal_entity": """
-        UPDATE legal_entity
-        SET transaction_unique_id = UPPER(transaction_unique_id),
-            recipient_name = UPPER(recipient_name),
-            business_types = UPPER(business_types),
-            vendor_fax_number = UPPER(vendor_fax_number)
-        WHERE create_date >= '2018-02-08'
-            AND create_date <= '2018-02-23'
-            AND (UPPER(transaction_unique_id) != transaction_unique_id
-                OR UPPER(recipient_name) != recipient_name
-                OR UPPER(business_types) != business_types
-                OR UPPER(vendor_fax_number) != vendor_fax_number);
-        """,
     "awards": """
         UPDATE awards
         SET transaction_unique_id = UPPER(transaction_unique_id),

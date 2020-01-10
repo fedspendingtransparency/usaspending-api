@@ -14,7 +14,6 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 @pytest.fixture
 def award_data_fixture(db):
     mommy.make("awards.TransactionNormalized", id=2)
-    mommy.make("references.LegalEntity", legal_entity_id=20)
     mommy.make(
         "awards.Award",
         base_and_all_options_value=None,
@@ -40,7 +39,6 @@ def award_data_fixture(db):
         period_of_performance_current_end_date="2039-09-09",
         period_of_performance_start_date="2009-09-10",
         piid=None,
-        recipient_id=20,
         subaward_count=0,
         total_funding_amount=5907041570,
         total_loan_value=5907041570,

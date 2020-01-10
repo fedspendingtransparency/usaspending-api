@@ -7,7 +7,6 @@ from rest_framework import status
 
 @pytest.fixture
 def award_data_fixture(db):
-    mommy.make("references.LegalEntity", legal_entity_id=1)
     mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True, type="A")
     mommy.make(
         "awards.TransactionFPDS",
@@ -20,7 +19,7 @@ def award_data_fixture(db):
         place_of_performance_state="TX",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", recipient_id=1, type="A")
+    mommy.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
     mommy.make(
         "awards.Subaward",
         id=1,
