@@ -22,6 +22,7 @@ Generate files and return metadata using filters on custom account
             + Members
                 + `csv`
                 + `tsv`
+                + `pstxt`
         + `filters` (required, FilterObject)
             The filters used to filter the data
     + Body

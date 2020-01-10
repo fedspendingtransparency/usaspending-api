@@ -2,6 +2,7 @@ import json
 import logging
 import multiprocessing
 import os
+import psutil as ps
 import re
 import shutil
 import subprocess
@@ -20,6 +21,7 @@ from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.download.download_utils import construct_data_date_range
+from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.generate_export_query import generate_default_export_query
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
@@ -37,7 +39,7 @@ MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 
 def generate_download(download_job):
@@ -50,12 +52,16 @@ def generate_download(download_job):
     piid = json_request.get("piid", None)
     award_id = json_request.get("award_id")
     assistance_id = json_request.get("assistance_id")
-    extension = json_request.get("file_format")
+    file_format = json_request.get("file_format")
 
     file_name = start_download(download_job)
+    working_dir = None
     try:
         # Create temporary files and working directory
         zip_file_path = settings.CSV_LOCAL_PATH + file_name
+        if not settings.IS_LOCAL and os.path.exists(zip_file_path):
+            # Clean up a zip file that might exist from a prior attempt at this download
+            os.remove(zip_file_path)
         working_dir = os.path.splitext(zip_file_path)[0]
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
@@ -68,7 +74,7 @@ def generate_download(download_job):
             # Parse and write data to the file
             download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
             parse_source(
-                source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension
+                source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format
             )
         include_data_dictionary = json_request.get("include_data_dictionary")
         if include_data_dictionary:
@@ -94,8 +100,9 @@ def generate_download(download_job):
         raise Exception(download_job.error_message) from e
     finally:
         # Remove working directory
-        if os.path.exists(working_dir):
+        if working_dir and os.path.exists(working_dir):
             shutil.rmtree(working_dir)
+        _kill_spawned_processes(download_job)
 
     try:
         # push file to S3 bucket, if not local
@@ -119,6 +126,7 @@ def generate_download(download_job):
         # Remove generated file
         if not settings.IS_LOCAL and os.path.exists(zip_file_path):
             os.remove(zip_file_path)
+        _kill_spawned_processes(download_job)
 
     return finish_download(download_job)
 
@@ -218,7 +226,7 @@ def build_data_file_name(source, download_job, piid, assistance_id):
     return data_file_name
 
 
-def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, extension):
+def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format):
     """Write to delimited text file(s) and zip file(s) using the source data"""
     export_function = generate_default_export_query
     if source and source.source_type in VALUE_MAPPINGS:
@@ -227,13 +235,14 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
     data_file_name = build_data_file_name(source, download_job, piid, assistance_id)
 
     source_query = source.row_emitter(columns)
+    extension = FILE_FORMATS[file_format]["extension"]
     source.file_name = f"{data_file_name}.{extension}"
     source_path = os.path.join(working_dir, source.file_name)
 
     write_to_log(message=f"Preparing to download data as {source.file_name}", download_job=download_job)
 
     # Generate the query file; values, limits, dates fixed
-    export_query = generate_export_query(source_query, limit, source, columns, extension, export_function)
+    export_query = generate_export_query(source_query, limit, source, columns, file_format, export_function)
     temp_file, temp_file_path = generate_export_query_temp_file(export_query, download_job)
 
     start_time = time.perf_counter()
@@ -243,7 +252,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         psql_process.start()
         wait_for_process(psql_process, start_time, download_job)
 
-        delim = FILE_FORMATS[extension]["delimiter"]
+        delim = FILE_FORMATS[file_format]["delimiter"]
 
         # Log how many rows we have
         write_to_log(message="Counting rows in delimited text file", download_job=download_job)
@@ -259,7 +268,8 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
 
         # Create a separate process to split the large data files into smaller file and write to zip; wait
         zip_process = multiprocessing.Process(
-            target=split_and_zip_data_files, args=(zip_file_path, source_path, data_file_name, extension, download_job)
+            target=split_and_zip_data_files,
+            args=(zip_file_path, source_path, data_file_name, file_format, download_job),
         )
         zip_process.start()
         wait_for_process(zip_process, start_time, download_job)
@@ -272,12 +282,13 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         os.remove(temp_file_path)
 
 
-def split_and_zip_data_files(zip_file_path, source_path, data_file_name, extension, download_job=None):
+def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_format, download_job=None):
     try:
         # Split data files into separate files
         # e.g. `Assistance_prime_transactions_delta_%s.csv`
         log_time = time.perf_counter()
-        delim = FILE_FORMATS[extension]["delimiter"]
+        delim = FILE_FORMATS[file_format]["delimiter"]
+        extension = FILE_FORMATS[file_format]["extension"]
 
         output_template = f"{data_file_name}_%s.{extension}"
         write_to_log(message="Beginning the delimited text file partition", download_job=download_job)
@@ -364,11 +375,11 @@ def wait_for_process(process, start_time, download_job):
     return time.perf_counter() - log_time
 
 
-def generate_export_query(source_query, limit, source, columns, extension, generate_export_query_function):
+def generate_export_query(source_query, limit, source, columns, file_format, generate_export_query_function):
     if limit:
         source_query = source_query[:limit]
     query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
-    options = FILE_FORMATS[extension]["options"]
+    options = FILE_FORMATS[file_format]["options"]
     return generate_export_query_function(source, query_annotated, options)
 
 
@@ -430,7 +441,16 @@ def apply_annotations_to_sql(raw_query, aliases):
         f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
     ]
 
-    return raw_query.replace(query_before_from, ", ".join(values_list), 1)
+    sql = raw_query.replace(query_before_from, ", ".join(values_list), 1)
+
+    # Now that we've converted the queryset to SQL, cleaned up aliasing for non-annotated fields, and sorted
+    # the SELECT columns, there's one final step.  The Django ORM does now allow alias names to conflict with
+    # column/field names on the underlying model.  For annotated fields, naming conflict exceptions occur at
+    # the time they are applied to the queryset which means they never get to this function.  To work around
+    # this, we give them a temporary name that cannot conflict with a field name on the model by appending
+    # the suffix specified by NAMING_CONFLICT_DISCRIMINATOR.  Now that we have the "final" SQL, we must remove
+    # that suffix.
+    return sql.replace(NAMING_CONFLICT_DISCRIMINATOR, "")
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
@@ -452,7 +472,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     except Exception as e:
         if not settings.IS_LOCAL:
             # Not logging the command as it can contain the database connection string
-            e.cmd = "[redacted]"
+            e.cmd = "[redacted psql command]"
         logger.error(e)
         sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
         logger.error(f"Faulty SQL: {sql}")
@@ -484,3 +504,19 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
     RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
+
+
+def _kill_spawned_processes(download_job=None):
+    """Cleanup (kill) any spawned child processes during this job run"""
+    job = ps.Process(os.getpid())
+    for spawn_of_job in job.children(recursive=True):
+        write_to_log(
+            message=f"Attempting to terminate child process with PID [{spawn_of_job.pid}] and name "
+            f"[{spawn_of_job.name}]",
+            download_job=download_job,
+            is_error=True,
+        )
+        try:
+            spawn_of_job.kill()
+        except ps.NoSuchProcess:
+            pass
