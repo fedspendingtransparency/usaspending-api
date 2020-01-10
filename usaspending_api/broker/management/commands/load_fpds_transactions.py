@@ -50,7 +50,7 @@ class Command(BaseCommand):
             logger.info(f"Handling fpds transactions since {date}...")
 
             stale_awards = delete_stale_fpds(date.date())
-            self.modified_award_ids.extend(stale_awards)
+            self.update_award_records(awards=stale_awards, skip_cd_linkage=True)
 
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
@@ -89,6 +89,17 @@ class Command(BaseCommand):
                 self.modified_award_ids.extend(load_fpds_transactions(id_list))
 
         logger.info(f"Total transaction IDs in file: {total_count}")
+
+    @staticmethod
+    def update_award_records(awards, skip_cd_linkage=True):
+        if awards:
+            unique_awards = set(awards)
+            logger.info(f"{len(unique_awards)} award records impacted by transaction DML operations")
+            logger.info(f"{prune_empty_awards(tuple(unique_awards))} award records removed")
+            logger.info(f"{update_awards(tuple(unique_awards))} award records updated")
+            logger.info(f"{update_contract_awards(tuple(unique_awards))} award records updated on FPDS-specific fields")
+            if not skip_cd_linkage:
+                update_c_to_d_linkages("contract")
 
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
@@ -146,13 +157,7 @@ class Command(BaseCommand):
                 raise ValueError("No last load date for FPDS stored in the database")
             self.load_fpds_incrementally(last_load)
 
-        if self.modified_award_ids:
-            unique_awards = set(self.modified_award_ids)
-            logger.info(f"{len(unique_awards)} award records impacted by transaction DML operations")
-            logger.info(f"{prune_empty_awards(tuple(unique_awards))} award records removed")
-            logger.info(f"{update_awards(tuple(unique_awards))} award records updated")
-            logger.info(f"{update_contract_awards(tuple(unique_awards))} award records updated on FPDS-specific fields")
-            update_c_to_d_linkages("contract")
+        self.update_award_records(awards=self.modified_award_ids, skip_cd_linkage=False)
 
         logger.info(f"Script took {datetime.now(timezone.utc) - update_time}")
 
