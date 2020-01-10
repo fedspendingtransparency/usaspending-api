@@ -13,6 +13,7 @@ EXTERNAL_DATA_TYPE = [
     LookupType(3, "exec_comp", "Executive Compensation from Broker"),
     # "opposite" side of the broker data load, data from USAspending DB -> Elasticsearch
     LookupType(100, "es_transactions", "Load elasticsearch with transactions from USAspending"),
+    LookupType(101, "es_awards", "Load elasticsearch with awards from USAspending"),
 ]
 EXTERNAL_DATA_TYPE_DICT = {item.name: item.id for item in EXTERNAL_DATA_TYPE}
 EXTERNAL_DATA_TYPE_DICT_ID = {item.id: item.name for item in EXTERNAL_DATA_TYPE}

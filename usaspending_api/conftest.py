@@ -10,12 +10,12 @@ from django.test import override_settings
 from django_mock_queries.query import MockSet
 from pathlib import Path
 
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.sqs.sqs_handler import (
     FAKE_QUEUE_DATA_PATH,
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
 )
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_transaction_etl_view_exists
 from usaspending_api.common.helpers.generic_helper import (
     generate_matviews,
     refresh_matviews as perform_refresh_matviews,
@@ -255,7 +255,8 @@ def django_db_setup(
             )
         else:
             generate_matviews()
-            ensure_transaction_etl_view_exists()
+            ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
+            ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
 
     def teardown_database():
         with django_db_blocker.unblock():
@@ -282,8 +283,23 @@ def elasticsearch_transaction_index(db):
 
     See test_demo_elasticsearch_tests.py for sample usage.
     """
-    elastic_search_index = TestElasticSearchIndex()
+    elastic_search_index = TestElasticSearchIndex("transactions")
     with override_settings(ES_TRANSACTIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
+        yield elastic_search_index
+        elastic_search_index.delete_index()
+
+
+@pytest.fixture
+def elasticsearch_award_index(db):
+    """
+    Add this fixture to your test if you intend to use the Elasticsearch
+    award index.  To use, create some mock database data then call
+    elasticsearch_award_index.update_index to populate Elasticsearch.
+
+    See test_award_index_elasticsearch_tests.py for sample usage.
+    """
+    elastic_search_index = TestElasticSearchIndex("awards")
+    with override_settings(ES_AWARDS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
         yield elastic_search_index
         elastic_search_index.delete_index()
 
