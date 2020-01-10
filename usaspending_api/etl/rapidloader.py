@@ -33,7 +33,7 @@ class Rapidloader:
             job_number += 1
             index = self.config["index_name"]
             filename = str(
-                self.config["directory"] / "{fy}_{type}.csv".format(fy=fiscal_year, type=self.config["type"])
+                self.config["directory"] / "{fy}_{type}.csv".format(fy=fiscal_year, type=self.config["load_type"])
             )
 
             new_job = DataJob(job_number, index, fiscal_year, filename)
@@ -63,7 +63,7 @@ class Rapidloader:
             process_list.append(
                 Process(
                     name="S3 Deleted Records Scrapper Process",
-                    target=deleted_transactions if self.cong["type"] == "transactions" else deleted_awards,
+                    target=deleted_transactions if self.config["load_type"] == "transactions" else deleted_awards,
                     args=(self.elasticsearch_client, self.config),
                 )
             )
@@ -86,7 +86,7 @@ class Rapidloader:
         if self.config["create_new_index"]:
             printf({"msg": "Closing old indices and adding aliases"})
             set_final_index_config(self.elasticsearch_client, self.config["index_name"])
-            swap_aliases(self.elasticsearch_client, self.config["index_name"], self.config["type"])
+            swap_aliases(self.elasticsearch_client, self.config["index_name"], self.config["load_type"])
 
         if self.config["snapshot"]:
             printf({"msg": "Taking snapshot"})

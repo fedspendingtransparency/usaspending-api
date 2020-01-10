@@ -3,7 +3,6 @@ import json
 import os
 import pandas as pd
 import psycopg2
-
 import subprocess
 import tempfile
 
@@ -276,7 +275,7 @@ def configure_sql_strings(config, filename, deleted_ids):
     Populates the formatted strings defined globally in this file to create the desired SQL
     """
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
-    if config["type"] == "awards":
+    if config["load_type"] == "awards":
         view_name = settings.ES_AWARDS_ETL_VIEW_NAME
         view_type = "award"
         type_fy = ""
@@ -338,7 +337,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
                 "starting_date": config["starting_date"],
                 "fiscal_year": job.fy,
                 "process_deletes": config["process_deletes"],
-                "type": config["type"],
+                "load_type": config["load_type"],
             }
             copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
 
@@ -399,10 +398,7 @@ def csv_chunk_gen(filename, chunksize, job_id, awards):
 def es_data_loader(client, fetch_jobs, done_jobs, config):
     if config["create_new_index"]:
         # ensure template for index is present and the latest version
-        if config["type"] == "awards":
-            call_command("es_configure", "--template-only", "--type=awards")
-        else:
-            call_command("es_configure", "--template-only", "--type=transactions")
+        call_command("es_configure", "--template-only", "--load_type={}".format(config["load_type"]))
     while True:
         if not done_jobs.empty():
             job = done_jobs.get_nowait()
@@ -443,9 +439,9 @@ def put_alias(client, index, alias_name, alias_body):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
-def create_aliases(client, index, type, silent=False):
+def create_aliases(client, index, load_type, silent=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        if type == "awards":
+        if load_type == "awards":
             alias_name = "{}-{}".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX, award_type)
         else:
             alias_name = "{}-{}".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, award_type)
@@ -462,17 +458,10 @@ def create_aliases(client, index, type, silent=False):
 
     # ensure the new index is added to the alias used for incremental loads.
     # If the alias is on multiple indexes, the loads will fail!
-    printf(
-        {
-            "msg": "Putting alias '{}' on {}".format(
-                settings.ES_AWARDS_WRITE_ALIAS if type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS, index
-            ),
-            "job": None,
-            "f": "ES Alias Put",
-        }
-    )
+    write_alias = settings.ES_AWARDS_WRITE_ALIAS if load_type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS
+    printf({"msg": "Putting alias '{}' on {}".format(write_alias, index), "job": None, "f": "ES Alias Put"})
     put_alias(
-        client, index, settings.ES_AWARDS_WRITE_ALIAS if type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS, {}
+        client, index, write_alias, {},
     )
 
 
@@ -491,11 +480,11 @@ def set_final_index_config(client, index):
         printf({"msg": message, "job": None, "f": "ES Settings Put"})
 
 
-def swap_aliases(client, index, type):
+def swap_aliases(client, index, load_type):
     if client.indices.get_alias(index, "*"):
         printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
-    if type == "awards":
+    if load_type == "awards":
         alias_patterns = settings.ES_AWARDS_QUERY_ALIAS_PREFIX + "*"
     else:
         alias_patterns = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "*"
@@ -509,7 +498,7 @@ def swap_aliases(client, index, type):
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
 
-    create_aliases(client, index, type=type)
+    create_aliases(client, index, load_type=load_type)
 
     try:
         if old_indexes:
@@ -532,14 +521,14 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         client.indices.create(index=job.index)
         client.indices.refresh(job.index)
 
-    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["type"])
+    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["load_type"])
     for count, chunk in enumerate(csv_generator):
         if len(chunk) == 0:
             printf({"msg": "No documents to add/delete for chunk #{}".format(count), "f": "ES Ingest", "job": job.name})
             continue
         iteration = perf_counter()
         if config["process_deletes"]:
-            if config["type"] == "awards":
+            if config["load_type"] == "awards":
                 id_list = [{"key": c[UNIVERSAL_AWARD_ID_NAME], "col": UNIVERSAL_AWARD_ID_NAME} for c in chunk]
                 delete_awards_from_es(client, id_list, job.name, config, job.index)
             else:
@@ -556,7 +545,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
                 "f": "ES Ingest",
             }
         )
-        streaming_post_to_es(client, chunk, job.index, config["type"], job.name)
+        streaming_post_to_es(client, chunk, job.index, config["load_type"], job.name)
         printf(
             {
                 "msg": "Iteration group #{} took {}s".format(count, perf_counter() - iteration),
@@ -801,9 +790,6 @@ def delete_awards_from_es(client, id_list, job_id, config, index=None):
         printf({"msg": 'Deleting {} of "{}"'.format(len(values), column), "f": "ES Delete", "job": job_id})
         values_generator = chunks(values, 1000)
         for v in values_generator:
-            # IMPORTANT: This delete routine looks at just 1 index at a time. If there are duplicate records across
-            # multiple indexes, those duplicates will not be caught by this routine. It is left as is because at the
-            # time of this comment, we are migrating to using a single index.
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
             delete_body = {

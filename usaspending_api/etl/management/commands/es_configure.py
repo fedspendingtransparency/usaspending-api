@@ -29,7 +29,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--type",
+            "--load_type",
             type=str,
             help="Select which type of index to configure, current options are awards or transactions",
             choices=["transactions", "awards"],
@@ -44,13 +44,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if not settings.ES_HOSTNAME:
             raise SystemExit("Fatal error: $ES_HOSTNAME is not set.")
-        self.type = options["type"]
-        self.template = "{}_template".format(options["type"][:-1])
-        if options["type"] == "awards":
+        self.load_type = options["load_type"]
+        self.template = "{}_template".format(options["load_type"][:-1])
+        if options["load_type"] == "awards":
             self.index_pattern = "*{}".format(settings.ES_AWARDS_NAME_SUFFIX)
             self.max_result_window = settings.ES_AWARDS_MAX_RESULT_WINDOW
             self.load_columns = AWARD_VIEW_COLUMNS
-        elif options["type"] == "transactions":
+        elif options["load_type"] == "transactions":
             self.index_pattern = "*{}".format(settings.ES_TRANSACTIONS_NAME_SUFFIX)
             self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
             self.load_columns = VIEW_COLUMNS
@@ -62,7 +62,7 @@ class Command(BaseCommand):
             self.run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=settings.ES_HOSTNAME)
             self.run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=settings.ES_HOSTNAME)
 
-        template_name = "{type}_template".format(type=self.type[:-1])
+        template_name = "{type}_template".format(type=self.load_type[:-1])
 
         self.run_curl_cmd(
             payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name=template_name
@@ -106,7 +106,7 @@ class Command(BaseCommand):
 
     def validate_known_fields(self, template):
         defined_fields = set(
-            [field for field in template["mappings"]["{view}_mapping".format(view=self.type[:-1])]["properties"]]
+            [field for field in template["mappings"]["{view}_mapping".format(view=self.load_type[:-1])]["properties"]]
         )
         load_columns = set(self.load_columns)
         if defined_fields ^ load_columns:  # check if any fields are not in both sets
