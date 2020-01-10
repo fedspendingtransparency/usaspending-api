@@ -121,7 +121,7 @@ class Explorer(object):
             .values("id", "type", "name", "code", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))
             .order_by("-total")
-        ).distinct()
+        )
 
         return alt_set
 
