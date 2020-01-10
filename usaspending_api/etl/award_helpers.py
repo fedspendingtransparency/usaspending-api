@@ -25,7 +25,6 @@ txn_latest AS (
     tn.last_modified_date,
     tn.period_of_performance_current_end_date,
     tn.place_of_performance_id,
-    tn.recipient_id,
     CASE
       WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
       WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
@@ -69,7 +68,6 @@ SET
   last_modified_date                      = l.last_modified_date,
   period_of_performance_current_end_date  = l.period_of_performance_current_end_date,
   place_of_performance_id                 = l.place_of_performance_id,
-  recipient_id                            = l.recipient_id,
 
   non_federal_funding_amount              = t.non_federal_funding_amount,
   total_funding_amount                    = t.total_funding_amount,
@@ -96,7 +94,6 @@ WHERE
     OR a.last_modified_date                      IS DISTINCT FROM l.last_modified_date
     OR a.period_of_performance_current_end_date  IS DISTINCT FROM l.period_of_performance_current_end_date
     OR a.place_of_performance_id                 IS DISTINCT FROM l.place_of_performance_id
-    OR a.recipient_id                            IS DISTINCT FROM l.recipient_id
     OR a.non_federal_funding_amount              IS DISTINCT FROM t.non_federal_funding_amount
     OR a.total_funding_amount                    IS DISTINCT FROM t.total_funding_amount
     OR a.total_loan_value                        IS DISTINCT FROM t.total_loan_value
@@ -144,22 +141,25 @@ txn_latest AS (
   ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
 ),
 executive_comp AS (
-  SELECT DISTINCT ON (tn.unique_award_key)
-    tn.unique_award_key,
-    fpds.officer_1_amount,
-    fpds.officer_1_name,
-    fpds.officer_2_amount,
-    fpds.officer_2_name,
-    fpds.officer_3_amount,
-    fpds.officer_3_name,
-    fpds.officer_4_amount,
-    fpds.officer_4_name,
-    fpds.officer_5_amount,
-    fpds.officer_5_name
-  FROM transaction_normalized tn
-  INNER JOIN transaction_fpds AS fpds ON tn.id = fpds.transaction_id
-  {predicate}
-  ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
+  WITH sub_cte_all_transactions AS (
+    SELECT
+      tn.unique_award_key,
+      fpds.officer_1_amount,
+      fpds.officer_1_name,
+      fpds.officer_2_amount,
+      fpds.officer_2_name,
+      fpds.officer_3_amount,
+      fpds.officer_3_name,
+      fpds.officer_4_amount,
+      fpds.officer_4_name,
+      fpds.officer_5_amount,
+      fpds.officer_5_name
+    FROM transaction_normalized tn
+    INNER JOIN transaction_fpds AS fpds ON tn.id = fpds.transaction_id
+    {predicate}
+    ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
+  )
+  SELECT DISTINCT ON (unique_award_key) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
 )
 UPDATE awards a
 SET
@@ -184,7 +184,7 @@ SET
   officer_5_name              = ec.officer_5_name
 FROM fpds_totals AS t
 INNER JOIN txn_latest AS l ON t.unique_award_key = l.unique_award_key
-INNER JOIN executive_comp AS ec ON t.unique_award_key = ec.unique_award_key
+LEFT OUTER JOIN executive_comp AS ec ON t.unique_award_key = ec.unique_award_key
 WHERE
   t.unique_award_key = a.generated_unique_award_id
   AND (
@@ -219,22 +219,25 @@ WITH
   ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
 ),
   executive_comp AS (
-    SELECT DISTINCT ON (tn.unique_award_key)
-      tn.unique_award_key,
-      fabs.officer_1_amount,
-      fabs.officer_1_name,
-      fabs.officer_2_amount,
-      fabs.officer_2_name,
-      fabs.officer_3_amount,
-      fabs.officer_3_name,
-      fabs.officer_4_amount,
-      fabs.officer_4_name,
-      fabs.officer_5_amount,
-      fabs.officer_5_name
-    FROM transaction_normalized tn
-    INNER JOIN transaction_fabs AS fabs ON tn.id = fabs.transaction_id
-    {predicate}
-    ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
+    WITH sub_cte_all_transactions AS (
+      SELECT
+        tn.unique_award_key,
+        fabs.officer_1_amount,
+        fabs.officer_1_name,
+        fabs.officer_2_amount,
+        fabs.officer_2_name,
+        fabs.officer_3_amount,
+        fabs.officer_3_name,
+        fabs.officer_4_amount,
+        fabs.officer_4_name,
+        fabs.officer_5_amount,
+        fabs.officer_5_name
+      FROM transaction_normalized tn
+      INNER JOIN transaction_fabs AS fabs ON tn.id = fabs.transaction_id
+      {predicate}
+      ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
+    )
+    SELECT DISTINCT ON (unique_award_key) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
 )
 UPDATE awards a
 SET
@@ -252,7 +255,7 @@ SET
   officer_5_amount  = ec.officer_5_amount,
   officer_5_name    = ec.officer_5_name
 FROM txn_latest l
-INNER JOIN executive_comp AS ec ON l.unique_award_key = ec.unique_award_key
+LEFT OUTER JOIN executive_comp AS ec ON l.unique_award_key = ec.unique_award_key
 WHERE
   l.unique_award_key = a.generated_unique_award_id
   AND (

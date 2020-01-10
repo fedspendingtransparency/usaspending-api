@@ -18,6 +18,7 @@ def test_award_update_from_latest_transaction():
         awarding_agency=agency1,
         period_of_performance_current_end_date=datetime.date(2016, 1, 1),
         description="original award",
+        generated_unique_award_id="AWD_1",
     )
 
     # adding transaction with same info should not change award values
@@ -28,6 +29,7 @@ def test_award_update_from_latest_transaction():
         period_of_performance_current_end_date=award.period_of_performance_current_end_date,
         description=award.description,
         action_date=datetime.date(2016, 2, 1),
+        unique_award_key="AWD_1",
     )
 
     update_awards()
@@ -47,6 +49,7 @@ def test_award_update_from_latest_transaction():
         period_of_performance_current_end_date=datetime.date(2017, 1, 1),
         description="older description",
         action_date=datetime.date(2016, 1, 1),
+        unique_award_key="AWD_1",
     )
     update_awards()
     award.refresh_from_db()
@@ -65,6 +68,7 @@ def test_award_update_from_latest_transaction():
         period_of_performance_current_end_date=datetime.date(2010, 1, 1),
         description="new description",
         action_date=datetime.date(2017, 1, 1),
+        unique_award_key="AWD_1",
     )
 
     update_awards()
@@ -80,7 +84,7 @@ def test_award_update_from_latest_transaction():
 def test_award_update_from_earliest_transaction():
     """Test awards fields that should be updated with most earliest transaction info."""
 
-    award = mommy.make("awards.Award")
+    award = mommy.make("awards.Award", generated_unique_award_id="AWD_ALPHA")
     mommy.make(
         "awards.TransactionNormalized",
         award=award,
@@ -88,10 +92,16 @@ def test_award_update_from_earliest_transaction():
         # the txn action_date will become the award
         # signed date
         action_date=datetime.date(2016, 1, 1),
+        unique_award_key="AWD_ALPHA",
     )
 
     # adding later transaction should not change award values
-    mommy.make("awards.TransactionNormalized", award=award, action_date=datetime.date(2017, 1, 1))
+    mommy.make(
+        "awards.TransactionNormalized",
+        award=award,
+        action_date=datetime.date(2017, 1, 1),
+        unique_award_key="AWD_ALPHA",
+    )
 
     update_awards()
     award.refresh_from_db()
@@ -99,7 +109,12 @@ def test_award_update_from_earliest_transaction():
     assert award.date_signed == datetime.date(2016, 1, 1)
 
     # adding earlier transaction should update award values
-    mommy.make("awards.TransactionNormalized", award=award, action_date=datetime.date(2010, 1, 1))
+    mommy.make(
+        "awards.TransactionNormalized",
+        award=award,
+        action_date=datetime.date(2010, 1, 1),
+        unique_award_key="AWD_ALPHA",
+    )
 
     update_awards()
     award.refresh_from_db()
@@ -111,8 +126,14 @@ def test_award_update_from_earliest_transaction():
 def test_award_update_obligated_amt():
     """Test that the award obligated amt updates as child transactions change."""
 
-    award = mommy.make("awards.Award", total_obligation=1000)
-    mommy.make("awards.TransactionNormalized", award=award, federal_action_obligation=1000, _quantity=5)
+    award = mommy.make("awards.Award", total_obligation=1000, generated_unique_award_id="BIG_AGENCY_AWD_1")
+    mommy.make(
+        "awards.TransactionNormalized",
+        award=award,
+        federal_action_obligation=1000,
+        _quantity=5,
+        unique_award_key="BIG_AGENCY_AWD_1",
+    )
 
     update_awards()
     award.refresh_from_db()
@@ -123,11 +144,17 @@ def test_award_update_obligated_amt():
 @pytest.mark.django_db
 def test_award_update_with_list():
     """Test optional parameter to update specific awards with txn data."""
-    awards = mommy.make("awards.Award", total_obligation=0, _quantity=10)
+    awards = [mommy.make("awards.Award", total_obligation=0, generated_unique_award_id=f"AWARD_{i}") for i in range(10)]
     test_award = awards[3]
 
     # test a single award update
-    mommy.make("awards.TransactionNormalized", award=test_award, federal_action_obligation=1000, _quantity=5)
+    mommy.make(
+        "awards.TransactionNormalized",
+        award=test_award,
+        federal_action_obligation=1000,
+        _quantity=5,
+        unique_award_key=test_award.generated_unique_award_id,
+    )
     count = update_awards((test_award.id,))
     test_award.refresh_from_db()
     # one award is updated
@@ -138,8 +165,20 @@ def test_award_update_with_list():
     assert awards[0].total_obligation == 0
 
     # test updating several awards
-    mommy.make("awards.TransactionNormalized", award=awards[0], federal_action_obligation=2000, _quantity=2)
-    mommy.make("awards.TransactionNormalized", award=awards[1], federal_action_obligation=-1000, _quantity=3)
+    mommy.make(
+        "awards.TransactionNormalized",
+        award=awards[0],
+        federal_action_obligation=2000,
+        _quantity=2,
+        unique_award_key=awards[0].generated_unique_award_id,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        award=awards[1],
+        federal_action_obligation=-1000,
+        _quantity=3,
+        unique_award_key=awards[1].generated_unique_award_id,
+    )
     count = update_awards((awards[0].id, awards[1].id))
     awards[0].refresh_from_db()
     awards[1].refresh_from_db()
@@ -158,14 +197,22 @@ def test_award_update_from_contract_transaction():
 
     # for contract type transactions, the base_and_all_options_value and base_exercised_options_val fields
     # should update the corresponding field on the award table
-    award = mommy.make("awards.Award")
-    txn = mommy.make("awards.TransactionNormalized", award=award)
-    txn2 = mommy.make("awards.TransactionNormalized", award=award)
+    award = mommy.make("awards.Award", generated_unique_award_id="EXAMPLE_AWARD_1")
+    txn = mommy.make("awards.TransactionNormalized", award=award, unique_award_key="EXAMPLE_AWARD_1")
+    txn2 = mommy.make("awards.TransactionNormalized", award=award, unique_award_key="EXAMPLE_AWARD_1")
     mommy.make(
-        "awards.TransactionFPDS", transaction=txn, base_and_all_options_value=1000, base_exercised_options_val=100
+        "awards.TransactionFPDS",
+        transaction=txn,
+        base_and_all_options_value=1000,
+        base_exercised_options_val=100,
+        unique_award_key="EXAMPLE_AWARD_1",
     )
     mommy.make(
-        "awards.TransactionFPDS", transaction=txn2, base_and_all_options_value=1001, base_exercised_options_val=101
+        "awards.TransactionFPDS",
+        transaction=txn2,
+        base_and_all_options_value=1001,
+        base_exercised_options_val=101,
+        unique_award_key="EXAMPLE_AWARD_1",
     )
 
     update_contract_awards()
@@ -178,9 +225,10 @@ def test_award_update_from_contract_transaction():
 @pytest.mark.django_db
 def test_award_update_contract_txn_with_list():
     """Test optional parameter to update specific awards from txn contract."""
-
-    awards = mommy.make("awards.Award", _quantity=5)
-    txn = mommy.make("awards.TransactionNormalized", award=awards[0])
+    awards = [mommy.make("awards.Award", total_obligation=0, generated_unique_award_id=f"AWARD_{i}") for i in range(5)]
+    txn = mommy.make(
+        "awards.TransactionNormalized", award=awards[0], unique_award_key=awards[0].generated_unique_award_id
+    )
     mommy.make(
         "awards.TransactionFPDS", transaction=txn, base_and_all_options_value=1000, base_exercised_options_val=100
     )
@@ -191,13 +239,25 @@ def test_award_update_contract_txn_with_list():
     assert awards[0].base_and_all_options_value == 1000
 
     # update multipe awards
-    txn1 = mommy.make("awards.TransactionNormalized", award=awards[1])
-    mommy.make(
-        "awards.TransactionFPDS", transaction=txn1, base_and_all_options_value=4000, base_exercised_options_val=400
+    txn1 = mommy.make(
+        "awards.TransactionNormalized", award=awards[1], unique_award_key=awards[1].generated_unique_award_id
     )
-    txn2 = mommy.make("awards.TransactionNormalized", award=awards[2])
     mommy.make(
-        "awards.TransactionFPDS", transaction=txn2, base_and_all_options_value=5000, base_exercised_options_val=500
+        "awards.TransactionFPDS",
+        transaction=txn1,
+        base_and_all_options_value=4000,
+        base_exercised_options_val=400,
+        unique_award_key=awards[1].generated_unique_award_id,
+    )
+    txn2 = mommy.make(
+        "awards.TransactionNormalized", award=awards[2], unique_award_key=awards[2].generated_unique_award_id
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction=txn2,
+        base_and_all_options_value=5000,
+        base_exercised_options_val=500,
+        unique_award_key=awards[2].generated_unique_award_id,
     )
     # multiple awards updated
     count = update_contract_awards((awards[1].id, awards[2].id))
@@ -214,9 +274,13 @@ def test_award_update_contract_txn_with_list():
 def test_award_update_contract_executive_comp():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = mommy.make("awards.Award")
-    txn = mommy.make("awards.TransactionNormalized", award=award, action_date="2011-10-01")
-    txn2 = mommy.make("awards.TransactionNormalized", award=award, action_date="2012-10-01")
+    award = mommy.make("awards.Award", generated_unique_award_id="AWARD_CONT_IDV")
+    txn = mommy.make(
+        "awards.TransactionNormalized", award=award, action_date="2011-10-01", unique_award_key="AWARD_CONT_IDV"
+    )
+    txn2 = mommy.make(
+        "awards.TransactionNormalized", award=award, action_date="2012-10-01", unique_award_key="AWARD_CONT_IDV"
+    )
     mommy.make(
         "awards.TransactionFPDS",
         transaction=txn,
@@ -230,6 +294,7 @@ def test_award_update_contract_executive_comp():
         officer_4_amount=4,
         officer_5_name="Colonel Mustard",
         officer_5_amount=5,
+        unique_award_key="AWARD_CONT_IDV",
     )
     mommy.make(
         "awards.TransactionFPDS",
@@ -244,6 +309,7 @@ def test_award_update_contract_executive_comp():
         officer_4_amount=400,
         officer_5_name="Victor Plum",
         officer_5_amount=500,
+        unique_award_key="AWARD_CONT_IDV",
     )
 
     update_contract_awards()
@@ -254,8 +320,10 @@ def test_award_update_contract_executive_comp():
 
     # Test that a newer transaction without Executive Comp data doesn't overwrite the award values
 
-    txn3 = mommy.make("awards.TransactionNormalized", award=award, action_date="2013-10-01")
-    mommy.make("awards.TransactionFPDS", transaction=txn3)
+    txn3 = mommy.make(
+        "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="AWARD_CONT_IDV"
+    )
+    mommy.make("awards.TransactionFPDS", transaction=txn3, unique_award_key="AWARD_CONT_IDV")
 
     update_contract_awards()
     award.refresh_from_db()
@@ -268,9 +336,11 @@ def test_award_update_contract_executive_comp():
 def test_award_update_assistance_executive_comp():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = mommy.make("awards.Award")
-    txn = mommy.make("awards.TransactionNormalized", award=award, action_date="2011-10-01")
-    txn2 = mommy.make("awards.TransactionNormalized", award=award, action_date="2012-10-01")
+    award = mommy.make("awards.Award", generated_unique_award_id="ASST_ONE")
+    txn = mommy.make("awards.TransactionNormalized", award=award, action_date="2011-10-01", unique_award_key="ASST_ONE")
+    txn2 = mommy.make(
+        "awards.TransactionNormalized", award=award, action_date="2012-10-01", unique_award_key="ASST_ONE"
+    )
     mommy.make(
         "awards.TransactionFABS",
         transaction=txn,
@@ -284,6 +354,7 @@ def test_award_update_assistance_executive_comp():
         officer_4_amount=4,
         officer_5_name="Colonel Mustard",
         officer_5_amount=5,
+        unique_award_key="ASST_ONE",
     )
     mommy.make(
         "awards.TransactionFABS",
@@ -298,6 +369,7 @@ def test_award_update_assistance_executive_comp():
         officer_4_amount=400,
         officer_5_name="Victor Plum",
         officer_5_amount=500,
+        unique_award_key="ASST_ONE",
     )
 
     update_assistance_awards()
@@ -308,8 +380,12 @@ def test_award_update_assistance_executive_comp():
 
     # Test that a newer transaction without Executive Comp data doesn't overwrite the award values
 
-    txn3 = mommy.make("awards.TransactionNormalized", award=award, action_date="2013-10-01")
-    mommy.make("awards.TransactionFABS", transaction=txn3)
+    txn3 = mommy.make(
+        "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="ASST_ONE"
+    )
+    mommy.make(
+        "awards.TransactionFABS", transaction=txn3, unique_award_key="ASST_ONE",
+    )
 
     update_assistance_awards()
     award.refresh_from_db()
@@ -322,18 +398,27 @@ def test_award_update_assistance_executive_comp():
 def test_award_update_transaction_fk():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = mommy.make("awards.Award")
+    award = mommy.make("awards.Award", generated_unique_award_id="FAKE_award_YELLOW_12")
     txn1 = mommy.make(
         "awards.TransactionNormalized",
         award=award,
         action_date="2011-10-01",
         description="Original Desc",
         modification_number="P0001",
+        unique_award_key="FAKE_award_YELLOW_12",
     )
-    mommy.make("awards.TransactionNormalized", award=award, action_date="2012-10-01")
-    mommy.make("awards.TransactionNormalized", award=award, action_date="2013-10-01")
-    mommy.make("awards.TransactionNormalized", award=award, action_date="2014-10-01")
-    mommy.make("awards.TransactionNormalized", award=award, action_date="2015-10-01")
+    mommy.make(
+        "awards.TransactionNormalized", award=award, action_date="2012-10-01", unique_award_key="FAKE_award_YELLOW_12",
+    )
+    mommy.make(
+        "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="FAKE_award_YELLOW_12",
+    )
+    mommy.make(
+        "awards.TransactionNormalized", award=award, action_date="2014-10-01", unique_award_key="FAKE_award_YELLOW_12",
+    )
+    mommy.make(
+        "awards.TransactionNormalized", award=award, action_date="2015-10-01", unique_award_key="FAKE_award_YELLOW_12",
+    )
     txn6 = mommy.make(
         "awards.TransactionNormalized",
         award=award,
@@ -341,6 +426,7 @@ def test_award_update_transaction_fk():
         description="Last Desc",
         modification_number="P0011",
         period_of_performance_current_end_date="2020-10-01",
+        unique_award_key="FAKE_award_YELLOW_12",
     )
 
     update_awards()
@@ -361,6 +447,7 @@ def test_award_update_transaction_fk():
         action_date=txn1.action_date,
         description="Updated Original Desc",
         modification_number="P0000",
+        unique_award_key="FAKE_award_YELLOW_12",
     )
 
     txn10 = mommy.make(
@@ -369,6 +456,7 @@ def test_award_update_transaction_fk():
         action_date=txn6.action_date,
         modification_number="P1000",
         period_of_performance_current_end_date="2019-10-01",
+        unique_award_key="FAKE_award_YELLOW_12",
     )
 
     update_awards()
