@@ -83,7 +83,6 @@ class Command(BaseCommand):
         with RetrieveFileFromUri(file_path).get_file_object() as file:
             logger.info(f"Loading transactions from IDs in {file_path}")
             for next_batch in self.gen_read_file_for_ids(file):
-                # logger.info(f"{len(next_batch)}..... '{next_batch[-1]}'")
                 id_list = [int(re.search(r"\d+", x).group()) for x in next_batch]
                 total_count += len(id_list)
                 logger.info(f"Loading next batch (size: {len(id_list)}, ids {id_list[0]}-{id_list[-1]})...")
