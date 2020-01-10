@@ -10,7 +10,7 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
 from usaspending_api.common.helpers.timing_helpers import timer
-from usaspending_api.references.models import Agency, LegalEntity, SubtierAgency, ToptierAgency, Location
+from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency, Location
 from usaspending_api.etl.management.load_base import get_or_create_location, format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_assistance_awards
 
@@ -77,24 +77,6 @@ class Command(BaseCommand):
         logger.info("Running dictfetchall on db_cursor")
         award_financial_assistance_data = dictfetchall(db_cursor)
 
-        legal_entity_location_field_map = {
-            "address_line1": "legal_entity_address_line1",
-            "address_line2": "legal_entity_address_line2",
-            "address_line3": "legal_entity_address_line3",
-            "city_name": "legal_entity_city_name",
-            "congressional_code": "legal_entity_congressional",
-            "county_code": "legal_entity_county_code",
-            "county_name": "legal_entity_county_name",
-            "foreign_city_name": "legal_entity_foreign_city",
-            "foreign_postal_code": "legal_entity_foreign_posta",
-            "foreign_province": "legal_entity_foreign_provi",
-            "state_code": "legal_entity_state_code",
-            "state_name": "legal_entity_state_name",
-            "zip5": "legal_entity_zip5",
-            "zip_last4": "legal_entity_zip_last4",
-            "location_country_code": "legal_entity_country_code",
-        }
-
         place_of_performance_field_map = {
             "city_name": "place_of_performance_city",
             "performance_code": "place_of_performance_code",
@@ -135,29 +117,12 @@ class Command(BaseCommand):
 
         # ROW ITERATION STARTS HERE
 
-        lel_bulk = []
         pop_bulk = []
         legal_entity_bulk = []
         award_bulk = []
 
         transaction_assistance_bulk = []
         transaction_normalized_bulk = []
-
-        logger.info("Getting legal entity location objects for {} rows...".format(len(award_financial_assistance_data)))
-        for index, row in enumerate(award_financial_assistance_data, 1):
-
-            # Recipient flag is true for LeL
-            legal_entity_location = get_or_create_location(
-                legal_entity_location_field_map, row, {"recipient_flag": True}, save=False
-            )
-
-            lel_bulk.append(legal_entity_location)
-
-        logger.info("Bulk creating {} legal entity location rows...".format(len(lel_bulk)))
-        try:
-            Location.objects.bulk_create(lel_bulk)
-        except IntegrityError:
-            logger.info("!!! DUPLICATES FOUND. Continuing... ")
 
         logger.info("Getting place of performance objects for {} rows...".format(len(award_financial_assistance_data)))
         for index, row in enumerate(award_financial_assistance_data, 1):
@@ -172,30 +137,6 @@ class Command(BaseCommand):
         logger.info("Bulk creating {} place of performance rows...".format(len(pop_bulk)))
         try:
             Location.objects.bulk_create(pop_bulk)
-        except IntegrityError:
-            logger.info("!!! DUPLICATES FOUND. Continuing... ")
-
-        logger.info("Getting legal entity objects for {} rows...".format(len(award_financial_assistance_data)))
-        for index, row in enumerate(award_financial_assistance_data, 1):
-
-            recipient_name = row.get("awardee_or_recipient_legal", "")
-
-            legal_entity = LegalEntity.objects.filter(
-                recipient_unique_id=row["awardee_or_recipient_uniqu"], recipient_name=recipient_name
-            ).first()
-
-            if legal_entity is None:
-                legal_entity = LegalEntity(
-                    recipient_unique_id=row["awardee_or_recipient_uniqu"], recipient_name=recipient_name
-                )
-                legal_entity_value_map = {"location": lel_bulk[index - 1]}
-                legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=False)
-
-            legal_entity_bulk.append(legal_entity)
-
-        logger.info("Bulk creating {} legal entity rows...".format(len(legal_entity_bulk)))
-        try:
-            LegalEntity.objects.bulk_create(legal_entity_bulk)
         except IntegrityError:
             logger.info("!!! DUPLICATES FOUND. Continuing... ")
 
@@ -342,19 +283,6 @@ class Command(BaseCommand):
         logger.info("Running dictfetchall on db_cursor")
         procurement_data = dictfetchall(db_cursor)
 
-        legal_entity_location_field_map = {
-            "address_line1": "legal_entity_address_line1",
-            "address_line2": "legal_entity_address_line2",
-            "address_line3": "legal_entity_address_line3",
-            "location_country_code": "legal_entity_country_code",
-            "city_name": "legal_entity_city_name",
-            "congressional_code": "legal_entity_congressional",
-            "state_code": "legal_entity_state_code",
-            "zip4": "legal_entity_zip4",
-        }
-
-        legal_entity_location_value_map = {"recipient_flag": True}
-
         place_of_performance_field_map = {
             # not sure place_of_performance_locat maps exactly to city name
             # "city_name": "place_of_performance_locat", # location id doesn't mean it's a city. Can't use this mapping
@@ -405,23 +333,6 @@ class Command(BaseCommand):
                             str(index), str(total_rows), datetime.now() - start_time
                         )
                     )
-
-                recipient_name = row["awardee_or_recipient_legal"]
-                if recipient_name is None:
-                    recipient_name = ""
-
-                legal_entity_location, created = get_or_create_location(
-                    legal_entity_location_field_map, row, copy(legal_entity_location_value_map)
-                )
-
-                # Create the legal entity if it doesn't exist
-                legal_entity, created = LegalEntity.objects.get_or_create(
-                    recipient_unique_id=row["awardee_or_recipient_uniqu"], recipient_name=recipient_name
-                )
-
-                if created:
-                    legal_entity_value_map = {"location": legal_entity_location}
-                    legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
                 # Create the place of performance location
                 pop_location, created = get_or_create_location(
@@ -474,7 +385,6 @@ class Command(BaseCommand):
                     "funding_agency": Agency.get_by_toptier_subtier(
                         row["funding_agency_code"], row["funding_sub_tier_agency_co"]
                     ),
-                    "recipient": legal_entity,
                     "place_of_performance": pop_location,
                     "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
                     "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
