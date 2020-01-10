@@ -68,6 +68,7 @@ def spending_by_award_test_data():
         description="test test test",
         awarding_agency_id=1,
         funding_agency_id=1,
+        total_obligation=999999.00,
     )
     mommy.make(
         "awards.Award",
@@ -79,6 +80,7 @@ def spending_by_award_test_data():
         latest_transaction_id=3,
         generated_unique_award_id="CONT_AWD_TESTING_2",
         date_signed="2009-01-01",
+        total_obligation=9016.00,
     )
     mommy.make(
         "awards.Award",
@@ -90,7 +92,31 @@ def spending_by_award_test_data():
         latest_transaction_id=6,
         generated_unique_award_id="CONT_AWD_TESTING_3",
         date_signed="2010-01-01",
+        total_obligation=500000001.00,
     )
+    mommy.make(
+        "awards.Award",
+        id=4,
+        type="02",
+        category="grant",
+        fain="abc444",
+        earliest_transaction_id=7,
+        latest_transaction_id=7,
+        generated_unique_award_id="ASST_NON_TESTING_4",
+        date_signed="2019-01-01",
+        total_obligation=12.00,
+    )
+
+    mommy.make("accounts.FederalAccount", id=1)
+    mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        treasury_account_identifier=1,
+        agency_id="097",
+        main_account_code="4930",
+        federal_account_id=1,
+    )
+    mommy.make("awards.FinancialAccountsByAwards", award_id=1, treasury_account_id=1)
+
     # Toptier Agency
     toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
 
@@ -107,18 +133,59 @@ def spending_by_award_test_data():
     mommy.make("references.Agency", toptier_agency_id=1, subtier_agency_id=1)
 
     mommy.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2014-01-01", is_fpds=True)
-    mommy.make("awards.TransactionNormalized", id=2, award_id=1, action_date="2015-01-01", is_fpds=True)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=2,
+        award_id=1,
+        action_date="2015-01-01",
+        is_fpds=True,
+        business_categories=["business_category_1_3"],
+    )
     mommy.make("awards.TransactionNormalized", id=3, award_id=2, action_date="2016-01-01", is_fpds=True)
     mommy.make("awards.TransactionNormalized", id=4, award_id=3, action_date="2017-01-01", is_fpds=True)
     mommy.make("awards.TransactionNormalized", id=5, award_id=3, action_date="2018-01-01", is_fpds=True)
-    mommy.make("awards.TransactionNormalized", id=6, award_id=3, action_date="2019-01-01", is_fpds=True)
-
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=6,
+        award_id=3,
+        action_date="2019-01-01",
+        is_fpds=True,
+        business_categories=["business_category_2_8"],
+    )
+    mommy.make("awards.TransactionNormalized", id=7, award_id=4, action_date="2019-10-1", is_fpds=False)
     mommy.make("awards.TransactionFPDS", transaction_id=1)
-    mommy.make("awards.TransactionFPDS", transaction_id=2)
-    mommy.make("awards.TransactionFPDS", transaction_id=3)
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=2,
+        place_of_performance_state="VA",
+        place_of_perform_country_c="USA",
+        place_of_perform_county_co="013",
+        place_of_perform_city_name="Arlington",
+        legal_entity_state_code="VA",
+        legal_entity_country_code="USA",
+        legal_entity_county_code="013",
+        legal_entity_city_name="Arlington",
+        naics="NACIS_test",
+        product_or_service_code="PSC_test",
+        type_of_contract_pricing="contract_pricing_test",
+        type_set_aside="type_set_aside_test",
+        extent_competed="extent_competed_test"
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=3,
+        place_of_performance_state="VA",
+        place_of_perform_country_c="USA",
+        place_of_perform_county_co="012",
+        legal_entity_state_code="VA",
+        legal_entity_country_code="USA",
+        legal_entity_county_code="012",
+    )
     mommy.make("awards.TransactionFPDS", transaction_id=4)
     mommy.make("awards.TransactionFPDS", transaction_id=5)
     mommy.make("awards.TransactionFPDS", transaction_id=6)
+
+    mommy.make("awards.TransactionFABS", transaction_id=7, cfda_number="10.331", awardee_or_recipient_uniqu="duns_1001")
 
     mommy.make("awards.BrokerSubaward", id=1, award_id=1, subaward_number=11111, awardee_or_recipient_uniqu="duns_1001")
     mommy.make("awards.BrokerSubaward", id=2, award_id=2, subaward_number=22222, awardee_or_recipient_uniqu="duns_1002")

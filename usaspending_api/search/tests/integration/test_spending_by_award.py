@@ -535,18 +535,18 @@ def test_correct_response_for_each_filter(client, monkeypatch, spending_by_award
         _test_correct_response_for_award_type_codes,
         _test_correct_response_for_agencies,
         _test_correct_response_for_tas_codes,
-        # _test_correct_response_for_pop_location,
-        # _test_correct_response_for_recipient_location,
-        # _test_correct_response_for_recipient_search_text,
-        # _test_correct_response_for_recipient_type_names,
-        # _test_correct_response_for_award_amounts,
-        # _test_correct_response_for_cfda_program,
-        # _test_correct_response_for_naics_codes,
-        # _test_correct_response_for_psc_codes,
-        # _test_correct_response_for_contract_pricing_type_codes,
-        # _test_correct_response_for_set_aside_type_codes,
-        # _test_correct_response_for_set_extent_competed_type_codes,
-        # _test_correct_response_for_recipient_id,
+        _test_correct_response_for_pop_location,
+        _test_correct_response_for_recipient_location,
+        _test_correct_response_for_recipient_search_text,
+        _test_correct_response_for_recipient_type_names,
+        _test_correct_response_for_award_amounts,
+        _test_correct_response_for_cfda_program,
+        _test_correct_response_for_naics_codes,
+        _test_correct_response_for_psc_codes,
+        _test_correct_response_for_contract_pricing_type_codes,
+        _test_correct_response_for_set_aside_type_codes,
+        _test_correct_response_for_set_extent_competed_type_codes,
+        _test_correct_response_for_recipient_id,
     ]
 
     for test in test_cases:
@@ -677,32 +677,8 @@ def _test_correct_response_for_tas_codes(client):
         data=json.dumps(
             {
                 "filters": {
-                    "tas_codes": [
-                        {
-                            "ata": "taa_ata_3",
-                            "aid": "taa_aid_3",
-                            "bpoa": "taa_bpoa_3",
-                            "epoa": "taa_epoa_3",
-                            "main": "taa_main_3",
-                            "sub": "taa_sub_3",
-                        },
-                        {
-                            "ata": "taa_ata_5",
-                            "aid": "taa_aid_5",
-                            "bpoa": "taa_bpoa_5",
-                            "epoa": "taa_epoa_5",
-                            "main": "taa_main_5",
-                            "sub": "taa_sub_5",
-                        },
-                        {
-                            "ata": "taa_ata_15",
-                            "aid": "taa_aid_15",
-                            "bpoa": "taa_bpoa_15",
-                            "epoa": "taa_epoa_15",
-                            "main": "taa_main_15",
-                            "sub": "taa_sub_15",
-                        },
-                    ],
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "tas_codes": [{"aid": "097", "main": "4930"}],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -715,8 +691,11 @@ def _test_correct_response_for_tas_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
+    ]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "TAS Codes filter does not match expected result"
 
 
@@ -727,12 +706,8 @@ def _test_correct_response_for_pop_location(client):
         data=json.dumps(
             {
                 "filters": {
-                    "place_of_performance_locations": [
-                        {"country": "USA", "state": "pop_state_code_2", "city": "pop_city_name_2"},
-                        {"country": "USA", "state": "pop_state_code_12", "county": "012"},
-                        {"country": "USA", "state": "pop_state_code_18", "district": "18"},
-                        {"country": "USA", "zip": "pop_zip5_19"},
-                    ],
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "place_of_performance_locations": [{"country": "USA", "state": "VA", "county": "013"}],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -745,8 +720,11 @@ def _test_correct_response_for_pop_location(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
+    ]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Place of Performance filter does not match expected result"
 
 
@@ -757,11 +735,10 @@ def _test_correct_response_for_recipient_location(client):
         data=json.dumps(
             {
                 "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
                     "recipient_locations": [
-                        {"country": "USA", "state": "le_state_code_4", "city": "le_city_name_4"},
-                        {"country": "USA", "state": "le_state_code_7", "county": "007"},
-                        {"country": "USA", "state": "le_state_code_17", "district": "17"},
-                        {"country": "USA", "zip": "le_zip5_20"},
+                        {"country": "USA", "state": "VA", "county": "012"},
+                        {"country": "USA", "state": "VA", "city": "Arlington"},
                     ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
@@ -769,14 +746,18 @@ def _test_correct_response_for_recipient_location(client):
                 "page": 1,
                 "limit": 60,
                 "sort": "Award ID",
-                "order": "desc",
+                "order": "asc",
                 "subawards": False,
             }
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None},
+        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2", "recipient_id": None},
+    ]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 2
     assert resp.json().get("results") == expected_result, "Recipient Location filter does not match expected result"
 
 
@@ -787,7 +768,8 @@ def _test_correct_response_for_recipient_search_text(client):
         data=json.dumps(
             {
                 "filters": {
-                    "recipient_search_text": ["recipient_name_", "recipient_name_10", "recipient_name_14", "000000020"],
+                    "award_type_codes": ["02", "03", "04", "05"],
+                    "recipient_search_text": ["recipient_name_for_award_1001"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -800,8 +782,16 @@ def _test_correct_response_for_recipient_search_text(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [
+        {
+            "internal_id": 4,
+            "Award ID": "abc444",
+            "generated_internal_id": "ASST_NON_TESTING_4",
+            "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9-R",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Recipient Search Text filter does not match expected result"
 
 
@@ -812,6 +802,7 @@ def _test_correct_response_for_recipient_type_names(client):
         data=json.dumps(
             {
                 "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
                     "recipient_type_names": ["business_category_1_3", "business_category_2_8"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
@@ -819,14 +810,18 @@ def _test_correct_response_for_recipient_type_names(client):
                 "page": 1,
                 "limit": 60,
                 "sort": "Award ID",
-                "order": "desc",
+                "order": "asc",
                 "subawards": False,
             }
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None},
+        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3", "recipient_id": None},
+    ]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 2
     assert resp.json().get("results") == expected_result, "Recipient Type Names filter does not match expected result"
 
 
@@ -837,25 +832,26 @@ def _test_correct_response_for_award_amounts(client):
         data=json.dumps(
             {
                 "filters": {
-                    "award_amounts": [
-                        {"upper_bound": 9001},
-                        {"lower_bound": 9013, "upper_bound": 9017},
-                        {"lower_bound": 9027},
-                    ],
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "award_amounts": [{"upper_bound": 1000000}, {"lower_bound": 9013, "upper_bound": 9017},],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
                 "limit": 60,
                 "sort": "Award ID",
-                "order": "desc",
+                "order": "asc",
                 "subawards": False,
             }
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None},
+        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2", "recipient_id": None},
+    ]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 2
     assert resp.json().get("results") == expected_result, "Award Amounts filter does not match expected result"
 
 
@@ -866,7 +862,8 @@ def _test_correct_response_for_cfda_program(client):
         data=json.dumps(
             {
                 "filters": {
-                    "program_numbers": ["cfda_number_11", "cfda_number_21", "cfda_number_25"],
+                    "award_type_codes": ["02", "03", "04", "05"],
+                    "program_numbers": ["10.331"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -879,8 +876,16 @@ def _test_correct_response_for_cfda_program(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [
+        {
+            "internal_id": 4,
+            "Award ID": "abc444",
+            "generated_internal_id": "ASST_NON_TESTING_4",
+            "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9-R",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "CFDA Program filter does not match expected result"
 
 
@@ -891,7 +896,8 @@ def _test_correct_response_for_naics_codes(client):
         data=json.dumps(
             {
                 "filters": {
-                    "naics_codes": ["naics_code_8", "naics_code_16", "naics_code_26"],
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "naics_codes": ["NACIS_test"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -904,8 +910,14 @@ def _test_correct_response_for_naics_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [{
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+            "recipient_id": None
+        }]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "NAICS Code filter does not match expected result"
 
 
@@ -916,7 +928,8 @@ def _test_correct_response_for_psc_codes(client):
         data=json.dumps(
             {
                 "filters": {
-                    "psc_codes": ["psc_code_2", "psc_code_12", "psc_code_24"],
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "psc_codes": ["PSC_test"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -929,8 +942,14 @@ def _test_correct_response_for_psc_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [{
+        "internal_id": 1,
+        "Award ID": "abc111",
+        "generated_internal_id": "CONT_AWD_TESTING_1",
+        "recipient_id": None
+    }]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
 
 
@@ -941,11 +960,8 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
         data=json.dumps(
             {
                 "filters": {
-                    "contract_pricing_type_codes": [
-                        "type_of_contract_pricing_0",
-                        "type_of_contract_pricing_10",
-                        "type_of_contract_pricing_22",
-                    ],
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "contract_pricing_type_codes": ["contract_pricing_test"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -958,11 +974,15 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [{
+        "internal_id": 1,
+        "Award ID": "abc111",
+        "generated_internal_id": "CONT_AWD_TESTING_1",
+        "recipient_id": None
+    }]
     assert resp.status_code == status.HTTP_200_OK
-    assert (
-        resp.json().get("results") == expected_result
-    ), "Contract Pricing Type Codes filter does not match expected result"
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results") == expected_result, "Contract Pricing Type Codes filter does not match expected result"
 
 
 def _test_correct_response_for_set_aside_type_codes(client):
@@ -972,7 +992,8 @@ def _test_correct_response_for_set_aside_type_codes(client):
         data=json.dumps(
             {
                 "filters": {
-                    "set_aside_type_codes": ["type_set_aside_16", "type_set_aside_26", "type_set_aside_28"],
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "set_aside_type_codes": ["type_set_aside_test"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -985,8 +1006,14 @@ def _test_correct_response_for_set_aside_type_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [{
+        "internal_id": 1,
+        "Award ID": "abc111",
+        "generated_internal_id": "CONT_AWD_TESTING_1",
+        "recipient_id": None
+    }]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
 
 
@@ -997,7 +1024,8 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
         data=json.dumps(
             {
                 "filters": {
-                    "extent_competed_type_codes": ["extent_competed_4", "extent_competed_24", "extent_competed_26"],
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "extent_competed_type_codes": ["extent_competed_test"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -1010,8 +1038,14 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [{
+        "internal_id": 1,
+        "Award ID": "abc111",
+        "generated_internal_id": "CONT_AWD_TESTING_1",
+        "recipient_id": None
+    }]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
     assert (
         resp.json().get("results") == expected_result
     ), "Extent Competed Type Codes filter does not match expected result"
@@ -1024,7 +1058,8 @@ def _test_correct_response_for_recipient_id(client):
         data=json.dumps(
             {
                 "filters": {
-                    "recipient_id": "c551b3f8-d9ef-ac00-5e79-33d33ceb7483-R",
+                    "award_type_codes": ["02", "03", "04", "05"],
+                    "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9",
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -1037,8 +1072,14 @@ def _test_correct_response_for_recipient_id(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = []
+    expected_result = [{
+            "internal_id": 4,
+            "Award ID": "abc444",
+            "generated_internal_id": "ASST_NON_TESTING_4",
+            "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9-R"
+        }]
     assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Recipient ID filter does not match expected result"
 
 

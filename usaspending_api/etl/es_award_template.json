@@ -136,12 +136,8 @@
           }
         },
         "parent_recipient_unique_id": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "keyword",
+          "null_value": "NULL"
         },
         "business_categories": {
           "type": "text",

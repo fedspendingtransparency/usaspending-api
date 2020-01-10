@@ -259,12 +259,12 @@ class _AwardAmounts(_Filter):
     @classmethod
     def _generate_elasticsearch_query(cls, filter_values: List[dict], query_type) -> ES_Q:
         award_amounts_query = []
-
         for v in filter_values:
             lower_bound = v.get("lower_bound")
             upper_bound = v.get("upper_bound")
             award_amounts_query.append(ES_Q("range", award_amount={"gte": lower_bound, "lte": upper_bound}))
-
+            if query_type == "awards":
+                award_amounts_query.append(ES_Q("range", total_obligation={"gte": lower_bound, "lte": upper_bound}))
         return ES_Q("bool", should=award_amounts_query, minimum_should_match=1)
 
 
@@ -436,5 +436,4 @@ class QueryWithFilters:
                 must_queries.extend(query)
             else:
                 must_queries.append(query)
-
         return ES_Q("bool", must=must_queries)
