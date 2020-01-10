@@ -23,6 +23,7 @@ This route sends a request to the backend to begin generating a zipfile of award
             + Members
                 + `csv`
                 + `tsv`
+                + `pstxt`
     + Body
 
             {
