@@ -211,7 +211,6 @@ def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
         business_categories |= set(get_business_categories(business_types, data_type="fpds"))
 
     # combine with latest transaction's business categories
-    # from usaspending_api.references.models import LegalEntity
     latest_transaction = (
         UniversalTransactionView.objects.filter(
             recipient_hash=recipient_hash, action_date__gte=settings.API_SEARCH_MIN_DATE

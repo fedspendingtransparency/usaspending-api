@@ -42,7 +42,6 @@ class Migration(migrations.Migration):
                 ('funding_toptier_agency_name', models.TextField()),
                 ('funding_subtier_agency_name', models.TextField()),
                 ('place_of_performance', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, to='references.Location')),
-                ('recipient', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, to='references.LegalEntity')),
                 ('award_type', models.TextField()),
                 ('prime_award_type', models.TextField()),
                 ('cfda_id', models.IntegerField()),

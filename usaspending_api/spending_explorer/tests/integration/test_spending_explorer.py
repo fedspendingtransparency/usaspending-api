@@ -46,6 +46,7 @@ GLOBAL_MOCK_DICT = [
         "account_title": "Tommy Two-Tone",
         "agency_identifier": "867",
         "main_account_code": "5309",
+        "federal_account_code": "867-5309",
     },
     {
         "model": TreasuryAppropriationAccount,
@@ -137,25 +138,41 @@ def test_unreported_data_actual_value_file_c(client):
             "model": FinancialAccountsByAwards,
             "financial_accounts_by_awards_id": -1,
             "submission_id": -1,
-            "award__recipient__recipient_name": "random_recipient_name_1",
+            "award__latest_transaction__assistance_data__awardee_or_recipient_legal": "random_recipient_name_1",
             "treasury_account_id": -1,
-            "transaction_obligated_amount": -5,
+            "transaction_obligated_amount": -2,
         },
         {
             "model": FinancialAccountsByAwards,
             "financial_accounts_by_awards_id": -2,
             "submission_id": -1,
-            "award__recipient__recipient_name": "random_recipient_name_2",
+            "award__latest_transaction__assistance_data__awardee_or_recipient_legal": "random_recipient_name_2",
             "treasury_account_id": -1,
-            "transaction_obligated_amount": -10,
+            "transaction_obligated_amount": -3,
         },
         {
             "model": FinancialAccountsByAwards,
             "financial_accounts_by_awards_id": -3,
             "submission_id": -1,
-            "award__recipient__recipient_name": "random_recipient_name_1",
+            "award__latest_transaction__assistance_data__awardee_or_recipient_legal": "random_recipient_name_1",
             "treasury_account_id": -2,
-            "transaction_obligated_amount": -1,
+            "transaction_obligated_amount": -5,
+        },
+        {
+            "model": FinancialAccountsByAwards,
+            "financial_accounts_by_awards_id": -4,
+            "submission_id": -1,
+            "award__latest_transaction__contract_data__awardee_or_recipient_legal": "random_recipient_name_1",
+            "treasury_account_id": -1,
+            "transaction_obligated_amount": -7,
+        },
+        {
+            "model": FinancialAccountsByAwards,
+            "financial_accounts_by_awards_id": -5,
+            "submission_id": -1,
+            "award__latest_transaction__contract_data__awardee_or_recipient_legal": "random_recipient_name_4",
+            "treasury_account_id": -2,
+            "transaction_obligated_amount": -11,
         },
     ]
 
@@ -171,9 +188,9 @@ def test_unreported_data_actual_value_file_c(client):
     json_response = response.json()
 
     expected_results = {
-        "total": -15,
-        "agencies": ["random_recipient_name_1", "random_recipient_name_2"],
-        "amounts": [-5, -10],
+        "total": -12,
+        "agencies": ["random_recipient_name_2", "random_recipient_name_1"],
+        "amounts": [-3, -9],
     }
 
     actual_results = {
