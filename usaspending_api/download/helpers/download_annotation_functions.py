@@ -61,14 +61,14 @@ def universal_award_matview_annotations():
 
 def idv_order_annotations():
     annotation_fields = {
-        "prime_award_treasury_accounts_funding_this_award": Subquery(
-            Award.objects.filter(id=OuterRef("award_id"))
+        "treasury_accounts_funding_this_award": Subquery(
+            Award.objects.filter(id=OuterRef("id"))
             .annotate(value=StringAgg("financial_set__treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
-        "prime_award_federal_accounts_funding_this_award": Subquery(
-            Award.objects.filter(id=OuterRef("award_id"))
+        "federal_accounts_funding_this_award": Subquery(
+            Award.objects.filter(id=OuterRef("id"))
             .annotate(
                 value=StringAgg(
                     "financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
@@ -87,13 +87,13 @@ def idv_order_annotations():
 def idv_transaction_annotations():
     annotation_fields = {
         "action_date_fiscal_year": FiscalYear("action_date"),
-        "prime_award_treasury_accounts_funding_this_award": Subquery(
+        "treasury_accounts_funding_this_award": Subquery(
             Award.objects.filter(id=OuterRef("award_id"))
             .annotate(value=StringAgg("financial_set__treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
-        "prime_award_federal_accounts_funding_this_award": Subquery(
+        "federal_accounts_funding_this_award": Subquery(
             Award.objects.filter(id=OuterRef("award_id"))
             .annotate(
                 value=StringAgg(
