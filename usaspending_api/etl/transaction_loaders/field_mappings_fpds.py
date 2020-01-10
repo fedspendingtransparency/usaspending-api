@@ -366,35 +366,6 @@ transaction_normalized_functions = {
 }
 
 # broker column name -> usaspending column name
-recipient_location_nonboolean_columns = {
-    "legal_entity_country_code": "location_country_code",
-    "legal_entity_country_name": "country_name",
-    "legal_entity_county_code": "county_code",
-    "legal_entity_state_code": "state_code",
-    "legal_entity_county_name": "county_name",
-    "legal_entity_congressional": "congressional_code",
-    "legal_entity_city_name": "city_name",
-    "legal_entity_address_line1": "address_line1",
-    "legal_entity_address_line2": "address_line2",
-    "legal_entity_address_line3": "address_line3",
-    "legal_entity_zip4": "zip4",
-    "legal_entity_zip_last4": "zip_last4",
-    "detached_award_proc_unique": "transaction_unique_id",
-}
-
-# usaspending column name -> derivation function
-recipient_location_functions = {
-    "is_fpds": lambda broker: True,
-    "data_source": data_source,
-    "place_of_performance_flag": lambda broker: False,
-    "recipient_flag": lambda broker: True,
-    "create_date": current_datetime,  # Data loader won't add this value if it's an update
-    "update_date": current_datetime,
-    "zip5": legal_entity_zip5,
-    "state_name": legal_entity_state_name,
-}
-
-# broker column name -> usaspending column name
 place_of_performance_nonboolean_columns = {
     "place_of_perform_country_c": "location_country_code",
     "place_of_perf_country_desc": "country_name",

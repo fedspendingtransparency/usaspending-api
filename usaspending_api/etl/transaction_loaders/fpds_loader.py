@@ -7,8 +7,6 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
     transaction_normalized_functions,
-    recipient_location_nonboolean_columns,
-    recipient_location_functions,
     place_of_performance_nonboolean_columns,
     place_of_performance_functions,
     award_nonboolean_columns,
@@ -48,49 +46,47 @@ def delete_stale_fpds(date):
 
     detached_award_procurement_ids = get_deleted_fpds_data_from_s3(date)
 
-    if detached_award_procurement_ids:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "select transaction_id from transaction_fpds where detached_award_procurement_id in ({})".format(
-                    ",".join([str(id) for id in detached_award_procurement_ids])
-                )
-            )
-            # assumes, possibly dangerously, that this won't be too many for the job to handle
-            transaction_normalized_ids = cursor.fetchall()
-
-            # since sql can't handle empty updates, we need to safely exit
-            if not transaction_normalized_ids:
-                return []
-
-            # Set backreferences from Awards to Transaction Normalized to null. These pointers will be correctly updated
-            # in the update awards stage later on
-            cursor.execute(
-                "update awards set latest_transaction_id = null, earliest_transaction_id = null "
-                "where latest_transaction_id in ({ids}) or earliest_transaction_id in ({ids}) "
-                "returning id".format(ids=",".join([str(row[0]) for row in transaction_normalized_ids]))
-            )
-            awards_touched = cursor.fetchall()
-
-            # Remove Trasaction FPDS rows
-            cursor.execute(
-                "delete from transaction_fpds where detached_award_procurement_id in ({})".format(
-                    ",".join([str(id) for id in detached_award_procurement_ids])
-                )
-            )
-
-            # Remove Transaction Normalized rows
-            cursor.execute(
-                "delete from transaction_normalized where id in ({})".format(
-                    ",".join([str(row[0]) for row in transaction_normalized_ids])
-                )
-            )
-
-            return awards_touched
-    else:
+    if not detached_award_procurement_ids:
         return []
 
+    ids_to_delete = ",".join([str(id) for id in detached_award_procurement_ids])
+    logger.debug(f"Obtained these delete record IDs: [{ids_to_delete}]")
 
-def load_ids(chunk):
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"select transaction_id from transaction_fpds where detached_award_procurement_id in ({ids_to_delete})"
+        )
+        # assumes that this won't be too many IDs and lead to degraded performance or require too much memory
+        transaction_normalized_ids = [str(row[0]) for row in cursor.fetchall()]
+
+        if not transaction_normalized_ids:
+            return []
+
+        txn_id_str = ",".join(transaction_normalized_ids)
+
+        # Set backreferences from Awards to Transaction Normalized to null. These FKs will be updated later
+        cursor.execute(
+            "update awards set latest_transaction_id = null, earliest_transaction_id = null "
+            "where latest_transaction_id in ({ids}) or earliest_transaction_id in ({ids}) "
+            "returning id".format(ids=txn_id_str)
+        )
+        awards_touched = cursor.fetchall()
+        logger.info(f"{len(awards_touched)} awards were unlinked from transactions due to pending deletes")
+
+        cursor.execute(f"delete from transaction_fpds where transaction_id in ({txn_id_str}) returning transaction_id")
+        deleted_fpds = set(cursor.fetchall())
+
+        cursor.execute(f"delete from transaction_normalized where id in ({txn_id_str}) returning id")
+        deleted_transactions = set(cursor.fetchall())
+
+        if deleted_transactions != deleted_fpds:
+            msg = "Delete Mismatch! Counts of transaction_normalized ({}) and transaction_fpds ({}) deletes"
+            raise RuntimeError(msg.format(len(deleted_transactions), len(deleted_fpds)))
+
+        return awards_touched
+
+
+def load_fpds_transactions(chunk):
     """
     Run transaction load for the provided ids. This will create any new rows in other tables to support the transaction
     data, but does NOT update "secondary" award values like total obligations or C -> D linkages. If transactions are
@@ -146,9 +142,6 @@ def _transform_objects(broker_objects):
 
     for broker_object in broker_objects:
         connected_objects = {
-            "recipient_location": _create_load_object(
-                broker_object, recipient_location_nonboolean_columns, None, recipient_location_functions
-            ),
             "place_of_performance_location": _create_load_object(
                 broker_object, place_of_performance_nonboolean_columns, None, place_of_performance_functions
             ),
@@ -205,9 +198,8 @@ def _load_transactions(load_objects):
 
             except Error as e:
                 logger.error(
-                    "load failed for detached_award_procurement_id {}! \nDetails: {}".format(
-                        load_object["transaction_fpds"]["detached_award_procurement_id"], e.pgerror
-                    )
+                    f"load failed for Broker ids {load_object['transaction_fpds']['detached_award_procurement_id']}!"
+                    f"\nDetails: {e.pgerror}"
                 )
                 failed_ids.append(load_object["transaction_fpds"]["detached_award_procurement_id"])
 
