@@ -91,7 +91,7 @@ def _stub___extract_broker_objects(id_list):
 
 
 def test_load_ids_empty():
-    fpds_loader.load_ids([])
+    fpds_loader.load_fpds_transactions([])
 
 
 # These are patched in opposite order from when they're listed in the function params, because that's how the fixture works
@@ -143,10 +143,10 @@ def test_load_ids_dummy_id(
 
     # Test run of the loader
     dummy_broker_ids = [101, 201, 301]
-    fpds_loader.load_ids(dummy_broker_ids)
+    fpds_loader.load_fpds_transactions(dummy_broker_ids)
 
     # Since the mocks will return "data" always when called, if not told to return "None", the branching logic in
-    # load_ids like: "lookup award, if not exists, create ... lookup transaction, if not exists, create", will
+    # load_fpds_transactions like: "lookup award, if not exists, create ... lookup transaction, if not exists, create", will
     # always "find" a *mock* award and transaction.
     # So, assert this baseline run followed that logic. That is:
     # - for each broker transaction extracted,
