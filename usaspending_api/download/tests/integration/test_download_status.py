@@ -66,9 +66,9 @@ def download_test_data(db):
     mommy.make("references.Agency", id=3, toptier_flag=False)
 
     # Create Awards
-    award1 = mommy.make("awards.Award", id=123, category="idv")
-    award2 = mommy.make("awards.Award", id=456, category="contracts")
-    award3 = mommy.make("awards.Award", id=789, category="assistance")
+    award1 = mommy.make("awards.Award", id=123, category="idv", generated_unique_award_id="TEST_AWARD_123")
+    award2 = mommy.make("awards.Award", id=456, category="contracts", generated_unique_award_id="TEST_AWARD_456")
+    award3 = mommy.make("awards.Award", id=789, category="assistance", generated_unique_award_id="TEST_AWARD_789")
 
     # Create Transactions
     trann1 = mommy.make(
@@ -79,6 +79,7 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_123",
     )
     trann2 = mommy.make(
         TransactionNormalized,
@@ -88,6 +89,7 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_456",
     )
     trann3 = mommy.make(
         TransactionNormalized,
@@ -97,14 +99,15 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_789",
     )
 
     # Create TransactionContract
-    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid")
-    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid")
+    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="TEST_AWARD_123")
+    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="TEST_AWARD_456")
 
     # Create TransactionAssistance
-    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain")
+    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="TEST_AWARD_789")
 
     # Set latest_award for each award
     update_awards()
