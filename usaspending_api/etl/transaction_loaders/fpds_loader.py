@@ -64,14 +64,17 @@ def delete_stale_fpds(date):
 
         txn_id_str = ",".join(transaction_normalized_ids)
 
+        cursor.execute(f"select distinct award_id from transaction_normalized where id in ({txn_id_str})")
+        awards_touched = cursor.fetchall()
+
         # Set backreferences from Awards to Transaction Normalized to null. These FKs will be updated later
         cursor.execute(
             "update awards set latest_transaction_id = null, earliest_transaction_id = null "
             "where latest_transaction_id in ({ids}) or earliest_transaction_id in ({ids}) "
             "returning id".format(ids=txn_id_str)
         )
-        awards_touched = cursor.fetchall()
-        logger.info(f"{len(awards_touched)} awards were unlinked from transactions due to pending deletes")
+        deleted_awards = cursor.fetchall()
+        logger.info(f"{len(deleted_awards)} awards were unlinked from transactions due to pending deletes")
 
         cursor.execute(f"delete from transaction_fpds where transaction_id in ({txn_id_str}) returning transaction_id")
         deleted_fpds = set(cursor.fetchall())

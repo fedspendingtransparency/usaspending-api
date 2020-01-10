@@ -53,6 +53,7 @@ class Command(BaseCommand):
             self.update_award_records(awards=stale_awards, skip_cd_linkage=True)
 
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
+            logger.info("Fetching records to update")
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0
             logger.info("{} total records to update".format(total_records))
@@ -100,6 +101,8 @@ class Command(BaseCommand):
             logger.info(f"{update_contract_awards(tuple(unique_awards))} award records updated on FPDS-specific fields")
             if not skip_cd_linkage:
                 update_c_to_d_linkages("contract")
+        else:
+            logger.info("No award records to update")
 
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
