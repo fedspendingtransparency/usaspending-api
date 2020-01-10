@@ -3,7 +3,6 @@ import json
 import os
 import pandas as pd
 import psycopg2
-
 import subprocess
 import tempfile
 
@@ -460,20 +459,10 @@ def create_aliases(client, index, load_type, silent=False):
 
     # ensure the new index is added to the alias used for incremental loads.
     # If the alias is on multiple indexes, the loads will fail!
-    printf(
-        {
-            "msg": "Putting alias '{}' on {}".format(
-                settings.ES_AWARDS_WRITE_ALIAS if load_type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS, index
-            ),
-            "job": None,
-            "f": "ES Alias Put",
-        }
-    )
+    write_alias = settings.ES_AWARDS_WRITE_ALIAS if load_type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS
+    printf({"msg": "Putting alias '{}' on {}".format(write_alias, index), "job": None, "f": "ES Alias Put"})
     put_alias(
-        client,
-        index,
-        settings.ES_AWARDS_WRITE_ALIAS if load_type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS,
-        {},
+        client, index, write_alias, {},
     )
 
 
@@ -802,9 +791,6 @@ def delete_awards_from_es(client, id_list, job_id, config, index=None):
         printf({"msg": 'Deleting {} of "{}"'.format(len(values), column), "f": "ES Delete", "job": job_id})
         values_generator = chunks(values, 1000)
         for v in values_generator:
-            # IMPORTANT: This delete routine looks at just 1 index at a time. If there are duplicate records across
-            # multiple indexes, those duplicates will not be caught by this routine. It is left as is because at the
-            # time of this comment, we are migrating to using a single index.
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
             delete_body = {
