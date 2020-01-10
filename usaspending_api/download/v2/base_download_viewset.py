@@ -1,9 +1,11 @@
 import json
 
 from datetime import datetime, timezone
+from typing import Optional
 
 from django.conf import settings
 from rest_framework.exceptions import NotFound
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -31,7 +33,7 @@ class BaseDownloadViewSet(APIView):
         bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
     )
 
-    def post(self, request, request_type="award", origination=None):
+    def post(self, request: Request, request_type: str = "award", origination: Optional[str] = None):
         if request_type == "award":
             json_request = validate_award_request(request.data)
         elif request_type == "idv":
@@ -72,7 +74,7 @@ class BaseDownloadViewSet(APIView):
 
         return self.get_download_response(file_name=final_output_zip_name)
 
-    def process_request(self, download_job):
+    def process_request(self, download_job: DownloadJob):
         if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
             download_generation.generate_download(download_job=download_job)
@@ -85,7 +87,7 @@ class BaseDownloadViewSet(APIView):
             queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
-    def get_download_response(self, file_name):
+    def get_download_response(self, file_name: str, is_download_status: bool = False):
         """Generate download response which encompasses various elements to provide accurate status for state of a
         download job"""
         download_job = DownloadJob.objects.filter(file_name=file_name).first()
@@ -98,17 +100,36 @@ class BaseDownloadViewSet(APIView):
         else:
             file_path = self.s3_handler.get_simple_url(file_name=file_name)
 
-        # Add additional response elements that should be part of anything calling this function
-        response = {
-            "status": download_job.job_status.name,
-            "url": file_path,
-            "message": download_job.error_message,
-            "file_name": file_name,
-            # converting size from bytes to kilobytes if file_size isn't None
-            "total_size": download_job.file_size / 1000 if download_job.file_size else None,
-            "total_columns": download_job.number_of_columns,
-            "total_rows": download_job.number_of_rows,
-            "seconds_elapsed": download_job.seconds_elapsed(),
-        }
+        base_response = {"file_name": file_name, "file_url": file_path}
+        if is_download_status:
+            response = {
+                "status": download_job.job_status.name,
+                "message": download_job.error_message,
+                **base_response,
+                # converting size from bytes to kilobytes if file_size isn't None
+                "total_size": download_job.file_size / 1000 if download_job.file_size else None,
+                "total_columns": download_job.number_of_columns,
+                "total_rows": download_job.number_of_rows,
+                "seconds_elapsed": download_job.seconds_elapsed(),
+            }
+        else:
+            # Generate the status endpoint for the file
+            if settings.IS_LOCAL:
+                protocol = "http"
+                host = "localhost:8000"
+            elif settings.DOWNLOAD_ENV == "production":
+                protocol = "https"
+                host = "api.usaspending.gov"
+            else:
+                protocol = "https"
+                host = f"{settings.DOWNLOAD_ENV}-api.usaspending.gov"
+
+            status_url = f"{protocol}://{host}/api/v2/download/status?file_name={file_name}"
+
+            response = {
+                "status_url": status_url,
+                **base_response,
+                "download_request": json.loads(download_job.json_request),
+            }
 
         return Response(response)

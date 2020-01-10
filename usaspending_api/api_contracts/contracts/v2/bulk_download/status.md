@@ -33,5 +33,5 @@ This route gets the current status of a download job.
             Is the number of rows in the CSV, or `null` if not finished.
         + `total_size` (required, number, nullable)
             Is the estimated file size of the CSV in kilobytes, or `null` if not finished.
-        + `url` (required, string)
+        + `file_url` (required, string)
             The URL for the file.
