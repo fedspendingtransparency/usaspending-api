@@ -24,9 +24,6 @@ def download_test_data(db):
     # Create Locations
     mommy.make("references.Location")
 
-    # Create LE
-    mommy.make("references.LegalEntity")
-
     # Create Awarding Top Agency
     ata1 = mommy.make(
         "references.ToptierAgency",
@@ -68,15 +65,10 @@ def download_test_data(db):
     # Create Funding Agency
     mommy.make("references.Agency", id=3, toptier_flag=False)
 
-    # Create Legal Entity
-    le1 = mommy.make("references.LegalEntity", legal_entity_id=1001)
-    le2 = mommy.make("references.LegalEntity", legal_entity_id=1002)
-    le3 = mommy.make("references.LegalEntity", legal_entity_id=1003)
-
     # Create Awards
-    award1 = mommy.make("awards.Award", id=123, recipient=le1, category="idv")
-    award2 = mommy.make("awards.Award", id=456, recipient=le2, category="contracts")
-    award3 = mommy.make("awards.Award", id=789, recipient=le3, category="assistance")
+    award1 = mommy.make("awards.Award", id=123, category="idv")
+    award2 = mommy.make("awards.Award", id=456, category="contracts")
+    award3 = mommy.make("awards.Award", id=789, category="assistance")
 
     # Create Transactions
     trann1 = mommy.make(
@@ -87,7 +79,6 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa1,
-        recipient=le1,
     )
     trann2 = mommy.make(
         TransactionNormalized,
@@ -97,7 +88,6 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
-        recipient=le2,
     )
     trann3 = mommy.make(
         TransactionNormalized,
@@ -107,7 +97,6 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
-        recipient=le3,
     )
 
     # Create TransactionContract

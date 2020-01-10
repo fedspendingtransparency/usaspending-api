@@ -2,7 +2,7 @@ from model_mommy import mommy
 from copy import deepcopy
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
+from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency
 
 
 def set_up_related_award_objects():
@@ -32,19 +32,10 @@ def set_up_related_award_objects():
     mommy.make("references.SubtierAgency", **subag)
     mommy.make("references.ToptierAgency", **subag)
 
-    le = {
-        "pk": 1,
-        "recipient_name": "John's Pizza",
-        "recipient_unique_id": 456,
-        "parent_recipient_unique_id": 123,
-        "location": Location.objects.get(pk=1),
-    }
-
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
 
     mommy.make("awards.TransactionNormalized", **trans_cont)
     mommy.make("references.Agency", **ag)
-    mommy.make("references.LegalEntity", **le)
     cont_data = {
         "pk": 1,
         "transaction": TransactionNormalized.objects.get(pk=1),
@@ -98,7 +89,6 @@ def create_tree(awards):
         "description": "lorem ipsum",
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
         "place_of_performance": Location.objects.get(pk=1),
