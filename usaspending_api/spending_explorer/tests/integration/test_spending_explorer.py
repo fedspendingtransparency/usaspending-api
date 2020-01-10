@@ -46,6 +46,7 @@ GLOBAL_MOCK_DICT = [
         "account_title": "Tommy Two-Tone",
         "agency_identifier": "867",
         "main_account_code": "5309",
+        "federal_account_code": "867-5309",
     },
     {
         "model": TreasuryAppropriationAccount,
