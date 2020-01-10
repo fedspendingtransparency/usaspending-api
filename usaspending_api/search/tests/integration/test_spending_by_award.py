@@ -114,8 +114,7 @@ def test_spending_by_award_legacy_filters(client, refresh_matviews):
 @pytest.mark.django_db
 def test_no_intersection(client):
 
-    mommy.make("references.LegalEntity", legal_entity_id=1)
-    mommy.make("awards.Award", id=1, type="A", recipient_id=1, latest_transaction_id=1)
+    mommy.make("awards.Award", id=1, type="A", latest_transaction_id=1)
     mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
     mommy.make("awards.TransactionFPDS", transaction_id=1)
 
@@ -177,7 +176,6 @@ def awards_over_different_date_ranges():
             guai = "AWARD_{}".format(award_id)
             award_type_list = all_award_types_mappings[award_category]
             award_type = award_type_list[award_id % len(award_type_list)]
-            recipient = mommy.make("references.LegalEntity", legal_entity_id=2000 + award_id)
             award = mommy.make(
                 "awards.Award",
                 id=award_id,
@@ -186,7 +184,6 @@ def awards_over_different_date_ranges():
                 category=award_category,
                 latest_transaction_id=1000 + award_id,
                 date_signed=date_range["date_signed"],
-                recipient=recipient,
                 piid="abcdefg{}".format(award_id),
                 fain="xyz{}".format(award_id),
                 uri="abcxyx{}".format(award_id),
