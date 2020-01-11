@@ -303,6 +303,7 @@ LOGGING = {
         # ======== Module-specific loggers ========
         "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
         "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "ddtrace": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
     },
 }
 
