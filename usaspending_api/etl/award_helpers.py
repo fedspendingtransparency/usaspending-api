@@ -302,13 +302,12 @@ subaward_award_update_sql_string = """
 
 def execute_database_statement(sql: str, values: Optional[list] = None) -> int:
     """Execute the SQL and return the UPDATE count"""
-
     with connection.cursor() as cursor:
         if values:
             cursor.execute(sql, values)
         else:
             cursor.execute(sql)
-        # print(f"\n\n{cursor.query.decode()}\n\n")
+
         rowcount = cursor.rowcount
 
     return rowcount
