@@ -97,12 +97,12 @@ class FPDSLoaderIntegrationTestCase(TestCase):
         assert new_award.earliest_transaction.transaction_unique_id == "101"
 
         # Given action_date additions, the 3rd one should push into 2011
-        transactions_by_id = {}
-        for transaction in usaspending_transactions:
-            transactions_by_id[transaction.transaction_unique_id] = transaction
-        assert transactions_by_id["101"] == 2010
-        assert transactions_by_id["201"] == 2010
-        assert transactions_by_id["301"] == 2011
+        transactions_by_id = {
+            transaction.transaction_unique_id: transaction for transaction in usaspending_transactions
+        }
+        assert transactions_by_id["101"].fiscal_year == 2010
+        assert transactions_by_id["201"].fiscal_year == 2010
+        assert transactions_by_id["301"].fiscal_year == 2011
 
 
 def _assemble_dummy_broker_data():
