@@ -25,7 +25,6 @@ def mock_tas_data(db):
         "references.SubtierAgency", subtier_agency_id=22, name="Department of Sub-Pizza", abbreviation="DOSP"
     )
     mommy.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2)
-    mommy.make("references.LegalEntity", legal_entity_id=1)
     mommy.make(
         TreasuryAppropriationAccount,
         treasury_account_identifier=1,
@@ -89,17 +88,10 @@ def mock_tas_data(db):
     )
 
     mommy.make(
-        "awards.Award",
-        id=1,
-        is_fpds=True,
-        latest_transaction_id=1,
-        piid="piid",
-        recipient_id=1,
-        type="A",
-        awarding_agency_id=1,
+        "awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piid", type="A", awarding_agency_id=1,
     )
-    mommy.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=1, piid="piid2", recipient_id=1, type="B")
-    mommy.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", recipient_id=1, type="C")
+    mommy.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=1, piid="piid2", type="B")
+    mommy.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", type="C")
 
     mommy.make(
         "awards.Subaward",
