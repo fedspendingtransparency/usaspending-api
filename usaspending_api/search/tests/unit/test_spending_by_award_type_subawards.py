@@ -1,7 +1,6 @@
 import json
 import pytest
 
-from django.db import connection
 from model_mommy import mommy
 from rest_framework import status
 
@@ -121,9 +120,6 @@ def test_spending_by_award_subawards(client):
         recipient_level="C",
         recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948",
     )
-
-    with connection.cursor() as cursor:
-        cursor.execute("refresh materialized view concurrently subaward_view")
 
     resp = client.post(
         "/api/v2/search/spending_by_award",

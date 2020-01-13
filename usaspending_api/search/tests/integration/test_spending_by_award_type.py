@@ -1,7 +1,6 @@
 import json
 import pytest
 
-from django.db import connection
 from model_mommy import mommy
 from rest_framework import status
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
@@ -62,9 +61,6 @@ def test_data():
         place_of_perform_country_n="GIBRALTAR",
         place_of_performance_zip5="00004",
     )
-
-    with connection.cursor() as cursor:
-        cursor.execute("refresh materialized view concurrently mv_contract_award_search")
 
 
 @pytest.mark.django_db

@@ -2,7 +2,6 @@ import json
 import pytest
 from datetime import datetime
 
-from django.db import connection
 from model_mommy import mommy
 from rest_framework import status
 
@@ -116,9 +115,6 @@ def test_no_intersection(client):
     mommy.make("awards.Award", id=1, type="A", latest_transaction_id=1)
     mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
     mommy.make("awards.TransactionFPDS", transaction_id=1)
-
-    with connection.cursor() as cursor:
-        cursor.execute("refresh materialized view concurrently mv_contract_award_search")
 
     request = {
         "subawards": False,

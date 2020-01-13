@@ -38,6 +38,6 @@ def test_matview_sql_generator(convert_traditional_views_to_materialized_views):
     """
 
     # Run through all of the materialized views and perform a simple count query.
-    for _, settings in MATERIALIZED_VIEWS.items():
+    for matview in MATERIALIZED_VIEWS.values():
         # This will fail if the materialized view doesn't exist for whatever reason which is what we want.
-        settings["model"].objects.count()
+        matview["model"].objects.count()
