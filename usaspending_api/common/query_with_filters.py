@@ -53,7 +53,7 @@ class _Keywords(_Filter):
             "description",
         ]
         for v in filter_values:
-            keyword_queries.append(ES_Q("query_string", query=v, default_operator="AND", fields=fields))
+            keyword_queries.append(ES_Q("query_string", query=v + "*", default_operator="AND", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
 
@@ -132,7 +132,7 @@ class _RecipientSearchText(_Filter):
         fields = ["recipient_name"]
 
         for v in filter_values:
-            upper_recipient_string = v.upper()
+            upper_recipient_string = v.upper() + "*"
             recipient_name_query = ES_Q(
                 "query_string", query=upper_recipient_string, default_operator="AND", fields=fields
             )

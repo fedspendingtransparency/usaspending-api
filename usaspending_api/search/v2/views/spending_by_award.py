@@ -121,8 +121,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "upper_bound": json_request["page"] * json_request["limit"] + 1,
         }
         self.elasticsearch = is_experimental_elasticsearch_api(request)
-        self.last_id = json_request.get("last_id")
-        self.last_value = json_request.get("last_value")
 
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
             return Response(self.populate_response(results=[], has_next=False))
@@ -130,6 +128,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
 
         if self.elasticsearch and not self.is_subaward:
+            self.last_id = json_request.get("last_id")
+            self.last_value = json_request.get("last_value")
             logger.info("Using experimental Elasticsearch functionality for 'spending_by_award'")
             results = self.query_elasticsearch()
             return Response(self.construct_es_reponse(results))
@@ -249,6 +249,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
                 sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
 
+        if self.last_id:
+            sort_by_fields.append({"generated_unique_award_id.keyword": "desc"})
+
         return sort_by_fields
 
     def get_database_fields(self):
@@ -281,24 +284,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "messages": [get_time_period_message()],
         }
 
-    def populate_elastic_response(
-        self, results: list, has_next: bool, last_id: str = None, last_value: str = None
-    ) -> dict:
-        return {
-            "limit": self.pagination["limit"],
-            "results": results,
-            "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
-            "last_id": last_id,
-            "last_value": last_value,
-            "messages": [get_time_period_message()],
-        }
-
     def query_elasticsearch(self) -> list:
         filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters, query_type="awards")
         sort_field = self.get_elastic_sort_by_fields()
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
-        if self.last_id:
-            sorts.append({"generated_unique_award_id.keyword": "desc"})
         search = (
             (
                 Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
@@ -359,13 +348,18 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 if set(self.filters["award_type_codes"]) <= set(loan_type_mapping)
                 else response[len(response) - 1].to_dict().get("total_obligation"),
             )
-        return self.populate_elastic_response(
-            results=results,
-            has_next=response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
-            > self.pagination["limit"],
-            last_id=last_id,
-            last_value=last_value,
-        )
+        return {
+            "limit": self.pagination["limit"],
+            "results": results,
+            "page_metadata": {
+                "page": self.pagination["page"],
+                "hasNext": response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
+                > self.pagination["limit"],
+            },
+            "last_id": last_id,
+            "last_value": last_value,
+            "messages": [get_time_period_message()],
+        }
 
     def append_recipient_hash_level(self, result) -> dict:
 
