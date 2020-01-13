@@ -382,7 +382,7 @@ def _test_correct_response_for_keywords(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "keywords": ["test", "recipient_name_", "recipient_name_1"],
+                    "keywords": ["test", "recipient_name_1"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
@@ -393,15 +393,15 @@ def _test_correct_response_for_keywords(client):
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
         {"aggregated_amount": 24030.0, "time_period": {"fiscal_year": "2010"}},
-        {"aggregated_amount": 8001.0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 16012.0, "time_period": {"fiscal_year": "2011"}},
         {"aggregated_amount": 24036.0, "time_period": {"fiscal_year": "2012"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 8013.0, "time_period": {"fiscal_year": "2013"}},
         {"aggregated_amount": 24042.0, "time_period": {"fiscal_year": "2014"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 8015.0, "time_period": {"fiscal_year": "2015"}},
         {"aggregated_amount": 24048.0, "time_period": {"fiscal_year": "2016"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 8017, "time_period": {"fiscal_year": "2017"}},
         {"aggregated_amount": 24054.0, "time_period": {"fiscal_year": "2018"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 8019, "time_period": {"fiscal_year": "2019"}},
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -657,7 +657,7 @@ def _test_correct_response_for_recipient_search_text(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "recipient_search_text": ["recipient_name_", "recipient_name_10", "recipient_name_14", "000000020"],
+                    "recipient_search_text": ["recipient_name_10", "recipient_name_14", "000000020"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }

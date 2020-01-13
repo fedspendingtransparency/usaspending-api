@@ -132,9 +132,9 @@ class _RecipientSearchText(_Filter):
         fields = ["recipient_name"]
 
         for v in filter_values:
-            upper_recipient_string = v.upper() + "*"
+            upper_recipient_string = v.upper()
             recipient_name_query = ES_Q(
-                "query_string", query=upper_recipient_string, default_operator="AND", fields=fields
+                "query_string", query=upper_recipient_string + "*", default_operator="AND", fields=fields
             )
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
