@@ -97,7 +97,7 @@ class FPDSLoaderIntegrationTestCase(TestCase):
 
         # Given action_date additions, the 3rd one should push into 2011
         transactions_by_id = {
-            transaction.detached_award_procurement_id: transaction for transaction in usaspending_transactions
+            transaction.detached_award_procurement_id: transaction.transaction for transaction in usaspending_transactions
         }
         assert transactions_by_id[101].fiscal_year == 2010
         assert transactions_by_id[201].fiscal_year == 2010
