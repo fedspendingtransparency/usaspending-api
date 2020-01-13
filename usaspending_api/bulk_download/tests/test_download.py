@@ -69,9 +69,15 @@ def award_data(db):
     award3 = mommy.make("awards.Award", category="assistance", generated_unique_award_id="TEST_AWARD_3")
 
     # Create Transactions
-    trann1 = mommy.make(TransactionNormalized, award=award1, modification_number=1, awarding_agency=aa1, unique_award_key="TEST_AWARD_1")
-    trann2 = mommy.make(TransactionNormalized, award=award2, modification_number=1, awarding_agency=aa2, unique_award_key="TEST_AWARD_2")
-    trann3 = mommy.make(TransactionNormalized, award=award3, modification_number=1, awarding_agency=aa2, unique_award_key="TEST_AWARD_3")
+    trann1 = mommy.make(
+        TransactionNormalized, award=award1, modification_number=1, awarding_agency=aa1, unique_award_key="TEST_AWARD_1"
+    )
+    trann2 = mommy.make(
+        TransactionNormalized, award=award2, modification_number=1, awarding_agency=aa2, unique_award_key="TEST_AWARD_2"
+    )
+    trann3 = mommy.make(
+        TransactionNormalized, award=award3, modification_number=1, awarding_agency=aa2, unique_award_key="TEST_AWARD_3"
+    )
 
     # Create TransactionContract
     mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="TEST_AWARD_1")
