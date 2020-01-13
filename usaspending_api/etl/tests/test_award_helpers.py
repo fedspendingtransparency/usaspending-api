@@ -3,7 +3,7 @@ import pytest
 
 from model_mommy import mommy
 
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_assistance_awards
+from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, update_assistance_awards
 
 
 @pytest.mark.django_db
@@ -215,7 +215,7 @@ def test_award_update_from_contract_transaction():
         unique_award_key="EXAMPLE_AWARD_1",
     )
 
-    update_contract_awards()
+    update_procurement_awards()
     award.refresh_from_db()
 
     assert award.base_and_all_options_value == 2001
@@ -233,7 +233,7 @@ def test_award_update_contract_txn_with_list():
         "awards.TransactionFPDS", transaction=txn, base_and_all_options_value=1000, base_exercised_options_val=100
     )
     # single award is updated
-    count = update_contract_awards((awards[0].id,))
+    count = update_procurement_awards((awards[0].id,))
     awards[0].refresh_from_db()
     assert count == 1
     assert awards[0].base_and_all_options_value == 1000
@@ -260,7 +260,7 @@ def test_award_update_contract_txn_with_list():
         unique_award_key=awards[2].generated_unique_award_id,
     )
     # multiple awards updated
-    count = update_contract_awards((awards[1].id, awards[2].id))
+    count = update_procurement_awards((awards[1].id, awards[2].id))
     awards[1].refresh_from_db()
     awards[2].refresh_from_db()
     assert count == 2
@@ -312,7 +312,7 @@ def test_award_update_contract_executive_comp():
         unique_award_key="AWARD_CONT_IDV",
     )
 
-    update_contract_awards()
+    update_procurement_awards()
     award.refresh_from_db()
 
     assert award.officer_1_name == "Jack Mustard"
@@ -325,7 +325,7 @@ def test_award_update_contract_executive_comp():
     )
     mommy.make("awards.TransactionFPDS", transaction=txn3, unique_award_key="AWARD_CONT_IDV")
 
-    update_contract_awards()
+    update_procurement_awards()
     award.refresh_from_db()
 
     assert award.officer_1_name == "Jack Mustard"

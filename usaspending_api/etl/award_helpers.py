@@ -19,6 +19,8 @@ txn_latest AS (
   SELECT DISTINCT ON (tn.unique_award_key)
     tn.unique_award_key,
     tn.id,
+    tn.type,
+    tn.type_description,
     tn.awarding_agency_id,
     tn.action_date,
     tn.funding_agency_id,
@@ -61,6 +63,8 @@ SET
   period_of_performance_start_date        = e.period_of_performance_start_date,
 
   latest_transaction_id                   = l.id,
+  type                                    = l.type,
+  type_description                        = l.type_description,
   awarding_agency_id                      = l.awarding_agency_id,
   category                                = l.category,
   certified_date                          = l.action_date,
@@ -87,6 +91,8 @@ WHERE
     OR a.description                             IS DISTINCT FROM e.description
     OR a.period_of_performance_start_date        IS DISTINCT FROM e.period_of_performance_start_date
     OR a.latest_transaction_id                   IS DISTINCT FROM l.id
+    OR a.type                                    IS DISTINCT FROM l.type
+    OR a.type_description                        IS DISTINCT FROM l.type_description
     OR a.awarding_agency_id                      IS DISTINCT FROM l.awarding_agency_id
     OR a.category                                IS DISTINCT FROM l.category
     OR a.certified_date                          IS DISTINCT FROM l.action_date
@@ -117,22 +123,6 @@ fpds_totals AS (
 txn_latest AS (
   SELECT DISTINCT ON (tn.unique_award_key)
     tn.unique_award_key,
-    CASE
-      WHEN tf.pulled_from IS DISTINCT FROM 'IDV' THEN tf.contract_award_type
-      WHEN tf.idv_type = 'B' AND tf.type_of_idc IS NOT NULL THEN CONCAT('IDV_B_', tf.type_of_idc::text)
-      WHEN tf.idv_type = 'B' AND tf.type_of_idc IS NULL AND
-        tf.type_of_idc_description = 'INDEFINITE DELIVERY / REQUIREMENTS' THEN 'IDV_B_A'
-      WHEN tf.idv_type = 'B' AND tf.type_of_idc IS NULL AND
-        tf.type_of_idc_description = 'INDEFINITE DELIVERY / INDEFINITE QUANTITY' THEN 'IDV_B_B'
-      WHEN tf.idv_type = 'B' AND tf.type_of_idc IS NULL AND
-        tf.type_of_idc_description = 'INDEFINITE DELIVERY / DEFINITE QUANTITY' THEN 'IDV_B_C'
-      ELSE CONCAT('IDV_', tf.idv_type::text) END AS type,
-    CASE WHEN tf.pulled_from IS DISTINCT FROM 'IDV' THEN tf.contract_award_type_desc
-      WHEN tf.idv_type = 'B' AND
-        (tf.type_of_idc_description IS DISTINCT FROM NULL AND tf.type_of_idc_description <> 'NAN')
-        THEN tf.type_of_idc_description
-      WHEN tf.idv_type = 'B' THEN 'INDEFINITE DELIVERY CONTRACT'
-      ELSE tf.idv_type_description END AS type_description,
     tf.agency_id,
     tf.referenced_idv_agency_iden
   FROM transaction_normalized AS tn
@@ -167,8 +157,6 @@ SET
   base_and_all_options_value  = t.total_base_and_options_value,
   base_exercised_options_val  = t.base_exercised_options_val,
 
-  type                        = l.type,
-  type_description            = l.type_description,
   fpds_agency_id              = l.agency_id,
   fpds_parent_agency_id       = l.referenced_idv_agency_iden,
 
@@ -190,8 +178,6 @@ WHERE
   AND (
         a.base_and_all_options_value IS DISTINCT FROM t.total_base_and_options_value
      OR a.base_exercised_options_val IS DISTINCT FROM t.base_exercised_options_val
-     OR a.type                       IS DISTINCT FROM l.type
-     OR a.type_description           IS DISTINCT FROM l.type_description
      OR a.fpds_agency_id             IS DISTINCT FROM l.agency_id
      OR a.fpds_parent_agency_id      IS DISTINCT FROM l.referenced_idv_agency_iden
      OR a.officer_1_amount           IS DISTINCT FROM ec.officer_1_amount
@@ -209,15 +195,6 @@ WHERE
 
 fabs_award_update_sql_string = """
 WITH
-  txn_latest AS (
-  SELECT DISTINCT ON (tn.unique_award_key)
-    tn.unique_award_key,
-    tn.type,
-    tn.type_description
-  FROM transaction_normalized tn
-  {predicate}
-  ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
-),
   executive_comp AS (
     WITH sub_cte_all_transactions AS (
       SELECT
@@ -242,8 +219,6 @@ WITH
 UPDATE awards a
 SET
   update_date       = now(),
-  type              = l.type,
-  type_description  = l.type_description,
   officer_1_amount  = ec.officer_1_amount,
   officer_1_name    = ec.officer_1_name,
   officer_2_amount  = ec.officer_2_amount,
@@ -254,14 +229,11 @@ SET
   officer_4_name    = ec.officer_4_name,
   officer_5_amount  = ec.officer_5_amount,
   officer_5_name    = ec.officer_5_name
-FROM txn_latest l
-LEFT OUTER JOIN executive_comp AS ec ON l.unique_award_key = ec.unique_award_key
+FROM executive_comp AS ec
 WHERE
-  l.unique_award_key = a.generated_unique_award_id
+  ec.unique_award_key = a.generated_unique_award_id
   AND (
-       a.type             IS DISTINCT FROM l.type
-    OR a.type_description IS DISTINCT FROM l.type_description
-    OR a.officer_1_amount IS DISTINCT FROM ec.officer_1_amount
+       a.officer_1_amount IS DISTINCT FROM ec.officer_1_amount
     OR a.officer_1_name   IS DISTINCT FROM ec.officer_1_name
     OR a.officer_2_amount IS DISTINCT FROM ec.officer_2_amount
     OR a.officer_2_name   IS DISTINCT FROM ec.officer_2_name
@@ -381,7 +353,7 @@ def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
     return execute_database_statement(fabs_award_update_sql_string.format(predicate=predicate), values)
 
 
-def update_contract_awards(award_tuple: Optional[tuple] = None) -> int:
+def update_procurement_awards(award_tuple: Optional[tuple] = None) -> int:
     """Update procurement-specific award data based on the info in child transactions."""
     if award_tuple:
         award_unique_keys = convert_award_id_to_guai(award_tuple)
