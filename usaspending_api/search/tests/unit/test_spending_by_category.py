@@ -1,7 +1,6 @@
 import pytest
 
 from decimal import Decimal
-from django.db import connection
 from django_mock_queries.query import MockModel, MockSet
 from model_mommy import mommy
 
@@ -372,9 +371,6 @@ def test_category_recipient_duns_subawards():
         recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a940",
         recipient_name="MULTIPLE RECIPIENTS",
     )
-
-    with connection.cursor() as cursor:
-        cursor.execute("refresh materialized view concurrently subaward_view")
 
     test_payload = {"category": "recipient_duns", "subawards": True, "page": 1, "limit": 50}
 

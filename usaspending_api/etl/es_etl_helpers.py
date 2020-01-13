@@ -320,7 +320,7 @@ def db_rows_to_dict(cursor):
 
 
 def download_db_records(fetch_jobs, done_jobs, config):
-    # There has been a reoccuring issue with .empty() returning true when the queue actually
+    # There has been a recurring issue with .empty() returning true when the queue actually
     # contains multiple jobs. Wait a few seconds before starting to see if it helps
     sleep(5)
     printf({"msg": "Queue has items: {}".format(not fetch_jobs.empty()), "f": "Download"})

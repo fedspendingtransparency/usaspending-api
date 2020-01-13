@@ -7,7 +7,7 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 
 
 @pytest.mark.django_db
-def test_spending_by_category_success(client, refresh_matviews):
+def test_spending_by_category_success(client):
 
     # test for required functions
     resp = client.post(
@@ -27,7 +27,7 @@ def test_spending_by_category_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_naics_autocomplete_failure(client, refresh_matviews):
+def test_naics_autocomplete_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post("/api/v2/search/spending_by_category/", content_type="application/json", data=json.dumps({}))
