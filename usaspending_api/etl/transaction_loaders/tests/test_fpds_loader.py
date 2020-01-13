@@ -10,8 +10,6 @@ from usaspending_api.etl.transaction_loaders.fpds_loader import (
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
-    recipient_location_nonboolean_columns,
-    recipient_location_functions,
     place_of_performance_nonboolean_columns,
     place_of_performance_functions,
     transaction_fpds_boolean_columns,
@@ -69,7 +67,6 @@ def _assemble_dummy_broker_data():
     return {
         **transaction_fpds_nonboolean_columns,
         **transaction_normalized_nonboolean_columns,
-        **recipient_location_nonboolean_columns,
         **place_of_performance_nonboolean_columns,
         **{key: str(random.choice([True, False])) for key in transaction_fpds_boolean_columns},
     }
@@ -91,7 +88,7 @@ def _stub___extract_broker_objects(id_list):
 
 
 def test_load_ids_empty():
-    fpds_loader.load_ids([])
+    fpds_loader.load_fpds_transactions([])
 
 
 # These are patched in opposite order from when they're listed in the function params, because that's how the fixture works
@@ -143,10 +140,10 @@ def test_load_ids_dummy_id(
 
     # Test run of the loader
     dummy_broker_ids = [101, 201, 301]
-    fpds_loader.load_ids(dummy_broker_ids)
+    fpds_loader.load_fpds_transactions(dummy_broker_ids)
 
     # Since the mocks will return "data" always when called, if not told to return "None", the branching logic in
-    # load_ids like: "lookup award, if not exists, create ... lookup transaction, if not exists, create", will
+    # load_fpds_transactions like: "lookup award, if not exists, create ... lookup transaction, if not exists, create", will
     # always "find" a *mock* award and transaction.
     # So, assert this baseline run followed that logic. That is:
     # - for each broker transaction extracted,
@@ -215,20 +212,20 @@ def test_create_load_object(monkeypatch):
     custom_bools = {"is_awesome": "awesome", "is_not_awesome": "nawesome", "reasons_to_not_be_awesome": "noawersn"}
 
     data = {
-        "legal_entity_country_code": "countrycode",
-        "legal_entity_country_name": "countryname",
-        "legal_entity_state_code": "statecode",
-        "legal_entity_state_descrip": "statedescription",
-        "legal_entity_county_code": "countycode",
-        "legal_entity_county_name": "countyname",
-        "legal_entity_congressional": "congressionalcode",
-        "legal_entity_city_name": "cityname",
-        "legal_entity_address_line1": "addressline1",
-        "legal_entity_address_line2": "addressline2",
-        "legal_entity_address_line3": "addressline3",
-        "legal_entity_zip4": "zipfour",
-        "legal_entity_zip5": "zipfive",
-        "legal_entity_zip_last4": "zip last 4",
+        "place_of_perform_country_c": "countrycode",
+        "place_of_perf_country_desc": "countryname",
+        "place_of_performance_state": "statecode",
+        "place_of_perfor_state_desc": "statedescription",
+        "place_of_perform_county_co": "countycode",
+        "place_of_perform_county_na": "countyname",
+        "place_of_performance_congr": "congressionalcode",
+        "place_of_perform_city_name": "cityname",
+        "address_line1": "addressline1",
+        "address_line2": "addressline2",
+        "address_line3": "addressline3",
+        "place_of_performance_zip4a": "zipfour",
+        "place_of_performance_zip5": "zipfive",
+        "place_of_perform_zip_last4": "zip last 4",
         "detached_award_proc_unique": 5,
         "is_awesome": "true",
         "is_not_awesome": "false",
@@ -243,16 +240,16 @@ def test_create_load_object(monkeypatch):
         "county_name": "COUNTYNAME",
         "congressional_code": "CONGRESSIONALCODE",
         "city_name": "CITYNAME",
-        "address_line1": "ADDRESSLINE1",
-        "address_line2": "ADDRESSLINE2",
-        "address_line3": "ADDRESSLINE3",
-        "zip4": "ZIPFOUR",
+        "address_line1": None,
+        "address_line2": None,
+        "address_line3": None,
         "zip5": "ZIPFIVE",
+        "zip_4a": "ZIPFOUR",
         "zip_last4": "ZIP LAST 4",
         "is_fpds": True,
         "data_source": "DBR",
-        "place_of_performance_flag": False,
-        "recipient_flag": True,
+        "place_of_performance_flag": True,
+        "recipient_flag": False,
         "transaction_unique_id": 5,
         "awesome": "true",
         "nawesome": "false",
@@ -261,7 +258,7 @@ def test_create_load_object(monkeypatch):
     mock_cursor(monkeypatch, data)
 
     actual_result = _create_load_object(
-        data, recipient_location_nonboolean_columns, custom_bools, recipient_location_functions
+        data, place_of_performance_nonboolean_columns, custom_bools, place_of_performance_functions
     )
     actual_result.pop("create_date", None)
     actual_result.pop("update_date", None)
@@ -284,8 +281,6 @@ def test_load_transactions(mock__fetch_subtier_agency_id, mock_connection):
     mega_key_list = {}
     mega_key_list.update(transaction_fpds_nonboolean_columns)
     mega_key_list.update(transaction_normalized_nonboolean_columns)
-    mega_key_list.update(recipient_location_nonboolean_columns)
-    mega_key_list.update(recipient_location_functions)
     mega_key_list.update(place_of_performance_nonboolean_columns)
     mega_key_list.update(place_of_performance_functions)
 

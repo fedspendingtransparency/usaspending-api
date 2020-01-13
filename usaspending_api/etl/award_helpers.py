@@ -128,8 +128,7 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
     )
 
     sql_update = _sql_update.format(earliest_transaction_cte, latest_transaction_cte, aggregate_transaction_cte)
-    # We don't need to worry about this double counting awards, because if it's deleted in the first step it can't be updated!
-    return prune_empty_awards(award_tuple) + execute_database_statement(sql_update, values)
+    return execute_database_statement(sql_update, values)
 
 
 def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
