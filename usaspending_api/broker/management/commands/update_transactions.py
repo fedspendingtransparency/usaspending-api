@@ -12,13 +12,13 @@ from usaspending_api.awards.models import Award
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency, Location
 from usaspending_api.etl.management.load_base import get_or_create_location, format_date, load_data_into_model
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_assistance_awards
+from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, update_assistance_awards
 
 
 logger = logging.getLogger("console")
 exception_logger = logging.getLogger("exceptions")
 
-# Lists to store for update_awards and update_contract_awards
+# Lists to store for update_awards and update_procurement_awards
 award_update_id_list = []
 award_contract_update_id_list = []
 award_assistance_update_id_list = []
@@ -473,7 +473,7 @@ class Command(BaseCommand):
             update_assistance_awards(tuple(award_assistance_update_id_list))
 
         with timer("updating contract-specific awards to reflect their latest transaction info", logger.info):
-            update_contract_awards(tuple(award_contract_update_id_list))
+            update_procurement_awards(tuple(award_contract_update_id_list))
 
         # Done!
         logger.info("FINISHED")
