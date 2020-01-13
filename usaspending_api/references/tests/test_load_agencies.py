@@ -229,12 +229,12 @@ def test_update_transactions_awards_subawards(disable_vacuuming):
     """ Test all three together since they're so tightly intertwined. """
 
     # Create some test data.
-    a = mommy.make("awards.Award")
-    tn = mommy.make("awards.TransactionNormalized", award=a)
+    a = mommy.make("awards.Award", generated_unique_award_id="AWARD_1")
+    tn = mommy.make("awards.TransactionNormalized", award=a, unique_award_key="AWARD_1")
     a.latest_transaction = tn
     a.save()
-    mommy.make("awards.TransactionFPDS", transaction=tn, funding_sub_tier_agency_co="0901")
-    mommy.make("awards.Subaward", award=a)
+    mommy.make("awards.TransactionFPDS", transaction=tn, funding_sub_tier_agency_co="0901", unique_award_key="AWARD_1")
+    mommy.make("awards.Subaward", award=a, unique_award_key="AWARD_1")
 
     # Load all the things.
     call_command("load_agencies", AGENCY_FILE)
