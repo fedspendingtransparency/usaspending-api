@@ -398,47 +398,29 @@ def apply_annotations_to_sql(raw_query, aliases):
     want to use the efficiency of psql's COPY method and keep the column names, we need to allow these scenarios. This
     function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
-    aliases_copy = list(aliases)
 
-    # Extract everything between the first SELECT and the last FROM
-    query_before_group_by = raw_query.split("GROUP BY ")[0]
-    query_before_from = re.sub("SELECT ", "", " FROM".join(re.split(" FROM", query_before_group_by)[:-1]), count=1)
+    select_statements = _select_columns(raw_query)
 
+    DIRECT_SELECT_QUERY_REGEX = r'^[^ ]*\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
     # Create a list from the non-derived values between SELECT and FROM
-    selects_str = re.findall(
-        r"SELECT (.*?) (CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|FROM)", raw_query
-    )[0]
-    just_selects = selects_str[0] if selects_str[1] == "FROM" else selects_str[0][:-1]
-    selects_list = [select.strip() for select in just_selects.strip().split(",")]
+    selects_list = [str for str in select_statements if re.search(DIRECT_SELECT_QUERY_REGEX, str)]
 
     # Create a list from the derived values between SELECT and FROM
-    remove_selects = query_before_from.replace(selects_str[0], "")
-    deriv_str_lookup = re.findall(
-        r"(CASE|CONCAT|SUM|COALESCE|STRING_AGG|MAX|EXTRACT|\(SELECT|)(.*?) AS (.*?)( |$)", remove_selects
-    )
+    aliased_list = [str for str in select_statements if not re.search(DIRECT_SELECT_QUERY_REGEX, str.strip())]
     deriv_dict = {}
-    for str_match in deriv_str_lookup:
-        # Remove trailing comma and surrounding quotes from the alias, add to dict, remove from alias list
-        alias = str_match[2][:-1].strip() if str_match[2][-1:] == "," else str_match[2].strip()
-        if (alias[-1:] == '"' and alias[:1] == '"') or (alias[-1:] == "'" and alias[:1] == "'"):
-            alias = alias[1:-1]
-        deriv_dict[alias] = "{}{}".format(str_match[0], str_match[1]).strip()
-        # Provides some safety if a field isn't provided in this historical_lookup
-        if alias in aliases_copy:
-            aliases_copy.remove(alias)
-
-    # Validate we have an alias for each value in the SELECT string
-    if len(selects_list) != len(aliases_copy):
-        raise Exception(
-            f"Length of aliases ({len(aliases_copy)}) doesn't match the columns in selects ({len(selects_list)})"
-        )
+    for str in aliased_list:
+        split_string = _top_level_split(str, " AS ")
+        alias = split_string[1].replace('"', "").replace(",", "").strip()
+        if alias not in aliases:
+            raise Exception(f'alias "{alias}" not found!')
+        deriv_dict[alias] = split_string[0]
 
     # Match aliases with their values
     values_list = [
         f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
     ]
 
-    sql = raw_query.replace(query_before_from, ", ".join(values_list), 1)
+    sql = raw_query.replace(_top_level_split(raw_query, "FROM")[0], "SELECT " + ", ".join(values_list), 1)
 
     # Now that we've converted the queryset to SQL, cleaned up aliasing for non-annotated fields, and sorted
     # the SELECT columns, there's one final step.  The Django ORM does now allow alias names to conflict with
@@ -448,6 +430,57 @@ def apply_annotations_to_sql(raw_query, aliases):
     # the suffix specified by NAMING_CONFLICT_DISCRIMINATOR.  Now that we have the "final" SQL, we must remove
     # that suffix.
     return sql.replace(NAMING_CONFLICT_DISCRIMINATOR, "")
+
+
+def _select_columns(sql):
+    in_quotes = False
+    parens_depth = 0
+    last_processed_index = 0
+    retval = []
+
+    for index, char in enumerate(sql):
+        if char == '"':
+            in_quotes = not in_quotes
+        if in_quotes:
+            continue
+        if char == "(":
+            parens_depth = parens_depth + 1
+        if char == ")":
+            parens_depth = parens_depth - 1
+
+        if parens_depth == 0:
+            # Ignore the SELECT statement
+            if sql[index : index + 6] == "SELECT":
+                last_processed_index = last_processed_index + 6
+            # If there is a FROM at the bottom level, we have all the values we need and can return
+            if sql[index : index + 4] == "FROM":
+                retval.append(sql[last_processed_index:index].strip())
+                return retval
+            # If there is a comma on the bottom level, add another select value and start parsing a new one
+            if char == ",":
+                retval.append(sql[last_processed_index:index].strip())
+                last_processed_index = index + 1  # skips the comma by design
+
+    return retval  # this will almost certainly error out later.
+
+
+def _top_level_split(sql, splitter):
+    in_quotes = False
+    parens_depth = 0
+    for index, char in enumerate(sql):
+        if char == '"':
+            in_quotes = not in_quotes
+        if in_quotes:
+            continue
+        if char == "(":
+            parens_depth = parens_depth + 1
+        if char == ")":
+            parens_depth = parens_depth - 1
+
+        if parens_depth == 0:
+            if sql[index : index + len(splitter)] == splitter:
+                return [sql[:index], sql[index + len(splitter) :]]
+    raise Exception(f"SQL string ${sql} cannot be split on ${splitter}")
 
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
