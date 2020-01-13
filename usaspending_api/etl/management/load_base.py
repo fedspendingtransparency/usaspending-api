@@ -16,7 +16,7 @@ from usaspending_api.references.abbreviations import territory_country_codes
 from usaspending_api.references.helpers import canonicalize_location_dict
 from usaspending_api.references.models import Location
 
-# Lists to store for update_awards and update_contract_awards
+# Lists to store for update_awards and update_procurement_awards
 award_update_id_list = []
 award_contract_update_id_list = []
 
