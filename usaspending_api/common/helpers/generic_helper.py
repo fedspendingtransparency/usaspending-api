@@ -1,5 +1,6 @@
 import logging
 import subprocess
+import re
 import time
 
 from calendar import monthrange, isleap
@@ -8,7 +9,6 @@ from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.db import connection
 from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
-
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.matview_manager import (
     OVERLAY_VIEWS,
@@ -21,9 +21,7 @@ from usaspending_api.references.models import Agency
 
 
 logger = logging.getLogger(__name__)
-TEMP_SQL_FILES = [str(DEFAULT_MATIVEW_DIR / val["sql_filename"]) for val in MATERIALIZED_VIEWS.values()]
-VIEW_SQL_FILES = [str(val) for val in OVERLAY_VIEWS]
-REFRESH_MATVIEWS_SQL = " ".join(f"refresh materialized view {matview_name};" for matview_name in MATERIALIZED_VIEWS)
+TEMP_SQL_FILES = [DEFAULT_MATIVEW_DIR / val["sql_filename"] for val in MATERIALIZED_VIEWS.values()]
 
 
 def read_text_file(filepath):
@@ -213,28 +211,31 @@ def within_one_year(d1, d2):
     return days_diff <= 365
 
 
-def generate_matviews():
+EXTRACT_MATVIEW_SQL = re.compile(r"^.*?CREATE MATERIALIZED VIEW (.*?)_temp\b(.*?) (?:NO )?WITH DATA;.*?$", re.DOTALL)
+REPLACE_VIEW_SQL = r"CREATE OR REPLACE VIEW \1\2;"
+
+
+def convert_matview_to_view(matview_sql):
+    sql = EXTRACT_MATVIEW_SQL.sub(REPLACE_VIEW_SQL, matview_sql)
+    if sql == matview_sql:
+        raise RuntimeError(
+            "Error converting materialized view to traditional view.  Perhaps the structure of matviews has changed?"
+        )
+    return sql
+
+
+def generate_matviews(materialized_views_as_traditional_views=False):
     with connection.cursor() as cursor:
         cursor.execute(CREATE_READONLY_SQL)
-        cursor.execute(get_sql([str(DEPENDENCY_FILEPATH)])[0])
+        cursor.execute(DEPENDENCY_FILEPATH.read_text())
         subprocess.call("python {} --quiet".format(MATVIEW_GENERATOR_FILE), shell=True)
-        for matview_sql_file in get_sql(TEMP_SQL_FILES):
-            cursor.execute(matview_sql_file)
-        for view_sql_file in get_sql(VIEW_SQL_FILES):
-            cursor.execute(view_sql_file)
-
-
-def refresh_matviews():
-    with connection.cursor() as cursor:
-        cursor.execute(REFRESH_MATVIEWS_SQL)
-
-
-def get_sql(sql_files):
-    data = []
-    for file in sql_files:
-        with open(file, "r") as myfile:
-            data.append(myfile.read())
-    return data
+        for matview_sql_file in TEMP_SQL_FILES:
+            sql = matview_sql_file.read_text()
+            if materialized_views_as_traditional_views:
+                sql = convert_matview_to_view(sql)
+            cursor.execute(sql)
+        for view_sql_file in OVERLAY_VIEWS:
+            cursor.execute(view_sql_file.read_text())
 
 
 def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):

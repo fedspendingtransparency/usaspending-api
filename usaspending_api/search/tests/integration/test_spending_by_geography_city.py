@@ -33,7 +33,7 @@ def award_data_fixture(db):
     )
 
 
-def test_geocode_filter_by_city(client, award_data_fixture, refresh_matviews):
+def test_geocode_filter_by_city(client, award_data_fixture):
 
     # Place of performance that does exist.
     resp = client.post(
