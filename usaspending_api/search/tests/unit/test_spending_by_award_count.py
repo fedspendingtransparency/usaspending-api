@@ -135,7 +135,7 @@ def get_spending_by_award_count_url():
 
 
 @pytest.mark.django_db
-def test_spending_by_award_count(client, db, award_data_fixture, refresh_matviews):
+def test_spending_by_award_count(client, db, award_data_fixture):
     test_payload = {
         "subawards": False,
         "filters": {
@@ -160,7 +160,7 @@ def test_spending_by_award_count(client, db, award_data_fixture, refresh_matview
 
 
 @pytest.mark.django_db
-def test_spending_by_award_count_idvs(client, db, award_data_fixture, refresh_matviews):
+def test_spending_by_award_count_idvs(client, db, award_data_fixture):
     test_payload = {
         "subawards": False,
         "filters": {

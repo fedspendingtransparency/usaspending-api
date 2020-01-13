@@ -16,10 +16,7 @@ from usaspending_api.common.sqs.sqs_handler import (
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
 )
-from usaspending_api.common.helpers.generic_helper import (
-    generate_matviews,
-    refresh_matviews as perform_refresh_matviews,
-)
+from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
@@ -254,7 +251,7 @@ def django_db_setup(
                 "being skipped. "
             )
         else:
-            generate_matviews()
+            generate_matviews(materialized_views_as_traditional_views=True)
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
 
@@ -267,11 +264,6 @@ def django_db_setup(
 
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)
-
-
-@pytest.fixture
-def refresh_matviews():
-    perform_refresh_matviews()
 
 
 @pytest.fixture

@@ -2,7 +2,6 @@ import json
 import pytest
 from datetime import datetime
 
-from django.db import connection
 from model_mommy import mommy
 from rest_framework import status
 
@@ -11,7 +10,7 @@ from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subaward_success(client, spending_by_award_test_data, refresh_matviews):
+def test_spending_by_award_subaward_success(client, spending_by_award_test_data):
 
     # Testing all filters
     resp = client.post(
@@ -87,7 +86,7 @@ def test_spending_by_award_subaward_success(client, spending_by_award_test_data,
 
 
 @pytest.mark.django_db
-def test_spending_by_award_success(client, refresh_matviews):
+def test_spending_by_award_success(client):
 
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -100,7 +99,7 @@ def test_spending_by_award_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_legacy_filters(client, refresh_matviews):
+def test_spending_by_award_legacy_filters(client):
 
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -116,9 +115,6 @@ def test_no_intersection(client):
     mommy.make("awards.Award", id=1, type="A", latest_transaction_id=1)
     mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
     mommy.make("awards.TransactionFPDS", transaction_id=1)
-
-    with connection.cursor() as cursor:
-        cursor.execute("refresh materialized view concurrently mv_contract_award_search")
 
     request = {
         "subawards": False,
@@ -193,7 +189,7 @@ def awards_over_different_date_ranges():
 
 
 @pytest.mark.django_db
-def test_date_range_search_with_one_range(client, awards_over_different_date_ranges, refresh_matviews):
+def test_date_range_search_with_one_range(client, awards_over_different_date_ranges):
     contract_type_list = all_award_types_mappings["contracts"]
     grants_type_list = all_award_types_mappings["grants"]
 
@@ -276,7 +272,7 @@ def test_date_range_search_with_one_range(client, awards_over_different_date_ran
 
 
 @pytest.mark.django_db
-def test_date_range_search_with_two_ranges(client, awards_over_different_date_ranges, refresh_matviews):
+def test_date_range_search_with_two_ranges(client, awards_over_different_date_ranges):
     contract_type_list = all_award_types_mappings["contracts"]
     grants_type_list = all_award_types_mappings["grants"]
 
