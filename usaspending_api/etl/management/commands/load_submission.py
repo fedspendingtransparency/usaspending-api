@@ -23,7 +23,7 @@ from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.references.models import ObjectClass, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
-from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 from usaspending_api.etl.management import load_base
 from usaspending_api.etl.management.load_base import load_data_into_model
@@ -111,13 +111,13 @@ class Command(load_base.Command):
         logger.info("Getting File C data")
         # we dont have sub-tier agency info, so we'll do our best
         # to match them to the more specific award records
-        award_financial_query = "SELECT * FROM certified_award_financial WHERE submission_id = {0}".format(
-            submission_id
+        award_financial_query = (
+            "SELECT * FROM certified_award_financial"
+            f" WHERE submission_id = {submission_id}"
+            " AND transaction_obligated_amou IS NOT NULL AND transaction_obligated_amou != 0"
         )
-        if isinstance(db_cursor, PhonyCursor):  # spoofed data for test
-            award_financial_frame = pd.DataFrame(db_cursor.db_responses[award_financial_query])
-        else:  # real data
-            award_financial_frame = pd.read_sql(award_financial_query, connections["data_broker"])
+
+        award_financial_frame = pd.read_sql(award_financial_query, connections["data_broker"])
         logger.info(
             "Acquired File C (award financial) data for {}, there are {} rows.".format(
                 submission_id, award_financial_frame.shape[0]
@@ -674,8 +674,6 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     awards_touched = []
 
     # format award_financial_frame
-    float_cols = ["transaction_obligated_amou"]
-    award_financial_frame[float_cols] = award_financial_frame[float_cols].fillna(0)
     award_financial_frame = award_financial_frame.replace({np.nan: None})
 
     for index, row in enumerate(award_financial_frame.to_dict(orient="records"), 1):
