@@ -2,7 +2,6 @@ import pytest
 
 from model_mommy import mommy
 from rest_framework import status
-
 from usaspending_api.accounts.models import FederalAccount
 
 
@@ -76,7 +75,6 @@ def test_federal_account_fiscal_year_snapshot_v2_endpoint(client, financial_spen
     assert results["appropriations"] == 8000000
 
 
-@pytest.mark.django_db
 def test_federal_account_fiscal_year_snapshot_v2_endpoint_no_results(client, financial_spending_data):
     """Test response when no AAB records found."""
 

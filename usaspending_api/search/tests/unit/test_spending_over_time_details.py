@@ -242,7 +242,7 @@ def test_spending_over_time_funny_dates_ordering(populate_models, client, mock_m
     confirm_proper_ordering(group, resp.data["results"])
 
 
-def test_generated_pragmatic_obligation_calculation(pragmatic_fixture, refresh_matviews):
+def test_generated_pragmatic_obligation_calculation(pragmatic_fixture):
     assert SummaryTransactionView.objects.all().count() == 2  # ensure both transactions are loaded
 
     # ensure the generated_pragmatic_obligation values for a contract and a loan are correct

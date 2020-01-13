@@ -213,7 +213,7 @@ def state_breakdown_result():
 
 
 @pytest.mark.django_db
-def test_state_metadata_success(client, state_data, refresh_matviews):
+def test_state_metadata_success(client, state_data):
     # test small request - state
     resp = client.get(state_metadata_endpoint("01"))
     assert resp.status_code == status.HTTP_200_OK
@@ -231,7 +231,7 @@ def test_state_metadata_success(client, state_data, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_state_years_success(client, state_data, refresh_matviews):
+def test_state_years_success(client, state_data):
     # test future year
     expected_response = EXPECTED_STATE.copy()
     expected_response.update(
@@ -286,7 +286,7 @@ def test_state_years_success(client, state_data, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_state_current_all_years_success(client, state_data, refresh_matviews):
+def test_state_current_all_years_success(client, state_data):
     # test all years
     expected_response = EXPECTED_STATE.copy()
     expected_response.update(
@@ -304,7 +304,7 @@ def test_state_current_all_years_success(client, state_data, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_state_current_fy_capita_success(client, state_data, refresh_matviews):
+def test_state_current_fy_capita_success(client, state_data):
     # making sure amount per capita is null for current fiscal year
     expected_response = EXPECTED_STATE.copy()
     expected_response.update({"award_amount_per_capita": None})
@@ -314,7 +314,7 @@ def test_state_current_fy_capita_success(client, state_data, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_state_metadata_failure(client, state_data, refresh_matviews):
+def test_state_metadata_failure(client, state_data):
     """Verify error on bad autocomplete request for budget function."""
 
     # There is no FIPS with 04
@@ -331,14 +331,14 @@ def test_state_metadata_failure(client, state_data, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_obtain_state_totals(state_view_data, refresh_matviews):
+def test_obtain_state_totals(state_view_data):
     result = obtain_state_totals("01", str(generate_fiscal_year(OUTSIDE_OF_LATEST)), ["A"])
     expected = {"pop_state_code": "AB", "total": 10, "count": 1}
     assert result == expected
 
 
 @pytest.mark.django_db
-def test_obtain_state_totals_none(state_view_data, refresh_matviews, monkeypatch):
+def test_obtain_state_totals_none(state_view_data, monkeypatch):
     monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"02": {"code": "No State"}})
     result = obtain_state_totals("02")
     expected = {"pop_state_code": None, "total": 0, "count": 0}
@@ -347,7 +347,7 @@ def test_obtain_state_totals_none(state_view_data, refresh_matviews, monkeypatch
 
 
 @pytest.mark.django_db
-def test_state_breakdown_success_state(client, state_view_data, state_breakdown_result, refresh_matviews):
+def test_state_breakdown_success_state(client, state_view_data, state_breakdown_result):
     resp = client.get("/api/v2/recipient/state/awards/01/?year=all")
     sorted_resp = sort_breakdown_response(resp.data)
 
@@ -359,7 +359,7 @@ def test_state_breakdown_success_state(client, state_view_data, state_breakdown_
 
 
 @pytest.mark.django_db
-def test_state_breakdown_success_year(client, state_view_data, state_breakdown_result, refresh_matviews):
+def test_state_breakdown_success_year(client, state_view_data, state_breakdown_result):
     resp = client.get("/api/v2/recipient/state/awards/01/?year={}".format(str(generate_fiscal_year(TODAY))))
     sorted_resp = sort_breakdown_response(resp.data)
 
@@ -371,7 +371,7 @@ def test_state_breakdown_success_year(client, state_view_data, state_breakdown_r
 
 
 @pytest.mark.django_db
-def test_state_breakdown_success_no_data(client, state_view_data, state_breakdown_result, refresh_matviews):
+def test_state_breakdown_success_no_data(client, state_view_data, state_breakdown_result):
     resp = client.get("/api/v2/recipient/state/awards/01/?year={}".format(CURRENT_FISCAL_YEAR - 3))
     sorted_resp = sort_breakdown_response(resp.data)
 
@@ -382,14 +382,14 @@ def test_state_breakdown_success_no_data(client, state_view_data, state_breakdow
 
 
 @pytest.mark.django_db
-def test_state_breakdown_failure(client, state_view_data, refresh_matviews):
+def test_state_breakdown_failure(client, state_view_data):
     resp = client.get("/api/v2/recipient/state/awards/05/")
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
-def test_state_list_success_state(client, state_data, refresh_matviews):
+def test_state_list_success_state(client, state_data):
     resp = client.get("/api/v2/recipient/state/")
     sorted_resp = sort_states_response(resp.data)
 
