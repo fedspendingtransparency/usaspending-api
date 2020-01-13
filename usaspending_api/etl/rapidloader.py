@@ -19,13 +19,13 @@ from usaspending_api.etl.es_etl_helpers import (
 
 
 class Rapidloader:
-    def __init__(self, *args):
+    def __init__(self, config, elasticsearch_client):
         """Set values based on env vars and when the script started"""
-        self.config = args[0]
-        self.elasticsearch_client = args[1]
+        self.config = config
+        self.elasticsearch_client = elasticsearch_client
 
     def run_load_steps(self) -> None:
-        download_queue = Queue()  # Queue for jobs whch need a csv downloaded
+        download_queue = Queue()  # Queue for jobs which need a csv downloaded
         es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
 
         job_number = 0
