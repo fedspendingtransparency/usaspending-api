@@ -1,7 +1,6 @@
 import json
 import pytest
 
-from django.db import connection
 from model_mommy import mommy
 from rest_framework import status
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
@@ -63,12 +62,9 @@ def test_data():
         place_of_performance_zip5="00004",
     )
 
-    with connection.cursor() as cursor:
-        cursor.execute("refresh materialized view concurrently mv_contract_award_search")
-
 
 @pytest.mark.django_db
-def test_spending_by_award_type_success(client, refresh_matviews):
+def test_spending_by_award_type_success(client):
 
     # test small request
     resp = client.post(
@@ -111,7 +107,7 @@ def test_spending_by_award_type_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_type_failure(client, refresh_matviews):
+def test_spending_by_award_type_failure(client):
 
     # test incomplete IDV award types
     resp = client.post(
@@ -388,7 +384,7 @@ def test_spending_by_award_foreign_filter(client, test_data):
 
 # test subaward types
 @pytest.mark.django_db
-def test_spending_by_subaward_type_success(client, refresh_matviews):
+def test_spending_by_subaward_type_success(client):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",

@@ -69,7 +69,7 @@ def _post(client, endpoint, request, expected_response):
     assert json.loads(response.content.decode("utf-8")) == expected_response
 
 
-def test_autocomplete_filters(client, test_data, refresh_matviews):
+def test_autocomplete_filters(client, test_data):
     """
     We're going to do one thoroughish set of tests for ata then a bunch of
     happy path tests for the other individual components.
@@ -138,7 +138,7 @@ def test_autocomplete_filters(client, test_data, refresh_matviews):
     )
 
 
-def test_autocomplete_aid(client, test_data, refresh_matviews):
+def test_autocomplete_aid(client, test_data):
 
     _post(
         client,
@@ -149,31 +149,31 @@ def test_autocomplete_aid(client, test_data, refresh_matviews):
     _post(client, BASE_ENDPOINT + "aid", {"filters": {"aid": "2"}}, {"results": []})
 
 
-def test_autocomplete_bpoa(client, test_data, refresh_matviews):
+def test_autocomplete_bpoa(client, test_data):
 
     _post(client, BASE_ENDPOINT + "bpoa", {"filters": {"bpoa": "9"}}, {"results": ["923456"]})
     _post(client, BASE_ENDPOINT + "bpoa", {"filters": {"bpoa": "6"}}, {"results": []})
 
 
-def test_autocomplete_epoa(client, test_data, refresh_matviews):
+def test_autocomplete_epoa(client, test_data):
 
     _post(client, BASE_ENDPOINT + "epoa", {"filters": {"epoa": "9"}}, {"results": ["934567"]})
     _post(client, BASE_ENDPOINT + "epoa", {"filters": {"epoa": "7"}}, {"results": []})
 
 
-def test_autocomplete_a(client, test_data, refresh_matviews):
+def test_autocomplete_a(client, test_data):
 
     _post(client, BASE_ENDPOINT + "a", {"filters": {"a": "X"}}, {"results": ["X"]})
     _post(client, BASE_ENDPOINT + "a", {"filters": {"a": "Z"}}, {"results": []})
 
 
-def test_autocomplete_main(client, test_data, refresh_matviews):
+def test_autocomplete_main(client, test_data):
 
     _post(client, BASE_ENDPOINT + "main", {"filters": {"main": "9"}}, {"results": ["9234"]})
     _post(client, BASE_ENDPOINT + "main", {"filters": {"main": "4"}}, {"results": []})
 
 
-def test_autocomplete_sub(client, test_data, refresh_matviews):
+def test_autocomplete_sub(client, test_data):
 
     _post(client, BASE_ENDPOINT + "sub", {"filters": {"sub": "9"}}, {"results": ["921"]})
     _post(client, BASE_ENDPOINT + "sub", {"filters": {"sub": "1"}}, {"results": []})

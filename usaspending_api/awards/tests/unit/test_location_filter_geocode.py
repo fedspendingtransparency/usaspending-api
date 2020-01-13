@@ -80,7 +80,7 @@ def award_data_fixture(db):
     mommy.make("awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", type="A")
 
 
-def test_geocode_filter_locations(award_data_fixture, refresh_matviews):
+def test_geocode_filter_locations(award_data_fixture):
 
     to = ContractAwardSearchMatview.objects
 
