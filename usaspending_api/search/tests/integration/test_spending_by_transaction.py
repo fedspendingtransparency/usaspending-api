@@ -57,7 +57,7 @@ def test_spending_by_transaction_kws_failure(client):
 
 
 @pytest.mark.django_db
-def test_no_intersection(client, refresh_matviews):
+def test_no_intersection(client):
     request = {
         "filters": {"keyword": "test", "award_type_codes": ["A", "B", "C", "D", "no intersection"]},
         "fields": ["Award ID", "Recipient Name", "Mod"],

@@ -111,7 +111,7 @@ def download_test_data(db):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_assistance_status(client, download_test_data, refresh_matviews):
+def test_download_assistance_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
@@ -142,7 +142,7 @@ def test_download_assistance_status(client, download_test_data, refresh_matviews
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_awards_status(client, download_test_data, refresh_matviews):
+def test_download_awards_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
@@ -182,7 +182,7 @@ def test_download_awards_status(client, download_test_data, refresh_matviews):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_contract_status(client, download_test_data, refresh_matviews):
+def test_download_contract_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
@@ -220,7 +220,7 @@ def test_download_contract_status(client, download_test_data, refresh_matviews):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_idv_status(client, download_test_data, refresh_matviews):
+def test_download_idv_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
@@ -252,7 +252,7 @@ def test_download_idv_status(client, download_test_data, refresh_matviews):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_transactions_status(client, download_test_data, refresh_matviews):
+def test_download_transactions_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
@@ -297,7 +297,7 @@ def test_download_transactions_status(client, download_test_data, refresh_matvie
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_transactions_limit(client, download_test_data, refresh_matviews):
+def test_download_transactions_limit(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     dl_resp = client.post(

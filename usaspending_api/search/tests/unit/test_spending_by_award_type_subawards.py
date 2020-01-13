@@ -7,7 +7,7 @@ from rest_framework import status
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subawards_success(client, refresh_matviews):
+def test_spending_by_award_subawards_success(client):
     # test idv subawards search
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -26,7 +26,7 @@ def test_spending_by_award_subawards_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subawards_fail(client, refresh_matviews):
+def test_spending_by_award_subawards_fail(client):
     # test idv subawards error message
     resp = client.post(
         "/api/v2/search/spending_by_award",
