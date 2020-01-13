@@ -359,7 +359,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 if set(self.filters["award_type_codes"]) <= set(loan_type_mapping)
                 else response[len(response) - 1].to_dict().get("total_obligation"),
             )
-        # print(response.hits.total)
         return self.populate_elastic_response(
             results=results,
             has_next=response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
