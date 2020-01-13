@@ -100,9 +100,9 @@ class FPDSLoaderIntegrationTestCase(TestCase):
         transactions_by_id = {
             transaction.detached_award_procurement_id: transaction for transaction in usaspending_transactions
         }
-        assert transactions_by_id["101"].fiscal_year == 2010
-        assert transactions_by_id["201"].fiscal_year == 2010
-        assert transactions_by_id["301"].fiscal_year == 2011
+        assert transactions_by_id[101].fiscal_year == 2010
+        assert transactions_by_id[201].fiscal_year == 2010
+        assert transactions_by_id[301].fiscal_year == 2011
 
 
 def _assemble_dummy_broker_data():
