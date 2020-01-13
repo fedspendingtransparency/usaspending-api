@@ -28,7 +28,6 @@
     "  awards.total_subsidy_cost,",
     "  awards.total_loan_value,",
     "",
-    "  awards.recipient_id,",
     "  UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal)) AS recipient_name,",
     "  transaction_fpds.awardee_or_recipient_uniqu AS recipient_unique_id,",
     "  transaction_fpds.ultimate_parent_unique_ide AS parent_recipient_unique_id,",

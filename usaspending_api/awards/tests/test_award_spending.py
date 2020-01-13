@@ -8,7 +8,6 @@ from datetime import datetime
 def award_spending_data(db):
     ttagency = mommy.make("references.ToptierAgency")
     agency = mommy.make("references.Agency", id=111, toptier_flag=True, toptier_agency=ttagency)
-    legal_entity = mommy.make("references.LegalEntity")
     award = mommy.make("awards.Award", category="grants", awarding_agency=agency)
     award1 = mommy.make("awards.Award", category="contracts", awarding_agency=agency)
     award2 = mommy.make("awards.Award", category=None, awarding_agency=agency)
@@ -19,7 +18,6 @@ def award_spending_data(db):
         federal_action_obligation=10,
         action_date=datetime(2017, 1, 1),
         fiscal_year=2017,
-        recipient=legal_entity,
     )
     mommy.make(
         "awards.TransactionNormalized",
@@ -28,7 +26,6 @@ def award_spending_data(db):
         federal_action_obligation=20,
         action_date=datetime(2017, 9, 1),
         fiscal_year=2017,
-        recipient=legal_entity,
     )
     mommy.make(
         "awards.TransactionNormalized",
@@ -37,7 +34,6 @@ def award_spending_data(db):
         federal_action_obligation=20,
         action_date=datetime(2016, 12, 1),
         fiscal_year=2017,
-        recipient=legal_entity,
     )
     mommy.make(
         "awards.TransactionNormalized",
@@ -46,7 +42,6 @@ def award_spending_data(db):
         federal_action_obligation=20,
         action_date=datetime(2016, 10, 2),
         fiscal_year=2017,
-        recipient=legal_entity,
     )
 
 

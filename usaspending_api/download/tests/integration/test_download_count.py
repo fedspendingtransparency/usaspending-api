@@ -22,9 +22,6 @@ def download_test_data(db):
     # Create Locations
     mommy.make("references.Location")
 
-    # Create LE
-    mommy.make("references.LegalEntity")
-
     # Create Awarding Top Agency
     ata1 = mommy.make(
         "references.ToptierAgency",
