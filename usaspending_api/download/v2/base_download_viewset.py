@@ -87,49 +87,75 @@ class BaseDownloadViewSet(APIView):
             queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
-    def get_download_response(self, file_name: str, is_download_status: bool = False):
-        """Generate download response which encompasses various elements to provide accurate status for state of a
-        download job"""
+    def get_download_response(self, file_name: str):
+        """
+        Generate download response which encompasses various elements to provide accurate status for state of a
+        download job
+        """
+        download_job = self._get_download_job(file_name)
+
+        # Compile url to file
+        file_path = self._get_file_path(file_name)
+
+        # Generate the status endpoint for the file
+        status_url = self._get_status_url(file_name)
+
+        response = {
+            "status_url": status_url,
+            "file_name": file_name,
+            "file_url": file_path,
+            "download_request": json.loads(download_job.json_request),
+        }
+
+        return Response(response)
+
+    def get_download_status_response(self, file_name: str):
+        """
+        Generate download status response which encompasses various elements to provide accurate
+        status for state of a download job
+        """
+        download_job = self._get_download_job(file_name)
+
+        # Compile url to file
+        file_path = self._get_file_path(file_name)
+
+        response = {
+            "status": download_job.job_status.name,
+            "message": download_job.error_message,
+            "file_name": file_name,
+            "file_url": file_path,
+            # converting size from bytes to kilobytes if file_size isn't None
+            "total_size": download_job.file_size / 1000 if download_job.file_size else None,
+            "total_columns": download_job.number_of_columns,
+            "total_rows": download_job.number_of_rows,
+            "seconds_elapsed": download_job.seconds_elapsed(),
+        }
+
+        return Response(response)
+
+    def _get_status_url(self, file_name: str) -> str:
+        if settings.IS_LOCAL:
+            protocol = "http"
+            host = "localhost:8000"
+        elif settings.DOWNLOAD_ENV == "production":
+            protocol = "https"
+            host = "api.usaspending.gov"
+        else:
+            protocol = "https"
+            host = f"{settings.DOWNLOAD_ENV}-api.usaspending.gov"
+
+        return f"{protocol}://{host}/api/v2/download/status?file_name={file_name}"
+
+    def _get_download_job(self, file_name: str) -> DownloadJob:
         download_job = DownloadJob.objects.filter(file_name=file_name).first()
         if not download_job:
             raise NotFound(f"Download job with filename {file_name} does not exist.")
+        return download_job
 
-        # Compile url to file
+    def _get_file_path(self, file_name: str) -> str:
         if settings.IS_LOCAL:
             file_path = settings.CSV_LOCAL_PATH + file_name
         else:
             file_path = self.s3_handler.get_simple_url(file_name=file_name)
 
-        base_response = {"file_name": file_name, "file_url": file_path}
-        if is_download_status:
-            response = {
-                "status": download_job.job_status.name,
-                "message": download_job.error_message,
-                **base_response,
-                # converting size from bytes to kilobytes if file_size isn't None
-                "total_size": download_job.file_size / 1000 if download_job.file_size else None,
-                "total_columns": download_job.number_of_columns,
-                "total_rows": download_job.number_of_rows,
-                "seconds_elapsed": download_job.seconds_elapsed(),
-            }
-        else:
-            # Generate the status endpoint for the file
-            if settings.IS_LOCAL:
-                protocol = "http"
-                host = "localhost:8000"
-            elif settings.DOWNLOAD_ENV == "production":
-                protocol = "https"
-                host = "api.usaspending.gov"
-            else:
-                protocol = "https"
-                host = f"{settings.DOWNLOAD_ENV}-api.usaspending.gov"
-
-            status_url = f"{protocol}://{host}/api/v2/download/status?file_name={file_name}"
-
-            response = {
-                "status_url": status_url,
-                **base_response,
-                "download_request": json.loads(download_job.json_request),
-            }
-
-        return Response(response)
+        return file_path
