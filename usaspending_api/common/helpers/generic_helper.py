@@ -211,7 +211,7 @@ def within_one_year(d1, d2):
     return days_diff <= 365
 
 
-EXTRACT_MATVIEW_SQL = re.compile(r"^.*?CREATE MATERIALIZED VIEW (.*?)_temp\b(.*?) WITH DATA;.*?$", re.DOTALL)
+EXTRACT_MATVIEW_SQL = re.compile(r"^.*?CREATE MATERIALIZED VIEW (.*?)_temp\b(.*?) (?:NO )?WITH DATA;.*?$", re.DOTALL)
 REPLACE_VIEW_SQL = r"CREATE OR REPLACE VIEW \1\2;"
 
 
@@ -219,7 +219,7 @@ def convert_matview_to_view(matview_sql):
     sql = EXTRACT_MATVIEW_SQL.sub(REPLACE_VIEW_SQL, matview_sql)
     if sql == matview_sql:
         raise RuntimeError(
-            "Error converting materialized view to view.  Perhaps the structure of matviews has changed?"
+            "Error converting materialized view to traditional view.  Perhaps the structure of matviews has changed?"
         )
     return sql
 

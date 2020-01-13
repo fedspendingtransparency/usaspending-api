@@ -27,7 +27,7 @@ pyvenv.cfg
 .envrc
 
 # profiling output
-prof
+prof/
 
 .pgdump
 .ipynb
