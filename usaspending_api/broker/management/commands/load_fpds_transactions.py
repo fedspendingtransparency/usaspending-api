@@ -11,7 +11,7 @@ from usaspending_api.common.helpers.date_helper import datetime_command_line_arg
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, prune_empty_awards
+from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, prune_empty_awards
 from usaspending_api.etl.transaction_loaders.fpds_loader import load_fpds_transactions, failed_ids, delete_stale_fpds
 
 logger = logging.getLogger("console")
@@ -97,7 +97,9 @@ class Command(BaseCommand):
             logger.info(f"{len(unique_awards)} award records impacted by transaction DML operations")
             logger.info(f"{prune_empty_awards(tuple(unique_awards))} award records removed")
             logger.info(f"{update_awards(tuple(unique_awards))} award records updated")
-            logger.info(f"{update_contract_awards(tuple(unique_awards))} award records updated on FPDS-specific fields")
+            logger.info(
+                f"{update_procurement_awards(tuple(unique_awards))} award records updated on FPDS-specific fields"
+            )
             if not skip_cd_linkage:
                 update_c_to_d_linkages("contract")
         else:
