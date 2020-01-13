@@ -1,13 +1,13 @@
-from collections import OrderedDict
-from datetime import datetime, timezone
-from pathlib import Path
 import pytest
 
+from collections import OrderedDict
+from datetime import datetime, timezone
+from model_mommy import mommy
+from pathlib import Path
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.helpers.text_helpers import generate_random_string
-from usaspending_api.etl.rapidloader import Rapidloader
-from model_mommy import mommy
 from usaspending_api.etl.es_etl_helpers import configure_sql_strings, check_awards_for_deletes, get_deleted_award_ids
+from usaspending_api.etl.rapidloader import Rapidloader
 
 
 @pytest.fixture
@@ -84,6 +84,21 @@ def award_data_fixture(db):
     mommy.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
 
 
+@pytest.fixture
+def baby_sleeps(monkeypatch):
+    """
+    If we don't do this, sleeps add about 2 minutes to the tests in this file.  Setting sleeps to
+    None or 0 was causing exceptions to be thrown, thus the 0.001 value.
+    """
+    from time import sleep
+
+    def _sleep(seconds):
+        sleep(0.001)
+
+    monkeypatch.setattr("usaspending_api.etl.es_etl_helpers.sleep", _sleep)
+    monkeypatch.setattr("usaspending_api.etl.rapidloader.sleep", _sleep)
+
+
 config = {
     "root_index": "award-query",
     "processing_start_datetime": datetime(2019, 12, 13, 16, 10, 33, 729108, tzinfo=timezone.utc),
@@ -104,7 +119,7 @@ config = {
 }
 
 
-def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index):
+def test_es_award_loader_class(award_data_fixture, elasticsearch_award_index, baby_sleeps):
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = Rapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "Rapidloader"
@@ -113,7 +128,7 @@ def test_es_award_loader_class(db, award_data_fixture, elasticsearch_award_index
     elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
 
 
-def test_es_transaction_loader_class(db, award_data_fixture, elasticsearch_transaction_index):
+def test_es_transaction_loader_class(award_data_fixture, elasticsearch_transaction_index, baby_sleeps):
     config["root_index"] = "transaction-query"
     config["load_type"] = "transactions"
     elasticsearch_client = instantiate_elasticsearch_client()
@@ -144,7 +159,7 @@ WHERE fiscal_year=2019 AND update_date >= '2007-10-01'
     assert count == count_sql
 
 
-def test_award_delete_sql(db, award_data_fixture):
+def test_award_delete_sql(award_data_fixture):
     id_list = ["CONT_AWD_IND12PB00323"]
     awards = check_awards_for_deletes(id_list)
     assert awards == []
@@ -154,7 +169,7 @@ def test_award_delete_sql(db, award_data_fixture):
     assert awards == [OrderedDict([("generated_unique_award_id", "CONT_AWD_WHATEVER")])]
 
 
-def test_get_award_ids(db, award_data_fixture, elasticsearch_transaction_index):
+def test_get_award_ids(award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
     id_list = [{"key": 1, "col": "transaction_id"}]
     config["root_index"] = "transaction-query"
