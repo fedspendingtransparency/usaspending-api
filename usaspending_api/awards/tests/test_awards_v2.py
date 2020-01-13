@@ -6,7 +6,7 @@ from rest_framework import status
 from model_mommy import mommy
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
+from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
@@ -131,18 +131,6 @@ def awards_and_transactions(db):
     }
 
     mommy.make("references.Agency", **agency)
-
-    # Legal Entity
-    parent_legal_entity = {
-        "pk": 2,
-        "location": Location.objects.get(pk=2),
-        "recipient_name": "PARENT LEGAL ENTITY",
-        "recipient_unique_id": "123",
-    }
-    legal_entity = {"pk": 1, "recipient_name": "LEGAL ENTITY", "recipient_unique_id": "456"}
-
-    mommy.make("references.LegalEntity", **parent_legal_entity)
-    mommy.make("references.LegalEntity", **legal_entity)
 
     # Transaction Normalized
     bc = {"business_categories": ["small_business"]}
@@ -640,7 +628,6 @@ def awards_and_transactions(db):
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
         "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "category": "grant",
         "date_signed": "2005-04-03",
         "description": "lorem ipsum",
@@ -663,7 +650,6 @@ def awards_and_transactions(db):
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 2000,
         "category": "contract",
         "date_signed": "2004-03-02",
@@ -690,7 +676,6 @@ def awards_and_transactions(db):
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=3),
         "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 600,
         "category": "grant",
         "date_signed": "2004-03-02",
@@ -712,7 +697,6 @@ def awards_and_transactions(db):
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=3),
         "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 600,
         "category": "idv",
         "date_signed": "2004-03-02",
@@ -732,7 +716,6 @@ def awards_and_transactions(db):
         "pk": 5,
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=6),
         "base_and_all_options_value": 2000,
@@ -761,7 +744,6 @@ def awards_and_transactions(db):
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=7),
         "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 2000,
         "category": "contract",
         "date_signed": "2004-03-02",
@@ -832,7 +814,6 @@ def awards_and_transactions(db):
         "description": "lorem ipsum",
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "total_obligation": 600,
         "base_and_all_options_value": 600,
         "period_of_performance_start_date": "2004-02-04",

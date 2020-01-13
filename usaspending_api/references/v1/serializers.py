@@ -2,7 +2,6 @@ from rest_framework import serializers
 from usaspending_api.references.models import (
     Agency,
     Cfda,
-    LegalEntity,
     Location,
     ObjectClass,
     RefProgramActivity,
@@ -62,22 +61,6 @@ class LocationSerializer(LimitableSerializer):
             "foreign_city_name",
             "foreign_postal_code",
         ]
-
-
-class LegalEntitySerializer(LimitableSerializer):
-    class Meta:
-        model = LegalEntity
-        fields = "__all__"
-        default_fields = [
-            "legal_entity_id",
-            "parent_recipient_unique_id",
-            "recipient_unique_id",
-            "recipient_name",
-            "business_types",
-            "business_types_description",
-            "location",
-        ]
-        nested_serializers = {"location": {"class": LocationSerializer, "kwargs": {"read_only": True}}}
 
 
 class ProgramActivitySerializer(LimitableSerializer):

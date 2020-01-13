@@ -129,7 +129,6 @@ set
     last_modified_date = l.last_modified_date,
     period_of_performance_current_end_date = l.period_of_performance_current_end_date,
     place_of_performance_id = l.place_of_performance_id,
-    recipient_id = l.recipient_id,
     type = l.type,
     type_description = l.type_description,
     officer_1_amount = r.officer_1_amount,

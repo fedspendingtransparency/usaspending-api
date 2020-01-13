@@ -32,7 +32,6 @@ class BaseAwardSearchModel(models.Model):
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     total_obl_bin = models.TextField()
 
-    recipient_id = models.IntegerField()
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()

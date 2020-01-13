@@ -19,7 +19,7 @@ from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile, StateData
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
-from usaspending_api.references.models import Agency, Cfda, LegalEntity, NAICS, PSC, RefCountryCode
+from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, RefCountryCode
 
 
 logger = logging.getLogger(__name__)
@@ -271,7 +271,7 @@ class BusinessLogic:
         elif self.category == "recipient_parent_duns":
             # TODO: check if we can aggregate on recipient name and parent duns,
             #    since parent recipient name isn't available
-            # Not implemented until Parent Recipient Name's in LegalEntity and matviews
+            # Not implemented until "Parent Recipient Name" is in matviews
             self.raise_not_implemented()
             # filters = {'parent_recipient_unique_id__isnull': False}
             # values = ['recipient_name', 'parent_recipient_unique_id']
@@ -403,15 +403,6 @@ def fetch_agency_tier_id_by_agency(agency_name, is_subtier=False):
     result = Agency.objects.filter(**filters).values(*columns).first()
     if not result:
         logger.warning("{} not found for agency_name: {}".format(",".join(columns), agency_name))
-        return None
-    return result[columns[0]]
-
-
-def fetch_recipient_id_by_duns(duns):
-    columns = ["legal_entity_id"]
-    result = LegalEntity.objects.filter(recipient_unique_id=duns).values(*columns).first()
-    if not result:
-        logger.warning("{} not found for duns: {}".format(",".join(columns), duns))
         return None
     return result[columns[0]]
 
