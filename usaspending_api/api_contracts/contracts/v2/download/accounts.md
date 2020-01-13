@@ -47,6 +47,28 @@ Generate files and return metadata using filters on custom account
             The URL for the file.
         + `download_request` (required, object)
             The JSON object used when processing the download.
+    + Body
+
+            {
+                "status_url": "http://localhost:8000/api/v2/download/status?file_name=FY2018Q1_All_TAS_AccountBalances_2020-01-13_H21M00S18407575.zip",
+                "file_name": "FY2018Q1_All_TAS_AccountBalances_2020-01-13_H21M00S18407575.zip",
+                "file_url": "/csv_downloads/FY2018Q1_All_TAS_AccountBalances_2020-01-13_H21M00S18407575.zip",
+                "download_request": {
+                    "account_level": "treasury_account",
+                    "agency": "all",
+                    "columns": [],
+                    "download_types": [
+                        "account_balances"
+                    ],
+                    "file_format": "csv",
+                    "filters": {
+                        "fy": 2018,
+                        "quarter": 1
+                    },
+                    "request_type": "account"
+                }
+            }
+            
 
 
 # Data Structures

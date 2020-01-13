@@ -9,11 +9,11 @@ This route gets the current status of a download job.
         
 + Request (application/json)
     + Parameters
-        + `file_name`: `all_prime_transactions_subawards_20191017223212534453.zip` (required, string) 
-        Taken from the `file_name` field of a download endpoint response.
+        + `file_name`: `012_PrimeTransactions_2020-01-13_H20M58S34486877.zip` (required, string) 
+            Taken from the `file_name` field of a download endpoint response.
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `file_name` (required, string)
             Is the name of the zipfile containing CSVs that will be generated (file_name is timestamp followed by `_transactions` or `_awards`).
         + `message` (required, string, nullable)
@@ -35,3 +35,15 @@ This route gets the current status of a download job.
             Is the estimated file size of the CSV in kilobytes, or `null` if not finished.
         + `file_url` (required, string)
             The URL for the file.
+    + Body
+            
+            {
+                "status": "finished",
+                "message": null,
+                "file_name": "012_PrimeTransactions_2020-01-13_H20M58S34486877.zip",
+                "file_url": "/usaspending-api/csv_downloads/012_PrimeTransactions_2020-01-13_H20M58S34486877.zip",
+                "total_size": 3.169,
+                "total_columns": 276,
+                "total_rows": 0,
+                "seconds_elapsed": "4.145662"
+            }

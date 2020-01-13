@@ -46,6 +46,66 @@ This route sends a request to the backend to begin generating a zipfile of award
             The URL for the file.
         + `download_request` (required, object)
             The JSON object used when processing the download.
+    + Body
+            
+            {
+                "status_url": "http://localhost:8000/api/v2/download/status?file_name=PrimeAwardSummariesAndSubawards_2020-01-13_H21M05S48397603.zip",
+                "file_name": "PrimeAwardSummariesAndSubawards_2020-01-13_H21M05S48397603.zip",
+                "file_url": "/csv_downloads/PrimeAwardSummariesAndSubawards_2020-01-13_H21M05S48397603.zip",
+                "download_request": {
+                    "agency": "all",
+                    "columns": [
+                        "assistance_award_unique_key",
+                        "award_id_fain",
+                        "award_id_uri",
+                        "sai_number",
+                        "total_funding_amount"
+                    ],
+                    "download_types": [
+                        "awards",
+                        "sub_awards"
+                    ],
+                    "file_format": "csv",
+                    "filters": {
+                        "award_type_codes": [
+                            "02",
+                            "03",
+                            "04",
+                            "05",
+                            "06",
+                            "07",
+                            "08",
+                            "09",
+                            "10",
+                            "11",
+                            "A",
+                            "B",
+                            "C",
+                            "D",
+                            "IDV_A",
+                            "IDV_B",
+                            "IDV_B_A",
+                            "IDV_B_B",
+                            "IDV_B_C",
+                            "IDV_C",
+                            "IDV_D",
+                            "IDV_E"
+                        ],
+                        "keywords": [
+                            "Defense"
+                        ],
+                        "time_period": [
+                            {
+                                "date_type": "action_date",
+                                "end_date": "2020-01-13",
+                                "start_date": "1000-01-01"
+                            }
+                        ]
+                    },
+                    "limit": 500000,
+                    "request_type": "award"
+                }
+            }
 
 # Data Structures
 
