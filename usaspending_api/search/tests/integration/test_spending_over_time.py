@@ -191,7 +191,7 @@ def spending_over_time_test_data(db):
 
 
 @pytest.mark.django_db
-def test_spending_over_time_success(client, refresh_matviews):
+def test_spending_over_time_success(client):
 
     # test for needed filters
     resp = client.post(
@@ -211,7 +211,7 @@ def test_spending_over_time_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_over_time_failure(client, refresh_matviews):
+def test_spending_over_time_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
@@ -221,7 +221,7 @@ def test_spending_over_time_failure(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_over_time_subawards_success(client, refresh_matviews):
+def test_spending_over_time_subawards_success(client):
 
     resp = client.post(
         "/api/v2/search/spending_over_time",
@@ -232,7 +232,7 @@ def test_spending_over_time_subawards_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_over_time_subawards_failure(client, refresh_matviews):
+def test_spending_over_time_subawards_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(

@@ -45,7 +45,6 @@ class TestElasticSearchIndex:
         for the index, and add contents.
         """
         self.delete_index()
-        self._refresh_materialized_views(self.index_type)
         self.client.indices.create(self.index_name, self.template)
         create_aliases(self.client, self.index_name, self.index_type, True)
         self._add_contents()
@@ -76,24 +75,6 @@ class TestElasticSearchIndex:
             )
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)
-
-    @staticmethod
-    def _refresh_materialized_views(index_type):
-        """
-        This materialized view is used by the es etl view, so
-        we will need to refresh it in order for the view to see
-        changes to the underlying tables.
-        """
-        with connection.cursor() as cursor:
-            if index_type == "transactions":
-                cursor.execute("REFRESH MATERIALIZED VIEW universal_transaction_matview;")
-            else:
-                cursor.execute("REFRESH MATERIALIZED VIEW mv_contract_award_search;")
-                cursor.execute("REFRESH MATERIALIZED VIEW mv_idv_award_search;")
-                cursor.execute("REFRESH MATERIALIZED VIEW mv_grant_award_search;")
-                cursor.execute("REFRESH MATERIALIZED VIEW mv_directpayment_award_search;")
-                cursor.execute("REFRESH MATERIALIZED VIEW mv_loan_award_search;")
-                cursor.execute("REFRESH MATERIALIZED VIEW mv_other_award_search;")
 
     @classmethod
     def _generate_index_name(cls):
