@@ -43,7 +43,7 @@ class Command(BaseCommand):
         with Timer("Part 1: Addressing Missing Award Records"):
             with connection.cursor() as cursor:
                 cursor.execute(
-                    CHECK_MISSING_AWARDS.format(table="transaction_fpds", fpds_field="detached_award_procurement_id")
+                    CHECK_MISSING_AWARDS.format(table="transaction_fpds", field="detached_award_procurement_id")
                 )
                 ids_to_load = [str(row[0]) for row in cursor.fetchall()]
 
@@ -76,11 +76,28 @@ class Command(BaseCommand):
 
     def inspect(self):
         logger.info("Running SQL to inspect data")
+        faulty_transaction_fks = """
+            SELECT
+                tn.id,
+                a.generated_unique_award_id AS guai,
+                tn.unique_award_key as uak
+            FROM transaction_normalized tn
+            LEFT OUTER JOIN awards a ON tn.award_id = a.id
+            WHERE
+                a.generated_unique_award_id IS DISTINCT FROM tn.unique_award_key
+        """
+
+        blank_award_fks = "SELECT * FROM awards where earliest_transaction_id is null or latest_transaction_id is null"
+
         with connection.cursor() as cursor:
-            cursor.execute(CHECK_MISSING_AWARDS.format(table="transaction_fpds", fpds_field="unique_award_key"))
+            cursor.execute(CHECK_MISSING_AWARDS.format(table="transaction_fpds", field="unique_award_key"))
             fpds_missing_ids = set([str(row[0]) for row in cursor.fetchall()])
-            cursor.execute(CHECK_MISSING_AWARDS.format(table="transaction_fabs", fpds_field="unique_award_key"))
+            cursor.execute(CHECK_MISSING_AWARDS.format(table="transaction_fabs", field="unique_award_key"))
             fabs_missing_ids = set([str(row[0]) for row in cursor.fetchall()])
+            cursor.execute(faulty_transaction_fks)
+            faulty_fks = [row for row in cursor.fetchall()]
+            cursor.execute(blank_award_fks)
+            blank_fks = [row for row in cursor.fetchall()]
 
         if fpds_missing_ids:
             logger.warn(f"{', '.join(fpds_missing_ids)}\n\n{len(fpds_missing_ids)} missing Procurement award count")
@@ -91,3 +108,15 @@ class Command(BaseCommand):
             logger.warn(f"{', '.join(fabs_missing_ids)}\n\n{len(fabs_missing_ids)} missing Assistance award count")
         else:
             logger.info("No Asssitance awards missing based on `unique_award_key`")
+
+        if faulty_fks:
+            records = "\n\t".join([f"ID {f.id} | stored key {f.uak} | award record {f.guai}" for f in faulty_fks])
+            message = f"Faulty FKs found `transaction_normalized.award_id` -> `awards.id`\n{records}"
+            logger.warn(message)
+        else:
+            logger.info("No `transaction_normalized.award_id` -> `awards.id` mismatches")
+
+        if blank_fks:
+            logger.warn(f"{', '.join(blank_fks)}\n\n{len(blank_fks)} Awards missing transaction FKs")
+        else:
+            logger.info("All awards have populated FKs to transaction_normalized")
