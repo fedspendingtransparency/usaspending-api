@@ -23,29 +23,10 @@ from usaspending_api.conftest_helpers import (
     ensure_broker_server_dblink_exists,
     remove_unittest_queue_data_files,
 )
-from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 
 logger = logging.getLogger("console")
 VALID_DB_CURSORS = [DEFAULT_DB_ALIAS, "data_broker"]
-
-
-@pytest.fixture()
-def mock_db_cursor(monkeypatch, request):
-    db_cursor_dict = request.param
-
-    for cursor in VALID_DB_CURSORS:
-        if cursor in db_cursor_dict:
-            data_file_key = cursor + "_data_file"
-
-            if data_file_key not in db_cursor_dict:
-                # Missing data file for the mocked cursor. Skipping PhonyCursor setup.
-                continue
-
-            db_cursor_dict[cursor].cursor.return_value = PhonyCursor(db_cursor_dict[data_file_key])
-            del db_cursor_dict[data_file_key]
-
-    monkeypatch.setattr("django.db.connections", db_cursor_dict)
 
 
 @pytest.fixture()
