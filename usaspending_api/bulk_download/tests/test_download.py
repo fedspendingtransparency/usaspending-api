@@ -102,7 +102,7 @@ def test_download_transactions_v2_endpoint(client, award_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db
@@ -115,7 +115,7 @@ def test_download_awards_v2_endpoint(client, award_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db
