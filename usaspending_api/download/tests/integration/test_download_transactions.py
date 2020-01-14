@@ -107,7 +107,6 @@ def download_test_data(db):
     update_awards()
 
 
-@pytest.mark.django_db
 def test_download_transactions_without_columns(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
@@ -120,7 +119,6 @@ def test_download_transactions_without_columns(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 def test_download_transactions_with_columns(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
@@ -144,7 +142,6 @@ def test_download_transactions_with_columns(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 def test_download_transactions_bad_limit(client):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
@@ -155,7 +152,6 @@ def test_download_transactions_bad_limit(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
 def test_download_transactions_excessive_limit(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
@@ -166,7 +162,6 @@ def test_download_transactions_excessive_limit(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
 def test_download_transactions_bad_column_list_raises(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     payload = {"filters": {"award_type_codes": []}, "columns": ["modification_number", "bogus_column"]}
@@ -177,7 +172,6 @@ def test_download_transactions_bad_column_list_raises(client, download_test_data
     assert "modification_number" not in resp.json()["detail"]
 
 
-@pytest.mark.django_db
 def test_download_transactions_bad_filter_type_raises(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     payload = {"filters": "01", "columns": []}

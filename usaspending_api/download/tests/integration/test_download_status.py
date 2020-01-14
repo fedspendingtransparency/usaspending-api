@@ -16,7 +16,7 @@ from usaspending_api.etl.award_helpers import update_awards
 
 
 @pytest.fixture
-def download_test_data(db):
+def download_test_data(transactional_db):
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
@@ -113,7 +113,6 @@ def download_test_data(db):
     update_awards()
 
 
-@pytest.mark.django_db(transaction=True)
 def test_download_assistance_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
@@ -144,7 +143,6 @@ def test_download_assistance_status(client, download_test_data):
     assert resp.json()["total_columns"] == 2
 
 
-@pytest.mark.django_db(transaction=True)
 def test_download_awards_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
@@ -184,7 +182,6 @@ def test_download_awards_status(client, download_test_data):
     assert resp.json()["total_columns"] == 5
 
 
-@pytest.mark.django_db(transaction=True)
 def test_download_contract_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
@@ -222,7 +219,6 @@ def test_download_contract_status(client, download_test_data):
     assert resp.json()["total_columns"] == 2
 
 
-@pytest.mark.django_db(transaction=True)
 def test_download_idv_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
@@ -254,7 +250,6 @@ def test_download_idv_status(client, download_test_data):
     assert resp.json()["total_columns"] == 2
 
 
-@pytest.mark.django_db(transaction=True)
 def test_download_transactions_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
@@ -299,7 +294,6 @@ def test_download_transactions_status(client, download_test_data):
     assert resp.json()["total_columns"] == 2
 
 
-@pytest.mark.django_db(transaction=True)
 def test_download_transactions_limit(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
