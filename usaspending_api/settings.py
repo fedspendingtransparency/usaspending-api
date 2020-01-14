@@ -130,9 +130,16 @@ INSTALLED_APPS = [
     "usaspending_api.search",
     "django_spaghetti",
     "simple_history",
+    "ddtrace.contrib.django",  # Datadog APM tracing
 ]
 
 INTERNAL_IPS = ()
+
+# Datadog APM tracing configuration
+DATADOG_TRACE = {
+    "ENABLED": False,  # Replace during env-deploys to turn on
+    "DEFAULT_SERVICE": "api",
+}
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
@@ -303,6 +310,7 @@ LOGGING = {
         # ======== Module-specific loggers ========
         "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
         "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "ddtrace": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
     },
 }
 
