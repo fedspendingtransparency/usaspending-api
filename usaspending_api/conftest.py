@@ -5,7 +5,7 @@ import pytest
 import tempfile
 
 from django.conf import settings
-from django.db import connections, DEFAULT_DB_ALIAS
+from django.db import connections
 from django.test import override_settings
 from django_mock_queries.query import MockSet
 from pathlib import Path
@@ -26,7 +26,6 @@ from usaspending_api.conftest_helpers import (
 
 
 logger = logging.getLogger("console")
-VALID_DB_CURSORS = [DEFAULT_DB_ALIAS, "data_broker"]
 
 
 @pytest.fixture()
