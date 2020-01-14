@@ -10,7 +10,7 @@ ENDPOINT = "/api/v2/search/spending_by_transaction/"
 
 
 @pytest.fixture
-def transaction_data(db):
+def transaction_data():
     mommy.make(
         "awards.TransactionNormalized",
         id=1,

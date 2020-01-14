@@ -142,6 +142,7 @@ def test_download_transactions_with_columns(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db
 def test_download_transactions_bad_limit(client):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(

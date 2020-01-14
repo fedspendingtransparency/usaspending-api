@@ -12,12 +12,12 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
 
 
+@pytest.mark.usefixtures("broker_db_setup", "db")
 class LoadSubmissionIntegrationTests(TestCase):
     logger = logging.getLogger(__name__)
     multi_db = True
 
     @classmethod
-    @pytest.mark.usefixtures("broker_db_setup", "db")
     def setUpClass(cls):
         # Setup default data in USAspending Test DB
         mommy.make(
@@ -62,7 +62,6 @@ class LoadSubmissionIntegrationTests(TestCase):
     def tearDownClass(cls):
         pass
 
-    @pytest.mark.django_db
     def test_load_submission_transaction_obligated_amount(self):
         """ Test load submission management command for File C transaction_obligated_amount NaNs """
         call_command("load_submission", "-9999")
@@ -74,7 +73,6 @@ class LoadSubmissionIntegrationTests(TestCase):
 
         assert expected_results == actual_results
 
-    @pytest.mark.django_db
     def test_load_submission_file_c_fain_and_uri(self):
         """
         Test load submission management command for File C records with FAIN and URI
@@ -109,7 +107,6 @@ class LoadSubmissionIntegrationTests(TestCase):
 
         assert expected_results == actual_results
 
-    @pytest.mark.django_db
     def test_load_submission_file_c_uri(self):
         """
         Test load submission management command for File C records with only a URI
@@ -128,7 +125,6 @@ class LoadSubmissionIntegrationTests(TestCase):
 
         assert expected_results == actual_results
 
-    @pytest.mark.django_db
     def test_load_submission_file_c_fain(self):
         """
         Test load submission management command for File C records with only a FAIN
@@ -147,7 +143,6 @@ class LoadSubmissionIntegrationTests(TestCase):
 
         assert expected_results == actual_results
 
-    @pytest.mark.django_db
     def test_load_submission_file_c_piid_with_parent_piid(self):
         """
         Test load submission management command for File C records with only a piid and parent piid
@@ -172,7 +167,6 @@ class LoadSubmissionIntegrationTests(TestCase):
 
         assert expected_results == actual_results
 
-    @pytest.mark.django_db
     def test_load_submission_file_c_piid_with_no_parent_piid(self):
         """
         Test load submission management command for File C records with only a piid and no parent piid
@@ -193,7 +187,6 @@ class LoadSubmissionIntegrationTests(TestCase):
 
         assert expected_results == actual_results
 
-    @pytest.mark.django_db
     def test_load_submission_file_c_piid_with_unmatched_parent_piid(self):
         """
         Test load submission management command for File C records that are not expected to be linked to Award data
@@ -218,7 +211,6 @@ class LoadSubmissionIntegrationTests(TestCase):
 
         assert expected_results == actual_results
 
-    @pytest.mark.django_db
     def test_load_submission_file_c_no_d_linkage(self):
         """
         Test load submission management command for File C records that are not expected to be linked to Award data
@@ -243,7 +235,6 @@ class LoadSubmissionIntegrationTests(TestCase):
 
         assert expected_results == actual_results
 
-    @pytest.mark.django_db
     def test_load_submission_file_c_zero_and_null_transaction_obligated_amount_ignored(self):
         """
         Test that the 'certified_award_financial` rows that have a 'transaction_obligated_amou'
