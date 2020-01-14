@@ -4,7 +4,7 @@ import pytest
 from rest_framework import status
 from model_mommy import mommy
 
-from usaspending_api.common.experimental_api_flags import ELASTICSEARCH_HEADER_VALUE, EXPERIMENTAL_API_HEADER
+from usaspending_api.common.experimental_api_flags import EXPERIMENTAL_API_HEADER, ExperimentalHeaderValue
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.v2.views.spending_over_time import GROUPING_LOOKUP
 
@@ -266,7 +266,7 @@ def test_spending_over_time_elasticsearch_http_header(client, monkeypatch, elast
         "/api/v2/search/spending_over_time",
         content_type="application/json",
         data=json.dumps({"group": "fiscal_year", "filters": {"keywords": ["test", "testing"]}}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(logging_statements) == 1, "Expected one logging statement"
@@ -290,7 +290,7 @@ def test_spending_over_time_elasticsearch_http_header(client, monkeypatch, elast
         "/api/v2/search/spending_over_time",
         content_type="application/json",
         data=json.dumps({"group": "fiscal_year", "subawards": True, "filters": {"keywords": ["test", "testing"]}}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(logging_statements) == 0, "Expected zero logging statements for Sub Awards with the Header"
@@ -326,7 +326,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
             "/api/v2/search/spending_over_time",
             content_type="application/json",
             data=json.dumps({"group": group, "filters": non_legacy_filters()}),
-            **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+            **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
         )
         assert resp.status_code == status.HTTP_200_OK, f"Failed to return 200 Response for group: {group}"
         assert len(logging_statements) == 1, "Expected one logging statement"
@@ -387,7 +387,7 @@ def _test_correct_response_for_keywords(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -424,7 +424,7 @@ def _test_correct_response_for_time_period(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 24036.0, "time_period": {"fiscal_year": "2012"}},
@@ -452,7 +452,7 @@ def _test_correct_response_for_award_type_codes(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -491,7 +491,7 @@ def _test_correct_response_for_agencies(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -550,7 +550,7 @@ def _test_correct_response_for_tas_codes(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -589,7 +589,7 @@ def _test_correct_response_for_pop_location(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -628,7 +628,7 @@ def _test_correct_response_for_recipient_location(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -662,7 +662,7 @@ def _test_correct_response_for_recipient_search_text(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -696,7 +696,7 @@ def _test_correct_response_for_recipient_type_names(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -734,7 +734,7 @@ def _test_correct_response_for_award_amounts(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -768,7 +768,7 @@ def _test_correct_response_for_cfda_program(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -802,7 +802,7 @@ def _test_correct_response_for_naics_codes(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -836,7 +836,7 @@ def _test_correct_response_for_psc_codes(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -874,7 +874,7 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -910,7 +910,7 @@ def _test_correct_response_for_set_aside_type_codes(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -944,7 +944,7 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -980,7 +980,7 @@ def _test_correct_response_for_recipient_id(client):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
@@ -1016,7 +1016,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_transac
         "/api/v2/search/spending_over_time",
         content_type="application/json",
         data=json.dumps({"group": "fiscal_year"}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert len(logging_statements) == 0, "Expected zero logging statements"
@@ -1028,7 +1028,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_transac
         "/api/v2/search/spending_over_time",
         content_type="application/json",
         data=json.dumps({"group": "fiscal_year", "filters": {}}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert len(logging_statements) == 0, "Expected zero logging statements"
@@ -1051,7 +1051,7 @@ def test_failure_with_invalid_group(client, monkeypatch, elasticsearch_transacti
         "/api/v2/search/spending_over_time",
         content_type="application/json",
         data=json.dumps({"group": "not a valid group", "filters": {"keywords": ["test", "testing"]}}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert len(logging_statements) == 0, "Expected zero logging statements"
@@ -1066,7 +1066,7 @@ def test_failure_with_invalid_group(client, monkeypatch, elasticsearch_transacti
         "/api/v2/search/spending_over_time",
         content_type="application/json",
         data=json.dumps({"filters": {"keywords": ["test", "testing"]}}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert len(logging_statements) == 0, "Expected zero logging statements"

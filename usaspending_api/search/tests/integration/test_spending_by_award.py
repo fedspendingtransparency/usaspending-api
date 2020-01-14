@@ -5,7 +5,7 @@ from datetime import datetime
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.common.experimental_api_flags import EXPERIMENTAL_API_HEADER, ELASTICSEARCH_HEADER_VALUE
+from usaspending_api.common.experimental_api_flags import EXPERIMENTAL_API_HEADER, ExperimentalHeaderValue
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters, legacy_filters
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 
@@ -403,7 +403,7 @@ def test_spending_by_award_elasticsearch_http_header(client, monkeypatch, elasti
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(logging_statements) == 1, "Expected one logging statement"
@@ -447,7 +447,7 @@ def test_spending_by_award_elasticsearch_http_header(client, monkeypatch, elasti
                 "order": "desc",
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(logging_statements) == 0, "Expected zero logging statements for Sub Awards with the Header"
@@ -502,7 +502,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_200_OK, f"Failed to return 200 Response"
     assert len(logging_statements) == 1, "Expected one logging statement"
@@ -563,7 +563,7 @@ def _test_correct_response_for_keywords(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
@@ -591,7 +591,7 @@ def _test_correct_response_for_time_period(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
@@ -619,7 +619,7 @@ def _test_correct_response_for_award_type_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3", "recipient_id": None},
@@ -653,7 +653,7 @@ def _test_correct_response_for_agencies(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
@@ -682,7 +682,7 @@ def _test_correct_response_for_tas_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
@@ -711,7 +711,7 @@ def _test_correct_response_for_pop_location(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
@@ -743,7 +743,7 @@ def _test_correct_response_for_recipient_location(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None},
@@ -773,7 +773,7 @@ def _test_correct_response_for_recipient_search_text(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {
@@ -807,7 +807,7 @@ def _test_correct_response_for_recipient_type_names(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None},
@@ -837,7 +837,7 @@ def _test_correct_response_for_award_amounts(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None},
@@ -867,7 +867,7 @@ def _test_correct_response_for_cfda_program(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {
@@ -901,7 +901,7 @@ def _test_correct_response_for_naics_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
@@ -930,7 +930,7 @@ def _test_correct_response_for_psc_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
@@ -959,7 +959,7 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
@@ -990,7 +990,7 @@ def _test_correct_response_for_set_aside_type_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
@@ -1019,7 +1019,7 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
@@ -1050,7 +1050,7 @@ def _test_correct_response_for_recipient_id(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     expected_result = [
         {
@@ -1080,7 +1080,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
         "/api/v2/search/spending_by_award",
         content_type="application/json",
         data=json.dumps({}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert len(logging_statements) == 0, "Expected zero logging statements"
@@ -1092,7 +1092,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
         "/api/v2/search/spending_by_award",
         content_type="application/json",
         data=json.dumps({"fields": [], "filters": {}, "page": 1, "limit": 60, "subawards": False}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert len(logging_statements) == 0, "Expected zero logging statements"
@@ -1115,7 +1115,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+        **{EXPERIMENTAL_API_HEADER: ExperimentalHeaderValue.ELASTICSEARCH.value},
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert len(logging_statements) == 0, "Expected zero logging statements"

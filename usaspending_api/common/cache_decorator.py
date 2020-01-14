@@ -2,6 +2,8 @@
 import logging
 from rest_framework_extensions.cache.decorators import CacheResponse
 
+from usaspending_api.common.experimental_api_flags import should_skip_api_cache_check
+
 logger = logging.getLogger("console")
 
 
@@ -12,7 +14,10 @@ class CustomCacheResponse(CacheResponse):
         )
         response = None
         try:
-            response = self.cache.get(key)
+            if should_skip_api_cache_check(request):
+                logger.info("Skipping API cache check due to 'disable-cache-check' flag")
+            else:
+                response = self.cache.get(key)
         except Exception:
             msg = "Problem while retrieving key [{k}] from cache for path:'{p}'"
             logger.exception(msg.format(k=key, p=str(request.path)))
