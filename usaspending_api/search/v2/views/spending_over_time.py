@@ -174,7 +174,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch(self, time_periods: list) -> list:
-        filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters)
+        filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters, "transactions")
         search = Search(index=f"{settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX}*").filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = es_client_query(search=search)
