@@ -53,8 +53,7 @@ def award_data_fixture(db):
     mommy.make("awards.Award", id=4, latest_transaction_id=4, is_fpds=True, type="A", piid="0003")
 
 
-@pytest.mark.django_db
-def test_city_search_matches_found(client, db, award_data_fixture, elasticsearch_transaction_index):
+def test_city_search_matches_found(client, award_data_fixture, elasticsearch_transaction_index):
 
     elasticsearch_transaction_index.update_index()
     body = {"filter": {"country_code": "USA", "scope": "recipient_location"}, "search_text": "arli", "limit": 20}
@@ -64,8 +63,7 @@ def test_city_search_matches_found(client, db, award_data_fixture, elasticsearch
         assert entry["city_name"].lower().find("arl") > -1
 
 
-@pytest.mark.django_db
-def test_city_search_no_matches(client, db, award_data_fixture, elasticsearch_transaction_index):
+def test_city_search_no_matches(client, award_data_fixture, elasticsearch_transaction_index):
 
     elasticsearch_transaction_index.update_index()
     body = {"filter": {"country_code": "USA", "scope": "recipient_location"}, "search_text": "bhqlg", "limit": 20}
@@ -85,8 +83,7 @@ def test_city_search_no_matches(client, db, award_data_fixture, elasticsearch_tr
         assert False  # this should never be reached
 
 
-@pytest.mark.django_db
-def test_city_search_special_characters(client, db, award_data_fixture, elasticsearch_transaction_index):
+def test_city_search_special_characters(client, award_data_fixture, elasticsearch_transaction_index):
 
     elasticsearch_transaction_index.update_index()
     body = {
@@ -100,8 +97,7 @@ def test_city_search_special_characters(client, db, award_data_fixture, elastics
         assert entry["city_name"].lower().find("arl") > -1
 
 
-@pytest.mark.django_db
-def test_city_search_non_usa(client, db, award_data_fixture, elasticsearch_transaction_index):
+def test_city_search_non_usa(client, award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
     body = {"filter": {"country_code": "GBR", "scope": "recipient_location"}, "search_text": "bri", "limit": 20}
     response = client.post("/api/v2/autocomplete/city", content_type="application/json", data=json.dumps(body))
@@ -116,8 +112,7 @@ def test_city_search_non_usa(client, db, award_data_fixture, elasticsearch_trans
         assert entry["city_name"].lower().find("bri") > -1
 
 
-@pytest.mark.django_db
-def test_city_search_foreign(client, db, award_data_fixture, elasticsearch_transaction_index):
+def test_city_search_foreign(client, award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
     body = {"filter": {"country_code": "FOREIGN", "scope": "recipient_location"}, "search_text": "bri", "limit": 20}
     response = client.post("/api/v2/autocomplete/city", content_type="application/json", data=json.dumps(body))
@@ -126,8 +121,7 @@ def test_city_search_foreign(client, db, award_data_fixture, elasticsearch_trans
         assert entry["city_name"].lower().find("bri") > -1
 
 
-@pytest.mark.django_db
-def test_city_search_nulls_are_usa(client, db, award_data_fixture, elasticsearch_transaction_index):
+def test_city_search_nulls_are_usa(client, award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
     body = {"filter": {"country_code": "USA", "scope": "recipient_location"}, "search_text": "phil", "limit": 20}
     response = client.post("/api/v2/autocomplete/city", content_type="application/json", data=json.dumps(body))

@@ -27,7 +27,7 @@ def populate_models(mock_matviews_qs):
 
 
 @pytest.fixture
-def pragmatic_fixture(db):
+def pragmatic_fixture():
     mommy.make(
         "awards.TransactionNormalized",
         id=1,
@@ -242,6 +242,7 @@ def test_spending_over_time_funny_dates_ordering(populate_models, client, mock_m
     confirm_proper_ordering(group, resp.data["results"])
 
 
+@pytest.mark.django_db
 def test_generated_pragmatic_obligation_calculation(pragmatic_fixture):
     assert SummaryTransactionView.objects.all().count() == 2  # ensure both transactions are loaded
 

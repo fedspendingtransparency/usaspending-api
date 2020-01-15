@@ -71,7 +71,7 @@ def create_query(should) -> dict:
     return query
 
 
-def test_date_range(db, award_data_fixture, elasticsearch_award_index):
+def test_date_range(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {
         "bool": {
@@ -100,7 +100,7 @@ def test_date_range(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_tas(db, award_data_fixture, elasticsearch_award_index):
+def test_tas(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {
         "nested": {
@@ -139,7 +139,7 @@ def test_tas(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_agency(db, award_data_fixture, elasticsearch_award_index):
+def test_agency(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {"match": {"funding_toptier_agency_name.keyword": "Department of Transportation"}}
     client = elasticsearch_award_index.client
@@ -153,7 +153,7 @@ def test_agency(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_award_type(db, award_data_fixture, elasticsearch_award_index):
+def test_award_type(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {"match": {"type": "A"}}
     query = create_query(should)
@@ -166,7 +166,7 @@ def test_award_type(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_award_id(db, award_data_fixture, elasticsearch_award_index):
+def test_award_id(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {"match": {"display_award_id": "IND12PB00323"}}
     query = create_query(should)
@@ -179,7 +179,7 @@ def test_award_id(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_cfda(db, award_data_fixture, elasticsearch_award_index):
+def test_cfda(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {"match": {"cfda_number.keyword": "84.063"}}
     query = create_query(should)
@@ -192,7 +192,7 @@ def test_cfda(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_recipient_location(db, award_data_fixture, elasticsearch_award_index):
+def test_recipient_location(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = [
         {"match": {"recipient_location_country_code": "USA"}},
@@ -216,7 +216,7 @@ def test_recipient_location(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_pop_location(db, award_data_fixture, elasticsearch_award_index):
+def test_pop_location(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = [
         {"match": {"pop_country_code": "USA"}},
@@ -239,7 +239,7 @@ def test_pop_location(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_naics(db, award_data_fixture, elasticsearch_award_index):
+def test_naics(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {"match": {"naics_code.keyword": "331122"}}
     query = create_query(should)
@@ -252,7 +252,7 @@ def test_naics(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_psc(db, award_data_fixture, elasticsearch_award_index):
+def test_psc(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {"match": {"product_or_service_code.keyword": "1510"}}
     query = create_query(should)
@@ -265,7 +265,7 @@ def test_psc(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_type_set_aside(db, award_data_fixture, elasticsearch_award_index):
+def test_type_set_aside(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {"match": {"type_set_aside.keyword": "8AN"}}
     query = create_query(should)
@@ -278,7 +278,7 @@ def test_type_set_aside(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_contract_pricing(db, award_data_fixture, elasticsearch_award_index):
+def test_contract_pricing(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {"match": {"type_of_contract_pricing.keyword": "2"}}
     query = create_query(should)
@@ -291,7 +291,7 @@ def test_contract_pricing(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_extent_competed(db, award_data_fixture, elasticsearch_award_index):
+def test_extent_competed(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     should = {"match": {"extent_competed": "F"}}
     query = create_query(should)
@@ -304,7 +304,7 @@ def test_extent_competed(db, award_data_fixture, elasticsearch_award_index):
     assert response["hits"]["total"] == 0
 
 
-def test_award_keyword(db, award_data_fixture, elasticsearch_award_index):
+def test_award_keyword(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     query = {
         "query": {"bool": {"filter": {"dis_max": {"queries": [{"query_string": {"query": "pop tarts"}}]}}}},

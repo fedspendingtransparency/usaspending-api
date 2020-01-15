@@ -49,7 +49,7 @@ def download_test_data(db):
     aa2 = mommy.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
-    mommy.make(
+    ata3 = mommy.make(
         "references.ToptierAgency",
         name="Bureau of Money",
         toptier_code="102",
@@ -62,7 +62,7 @@ def download_test_data(db):
     mommy.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Funding Agency
-    mommy.make("references.Agency", id=3, toptier_flag=False)
+    mommy.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
     award1 = mommy.make("awards.Award", id=123, category="idv")
@@ -116,7 +116,7 @@ def test_download_awards_without_columns(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db
@@ -129,7 +129,7 @@ def test_tsv_download_awards_without_columns(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db
@@ -142,7 +142,7 @@ def test_psv_download_awards_without_columns(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db
@@ -166,7 +166,7 @@ def test_download_awards_with_columns(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db
