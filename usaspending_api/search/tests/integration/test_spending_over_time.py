@@ -10,7 +10,7 @@ from usaspending_api.search.v2.views.spending_over_time import GROUPING_LOOKUP
 
 
 @pytest.fixture
-def spending_over_time_test_data(db):
+def spending_over_time_test_data():
     """
     Generate minimum test data for 'spending_over_time' integration tests.
     Use some calculations inside of a loop to get a larger data sample.

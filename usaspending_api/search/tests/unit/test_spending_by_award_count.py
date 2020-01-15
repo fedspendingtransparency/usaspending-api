@@ -134,8 +134,7 @@ def get_spending_by_award_count_url():
     return "/api/v2/search/spending_by_award_count/"
 
 
-@pytest.mark.django_db
-def test_spending_by_award_count(client, db, award_data_fixture):
+def test_spending_by_award_count(client, award_data_fixture):
     test_payload = {
         "subawards": False,
         "filters": {
@@ -159,8 +158,7 @@ def test_spending_by_award_count(client, db, award_data_fixture):
     assert expected_response == resp.data, "Unexpected or missing content!"
 
 
-@pytest.mark.django_db
-def test_spending_by_award_count_idvs(client, db, award_data_fixture):
+def test_spending_by_award_count_idvs(client, award_data_fixture):
     test_payload = {
         "subawards": False,
         "filters": {
