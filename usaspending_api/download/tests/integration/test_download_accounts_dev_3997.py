@@ -48,8 +48,8 @@ def get_csv_contents_and_clean_up(zip_file_path):
     return [{k: v for k, v in r.items() if k in important_columns} for r in csv_reader]
 
 
-@pytest.mark.django_db
-def test_download_accounts_dev_3997(client, transactional_db):
+@pytest.mark.django_db(transaction=True)
+def test_download_accounts_dev_3997(client):
     """
     As part of DEV-3997, special roll-ups/excisions were added to File B downloads.  This tests to
     ensure those are happening correctly.  The specific conditions we are testing for:
