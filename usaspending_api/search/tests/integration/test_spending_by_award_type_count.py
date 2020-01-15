@@ -14,7 +14,6 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 @pytest.fixture
 def award_data_fixture(db):
     mommy.make("awards.TransactionNormalized", id=2)
-    mommy.make("references.LegalEntity", legal_entity_id=20)
     mommy.make(
         "awards.Award",
         base_and_all_options_value=None,
@@ -40,7 +39,6 @@ def award_data_fixture(db):
         period_of_performance_current_end_date="2039-09-09",
         period_of_performance_start_date="2009-09-10",
         piid=None,
-        recipient_id=20,
         subaward_count=0,
         total_funding_amount=5907041570,
         total_loan_value=5907041570,
@@ -55,7 +53,7 @@ def award_data_fixture(db):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_type_success(client, refresh_matviews):
+def test_spending_by_award_type_success(client):
 
     # test for filters
     resp = client.post(
@@ -79,7 +77,7 @@ def test_spending_by_award_type_success(client, refresh_matviews):
 
 @pytest.mark.skip
 @pytest.mark.django_db(transaction=True)
-def test_spending_by_award_count_filters(client, refresh_matviews):
+def test_spending_by_award_count_filters(client):
     resp = client.post(
         "/api/v2/search/spending_by_award_count",
         content_type="application/json",
@@ -101,7 +99,7 @@ def test_spending_by_award_type_failure(client):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_no_intersection(client, db, award_data_fixture, refresh_matviews):
+def test_spending_by_award_no_intersection(client, db, award_data_fixture):
 
     request = {"subawards": False, "fields": ["Award ID"], "sort": "Award ID", "filters": {"award_type_codes": ["07"]}}
 

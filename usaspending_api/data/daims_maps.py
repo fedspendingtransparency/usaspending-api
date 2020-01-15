@@ -66,7 +66,6 @@ daims_maps = {
         "REC": "Funds are provided by the Recovery Act",
         "NON": "Funded by other (non-Recovery Act) sources",
     },
-    # This is included in D1/D2 type maps, but is stored in the LegalEntity models
     "business_types_map": {
         "A": "State government",
         "B": "County Government",
@@ -134,7 +133,6 @@ daims_maps = {
     "cost_accounting_standards_map": {"Y": "Yes", "N": "No", "X": "Not Applicable"},
     "cost_or_pricing_data_map": {"N": "No", "W": "Not Obtained - Waived", "Y": "Yes"},
     "construction_wage_rate_req_map": {"Y": "Yes", "N": "No", "X": "Not Applicable"},
-    # This is located in LegalEntity as well
     "domestic_or_foreign_entity_map": {
         "A": "U.S. Owned Business",
         "B": "Other U.S. Entity (e.g. Government)",

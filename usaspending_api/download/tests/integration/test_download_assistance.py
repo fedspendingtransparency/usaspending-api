@@ -23,9 +23,6 @@ def download_test_data(db):
     # Create Locations
     mommy.make("references.Location")
 
-    # Create LE
-    mommy.make("references.LegalEntity")
-
     # Create Awarding Top Agency
     ata1 = mommy.make(
         "references.ToptierAgency",
@@ -119,7 +116,7 @@ def test_download_assistance_without_columns(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db
@@ -134,7 +131,7 @@ def test_download_assistance_with_columns(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db

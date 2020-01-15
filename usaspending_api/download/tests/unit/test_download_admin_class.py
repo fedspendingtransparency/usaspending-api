@@ -46,7 +46,7 @@ def test_simple_download_admin_pass():
 
 @pytest.mark.skip
 @pytest.mark.django_db
-def test_download_admin_restart_pass(refresh_matviews):
+def test_download_admin_restart_pass():
     job_status_rows = [
         {"job_status_id": 1, "name": "placeholder_1", "description": "Example Job Status 1"},
         {"job_status_id": 2, "name": "placeholder_2", "description": "Example Job Status 2"},

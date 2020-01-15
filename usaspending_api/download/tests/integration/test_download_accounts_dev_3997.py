@@ -320,9 +320,9 @@ def test_download_accounts_dev_3997(client, transactional_db):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["status"] == "finished"
+    assert "api/v2/download/status?file_name=FY2018Q1-Q4_All_TAS_AccountBreakdownByPA-OC" in resp.data["status_url"]
 
-    csv_contents = get_csv_contents_and_clean_up(resp.data["url"])
+    csv_contents = get_csv_contents_and_clean_up(resp.data["file_url"])
 
     # 8/10 treasury account rows should remain
     # 000-X-0004-001 with all $0 gets rolled into 000-X-0004-001 with actual dollar values
@@ -453,10 +453,9 @@ def test_download_accounts_dev_3997(client, transactional_db):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["status"] == "finished"
+    assert "api/v2/download/status?file_name=FY2018Q1-Q4_All_FA_AccountBreakdownByPA-OC" in resp.data["status_url"]
 
-    csv_contents = get_csv_contents_and_clean_up(resp.data["url"])
-    print(csv_contents)
+    csv_contents = get_csv_contents_and_clean_up(resp.data["file_url"])
 
     # 7/10 federal account rows should remain
     # 000-0002 missing direct_reimbursable gets rolled into 000-0002 with direct_reimbursable

@@ -11,7 +11,7 @@ from usaspending_api.awards.tests.unit.test_subawards import subaward_1, subawar
 
 
 @pytest.mark.django_db
-def test_subaward_success(client, refresh_matviews):
+def test_subaward_success(client):
 
     resp = client.post(
         "/api/v2/subawards/", content_type="application/json", data=json.dumps({"order": "desc", "limit": 100})
@@ -20,7 +20,7 @@ def test_subaward_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_subaward_failure(client, refresh_matviews):
+def test_subaward_failure(client):
 
     resp = client.post(
         "/api/v2/subawards/",
@@ -31,7 +31,7 @@ def test_subaward_failure(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_subaward_query_1(client, refresh_matviews, mock_matviews_qs):
+def test_subaward_query_1(client, mock_matviews_qs):
     mock_model_1 = MockModel(**subaward_1)
     mock_model_2 = MockModel(**subaward_2)
     mock_model_3 = MockModel(**subaward_3)
@@ -46,7 +46,7 @@ def test_subaward_query_1(client, refresh_matviews, mock_matviews_qs):
 
 
 @pytest.mark.django_db
-def test_subaward_query_2(client, refresh_matviews, mock_matviews_qs):
+def test_subaward_query_2(client, mock_matviews_qs):
     mock_model_4 = MockModel(**subaward_12)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_4])
@@ -59,7 +59,7 @@ def test_subaward_query_2(client, refresh_matviews, mock_matviews_qs):
 
 
 @pytest.mark.django_db
-def test_subaward_query_3(client, refresh_matviews, mock_matviews_qs):
+def test_subaward_query_3(client, mock_matviews_qs):
     mock_model_4 = MockModel(**subaward_12)
 
     add_to_mock_objects(mock_matviews_qs, [mock_model_4])

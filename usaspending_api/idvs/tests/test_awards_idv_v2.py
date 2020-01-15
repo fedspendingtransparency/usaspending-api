@@ -5,7 +5,7 @@ from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
+from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
@@ -61,25 +61,8 @@ def awards_and_transactions(db):
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
 
-    parent_le = {
-        "pk": 2,
-        "recipient_name": "Dave's Pizza LLC",
-        "recipient_unique_id": "123",
-        "location": Location.objects.get(pk=2),
-    }
-
-    le = {
-        "pk": 1,
-        "recipient_name": "John's Pizza",
-        "recipient_unique_id": "456",
-        "parent_recipient_unique_id": "123",
-        "location": Location.objects.get(pk=1),
-    }
-
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
     mommy.make("references.Agency", **ag)
-    mommy.make("references.LegalEntity", **parent_le)
-    mommy.make("references.LegalEntity", **le)
 
     trans_asst = {"pk": 1, "award_id": 1, "business_categories": ["small_business"]}
     trans_cont_1 = {"pk": 2, "award_id": 2, "business_categories": ["small_business"]}
@@ -108,7 +91,6 @@ def awards_and_transactions(db):
         "subaward_count": 10,
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "place_of_performance": Location.objects.get(pk=1),
         "date_signed": "2005-04-03",
     }
@@ -123,7 +105,6 @@ def awards_and_transactions(db):
         "description": "lorem ipsum",
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
@@ -148,7 +129,6 @@ def awards_and_transactions(db):
         "description": "lorem ipsum",
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
