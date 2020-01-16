@@ -6,7 +6,7 @@ from rest_framework.exceptions import ParseError
 
 from usaspending_api.common.exceptions import InvalidParameterException
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 
 def check_types_and_assign_defaults(old_dict, new_dict, defaults_dict):

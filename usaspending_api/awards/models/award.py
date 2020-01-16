@@ -107,9 +107,6 @@ class Award(DataSourceTrackedModel):
     date_signed = models.DateField(
         null=True, db_index=False, verbose_name="Award Date", help_text="The date the award was signed"
     )
-    recipient = models.ForeignKey(
-        "references.LegalEntity", null=True, help_text="The recipient of the award", db_index=True
-    )
     description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award")
     period_of_performance_start_date = models.DateField(
         null=True, db_index=True, verbose_name="Start Date", help_text="The start date for the period of performance"

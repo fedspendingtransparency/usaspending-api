@@ -57,8 +57,8 @@ def test_with_id(client, naics_test_data):
             "naics_description": "Oilseed and Grain Farming",
             "count": 2,
             "children": [
-                {"naics": "111110", "naics_description": "Soybean Farming", "count": 1},
-                {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 1},
+                {"naics": "111110", "naics_description": "Soybean Farming", "count": 0},
+                {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 0},
             ],
         }
     ]
@@ -66,7 +66,7 @@ def test_with_id(client, naics_test_data):
 
     resp = client.get("/api/v2/references/naics/111120/")
     assert resp.status_code == 200
-    expected_data = [{"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 1}]
+    expected_data = [{"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 0}]
     assert resp.data["results"] == expected_data
 
     # Nonexistent id.
@@ -129,8 +129,8 @@ def test_with_filter(client, naics_test_data):
                         "naics_description": "Oilseed and Grain Farming",
                         "count": 2,
                         "children": [
-                            {"naics": "111110", "naics_description": "Soybean Farming", "count": 1},
-                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 1},
+                            {"naics": "111110", "naics_description": "Soybean Farming", "count": 0},
+                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 0},
                         ],
                     }
                 ],
@@ -154,15 +154,15 @@ def test_with_filter(client, naics_test_data):
                         "naics_description": "Oilseed and Grain Farming",
                         "count": 2,
                         "children": [
-                            {"naics": "111110", "naics_description": "Soybean Farming", "count": 1},
-                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 1},
+                            {"naics": "111110", "naics_description": "Soybean Farming", "count": 0},
+                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 0},
                         ],
                     },
                     {
                         "naics": "1112",
                         "naics_description": "Vegetable and Melon Farming",
                         "count": 1,
-                        "children": [{"naics": "111211", "naics_description": "Potato Farming", "count": 1}],
+                        "children": [{"naics": "111211", "naics_description": "Potato Farming", "count": 0}],
                     },
                 ],
             }
@@ -185,8 +185,8 @@ def test_with_filter(client, naics_test_data):
                         "naics_description": "Oilseed and Grain Farming",
                         "count": 2,
                         "children": [
-                            {"naics": "111110", "naics_description": "Soybean Farming", "count": 1},
-                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 1},
+                            {"naics": "111110", "naics_description": "Soybean Farming", "count": 0},
+                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 0},
                         ],
                     },
                     {"naics": "1112", "naics_description": "Vegetable and Melon Farming", "count": 1, "children": []},
@@ -211,14 +211,14 @@ def test_with_filter(client, naics_test_data):
                         "naics_description": "Oilseed and Grain Farming",
                         "count": 2,
                         "children": [
-                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 1}
+                            {"naics": "111120", "naics_description": "Oilseed (except Soybean) Farming", "count": 0}
                         ],
                     },
                     {
                         "naics": "1112",
                         "naics_description": "Vegetable and Melon Farming",
                         "count": 1,
-                        "children": [{"naics": "111211", "naics_description": "Potato Farming", "count": 1}],
+                        "children": [{"naics": "111211", "naics_description": "Potato Farming", "count": 0}],
                     },
                 ],
             }

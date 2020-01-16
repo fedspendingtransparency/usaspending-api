@@ -1,15 +1,17 @@
 import json
 
 from datetime import datetime, timezone
+from typing import Optional
 
 from django.conf import settings
 from rest_framework.exceptions import NotFound
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
-from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
+from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
@@ -31,7 +33,7 @@ class BaseDownloadViewSet(APIView):
         bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
     )
 
-    def post(self, request, request_type="award"):
+    def post(self, request: Request, request_type: str = "award", origination: Optional[str] = None):
         if request_type == "award":
             json_request = validate_award_request(request.data)
         elif request_type == "idv":
@@ -58,14 +60,11 @@ class BaseDownloadViewSet(APIView):
 
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
-            write_to_log(
-                message="Generating file from cached download job ID: {}".format(cached_download["download_job_id"])
-            )
+            write_to_log(message=f"Generating file from cached download job ID: {cached_download['download_job_id']}")
             cached_filename = cached_download["file_name"]
             return self.get_download_response(file_name=cached_filename)
 
-        request_agency = json_request.get("filters", {}).get("agency", None)
-        final_output_zip_name = create_unique_filename(json_request, request_agency)
+        final_output_zip_name = create_unique_filename(json_request, origination=origination)
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT["ready"], file_name=final_output_zip_name, json_request=ordered_json_request
         )
@@ -75,38 +74,56 @@ class BaseDownloadViewSet(APIView):
 
         return self.get_download_response(file_name=final_output_zip_name)
 
-    def process_request(self, download_job):
-        if settings.IS_LOCAL:
-            # Locally, we do not use SQS
+    def process_request(self, download_job: DownloadJob):
+        if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
+            # Eagerly execute the download in this running process
             download_generation.generate_download(download_job=download_job)
         else:
             # Send a SQS message that will be processed by another server which will eventually run
             # download_generation.write_csvs(**kwargs) (see download_sqs_worker.py)
             write_to_log(
-                message="Passing download_job {} to SQS".format(download_job.download_job_id), download_job=download_job
+                message=f"Passing download_job {download_job.download_job_id} to SQS", download_job=download_job
             )
-            queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
-    def get_download_response(self, file_name):
-        """Generate download response which encompasses various elements to provide accurate status for state of a
-        download job"""
-        download_job = DownloadJob.objects.filter(file_name=file_name).first()
-        if not download_job:
-            raise NotFound("Download job with filename {} does not exist.".format(file_name))
+    def get_download_response(self, file_name: str):
+        """
+        Generate download response which encompasses various elements to provide accurate status for state of a
+        download job
+        """
+        download_job = self._get_download_job(file_name)
 
         # Compile url to file
-        if settings.IS_LOCAL:
-            file_path = settings.CSV_LOCAL_PATH + file_name
-        else:
-            file_path = self.s3_handler.get_simple_url(file_name=file_name)
+        file_path = self._get_file_path(file_name)
 
-        # Add additional response elements that should be part of anything calling this function
+        # Generate the status endpoint for the file
+        status_url = self._get_status_url(file_name)
+
+        response = {
+            "status_url": status_url,
+            "file_name": file_name,
+            "file_url": file_path,
+            "download_request": json.loads(download_job.json_request),
+        }
+
+        return Response(response)
+
+    def get_download_status_response(self, file_name: str):
+        """
+        Generate download status response which encompasses various elements to provide accurate
+        status for state of a download job
+        """
+        download_job = self._get_download_job(file_name)
+
+        # Compile url to file
+        file_path = self._get_file_path(file_name)
+
         response = {
             "status": download_job.job_status.name,
-            "url": file_path,
             "message": download_job.error_message,
             "file_name": file_name,
+            "file_url": file_path,
             # converting size from bytes to kilobytes if file_size isn't None
             "total_size": download_job.file_size / 1000 if download_job.file_size else None,
             "total_columns": download_job.number_of_columns,
@@ -115,3 +132,30 @@ class BaseDownloadViewSet(APIView):
         }
 
         return Response(response)
+
+    def _get_status_url(self, file_name: str) -> str:
+        if settings.IS_LOCAL:
+            protocol = "http"
+            host = "localhost:8000"
+        elif settings.DOWNLOAD_ENV == "production":
+            protocol = "https"
+            host = "api.usaspending.gov"
+        else:
+            protocol = "https"
+            host = f"{settings.DOWNLOAD_ENV}-api.usaspending.gov"
+
+        return f"{protocol}://{host}/api/v2/download/status?file_name={file_name}"
+
+    def _get_download_job(self, file_name: str) -> DownloadJob:
+        download_job = DownloadJob.objects.filter(file_name=file_name).first()
+        if not download_job:
+            raise NotFound(f"Download job with filename {file_name} does not exist.")
+        return download_job
+
+    def _get_file_path(self, file_name: str) -> str:
+        if settings.IS_LOCAL:
+            file_path = settings.CSV_LOCAL_PATH + file_name
+        else:
+            file_path = self.s3_handler.get_simple_url(file_name=file_name)
+
+        return file_path

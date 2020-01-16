@@ -16,7 +16,7 @@ from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.recipient.v2.views import recipients
 from usaspending_api.recipient.models import RecipientProfile, DUNS, RecipientLookup
-from usaspending_api.references.models import RefCountryCode, LegalEntity
+from usaspending_api.references.models import RefCountryCode
 
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
 TODAY = datetime.datetime.now()
@@ -321,10 +321,9 @@ def test_extract_business_categories(monkeypatch):
 
     utm_objects = Mock()
     utm_objects.filter().order_by().values().first.return_value = {"business_categories": business_categories}
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalTransactionView.objects", utm_objects)
+    monkeypatch.setattr("usaspending_api.search.models.UniversalTransactionView.objects", utm_objects)
 
     mommy.make(RecipientLookup, **TEST_RECIPIENT_LOOKUPS[recipient_hash])
-    mommy.make(LegalEntity, recipient_name=recipient_name, recipient_unique_id=recipient_duns)
 
     # Mock DUNS
     # Should add 'category_business'
@@ -463,13 +462,11 @@ def test_recipient_overview(client, mock_matviews_qs, monkeypatch):
         mommy.make(DUNS, **test_duns_model)
         mommy.make(RefCountryCode, **TEST_REF_COUNTRY_CODE[country_code])
 
-    # Mock Legal Entity
     expected_business_cat = ["expected", "business", "cat"]
-    mommy.make(LegalEntity, recipient_name="PARENT RECIPIENT", recipient_unique_id="000000001")
 
     utm_objects = Mock()
     utm_objects.filter().order_by().values().first.return_value = {"business_categories": expected_business_cat}
-    monkeypatch.setattr("usaspending_api.awards.models_matviews.UniversalTransactionView.objects", utm_objects)
+    monkeypatch.setattr("usaspending_api.search.models.UniversalTransactionView.objects", utm_objects)
 
     resp = client.get(recipient_overview_endpoint(r_id))
     assert resp.status_code == status.HTTP_200_OK

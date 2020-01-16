@@ -15,7 +15,7 @@ from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, execute_sql_to_ordered_dictionary
 
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
@@ -42,9 +42,13 @@ VIEW_COLUMNS = [
     "type_description",
     "award_category",
     "recipient_unique_id",
-    "parent_recipient_unique_id",
     "recipient_name",
+    "recipient_hash",
+    "parent_recipient_unique_id",
+    "parent_recipient_name",
+    "parent_recipient_hash",
     "action_date",
+    "fiscal_action_date",
     "period_of_performance_start_date",
     "period_of_performance_current_end_date",
     "ordering_period_end_date",
@@ -54,8 +58,13 @@ VIEW_COLUMNS = [
     "transaction_amount",
     "face_value_loan_guarantee",
     "original_loan_subsidy_cost",
+    "generated_pragmatic_obligation",
     "awarding_agency_id",
     "funding_agency_id",
+    "awarding_toptier_agency_id",
+    "funding_toptier_agency_id",
+    "awarding_subtier_agency_id",
+    "funding_subtier_agency_id",
     "awarding_toptier_agency_name",
     "funding_toptier_agency_name",
     "awarding_subtier_agency_name",
@@ -64,12 +73,17 @@ VIEW_COLUMNS = [
     "funding_toptier_agency_abbreviation",
     "awarding_subtier_agency_abbreviation",
     "funding_subtier_agency_abbreviation",
+    "awarding_toptier_agency_code",
+    "funding_toptier_agency_code",
+    "awarding_subtier_agency_code",
+    "funding_subtier_agency_code",
+    "cfda_id",
+    "cfda_number",
     "cfda_title",
     "cfda_popular_name",
     "type_of_contract_pricing",
     "type_set_aside",
     "extent_competed",
-    "pulled_from",
     "type",
     "pop_country_code",
     "pop_country_name",
@@ -87,6 +101,76 @@ VIEW_COLUMNS = [
     "recipient_location_zip5",
     "recipient_location_congressional_code",
     "recipient_location_city_name",
+    "treasury_accounts",
+    "federal_accounts",
+    "business_categories",
+]
+AWARD_VIEW_COLUMNS = [
+    "award_id",
+    "generated_unique_award_id",
+    "display_award_id",
+    "category",
+    "type",
+    "type_description",
+    "piid",
+    "fain",
+    "uri",
+    "total_obligation",
+    "description",
+    "total_obl_bin",
+    "total_subsidy_cost",
+    "total_loan_value",
+    "update_date",
+    "recipient_name",
+    "recipient_hash",
+    "recipient_unique_id",
+    "parent_recipient_unique_id",
+    "business_categories",
+    "action_date",
+    "fiscal_year",
+    "last_modified_date",
+    "period_of_performance_start_date",
+    "period_of_performance_current_end_date",
+    "date_signed",
+    "ordering_period_end_date",
+    "original_loan_subsidy_cost",
+    "face_value_loan_guarantee",
+    "awarding_agency_id",
+    "funding_agency_id",
+    "awarding_toptier_agency_name",
+    "funding_toptier_agency_name",
+    "awarding_subtier_agency_name",
+    "funding_subtier_agency_name",
+    "awarding_toptier_agency_code",
+    "funding_toptier_agency_code",
+    "awarding_subtier_agency_code",
+    "funding_subtier_agency_code",
+    "recipient_location_country_code",
+    "recipient_location_country_name",
+    "recipient_location_state_code",
+    "recipient_location_county_code",
+    "recipient_location_county_name",
+    "recipient_location_congressional_code",
+    "recipient_location_zip5",
+    "recipient_location_city_name",
+    "pop_country_code",
+    "pop_country_name",
+    "pop_state_code",
+    "pop_county_code",
+    "pop_county_name",
+    "pop_zip5",
+    "pop_congressional_code",
+    "pop_city_name",
+    "cfda_number",
+    "sai_number",
+    "type_of_contract_pricing",
+    "extent_competed",
+    "type_set_aside",
+    "product_or_service_code",
+    "product_or_service_description",
+    "naics_code",
+    "naics_description",
+    "treasury_accounts",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
@@ -94,29 +178,29 @@ UPDATE_DATE_SQL = " AND update_date >= '{}'"
 COUNT_SQL = """
 SELECT COUNT(*) AS count
 FROM {view}
-WHERE transaction_fiscal_year={fy}{update_date}
+WHERE {type_fy}fiscal_year={fy}{update_date}
 """
 
 COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
-    WHERE transaction_fiscal_year={fy}{update_date}
+    WHERE {type_fy}fiscal_year={fy}{update_date}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
 CHECK_IDS_SQL = """
-WITH temp_transaction_ids AS (
+WITH temp_{view_type}_ids AS (
   SELECT *
-  FROM (VALUES {id_list}) AS unique_id_list (generated_unique_transaction_id)
+  FROM (VALUES {id_list}) AS unique_id_list (generated_unique_{view_type}_id)
 )
-SELECT transaction_id, generated_unique_transaction_id, update_date
+SELECT {view_type}_id, generated_unique_{view_type}_id, update_date
 FROM {view}
 WHERE EXISTS (
   SELECT *
-  FROM temp_transaction_ids
+  FROM temp_{view_type}_ids
   WHERE
-    {view}.generated_unique_transaction_id = temp_transaction_ids.generated_unique_transaction_id
-    AND transaction_fiscal_year={fy}
+    {view}.generated_unique_{view_type}_id = temp_{view_type}_ids.generated_unique_{view_type}_id
+    AND {type_fy}fiscal_year={fy}
 )
 """
 
@@ -134,6 +218,7 @@ AWARD_DESC_CATEGORIES = {
 }
 
 UNIVERSAL_TRANSACTION_ID_NAME = "generated_unique_transaction_id"
+UNIVERSAL_AWARD_ID_NAME = "generated_unique_award_id"
 
 
 class DataJob:
@@ -148,6 +233,24 @@ class DataJob:
 # ==============================================================================
 # Helper functions for several Django management commands focused on ETL into a Elasticsearch cluster
 # ==============================================================================
+
+
+def convert_postgres_array_as_string_to_list(array_as_string: str) -> list:
+    """
+        Postgres arrays are stored in CSVs as strings. Elasticsearch is able to handle lists of items, but needs to
+        be passed a list instead of a string. In the case of an empty array, return null.
+        For example, "{this,is,a,postgres,array}" -> ["this", "is", "a", "postgres", "array"].
+    """
+    return array_as_string[1:-1].split(",") if len(array_as_string) > 2 else None
+
+
+def convert_postgres_json_array_as_string_to_json(json_array_as_string: str) -> dict:
+    """
+        Postgres JSON arrays (jsonb) are stored in CSVs as strings. Elasticsearch is able to handle
+        JSON arrays with nested types, but needs to be passed a list JSON instead of a string.
+        In the case of an empty array, return null.
+    """
+    return json.loads(json_array_as_string) if json_array_as_string else None
 
 
 def process_guarddog(process_list):
@@ -172,21 +275,23 @@ def configure_sql_strings(config, filename, deleted_ids):
     Populates the formatted strings defined globally in this file to create the desired SQL
     """
     update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
+    if config["load_type"] == "awards":
+        view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+        view_type = "award"
+        type_fy = ""
+    else:
+        view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+        view_type = "transaction"
+        type_fy = "transaction_"
 
     copy_sql = COPY_SQL.format(
-        fy=config["fiscal_year"],
-        update_date=update_date_str,
-        filename=filename,
-        view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
+        fy=config["fiscal_year"], update_date=update_date_str, filename=filename, view=view_name, type_fy=type_fy
     )
 
-    count_sql = COUNT_SQL.format(
-        fy=config["fiscal_year"], update_date=update_date_str, view=settings.ES_TRANSACTIONS_ETL_VIEW_NAME
-    )
-
+    count_sql = COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy)
     if deleted_ids and config["process_deletes"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
-        id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"])
+        id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"], type_fy=type_fy, view_type=view_type)
     else:
         id_sql = None
 
@@ -215,7 +320,7 @@ def db_rows_to_dict(cursor):
 
 
 def download_db_records(fetch_jobs, done_jobs, config):
-    # There has been a reoccuring issue with .empty() returning true when the queue actually
+    # There has been a recurring issue with .empty() returning true when the queue actually
     # contains multiple jobs. Wait a few seconds before starting to see if it helps
     sleep(5)
     printf({"msg": "Queue has items: {}".format(not fetch_jobs.empty()), "f": "Download"})
@@ -232,6 +337,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
                 "starting_date": config["starting_date"],
                 "fiscal_year": job.fy,
                 "process_deletes": config["process_deletes"],
+                "load_type": config["load_type"],
             }
             copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
 
@@ -263,7 +369,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
         count = execute_sql_statement(count_sql, True, verbose)[0]["count"]
         printf({"msg": "Writing {} to this file: {}".format(count, filename), "job": job_id, "f": "Download"})
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
-    subprocess.Popen('psql "${{DATABASE_URL}}" -c {}'.format(copy_sql), shell=True).wait()
+    subprocess.Popen("psql {} -c {}".format(get_database_dsn_string(), copy_sql), shell=True).wait()
 
     if not skip_counts:
         download_count = count_rows_in_delimited_file(filename, has_header=True, safe=False)
@@ -274,11 +380,17 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
     return count
 
 
-def csv_chunk_gen(filename, chunksize, job_id):
+def csv_chunk_gen(filename, chunksize, job_id, awards):
     printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
+    # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
+    converters = {
+        "business_categories": convert_postgres_array_as_string_to_list,
+        "treasury_accounts": convert_postgres_json_array_as_string_to_json,
+        "federal_accounts": convert_postgres_json_array_as_string_to_json,
+    }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    dtype = {k: str for k in VIEW_COLUMNS}
-    for file_df in pd.read_csv(filename, dtype=dtype, header=0, chunksize=chunksize):
+    dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
+    for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
         yield file_df.to_dict(orient="records")
 
@@ -286,7 +398,7 @@ def csv_chunk_gen(filename, chunksize, job_id):
 def es_data_loader(client, fetch_jobs, done_jobs, config):
     if config["create_new_index"]:
         # ensure template for index is present and the latest version
-        call_command("es_configure", "--template-only")
+        call_command("es_configure", "--template-only", "--load_type={}".format(config["load_type"]))
     while True:
         if not done_jobs.empty():
             job = done_jobs.get_nowait()
@@ -305,11 +417,13 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     return
 
 
-def streaming_post_to_es(client, chunk, index_name, job_id=None):
+def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None):
     success, failed = 0, 0
     try:
-        # "doc_type" is set in the index templete file. Don't change this without changing in json file first
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name, doc_type="transaction_mapping"):
+        # "doc_type" is set in the index template file. Don't change this without changing in json file first
+        for ok, item in helpers.streaming_bulk(
+            client, chunk, index=index_name, doc_type="{}_mapping".format(type[:-1])
+        ):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -325,9 +439,12 @@ def put_alias(client, index, alias_name, alias_body):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
-def create_aliases(client, index, silent=False):
+def create_aliases(client, index, load_type, silent=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        alias_name = "{}-{}".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, award_type)
+        if load_type == "awards":
+            alias_name = "{}-{}".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX, award_type)
+        else:
+            alias_name = "{}-{}".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, award_type)
         if silent is False:
             printf(
                 {
@@ -341,14 +458,11 @@ def create_aliases(client, index, silent=False):
 
     # ensure the new index is added to the alias used for incremental loads.
     # If the alias is on multiple indexes, the loads will fail!
-    printf(
-        {
-            "msg": "Putting alias '{}' on {}".format(settings.ES_TRANSACTIONS_WRITE_ALIAS, index),
-            "job": None,
-            "f": "ES Alias Put",
-        }
+    write_alias = settings.ES_AWARDS_WRITE_ALIAS if load_type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS
+    printf({"msg": "Putting alias '{}' on {}".format(write_alias, index), "job": None, "f": "ES Alias Put"})
+    put_alias(
+        client, index, write_alias, {},
     )
-    put_alias(client, index, settings.ES_TRANSACTIONS_WRITE_ALIAS, {})
 
 
 def set_final_index_config(client, index):
@@ -366,12 +480,14 @@ def set_final_index_config(client, index):
         printf({"msg": message, "job": None, "f": "ES Settings Put"})
 
 
-def swap_aliases(client, index):
+def swap_aliases(client, index, load_type):
     if client.indices.get_alias(index, "*"):
         printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
-
-    alias_patterns = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "*"
+    if load_type == "awards":
+        alias_patterns = settings.ES_AWARDS_QUERY_ALIAS_PREFIX + "*"
+    else:
+        alias_patterns = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "*"
     old_indexes = []
 
     try:
@@ -382,7 +498,7 @@ def swap_aliases(client, index):
     except Exception:
         printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
 
-    create_aliases(client, index)
+    create_aliases(client, index, load_type=load_type)
 
     try:
         if old_indexes:
@@ -405,15 +521,21 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         client.indices.create(index=job.index)
         client.indices.refresh(job.index)
 
-    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name)
+    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["load_type"])
     for count, chunk in enumerate(csv_generator):
         if len(chunk) == 0:
             printf({"msg": "No documents to add/delete for chunk #{}".format(count), "f": "ES Ingest", "job": job.name})
             continue
         iteration = perf_counter()
         if config["process_deletes"]:
-            id_list = [{"key": c[UNIVERSAL_TRANSACTION_ID_NAME], "col": UNIVERSAL_TRANSACTION_ID_NAME} for c in chunk]
-            delete_transactions_from_es(client, id_list, job.name, config, job.index)
+            if config["load_type"] == "awards":
+                id_list = [{"key": c[UNIVERSAL_AWARD_ID_NAME], "col": UNIVERSAL_AWARD_ID_NAME} for c in chunk]
+                delete_awards_from_es(client, id_list, job.name, config, job.index)
+            else:
+                id_list = [
+                    {"key": c[UNIVERSAL_TRANSACTION_ID_NAME], "col": UNIVERSAL_TRANSACTION_ID_NAME} for c in chunk
+                ]
+                delete_transactions_from_es(client, id_list, job.name, config, job.index)
 
         current_rows = "({}-{})".format(count * chunksize + 1, count * chunksize + len(chunk))
         printf(
@@ -423,7 +545,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
                 "f": "ES Ingest",
             }
         )
-        streaming_post_to_es(client, chunk, job.index, job.name)
+        streaming_post_to_es(client, chunk, job.index, config["load_type"], job.name)
         printf(
             {
                 "msg": "Iteration group #{} took {}s".format(count, perf_counter() - iteration),
@@ -444,6 +566,29 @@ def deleted_transactions(client, config):
     deleted_ids = gather_deleted_ids(config)
     id_list = [{"key": deleted_id, "col": UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
     delete_transactions_from_es(client, id_list, None, config, None)
+
+
+def deleted_awards(client, config):
+    """
+    so we have to find all the awards connected to these transactions,
+    if we can't find the awards in the database, then we have to delete them from es
+    """
+    deleted_ids = gather_deleted_ids(config)
+    id_list = [{"key": deleted_id, "col": UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
+    award_ids = get_deleted_award_ids(client, id_list, config, settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*")
+    if (len(award_ids)) == 0:
+        printf({"msg": "No related awards require deletion. ", "f": "ES Delete", "job": None})
+        return
+    deleted_award_ids = check_awards_for_deletes(award_ids)
+    if len(deleted_award_ids) != 0:
+        award_id_list = [
+            {"key": deleted_award["generated_unique_award_id"], "col": UNIVERSAL_AWARD_ID_NAME}
+            for deleted_award in deleted_awards
+        ]
+        delete_awards_from_es(client, award_id_list, None, config, None)
+    else:
+        printf({"msg": "No related awards require deletion. ", "f": "ES Delete", "job": None})
+    return
 
 
 def take_snapshot(client, index, repository):
@@ -574,6 +719,82 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
             delete_body = delete_query(response)
+            try:
+                client.delete_by_query(
+                    index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
+                )
+            except Exception as e:
+                printf({"msg": "[ERROR][ERROR][ERROR]\n{}".format(str(e)), "f": "ES Delete", "job": job_id})
+    end_ = client.search(index=index)["hits"]["total"]
+
+    t = perf_counter() - start
+    total = str(start_ - end_)
+    printf({"msg": "ES Deletes took {}s. Deleted {} records".format(t, total), "f": "ES Delete", "job": job_id})
+    return
+
+
+def get_deleted_award_ids(client, id_list, config, index=None):
+    """
+        id_list = [{key:'key1',col:'transaction_id'},
+                   {key:'key2',col:'generated_unique_transaction_id'}],
+                   ...]
+     """
+    if index is None:
+        index = "{}-*".format(config["root_index"])
+    col_to_items_dict = defaultdict(list)
+    for l in id_list:
+        col_to_items_dict[l["col"]].append(l["key"])
+    awards = []
+    for column, values in col_to_items_dict.items():
+        values_generator = chunks(values, 1000)
+        for v in values_generator:
+            body = filter_query(column, v)
+            response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
+            if response["hits"]["total"] != 0:
+                awards = [x["_source"]["generated_unique_award_id"] for x in response["hits"]["hits"]]
+    return awards
+
+
+def check_awards_for_deletes(id_list):
+    formatted_value_ids = ""
+    for x in id_list:
+        formatted_value_ids += "('" + x + "'),"
+
+    sql = """
+        SELECT x.generated_unique_award_id FROM (values {ids}) AS x(generated_unique_award_id)
+        LEFT JOIN awards a ON a.generated_unique_award_id = x.generated_unique_award_id
+        WHERE a.generated_unique_award_id is null"""
+    results = execute_sql_to_ordered_dictionary(sql.format(ids=formatted_value_ids[:-1]))
+    return results
+
+
+def delete_awards_from_es(client, id_list, job_id, config, index=None):
+    """
+    id_list = [{key:'key1',col:'award_id'},
+               {key:'key2',col:'generated_unique_award_id'}],
+               ...]
+    """
+    start = perf_counter()
+
+    printf({"msg": "Deleting up to {} document(s)".format(len(id_list)), "f": "ES Delete", "job": job_id})
+
+    if index is None:
+        index = "{}-*".format(config["root_index"])
+    start_ = client.search(index=index)["hits"]["total"]
+    printf({"msg": "Starting amount of indices ----- {}".format(start_), "f": "ES Delete", "job": job_id})
+    col_to_items_dict = defaultdict(list)
+    for l in id_list:
+        col_to_items_dict[l["col"]].append(l["key"])
+
+    for column, values in col_to_items_dict.items():
+        printf({"msg": 'Deleting {} of "{}"'.format(len(values), column), "f": "ES Delete", "job": job_id})
+        values_generator = chunks(values, 1000)
+        for v in values_generator:
+            body = filter_query(column, v)
+            response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
+            delete_body = {
+                "query": {"ids": {"type": "award_mapping", "values": [i["_id"] for i in response["hits"]["hits"]]}}
+            }
             try:
                 client.delete_by_query(
                     index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]

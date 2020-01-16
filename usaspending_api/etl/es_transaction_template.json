@@ -66,60 +66,85 @@
           "type": "integer"
         },
         "piid": {
-          "index": false,
-          "type": "text"
+          "type": "keyword"
         },
         "fain": {
-          "index": false,
-          "type": "text"
+          "type": "keyword"
         },
         "uri": {
-          "index": false,
-          "type": "text"
+          "type": "keyword"
         },
         "award_description": {
           "type": "text",
           "analyzer": "stemmer_analyzer"
         },
         "product_or_service_code": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "product_or_service_description": {
           "type": "text"
         },
         "naics_code": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "naics_description": {
           "type": "text"
         },
         "type_description": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "award_category": {
-          "type": "text",
-          "index": false
+          "type": "keyword"
         },
         "recipient_unique_id": {
-          "type": "text"
-        },
-        "parent_recipient_unique_id": {
-          "type": "text"
+          "type": "keyword"
         },
         "recipient_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
+        "recipient_hash": {
+          "type": "keyword"
+        },
+        "parent_recipient_unique_id": {
+          "type": "keyword",
+          "null_value": "NULL"
+        },
+        "parent_recipient_name": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "parent_recipient_hash": {
+          "type": "keyword"
+        },
         "action_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "fiscal_action_date": {
           "type": "date",
           "format": "yyyy-MM-dd"
         },
@@ -129,20 +154,17 @@
         },
         "period_of_performance_current_end_date": {
           "type": "date",
-          "format": "yyyy-MM-dd",
-          "index": false
+          "format": "yyyy-MM-dd"
         },
         "ordering_period_end_date": {
           "type": "date",
           "format": "yyyy-MM-dd"
         },
         "transaction_fiscal_year": {
-          "type": "integer",
-          "index": false
+          "type": "integer"
         },
         "award_fiscal_year": {
-          "type": "integer",
-          "index": false
+          "type": "integer"
         },
         "award_amount": {
           "type": "scaled_float",
@@ -160,52 +182,117 @@
           "type": "scaled_float",
           "scaling_factor": 100
         },
+        "generated_pragmatic_obligation": {
+          "type": "scaled_float",
+          "scaling_factor": 100
+        },
         "awarding_agency_id": {
-          "type": "integer",
-          "index": false
+          "type": "integer"
         },
         "funding_agency_id": {
-          "type": "integer",
-          "index": false
+          "type": "integer"
+        },
+        "awarding_toptier_agency_id": {
+          "type": "integer"
+        },
+        "awarding_subtier_agency_id": {
+          "type": "integer"
+        },
+        "funding_toptier_agency_id": {
+          "type": "integer"
+        },
+        "funding_subtier_agency_id": {
+          "type": "integer"
         },
         "awarding_toptier_agency_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "funding_toptier_agency_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "awarding_subtier_agency_name": {
-          "type": "keyword",
+          "type": "text",
           "fields": {
-            "raw": {
-              "type": "text"
+            "keyword": {
+              "type": "keyword"
             }
           }
         },
         "funding_subtier_agency_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "awarding_toptier_agency_abbreviation": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "funding_toptier_agency_abbreviation": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "awarding_subtier_agency_abbreviation": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "funding_subtier_agency_abbreviation": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
-
+        "awarding_toptier_agency_code": {
+          "type": "keyword"
+        },
+        "funding_toptier_agency_code": {
+          "type": "keyword"
+        },
+        "awarding_subtier_agency_code": {
+          "type": "keyword"
+        },
+        "funding_subtier_agency_code": {
+          "type": "keyword"
+        },
+        "cfda_id": {
+          "type": "integer"
+        },
+        "cfda_number": {
+          "type": "keyword"
+        },
         "cfda_title": {
           "type": "text",
-          "index": false
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "cfda_popular_name": {
           "type": "text",
@@ -213,19 +300,31 @@
         },
         "type_of_contract_pricing": {
           "type": "text",
-          "index": false
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "type_set_aside": {
           "type": "text",
-          "index": false
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "extent_competed": {
           "type": "text",
-          "index": false
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
-        "pulled_from": {
-          "type": "text",
-          "index": false
+        "type": {
+          "type": "keyword",
+          "null_value": "NULL"
         },
         "pop_country_code": {
           "type": "keyword"
@@ -237,16 +336,21 @@
           "type": "keyword"
         },
         "pop_county_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "pop_county_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "pop_zip5": {
           "type": "text"
         },
         "pop_congressional_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "pop_city_name": {
           "type": "text",
@@ -256,7 +360,6 @@
             }
           }
         },
-
         "recipient_location_country_code": {
           "type": "keyword"
         },
@@ -267,16 +370,21 @@
           "type": "keyword"
         },
         "recipient_location_county_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "recipient_location_county_name": {
-          "type": "text"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_location_zip5": {
           "type": "text"
         },
         "recipient_location_congressional_code": {
-          "type": "text"
+          "type": "keyword"
         },
         "recipient_location_city_name": {
           "type": "text",
@@ -286,9 +394,28 @@
             }
           }
         },
-        "type": {
-          "type": "keyword",
-          "null_value": "NULL"
+        "treasury_accounts": {
+          "type": "nested",
+          "properties": {
+            "aid": {"type": "keyword"},
+            "ata": {"type": "keyword"},
+            "main": {"type": "keyword"},
+            "sub": {"type": "keyword"},
+            "bpoa": {"type": "keyword"},
+            "epoa": {"type": "keyword"},
+            "a": {"type": "keyword"}
+          }
+        },
+        "federal_accounts": {
+          "type": "nested",
+          "properties": {
+            "id": {"type": "integer"},
+            "account_title": {"type": "keyword"},
+            "federal_account_code": {"type": "keyword"}
+          }
+        },
+        "business_categories": {
+          "type": "keyword"
         }
       }
     }

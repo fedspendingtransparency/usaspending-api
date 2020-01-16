@@ -5,7 +5,7 @@ from django.db.models import F, Sum
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from usaspending_api.awards.models_matviews import UniversalTransactionView
+from usaspending_api.search.models import UniversalTransactionView
 from usaspending_api.awards.v2.filters.view_selector import recipient_totals
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.cache_decorator import cache_response
@@ -211,7 +211,6 @@ def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
         business_categories |= set(get_business_categories(business_types, data_type="fpds"))
 
     # combine with latest transaction's business categories
-    # from usaspending_api.references.models import LegalEntity
     latest_transaction = (
         UniversalTransactionView.objects.filter(
             recipient_hash=recipient_hash, action_date__gte=settings.API_SEARCH_MIN_DATE
