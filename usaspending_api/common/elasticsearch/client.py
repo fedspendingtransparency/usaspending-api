@@ -77,6 +77,29 @@ def es_client_query(
     return None
 
 
+def es_client_query_count(
+    index: str = None, body: dict = None, timeout: str = "1m", retries: int = 5, search: Search = None
+) -> ElasticsearchResponse:
+    if CLIENT is None:
+        create_es_client()
+    if CLIENT is None:  # If CLIENT is still None, don't even attempt to connect to the cluster
+        retries = 0
+    elif retries > 20:
+        retries = 20
+    elif retries < 1:
+        retries = 1
+    for attempt in range(retries):
+        response = _es_count(index=index, body=body, search=search)
+        if response is None and search is None:
+            logger.info(f"Failure using these: Index='{index}', Body={json.dumps(body)}")
+        if response is None:
+            logger.info(f"Failure using these: Body={json.dumps(search.to_dict())}")
+        else:
+            return response
+    logger.error(f"Unable to reach elasticsearch cluster. {retries} attempt(s) made")
+    return None
+
+
 def _es_search(
     index: str = None, body: dict = None, search: Search = None, timeout: int = "1m"
 ) -> ElasticsearchResponse:
@@ -87,6 +110,28 @@ def _es_search(
             result = search.using(CLIENT).params(timeout=timeout).execute()
         else:
             result = CLIENT.search(index=index, body=body, timeout=timeout)
+    except NameError as e:
+        logger.error(error_template.format(type="Hostname", e=str(e)))
+    except (ConnectionError, ConnectionTimeout) as e:
+        logger.error(error_template.format(type="Connection", e=str(e)))
+    except NotFoundError as e:
+        logger.error(error_template.format(type="404 Not Found", e=str(e)))
+    except TransportError as e:
+        logger.error(error_template.format(type="Transport", e=str(e)))
+    except Exception as e:
+        logger.error(error_template.format(type="Generic", e=str(e)))
+    return result
+
+
+def _es_count(index: str = None, body: dict = None, search: Search = None) -> ElasticsearchResponse:
+    error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
+    result = None
+    try:
+        if search is not None:
+            result = search.using(CLIENT).params().count()
+        else:
+            print(body)
+            result = CLIENT.count(index=index, body=body)
     except NameError as e:
         logger.error(error_template.format(type="Hostname", e=str(e)))
     except (ConnectionError, ConnectionTimeout) as e:

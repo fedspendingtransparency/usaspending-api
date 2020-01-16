@@ -1,10 +1,12 @@
 import copy
+import logging
 
 from sys import maxsize
 from django.conf import settings
 from django.db.models import Count, Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from elasticsearch_dsl import Search
 
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
@@ -13,12 +15,17 @@ from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_catego
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
+from usaspending_api.common.elasticsearch.client import es_client_query_count
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.common.helpers.orm_helpers import category_to_award_materialized_views
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+
+logger = logging.getLogger("console")
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -56,6 +63,12 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         filters = add_date_range_comparison_types(
             json_request.get("filters", None), subawards, gte_date_type="action_date", lte_date_type="date_signed"
         )
+        elasticsearch = is_experimental_elasticsearch_api(request)
+
+        if elasticsearch and not subawards:
+            logger.info("Using experimental Elasticsearch functionality for 'spending_by_award'")
+            results = self.query_elasticsearch(filters)
+            return Response({"results": results, "messages": [get_time_period_message()]})
 
         if filters is None:
             raise InvalidParameterException("Missing required request parameters: 'filters'")
@@ -125,3 +138,23 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         results["subcontracts"] = sum([sub["count"] for sub in queryset if sub["award_type"] == "procurement"])
 
         return results
+
+    def query_elasticsearch(self, filters) -> list:
+        filter_query = QueryWithFilters.generate_elasticsearch_query(filters, query_type="awards")
+        contracts = Search(index="{}-contracts".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX)).filter(filter_query)
+        idvs = Search(index="{}-idvs".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX)).filter(filter_query)
+        grants = Search(index="{}-grants".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX)).filter(filter_query)
+        directpayments = Search(index="{}-directpayments".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX)).filter(
+            filter_query
+        )
+        loans = Search(index="{}-loans".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX)).filter(filter_query)
+        other = Search(index="{}-other".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX)).filter(filter_query)
+        response = {
+            "contracts": es_client_query_count(search=contracts),
+            "direct_payments": es_client_query_count(search=directpayments),
+            "grants": es_client_query_count(search=grants),
+            "idvs": es_client_query_count(search=idvs),
+            "loans": es_client_query_count(search=loans),
+            "other": es_client_query_count(search=other),
+        }
+        return response
