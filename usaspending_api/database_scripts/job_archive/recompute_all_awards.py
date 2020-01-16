@@ -71,6 +71,7 @@ GET_FPDS_AWARDS = "SELECT generated_unique_award_id FROM awards where is_fpds = 
 GET_MIN_MAX_SQL = "SELECT MIN(id), MAX(id) FROM awards"
 MAX_ID, MIN_ID, CLOSING_TIME, ITERATION_ESTIMATED_SECONDS = None, None, None, None
 TOTAL_UPDATES, CHUNK_SIZE = 0, 20000
+TYPES = ("fpds", "fabs")
 EXIT_SIGNALS = [signal.SIGHUP, signal.SIGABRT, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]
 
 
@@ -214,10 +215,17 @@ def main():
 
             with Timer("[Awards {:,} - {:,}]".format(batch_min, batch_max), pipe_output=logging.info) as t:
                 with connection.cursor() as cursor:
-                    cursor.execute(GET_FABS_AWARDS.format(minid=batch_min, maxid=batch_max))
-                    fabs = [f"'{row[0]}'" for row in cursor.fetchall()]
-                    cursor.execute(GET_FPDS_AWARDS.format(minid=batch_min, maxid=batch_max))
-                    fpds = [f"'{row[0]}'" for row in cursor.fetchall()]
+                    if "fabs" in TYPES:
+                        cursor.execute(GET_FABS_AWARDS.format(minid=batch_min, maxid=batch_max))
+                        fabs = [f"'{row[0]}'" for row in cursor.fetchall()]
+                    else:
+                        fabs = []
+
+                    if "fpds" in TYPES:
+                        cursor.execute(GET_FPDS_AWARDS.format(minid=batch_min, maxid=batch_max))
+                        fpds = [f"'{row[0]}'" for row in cursor.fetchall()]
+                    else:
+                        fpds = []
 
                 if fabs or fpds:
                     row_count = run_update_query(fabs_awards=fabs, fpds_awards=fpds)
@@ -283,6 +291,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--closing-time", type=datetime_command_line_argument_type(naive=False))
     parser.add_argument("--chunk-size", type=int, default=CHUNK_SIZE)
+    parser.add_argument("--type", type=str, choices=TYPES)
     parser.add_argument("--max-id", type=int)
     parser.add_argument("--min-id", type=int)
     parser.add_argument("--debug", action="store_true")
@@ -293,6 +302,8 @@ if __name__ == "__main__":
     MAX_ID = args.max_id
     MIN_ID = args.min_id
     DEBUG = args.debug
+    if args.type:
+        TYPES = (args.type,)
 
     for sig in EXIT_SIGNALS:
         signal.signal(sig, _handle_exit_signal)
