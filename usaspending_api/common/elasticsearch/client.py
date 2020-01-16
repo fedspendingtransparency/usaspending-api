@@ -130,7 +130,6 @@ def _es_count(index: str = None, body: dict = None, search: Search = None) -> El
         if search is not None:
             result = search.using(CLIENT).params().count()
         else:
-            print(body)
             result = CLIENT.count(index=index, body=body)
     except NameError as e:
         logger.error(error_template.format(type="Hostname", e=str(e)))
