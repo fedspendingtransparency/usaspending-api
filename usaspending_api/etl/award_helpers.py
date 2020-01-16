@@ -344,7 +344,7 @@ def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
     """Update assistance-specific award data based on the info in child transactions."""
     if award_tuple:
         award_unique_keys = convert_award_id_to_guai(award_tuple)
-        values = [award_unique_keys, award_unique_keys]
+        values = [award_unique_keys]
         predicate = "WHERE tn.unique_award_key IN %s"
     else:
         values = None
