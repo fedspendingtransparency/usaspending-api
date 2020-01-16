@@ -47,10 +47,7 @@ class Command(BaseCommand):
             logger.info("=" * len(start_msg))
             try:
                 call_command("load_multiple_submissions", fy, q)
-            except SystemExit:
-                logger.info(f"Submission(s) errors in FY{fy}-Q{q}. Continuing...")
-                self.failed_state = True
-            except (CommandError, Exception):
+            except (CommandError, SystemExit, Exception):
                 logger.exception(f"Submission(s) errors in FY{fy}-Q{q}. Continuing...")
                 self.failed_state = True
 
@@ -60,9 +57,6 @@ class Command(BaseCommand):
             logger.info(f"Running submission load for submission ID {submission_id}")
             try:
                 call_command("load_submission", submission_id)
-            except SystemExit:
-                self.failed_state = True
-                logger.info(f"Skipping submission ID {submission_id} due to error. Continuing...")
-            except (CommandError, Exception):
+            except (CommandError, SystemExit, Exception):
                 self.failed_state = True
                 logger.exception(f"Skipping Submission ID {submission_id} due to error. Continuing...")
