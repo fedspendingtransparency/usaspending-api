@@ -49,6 +49,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        self.warning_status = False
         self.metrics = OpsReporter(job_name="dev_4109_repair_awards.py")
         start = perf_counter()
 
@@ -59,6 +60,8 @@ class Command(BaseCommand):
         self.metrics["duration"] = perf_counter() - start
         if options["metrics"]:
             self.metrics.dump_to_file(options["metrics"])
+
+        logger.info("Complete")
 
     def main(self, options):
 
@@ -86,12 +89,17 @@ class Command(BaseCommand):
 
             if fabs_to_load:
                 logger.warning(f"NEED TO LOAD {len(fabs_to_load)} transactions from Broker!")
-                logger.info("This script will not handle that reload")
+                logger.info(
+                    "This script will not handle this reload. "
+                    "Store this IDs in a file for fabs_nightly_loader --afa-id-file:"
+                    f"\n{' '.join(fabs_to_load)}"
+                    "\n (note, check case of -none- vs -NONE-"
+                )
             else:
                 logger.info("No FABS transactions need to be reloaded")
 
             if fpds_to_load:
-                logger.info(f"Reloading {len(fpds_to_load)} transactions from Broker")
+                logger.info(f"Reloading {len(fpds_to_load)} FPDS transactions from Broker\n{' '.join(fpds_to_load)}")
                 call_command("load_fpds_transactions", "--ids", " ".join(fpds_to_load))
             else:
                 logger.info("No FPDS transactions need to be reloaded")
@@ -114,6 +122,8 @@ class Command(BaseCommand):
             self.metrics["updated_transaction_normalized_fks_to_awards"] = len(transactions)
             if transactions:
                 logger.info(f"Updated transactions:\n{', '.join(transactions)}")
+            else:
+                logger.info("No transactions needed to be updated")
 
     def part_three(self):
         logger.info("Part 3: Re-Computing Awards")
