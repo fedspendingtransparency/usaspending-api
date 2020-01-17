@@ -1,5 +1,6 @@
 import json
 import pytest
+from django.conf import settings
 
 from model_mommy import mommy
 from rest_framework import status
@@ -187,6 +188,10 @@ def test_spending_by_award_elasticsearch(client, award_data_fixture, monkeypatch
     monkeypatch.setattr(
         "usaspending_api.search.v2.views.spending_by_award.logger.info",
         lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
+        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
     )
     elasticsearch_award_index.update_index()
     resp = client.post(
