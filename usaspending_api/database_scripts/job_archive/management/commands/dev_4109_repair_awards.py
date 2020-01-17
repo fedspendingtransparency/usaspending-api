@@ -127,7 +127,7 @@ class Command(BaseCommand):
 
     def part_three(self):
         logger.info("Part 3: Re-Computing Awards")
-        logger.warning("Run usaspending-api/usaspending_api/scripts/archive/recompute_all_awards.py")
+        logger.warning("Run usaspending_api/database_scripts/job_archive/recompute_all_awards.py")
 
     def inspect(self):
         logger.info("Running SQL to inspect data")
