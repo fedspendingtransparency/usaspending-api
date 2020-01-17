@@ -124,6 +124,7 @@ INSTALLED_APPS = [
     "usaspending_api.financial_activities",
     "usaspending_api.api_docs",
     "usaspending_api.broker",
+    "usaspending_api.database_scripts.job_archive",
     "usaspending_api.download",
     "usaspending_api.bulk_download",
     "usaspending_api.recipient",

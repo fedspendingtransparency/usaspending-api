@@ -341,11 +341,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
         last_id = None
         last_value = None
         if len(response) > 0:
-            last_id = (response[len(response) - 1].to_dict().get("generated_unique_award_id"),)
+            last_id = response[len(response) - 1].to_dict().get("generated_unique_award_id")
             last_value = (
                 response[len(response) - 1].to_dict().get("total_loan_value")
                 if set(self.filters["award_type_codes"]) <= set(loan_type_mapping)
-                else response[len(response) - 1].to_dict().get("total_obligation"),
+                else response[len(response) - 1].to_dict().get("total_obligation")
             )
         return {
             "limit": self.pagination["limit"],
@@ -354,9 +354,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "page": self.pagination["page"],
                 "hasNext": response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
                 > self.pagination["limit"],
+                "last_id": last_id,
+                "last_value": last_value,
             },
-            "last_id": last_id,
-            "last_value": last_value,
             "messages": [get_time_period_message()],
         }
 

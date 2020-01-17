@@ -14,7 +14,7 @@ from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.etl.award_helpers import update_awards, update_assistance_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
+from usaspending_api.etl.management.load_base import load_data_into_model, format_date
 from usaspending_api.references.models import Agency
 
 
@@ -56,22 +56,6 @@ def insert_all_new_fabs(all_new_to_insert):
 
 
 def insert_new_fabs(to_insert):
-    place_of_performance_field_map = {
-        "location_country_code": "place_of_perform_country_c",
-        "country_name": "place_of_perform_country_n",
-        "state_code": "place_of_perfor_state_code",
-        "state_name": "place_of_perform_state_nam",
-        "city_name": "place_of_performance_city",
-        "county_name": "place_of_perform_county_na",
-        "county_code": "place_of_perform_county_co",
-        "foreign_location_description": "place_of_performance_forei",
-        "zip_4a": "place_of_performance_zip4a",
-        "congressional_code": "place_of_performance_congr",
-        "performance_code": "place_of_performance_code",
-        "zip_last4": "place_of_perform_zip_last4",
-        "zip5": "place_of_performance_zip5",
-    }
-
     fabs_normalized_field_map = {
         "type": "assistance_type",
         "description": "award_description",
@@ -94,9 +78,6 @@ def insert_new_fabs(to_insert):
     update_award_ids = []
     for row in to_insert:
         upper_case_dict_values(row)
-
-        # Create the place of performance location
-        pop_location = create_location(place_of_performance_field_map, row, {"place_of_performance_flag": True})
 
         # Find the toptier awards from the subtier awards
         awarding_agency = Agency.get_by_subtier_only(row["awarding_sub_tier_agency_c"])
@@ -123,7 +104,6 @@ def insert_new_fabs(to_insert):
             "award": award,
             "awarding_agency": awarding_agency,
             "funding_agency": funding_agency,
-            "place_of_performance": pop_location,
             "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
             "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
             "action_date": format_date(row["action_date"]),

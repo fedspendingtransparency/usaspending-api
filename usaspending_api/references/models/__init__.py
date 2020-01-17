@@ -6,7 +6,6 @@ from usaspending_api.references.models.filter_hash import FilterHash
 from usaspending_api.references.models.frec import FREC
 from usaspending_api.references.models.frec_map import FrecMap
 from usaspending_api.references.models.gtas_total_obligation import GTASTotalObligation
-from usaspending_api.references.models.location import Location
 from usaspending_api.references.models.naics import NAICS
 from usaspending_api.references.models.object_class import ObjectClass
 from usaspending_api.references.models.overall_totals import OverallTotals
@@ -27,7 +26,6 @@ __all__ = [
     "FREC",
     "FrecMap",
     "GTASTotalObligation",
-    "Location",
     "NAICS",
     "ObjectClass",
     "OverallTotals",
