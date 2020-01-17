@@ -97,7 +97,6 @@ class Explorer(object):
 
     def recipient(self):
         # Recipients Queryset
-
         alt_set = (
             self.alt_set.filter(~Q(transaction_obligated_amount=Decimal("NaN")))
             .filter(
