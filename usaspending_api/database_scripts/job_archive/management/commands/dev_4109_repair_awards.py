@@ -100,7 +100,7 @@ class Command(BaseCommand):
 
             if fpds_to_load:
                 logger.info(f"Reloading {len(fpds_to_load)} FPDS transactions from Broker\n{' '.join(fpds_to_load)}")
-                call_command("load_fpds_transactions", "--ids", " ".join(fpds_to_load))
+                call_command("load_fpds_transactions", "--ids", *fpds_to_load)
             else:
                 logger.info("No FPDS transactions need to be reloaded")
 
