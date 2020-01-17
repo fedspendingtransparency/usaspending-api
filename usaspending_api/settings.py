@@ -14,10 +14,10 @@ from pathlib import Path
 APP_DIR = Path(__file__).resolve().parent
 BASE_DIR = APP_DIR.parent
 
-# User-specified limit on downloads should not be permitted beyond this
+# Row-limited download limit
 MAX_DOWNLOAD_LIMIT = 500000
 
-# User-specified timeout limit for streaming downloads
+# Timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
 # Default timeout for SQL statements in Django
