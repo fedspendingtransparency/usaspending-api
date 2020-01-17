@@ -203,7 +203,7 @@ def test_load_from_broker():
 def test_create_load_object(monkeypatch):
     columns = {"input_field_1": "output_field_1", "input_field_2": "output_field_2"}
     bools = {"input_field_3": "output_field_3", "input_field_4": "output_field_4", "input_field_5": "output_field_5"}
-    functions = {"input_field_6": lambda t: t["input_field_6"] * 2, "input_field_7": lambda t: "replacement"}
+    functions = {"output_field_6": lambda t: t["input_field_6"] * 2, "output_field_7": lambda t: "replacement"}
 
     data = {
         "input_field_1": "this is field 1",
@@ -220,8 +220,8 @@ def test_create_load_object(monkeypatch):
         "output_field_3": "true",
         "output_field_4": "false",
         "output_field_5": False,
-        "input_field_6": 10,
-        "input_field_7": "replacement",
+        "output_field_6": 10,
+        "output_field_7": "replacement",
     }
     mock_cursor(monkeypatch, data)
 

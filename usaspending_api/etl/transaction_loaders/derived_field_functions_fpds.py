@@ -1,13 +1,8 @@
 from datetime import datetime, timezone
-import re
-
-from usaspending_api.common.helpers.date_helper import fy
-from usaspending_api.etl.transaction_loaders.cached_reference_data import subtier_agency_list
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
-
-
-ZIP_CODE_PATTERN = re.compile(r"^(\d{5})-?(\d{4})?$")
+from usaspending_api.common.helpers.date_helper import fy
+from usaspending_api.etl.transaction_loaders.cached_reference_data import subtier_agency_list
 
 
 def calculate_fiscal_year(broker_input):
