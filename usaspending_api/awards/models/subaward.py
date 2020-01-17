@@ -127,6 +127,7 @@ class Subaward(models.Model):
     pop_zip4 = models.TextField(null=True, blank=True)
     pop_street_address = models.TextField(null=True, blank=True)
     pop_congressional_code = models.TextField(null=True, blank=True)
+    place_of_perform_scope = models.TextField(null=True, blank=True)
 
     updated_at = models.DateTimeField(blank=True, null=True)
 

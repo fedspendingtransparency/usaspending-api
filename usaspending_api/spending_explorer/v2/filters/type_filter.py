@@ -8,7 +8,6 @@ from usaspending_api.references.models import GTASTotalObligation
 from usaspending_api.spending_explorer.v2.filters.explorer import Explorer
 from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
 
-
 UNREPORTED_DATA_NAME = "Unreported Data"
 VALID_UNREPORTED_DATA_TYPES = ["agency", "budget_function", "object_class"]
 VALID_UNREPORTED_FILTERS = ["fy", "quarter"]

@@ -1,12 +1,11 @@
-import logging
-import os.path
-import re
 import glob
+import logging
+import re
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from openpyxl import load_workbook
 from django.db import transaction
+from openpyxl import load_workbook
 
 from usaspending_api.references.models import NAICS
 
@@ -16,9 +15,7 @@ class Command(BaseCommand):
 
     logger = logging.getLogger("console")
 
-    path = "usaspending_api/data/naics_archive"
-    path = os.path.normpath(path)
-    default_path = os.path.join(settings.BASE_DIR, path)
+    default_path = str(settings.APP_DIR / "data" / "naics_archive")
 
     def add_arguments(self, parser):
         parser.add_argument(

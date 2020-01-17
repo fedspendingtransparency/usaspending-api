@@ -1,5 +1,7 @@
 from decimal import Decimal
 from django.db.models import F, Sum, Value, CharField, Q, Case, When
+from django.db.models.functions import Coalesce
+
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 from usaspending_api.references.models import Agency
 
@@ -98,12 +100,25 @@ class Explorer(object):
         # Recipients Queryset
 
         alt_set = (
-            self.alt_set.filter(~Q(transaction_obligated_amount=Decimal("NaN")), award__recipient__isnull=False)
+            self.alt_set.filter(~Q(transaction_obligated_amount=Decimal("NaN")))
+            .filter(
+                Q(award__latest_transaction__contract_data__awardee_or_recipient_legal__isnull=False)
+                | Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal__isnull=False)
+            )
             .annotate(
-                id=F("award__recipient__recipient_name"),
+                id=Coalesce(
+                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
+                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
+                ),
                 type=Value("recipient", output_field=CharField()),
-                name=F("award__recipient__recipient_name"),
-                code=F("award__recipient__recipient_name"),
+                name=Coalesce(
+                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
+                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
+                ),
+                code=Coalesce(
+                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
+                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
+                ),
             )
             .values("id", "type", "name", "code", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))

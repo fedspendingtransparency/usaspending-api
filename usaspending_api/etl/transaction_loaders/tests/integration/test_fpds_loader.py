@@ -11,10 +11,6 @@ from usaspending_api.awards.models import Award, TransactionFPDS
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
-    legal_entity_nonboolean_columns,
-    legal_entity_boolean_columns,
-    recipient_location_nonboolean_columns,
-    place_of_performance_nonboolean_columns,
     transaction_fpds_boolean_columns,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_bulk_insert_list_column_sql
@@ -99,7 +95,13 @@ class FPDSLoaderIntegrationTestCase(TestCase):
         assert new_award.earliest_transaction.transaction_unique_id == "101"
 
         # Given action_date additions, the 3rd one should push into 2011
-        assert [2010, 2010, 2011] == [_.transaction.fiscal_year for _ in usaspending_transactions]
+        transactions_by_id = {
+            transaction.detached_award_procurement_id: transaction.transaction
+            for transaction in usaspending_transactions
+        }
+        assert transactions_by_id[101].fiscal_year == 2010
+        assert transactions_by_id[201].fiscal_year == 2010
+        assert transactions_by_id[301].fiscal_year == 2011
 
 
 def _assemble_dummy_broker_data():
@@ -110,10 +112,6 @@ def _assemble_dummy_broker_data():
     return {
         **transaction_fpds_nonboolean_columns,
         **transaction_normalized_nonboolean_columns,
-        **legal_entity_nonboolean_columns,
-        **{key: str(random.choice([True, False])) for key in legal_entity_boolean_columns},
-        **recipient_location_nonboolean_columns,
-        **place_of_performance_nonboolean_columns,
         **{key: str(random.choice([True, False])) for key in transaction_fpds_boolean_columns},
     }
 

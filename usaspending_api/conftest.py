@@ -1,45 +1,31 @@
+import docker
 import logging
 import os
-
-import docker
 import pytest
 import tempfile
 
 from django.conf import settings
-from django.db import connections, DEFAULT_DB_ALIAS
+from django.db import connections
 from django.test import override_settings
 from django_mock_queries.query import MockSet
 from pathlib import Path
+
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
+from usaspending_api.common.sqs.sqs_handler import (
+    FAKE_QUEUE_DATA_PATH,
+    UNITTEST_FAKE_QUEUE_NAME,
+    _FakeUnitTestFileBackedSQSQueue,
+)
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
-    ensure_transaction_delta_view_exists,
     ensure_broker_server_dblink_exists,
+    remove_unittest_queue_data_files,
 )
-from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 
 logger = logging.getLogger("console")
-VALID_DB_CURSORS = [DEFAULT_DB_ALIAS, "data_broker"]
-
-
-@pytest.fixture()
-def mock_db_cursor(monkeypatch, request):
-    db_cursor_dict = request.param
-
-    for cursor in VALID_DB_CURSORS:
-        if cursor in db_cursor_dict:
-            data_file_key = cursor + "_data_file"
-
-            if data_file_key not in db_cursor_dict:
-                # Missing data file for the mocked cursor. Skipping PhonyCursor setup.
-                continue
-
-            db_cursor_dict[cursor].cursor.return_value = PhonyCursor(db_cursor_dict[data_file_key])
-            del db_cursor_dict[data_file_key]
-
-    monkeypatch.setattr("django.db.connections", db_cursor_dict)
 
 
 @pytest.fixture()
@@ -73,18 +59,6 @@ def mock_naics(monkeypatch):
     monkeypatch.setattr("usaspending_api.references.models.NAICS.objects", mock_naics_qs)
     yield mock_naics_qs
     mock_naics_qs.delete()
-
-
-@pytest.fixture()
-def mock_recipients(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_recipient_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.references.models.LegalEntity.objects", mock_recipient_qs)
-
-    yield mock_recipient_qs
-
-    mock_recipient_qs.delete()
 
 
 @pytest.fixture()
@@ -189,9 +163,7 @@ def mock_matviews_qs(monkeypatch):
     mock_qs = MockSet()  # mock queryset
     for k, v in MATERIALIZED_VIEWS.items():
         if k not in ["tas_autocomplete_matview"]:
-            monkeypatch.setattr(
-                "usaspending_api.awards.models_matviews.{}.objects".format(v["model"].__name__), mock_qs
-            )
+            monkeypatch.setattr("usaspending_api.search.models.{}.objects".format(v["model"].__name__), mock_qs)
 
     yield mock_qs
 
@@ -259,8 +231,9 @@ def django_db_setup(
                 "being skipped. "
             )
         else:
-            generate_matviews()
-            ensure_transaction_delta_view_exists()
+            generate_matviews(materialized_views_as_traditional_views=True)
+            ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
+            ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
 
     def teardown_database():
         with django_db_blocker.unblock():
@@ -273,11 +246,6 @@ def django_db_setup(
         request.addfinalizer(teardown_database)
 
 
-@pytest.fixture()
-def refresh_matviews():
-    generate_matviews()
-
-
 @pytest.fixture
 def elasticsearch_transaction_index(db):
     """
@@ -287,8 +255,23 @@ def elasticsearch_transaction_index(db):
 
     See test_demo_elasticsearch_tests.py for sample usage.
     """
-    elastic_search_index = TestElasticSearchIndex()
-    with override_settings(TRANSACTIONS_INDEX_ROOT=elastic_search_index.alias_prefix):
+    elastic_search_index = TestElasticSearchIndex("transactions")
+    with override_settings(ES_TRANSACTIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
+        yield elastic_search_index
+        elastic_search_index.delete_index()
+
+
+@pytest.fixture
+def elasticsearch_award_index(db):
+    """
+    Add this fixture to your test if you intend to use the Elasticsearch
+    award index.  To use, create some mock database data then call
+    elasticsearch_award_index.update_index to populate Elasticsearch.
+
+    See test_award_index_elasticsearch_tests.py for sample usage.
+    """
+    elastic_search_index = TestElasticSearchIndex("awards")
+    with override_settings(ES_AWARDS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
         yield elastic_search_index
         elastic_search_index.delete_index()
 
@@ -305,9 +288,19 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
         logger.info("broker_db_setup: Skipping execution of broker DB migrations because --nomigrations flag was used.")
         return
 
+    broker_config_env_envvar = "integrationtest"
     broker_docker_image = "dataact-broker-backend:latest"
-    broker_src_dir_path_obj = Path(settings.BASE_DIR).resolve().parent / "data-act-broker-backend"
-    broker_docker_volume_target = "/data-act/backend"
+    broker_src_dir_path_obj = settings.BASE_DIR.parent / "data-act-broker-backend"
+    broker_src_target = "/data-act/backend"
+    broker_config_dir = "dataactcore"
+    broker_config_copy_target = "/tmp/" + broker_config_dir + "/"
+    broker_config_mask_target = broker_src_target + "/" + broker_config_dir + "/"
+    broker_example_default_config_file = "config_example.yml"
+    broker_example_env_config_file = "local_config_example.yml"
+    broker_example_env_secrets_file = "local_secrets_example.yml"
+    broker_integrationtest_default_config_file = "config.yml"
+    broker_integrationtest_config_file = f"{broker_config_env_envvar}_config.yml"
+    broker_integrationtest_secrets_file = f"{broker_config_env_envvar}_secrets.yml"
 
     docker_client = docker.from_env()
 
@@ -346,20 +339,62 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
             "Do you have the environment variable set for this database connection string?"
         )
     broker_test_db_name = settings.DATABASES["data_broker"]["NAME"]
-    mounted_src = docker.types.Mount(
-        type="bind", source=str(broker_src_dir_path_obj), target=broker_docker_volume_target
+
+    # Using a combination of mounts to copy the broker source code into the container, and create a modifiable copy
+    # of the broker config dir as a tmpfs, so those modifications are not seen in the host source, but only from
+    # within the container
+    # NOTE: tmpfs layered over the src bind mount makes the config dir empty, so another bind mount is used as the
+    # source to copy the config back into the tmpfs mount
+    mounted_src = docker.types.Mount(type="bind", source=str(broker_src_dir_path_obj), target=broker_src_target)
+    mounted_broker_config_copy = docker.types.Mount(
+        type="bind",
+        source=str(broker_src_dir_path_obj / broker_config_dir),
+        target=broker_config_copy_target,
+        read_only=True,
     )
-    broker_db_setup_command = "python dataactcore/scripts/setup_all_db.py --dbname {}".format(broker_test_db_name)
-    logger.info("Running command `{}` in a container of image {}".format(broker_db_setup_command, broker_docker_image))
-    logger.info("Container will access Broker scripts from mounted source dir: {}".format(broker_src_dir_path_obj))
-    # NOTE: use ofo network_mode="host" applies ONLY when on Linux
+    mounted_broker_config = docker.types.Mount(type="tmpfs", source=None, target=broker_config_mask_target)
+
+    broker_config_file_cmds = rf"""                                                               \
+        cp -a {broker_config_copy_target}* {broker_src_target}/{broker_config_dir}/;              \
+        cp {broker_src_target}/{broker_config_dir}/{broker_example_default_config_file}           \
+           {broker_src_target}/{broker_config_dir}/{broker_integrationtest_default_config_file};  \
+        cp {broker_src_target}/{broker_config_dir}/{broker_example_env_config_file}               \
+           {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};          \
+        cp {broker_src_target}/{broker_config_dir}/{broker_example_env_secrets_file}              \
+           {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};         \
+    """
+
+    # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
+    # This will ensure that when the broker script is run, it uses the same test broker DB
+    broker_db_config_cmds = rf"""                                                                 \
+        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES["data_broker"]["HOST"]}/"             \
+            {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
+        sed -i.bak -E "s/port:.*$/port: {settings.DATABASES["data_broker"]["PORT"]}/"             \
+            {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
+        sed -i.bak -E "s/username:.*$/username: {settings.DATABASES["data_broker"]["USER"]}/"     \
+            {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
+        sed -i.bak -E "s/password:.*$/password: {settings.DATABASES["data_broker"]["PASSWORD"]}/" \
+            {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
+    """
+
+    # Python script in broker-code that will run migrations and other db setup in the broker test DB
+    broker_db_setup_cmd = rf"""                                                                   \
+        python {broker_src_target}/{broker_config_dir}/scripts/setup_all_db.py --dbname {broker_test_db_name};
+    """
+
+    broker_container_command = "sh -cex '" + broker_config_file_cmds + broker_db_config_cmds + broker_db_setup_cmd + "'"
+    logger.info(f"Running following command in a container of image {broker_docker_image}: {broker_container_command}")
+    logger.info(f"Container will access Broker scripts from mounted source dir: {broker_src_dir_path_obj}")
+
+    # NOTE: use of network_mode="host" applies ONLY when on Linux
     # It allows docker to resolve network addresses (like "localhost") as if running from the docker host
     log_gen = docker_client.containers.run(
         broker_docker_image,
-        broker_db_setup_command,
+        broker_container_command,
         remove=True,
         network_mode="host",
-        mounts=[mounted_src],
+        environment={"env": broker_config_env_envvar},
+        mounts=[mounted_src, mounted_broker_config_copy, mounted_broker_config],
         stderr=True,
         stream=True,
     )
@@ -394,3 +429,30 @@ def temp_file_path():
         os.remove(path)
     except Exception:
         pass
+
+
+@pytest.fixture(scope="session")
+def unittest_fake_sqs_queue_instance():
+    fake_unittest_q = _FakeUnitTestFileBackedSQSQueue.instance()
+    yield fake_unittest_q
+
+
+@pytest.fixture(scope="session")
+def local_queue_dir(unittest_fake_sqs_queue_instance):
+    FAKE_QUEUE_DATA_PATH.mkdir(parents=True, exist_ok=True)
+    yield
+    # Clean up any files created on disk
+    remove_unittest_queue_data_files(unittest_fake_sqs_queue_instance)
+
+
+@pytest.fixture()
+def fake_sqs_queue(local_queue_dir, unittest_fake_sqs_queue_instance):
+    q = unittest_fake_sqs_queue_instance
+
+    # Check that it's the unit test queue before purging
+    assert q.url.split("/")[-1] == UNITTEST_FAKE_QUEUE_NAME
+    q.purge()
+    q.reset_instance_state()
+    yield
+    q.purge()
+    q.reset_instance_state()

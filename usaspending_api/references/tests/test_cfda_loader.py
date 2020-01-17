@@ -1,4 +1,3 @@
-import os
 import pytest
 
 from django.conf import settings
@@ -12,9 +11,8 @@ from usaspending_api.references.models import Cfda
 @pytest.mark.django_db
 def cfda_data(db):
     "Load from small test CSV to test database"
-    path = "usaspending_api/references/management/commands/cfda_sample.csv"
-    path = os.path.normpath(path)
-    fullpath = "file://" + os.path.join(settings.BASE_DIR, path)
+    file_path = settings.APP_DIR / "references" / "management" / "commands" / "cfda_sample.csv"
+    fullpath = "file://{}".format(file_path)
 
     call_command("loadcfda", fullpath)
 

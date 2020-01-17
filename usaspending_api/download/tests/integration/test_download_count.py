@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
@@ -18,12 +18,6 @@ def download_test_data(db):
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
-
-    # Create Locations
-    mommy.make("references.Location")
-
-    # Create LE
-    mommy.make("references.LegalEntity")
 
     # Create Awarding Top Agency
     ata1 = mommy.make(
@@ -51,7 +45,7 @@ def download_test_data(db):
     aa2 = mommy.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
-    mommy.make(
+    ata3 = mommy.make(
         "references.ToptierAgency",
         name="Bureau of Money",
         toptier_code="102",
@@ -64,7 +58,7 @@ def download_test_data(db):
     mommy.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Funding Agency
-    mommy.make("references.Agency", id=3, toptier_flag=False)
+    mommy.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
     award1 = mommy.make("awards.Award", id=123, category="idv")
@@ -109,7 +103,7 @@ def download_test_data(db):
 
 
 def test_download_count(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/count/",
         content_type="application/json",

@@ -9,7 +9,7 @@ from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
@@ -20,12 +20,6 @@ def download_test_data(db):
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
-
-    # Create Locations
-    mommy.make("references.Location")
-
-    # Create LE
-    mommy.make("references.LegalEntity")
 
     # Create Awarding Top Agency
     ata1 = mommy.make(
@@ -53,7 +47,7 @@ def download_test_data(db):
     aa2 = mommy.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
-    mommy.make(
+    ata3 = mommy.make(
         "references.ToptierAgency",
         name="Bureau of Money",
         toptier_code="102",
@@ -66,7 +60,7 @@ def download_test_data(db):
     mommy.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Funding Agency
-    mommy.make("references.Agency", id=3, toptier_flag=False)
+    mommy.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
     award1 = mommy.make("awards.Award", id=123, category="idv")
@@ -110,9 +104,8 @@ def download_test_data(db):
     update_awards()
 
 
-@pytest.mark.django_db
 def test_download_transactions_without_columns(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
@@ -120,12 +113,11 @@ def test_download_transactions_without_columns(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 def test_download_transactions_with_columns(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
@@ -144,12 +136,12 @@ def test_download_transactions_with_columns(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db
 def test_download_transactions_bad_limit(client):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
@@ -158,9 +150,8 @@ def test_download_transactions_bad_limit(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
 def test_download_transactions_excessive_limit(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
@@ -169,9 +160,8 @@ def test_download_transactions_excessive_limit(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
 def test_download_transactions_bad_column_list_raises(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     payload = {"filters": {"award_type_codes": []}, "columns": ["modification_number", "bogus_column"]}
     resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
@@ -180,9 +170,8 @@ def test_download_transactions_bad_column_list_raises(client, download_test_data
     assert "modification_number" not in resp.json()["detail"]
 
 
-@pytest.mark.django_db
 def test_download_transactions_bad_filter_type_raises(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     payload = {"filters": "01", "columns": []}
     resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

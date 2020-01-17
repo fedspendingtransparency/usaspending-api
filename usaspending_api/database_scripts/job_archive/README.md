@@ -5,7 +5,7 @@ Store one-off Python and SQL scripts used for data change operations.
 # Mandatory header for all script files in this directory
 ```
 Jira Ticket Number(s): <DEV-..., >
-Expected CLI: $ <psql .... | python3.5 ....>
+Expected CLI: $ <psql .... | python3 ....>
 Purpose: <a sentence to paragraph on the changes this script performs and expected outcome>
 ```
 

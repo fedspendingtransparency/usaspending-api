@@ -5,45 +5,11 @@ from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
+from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
 def awards_and_transactions(db):
-    parent_loc = {
-        "pk": 2,
-        "location_country_code": "USA",
-        "country_name": "UNITED STATES",
-        "state_code": "SC",
-        "city_name": "Charleston",
-        "county_name": "CHARLESTON",
-        "address_line1": "123 calhoun st",
-        "address_line2": None,
-        "address_line3": None,
-        "zip4": 294245897,
-        "congressional_code": "90",
-        "zip5": 29424,
-        "foreign_postal_code": None,
-        "foreign_province": None,
-    }
-    loc = {
-        "pk": 1,
-        "location_country_code": "USA",
-        "country_name": "UNITED STATES",
-        "state_code": "NC",
-        "city_name": "Charlotte",
-        "county_name": "BUNCOMBE",
-        "address_line1": "123 main st",
-        "address_line2": None,
-        "address_line3": None,
-        "zip4": 122045312,
-        "congressional_code": "90",
-        "zip5": 12204,
-        "foreign_postal_code": None,
-        "foreign_province": None,
-    }
-    mommy.make("references.Location", **parent_loc)
-    mommy.make("references.Location", **loc)
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
     mommy.make("references.SubtierAgency", subtier_code="def", **subag)
@@ -61,31 +27,12 @@ def awards_and_transactions(db):
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
 
-    parent_le = {
-        "pk": 2,
-        "recipient_name": "Dave's Pizza LLC",
-        "recipient_unique_id": "123",
-        "business_categories": ["limited liability"],
-        "location": Location.objects.get(pk=2),
-    }
-
-    le = {
-        "pk": 1,
-        "recipient_name": "John's Pizza",
-        "recipient_unique_id": "456",
-        "parent_recipient_unique_id": "123",
-        "business_categories": ["small_business"],
-        "location": Location.objects.get(pk=1),
-    }
-
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
     mommy.make("references.Agency", **ag)
-    mommy.make("references.LegalEntity", **parent_le)
-    mommy.make("references.LegalEntity", **le)
 
-    trans_asst = {"pk": 1, "award_id": 1}
-    trans_cont_1 = {"pk": 2, "award_id": 2}
-    trans_cont_2 = {"pk": 3, "award_id": 3}
+    trans_asst = {"pk": 1, "award_id": 1, "business_categories": ["small_business"]}
+    trans_cont_1 = {"pk": 2, "award_id": 2, "business_categories": ["small_business"]}
+    trans_cont_2 = {"pk": 3, "award_id": 3, "business_categories": ["small_business"]}
     mommy.make("awards.TransactionNormalized", **trans_asst)
     mommy.make("awards.TransactionNormalized", **trans_cont_1)
     mommy.make("awards.TransactionNormalized", **trans_cont_2)
@@ -110,8 +57,6 @@ def awards_and_transactions(db):
         "subaward_count": 10,
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
-        "place_of_performance": Location.objects.get(pk=1),
         "date_signed": "2005-04-03",
     }
     award_2_model = {
@@ -125,7 +70,6 @@ def awards_and_transactions(db):
         "description": "lorem ipsum",
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
@@ -150,7 +94,6 @@ def awards_and_transactions(db):
         "description": "lorem ipsum",
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
@@ -450,6 +393,7 @@ expected_response_idv = {
             "address_line3": None,
             "foreign_province": None,
             "city_name": "Charlotte",
+            "county_code": None,
             "county_name": "BUNCOMBE",
             "state_code": "NC",
             "state_name": "North Carolina",
@@ -470,6 +414,7 @@ expected_response_idv = {
         "address_line3": None,
         "foreign_province": None,
         "city_name": "Austin",
+        "county_code": None,
         "county_name": "Tripoli",
         "state_code": "TX",
         "state_name": "Texas",
@@ -589,6 +534,7 @@ recipient_without_id_and_name = {
         "address_line3": None,
         "foreign_province": None,
         "city_name": "Charlotte",
+        "county_code": None,
         "county_name": "BUNCOMBE",
         "state_code": "NC",
         "state_name": "North Carolina",

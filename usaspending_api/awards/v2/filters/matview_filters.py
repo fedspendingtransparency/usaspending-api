@@ -5,14 +5,14 @@ from django.db.models import Q
 
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.awards.models_matviews import AwardSearchView, UniversalTransactionView
+from usaspending_api.search.models import AwardSearchView, UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
-from usaspending_api.search.helpers import build_tas_codes_filter
+from usaspending_api.search.helpers import build_tas_codes_filter, build_award_ids_filter
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -220,7 +220,7 @@ def matview_search_filter(filters, model, for_downloads=False):
                 raise InvalidParameterException("Invalid filter: recipient_scope type is invalid.")
 
         elif key == "recipient_locations":
-            queryset = queryset.filter(geocode_filter_locations("recipient_location", value, True))
+            queryset = queryset.filter(geocode_filter_locations("recipient_location", value))
 
         elif key == "recipient_type_names":
             if len(value) != 0:
@@ -235,18 +235,13 @@ def matview_search_filter(filters, model, for_downloads=False):
                 raise InvalidParameterException("Invalid filter: place_of_performance_scope is invalid.")
 
         elif key == "place_of_performance_locations":
-            queryset = queryset.filter(geocode_filter_locations("pop", value, True))
+            queryset = queryset.filter(geocode_filter_locations("pop", value))
 
         elif key == "award_amounts":
             queryset &= total_obligation_queryset(value, model, filters)
 
         elif key == "award_ids":
-            filter_obj = Q()
-            for val in value:
-                # award_id_string is a Postgres TS_vector
-                # award_id_string = piid + fain + uri
-                filter_obj |= Q(award_ts_vector=val)
-            queryset = queryset.filter(filter_obj)
+            queryset = build_award_ids_filter(queryset, value, ("piid", "fain", "uri"))
 
         elif key == "program_numbers":
             in_query = [v for v in value]
@@ -293,22 +288,19 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         # Federal Account Filter
         elif key == "object_class":
-            faba_flag = True
             result = Q()
             for oc in value:
                 subresult = Q()
-                for (key, values) in oc.items():
-                    subresult &= filter_on("treasury_account__program_balances__object_class", key, values)
+                subresult &= filter_on("award__financial_set__object_class", "object_class", oc)
                 result |= subresult
-            faba_queryset = faba_queryset.filter(result)
+            queryset = queryset.filter(result)
 
         # Federal Account Filter
         elif key == "program_activity":
-            faba_flag = True
             or_queryset = Q()
             for v in value:
-                or_queryset |= Q(treasury_account__program_balances__program_activity__program_activity_code=v)
-            faba_queryset = faba_queryset.filter(or_queryset)
+                or_queryset |= Q(award__financial_set__program_activity__id=v)
+            queryset = queryset.filter(or_queryset)
 
     if faba_flag:
         award_ids = faba_queryset.values("award_id")

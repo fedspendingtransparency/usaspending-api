@@ -65,7 +65,11 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # recipient
             elif key == "recipient":
-                alt_set = alt_set.filter(award__recipient__recipient_name=value)
+                or_alt_set = alt_set.filter(
+                    Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal=value)
+                    | Q(award__latest_transaction__contract_data__awardee_or_recipient_legal=value)
+                )
+                alt_set &= or_alt_set
 
             # award, award_category
             elif key == "award" or key == "award_category":
@@ -114,10 +118,11 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # recipient
             elif key == "recipient":
-                queryset = queryset.filter(
-                    treasury_account__in=alt_set.filter(award__recipient__recipient_name=value).values_list(
-                        "treasury_account_id", flat=True
-                    )
+                and_queryset = queryset.filter(
+                    treasury_account__in=alt_set.filter(
+                        Q(award__latest_transaction__contract_data__awardee_or_recipient_legal=value)
+                        | Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal=value)
+                    ).values_list("treasury_account_id", flat=True)
                 )
 
             # award, award_category

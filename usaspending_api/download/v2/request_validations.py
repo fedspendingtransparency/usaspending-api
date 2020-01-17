@@ -20,6 +20,7 @@ from usaspending_api.download.lookups import (
     YEAR_CONSTRAINT_FILTER_DEFAULTS,
     ROW_CONSTRAINT_FILTER_DEFAULTS,
     ACCOUNT_FILTER_DEFAULTS,
+    FILE_FORMATS,
 )
 
 
@@ -32,6 +33,19 @@ def validate_award_request(request_data):
 
     json_request = {"download_types": award_levels, "filters": {}}
 
+    # Set defaults of non-required parameters
+    json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
+    json_request["columns"] = request_data.get("columns", [])
+    json_request["file_format"] = str(request_data.get("file_format", "csv")).lower()
+
+    check_types_and_assign_defaults(filters, json_request["filters"], SHARED_AWARD_FILTER_DEFAULTS)
+
+    json_request["filters"]["award_type_codes"] = _validate_award_type_codes(filters)
+
+    _validate_and_update_locations(filters, json_request)
+    _validate_tas_codes(filters, json_request)
+    _validate_file_format(json_request)
+
     # Overriding all other filters if the keyword filter is provided in year-constraint download
     # Make sure this is after checking the award_levels
     constraint_type = request_data.get("constraint_type")
@@ -42,17 +56,6 @@ def validate_award_request(request_data):
         }
         json_request["limit"] = settings.MAX_DOWNLOAD_LIMIT
         return json_request
-
-    # Set defaults of non-required parameters
-    json_request["columns"] = request_data.get("columns", [])
-    json_request["file_format"] = request_data.get("file_format", "csv")
-
-    check_types_and_assign_defaults(filters, json_request["filters"], SHARED_AWARD_FILTER_DEFAULTS)
-
-    json_request["filters"]["award_type_codes"] = _validate_award_type_codes(filters)
-
-    _validate_and_update_locations(filters, json_request)
-    _validate_tas_codes(filters, json_request)
 
     # Validate time periods
     total_range_count = validate_time_periods(filters, json_request)
@@ -80,10 +83,13 @@ def validate_idv_request(request_data):
     _validate_required_parameters(request_data, ["award_id"])
     award_id, piid, _, _, _ = _validate_award_id(request_data)
 
+    request_data["file_format"] = str(request_data.get("file_format", "csv")).lower()
+    _validate_file_format(request_data)
+
     return {
         "account_level": "treasury_account",
         "download_types": ["idv_orders", "idv_transaction_history", "idv_federal_account_funding"],
-        "file_format": request_data.get("file_format", "csv"),
+        "file_format": request_data["file_format"],
         "include_file_description": {"source": settings.IDV_DOWNLOAD_README_FILE_PATH, "destination": "readme.txt"},
         "piid": piid,
         "is_for_idv": True,
@@ -99,12 +105,15 @@ def validate_idv_request(request_data):
 
 def validate_contract_request(request_data):
     _validate_required_parameters(request_data, ["award_id"])
-    award_id, piid, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
+    award_id, piid, _, _, _ = _validate_award_id(request_data)
+
+    request_data["file_format"] = str(request_data.get("file_format", "csv")).lower()
+    _validate_file_format(request_data)
 
     return {
         "account_level": "treasury_account",
         "download_types": ["sub_contracts", "contract_transactions", "contract_federal_account_funding"],
-        "file_format": request_data.get("file_format", "csv"),
+        "file_format": request_data["file_format"],
         "include_file_description": {
             "source": settings.CONTRACT_DOWNLOAD_README_FILE_PATH,
             "destination": "ContractAwardSummary_download_readme.txt",
@@ -123,14 +132,18 @@ def validate_contract_request(request_data):
 
 def validate_assistance_request(request_data):
     _validate_required_parameters(request_data, ["award_id"])
-    award_id, piid, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
+    award_id, _, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
+
+    request_data["file_format"] = str(request_data.get("file_format", "csv")).lower()
+    _validate_file_format(request_data)
+
     award = fain
     if "AGG" in generated_unique_award_id:
         award = uri
     return {
         "account_level": "treasury_account",
         "download_types": ["assistance_transactions", "sub_grants", "assistance_federal_account_funding"],
-        "file_format": request_data.get("file_format", "csv"),
+        "file_format": request_data["file_format"],
         "include_file_description": {
             "source": settings.ASSISTANCE_DOWNLOAD_README_FILE_PATH,
             "destination": "AssistanceAwardSummary_download_readme.txt",
@@ -155,6 +168,9 @@ def validate_account_request(request_data):
 
     filters = _validate_filters(request_data)
 
+    json_request["file_format"] = str(request_data.get("file_format", "csv")).lower()
+    _validate_file_format(json_request)
+
     # Validate required filters
     for required_filter in ["fy", "quarter"]:
         if required_filter not in filters:
@@ -178,6 +194,7 @@ def validate_account_request(request_data):
         raise InvalidParameterException("Invalid Parameter: submission_type must be {}".format(valid_submissions))
 
     json_request["download_types"] = [filters["submission_type"]]
+    json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
 
     # Validate the rest of the filters
     check_types_and_assign_defaults(filters, json_request["filters"], ACCOUNT_FILTER_DEFAULTS)
@@ -274,3 +291,10 @@ def _validate_required_parameters(request_data, required_parameters):
     for required_param in required_parameters:
         if required_param not in request_data:
             raise InvalidParameterException("Missing one or more required body parameters: {}".format(required_param))
+
+
+def _validate_file_format(json_request: dict) -> None:
+    val = json_request["file_format"]
+    if val not in FILE_FORMATS:
+        msg = f"'{val}' is not an acceptable value for 'file_format'. Valid options: {tuple(FILE_FORMATS.keys())}"
+        raise InvalidParameterException(msg)

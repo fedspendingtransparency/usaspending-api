@@ -14,7 +14,7 @@ from django.core.management.base import BaseCommand
 # account data
 TAS_ID_TO_ACCOUNT = {}
 
-# Lists to store for update_awards and update_contract_awards
+# Lists to store for update_awards and update_procurement_awards
 AWARD_UPDATE_ID_LIST = []
 
 logger = logging.getLogger("console")

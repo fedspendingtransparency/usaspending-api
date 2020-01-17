@@ -32,7 +32,6 @@ FABS_AWARD_FIELDS = OrderedDict(
         ("total_subaward_amount", "total_subaward_amount"),
         ("awarding_agency", "awarding_agency"),
         ("funding_agency", "funding_agency"),
-        ("recipient", "recipient"),
         ("subaward_count", "subaward_count"),
         ("total_subaward_amount", "total_subaward_amount"),
         ("total_subsidy_cost", "total_subsidy_cost"),
@@ -44,7 +43,6 @@ FABS_AWARD_FIELDS = OrderedDict(
         ("total_funding_amount", "total_funding"),
         *OFFICER_FIELDS.items(),
         # extra fields
-        ("recipient_id", "_lei"),
         ("latest_transaction_id", "_trx"),
         ("awarding_agency_id", "_awarding_agency"),
         ("funding_agency_id", "_funding_agency"),
@@ -71,7 +69,6 @@ FPDS_AWARD_FIELDS = OrderedDict(
         ("total_subaward_amount", "total_subaward_amount"),
         *OFFICER_FIELDS.items(),
         # extra fields
-        ("recipient_id", "_lei"),
         ("latest_transaction_id", "_trx"),
         ("awarding_agency_id", "_awarding_agency"),
         ("funding_agency_id", "_funding_agency"),
@@ -86,6 +83,7 @@ FPDS_AWARD_FIELDS = OrderedDict(
 
 FABS_ASSISTANCE_FIELDS = OrderedDict(
     [
+        ("transaction_id", "_transaction_id"),
         ("record_type", "record_type"),
         ("cfda_number", "cfda_number"),
         ("cfda_title", "cfda_title"),
@@ -100,6 +98,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("legal_entity_state_code", "_rl_state_code"),
         ("legal_entity_state_name", "_rl_state_name"),
         ("legal_entity_city_name", "_rl_city_name"),
+        ("legal_entity_county_code", "_rl_county_code"),
         ("legal_entity_county_name", "_rl_county_name"),
         ("legal_entity_address_line1", "_rl_address_line1"),
         ("legal_entity_address_line2", "_rl_address_line2"),
@@ -112,6 +111,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         # "Place of Performance" fields below
         ("place_of_perform_country_c", "_pop_location_country_code"),
         ("place_of_perform_country_n", "_pop_country_name"),
+        ("place_of_perform_county_co", "_pop_county_code"),
         ("place_of_perform_county_na", "_pop_county_name"),
         ("place_of_performance_city", "_pop_city_name"),
         ("place_of_perfor_state_code", "_pop_state_code"),
@@ -128,6 +128,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
 
 FPDS_CONTRACT_FIELDS = OrderedDict(
     [
+        ("transaction_id", "_transaction_id"),
         ("idv_type_description", "idv_type_description"),
         ("type_of_idc_description", "type_of_idc_description"),
         ("referenced_idv_agency_iden", "referenced_idv_agency_iden"),
@@ -207,6 +208,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("legal_entity_state_code", "_rl_state_code"),
         ("legal_entity_state_descrip", "_rl_state_name"),
         ("legal_entity_city_name", "_rl_city_name"),
+        ("legal_entity_county_code", "_rl_county_code"),
         ("legal_entity_county_name", "_rl_county_name"),
         ("legal_entity_address_line1", "_rl_address_line1"),
         ("legal_entity_address_line2", "_rl_address_line2"),
@@ -220,6 +222,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("place_of_performance_state", "_pop_state_code"),
         ("place_of_perfor_state_desc", "_pop_state_name"),
         ("place_of_perform_city_name", "_pop_city_name"),
+        ("place_of_perform_county_co", "_pop_county_code"),
         ("place_of_perform_county_na", "_pop_county_name"),
         ("place_of_perform_zip_last4", "_pop_zip4"),
         ("place_of_performance_congr", "_pop_congressional_code"),

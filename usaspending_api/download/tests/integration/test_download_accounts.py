@@ -14,7 +14,7 @@ from usaspending_api.awards.models import (
     FinancialAccountsByAwards,
 )
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
@@ -25,12 +25,6 @@ def download_test_data(db):
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
-
-    # Create Locations
-    mommy.make("references.Location")
-
-    # Create LE
-    mommy.make("references.LegalEntity")
 
     # Create Awarding Top Agency
     ata1 = mommy.make(
@@ -52,15 +46,12 @@ def download_test_data(db):
         icon_filename="test1",
     )
 
-    # Create Awarding subs
-    mommy.make("references.SubtierAgency", name="Bureau of Things")
-
     # Create Awarding Agencies
     aa1 = mommy.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False)
     aa2 = mommy.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
-    mommy.make(
+    ata3 = mommy.make(
         "references.ToptierAgency",
         toptier_agency_id=102,
         name="Bureau of Money",
@@ -70,16 +61,13 @@ def download_test_data(db):
         icon_filename="test",
     )
 
-    # Create Funding SUB
-    mommy.make("references.SubtierAgency", name="Bureau of Things")
-
     # Create Funding Agency
-    mommy.make("references.Agency", id=3, toptier_flag=False)
+    mommy.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
-    award1 = mommy.make("awards.Award", id=123, category="idv")
-    award2 = mommy.make("awards.Award", id=456, category="contracts")
-    award3 = mommy.make("awards.Award", id=789, category="assistance")
+    award1 = mommy.make("awards.Award", id=123, category="idv", generated_unique_award_id="CONT_IDV_1")
+    award2 = mommy.make("awards.Award", id=456, category="contracts", generated_unique_award_id="CONT_AWD_1")
+    award3 = mommy.make("awards.Award", id=789, category="assistance", generated_unique_award_id="ASST_NON_1")
 
     # Create Transactions
     trann1 = mommy.make(
@@ -89,6 +77,7 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa1,
+        unique_award_key="CONT_IDV_1",
     )
     trann2 = mommy.make(
         TransactionNormalized,
@@ -97,6 +86,7 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
+        unique_award_key="CONT_AWD_1",
     )
     trann3 = mommy.make(
         TransactionNormalized,
@@ -105,14 +95,15 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
+        unique_award_key="ASST_NON_1",
     )
 
     # Create TransactionContract
-    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid")
-    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid")
+    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="CONT_IDV_1")
+    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="CONT_AWD_1")
 
     # Create TransactionAssistance
-    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain")
+    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="ASST_NON_1")
 
     # Create FederalAccount
     fa1 = mommy.make(FederalAccount, id=10)
@@ -127,9 +118,8 @@ def download_test_data(db):
     update_awards()
 
 
-@pytest.mark.django_db
 def test_tas_a_defaults_success(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -143,12 +133,11 @@ def test_tas_a_defaults_success(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 def test_tas_b_defaults_success(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -162,12 +151,11 @@ def test_tas_b_defaults_success(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 def test_tas_c_defaults_success(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -181,12 +169,11 @@ def test_tas_c_defaults_success(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 def test_federal_account_a_defaults_success(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -200,12 +187,11 @@ def test_federal_account_a_defaults_success(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 def test_federal_account_b_defaults_success(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -219,12 +205,11 @@ def test_federal_account_b_defaults_success(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 def test_federal_account_c_defaults_success(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -238,12 +223,11 @@ def test_federal_account_c_defaults_success(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 def test_agency_filter_success(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -259,9 +243,8 @@ def test_agency_filter_success(client, download_test_data):
     assert resp.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.django_db
 def test_agency_filter_failure(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -282,9 +265,8 @@ def test_agency_filter_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
 def test_federal_account_filter_success(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -305,9 +287,8 @@ def test_federal_account_filter_success(client, download_test_data):
     assert resp.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.django_db
 def test_federal_account_filter_failure(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -328,9 +309,8 @@ def test_federal_account_filter_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
 def test_account_level_failure(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -346,9 +326,8 @@ def test_account_level_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
 def test_submission_type_failure(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -364,9 +343,8 @@ def test_submission_type_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
 def test_fy_failure(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -382,9 +360,8 @@ def test_fy_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
 def test_quarter_failure(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -400,9 +377,8 @@ def test_quarter_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
 def test_download_accounts_bad_filter_type_raises(client, download_test_data):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     payload = {"account_level": "federal_account", "filters": "01", "columns": []}
     resp = client.post("/api/v2/download/accounts/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

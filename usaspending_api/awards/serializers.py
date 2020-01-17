@@ -1,16 +1,8 @@
-from rest_framework import serializers
-
 from usaspending_api.accounts.serializers import TasSerializer
-from usaspending_api.awards.models import Award, FinancialAccountsByAwards, Subaward
-from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS, TransactionFABS
-from usaspending_api.common.helpers.date_helper import fy
+from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.awards.models import TransactionFPDS, TransactionFABS
 from usaspending_api.common.serializers import LimitableSerializer
-from usaspending_api.references.v1.serializers import (
-    AgencySerializer,
-    LegalEntitySerializer,
-    LocationSerializer,
-    CfdaSerializer,
-)
+from usaspending_api.references.v1.serializers import CfdaSerializer
 from usaspending_api.references.v1.serializers import ProgramActivitySerializer, ObjectClassSerializer
 from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 
@@ -199,105 +191,3 @@ class TransactionFPDSSerializer(LimitableSerializer):
             "naics_description",
             "product_or_service_code",
         ]
-
-
-class TransactionNormalizedSerializer(LimitableSerializer):
-    """Serialize complete transactions, including assistance and contract data."""
-
-    prefetchable = False
-
-    class Meta:
-
-        model = TransactionNormalized
-        fields = "__all__"
-        default_fields = [
-            "id",
-            "type",
-            "type_description",
-            "period_of_performance_start_date",
-            "period_of_performance_current_end_date",
-            "action_date",
-            "action_type",
-            "action_type_description",
-            "action_date__fy",
-            "federal_action_obligation",
-            "original_loan_subsidy_cost",
-            "modification_number",
-            "awarding_agency",
-            "funding_agency",
-            "recipient",
-            "description",
-            "place_of_performance",
-            "contract_data",  # must match related_name in TransactionFPDS
-            "assistance_data",  # must match related_name in TransactionFABS
-        ]
-        nested_serializers = {
-            # name below must match related_name in TransactionFABS
-            "assistance_data": {"class": TransactionFABSSerializer, "kwargs": {"read_only": True}},
-            # name below must match related_name in TransactionFPDS
-            "contract_data": {"class": TransactionFPDSSerializer, "kwargs": {"read_only": True}},
-            "recipient": {"class": LegalEntitySerializer, "kwargs": {"read_only": True}},
-            "awarding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
-            "funding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
-            "place_of_performance": {"class": LocationSerializer, "kwargs": {"read_only": True}},
-        }
-
-
-class AwardSerializer(LimitableSerializer):
-    class Meta:
-
-        model = Award
-        fields = "__all__"
-        default_fields = [
-            "id",
-            "type",
-            "type_description",
-            "category",
-            "total_obligation",
-            "total_subsidy_cost",
-            "total_loan_value",
-            "date_signed",
-            "certified_date",
-            "description",
-            "piid",
-            "fain",
-            "uri",
-            "period_of_performance_start_date",
-            "period_of_performance_current_end_date",
-            "place_of_performance",
-            "awarding_agency",
-            "funding_agency",
-            "recipient",
-            "date_signed__fy",
-            "subaward_count",
-            "total_subaward_amount",
-            "latest_transaction__assistance_data",
-            "latest_transaction__contract_data",
-        ]
-        nested_serializers = {
-            "recipient": {"class": LegalEntitySerializer, "kwargs": {"read_only": True}},
-            "awarding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
-            "funding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
-            "place_of_performance": {"class": LocationSerializer, "kwargs": {"read_only": True}},
-            "latest_transaction": {"class": TransactionNormalizedSerializer, "kwargs": {"read_only": True}},
-        }
-
-    date_signed__fy = serializers.SerializerMethodField()
-
-    def get_date_signed__fy(self, obj):
-        return fy(obj.date_signed)
-
-
-class SubawardSerializer(LimitableSerializer):
-
-    prefetchable = False
-
-    class Meta:
-        model = Subaward
-        fields = "__all__"
-        nested_serializers = {
-            "award": {"class": AwardSerializer, "kwargs": {"read_only": True}},
-            "awarding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
-            "funding_agency": {"class": AgencySerializer, "kwargs": {"read_only": True}},
-            "cfda": {"class": CfdaSerializer, "kwargs": {"read_only": True}},
-        }

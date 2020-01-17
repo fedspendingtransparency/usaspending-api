@@ -9,22 +9,17 @@ from unittest.mock import Mock
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
+from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.etl.award_helpers import update_awards
-from usaspending_api.download.filestreaming import csv_generation
 
 
 @pytest.fixture
-def download_test_data(db):
+def download_test_data(transactional_db):
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
-
-    # Create Locations
-    mommy.make("references.Location")
-
-    # Create LE
-    mommy.make("references.LegalEntity")
 
     # Create Awarding Top Agency
     ata1 = mommy.make(
@@ -52,7 +47,7 @@ def download_test_data(db):
     aa2 = mommy.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
-    mommy.make(
+    ata3 = mommy.make(
         "references.ToptierAgency",
         name="Bureau of Money",
         toptier_code="102",
@@ -65,17 +60,12 @@ def download_test_data(db):
     mommy.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Funding Agency
-    mommy.make("references.Agency", id=3, toptier_flag=False)
-
-    # Create Legal Entity
-    le1 = mommy.make("references.LegalEntity", legal_entity_id=1001)
-    le2 = mommy.make("references.LegalEntity", legal_entity_id=1002)
-    le3 = mommy.make("references.LegalEntity", legal_entity_id=1003)
+    mommy.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
-    award1 = mommy.make("awards.Award", id=123, recipient=le1, category="idv")
-    award2 = mommy.make("awards.Award", id=456, recipient=le2, category="contracts")
-    award3 = mommy.make("awards.Award", id=789, recipient=le3, category="assistance")
+    award1 = mommy.make("awards.Award", id=123, category="idv", generated_unique_award_id="CONT_IDV_NEW")
+    award2 = mommy.make("awards.Award", id=456, category="contracts", generated_unique_award_id="CONT_AWD_NEW")
+    award3 = mommy.make("awards.Award", id=789, category="assistance", generated_unique_award_id="ASST_NON_NEW")
 
     # Create Transactions
     trann1 = mommy.make(
@@ -86,7 +76,7 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa1,
-        recipient=le1,
+        unique_award_key="CONT_IDV_NEW",
     )
     trann2 = mommy.make(
         TransactionNormalized,
@@ -96,7 +86,7 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
-        recipient=le2,
+        unique_award_key="CONT_AWD_NEW",
     )
     trann3 = mommy.make(
         TransactionNormalized,
@@ -106,23 +96,22 @@ def download_test_data(db):
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
-        recipient=le3,
+        unique_award_key="ASST_NON_NEW",
     )
 
     # Create TransactionContract
-    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid")
-    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid")
+    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="CONT_IDV_NEW")
+    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="CONT_AWD_NEW")
 
     # Create TransactionAssistance
-    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain")
+    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="ASST_NON_NEW")
 
     # Set latest_award for each award
     update_awards()
 
 
-@pytest.mark.django_db(transaction=True)
-def test_download_assistance_status(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_assistance_status(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -134,7 +123,7 @@ def test_download_assistance_status(client, download_test_data, refresh_matviews
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == 87
+    assert resp.json()["total_columns"] == 90
 
     # Test with columns specified
     dl_resp = client.post(
@@ -151,9 +140,8 @@ def test_download_assistance_status(client, download_test_data, refresh_matviews
     assert resp.json()["total_columns"] == 2
 
 
-@pytest.mark.django_db(transaction=True)
-def test_download_awards_status(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_awards_status(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -165,7 +153,7 @@ def test_download_awards_status(client, download_test_data, refresh_matviews):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 3
-    assert resp.json()["total_columns"] == 263
+    assert resp.json()["total_columns"] == len(query_paths["award"]["d1"])
 
     # Test with columns specified
     dl_resp = client.post(
@@ -191,9 +179,8 @@ def test_download_awards_status(client, download_test_data, refresh_matviews):
     assert resp.json()["total_columns"] == 5
 
 
-@pytest.mark.django_db(transaction=True)
-def test_download_contract_status(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_contract_status(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -203,7 +190,7 @@ def test_download_contract_status(client, download_test_data, refresh_matviews):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == 277
+    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
 
     # Test with columns specified
     dl_resp = client.post(
@@ -229,9 +216,8 @@ def test_download_contract_status(client, download_test_data, refresh_matviews):
     assert resp.json()["total_columns"] == 2
 
 
-@pytest.mark.django_db(transaction=True)
-def test_download_idv_status(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_idv_status(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -241,7 +227,7 @@ def test_download_idv_status(client, download_test_data, refresh_matviews):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == 277
+    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
 
     # Test with columns specified
     dl_resp = client.post(
@@ -261,9 +247,8 @@ def test_download_idv_status(client, download_test_data, refresh_matviews):
     assert resp.json()["total_columns"] == 2
 
 
-@pytest.mark.django_db(transaction=True)
-def test_download_transactions_status(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_transactions_status(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -281,7 +266,7 @@ def test_download_transactions_status(client, download_test_data, refresh_matvie
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 2
-    assert resp.json()["total_columns"] == 277
+    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
 
     # Test with columns specified
     dl_resp = client.post(
@@ -306,9 +291,8 @@ def test_download_transactions_status(client, download_test_data, refresh_matvie
     assert resp.json()["total_columns"] == 2
 
 
-@pytest.mark.django_db(transaction=True)
-def test_download_transactions_limit(client, download_test_data, refresh_matviews):
-    csv_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_transactions_limit(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     dl_resp = client.post(
         "/api/v2/download/transactions/",
@@ -319,4 +303,4 @@ def test_download_transactions_limit(client, download_test_data, refresh_matview
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 2
-    assert resp.json()["total_columns"] == 277
+    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])

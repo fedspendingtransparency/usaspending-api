@@ -75,6 +75,9 @@ def get_deleted_fpds_data_from_s3(date):
     ids_to_delete = []
     regex_str = ".*_delete_records_(IDV|award).*"
 
+    if not date:
+        return []
+
     if settings.IS_LOCAL:
         for file in os.listdir(settings.CSV_LOCAL_PATH):
             if re.search(regex_str, file) and datetime.strptime(file[: file.find("_")], "%m-%d-%Y").date() >= date:

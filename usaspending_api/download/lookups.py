@@ -13,7 +13,7 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.awards.models_matviews import AwardSearchView, UniversalTransactionView, SubawardView
+from usaspending_api.search.models import AwardSearchView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
     idv_transaction_filter,
@@ -30,6 +30,9 @@ from usaspending_api.awards.v2.filters.matview_filters import (
 )
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.download.filestreaming.generate_export_query import (
+    generate_file_b_custom_account_download_export_query,
+)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.download.helpers.download_annotation_functions import (
     universal_transaction_matview_annotations,
@@ -61,7 +64,8 @@ VALUE_MAPPINGS = {
         "source_type": "award",
         "table": AwardSearchView,
         "table_name": "award",
-        "download_name": "prime_awards",
+        "type_name": "PrimeAwardSummaries",
+        "download_name": "{agency}{type}_PrimeAwardSummaries_{timestamp}",
         "contract_data": "award__latest_transaction__contract_data",
         "assistance_data": "award__latest_transaction__assistance_data",
         "filter_function": universal_award_matview_filter,
@@ -72,7 +76,8 @@ VALUE_MAPPINGS = {
         "source_type": "award",
         "table": UniversalTransactionView,
         "table_name": "transaction",
-        "download_name": "prime_transactions",
+        "type_name": "PrimeTransactions",
+        "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
         "contract_data": "transaction__contract_data",
         "assistance_data": "transaction__assistance_data",
         "filter_function": universal_transaction_matview_filter,
@@ -83,7 +88,8 @@ VALUE_MAPPINGS = {
         "source_type": "award",
         "table": SubawardView,
         "table_name": "subaward",
-        "download_name": "subawards",
+        "type_name": "Subawards",
+        "download_name": "{agency}{type}_Subawards_{timestamp}",
         "contract_data": "award__latest_transaction__contract_data",
         "assistance_data": "award__latest_transaction__assistance_data",
         "filter_function": subaward_download,
@@ -94,7 +100,8 @@ VALUE_MAPPINGS = {
         "source_type": "account",
         "table": AppropriationAccountBalances,
         "table_name": "account_balances",
-        "download_name": "account_balances",
+        "download_name": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
+        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
         "filter_function": account_download_filter,
     },
     # Object Class Program Activity Account Data
@@ -102,14 +109,17 @@ VALUE_MAPPINGS = {
         "source_type": "account",
         "table": FinancialAccountsByProgramActivityObjectClass,
         "table_name": "object_class_program_activity",
-        "download_name": "account_breakdown_by_program_activity_object_class",
+        "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
+        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
         "filter_function": account_download_filter,
+        "export_query_function": generate_file_b_custom_account_download_export_query,
     },
     "award_financial": {
         "source_type": "account",
         "table": FinancialAccountsByAwards,
         "table_name": "award_financial",
-        "download_name": "account_breakdown_by_award",
+        "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByAward_{timestamp}",
+        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByAward_{timestamp}",
         "filter_function": account_download_filter,
     },
     "idv_orders": {
@@ -266,3 +276,9 @@ CFO_CGACS_MAPPING = OrderedDict(
     ]
 )
 CFO_CGACS = list(CFO_CGACS_MAPPING.keys())
+
+FILE_FORMATS = {
+    "csv": {"delimiter": ",", "extension": "csv", "options": "WITH CSV HEADER"},
+    "tsv": {"delimiter": "\t", "extension": "tsv", "options": r"WITH CSV DELIMITER E'\t' HEADER"},
+    "pstxt": {"delimiter": "|", "extension": "txt", "options": "WITH CSV DELIMITER '|' HEADER"},
+}

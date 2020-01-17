@@ -19,4 +19,4 @@ class DownloadStatusViewSet(BaseDownloadViewSet):
         if not file_name:
             raise InvalidParameterException("Missing one or more required query parameters: file_name")
 
-        return self.get_download_response(file_name=file_name)
+        return self.get_download_status_response(file_name=file_name)

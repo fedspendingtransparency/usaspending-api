@@ -551,7 +551,8 @@ begin
         bc_arr := bc_arr || array['government'];
     end if;
 
-    return bc_arr;
+    -- Sort and return the array.
+    return array(select unnest(bc_arr) order by 1);
 end;
 $$  language plpgsql;
 
@@ -659,6 +660,7 @@ begin
         bc_arr := bc_arr || array['individuals'];
     end if;
 
-    return bc_arr;
+    -- Sort and return the array.
+    return array(select unnest(bc_arr) order by 1);
 end;
 $$  language plpgsql;

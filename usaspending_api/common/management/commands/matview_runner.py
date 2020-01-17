@@ -10,6 +10,7 @@ from usaspending_api.common.data_connectors.async_sql_query import async_run_cre
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.common.matview_manager import (
     DEFAULT_MATIVEW_DIR,
+    DEPENDENCY_FILEPATH,
     DROP_OLD_MATVIEWS,
     MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
@@ -30,6 +31,7 @@ class Command(BaseCommand):
             self.matviews = {args["only"]: MATERIALIZED_VIEWS[args["only"]]}
         self.matview_dir = args["temp_dir"]
         self.no_cleanup = args["leave_sql"]
+        self.run_dependencies = args["dependencies"]
 
     def add_arguments(self, parser):
         parser.add_argument("--only", choices=list(MATERIALIZED_VIEWS.keys()))
@@ -44,12 +46,17 @@ class Command(BaseCommand):
             help="Choose a non-default directory to store materialized view SQL files.",
             default=DEFAULT_MATIVEW_DIR,
         )
+        parser.add_argument(
+            "--dependencies", action="store_true", help="Run the SQL dependencies before the materialized view SQL."
+        )
 
     def handle(self, *args, **options):
         """Overloaded Command Entrypoint"""
         with Timer(__name__):
             self.faux_init(options)
             self.generate_matview_sql()
+            if self.run_dependencies:
+                create_dependencies()
             self.create_views()
             if not self.no_cleanup:
                 self.cleanup()
@@ -86,6 +93,11 @@ class Command(BaseCommand):
 
         drop_sql = open(str(DROP_OLD_MATVIEWS), "r").read()
         run_sql(drop_sql, "Drop Old Materialized Views")
+
+
+def create_dependencies():
+    sql_statements = open(str(DEPENDENCY_FILEPATH), "r").read()
+    run_sql(sql_statements, "dependencies")
 
 
 def run_sql(sql, name):

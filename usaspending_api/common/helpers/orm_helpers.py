@@ -1,8 +1,8 @@
 from datetime import date
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, Func, IntegerField
+from django.db.models import Aggregate, CharField, Func, IntegerField
 from usaspending_api.common.helpers.sql_helpers import get_connection
-from usaspending_api.awards.models_matviews import (
+from usaspending_api.search.models import (
     ContractAwardSearchMatview,
     DirectPaymentAwardSearchMatview,
     GrantAwardSearchMatview,
@@ -56,6 +56,17 @@ class FiscalYear(Func):
     function = "EXTRACT"
     template = "%(function)s(YEAR from (%(expressions)s) + INTERVAL '3 months')"
     output_field = IntegerField()
+
+
+class FiscalYearAndQuarter(Func):
+    """ Generates a fiscal year and quarter string along the lines of FY2019Q1. """
+
+    function = "EXTRACT"
+    template = (
+        "CONCAT('FY', %(function)s(YEAR from (%(expressions)s) + INTERVAL '3 months'), "
+        "'Q', %(function)s(QUARTER from (%(expressions)s) + INTERVAL '3 months'))"
+    )
+    output_field = CharField()
 
 
 class BoolOr(Aggregate):

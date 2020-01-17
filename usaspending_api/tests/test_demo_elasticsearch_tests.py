@@ -7,15 +7,12 @@ from rest_framework import status
 
 @pytest.fixture
 def award_data_fixture(db):
-    mommy.make("references.LegalEntity", legal_entity_id=1)
     mommy.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2010-10-01", is_fpds=True, type="A")
     mommy.make("awards.TransactionFPDS", transaction_id=1, legal_entity_zip5="abcde", piid="IND12PB00323")
-    mommy.make(
-        "awards.Award", id=1, latest_transaction_id=1, recipient_id=1, is_fpds=True, type="A", piid="IND12PB00323"
-    )
+    mommy.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
 
-def test_positive_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
+def test_positive_sample_query(award_data_fixture, elasticsearch_transaction_index):
     """
     A super simple direct search against Elasticsearch that returns one record.
     """
@@ -30,7 +27,7 @@ def test_positive_sample_query(db, award_data_fixture, elasticsearch_transaction
     assert response["hits"]["total"] == 1
 
 
-def test_negative_sample_query(db, award_data_fixture, elasticsearch_transaction_index):
+def test_negative_sample_query(award_data_fixture, elasticsearch_transaction_index):
     """
     A super simple direct search against Elasticsearch that returns no results.
     """
@@ -45,7 +42,7 @@ def test_negative_sample_query(db, award_data_fixture, elasticsearch_transaction
     assert response["hits"]["total"] == 0
 
 
-def test_a_search_endpoint(client, db, award_data_fixture, elasticsearch_transaction_index):
+def test_a_search_endpoint(client, award_data_fixture, elasticsearch_transaction_index):
     """
     An example of how one might test a keyword search.
     """

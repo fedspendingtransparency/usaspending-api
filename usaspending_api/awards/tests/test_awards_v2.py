@@ -6,47 +6,11 @@ from rest_framework import status
 from model_mommy import mommy
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
+from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
 def awards_and_transactions(db):
-    # Location
-    parent_loc = {
-        "pk": 2,
-        "address_line1": "123 calhoun st",
-        "address_line2": None,
-        "address_line3": None,
-        "city_name": "Charleston",
-        "congressional_code": "90",
-        "country_name": "UNITED STA1TES",
-        "county_name": "CHARLESTON",
-        "foreign_postal_code": None,
-        "foreign_province": None,
-        "location_country_code": "USA",
-        "state_code": "SC",
-        "zip4": 294245897,
-        "zip5": 29424,
-    }
-    loc = {
-        "pk": 1,
-        "address_line1": "123 main st",
-        "address_line2": None,
-        "address_line3": None,
-        "city_name": "Charlotte",
-        "congressional_code": "90",
-        "country_name": "UNITED STA1TES",
-        "county_name": "BUNCOMBE",
-        "foreign_postal_code": None,
-        "foreign_province": None,
-        "location_country_code": "USA",
-        "state_code": "NC",
-        "zip4": 122045312,
-        "zip5": 12204,
-    }
-
-    mommy.make("references.Location", **parent_loc)
-    mommy.make("references.Location", **loc)
 
     # DUNS
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
@@ -131,37 +95,21 @@ def awards_and_transactions(db):
 
     mommy.make("references.Agency", **agency)
 
-    # Legal Entity
-    parent_legal_entity = {
-        "pk": 2,
-        "business_categories": ["limited liability"],
-        "location": Location.objects.get(pk=2),
-        "recipient_name": "PARENT LEGAL ENTITY",
-        "recipient_unique_id": "123",
-    }
-    legal_entity = {
-        "pk": 1,
-        "business_categories": ["small_business"],
-        "recipient_name": "LEGAL ENTITY",
-        "recipient_unique_id": "456",
-    }
-
-    mommy.make("references.LegalEntity", **parent_legal_entity)
-    mommy.make("references.LegalEntity", **legal_entity)
-
     # Transaction Normalized
-    asst_trans_norm_1 = {"pk": 1, "award_id": 1}
-    asst_trans_norm_2 = {"pk": 3, "award_id": 3}
-    asst_trans_norm_3 = {"pk": 4, "award_id": 3}
-    asst_trans_norm_4 = {"pk": 5, "award_id": 3}
+    bc = {"business_categories": ["small_business"]}
 
-    cont_trans_norm_1 = {"pk": 2, "award_id": 2}
-    cont_trans_norm_2 = {"pk": 6, "award_id": 5}
-    cont_trans_norm_3 = {"pk": 7, "award_id": 6}
-    cont_trans_norm_4 = {"pk": 8, "award_id": 7}
-    cont_trans_norm_5 = {"pk": 9, "award_id": 8}
-    cont_trans_norm_6 = {"pk": 10, "award_id": 9}
-    cont_trans_norm_7 = {"pk": 11, "award_id": 10}
+    asst_trans_norm_1 = {"pk": 1, "award_id": 1, **bc}
+    asst_trans_norm_2 = {"pk": 3, "award_id": 3, **bc}
+    asst_trans_norm_3 = {"pk": 4, "award_id": 3, **bc}
+    asst_trans_norm_4 = {"pk": 5, "award_id": 3, **bc}
+
+    cont_trans_norm_1 = {"pk": 2, "award_id": 2, **bc}
+    cont_trans_norm_2 = {"pk": 6, "award_id": 5, **bc}
+    cont_trans_norm_3 = {"pk": 7, "award_id": 6, **bc}
+    cont_trans_norm_4 = {"pk": 8, "award_id": 7, **bc}
+    cont_trans_norm_5 = {"pk": 9, "award_id": 8, **bc}
+    cont_trans_norm_6 = {"pk": 10, "award_id": 9, **bc}
+    cont_trans_norm_7 = {"pk": 11, "award_id": 10, **bc}
 
     mommy.make("awards.TransactionNormalized", **asst_trans_norm_1)
     mommy.make("awards.TransactionNormalized", **asst_trans_norm_2)
@@ -193,7 +141,8 @@ def awards_and_transactions(db):
         "legal_entity_city_name": "Charlotte",
         "legal_entity_congressional": "90",
         "legal_entity_country_code": "USA",
-        "legal_entity_country_name": "UNITED STA1TES",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_county_code": "019",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
         "legal_entity_state_name": "North Carolina",
@@ -208,6 +157,7 @@ def awards_and_transactions(db):
         "place_of_perform_country_c": "PDA",
         "place_of_perform_country_n": "Pacific Delta Amazon",
         "place_of_perform_county_na": "Tripoli",
+        "place_of_perform_county_co": "023",
         "place_of_perform_zip_last4": "2135",
         "place_of_performance_city": "Austin",
         "place_of_performance_congr": "-0-",
@@ -233,7 +183,8 @@ def awards_and_transactions(db):
         "legal_entity_city_name": "Charlotte",
         "legal_entity_congressional": "90",
         "legal_entity_country_code": "USA",
-        "legal_entity_country_name": "UNITED STA1TES",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_county_code": "019",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
         "legal_entity_state_name": "North Carolina",
@@ -248,6 +199,7 @@ def awards_and_transactions(db):
         "place_of_perfor_state_code": "TX",
         "place_of_perform_country_c": "PDA",
         "place_of_perform_country_n": "Pacific Delta Amazon",
+        "place_of_perform_county_co": "023",
         "place_of_perform_county_na": "Tripoli",
         "place_of_perform_zip_last4": "2135",
         "place_of_performance_city": "Austin",
@@ -275,7 +227,8 @@ def awards_and_transactions(db):
         "legal_entity_city_name": "Charlotte",
         "legal_entity_congressional": "90",
         "legal_entity_country_code": "USA",
-        "legal_entity_country_name": "UNITED STA1TES",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_county_code": "019",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
         "legal_entity_state_name": "North Carolina",
@@ -290,6 +243,7 @@ def awards_and_transactions(db):
         "place_of_perfor_state_code": "TX",
         "place_of_perform_country_c": "PDA",
         "place_of_perform_country_n": "Pacific Delta Amazon",
+        "place_of_perform_county_co": "023",
         "place_of_perform_county_na": "Tripoli",
         "place_of_perform_zip_last4": "2135",
         "place_of_performance_city": "Austin",
@@ -317,7 +271,8 @@ def awards_and_transactions(db):
         "legal_entity_city_name": "Charlotte",
         "legal_entity_congressional": "90",
         "legal_entity_country_code": "USA",
-        "legal_entity_country_name": "UNITED STA1TES",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_county_code": "019",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
         "legal_entity_state_name": "North Carolina",
@@ -332,6 +287,7 @@ def awards_and_transactions(db):
         "place_of_perfor_state_code": "TX",
         "place_of_perform_country_c": "PDA",
         "place_of_perform_country_n": "Pacific Delta Amazon",
+        "place_of_perform_county_co": "023",
         "place_of_perform_county_na": "Tripoli",
         "place_of_perform_zip_last4": "2135",
         "place_of_performance_city": "Austin",
@@ -380,7 +336,8 @@ def awards_and_transactions(db):
         "legal_entity_city_name": "Charlotte",
         "legal_entity_congressional": "90",
         "legal_entity_country_code": "USA",
-        "legal_entity_country_name": "UNITED STA1TES",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_county_code": "019",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
         "legal_entity_state_descrip": "North Carolina",
@@ -398,9 +355,10 @@ def awards_and_transactions(db):
         "officer_2_amount": 1234.00,
         "officer_2_name": "Stan Burger",
         "other_than_full_and_o_desc": None,
-        "place_of_perf_country_desc": "UNITED STA1TES",
+        "place_of_perf_country_desc": "UNITED STATES",
         "place_of_perform_city_name": "Charlotte",
         "place_of_perform_country_c": "USA",
+        "place_of_perform_county_co": "019",
         "place_of_perform_county_na": "BUNCOMBE",
         "place_of_performance_congr": "90",
         "place_of_performance_state": "NC",
@@ -457,7 +415,8 @@ def awards_and_transactions(db):
         "legal_entity_city_name": "Charlotte",
         "legal_entity_congressional": "90",
         "legal_entity_country_code": "USA",
-        "legal_entity_country_name": "UNITED STA1TES",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_county_code": "019",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
         "legal_entity_state_descrip": "North Carolina",
@@ -475,9 +434,10 @@ def awards_and_transactions(db):
         "officer_2_amount": 1234.00,
         "officer_2_name": "Stan Burger",
         "other_than_full_and_o_desc": None,
-        "place_of_perf_country_desc": "UNITED STA1TES",
+        "place_of_perf_country_desc": "UNITED STATES",
         "place_of_perform_city_name": "Charlotte",
         "place_of_perform_country_c": "USA",
+        "place_of_perform_county_co": "019",
         "place_of_perform_county_na": "BUNCOMBE",
         "place_of_performance_congr": "90",
         "place_of_performance_state": "NC",
@@ -534,7 +494,8 @@ def awards_and_transactions(db):
         "legal_entity_city_name": "Charlotte",
         "legal_entity_congressional": "90",
         "legal_entity_country_code": "USA",
-        "legal_entity_country_name": "UNITED STA1TES",
+        "legal_entity_country_name": "UNITED STATES",
+        "legal_entity_county_code": "019",
         "legal_entity_county_name": "BUNCOMBE",
         "legal_entity_state_code": "NC",
         "legal_entity_state_descrip": "North Carolina",
@@ -552,9 +513,10 @@ def awards_and_transactions(db):
         "officer_2_amount": 1234.00,
         "officer_2_name": "Stan Burger",
         "other_than_full_and_o_desc": None,
-        "place_of_perf_country_desc": "UNITED STA1TES",
+        "place_of_perf_country_desc": "UNITED STATES",
         "place_of_perform_city_name": "Charlotte",
         "place_of_perform_country_c": "USA",
+        "place_of_perform_county_co": "019",
         "place_of_perform_county_na": "BUNCOMBE",
         "place_of_performance_congr": "90",
         "place_of_performance_state": "NC",
@@ -628,8 +590,6 @@ def awards_and_transactions(db):
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
-        "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "category": "grant",
         "date_signed": "2005-04-03",
         "description": "lorem ipsum",
@@ -651,8 +611,6 @@ def awards_and_transactions(db):
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
-        "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 2000,
         "category": "contract",
         "date_signed": "2004-03-02",
@@ -678,8 +636,6 @@ def awards_and_transactions(db):
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=3),
-        "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 600,
         "category": "grant",
         "date_signed": "2004-03-02",
@@ -700,8 +656,6 @@ def awards_and_transactions(db):
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=3),
-        "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 600,
         "category": "idv",
         "date_signed": "2004-03-02",
@@ -721,8 +675,6 @@ def awards_and_transactions(db):
         "pk": 5,
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
-        "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=6),
         "base_and_all_options_value": 2000,
         "category": "contract",
@@ -749,8 +701,6 @@ def awards_and_transactions(db):
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=7),
-        "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 2000,
         "category": "contract",
         "date_signed": "2004-03-02",
@@ -821,13 +771,11 @@ def awards_and_transactions(db):
         "description": "lorem ipsum",
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "total_obligation": 600,
         "base_and_all_options_value": 600,
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
         "generated_unique_award_id": "ASST_NON_:~$@*\"()#/,^&+=`!'%/_. -_9700",
-        "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=3),
         "total_subaward_amount": 0,
         "subaward_count": 0,
@@ -1055,13 +1003,14 @@ expected_response_asst = {
             "address_line3": None,
             "foreign_province": None,
             "city_name": "Charlotte",
+            "county_code": "019",
             "county_name": "BUNCOMBE",
             "state_code": "NC",
             "state_name": "North Carolina",
             "zip5": "12204",
             "zip4": "5312",
             "foreign_postal_code": None,
-            "country_name": "UNITED STA1TES",
+            "country_name": "UNITED STATES",
             "location_country_code": "USA",
             "congressional_code": "90",
         },
@@ -1084,6 +1033,7 @@ expected_response_asst = {
         "address_line3": None,
         "foreign_province": None,
         "city_name": "Austin",
+        "county_code": "023",
         "county_name": "Tripoli",
         "state_code": "TX",
         "state_name": "Texas",
@@ -1132,13 +1082,14 @@ expected_response_cont = {
             "address_line3": None,
             "foreign_province": None,
             "city_name": "Charlotte",
+            "county_code": "019",
             "county_name": "BUNCOMBE",
             "state_code": "NC",
             "state_name": "North Carolina",
             "zip5": "12204",
             "zip4": "5312",
             "foreign_postal_code": None,
-            "country_name": "UNITED STA1TES",
+            "country_name": "UNITED STATES",
             "location_country_code": "USA",
             "congressional_code": "90",
         },
@@ -1158,13 +1109,14 @@ expected_response_cont = {
         "address_line3": None,
         "foreign_province": None,
         "city_name": "Charlotte",
+        "county_code": "019",
         "county_name": "BUNCOMBE",
         "state_code": "NC",
         "state_name": "North Carolina",
         "zip5": "12204",
         "zip4": "5312",
         "foreign_postal_code": None,
-        "country_name": "UNITED STA1TES",
+        "country_name": "UNITED STATES",
         "location_country_code": "USA",
         "congressional_code": "90",
     },

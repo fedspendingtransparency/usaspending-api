@@ -8,8 +8,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
-from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
-from usaspending_api.download.filestreaming import csv_generation
+from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.helpers import multipart_upload, pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
@@ -17,7 +17,7 @@ from usaspending_api.download.v2.request_validations import validate_award_reque
 from usaspending_api.download.v2.year_limited_downloads import YearLimitedDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 award_mappings = {
     "contracts": ["contracts", "idvs"],
@@ -73,7 +73,7 @@ class Command(BaseCommand):
             # Note: Because of the line below, it's advised to only run this script on a separate instance as this will
             #       modify your bulk download settings.
             settings.BULK_DOWNLOAD_S3_BUCKET_NAME = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
-            csv_generation.generate_csvs(download_job=download_job)
+            download_generation.generate_download(download_job=download_job)
             if cleanup:
                 # Get all the files that have the same prefix except for the update date
                 file_name_prefix = file_name[:-12]  # subtracting the 'YYYYMMDD.zip'
@@ -84,7 +84,7 @@ class Command(BaseCommand):
                     key.delete()
                     logger.info("Deleting {} from bucket".format(key.key))
         else:
-            queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+            queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
     def upload_placeholder(self, file_name, empty_file):
@@ -204,7 +204,7 @@ class Command(BaseCommand):
         toptier_agencies = list(toptier_agencies.values("name", "toptier_agency_id", "toptier_code"))
         # Adding 'all' to prevent duplication of code
         if include_all:
-            toptier_agencies.append({"name": "All", "toptier_agency_id": "all", "toptier_code": "all"})
+            toptier_agencies.append({"name": "All", "toptier_agency_id": "all", "toptier_code": "All"})
         if not fiscal_years:
             fiscal_years = range(2001, generate_fiscal_year(current_date) + 1)
 
@@ -226,10 +226,10 @@ class Command(BaseCommand):
                 start_date = "{}-10-01".format(fiscal_year - 1)
                 end_date = "{}-09-30".format(fiscal_year)
                 for award_type in award_types:
-                    file_name = "{}_{}_{}".format(fiscal_year, agency["toptier_code"], award_type.capitalize())
-                    full_file_name = "{}_Full_{}.zip".format(file_name, updated_date_timestamp)
+                    file_name = f"FY{fiscal_year}_{agency['toptier_code']}_{award_type.capitalize()}"
+                    full_file_name = f"{file_name}_Full_{updated_date_timestamp}.zip"
                     if not clobber and file_name in reuploads:
-                        logger.info("Skipping already uploaded: {}".format(full_file_name))
+                        logger.info(f"Skipping already uploaded: {full_file_name}")
                         continue
                     if placeholders:
                         empty_file = empty_contracts_file if award_type == "contracts" else empty_asssistance_file
