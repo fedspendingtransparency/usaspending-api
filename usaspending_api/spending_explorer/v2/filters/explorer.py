@@ -1,9 +1,8 @@
-from decimal import Decimal
 from django.db.models import F, Sum, Value, CharField, Q, Case, When
 from django.db.models.functions import Coalesce
-
-from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
+from decimal import Decimal
 from usaspending_api.references.models import Agency
+from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
 class Explorer(object):

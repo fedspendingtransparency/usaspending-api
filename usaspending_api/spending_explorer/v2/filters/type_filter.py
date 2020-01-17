@@ -1,4 +1,4 @@
-from django.db.models import Sum, Q, Count
+from django.db.models import Sum
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
