@@ -7,11 +7,9 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     business_categories,
     created_at,
     updated_at,
-    place_of_performance_state_code,
-    place_of_performance_state_description,
-    data_source,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import truncate_timestamp
+
 
 # broker column name -> usaspending column name
 transaction_fpds_nonboolean_columns = {
@@ -361,35 +359,6 @@ transaction_normalized_functions = {
     "update_date": current_datetime,
     "action_date": lambda broker: truncate_timestamp(broker["action_date"]),
     "business_categories": business_categories,
-}
-
-# broker column name -> usaspending column name
-place_of_performance_nonboolean_columns = {
-    "place_of_perform_country_c": "location_country_code",
-    "place_of_perf_country_desc": "country_name",
-    "place_of_perform_county_co": "county_code",
-    "place_of_perform_county_na": "county_name",
-    "place_of_performance_congr": "congressional_code",
-    "place_of_perform_city_name": "city_name",
-    "place_of_performance_zip4a": "zip_4a",
-    "place_of_performance_zip5": "zip5",
-    "place_of_perform_zip_last4": "zip_last4",
-    "detached_award_proc_unique": "transaction_unique_id",
-}
-
-# usaspending column name -> derivation function
-place_of_performance_functions = {
-    "is_fpds": lambda broker: True,
-    "data_source": data_source,
-    "place_of_performance_flag": lambda broker: True,
-    "recipient_flag": lambda broker: False,
-    "address_line1": lambda broker: None,
-    "address_line2": lambda broker: None,
-    "address_line3": lambda broker: None,
-    "create_date": current_datetime,  # Data loader won't add this value if it's an update
-    "update_date": current_datetime,
-    "state_code": place_of_performance_state_code,
-    "state_name": place_of_performance_state_description,
 }
 
 # broker column name -> usaspending column name
