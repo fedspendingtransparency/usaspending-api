@@ -11,7 +11,7 @@ from elasticsearch_dsl import Search, Q
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
-from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
+from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category, all_award_types_mappings
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
@@ -146,14 +146,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         s.aggs.bucket(
             "types",
             "filters",
-            filters={
-                "contracts": Q("terms", type=["A", "B", "C", "D"]),
-                "idvs": Q("terms", type=["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]),
-                "grants": Q("terms", type=["02", "03", "04", "05"]),
-                "direct_payments": Q("terms", type=["06", "10"]),
-                "loans": Q("terms", type=["07", "08"]),
-                "other": Q("terms", type=["09", "11"]),
-            },
+            filters={category: Q("terms", type=types) for category, types in all_award_types_mappings.items()},
         )
         results = es_client_query(search=s)
 
@@ -162,7 +155,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         grants = results.aggregations.types.buckets.grants.doc_count
         direct_payments = results.aggregations.types.buckets.direct_payments.doc_count
         loans = results.aggregations.types.buckets.loans.doc_count
-        other = results.aggregations.types.buckets.other.doc_count
+        other = results.aggregations.types.buckets.other_financial_assistance.doc_count
 
         response = {
             "contracts": contracts,
