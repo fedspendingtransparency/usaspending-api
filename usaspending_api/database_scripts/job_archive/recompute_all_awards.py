@@ -80,7 +80,7 @@ def _handle_exit_signal(signum, frame):
     signal_or_human = BSD_SIGNALS.get(signum, signum)
     logging.warning("Received signal {}. Attempting to gracefully exit".format(signal_or_human))
     teardown(successful_run=False)
-    raise SystemExit()
+    raise SystemExit(1)
 
 
 def datetime_command_line_argument_type(naive):
@@ -136,7 +136,7 @@ async def async_run_create(sql):
     except Exception:
         logging.exception("=== ERROR ===")
         logging.error("{}\n=============".format(sql))
-        raise SystemExit
+        raise SystemExit(1)
 
     if DEBUG:
         logging.info(sql)
