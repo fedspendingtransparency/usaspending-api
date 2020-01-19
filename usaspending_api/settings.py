@@ -137,17 +137,23 @@ INSTALLED_APPS = [
 INTERNAL_IPS = ()
 
 # Datadog APM tracing configuration
+# patch_all(): Capture traces from integrated components' libraries by patching them. See:
+#   - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
+#   - If Automatically Instrumented = Yes, here: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
+# TODO: Need to filter out service:aws.sqs from bulk_download, since it polls every second
+patch_all()
 DATADOG_TRACE = {
     "ENABLED": False,  # Replace during env-deploys to turn on
     "DEFAULT_SERVICE": "api",
+    "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 }
-# patch_all(): Capture traces from integrated components' libraries
-# See: http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
-patch_all()
-ddconfig.analytics_enabled = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
-ddconfig.trace_headers([
+ddconfig.django.http.trace_headers([
     "x-requested-with",
 ])
+# Enable Analytics for specific integrations. See:
+#   - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#configure-additional-services-optional
+ddconfig.postgres.analytics_enabled = True
+ddconfig.boto.analytics_enabled = True
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
