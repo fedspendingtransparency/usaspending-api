@@ -9,7 +9,7 @@ import os
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
-from ddtrace import config as ddconfig
+from ddtrace import config as ddconfig, patch_all
 
 # All paths inside the project should be additive to BASE_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -140,11 +140,13 @@ INTERNAL_IPS = ()
 DATADOG_TRACE = {
     "ENABLED": False,  # Replace during env-deploys to turn on
     "DEFAULT_SERVICE": "api",
-    "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 }
-ddconfig.analytics_enabled = True
+# patch_all(): Capture traces from integrated components' libraries
+# See: http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
+patch_all()
+ddconfig.analytics_enabled = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 ddconfig.trace_headers([
-    "X-Requested-With",
+    "x-requested-with",
 ])
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
