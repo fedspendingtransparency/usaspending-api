@@ -9,6 +9,7 @@ import os
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
+from ddtrace import config as ddconfig
 
 # All paths inside the project should be additive to BASE_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -141,6 +142,10 @@ DATADOG_TRACE = {
     "DEFAULT_SERVICE": "api",
     "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 }
+ddconfig.analytics_enabled = True
+ddconfig.trace_headers([
+    "X-Requested-With",
+])
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
