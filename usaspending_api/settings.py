@@ -139,6 +139,7 @@ INTERNAL_IPS = ()
 DATADOG_TRACE = {
     "ENABLED": False,  # Replace during env-deploys to turn on
     "DEFAULT_SERVICE": "api",
+    "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 }
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
