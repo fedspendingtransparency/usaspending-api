@@ -4,6 +4,7 @@ import traceback
 from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from ddtrace.ext.priority import USER_REJECT
+from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
 
 from django.core.management.base import BaseCommand
 
@@ -49,7 +50,8 @@ class Command(BaseCommand):
             # Start a Datadog Trace for this poll iter to capture activity in APM
             with tracer.trace(
                 name=f"job.{JOB_TYPE}", service="bulk-download", resource=queue.url, span_type=SpanTypes.WORKER
-            ):
+            ) as span:
+                # TODO:remove below diagnostic once working
                 root_span = tracer.current_root_span()
                 if root_span:
                     logger.debug(
@@ -61,6 +63,10 @@ class Command(BaseCommand):
                         "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be "
                         "started"
                     )
+
+                # Set True to add span to App Analytics:
+                # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
+                span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, True)
 
                 # Setup dispatcher that coordinates job activity on SQS
                 dispatcher = SQSWorkDispatcher(
@@ -109,7 +115,7 @@ def download_service_app(download_job_id):
         job_id=download_job_id,
         other_params=download_job_details,
     )
-    tracer.set_tags(download_job_details)
+    tracer.current_span().set_tags(download_job_details)
     generate_download(download_job=download_job)
 
 

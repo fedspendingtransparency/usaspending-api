@@ -9,7 +9,7 @@ import os
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
-from ddtrace import patch_all
+from ddtrace import config as ddconfig, patch_all
 
 # All paths inside the project should be additive to BASE_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -141,14 +141,16 @@ INTERNAL_IPS = ()
 # patch_all(): Capture traces from integrated components' libraries by patching them. See:
 #   - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
 #   - If Automatically Instrumented = Yes, here: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
-# TODO: Need to filter out service:aws.sqs from bulk_download, since it polls every second.
-#  - maybe add code to block the span when making the polling call?
 patch_all()
 DATADOG_TRACE = {
     "ENABLED": False,  # Replace during env-deploys to turn on
-    "DEFAULT_SERVICE": "api",
+    "DEFAULT_SERVICE": "api",  # TODO:OPS-995 look into setting this to "bulk-download" for BD App Analytics presence
     "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 }
+# Doubly set these to true when running outside of Django web requests (e.g. Bulk Downloader)
+# ddconfig.analytics_enabled = True
+# ddconsfig.postgres.analytics_enabled = True
+
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
