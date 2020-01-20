@@ -2,6 +2,8 @@ import logging
 import time
 import traceback
 from ddtrace import tracer
+from ddtrace.ext import SpanTypes
+from ddtrace.ext.priority import USER_REJECT
 
 from django.core.management.base import BaseCommand
 
@@ -37,26 +39,32 @@ class Command(BaseCommand):
             logger.debug(f"Datadog ROOT span exists.\n DETAILS:\n{root_span}")
         else:
             logger.debug(
-                "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be " "started"
+                "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be started"
             )
 
-        # Set Datadog info to Trace this activity in APM
-        tracer.set_service_info(app_type="job", app="usaspending", service="bulk-download")
-        # NOTE: can also use tracer.set_tags() to pass in dictionary of global tags for all traces
-        with tracer.trace(f"job.{JOB_TYPE}", resource=queue.url):
-            root_span = tracer.current_root_span()
-            if root_span:
-                logger.debug(
-                    f"Datadog ROOT span exists.\nSPAN DETAILS:\n{root_span}\nTRACER DETAILS:\n{tracer}\nTRACER DICT:\n{tracer.__dict__}"
-                )
-            else:
-                logger.debug(
-                    "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be " "started"
-                )
+        message_found = None
+        keep_polling = True
+        while keep_polling:
 
-            message_found = None
-            keep_polling = True
-            while keep_polling:
+            # Start a Datadog Trace for this poll iter to capture activity in APM
+            with tracer.trace(
+                name=f"job.{JOB_TYPE}",
+                service="bulk-download",
+                resource=queue.url,
+                span_type=SpanTypes.WORKER
+            ):
+                root_span = tracer.current_root_span()
+                if root_span:
+                    logger.debug(
+                        f"Datadog ROOT span exists.\nSPAN DETAILS:\n{root_span}\nTRACER DETAILS:\n{tracer}\nTRACER "
+                        f"DICT:\n{tracer.__dict__}"
+                    )
+                else:
+                    logger.debug(
+                        "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be " 
+                        "started"
+                    )
+
                 # Setup dispatcher that coordinates job activity on SQS
                 dispatcher = SQSWorkDispatcher(queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True)
 
@@ -82,6 +90,10 @@ class Command(BaseCommand):
 
                 # When you receive an empty response from the queue, wait before trying again
                 if not message_found:
+                    # Drop the Datadog trace, since no trace-worthy activity happened on this poll
+                    ddcontext = tracer.context_provider.active()
+                    ddcontext.sampling_priority = USER_REJECT
+
                     time.sleep(1)
 
                 # If this process is exiting, don't poll for more work
