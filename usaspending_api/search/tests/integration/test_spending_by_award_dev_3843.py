@@ -37,7 +37,7 @@ def build_request_data(award_ids, subawards):
 
 
 @pytest.mark.django_db
-def test_award_id_search(client, award_id_search_data, refresh_matviews):
+def test_award_id_search(client, award_id_search_data):
     """
     DEV-3843 requested that we support searching exact award id matches when awards ids are surrounded by quotes.
     """

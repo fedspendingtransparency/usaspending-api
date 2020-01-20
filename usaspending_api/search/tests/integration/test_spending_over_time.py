@@ -10,7 +10,7 @@ from usaspending_api.search.v2.views.spending_over_time import GROUPING_LOOKUP
 
 
 @pytest.fixture
-def spending_over_time_test_data(db):
+def spending_over_time_test_data():
     """
     Generate minimum test data for 'spending_over_time' integration tests.
     Use some calculations inside of a loop to get a larger data sample.
@@ -191,7 +191,7 @@ def spending_over_time_test_data(db):
 
 
 @pytest.mark.django_db
-def test_spending_over_time_success(client, refresh_matviews):
+def test_spending_over_time_success(client):
 
     # test for needed filters
     resp = client.post(
@@ -211,7 +211,7 @@ def test_spending_over_time_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_over_time_failure(client, refresh_matviews):
+def test_spending_over_time_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
@@ -221,7 +221,7 @@ def test_spending_over_time_failure(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_over_time_subawards_success(client, refresh_matviews):
+def test_spending_over_time_subawards_success(client):
 
     resp = client.post(
         "/api/v2/search/spending_over_time",
@@ -232,7 +232,7 @@ def test_spending_over_time_subawards_success(client, refresh_matviews):
 
 
 @pytest.mark.django_db
-def test_spending_over_time_subawards_failure(client, refresh_matviews):
+def test_spending_over_time_subawards_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
     resp = client.post(
@@ -382,7 +382,7 @@ def _test_correct_response_for_keywords(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "keywords": ["test", "recipient_name_", "recipient_name_1"],
+                    "keywords": ["test", "recipient_name_1"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
@@ -393,15 +393,15 @@ def _test_correct_response_for_keywords(client):
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2008"}},
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2009"}},
         {"aggregated_amount": 24030.0, "time_period": {"fiscal_year": "2010"}},
-        {"aggregated_amount": 8001.0, "time_period": {"fiscal_year": "2011"}},
+        {"aggregated_amount": 16012.0, "time_period": {"fiscal_year": "2011"}},
         {"aggregated_amount": 24036.0, "time_period": {"fiscal_year": "2012"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2013"}},
+        {"aggregated_amount": 8013.0, "time_period": {"fiscal_year": "2013"}},
         {"aggregated_amount": 24042.0, "time_period": {"fiscal_year": "2014"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2015"}},
+        {"aggregated_amount": 8015.0, "time_period": {"fiscal_year": "2015"}},
         {"aggregated_amount": 24048.0, "time_period": {"fiscal_year": "2016"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2017"}},
+        {"aggregated_amount": 8017, "time_period": {"fiscal_year": "2017"}},
         {"aggregated_amount": 24054.0, "time_period": {"fiscal_year": "2018"}},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}},
+        {"aggregated_amount": 8019, "time_period": {"fiscal_year": "2019"}},
         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2020"}},
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -657,7 +657,7 @@ def _test_correct_response_for_recipient_search_text(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "recipient_search_text": ["recipient_name_", "recipient_name_10", "recipient_name_14", "000000020"],
+                    "recipient_search_text": ["recipient_name_10", "recipient_name_14", "000000020"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }

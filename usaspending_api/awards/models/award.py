@@ -117,14 +117,6 @@ class Award(DataSourceTrackedModel):
         verbose_name="End Date",
         help_text="The current, not original, period of performance end date",
     )
-    place_of_performance = models.ForeignKey(
-        "references.Location",
-        null=True,
-        help_text="The principal place of business, where the majority of the "
-        "work is performed. For example, in a manufacturing contract, "
-        "this would be the main plant where items are produced.",
-        db_index=True,
-    )
     base_and_all_options_value = models.DecimalField(
         max_digits=23,
         db_index=False,

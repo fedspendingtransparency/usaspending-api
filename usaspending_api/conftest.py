@@ -5,7 +5,7 @@ import pytest
 import tempfile
 
 from django.conf import settings
-from django.db import connections, DEFAULT_DB_ALIAS
+from django.db import connections
 from django.test import override_settings
 from django_mock_queries.query import MockSet
 from pathlib import Path
@@ -16,39 +16,16 @@ from usaspending_api.common.sqs.sqs_handler import (
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
 )
-from usaspending_api.common.helpers.generic_helper import (
-    generate_matviews,
-    refresh_matviews as perform_refresh_matviews,
-)
+from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
     ensure_broker_server_dblink_exists,
     remove_unittest_queue_data_files,
 )
-from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 
 logger = logging.getLogger("console")
-VALID_DB_CURSORS = [DEFAULT_DB_ALIAS, "data_broker"]
-
-
-@pytest.fixture()
-def mock_db_cursor(monkeypatch, request):
-    db_cursor_dict = request.param
-
-    for cursor in VALID_DB_CURSORS:
-        if cursor in db_cursor_dict:
-            data_file_key = cursor + "_data_file"
-
-            if data_file_key not in db_cursor_dict:
-                # Missing data file for the mocked cursor. Skipping PhonyCursor setup.
-                continue
-
-            db_cursor_dict[cursor].cursor.return_value = PhonyCursor(db_cursor_dict[data_file_key])
-            del db_cursor_dict[data_file_key]
-
-    monkeypatch.setattr("django.db.connections", db_cursor_dict)
 
 
 @pytest.fixture()
@@ -254,7 +231,7 @@ def django_db_setup(
                 "being skipped. "
             )
         else:
-            generate_matviews()
+            generate_matviews(materialized_views_as_traditional_views=True)
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
 
@@ -267,11 +244,6 @@ def django_db_setup(
 
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)
-
-
-@pytest.fixture
-def refresh_matviews():
-    perform_refresh_matviews()
 
 
 @pytest.fixture

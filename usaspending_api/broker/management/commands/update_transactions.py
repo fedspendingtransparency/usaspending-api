@@ -1,6 +1,5 @@
 import logging
 
-from copy import copy
 from datetime import datetime
 from usaspending_api.common.helpers.date_helper import fy
 from django.core.management.base import BaseCommand
@@ -10,15 +9,15 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.models import Award
 from usaspending_api.common.helpers.timing_helpers import timer
-from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency, Location
-from usaspending_api.etl.management.load_base import get_or_create_location, format_date, load_data_into_model
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards, update_assistance_awards
+from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
+from usaspending_api.etl.management.load_base import format_date, load_data_into_model
+from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, update_assistance_awards
 
 
 logger = logging.getLogger("console")
 exception_logger = logging.getLogger("exceptions")
 
-# Lists to store for update_awards and update_contract_awards
+# Lists to store for update_awards and update_procurement_awards
 award_update_id_list = []
 award_contract_update_id_list = []
 award_assistance_update_id_list = []
@@ -42,14 +41,6 @@ class Command(BaseCommand):
 
     @staticmethod
     def update_transaction_assistance(db_cursor, fiscal_year=None, page=1, limit=500000):
-
-        # logger.info("Getting IDs for what's currently in the DB...")
-        # current_ids = TransactionFABS.objects
-        #
-        # if fiscal_year:
-        #     current_ids = current_ids.filter(action_date__fy=fiscal_year)
-        #
-        # current_ids = current_ids.values_list('published_award_financial_assistance_id', flat=True)
 
         query = "SELECT * FROM published_award_financial_assistance"
         arguments = []
@@ -77,17 +68,6 @@ class Command(BaseCommand):
         logger.info("Running dictfetchall on db_cursor")
         award_financial_assistance_data = dictfetchall(db_cursor)
 
-        place_of_performance_field_map = {
-            "city_name": "place_of_performance_city",
-            "performance_code": "place_of_performance_code",
-            "congressional_code": "place_of_performance_congr",
-            "county_name": "place_of_perform_county_na",
-            "foreign_location_description": "place_of_performance_forei",
-            "state_name": "place_of_perform_state_nam",
-            "zip4": "place_of_performance_zip4a",
-            "location_country_code": "place_of_perform_country_c",
-        }
-
         fabs_normalized_field_map = {
             "type": "assistance_type",
             "description": "award_description",
@@ -108,37 +88,17 @@ class Command(BaseCommand):
         }
 
         logger.info("Getting total rows")
-        # rows_loaded = len(current_ids)
+
         total_rows = len(award_financial_assistance_data)  # - rows_loaded
 
         logger.info("Processing " + str(total_rows) + " rows of assistance data")
 
-        # skip_count = 0
-
         # ROW ITERATION STARTS HERE
 
-        pop_bulk = []
-        legal_entity_bulk = []
         award_bulk = []
 
         transaction_assistance_bulk = []
         transaction_normalized_bulk = []
-
-        logger.info("Getting place of performance objects for {} rows...".format(len(award_financial_assistance_data)))
-        for index, row in enumerate(award_financial_assistance_data, 1):
-
-            # Place of Performance flag is true for PoP
-            pop_location = get_or_create_location(
-                place_of_performance_field_map, row, {"place_of_performance_flag": True}, save=False
-            )
-
-            pop_bulk.append(pop_location)
-
-        logger.info("Bulk creating {} place of performance rows...".format(len(pop_bulk)))
-        try:
-            Location.objects.bulk_create(pop_bulk)
-        except IntegrityError:
-            logger.info("!!! DUPLICATES FOUND. Continuing... ")
 
         awarding_agency_list = []
         funding_agency_list = []
@@ -203,8 +163,6 @@ class Command(BaseCommand):
                 "award": award_bulk[index - 1],
                 "awarding_agency": awarding_agency_list[index - 1],
                 "funding_agency": funding_agency_list[index - 1],
-                "recipient": legal_entity_bulk[index - 1],
-                "place_of_performance": pop_bulk[index - 1],
                 "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
                 "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
                 "action_date": format_date(row["action_date"]),
@@ -283,17 +241,6 @@ class Command(BaseCommand):
         logger.info("Running dictfetchall on db_cursor")
         procurement_data = dictfetchall(db_cursor)
 
-        place_of_performance_field_map = {
-            # not sure place_of_performance_locat maps exactly to city name
-            # "city_name": "place_of_performance_locat", # location id doesn't mean it's a city. Can't use this mapping
-            "congressional_code": "place_of_performance_congr",
-            "state_code": "place_of_performance_state",
-            "zip4": "place_of_performance_zip4a",
-            "location_country_code": "place_of_perform_country_c",
-        }
-
-        place_of_performance_value_map = {"place_of_performance_flag": True}
-
         fpds_normalized_field_map = {"type": "contract_award_type", "description": "award_description"}
 
         fpds_field_map = {
@@ -310,22 +257,14 @@ class Command(BaseCommand):
         }
 
         logger.info("Getting total rows")
-        # rows_loaded = len(current_ids)
+
         total_rows = len(procurement_data)  # - rows_loaded
 
         logger.info("Processing " + str(total_rows) + " rows of procurement data")
 
-        # skip_count = 0
-
         start_time = datetime.now()
         for index, row in enumerate(procurement_data, 1):
             with db_transaction.atomic():
-                # if TransactionFPDS.objects.values('detached_award_procurement_id').\
-                #         filter(detached_award_procurement_id=str(row['detached_award_procurement_id'])).first():
-                #     skip_count += 1
-                #
-                #     if not (skip_count % 100):
-                #         logger.info('Skipped {} records so far'.format(str(skip_count)))
 
                 if not (index % 100):
                     logger.info(
@@ -333,11 +272,6 @@ class Command(BaseCommand):
                             str(index), str(total_rows), datetime.now() - start_time
                         )
                     )
-
-                # Create the place of performance location
-                pop_location, created = get_or_create_location(
-                    place_of_performance_field_map, row, copy(place_of_performance_value_map)
-                )
 
                 # If awarding toptier agency code (aka CGAC) is not supplied on the D2 record,
                 # use the sub tier code to look it up. This code assumes that all incoming
@@ -385,7 +319,6 @@ class Command(BaseCommand):
                     "funding_agency": Agency.get_by_toptier_subtier(
                         row["funding_agency_code"], row["funding_sub_tier_agency_co"]
                     ),
-                    "place_of_performance": pop_location,
                     "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
                     "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
                     "action_date": format_date(row["action_date"]),
@@ -473,7 +406,7 @@ class Command(BaseCommand):
             update_assistance_awards(tuple(award_assistance_update_id_list))
 
         with timer("updating contract-specific awards to reflect their latest transaction info", logger.info):
-            update_contract_awards(tuple(award_contract_update_id_list))
+            update_procurement_awards(tuple(award_contract_update_id_list))
 
         # Done!
         logger.info("FINISHED")

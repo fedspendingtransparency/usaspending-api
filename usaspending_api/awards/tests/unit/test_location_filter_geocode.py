@@ -7,7 +7,6 @@ from usaspending_api.awards.v2.filters.location_filter_geocode import (
     geocode_filter_locations,
     get_fields_list,
     location_error_handling,
-    return_query_string,
     validate_location_keys,
 )
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -80,7 +79,7 @@ def award_data_fixture(db):
     mommy.make("awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", type="A")
 
 
-def test_geocode_filter_locations(award_data_fixture, refresh_matviews):
+def test_geocode_filter_locations(award_data_fixture):
 
     to = ContractAwardSearchMatview.objects
 
@@ -89,17 +88,17 @@ def test_geocode_filter_locations(award_data_fixture, refresh_matviews):
         {"city": "Burbank", "state": "CA", "country": "USA"},
     ]
 
-    assert to.filter(geocode_filter_locations("nothing", [], True)).count() == 5
-    assert to.filter(geocode_filter_locations("pop", values, True)).count() == 1
-    assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 1
+    assert to.filter(geocode_filter_locations("nothing", [])).count() == 5
+    assert to.filter(geocode_filter_locations("pop", values)).count() == 1
+    assert to.filter(geocode_filter_locations("recipient_location", values)).count() == 1
 
     values = [
         {"city": "Houston", "state": "TX", "country": "USA"},
         {"city": "McCool Junction", "state": "TX", "country": "USA"},
     ]
 
-    assert to.filter(geocode_filter_locations("pop", values, True)).count() == 1
-    assert to.filter(geocode_filter_locations("recipient_location", values, True)).count() == 0
+    assert to.filter(geocode_filter_locations("pop", values)).count() == 1
+    assert to.filter(geocode_filter_locations("recipient_location", values)).count() == 0
 
 
 def test_validate_location_keys():
@@ -176,8 +175,3 @@ def test_get_fields_list():
     assert get_fields_list("county_code", "01") == ["1", "01", "1.0"]
     assert get_fields_list("feet", "01") == ["01"]
     assert get_fields_list("congressional_code", "abc") == ["abc"]
-
-
-def test_return_query_string():
-    assert return_query_string(True) == ("{0}_{1}", "country_code")
-    assert return_query_string(False) == ("{0}__{1}", "location_country_code")

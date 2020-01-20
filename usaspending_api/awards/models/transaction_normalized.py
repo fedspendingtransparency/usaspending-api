@@ -81,9 +81,6 @@ class TransactionNormalized(models.Model):
         help_text="The agency which is funding this transaction",
     )
     description = models.TextField(null=True, help_text="The description of this transaction")
-    place_of_performance = models.ForeignKey(
-        "references.Location", null=True, help_text="The location where the work on this transaction was performed"
-    )
     drv_award_transaction_usaspend = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True

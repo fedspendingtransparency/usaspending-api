@@ -15,9 +15,6 @@ def award_data(db):
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
-    # Create Locations
-    mommy.make("references.Location")
-
     # Create Awarding Top Agency
     ata1 = mommy.make(
         "references.ToptierAgency",
@@ -64,21 +61,27 @@ def award_data(db):
     mommy.make("accounts.FederalAccount", account_title="Compensation to Accounts", agency_identifier="102", id=1)
 
     # Create Awards
-    award1 = mommy.make("awards.Award", category="contracts")
-    award2 = mommy.make("awards.Award", category="contracts")
-    award3 = mommy.make("awards.Award", category="assistance")
+    award1 = mommy.make("awards.Award", category="contracts", generated_unique_award_id="TEST_AWARD_1")
+    award2 = mommy.make("awards.Award", category="contracts", generated_unique_award_id="TEST_AWARD_2")
+    award3 = mommy.make("awards.Award", category="assistance", generated_unique_award_id="TEST_AWARD_3")
 
     # Create Transactions
-    trann1 = mommy.make(TransactionNormalized, award=award1, modification_number=1, awarding_agency=aa1)
-    trann2 = mommy.make(TransactionNormalized, award=award2, modification_number=1, awarding_agency=aa2)
-    trann3 = mommy.make(TransactionNormalized, award=award3, modification_number=1, awarding_agency=aa2)
+    trann1 = mommy.make(
+        TransactionNormalized, award=award1, modification_number=1, awarding_agency=aa1, unique_award_key="TEST_AWARD_1"
+    )
+    trann2 = mommy.make(
+        TransactionNormalized, award=award2, modification_number=1, awarding_agency=aa2, unique_award_key="TEST_AWARD_2"
+    )
+    trann3 = mommy.make(
+        TransactionNormalized, award=award3, modification_number=1, awarding_agency=aa2, unique_award_key="TEST_AWARD_3"
+    )
 
     # Create TransactionContract
-    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid")
-    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid")
+    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="TEST_AWARD_1")
+    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="TEST_AWARD_2")
 
     # Create TransactionAssistance
-    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain")
+    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="TEST_AWARD_3")
 
     # Set latest_award for each award
     update_awards()
@@ -96,7 +99,7 @@ def test_download_transactions_v2_endpoint(client, award_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db
@@ -109,7 +112,7 @@ def test_download_awards_v2_endpoint(client, award_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["url"]
+    assert ".zip" in resp.json()["file_url"]
 
 
 @pytest.mark.django_db

@@ -9,6 +9,7 @@ import os
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
+from ddtrace import patch_all
 
 # All paths inside the project should be additive to BASE_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -124,15 +125,30 @@ INSTALLED_APPS = [
     "usaspending_api.financial_activities",
     "usaspending_api.api_docs",
     "usaspending_api.broker",
+    "usaspending_api.database_scripts.job_archive",
     "usaspending_api.download",
     "usaspending_api.bulk_download",
     "usaspending_api.recipient",
     "usaspending_api.search",
     "django_spaghetti",
     "simple_history",
+    "ddtrace.contrib.django",  # Datadog APM tracing
 ]
 
 INTERNAL_IPS = ()
+
+# Datadog APM tracing configuration
+# patch_all(): Capture traces from integrated components' libraries by patching them. See:
+#   - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
+#   - If Automatically Instrumented = Yes, here: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
+# TODO: Need to filter out service:aws.sqs from bulk_download, since it polls every second.
+#  - maybe add code to block the span when making the polling call?
+patch_all()
+DATADOG_TRACE = {
+    "ENABLED": False,  # Replace during env-deploys to turn on
+    "DEFAULT_SERVICE": "api",
+    "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
+}
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 

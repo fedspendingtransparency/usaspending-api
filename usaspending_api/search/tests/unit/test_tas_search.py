@@ -122,8 +122,7 @@ def mock_tas_data(db):
     )
 
 
-@pytest.mark.django_db
-def test_spending_by_award_tas_success(client, mock_tas_data, refresh_matviews):
+def test_spending_by_award_tas_success(client, mock_tas_data):
 
     data = {
         "filters": {"tas_codes": [{"aid": "028", "main": "8006"}], "award_type_codes": ["A", "B", "C", "D"]},
@@ -148,8 +147,7 @@ def test_spending_by_award_tas_success(client, mock_tas_data, refresh_matviews):
     assert len(resp.data["results"]) == 1
 
 
-@pytest.mark.django_db
-def test_spending_by_award_tas_dates(client, mock_tas_data, refresh_matviews):
+def test_spending_by_award_tas_dates(client, mock_tas_data):
     data = {
         "filters": {
             "tas_codes": [{"aid": "028", "main": "8006", "bpoa": "2011"}],
@@ -175,8 +173,7 @@ def test_spending_by_award_tas_dates(client, mock_tas_data, refresh_matviews):
     assert len(resp.data["results"]) == 2
 
 
-@pytest.mark.django_db
-def test_spending_by_award_tas_sub_account(client, mock_tas_data, refresh_matviews):
+def test_spending_by_award_tas_sub_account(client, mock_tas_data):
     data = {
         "filters": {
             "tas_codes": [{"aid": "028", "main": "8006", "sub": "000"}],
@@ -202,8 +199,7 @@ def test_spending_by_award_tas_sub_account(client, mock_tas_data, refresh_matvie
     assert len(resp.data["results"]) == 1
 
 
-@pytest.mark.django_db
-def test_spending_by_award_tas_ata(client, mock_tas_data, refresh_matviews):
+def test_spending_by_award_tas_ata(client, mock_tas_data):
     data = {
         "filters": {
             "tas_codes": [{"aid": "028", "main": "8006", "ata": "004"}],
@@ -217,8 +213,7 @@ def test_spending_by_award_tas_ata(client, mock_tas_data, refresh_matviews):
     assert len(resp.data["results"]) == 1
 
 
-@pytest.mark.django_db
-def test_spending_by_award_subaward_success(client, mock_tas_data, refresh_matviews):
+def test_spending_by_award_subaward_success(client, mock_tas_data):
     data = {
         "filters": {"tas_codes": [{"aid": "028", "main": "8006"}], "award_type_codes": ["A", "B", "C", "D"]},
         "fields": ["Sub-Award ID"],
@@ -241,8 +236,7 @@ def test_spending_by_award_subaward_success(client, mock_tas_data, refresh_matvi
     assert len(resp.data["results"]) == 1
 
 
-@pytest.mark.django_db
-def test_spending_by_award_subaward_failure(client, mock_tas_data, refresh_matviews):
+def test_spending_by_award_subaward_failure(client, mock_tas_data):
     data = {
         "filters": {"tas_codes": [{"aid": "000", "main": "0000"}], "award_type_codes": ["A", "B", "C", "D"]},
         "fields": ["Sub-Award ID"],
@@ -253,8 +247,7 @@ def test_spending_by_award_subaward_failure(client, mock_tas_data, refresh_matvi
     assert len(resp.data["results"]) == 0
 
 
-@pytest.mark.django_db
-def test_spending_over_time(client, mock_tas_data, refresh_matviews):
+def test_spending_over_time(client, mock_tas_data):
     data = {"group": "fiscal_year", "filters": {"tas_codes": [{"aid": "028", "main": "8006"}]}, "subawards": False}
     resp = client.post("/api/v2/search/spending_over_time", content_type="application/json", data=json.dumps(data))
     assert resp.status_code == status.HTTP_200_OK
@@ -262,8 +255,7 @@ def test_spending_over_time(client, mock_tas_data, refresh_matviews):
     assert len(resp.data["results"]) == FiscalDate.today().fiscal_year - earliest_fiscal_year_we_care_about
 
 
-@pytest.mark.django_db
-def test_spending_by_geography(client, mock_tas_data, refresh_matviews):
+def test_spending_by_geography(client, mock_tas_data):
     data = {
         "scope": "place_of_performance",
         "geo_layer": "state",
@@ -275,8 +267,7 @@ def test_spending_by_geography(client, mock_tas_data, refresh_matviews):
     assert len(resp.data["results"]) == 1
 
 
-@pytest.mark.django_db
-def test_spending_by_category(client, mock_tas_data, refresh_matviews):
+def test_spending_by_category(client, mock_tas_data):
     data = {
         "category": "awarding_agency",
         "filters": {"tas_codes": [{"aid": "028", "main": "8006"}]},

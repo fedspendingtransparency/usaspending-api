@@ -1,20 +1,22 @@
-from django.core.management.base import BaseCommand
 import logging
-import re
 import psycopg2
-from datetime import datetime, timezone
+import re
 
-from usaspending_api.etl.transaction_loaders.fpds_loader import load_ids, failed_ids, delete_stale_fpds
-from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
-from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
-from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
-from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.etl.award_helpers import update_awards, update_contract_awards
+from datetime import datetime, timezone
+from django.core.management.base import BaseCommand
+from typing import IO, List, AnyStr, Optional
+
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
+from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
+from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, prune_empty_awards
+from usaspending_api.etl.transaction_loaders.fpds_loader import load_fpds_transactions, failed_ids, delete_stale_fpds
 
 logger = logging.getLogger("console")
 
-CHUNK_SIZE = 5000
+CHUNK_SIZE = 15000
 
 ALL_FPDS_QUERY = "SELECT {} FROM detached_award_procurement"
 
@@ -39,60 +41,69 @@ class Command(BaseCommand):
             db_cursor.execute(db_query)
         return db_cursor
 
-    def load_fpds_incrementally(self, date):
-        """
-        Handles "increment" loads, which includes deleting transactions so long as a date is provided
-        :param date: if provided, loader will load and delete all transactions starting from this date
-        :return: nothing
-        """
-        if date is None:
-            logger.info("fetching all fpds transactions...")
-        else:
-            logger.info("fetching fpds transactions since {}...".format(str(date)))
+    def load_fpds_incrementally(self, date: Optional[datetime], chunk_size: int = CHUNK_SIZE) -> None:
+        """Process incremental loads based on a date range or full data loads"""
 
-        # First clear any transactions marked for deletion. If the transactions have since been re-added, they will be back in the broker DB and will be re-inserted in the next step
-        if date:
+        if date is None:
+            logger.info("Skipping deletes. Fetching all fpds transactions...")
+        else:
+            logger.info(f"Handling fpds transactions since {date}...")
+
             stale_awards = delete_stale_fpds(date.date())
-            self.modified_award_ids.extend(stale_awards)
+            self.update_award_records(awards=stale_awards, skip_cd_linkage=True)
 
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
+            logger.info("Fetching records to update")
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0
             logger.info("{} total records to update".format(total_records))
             cursor = self.get_cursor_for_date_query(connection, date)
             while True:
-                id_list = cursor.fetchmany(CHUNK_SIZE)
+                id_list = cursor.fetchmany(chunk_size)
                 if len(id_list) == 0:
                     break
-                logger.info("Loading batch from date query (size: {})...".format(len(id_list)))
-                self.modified_award_ids.extend(load_ids([row[0] for row in id_list]))
+                logger.info("Loading batch (size: {}) from date query...".format(len(id_list)))
+                self.modified_award_ids.extend(load_fpds_transactions([row[0] for row in id_list]))
                 records_processed = records_processed + len(id_list)
                 logger.info("{} out of {} processed".format(records_processed, total_records))
 
     @staticmethod
-    def next_file_batch_generator(file):
+    def gen_read_file_for_ids(file: IO[AnyStr], chunk_size: int = CHUNK_SIZE) -> List[str]:
+        """ """
         while True:
-            lines = file.readlines(CHUNK_SIZE * 8)  # since this is by bytes, this allows a rough translation to lines
-            lines = [line.decode("utf-8") for line in lines]
-            if len(lines) == 0:
-                break
+            lines = [line for line in (file.readline().decode("utf-8").strip() for _ in range(chunk_size)) if line]
             yield lines
 
-    def load_fpds_from_file(self, file_path):
-        """
-        Loads arbitrary set of ids, WITHOUT checking for deletes.
-        :param file_path:
-        :return:
-        """
+            if len(lines) < chunk_size:
+                break
+
+    def load_fpds_from_file(self, file_path: str) -> None:
+        """Loads arbitrary set of ids, WITHOUT checking for deletes"""
+        total_count = 0
         with RetrieveFileFromUri(file_path).get_file_object() as file:
-            for next_batch in self.next_file_batch_generator(file):
+            logger.info(f"Loading transactions from IDs in {file_path}")
+            for next_batch in self.gen_read_file_for_ids(file):
                 id_list = [int(re.search(r"\d+", x).group()) for x in next_batch]
-                logger.info(
-                    "Loading next batch from provided file (size: {}, ids {}-{})...".format(
-                        len(id_list), id_list[0], id_list[-1]
-                    )
-                )
-                self.modified_award_ids.extend(load_ids(id_list))
+                total_count += len(id_list)
+                logger.info(f"Loading next batch (size: {len(id_list)}, ids {id_list[0]}-{id_list[-1]})...")
+                self.modified_award_ids.extend(load_fpds_transactions(id_list))
+
+        logger.info(f"Total transaction IDs in file: {total_count}")
+
+    @staticmethod
+    def update_award_records(awards, skip_cd_linkage=True):
+        if awards:
+            unique_awards = set(awards)
+            logger.info(f"{len(unique_awards)} award records impacted by transaction DML operations")
+            logger.info(f"{prune_empty_awards(tuple(unique_awards))} award records removed")
+            logger.info(f"{update_awards(tuple(unique_awards))} award records updated")
+            logger.info(
+                f"{update_procurement_awards(tuple(unique_awards))} award records updated on FPDS-specific fields"
+            )
+            if not skip_cd_linkage:
+                update_c_to_d_linkages("contract")
+        else:
+            logger.info("No award records to update")
 
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
@@ -139,7 +150,7 @@ class Command(BaseCommand):
             self.load_fpds_incrementally(options["date"])
 
         elif options["ids"]:
-            self.modified_award_ids.extend(load_ids(options["ids"]))
+            self.modified_award_ids.extend(load_fpds_transactions(options["ids"]))
 
         elif options["file"]:
             self.load_fpds_from_file(options["file"])
@@ -150,28 +161,17 @@ class Command(BaseCommand):
                 raise ValueError("No last load date for FPDS stored in the database")
             self.load_fpds_incrementally(last_load)
 
-        if self.modified_award_ids:
-            logger.info(
-                "updating award values ({} awards touched by transaction modifications)".format(
-                    len(set(self.modified_award_ids))
-                )
-            )
-            logger.info("{} awards touched by update_awards()".format(update_awards(tuple(self.modified_award_ids))))
-            logger.info(
-                "{} awards touched by update_contract_awards()".format(
-                    update_contract_awards(tuple(self.modified_award_ids))
-                )
-            )
-            update_c_to_d_linkages("contract")
+        self.update_award_records(awards=self.modified_award_ids, skip_cd_linkage=False)
+
+        logger.info(f"Script took {datetime.now(timezone.utc) - update_time}")
 
         if failed_ids:
-            logger.error(
-                "The following detached_award_procurement_ids failed to load: {}".format(
-                    ["{},".format(failure) for failure in failed_ids]
-                )
-            )
+            failed_id_str = ", ".join([str(id) for id in failed_ids])
+            logger.error(f"The following detached_award_procurement_ids failed to load: [{failed_id_str}]")
             raise SystemExit(1)
 
         if options["reload_all"] or options["since_last_load"]:
             # we wait until after the load finishes to update the load date because if this crashes we'll need to load again
             update_last_load_date("fpds", update_time)
+
+        logger.info(f"Successfully Completed")
