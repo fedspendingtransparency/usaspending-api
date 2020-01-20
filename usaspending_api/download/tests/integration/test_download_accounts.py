@@ -26,9 +26,6 @@ def download_test_data(db):
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
-    # Create Locations
-    mommy.make("references.Location")
-
     # Create Awarding Top Agency
     ata1 = mommy.make(
         "references.ToptierAgency",
@@ -54,7 +51,7 @@ def download_test_data(db):
     aa2 = mommy.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
-    mommy.make(
+    ata3 = mommy.make(
         "references.ToptierAgency",
         toptier_agency_id=102,
         name="Bureau of Money",
@@ -65,7 +62,7 @@ def download_test_data(db):
     )
 
     # Create Funding Agency
-    mommy.make("references.Agency", id=3, toptier_flag=False)
+    mommy.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
     award1 = mommy.make("awards.Award", id=123, category="idv", generated_unique_award_id="CONT_IDV_1")

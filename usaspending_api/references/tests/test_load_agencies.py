@@ -36,8 +36,8 @@ def _get_record_count():
     )
 
 
-@pytest.mark.django_db
-def test_happy_path(transactional_db):
+@pytest.mark.django_db(transaction=True)
+def test_happy_path():
     """
     We're running this one without a transaction just to ensure the vacuuming doesn't blow up.  For
     the remaining tests we'll run inside of a transaction since it's faster.

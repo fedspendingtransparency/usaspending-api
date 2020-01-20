@@ -361,6 +361,27 @@ def award_financial_derivations(derived_fields):
             "award__latest_transaction__assistance_data__legal_entity_zip_last4",
         ),
     )
+    derived_fields["primary_place_of_performance_country"] = Coalesce(
+        "award__latest_transaction__contract_data__place_of_perf_country_desc",
+        "award__latest_transaction__assistance_data__place_of_perform_country_n",
+    )
+    derived_fields["primary_place_of_performance_state"] = Coalesce(
+        "award__latest_transaction__contract_data__place_of_perfor_state_desc",
+        "award__latest_transaction__assistance_data__place_of_perform_state_nam",
+    )
+    derived_fields["primary_place_of_performance_county"] = Coalesce(
+        "award__latest_transaction__contract_data__place_of_perform_county_na",
+        "award__latest_transaction__assistance_data__place_of_perform_county_na",
+    )
+    derived_fields["primary_place_of_performance_congressional_district"] = Coalesce(
+        "award__latest_transaction__contract_data__place_of_performance_congr",
+        "award__latest_transaction__assistance_data__place_of_performance_congr",
+    )
+    derived_fields["primary_place_of_performance_zip_code"] = Coalesce(
+        "award__latest_transaction__contract_data__place_of_performance_zip4a",
+        "award__latest_transaction__assistance_data__place_of_performance_zip4a",
+    )
+
     derived_fields["usaspending_permalink"] = Case(
         When(
             **{
