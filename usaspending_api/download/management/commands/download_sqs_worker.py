@@ -48,10 +48,7 @@ class Command(BaseCommand):
 
             # Start a Datadog Trace for this poll iter to capture activity in APM
             with tracer.trace(
-                name=f"job.{JOB_TYPE}",
-                service="bulk-download",
-                resource=queue.url,
-                span_type=SpanTypes.WORKER
+                name=f"job.{JOB_TYPE}", service="bulk-download", resource=queue.url, span_type=SpanTypes.WORKER
             ):
                 root_span = tracer.current_root_span()
                 if root_span:
@@ -61,12 +58,14 @@ class Command(BaseCommand):
                     )
                 else:
                     logger.debug(
-                        "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be " 
+                        "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be "
                         "started"
                     )
 
                 # Setup dispatcher that coordinates job activity on SQS
-                dispatcher = SQSWorkDispatcher(queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True)
+                dispatcher = SQSWorkDispatcher(
+                    queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True
+                )
 
                 try:
 
