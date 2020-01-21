@@ -5,19 +5,19 @@ from django.db import connection
 general_award_update_sql_string = """
 WITH
 txn_earliest AS (
-  SELECT DISTINCT ON (tn.unique_award_key)
-    tn.unique_award_key,
+  SELECT DISTINCT ON (tn.award_id)
+    tn.award_id,
     tn.id,
     tn.action_date,
     tn.description,
     tn.period_of_performance_start_date
   FROM transaction_normalized tn
   {predicate}
-  ORDER BY tn.unique_award_key, tn.action_date ASC, tn.modification_number ASC, tn.transaction_unique_id ASC
+  ORDER BY tn.award_id, tn.action_date ASC, tn.modification_number ASC, tn.transaction_unique_id ASC
 ),
 txn_latest AS (
-  SELECT DISTINCT ON (tn.unique_award_key)
-    tn.unique_award_key,
+  SELECT DISTINCT ON (tn.award_id)
+    tn.award_id,
     tn.id,
     tn.type,
     tn.type_description,
@@ -39,11 +39,11 @@ txn_latest AS (
     END AS category
   FROM transaction_normalized tn
   {predicate}
-  ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
+  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
 ),
 txn_totals AS (
   SELECT
-    tn.unique_award_key,
+    tn.award_id,
     SUM(tn.federal_action_obligation)   AS total_obligation,
     SUM(tn.original_loan_subsidy_cost)  AS total_subsidy_cost,
     SUM(tn.funding_amount)              AS total_funding_amount,
@@ -51,7 +51,7 @@ txn_totals AS (
     SUM(tn.non_federal_funding_amount)  AS non_federal_funding_amount
   FROM transaction_normalized tn
   {predicate}
-  GROUP BY tn.unique_award_key
+  GROUP BY tn.award_id
 )
 UPDATE awards a
 SET
@@ -80,11 +80,11 @@ SET
   total_subsidy_cost                      = t.total_subsidy_cost
 
 FROM txn_earliest e
-INNER JOIN txn_latest   l ON e.unique_award_key = l.unique_award_key
-INNER JOIN txn_totals   t ON e.unique_award_key = t.unique_award_key
+INNER JOIN txn_latest   l ON e.award_id = l.award_id
+INNER JOIN txn_totals   t ON e.award_id = t.award_id
 
 WHERE
-  e.unique_award_key = a.generated_unique_award_id
+  e.award_id = a.id
   AND (
        a.earliest_transaction_id                 IS DISTINCT FROM e.id
     OR a.date_signed                             IS DISTINCT FROM e.action_date
@@ -112,28 +112,28 @@ fpds_award_update_sql_string = """
 WITH
 fpds_totals AS (
   SELECT
-    tn.unique_award_key,
+    tn.award_id,
     SUM(tf.base_and_all_options_value::NUMERIC(23,2)) AS total_base_and_options_value,
     SUM(tf.base_exercised_options_val::NUMERIC(23,2)) AS base_exercised_options_val
   FROM transaction_normalized AS tn
   INNER JOIN transaction_fpds AS tf ON tn.id = tf.transaction_id
   {predicate}
-  GROUP BY tn.unique_award_key
+  GROUP BY tn.award_id
 ),
 txn_latest AS (
-  SELECT DISTINCT ON (tn.unique_award_key)
-    tn.unique_award_key,
+  SELECT DISTINCT ON (tn.award_id)
+    tn.award_id,
     tf.agency_id,
     tf.referenced_idv_agency_iden
   FROM transaction_normalized AS tn
   INNER JOIN transaction_fpds AS tf ON tn.id = tf.transaction_id
   {predicate}
-  ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
+  ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
 ),
 executive_comp AS (
   WITH sub_cte_all_transactions AS (
     SELECT
-      tn.unique_award_key,
+      tn.award_id,
       fpds.officer_1_amount,
       fpds.officer_1_name,
       fpds.officer_2_amount,
@@ -147,9 +147,9 @@ executive_comp AS (
     FROM transaction_normalized tn
     INNER JOIN transaction_fpds AS fpds ON tn.id = fpds.transaction_id
     {predicate}
-    ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
+    ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
   )
-  SELECT DISTINCT ON (unique_award_key) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
+  SELECT DISTINCT ON (award_id) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
 )
 UPDATE awards a
 SET
@@ -171,10 +171,10 @@ SET
   officer_5_amount            = ec.officer_5_amount,
   officer_5_name              = ec.officer_5_name
 FROM fpds_totals AS t
-INNER JOIN txn_latest AS l ON t.unique_award_key = l.unique_award_key
-LEFT OUTER JOIN executive_comp AS ec ON t.unique_award_key = ec.unique_award_key
+INNER JOIN txn_latest AS l ON t.award_id = l.award_id
+LEFT OUTER JOIN executive_comp AS ec ON t.award_id = ec.award_id
 WHERE
-  t.unique_award_key = a.generated_unique_award_id
+  t.award_id = a.id
   AND (
         a.base_and_all_options_value IS DISTINCT FROM t.total_base_and_options_value
      OR a.base_exercised_options_val IS DISTINCT FROM t.base_exercised_options_val
@@ -198,7 +198,7 @@ WITH
   executive_comp AS (
     WITH sub_cte_all_transactions AS (
       SELECT
-        tn.unique_award_key,
+        tn.award_id,
         fabs.officer_1_amount,
         fabs.officer_1_name,
         fabs.officer_2_amount,
@@ -212,9 +212,9 @@ WITH
       FROM transaction_normalized tn
       INNER JOIN transaction_fabs AS fabs ON tn.id = fabs.transaction_id
       {predicate}
-      ORDER BY tn.unique_award_key, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
+      ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
     )
-    SELECT DISTINCT ON (unique_award_key) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
+    SELECT DISTINCT ON (award_id) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
 )
 UPDATE awards a
 SET
@@ -231,7 +231,7 @@ SET
   officer_5_name    = ec.officer_5_name
 FROM executive_comp AS ec
 WHERE
-  ec.unique_award_key = a.generated_unique_award_id
+  ec.award_id = a.id
   AND (
        a.officer_1_amount IS DISTINCT FROM ec.officer_1_amount
     OR a.officer_1_name   IS DISTINCT FROM ec.officer_1_name
@@ -250,12 +250,12 @@ WHERE
 subaward_award_update_sql_string = """
   WITH subaward_totals AS (
     SELECT
-      unique_award_key,
+      award_id,
       SUM(amount) AS total_subaward_amount,
       COUNT(*)    AS subaward_count
     FROM subaward
     {predicate}
-    GROUP BY unique_award_key
+    GROUP BY award_id
   )
   UPDATE awards a
     SET
@@ -264,7 +264,7 @@ subaward_award_update_sql_string = """
       subaward_count        = subaward_totals.subaward_count
     FROM subaward_totals
     WHERE
-      subaward_totals.unique_award_key = a.generated_unique_award_id
+      subaward_totals.award_id = a.id
       AND (
            a.total_subaward_amount  IS DISTINCT FROM subaward_totals.total_subaward_amount
         OR a.subaward_count         IS DISTINCT FROM subaward_totals.subaward_count
@@ -298,9 +298,8 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
     """Update Award records using transaction data"""
 
     if award_tuple:
-        award_unique_keys = convert_award_id_to_guai(award_tuple)
-        values = [award_unique_keys, award_unique_keys, award_unique_keys]
-        predicate = "WHERE tn.unique_award_key IN %s"
+        values = [award_tuple, award_tuple, award_tuple]
+        predicate = "WHERE tn.award_id IN %s"
     else:
         values = None
         predicate = ""
@@ -343,9 +342,8 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
 def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
     """Update assistance-specific award data based on the info in child transactions."""
     if award_tuple:
-        award_unique_keys = convert_award_id_to_guai(award_tuple)
-        values = [award_unique_keys]
-        predicate = "WHERE tn.unique_award_key IN %s"
+        values = [award_tuple]
+        predicate = "WHERE tn.award_id IN %s"
     else:
         values = None
         predicate = ""
@@ -356,9 +354,8 @@ def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
 def update_procurement_awards(award_tuple: Optional[tuple] = None) -> int:
     """Update procurement-specific award data based on the info in child transactions."""
     if award_tuple:
-        award_unique_keys = convert_award_id_to_guai(award_tuple)
-        values = [award_unique_keys, award_unique_keys, award_unique_keys]
-        predicate = "WHERE tn.unique_award_key IN %s"
+        values = [award_tuple, award_tuple, award_tuple]
+        predicate = "WHERE tn.award_id IN %s"
     else:
         values = None
         predicate = ""
@@ -370,9 +367,8 @@ def update_award_subawards(award_tuple: Optional[tuple] = None) -> int:
     """Updates awards' subaward counts and totals"""
 
     if award_tuple:
-        award_unique_keys = convert_award_id_to_guai(award_tuple)
-        values = [award_unique_keys]
-        predicate = "WHERE unique_award_key IN %s"
+        values = [award_tuple]
+        predicate = "WHERE award_id IN %s"
     else:
         values = None
         predicate = ""

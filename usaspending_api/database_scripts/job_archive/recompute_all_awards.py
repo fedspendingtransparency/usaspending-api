@@ -65,9 +65,9 @@ BSD_SIGNALS = {
 
 DEBUG, CLEANUP = False, False
 GET_FABS_AWARDS = (
-    "SELECT generated_unique_award_id FROM awards where is_fpds = FALSE AND id BETWEEN {minid} AND {maxid}"
+    "SELECT id FROM awards where is_fpds = FALSE AND id BETWEEN {minid} AND {maxid}"
 )
-GET_FPDS_AWARDS = "SELECT generated_unique_award_id FROM awards where is_fpds = TRUE AND id BETWEEN {minid} AND {maxid}"
+GET_FPDS_AWARDS = "SELECT id FROM awards where is_fpds = TRUE AND id BETWEEN {minid} AND {maxid}"
 GET_MIN_MAX_SQL = "SELECT MIN(id), MAX(id) FROM awards"
 MAX_ID, MIN_ID, CLOSING_TIME, ITERATION_ESTIMATED_SECONDS = None, None, None, None
 TOTAL_UPDATES, CHUNK_SIZE = 0, 20000
@@ -149,16 +149,16 @@ def run_update_query(fabs_awards, fpds_awards):
     loop = asyncio.new_event_loop()
     statements = []
 
-    predicate = f"WHERE tn.unique_award_key IN ({','.join(fabs_awards + fpds_awards)})"
+    predicate = f"WHERE tn.award_id IN ({','.join(fabs_awards + fpds_awards)})"
     all_sql = general_award_update_sql_string.format(predicate=predicate)
     statements.append(asyncio.ensure_future(async_run_create(all_sql), loop=loop))
 
     if fabs_awards:
-        predicate = f"WHERE tn.unique_award_key IN ({','.join(fabs_awards)})"
+        predicate = f"WHERE tn.award_id IN ({','.join(fabs_awards)})"
         fabs_sql = fabs_award_update_sql_string.format(predicate=predicate)
         statements.append(asyncio.ensure_future(async_run_create(fabs_sql), loop=loop))
     if fpds_awards:
-        predicate = f"WHERE tn.unique_award_key IN ({','.join(fpds_awards)})"
+        predicate = f"WHERE tn.award_id IN ({','.join(fpds_awards)})"
         fpds_sql = fpds_award_update_sql_string.format(predicate=predicate)
         statements.append(asyncio.ensure_future(async_run_create(fpds_sql), loop=loop))
 
