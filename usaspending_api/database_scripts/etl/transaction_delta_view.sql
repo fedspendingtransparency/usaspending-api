@@ -1,6 +1,7 @@
 -- Needs to be present in the Postgres DB if data needs to be retrieved for Elasticsearch
+DROP VIEW IF EXISTS transaction_delta_view;
 
-CREATE OR REPLACE VIEW transaction_delta_view AS
+CREATE VIEW transaction_delta_view AS
 SELECT
   UTM.transaction_id,
   FPDS.detached_award_proc_unique,
