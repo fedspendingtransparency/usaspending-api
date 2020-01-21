@@ -81,22 +81,26 @@ class Command(BaseCommand):
         tasks = []
         for matview, config in self.matviews.items():
             logger.info("Creating Future for {}".format(matview))
-            sql = open(str(self.matview_dir / config["sql_filename"]), "r").read()
+            with open(str(self.matview_dir / config["sql_filename"]), "r") as f:
+                sql = f.read()
             tasks.append(asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(matview)), loop=loop))
 
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
 
         for view in OVERLAY_VIEWS:
-            sql = open(str(view), "r").read()
+            with open(str(view), "r") as f:
+                sql = f.read()
             run_sql(sql, "Creating Views")
 
-        drop_sql = open(str(DROP_OLD_MATVIEWS), "r").read()
+        with open(str(DROP_OLD_MATVIEWS), "r") as f:
+            drop_sql = f.read()
         run_sql(drop_sql, "Drop Old Materialized Views")
 
 
 def create_dependencies():
-    sql_statements = open(str(DEPENDENCY_FILEPATH), "r").read()
+    with open(str(DEPENDENCY_FILEPATH), "r") as f:
+        sql_statements = f.read()
     run_sql(sql_statements, "dependencies")
 
 
