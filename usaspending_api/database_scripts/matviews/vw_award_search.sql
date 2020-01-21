@@ -1,4 +1,6 @@
-CREATE OR REPLACE VIEW vw_award_search AS (
+DROP VIEW IF EXISTS vw_award_search;
+
+CREATE VIEW vw_award_search AS (
   SELECT * FROM mv_contract_award_search
   UNION ALL
   SELECT * FROM mv_directpayment_award_search
