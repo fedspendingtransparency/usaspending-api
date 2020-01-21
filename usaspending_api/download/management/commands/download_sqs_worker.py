@@ -31,15 +31,15 @@ class Command(BaseCommand):
         log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
 
         # TODO:remove below diagnostic
-        logger.debug(
+        logger.warning(
             f"Datadog Tracer ENABLED = {tracer.enabled} and settings.DEBUG = {settings.DEBUG} \nDETAILS:"
             f"\n{tracer}\nDICT:\n{tracer.__dict__}"
         )
         root_span = tracer.current_root_span()
         if root_span:
-            logger.debug(f"Datadog ROOT span exists.\n DETAILS:\n{root_span}")
+            logger.warning(f"Datadog ROOT span exists.\n DETAILS:\n{root_span}")
         else:
-            logger.debug(
+            logger.warning(
                 "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be started"
             )
 
@@ -54,12 +54,12 @@ class Command(BaseCommand):
                 # TODO:remove below diagnostic once working
                 root_span = tracer.current_root_span()
                 if root_span:
-                    logger.debug(
+                    logger.warning(
                         f"Datadog ROOT span exists.\nSPAN DETAILS:\n{root_span}\nTRACER DETAILS:\n{tracer}\nTRACER "
                         f"DICT:\n{tracer.__dict__}"
                     )
                 else:
-                    logger.debug(
+                    logger.warning(
                         "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be "
                         "started"
                     )
@@ -106,17 +106,31 @@ class Command(BaseCommand):
 
 
 def download_service_app(download_job_id):
-    download_job = _retrieve_download_job_from_db(download_job_id)
-    download_job_details = download_job_to_log_dict(download_job)
-    log_job_message(
-        logger=logger,
-        message="Starting processing of download request",
-        job_type=JOB_TYPE,
-        job_id=download_job_id,
-        other_params=download_job_details,
-    )
-    tracer.current_span().set_tags(download_job_details)
-    generate_download(download_job=download_job)
+    # TODO:remove below diagnostic once working
+    current_span = tracer.current_span()
+    if current_span:
+        logger.warning(
+            f"Datadog CURRENT span in subprocess exists.\nSPAN DETAILS:\n{current_span}\nTRACER DETAILS:\n"
+            f"{tracer}\nTRACER "
+            f"DICT:\n{tracer.__dict__}"
+        )
+    else:
+        logger.warning(
+            "Datadog CURRENT span does NOT exist in subprocess."
+        )
+
+    with tracer.trace(name=f"job.{JOB_TYPE}") as span:
+        download_job = _retrieve_download_job_from_db(download_job_id)
+        download_job_details = download_job_to_log_dict(download_job)
+        log_job_message(
+            logger=logger,
+            message="Starting processing of download request",
+            job_type=JOB_TYPE,
+            job_id=download_job_id,
+            other_params=download_job_details,
+        )
+        span.set_tags(download_job_details)
+        generate_download(download_job=download_job)
 
 
 def _retrieve_download_job_from_db(download_job_id):

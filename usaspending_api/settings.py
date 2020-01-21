@@ -147,9 +147,21 @@ DATADOG_TRACE = {
     "DEFAULT_SERVICE": "api",  # TODO:OPS-995 look into setting this to "bulk-download" for BD App Analytics presence
     "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 }
-# Doubly set these to true when running outside of Django web requests (e.g. Bulk Downloader)
+# TODO:OPS-995: Try these things
+# 1) Doubly set these to true when running outside of Django web requests (e.g. Bulk Downloader)
 # ddconfig.analytics_enabled = True
 # ddconsfig.postgres.analytics_enabled = True
+# 2) Put another `patch_all()` call in the download_sqs_worker.py
+# 3) Research why spans don't continue on sub-processes
+#    - do I need to start a new child span in the worker
+#    - try wrapping the worker function body in a with tracer.trace so it spawns its own, non-read-only span
+#    - they will have different process IDs, so that may affect conjoining the span to its parent
+# 4) APM events seem to be registering though Traces are rejected. Research how to suppress APM events too (hits/sec)
+# 5) Sub-process trace may be read-only or disconnected from parent due to process affinity / process_id tag
+#    - Spawn a new child trace and see if it auto-connects to parent trace from parent process
+#    - Or forcibly (by trace_id or span_id) try to re-connect the disjointed/orphaned parent-child trace spans
+# 6) Tags probably aren't sticking to the BD trace because they're attempted to be set within the worker
+#    sub-process, which is either read-only, or a trace does not exist, or it's an orphaned span
 
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
