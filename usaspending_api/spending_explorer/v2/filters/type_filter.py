@@ -159,7 +159,6 @@ def type_filter(_type, filters, limit=None):
         # Total value of filtered results
         actual_total = 0
 
-        alt_set = alt_set.all()
         for award in alt_set:
             award["id"] = str(award["id"])
             if _type in ["award", "award_category"]:
