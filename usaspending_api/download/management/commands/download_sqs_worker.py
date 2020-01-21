@@ -6,6 +6,9 @@ from ddtrace.ext import SpanTypes
 from ddtrace.ext.priority import USER_REJECT
 from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
 
+from ddtrace.sampler import RateSampler
+
+
 from django.core.management.base import BaseCommand
 
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
@@ -27,6 +30,10 @@ JOB_TYPE = "USAspendingDownloader"
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        # Set True to add trace to App Analytics:
+        # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
+        tracer.set_tags({ANALYTICS_SAMPLE_RATE_KEY: True})
+
         queue = get_sqs_queue()
         log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
 
@@ -37,10 +44,11 @@ class Command(BaseCommand):
         )
         root_span = tracer.current_root_span()
         if root_span:
-            logger.warning(f"Datadog ROOT span exists.\n DETAILS:\n{root_span}")
+            logger.warning(f"Datadog ROOT span exists at start of job.\n DETAILS:\n{root_span}")
         else:
             logger.warning(
-                "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be started"
+                "Datadog ROOT span does NOT exist at start of job. Perhaps tracing is not enabled or a span needs to "
+                "be started"
             )
 
         message_found = None
@@ -53,20 +61,6 @@ class Command(BaseCommand):
             ) as span:
                 # TODO:remove below diagnostic once working
                 root_span = tracer.current_root_span()
-                if root_span:
-                    logger.warning(
-                        f"Datadog ROOT span exists.\nSPAN DETAILS:\n{root_span}\nTRACER DETAILS:\n{tracer}\nTRACER "
-                        f"DICT:\n{tracer.__dict__}"
-                    )
-                else:
-                    logger.warning(
-                        "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be "
-                        "started"
-                    )
-
-                # Set True to add span to App Analytics:
-                # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
-                span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, True)
 
                 # Setup dispatcher that coordinates job activity on SQS
                 dispatcher = SQSWorkDispatcher(
@@ -100,6 +94,20 @@ class Command(BaseCommand):
                     ddcontext.sampling_priority = USER_REJECT
 
                     time.sleep(1)
+                else:
+                    if root_span:
+                        logger.warning(
+                            f"Datadog ROOT SPAN exists.\nSPAN DETAILS:\n{root_span}"
+                            f"\nspan.meta:\n{root_span.meta}"
+                            f"\nspan.metrics:\n{root_span.metrics}"
+                            f"\nTRACER DETAILS:\n{tracer}"
+                            f"\nTRACER DICT:\n{tracer.__dict__}"
+                        )
+                    else:
+                        logger.warning(
+                            "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be "
+                            "started"
+                        )
 
                 # If this process is exiting, don't poll for more work
                 keep_polling = not dispatcher.is_exiting
@@ -110,16 +118,18 @@ def download_service_app(download_job_id):
     current_span = tracer.current_span()
     if current_span:
         logger.warning(
-            f"Datadog CURRENT span in subprocess exists.\nSPAN DETAILS:\n{current_span}\nTRACER DETAILS:\n"
-            f"{tracer}\nTRACER "
-            f"DICT:\n{tracer.__dict__}"
+            f"Datadog CURRENT span exists in subprocess.\nSPAN DETAILS:\n{current_span}"
+            f"\nspan.meta:\n{current_span.meta}"
+            f"\nspan.metrics:\n{current_span.metrics}"
+            f"\nTRACER DETAILS:\n{tracer}"
+            f"\nTRACER DICT:\n{tracer.__dict__}"
         )
     else:
         logger.warning(
             "Datadog CURRENT span does NOT exist in subprocess."
         )
 
-    with tracer.trace(name=f"job.{JOB_TYPE}") as span:
+    with tracer.trace(name=f"job.{JOB_TYPE}.download") as span:
         download_job = _retrieve_download_job_from_db(download_job_id)
         download_job_details = download_job_to_log_dict(download_job)
         log_job_message(
@@ -130,6 +140,20 @@ def download_service_app(download_job_id):
             other_params=download_job_details,
         )
         span.set_tags(download_job_details)
+
+        if span:
+            logger.warning(
+                f"Datadog CHILD span was created in subprocess.\nSPAN DETAILS:\n{span}"
+                f"\nspan.meta:\n{span.meta}"
+                f"\nspan.metrics:\n{span.metrics}"
+                f"\nTRACER DETAILS:\n{tracer}"
+                f"\nTRACER DICT:\n{tracer.__dict__}"
+            )
+        else:
+            logger.warning(
+                "Datadog CHILD span was NOT created in subprocess."
+            )
+
         generate_download(download_job=download_job)
 
 

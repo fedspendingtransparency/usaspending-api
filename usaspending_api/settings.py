@@ -142,11 +142,13 @@ INTERNAL_IPS = ()
 #   - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
 #   - If Automatically Instrumented = Yes, here: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
 patch_all()
+# NOTE: Track https://github.com/DataDog/dd-trace-py/issues/986 to see if these settings are even honored
 DATADOG_TRACE = {
     "ENABLED": False,  # Replace during env-deploys to turn on
     "DEFAULT_SERVICE": "api",  # TODO:OPS-995 look into setting this to "bulk-download" for BD App Analytics presence
     "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 }
+ddconfig.trace_headers(["X-Requested-With"])
 # TODO:OPS-995: Try these things
 # 1) Doubly set these to true when running outside of Django web requests (e.g. Bulk Downloader)
 # ddconfig.analytics_enabled = True
@@ -314,12 +316,12 @@ LOGGING = {
             "formatter": "user_readable",
         },
         "console_file": {
-            "level": "INFO",
+            "level": "DEBUG",
             "class": "logging.handlers.WatchedFileHandler",
             "filename": str(APP_DIR / "logs" / "console.log"),
             "formatter": "specifics",
         },
-        "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simpletime"},
     },
     "loggers": {
         # The root logger; i.e. "all modules"
