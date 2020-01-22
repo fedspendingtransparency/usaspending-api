@@ -173,7 +173,7 @@ def upsert_records_with_predicate(
     excluded = SQL(", ").join(
         [
             SQL("{dest} = {source}").format(dest=Identifier(field), source=SQL("EXCLUDED.") + Identifier(field))
-            for field in destination.columns
+            for field in insertable_columns
         ]
     )
 

@@ -17,7 +17,7 @@ class ETLDBLinkTable(ETLObjectBase):
         super(ETLDBLinkTable, self).__init__()
 
     def _get_columns(self) -> List[str]:
-        return get_columns(self.table_name, self.schema_name, self.dblink_name)
+        return [c for c in get_columns(self.table_name, self.schema_name, self.dblink_name) if c in self.data_types]
 
     def _get_object_representation(self, custom_predicate: List[dict] = None) -> Composed:
         """ To help us treat a dblink table like any other object, let's wrap it in a subquery. """
