@@ -1,23 +1,31 @@
 import copy
+import logging
 
 from sys import maxsize
 from django.conf import settings
 from django.db.models import Count, Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from elasticsearch_dsl import Q
 
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_award_count
-from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
+from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category, all_award_types_mappings
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
+from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.common.helpers.orm_helpers import category_to_award_materialized_views
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+
+logger = logging.getLogger("console")
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -55,6 +63,12 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         filters = add_date_range_comparison_types(
             json_request.get("filters", None), subawards, gte_date_type="action_date", lte_date_type="date_signed"
         )
+        elasticsearch = is_experimental_elasticsearch_api(request)
+
+        if elasticsearch and not subawards:
+            logger.info("Using experimental Elasticsearch functionality for 'spending_by_award_count'")
+            results = self.query_elasticsearch(filters)
+            return Response({"results": results, "messages": [get_time_period_message()]})
 
         if filters is None:
             raise InvalidParameterException("Missing required request parameters: 'filters'")
@@ -72,7 +86,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         else:
             results = self.handle_awards(filters, empty_results)
 
-        return Response({"results": results})
+        return Response({"results": results, "messages": [get_time_period_message()]})
 
     @staticmethod
     def handle_awards(filters: dict, results_object: dict) -> dict:
@@ -124,3 +138,31 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         results["subcontracts"] = sum([sub["count"] for sub in queryset if sub["award_type"] == "procurement"])
 
         return results
+
+    def query_elasticsearch(self, filters) -> list:
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
+        s = AwardSearch().filter(filter_query)
+
+        s.aggs.bucket(
+            "types",
+            "filters",
+            filters={category: Q("terms", type=types) for category, types in all_award_types_mappings.items()},
+        )
+        results = s.handle_execute()
+
+        contracts = results.aggregations.types.buckets.contracts.doc_count
+        idvs = results.aggregations.types.buckets.idvs.doc_count
+        grants = results.aggregations.types.buckets.grants.doc_count
+        direct_payments = results.aggregations.types.buckets.direct_payments.doc_count
+        loans = results.aggregations.types.buckets.loans.doc_count
+        other = results.aggregations.types.buckets.other_financial_assistance.doc_count
+
+        response = {
+            "contracts": contracts,
+            "direct_payments": direct_payments,
+            "grants": grants,
+            "idvs": idvs,
+            "loans": loans,
+            "other": other,
+        }
+        return response

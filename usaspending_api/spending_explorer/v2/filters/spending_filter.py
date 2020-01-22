@@ -1,5 +1,7 @@
 import logging
 
+from django.db.models import Q
+
 from usaspending_api.references.models import Agency
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
@@ -43,38 +45,34 @@ def spending_filter(alt_set, queryset, filters, _type):
             # Apply filters
             # budget_function
             if key == "budget_function":
-                and_alt_set = alt_set.filter(treasury_account__budget_function_code=value)
-                alt_set &= and_alt_set
+                alt_set = alt_set.filter(treasury_account__budget_function_code=value)
 
             # budget_subfunction
             elif key == "budget_subfunction":
-                and_alt_set = alt_set.filter(treasury_account__budget_subfunction_code=value)
-                alt_set &= and_alt_set
+                alt_set = alt_set.filter(treasury_account__budget_subfunction_code=value)
 
             # federal_account
             elif key == "federal_account":
-                and_alt_set = alt_set.filter(treasury_account__federal_account=value)
-                alt_set &= and_alt_set
+                alt_set = alt_set.filter(treasury_account__federal_account=value)
 
             # program_activity
             elif key == "program_activity":
-                and_alt_set = alt_set.filter(program_activity=value)
-                alt_set &= and_alt_set
+                alt_set = alt_set.filter(program_activity=value)
 
             # object_class
             elif key == "object_class":
-                or_alt_set = alt_set.filter(object_class__major_object_class=value)
-                alt_set &= or_alt_set
+                alt_set = alt_set.filter(object_class__major_object_class=value)
 
             # recipient
             elif key == "recipient":
-                and_alt_set = alt_set.filter(award__recipient__recipient_name=value)
-                alt_set &= and_alt_set
+                alt_set = alt_set.filter(
+                    Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal=value)
+                    | Q(award__latest_transaction__contract_data__awardee_or_recipient_legal=value)
+                )
 
             # award, award_category
             elif key == "award" or key == "award_category":
-                and_alt_set = alt_set.filter(award__id=value)
-                alt_set &= and_alt_set
+                alt_set = alt_set.filter(award__id=value)
 
             # agency
             elif key == "agency":
@@ -85,58 +83,52 @@ def spending_filter(alt_set, queryset, filters, _type):
                         toptier_flag=True, toptier_agency__toptier_code__in=DOD_ARMED_FORCES_CGAC
                     ).values_list("toptier_agency", flat=True)
 
-                    and_alt_set = alt_set.filter(treasury_account__funding_toptier_agency__in=dod_agencies)
+                    and_alt_set = Q(treasury_account__funding_toptier_agency__in=dod_agencies)
                 else:
                     agency = Agency.objects.filter(toptier_flag=True, id=value).first()
                     if agency is None:
                         raise InvalidParameterException("Agency ID provided does not correspond to a toptier agency")
 
-                    and_alt_set = alt_set.filter(treasury_account__funding_toptier_agency=agency.toptier_agency)
+                    and_alt_set = Q(treasury_account__funding_toptier_agency=agency.toptier_agency)
 
-                alt_set &= and_alt_set
+                alt_set = alt_set.filter(and_alt_set)
 
         # All other _type
         else:
             # budget_function
             if key == "budget_function":
-                and_queryset = queryset.filter(treasury_account__budget_function_code=value)
-                queryset &= and_queryset
+                queryset = queryset.filter(treasury_account__budget_function_code=value)
 
             # budget_subfunction
             elif key == "budget_subfunction":
-                and_queryset = queryset.filter(treasury_account__budget_subfunction_code=value)
-                queryset &= and_queryset
+                queryset = queryset.filter(treasury_account__budget_subfunction_code=value)
 
             # federal_account
             elif key == "federal_account":
-                and_queryset = queryset.filter(treasury_account__federal_account=value)
-                queryset &= and_queryset
+                queryset = queryset.filter(treasury_account__federal_account=value)
 
             # program_activity
             elif key == "program_activity":
-                and_queryset = queryset.filter(program_activity=value)
-                queryset &= and_queryset
+                queryset = queryset.filter(program_activity=value)
 
             # object_class
             elif key == "object_class":
-                and_queryset = queryset.filter(object_class__major_object_class=value)
-                queryset &= and_queryset
+                queryset = queryset.filter(object_class__major_object_class=value)
 
             # recipient
             elif key == "recipient":
-                and_queryset = queryset.filter(
-                    treasury_account__in=alt_set.filter(award__recipient__recipient_name=value).values_list(
-                        "treasury_account_id", flat=True
-                    )
+                queryset = queryset.filter(
+                    treasury_account__in=alt_set.filter(
+                        Q(award__latest_transaction__contract_data__awardee_or_recipient_legal=value)
+                        | Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal=value)
+                    ).values_list("treasury_account_id", flat=True)
                 )
-                queryset &= and_queryset
 
             # award, award_category
             elif key == "award" or key == "award_category":
-                and_queryset = queryset.filter(
+                queryset = queryset.filter(
                     treasury_account__in=alt_set.filter(award__id=value).values_list("treasury_account_id", flat=True)
                 )
-                queryset &= and_queryset
 
             # agency
             elif key == "agency":
@@ -149,13 +141,13 @@ def spending_filter(alt_set, queryset, filters, _type):
                         toptier_flag=True, toptier_agency__toptier_code__in=DOD_ARMED_FORCES_CGAC
                     ).values_list("toptier_agency", flat=True)
 
-                    and_queryset = queryset.filter(treasury_account__funding_toptier_agency__in=dod_agencies)
+                    and_queryset = Q(treasury_account__funding_toptier_agency__in=dod_agencies)
                 else:
                     agency = Agency.objects.filter(toptier_flag=True, id=value).first()
                     if agency is None:
                         raise InvalidParameterException("Agency ID provided does not correspond to a toptier agency")
 
-                    and_queryset = queryset.filter(treasury_account__funding_toptier_agency=agency.toptier_agency)
-                queryset &= and_queryset
+                    and_queryset = Q(treasury_account__funding_toptier_agency=agency.toptier_agency)
+                queryset = queryset.filter(and_queryset)
 
     return alt_set, queryset

@@ -32,7 +32,6 @@ FABS_AWARD_FIELDS = OrderedDict(
         ("total_subaward_amount", "total_subaward_amount"),
         ("awarding_agency", "awarding_agency"),
         ("funding_agency", "funding_agency"),
-        ("recipient", "recipient"),
         ("subaward_count", "subaward_count"),
         ("total_subaward_amount", "total_subaward_amount"),
         ("total_subsidy_cost", "total_subsidy_cost"),

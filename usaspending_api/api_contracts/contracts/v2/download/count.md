@@ -14,9 +14,23 @@ Returns the number of transactions that would be included in a download request 
         + `filters` (required, FilterObject)
 
 + Response 200 (application/json)
-    + Attributes
-        + `transaction_rows_gt_limit`: true (required, boolean)
+    + Attributes (object)
+        + `transaction_rows_gt_limit` (required, boolean)
             A boolean returning whether the transaction count is over the maximum row limit.
+        + `calculated_transaction_count` (required, number)
+            The calculated count of all transactions which would be included in the download files.
+        + `maximum_transaction_limit` (required, number)
+            The current allowed maximum number of transactions in a row-limited download. Visit https://www.usaspending.gov/#/download_center/custom_award_data to download larger volumes of data.
+        + `messages` (optional, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
+    + Body
+
+            {
+                "calculated_transaction_count": 87343,
+                "maximum_transaction_limit": 500000,
+                "transaction_rows_gt_limit": false,
+                "messages": ["For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."]
+            }
 
 # Data Structures
 
@@ -40,6 +54,7 @@ Returns the number of transactions that would be included in a download request 
 + `recipient_type_names`: `category_business` (optional, array[string])
 + `award_type_codes` (optional, FilterObjectAwardTypes)
 + `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN`  (optional, array[string])
+    Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
 + `naics_codes`: `311812` (optional, array[string])
@@ -51,7 +66,11 @@ Returns the number of transactions that would be included in a download request 
 
 ## TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
+    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
+    feature on the website or one of our `download` or `bulk_download` API endpoints.
 + `end_date`: `2018-09-30` (required, string)
+    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
+    feature on the website or one of our `download` or `bulk_download` API endpoints.
 + `date_type` (optional, enum[string])
     + Members
         + `action_date`

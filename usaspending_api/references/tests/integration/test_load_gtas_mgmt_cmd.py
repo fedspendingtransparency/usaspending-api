@@ -1,30 +1,26 @@
-# Stdlib imports
+import pytest
 
-# Core Django imports
 from django.core.management import call_command
 from django.db import DEFAULT_DB_ALIAS
-
-# Third-party app imports
-import pytest
 from unittest.mock import MagicMock
-
-# Imports from your apps
+from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 from usaspending_api.references.models import GTASTotalObligation
 
 
-DB_CURSOR_PARAMS = {
-    DEFAULT_DB_ALIAS: MagicMock(),
-    "data_broker": MagicMock(),
-    "data_broker_data_file": "usaspending_api/references/tests/data/broker_gtas.json",
-}
-
-
 @pytest.mark.django_db
-@pytest.mark.parametrize("mock_db_cursor", [DB_CURSOR_PARAMS], indirect=True)
-def test_program_activity_fresh_load(mock_db_cursor):
+def test_program_activity_fresh_load(monkeypatch):
     """
-        Test the gtas totals load to ensure data is loaded with the correct totals.
+    Test the gtas totals load to ensure data is loaded with the correct totals.
     """
+
+    data_broker_mock = MagicMock()
+    data_broker_mock.cursor.return_value = PhonyCursor("usaspending_api/references/tests/data/broker_gtas.json")
+    mock_connections = {
+        DEFAULT_DB_ALIAS: MagicMock(),
+        "data_broker": data_broker_mock,
+    }
+
+    monkeypatch.setattr("usaspending_api.references.management.commands.load_gtas.connections", mock_connections)
 
     call_command("load_gtas")
 

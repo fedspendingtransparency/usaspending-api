@@ -14,10 +14,10 @@ from pathlib import Path
 APP_DIR = Path(__file__).resolve().parent
 BASE_DIR = APP_DIR.parent
 
-# User-specified limit on downloads should not be permitted beyond this
+# Row-limited download limit
 MAX_DOWNLOAD_LIMIT = 500000
 
-# User-specified timeout limit for streaming downloads
+# Timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 
 # Default timeout for SQL statements in Django
@@ -42,6 +42,11 @@ ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
 IS_LOCAL = True
+
+# How to handle downloads locally
+# True: process it right away by the API;
+# False: leave the message in the local file-backed queue to be picked up and processed by the bulk-download container
+RUN_LOCAL_DOWNLOAD_IN_PROCESS = os.environ.get("RUN_LOCAL_DOWNLOAD_IN_PROCESS", "").lower() not in ["false", "0", "no"]
 
 # AWS Region for USAspending Infrastructure
 USASPENDING_AWS_REGION = ""
@@ -88,6 +93,11 @@ ES_TRANSACTIONS_MAX_RESULT_WINDOW = 50000
 ES_TRANSACTIONS_NAME_SUFFIX = "transactions"
 ES_TRANSACTIONS_QUERY_ALIAS_PREFIX = "transaction-query"
 ES_TRANSACTIONS_WRITE_ALIAS = "transaction-load-alias"
+ES_AWARDS_ETL_VIEW_NAME = "award_delta_view"
+ES_AWARDS_MAX_RESULT_WINDOW = 50000
+ES_AWARDS_NAME_SUFFIX = "awards"
+ES_AWARDS_QUERY_ALIAS_PREFIX = "award-query"
+ES_AWARDS_WRITE_ALIAS = "award-load-alias"
 ES_TIMEOUT = 30
 ES_REPOSITORY = ""
 
@@ -114,9 +124,11 @@ INSTALLED_APPS = [
     "usaspending_api.financial_activities",
     "usaspending_api.api_docs",
     "usaspending_api.broker",
+    "usaspending_api.database_scripts.job_archive",
     "usaspending_api.download",
     "usaspending_api.bulk_download",
     "usaspending_api.recipient",
+    "usaspending_api.search",
     "django_spaghetti",
     "simple_history",
 ]
@@ -281,8 +293,17 @@ LOGGING = {
         "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
     },
     "loggers": {
+        # The root logger; i.e. "all modules"
+        "": {"handlers": ["console", "console_file"], "level": "WARNING", "propagate": False},
+        # Logger for Django API requests via middleware. See logging.py
         "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
+        # Catch-all logger (over)used for non-Django-API commands that output to the console
         "console": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        # Logger used to specifically record exceptions
+        "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
+        # ======== Module-specific loggers ========
+        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
     },
 }
 

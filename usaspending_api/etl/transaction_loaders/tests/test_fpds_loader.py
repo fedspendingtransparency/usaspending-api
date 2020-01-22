@@ -10,12 +10,6 @@ from usaspending_api.etl.transaction_loaders.fpds_loader import (
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
-    legal_entity_nonboolean_columns,
-    legal_entity_boolean_columns,
-    recipient_location_nonboolean_columns,
-    recipient_location_functions,
-    place_of_performance_nonboolean_columns,
-    place_of_performance_functions,
     transaction_fpds_boolean_columns,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
@@ -71,10 +65,6 @@ def _assemble_dummy_broker_data():
     return {
         **transaction_fpds_nonboolean_columns,
         **transaction_normalized_nonboolean_columns,
-        **legal_entity_nonboolean_columns,
-        **{key: str(random.choice([True, False])) for key in legal_entity_boolean_columns},
-        **recipient_location_nonboolean_columns,
-        **place_of_performance_nonboolean_columns,
         **{key: str(random.choice([True, False])) for key in transaction_fpds_boolean_columns},
     }
 
@@ -95,7 +85,7 @@ def _stub___extract_broker_objects(id_list):
 
 
 def test_load_ids_empty():
-    fpds_loader.load_ids([])
+    fpds_loader.load_fpds_transactions([])
 
 
 # These are patched in opposite order from when they're listed in the function params, because that's how the fixture works
@@ -105,9 +95,6 @@ def test_load_ids_empty():
 @patch(
     "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019)
 )
-@patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_recipient_location")
-@patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_recipient")
-@patch("usaspending_api.etl.transaction_loaders.fpds_loader.bulk_insert_place_of_performance")
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._matching_award")
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.insert_award")
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._lookup_existing_transaction")
@@ -123,9 +110,6 @@ def test_load_ids_dummy_id(
     mock__lookup_existing_transaction,
     mock__insert_award,
     mock__matching_award,
-    mock__bulk_insert_place_of_performance,
-    mock__bulk_insert_recipient,
-    mock__bulk_insert_recipient_location,
     mock__fy,
     mock__extract_broker_objects,
     mock___fetch_subtier_agency_id,
@@ -151,20 +135,15 @@ def test_load_ids_dummy_id(
 
     # Test run of the loader
     dummy_broker_ids = [101, 201, 301]
-    fpds_loader.load_ids(dummy_broker_ids)
+    fpds_loader.load_fpds_transactions(dummy_broker_ids)
 
     # Since the mocks will return "data" always when called, if not told to return "None", the branching logic in
-    # load_ids like: "lookup award, if not exists, create ... lookup transaction, if not exists, create", will
+    # load_fpds_transactions like: "lookup award, if not exists, create ... lookup transaction, if not exists, create", will
     # always "find" a *mock* award and transaction.
     # So, assert this baseline run followed that logic. That is:
     # - for each broker transaction extracted,
     # - an existing award that it belongs to was found in usaspending
     # - and an existing transaction that it belongs to was found in usaspending
-
-    # One call per batch of transactions to load from broker into usaspending
-    assert mock__bulk_insert_recipient_location.call_count == 1
-    assert mock__bulk_insert_recipient.call_count == 1
-    assert mock__bulk_insert_place_of_performance.call_count == 1
 
     # One call per transactions to load from broker into usaspending
     assert mock__matching_award.call_count == 3
@@ -222,60 +201,33 @@ def test_load_from_broker():
 # This only runs for one of the most simple tables, since this is supposed to be a test to ensure that the loader works,
 # NOT that the map is accurate
 def test_create_load_object(monkeypatch):
-    custom_bools = {"is_awesome": "awesome", "is_not_awesome": "nawesome", "reasons_to_not_be_awesome": "noawersn"}
+    columns = {"input_field_1": "output_field_1", "input_field_2": "output_field_2"}
+    bools = {"input_field_3": "output_field_3", "input_field_4": "output_field_4", "input_field_5": "output_field_5"}
+    functions = {"output_field_6": lambda t: t["input_field_6"] * 2, "output_field_7": lambda t: "replacement"}
 
     data = {
-        "legal_entity_country_code": "countrycode",
-        "legal_entity_country_name": "countryname",
-        "legal_entity_state_code": "statecode",
-        "legal_entity_state_descrip": "statedescription",
-        "legal_entity_county_code": "countycode",
-        "legal_entity_county_name": "countyname",
-        "legal_entity_congressional": "congressionalcode",
-        "legal_entity_city_name": "cityname",
-        "legal_entity_address_line1": "addressline1",
-        "legal_entity_address_line2": "addressline2",
-        "legal_entity_address_line3": "addressline3",
-        "legal_entity_zip4": "zipfour",
-        "legal_entity_zip5": "zipfive",
-        "legal_entity_zip_last4": "zip last 4",
-        "detached_award_proc_unique": 5,
-        "is_awesome": "true",
-        "is_not_awesome": "false",
-        "reasons_to_not_be_awesome": None,
+        "input_field_1": "this is field 1",
+        "input_field_2": "this is field 2",
+        "input_field_3": "true",
+        "input_field_4": "false",
+        "input_field_5": None,
+        "input_field_6": 5,
+        "input_field_7": "this is field 7",
     }
-    result = {
-        "location_country_code": "COUNTRYCODE",
-        "country_name": "COUNTRYNAME",
-        "state_code": "STATECODE",
-        "state_name": "STATEDESCRIPTION",
-        "county_code": "COUNTYCODE",
-        "county_name": "COUNTYNAME",
-        "congressional_code": "CONGRESSIONALCODE",
-        "city_name": "CITYNAME",
-        "address_line1": "ADDRESSLINE1",
-        "address_line2": "ADDRESSLINE2",
-        "address_line3": "ADDRESSLINE3",
-        "zip4": "ZIPFOUR",
-        "zip5": "ZIPFIVE",
-        "zip_last4": "ZIP LAST 4",
-        "is_fpds": True,
-        "data_source": "DBR",
-        "place_of_performance_flag": False,
-        "recipient_flag": True,
-        "transaction_unique_id": 5,
-        "awesome": "true",
-        "nawesome": "false",
-        "noawersn": False,
+    expected_result = {
+        "output_field_1": "THIS IS FIELD 1",
+        "output_field_2": "THIS IS FIELD 2",
+        "output_field_3": "true",
+        "output_field_4": "false",
+        "output_field_5": False,
+        "output_field_6": 10,
+        "output_field_7": "replacement",
     }
     mock_cursor(monkeypatch, data)
 
-    actual_result = _create_load_object(
-        data, recipient_location_nonboolean_columns, custom_bools, recipient_location_functions
-    )
-    actual_result.pop("create_date", None)
-    actual_result.pop("update_date", None)
-    assert actual_result == result
+    actual_result = _create_load_object(data, columns, bools, functions)
+
+    assert actual_result == expected_result
 
 
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.connection")
@@ -294,11 +246,6 @@ def test_load_transactions(mock__fetch_subtier_agency_id, mock_connection):
     mega_key_list = {}
     mega_key_list.update(transaction_fpds_nonboolean_columns)
     mega_key_list.update(transaction_normalized_nonboolean_columns)
-    mega_key_list.update(legal_entity_nonboolean_columns)
-    mega_key_list.update(recipient_location_nonboolean_columns)
-    mega_key_list.update(recipient_location_functions)
-    mega_key_list.update(place_of_performance_nonboolean_columns)
-    mega_key_list.update(place_of_performance_functions)
 
     unique_val = 1
     for key in mega_key_list.keys():
@@ -312,7 +259,6 @@ def test_load_transactions(mock__fetch_subtier_agency_id, mock_connection):
 
     mega_boolean_key_list = {}
     mega_boolean_key_list.update(transaction_fpds_boolean_columns)
-    mega_boolean_key_list.update(legal_entity_boolean_columns)
 
     for key in mega_boolean_key_list:
         mega_boolean_key_list[key] = "false"

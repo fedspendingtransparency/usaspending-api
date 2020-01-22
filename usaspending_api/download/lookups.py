@@ -13,7 +13,11 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.awards.models_matviews import AwardSearchView, UniversalTransactionView, SubawardView
+from usaspending_api.download.helpers.elasticsearch_download_functions import (
+    AwardsElasticsearchDownload,
+    TransactionsElasticsearchDownload,
+)
+from usaspending_api.search.models import AwardSearchView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
     idv_transaction_filter,
@@ -30,6 +34,9 @@ from usaspending_api.awards.v2.filters.matview_filters import (
 )
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.download.filestreaming.generate_export_query import (
+    generate_file_b_custom_account_download_export_query,
+)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.download.helpers.download_annotation_functions import (
     universal_transaction_matview_annotations,
@@ -68,6 +75,19 @@ VALUE_MAPPINGS = {
         "filter_function": universal_award_matview_filter,
         "annotations_function": universal_award_matview_annotations,
     },
+    # Elasticsearch Award Level
+    # Lives alongside Postgres functionality for /api/v2/download/awards/ as of 1/17/2020
+    "elasticsearch_awards": {
+        "source_type": "award",
+        "table": AwardSearchView,
+        "table_name": "award",
+        "type_name": "PrimeAwardSummaries",
+        "download_name": "{agency}{type}_PrimeAwardSummaries_{timestamp}",
+        "contract_data": "award__latest_transaction__contract_data",
+        "assistance_data": "award__latest_transaction__assistance_data",
+        "filter_function": AwardsElasticsearchDownload.query,
+        "annotations_function": universal_award_matview_annotations,
+    },
     # Transaction Level
     "transactions": {
         "source_type": "award",
@@ -78,6 +98,19 @@ VALUE_MAPPINGS = {
         "contract_data": "transaction__contract_data",
         "assistance_data": "transaction__assistance_data",
         "filter_function": universal_transaction_matview_filter,
+        "annotations_function": universal_transaction_matview_annotations,
+    },
+    # Elasticsearch Transaction Level
+    # Lives alongside Postgres functionality for /api/v2/download/transactions/ as of 1/17/2020
+    "elasticsearch_transactions": {
+        "source_type": "award",
+        "table": UniversalTransactionView,
+        "table_name": "transaction",
+        "type_name": "PrimeTransactions",
+        "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
+        "contract_data": "transaction__contract_data",
+        "assistance_data": "transaction__assistance_data",
+        "filter_function": TransactionsElasticsearchDownload.query,
         "annotations_function": universal_transaction_matview_annotations,
     },
     # SubAward Level
@@ -106,9 +139,10 @@ VALUE_MAPPINGS = {
         "source_type": "account",
         "table": FinancialAccountsByProgramActivityObjectClass,
         "table_name": "object_class_program_activity",
-        "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByProgramActivityObjectClass_{timestamp}",
-        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByProgramActivityObjectClass_{timestamp}",
+        "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
+        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
         "filter_function": account_download_filter,
+        "export_query_function": generate_file_b_custom_account_download_export_query,
     },
     "award_financial": {
         "source_type": "account",
@@ -274,6 +308,7 @@ CFO_CGACS_MAPPING = OrderedDict(
 CFO_CGACS = list(CFO_CGACS_MAPPING.keys())
 
 FILE_FORMATS = {
-    "csv": {"delimiter": ",", "options": "WITH CSV HEADER"},
-    "tsv": {"delimiter": "\t", "options": r"WITH CSV DELIMITER E'\t' HEADER"},
+    "csv": {"delimiter": ",", "extension": "csv", "options": "WITH CSV HEADER"},
+    "tsv": {"delimiter": "\t", "extension": "tsv", "options": r"WITH CSV DELIMITER E'\t' HEADER"},
+    "pstxt": {"delimiter": "|", "extension": "txt", "options": "WITH CSV DELIMITER '|' HEADER"},
 }

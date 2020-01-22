@@ -1,49 +1,34 @@
-# Third-party app imports
 import pytest
-from model_mommy import mommy
 
-# Imports from your apps
+from model_mommy import mommy
 from usaspending_api.awards.models import Award, TransactionNormalized, TransactionFABS
 from usaspending_api.broker.helpers.delete_stale_fabs import delete_stale_fabs
-from usaspending_api.references.models import LegalEntity, Location
 
 
 @pytest.mark.django_db()
 def test_delete_fabs_success():
     """ Testing delete fabs works properly """
 
-    # Award/Transaction/LE/Location deleted based on 1-1 transaction
-    mommy.make(Award, id=1, latest_transaction_id=1, recipient_id=1, place_of_performance_id=1)
-    mommy.make(TransactionNormalized, id=1, award_id=1, recipient_id=1, place_of_performance_id=1)
-    mommy.make(TransactionFABS, transaction_id=1, afa_generated_unique="A")
-    mommy.make(LegalEntity, legal_entity_id=1, location_id=2)
-    mommy.make(Location, location_id=1)
-    mommy.make(Location, location_id=2)
+    # Award/Transaction deleted based on 1-1 transaction
+    mommy.make(Award, id=1, latest_transaction_id=1, generated_unique_award_id="TEST_AWARD_1")
+    mommy.make(TransactionNormalized, id=1, award_id=1, unique_award_key="TEST_AWARD_1")
+    mommy.make(TransactionFABS, transaction_id=1, afa_generated_unique="A", unique_award_key="TEST_AWARD_1")
 
-    # Award/Locations/LEs kept despite having one of their associated transactions removed
-    mommy.make(Award, id=2, latest_transaction_id=2, recipient_id=3, place_of_performance_id=3)
+    # Award kept despite having one of their associated transactions removed
+    mommy.make(Award, id=2, latest_transaction_id=2, generated_unique_award_id="TEST_AWARD_2")
     mommy.make(
-        TransactionNormalized, id=2, award_id=2, recipient_id=2, place_of_performance_id=3, action_date="2019-01-01"
+        TransactionNormalized, id=2, award_id=2, action_date="2019-01-01", unique_award_key="TEST_AWARD_2",
     )
     mommy.make(
-        TransactionNormalized, id=3, award_id=2, recipient_id=3, place_of_performance_id=4, action_date="2019-01-02"
+        TransactionNormalized, id=3, award_id=2, action_date="2019-01-02", unique_award_key="TEST_AWARD_2",
     )
-    mommy.make(TransactionFABS, transaction_id=2, afa_generated_unique="B")
-    mommy.make(TransactionFABS, transaction_id=3, afa_generated_unique="C")
-    mommy.make(LegalEntity, legal_entity_id=2, location_id=5)
-    mommy.make(LegalEntity, legal_entity_id=3, location_id=6)
-    mommy.make(Location, location_id=3)
-    mommy.make(Location, location_id=4)
-    mommy.make(Location, location_id=5)
-    mommy.make(Location, location_id=6)
+    mommy.make(TransactionFABS, transaction_id=2, afa_generated_unique="B", unique_award_key="TEST_AWARD_2")
+    mommy.make(TransactionFABS, transaction_id=3, afa_generated_unique="C", unique_award_key="TEST_AWARD_2")
 
     # Award/Transaction/LE/Locations untouched at all for control
-    mommy.make(Award, id=3, latest_transaction_id=4, recipient_id=4, place_of_performance_id=7)
-    mommy.make(TransactionNormalized, id=4, award_id=3, recipient_id=4, place_of_performance_id=7)
-    mommy.make(TransactionFABS, transaction_id=4, afa_generated_unique="D")
-    mommy.make(LegalEntity, legal_entity_id=4, location_id=8)
-    mommy.make(Location, location_id=7)
-    mommy.make(Location, location_id=8)
+    mommy.make(Award, id=3, latest_transaction_id=4, generated_unique_award_id="TEST_AWARD_3")
+    mommy.make(TransactionNormalized, id=4, award_id=3, unique_award_key="TEST_AWARD_3")
+    mommy.make(TransactionFABS, transaction_id=4, afa_generated_unique="D", unique_award_key="TEST_AWARD_3")
 
     # Main call
     updated_awards = delete_stale_fabs(["A", "B"])
@@ -60,14 +45,6 @@ def test_delete_fabs_success():
     latest_transaction_ids = set([award.latest_transaction_id for award in awards_left])
     expected_latest_transaction_ids = {3, 4}
     assert latest_transaction_ids == expected_latest_transaction_ids
-
-    recipient_ids = set([award.recipient_id for award in awards_left])
-    expected_recipient_ids = {3, 4}
-    assert recipient_ids == expected_recipient_ids
-
-    ppop_ids = set([award.place_of_performance_id for award in awards_left])
-    expected_ppop_ids = {4, 7}
-    assert ppop_ids == expected_ppop_ids
 
     # Transaction Normalized
     transactions_left = TransactionNormalized.objects.all()

@@ -8,7 +8,6 @@ from usaspending_api.references.models import GTASTotalObligation
 from usaspending_api.spending_explorer.v2.filters.explorer import Explorer
 from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
 
-
 UNREPORTED_DATA_NAME = "Unreported Data"
 VALID_UNREPORTED_DATA_TYPES = ["agency", "budget_function", "object_class"]
 VALID_UNREPORTED_FILTERS = ["fy", "quarter"]
@@ -160,7 +159,6 @@ def type_filter(_type, filters, limit=None):
         # Total value of filtered results
         actual_total = 0
 
-        alt_set = alt_set.all()
         for award in alt_set:
             award["id"] = str(award["id"])
             if _type in ["award", "award_category"]:

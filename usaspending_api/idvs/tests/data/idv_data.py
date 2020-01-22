@@ -1,50 +1,22 @@
 from model_mommy import mommy
-from copy import deepcopy
-
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
+from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
 def set_up_related_award_objects():
 
-    loc = {
-        "pk": 1,
-        "location_country_code": "USA",
-        "country_name": "UNITED STATES",
-        "state_code": "NC",
-        "city_name": "Charlotte",
-        "county_name": "BUNCOMBE",
-        "address_line1": "123 main st",
-        "address_line2": None,
-        "address_line3": None,
-        "zip4": 122045312,
-        "congressional_code": "90",
-        "zip5": 12204,
-        "foreign_postal_code": None,
-        "foreign_province": None,
-    }
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
 
     trans_cont = {"pk": 1, "business_categories": ["small_business"]}
     duns = {"awardee_or_recipient_uniqu": 123, "legal_business_name": "Sams Club"}
-    mommy.make("references.Location", **loc)
     mommy.make("recipient.DUNS", **duns)
     mommy.make("references.SubtierAgency", **subag)
     mommy.make("references.ToptierAgency", **subag)
-
-    le = {
-        "pk": 1,
-        "recipient_name": "John's Pizza",
-        "recipient_unique_id": 456,
-        "parent_recipient_unique_id": 123,
-        "location": Location.objects.get(pk=1),
-    }
 
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
 
     mommy.make("awards.TransactionNormalized", **trans_cont)
     mommy.make("references.Agency", **ag)
-    mommy.make("references.LegalEntity", **le)
     cont_data = {
         "pk": 1,
         "transaction": TransactionNormalized.objects.get(pk=1),
@@ -98,17 +70,14 @@ def create_tree(awards):
         "description": "lorem ipsum",
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
-        "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
     }
     award_dict = []
     for award in awards:
-        new_model = deepcopy(generic_model)
         new_model = {**generic_model, **award}
         award_dict.append(new_model)
     return award_dict

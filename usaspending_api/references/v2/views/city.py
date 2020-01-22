@@ -85,7 +85,6 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
         "aggs": {
             "cities": {"terms": {"field": "{}.keyword".format(return_fields[0]), "size": city_buckets}, "aggs": aggs}
         },
-        "size": 0,
     }
     return query
 

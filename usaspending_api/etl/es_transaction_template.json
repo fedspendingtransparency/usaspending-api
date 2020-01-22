@@ -101,12 +101,6 @@
           "type": "keyword"
         },
         "recipient_unique_id": {
-          "type": "text"
-        },
-        "parent_recipient_unique_id": {
-          "type": "text"
-        },
-        "recipient_hash": {
           "type": "keyword"
         },
         "recipient_name": {
@@ -116,6 +110,24 @@
               "type": "keyword"
             }
           }
+        },
+        "recipient_hash": {
+          "type": "keyword"
+        },
+        "parent_recipient_unique_id": {
+          "type": "keyword",
+          "null_value": "NULL"
+        },
+        "parent_recipient_name": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "parent_recipient_hash": {
+          "type": "keyword"
         },
         "action_date": {
           "type": "date",
@@ -313,12 +325,7 @@
           "type": "keyword"
         },
         "pop_county_code": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "keyword"
         },
         "pop_county_name": {
           "type": "text",
@@ -342,7 +349,6 @@
             }
           }
         },
-
         "recipient_location_country_code": {
           "type": "keyword"
         },
@@ -353,12 +359,7 @@
           "type": "keyword"
         },
         "recipient_location_county_code": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "keyword"
         },
         "recipient_location_county_name": {
           "type": "text",

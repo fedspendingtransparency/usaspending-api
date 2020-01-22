@@ -12,11 +12,9 @@ from django.db import connections
 
 from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
-from usaspending_api.references.abbreviations import territory_country_codes
-from usaspending_api.references.helpers import canonicalize_location_dict
-from usaspending_api.references.models import Location
 
-# Lists to store for update_awards and update_contract_awards
+
+# Lists to store for update_awards and update_procurement_awards
 award_update_id_list = []
 award_contract_update_id_list = []
 
@@ -135,119 +133,6 @@ def load_data_into_model(model_instance, data, **kwargs):
         return mod
     else:
         return model_instance
-
-
-def create_location(location_map, row, location_value_map=None):
-    """
-    Create a location object
-
-    Input parameters:
-        - location_map: a dictionary with key = field name on the location model and value = corresponding field name
-          on the current row of data
-        - row: the row of data currently being loaded
-    """
-    if location_value_map is None:
-        location_value_map = {}
-
-    row = canonicalize_location_dict(row)
-    location_data = load_data_into_model(
-        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True, save=False
-    )
-
-    return Location.objects.create(**location_data)
-
-
-def get_or_create_location(location_map, row, location_value_map=None, empty_location=None, d_file=False, save=True):
-    """
-    Retrieve or create a location object
-
-    Input parameters:
-        - location_map: a dictionary with key = field name on the location model
-            and value = corresponding field name on the current row of data
-        - row: the row of data currently being loaded
-    """
-    if location_value_map is None:
-        location_value_map = {}
-
-    row = canonicalize_location_dict(row)
-
-    # For only FABS
-    if "place_of_performance_code" in row:
-        # If the recipient's location country code is empty or it's 'UNITED STATES
-        # OR the place of performance location country code is empty and the performance code isn't 00FORGN
-        # OR the place of performance location country code is empty and there isn't a performance code
-        # OR the country code is a US territory
-        # THEN we can assume that the location country code is 'USA'
-        if (
-            (
-                "recipient_flag" in location_value_map
-                and location_value_map["recipient_flag"]
-                and (
-                    row[location_map.get("location_country_code")] is None
-                    or row[location_map.get("location_country_code")] == "UNITED STATES"
-                )
-            )
-            or (
-                "place_of_performance_flag" in location_value_map
-                and location_value_map["place_of_performance_flag"]
-                and row[location_map.get("location_country_code")] is None
-                and "performance_code" in location_map
-                and row[location_map["performance_code"]] != "00FORGN"
-            )
-            or (
-                "place_of_performance_flag" in location_value_map
-                and location_value_map["place_of_performance_flag"]
-                and row[location_map.get("location_country_code")] is None
-                and "performance_code" not in location_map
-            )
-            or (row[location_map.get("location_country_code")] in territory_country_codes)
-        ):
-            row[location_map["location_country_code"]] = "USA"
-
-    state_code = row.get(location_map.get("state_code"))
-    if state_code is not None:
-        # Remove . in state names (i.e. D.C.)
-        location_value_map.update({"state_code": state_code.replace(".", "")})
-
-    location_value_map.update(
-        {
-            "location_country_code": location_map.get("location_country_code"),
-            "country_name": location_map.get("location_country_name"),
-            "state_code": None,  # expired
-            "state_name": None,
-        }
-    )
-
-    location_data = load_data_into_model(
-        Location(), row, value_map=location_value_map, field_map=location_map, as_dict=True
-    )
-
-    del location_data["data_source"]  # hacky way to ensure we don't create a series of empty location records
-    if len(location_data):
-
-        if (
-            len(location_data) == 1
-            and "place_of_performance_flag" in location_data
-            and location_data["place_of_performance_flag"]
-        ):
-            location_object = None
-            created = False
-        elif save:
-            location_object = load_data_into_model(
-                Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False, save=True
-            )
-            created = False
-        else:
-            location_object = load_data_into_model(
-                Location(), row, value_map=location_value_map, field_map=location_map, as_dict=False
-            )
-            # location_object = Location.objects.create(**location_data)
-            created = True
-
-        return location_object, created
-    else:
-        # record had no location information at all
-        return None, None
 
 
 def store_value(model_instance_or_dict, field, value, reverse=None, data=None):

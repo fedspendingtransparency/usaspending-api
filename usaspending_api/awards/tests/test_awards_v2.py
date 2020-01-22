@@ -6,48 +6,11 @@ from rest_framework import status
 from model_mommy import mommy
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency, LegalEntity
+from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
 def awards_and_transactions(db):
-    # Location
-    parent_loc = {
-        "pk": 2,
-        "address_line1": "123 calhoun st",
-        "address_line2": None,
-        "address_line3": None,
-        "city_name": "Charleston",
-        "congressional_code": "90",
-        "country_name": "UNITED STATES",
-        "county_name": "CHARLESTON",
-        "foreign_postal_code": None,
-        "foreign_province": None,
-        "location_country_code": "USA",
-        "state_code": "SC",
-        "zip4": 294245897,
-        "zip5": 29424,
-    }
-    loc = {
-        "pk": 1,
-        "address_line1": "123 main st",
-        "address_line2": None,
-        "address_line3": None,
-        "city_name": "Charlotte",
-        "congressional_code": "90",
-        "country_name": "UNITED STATES",
-        "county_code": "019",
-        "county_name": "BUNCOMBE",
-        "foreign_postal_code": None,
-        "foreign_province": None,
-        "location_country_code": "USA",
-        "state_code": "NC",
-        "zip4": 122045312,
-        "zip5": 12204,
-    }
-
-    mommy.make("references.Location", **parent_loc)
-    mommy.make("references.Location", **loc)
 
     # DUNS
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
@@ -131,18 +94,6 @@ def awards_and_transactions(db):
     }
 
     mommy.make("references.Agency", **agency)
-
-    # Legal Entity
-    parent_legal_entity = {
-        "pk": 2,
-        "location": Location.objects.get(pk=2),
-        "recipient_name": "PARENT LEGAL ENTITY",
-        "recipient_unique_id": "123",
-    }
-    legal_entity = {"pk": 1, "recipient_name": "LEGAL ENTITY", "recipient_unique_id": "456"}
-
-    mommy.make("references.LegalEntity", **parent_legal_entity)
-    mommy.make("references.LegalEntity", **legal_entity)
 
     # Transaction Normalized
     bc = {"business_categories": ["small_business"]}
@@ -639,8 +590,6 @@ def awards_and_transactions(db):
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=1),
-        "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "category": "grant",
         "date_signed": "2005-04-03",
         "description": "lorem ipsum",
@@ -662,8 +611,6 @@ def awards_and_transactions(db):
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=2),
-        "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 2000,
         "category": "contract",
         "date_signed": "2004-03-02",
@@ -689,8 +636,6 @@ def awards_and_transactions(db):
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=3),
-        "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 600,
         "category": "grant",
         "date_signed": "2004-03-02",
@@ -711,8 +656,6 @@ def awards_and_transactions(db):
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=3),
-        "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 600,
         "category": "idv",
         "date_signed": "2004-03-02",
@@ -732,8 +675,6 @@ def awards_and_transactions(db):
         "pk": 5,
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
-        "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=6),
         "base_and_all_options_value": 2000,
         "category": "contract",
@@ -760,8 +701,6 @@ def awards_and_transactions(db):
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=7),
-        "place_of_performance": Location.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "base_and_all_options_value": 2000,
         "category": "contract",
         "date_signed": "2004-03-02",
@@ -832,13 +771,11 @@ def awards_and_transactions(db):
         "description": "lorem ipsum",
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "recipient": LegalEntity.objects.get(pk=1),
         "total_obligation": 600,
         "base_and_all_options_value": 600,
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
         "generated_unique_award_id": "ASST_NON_:~$@*\"()#/,^&+=`!'%/_. -_9700",
-        "place_of_performance": Location.objects.get(pk=1),
         "latest_transaction": TransactionNormalized.objects.get(pk=3),
         "total_subaward_amount": 0,
         "subaward_count": 0,

@@ -107,9 +107,6 @@ class Award(DataSourceTrackedModel):
     date_signed = models.DateField(
         null=True, db_index=False, verbose_name="Award Date", help_text="The date the award was signed"
     )
-    recipient = models.ForeignKey(
-        "references.LegalEntity", null=True, help_text="The recipient of the award", db_index=True
-    )
     description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award")
     period_of_performance_start_date = models.DateField(
         null=True, db_index=True, verbose_name="Start Date", help_text="The start date for the period of performance"
@@ -119,14 +116,6 @@ class Award(DataSourceTrackedModel):
         db_index=True,
         verbose_name="End Date",
         help_text="The current, not original, period of performance end date",
-    )
-    place_of_performance = models.ForeignKey(
-        "references.Location",
-        null=True,
-        help_text="The principal place of business, where the majority of the "
-        "work is performed. For example, in a manufacturing contract, "
-        "this would be the main plant where items are produced.",
-        db_index=True,
     )
     base_and_all_options_value = models.DecimalField(
         max_digits=23,
