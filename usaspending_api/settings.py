@@ -142,13 +142,15 @@ INTERNAL_IPS = ()
 #   - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
 #   - If Automatically Instrumented = Yes, here: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
 patch_all()
-# NOTE: Track https://github.com/DataDog/dd-trace-py/issues/986 to see if these settings are even honored
+# NOTE: Track these to see if these settings are even honored or buggy
+# - https://github.com/DataDog/dd-trace-py/issues/986
+# - https://github.com/DataDog/dd-trace-py/issues/798
 DATADOG_TRACE = {
     "ENABLED": False,  # Replace during env-deploys to turn on
     "DEFAULT_SERVICE": "api",  # TODO:OPS-995 look into setting this to "bulk-download" for BD App Analytics presence
     "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
+    "DISTRIBUTED_TRACING": False,  # only needed if picking up disjoint traces by HTTP Header value
 }
-ddconfig.trace_headers(["X-Requested-With"])
 # TODO:OPS-995: Try these things
 # 1) Doubly set these to true when running outside of Django web requests (e.g. Bulk Downloader)
 # ddconfig.analytics_enabled = True
@@ -333,8 +335,8 @@ LOGGING = {
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
         # ======== Module-specific loggers ========
-        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
-        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
         "ddtrace": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
     },
 }

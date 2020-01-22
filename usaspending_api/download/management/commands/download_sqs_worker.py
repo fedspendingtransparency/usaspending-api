@@ -6,9 +6,6 @@ from ddtrace.ext import SpanTypes
 from ddtrace.ext.priority import USER_REJECT
 from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
 
-from ddtrace.sampler import RateSampler
-
-
 from django.core.management.base import BaseCommand
 
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
@@ -30,10 +27,6 @@ JOB_TYPE = "USAspendingDownloader"
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        # Set True to add trace to App Analytics:
-        # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
-        tracer.set_tags({ANALYTICS_SAMPLE_RATE_KEY: True})
-
         queue = get_sqs_queue()
         log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
 
@@ -59,8 +52,9 @@ class Command(BaseCommand):
             with tracer.trace(
                 name=f"job.{JOB_TYPE}", service="bulk-download", resource=queue.url, span_type=SpanTypes.WORKER
             ) as span:
-                # TODO:remove below diagnostic once working
-                root_span = tracer.current_root_span()
+                # Set True to add trace to App Analytics:
+                # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
+                span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, True)
 
                 # Setup dispatcher that coordinates job activity on SQS
                 dispatcher = SQSWorkDispatcher(
@@ -90,8 +84,11 @@ class Command(BaseCommand):
                 # When you receive an empty response from the queue, wait before trying again
                 if not message_found:
                     # Drop the Datadog trace, since no trace-worthy activity happened on this poll
-                    ddcontext = tracer.context_provider.active()
-                    ddcontext.sampling_priority = USER_REJECT
+                    # TODO:OPS-995 find a way to suppress APM events
+                    # 1) maybe try: `span.sampled = False`  here?
+                    # 2) or maybe try to set USER_REJECT earlier as teh default priority, and reset it to None here if
+                    #    desired?
+                    tracer.context_provider.active().sampling_priority = USER_REJECT
 
                     time.sleep(1)
                 else:
@@ -155,6 +152,10 @@ def download_service_app(download_job_id):
             )
 
         generate_download(download_job=download_job)
+
+    logger.debug("Sleeping 1 second after trace span finished")
+    time.sleep(1)  # Give a second for tracing to finish for this span
+    logger.debug("DONE Sleeping 1 second after trace span finished")
 
 
 def _retrieve_download_job_from_db(download_job_id):
