@@ -14,9 +14,23 @@ Returns the number of transactions that would be included in a download request 
         + `filters` (required, FilterObject)
 
 + Response 200 (application/json)
-    + Attributes
-        + `transaction_rows_gt_limit`: true (required, boolean)
+    + Attributes (object)
+        + `transaction_rows_gt_limit` (required, boolean)
             A boolean returning whether the transaction count is over the maximum row limit.
+        + `calculated_transaction_count` (required, number)
+            The calculated count of all transactions which would be included in the download files.
+        + `maximum_transaction_limit` (required, number)
+            The current allowed maximum number of transactions in a row-limited download. Visit https://www.usaspending.gov/#/download_center/custom_award_data to download larger volumes of data.
+        + `messages` (optional, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
+    + Body
+
+            {
+                "calculated_transaction_count": 87343,
+                "maximum_transaction_limit": 500000,
+                "transaction_rows_gt_limit": false,
+                "messages": ["For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."]
+            }
 
 # Data Structures
 
