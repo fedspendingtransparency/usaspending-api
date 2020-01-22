@@ -103,6 +103,7 @@ class Migration(migrations.Migration):
                 ('place_of_performance_forei', models.TextField(blank=True, null=True)),
                 ('place_of_performance_zip4a', models.TextField(blank=True, null=True)),
                 ('place_of_performance_zip5', models.TextField(blank=True, null=True)),
+                ('place_of_performance_scope', models.TextField(blank=True, null=True)),
                 ('record_type', models.IntegerField(blank=True, null=True)),
                 ('record_type_description', models.TextField(blank=True, null=True)),
                 ('sai_number', models.TextField(blank=True, null=True)),

@@ -16,12 +16,14 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     broker_select_sql = """
         SELECT     "{id}"
         FROM       "{table}"
-        WHERE      "is_active" IS true
-          AND      "submission_id" IN (
+        WHERE
+              "is_active" IS TRUE
+          AND "submission_id" IN (
             SELECT "submission_id"
             FROM   "submission"
-            WHERE  "d2_submission" IS true
-              AND  "publish_status_id" IN (2, 3)
+            WHERE
+                  "d2_submission" IS TRUE
+              AND "publish_status_id" IN (2, 3)
               {optional_predicate}
           )
     """
