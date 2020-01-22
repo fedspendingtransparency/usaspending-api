@@ -1,15 +1,4 @@
-from usaspending_api.etl.transaction_loaders.data_load_helpers import (
-    format_insert_or_update_column_sql,
-    format_bulk_insert_list_column_sql,
-)
-
-
-def bulk_insert_place_of_performance(cursor, load_objects):
-    columns, values = format_bulk_insert_list_column_sql(cursor, load_objects, "place_of_performance_location")
-    recipient_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(columns, values)
-
-    cursor.execute(recipient_sql)
-    return [tup[0] for tup in cursor.fetchall()]
+from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
 
 
 def insert_award(cursor, load_object):

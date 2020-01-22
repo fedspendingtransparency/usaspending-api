@@ -1667,14 +1667,26 @@ query_paths = {
                 ("recipient_congressional_district", "recipient_congressional_district"),
                 # Column is annotated in account_download.py
                 ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
-                ("primary_place_of_performance_country", "award__place_of_performance__country_name"),
-                ("primary_place_of_performance_state", "award__place_of_performance__state_name"),
-                ("primary_place_of_performance_county", "award__place_of_performance__county_name"),
+                (
+                    "primary_place_of_performance_country",
+                    "primary_place_of_performance_country",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_state",
+                    "primary_place_of_performance_state",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_county",
+                    "primary_place_of_performance_county",
+                ),  # Column is annotated in account_download.py
                 (
                     "primary_place_of_performance_congressional_district",
-                    "award__place_of_performance__congressional_code",
-                ),
-                ("primary_place_of_performance_zip_code", "award__place_of_performance__zip4"),
+                    "primary_place_of_performance_congressional_district",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_zip_code",
+                    "primary_place_of_performance_zip_code",
+                ),  # Column is annotated in account_download.py
                 ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
                 ("product_or_service_code", "award__latest_transaction__contract_data__product_or_service_code"),
@@ -1738,14 +1750,26 @@ query_paths = {
                 ("recipient_congressional_district", "recipient_congressional_district"),
                 # Column is annotated in account_download.py
                 ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
-                ("primary_place_of_performance_country", "award__place_of_performance__country_name"),
-                ("primary_place_of_performance_state", "award__place_of_performance__state_name"),
-                ("primary_place_of_performance_county", "award__place_of_performance__county_name"),
+                (
+                    "primary_place_of_performance_country",
+                    "primary_place_of_performance_country",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_state",
+                    "primary_place_of_performance_state",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_county",
+                    "primary_place_of_performance_county",
+                ),  # Column is annotated in account_download.py
                 (
                     "primary_place_of_performance_congressional_district",
-                    "award__place_of_performance__congressional_code",
-                ),
-                ("primary_place_of_performance_zip_code", "award__place_of_performance__zip4"),
+                    "primary_place_of_performance_congressional_district",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_zip_code",
+                    "primary_place_of_performance_zip_code",
+                ),  # Column is annotated in account_download.py
                 ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
                 ("product_or_service_code", "award__latest_transaction__contract_data__product_or_service_code"),
