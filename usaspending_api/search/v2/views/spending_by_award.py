@@ -155,8 +155,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             {
                 "name": "last_id",
                 "key": "last_id",
-                "type": "text",
-                "text_type": "search",
+                "type": "integer",
                 "required": False,
                 "allow_nulls": True,
             },
@@ -247,7 +246,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
 
         if self.last_id:
-            sort_by_fields.append("generated_unique_award_id.keyword")
+            sort_by_fields.append("award_id")
 
         return sort_by_fields
 
@@ -286,7 +285,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         sort_field = self.get_elastic_sort_by_fields()
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
-
         if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and not self.last_id and not self.last_value:
             sorts.append({"award_id": self.pagination["sort_order"]})
             logger.warning(
@@ -302,12 +300,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 results["award_id"] = result.get("award_id")
                 results["total_obligation"] = float(result.get("total_obligation"))
             search = (
-                Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
+                AwardSearch()
                 .filter(filter_query)
                 .sort(*sorts)
                 .extra(search_after=[results["total_obligation"], results["award_id"]])[0 : self.pagination["limit"]]
             )
-            response = es_client_query(search=search)
+            response = search.handle_execute()
             return response
 
         search = (
@@ -360,7 +358,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         last_id = None
         last_value = None
         if len(response) > 0:
-            last_id = response[len(response) - 1].to_dict().get("generated_unique_award_id")
+            last_id = int(response[len(response) - 1].to_dict().get("award_id"))
             last_value = (
                 response[len(response) - 1].to_dict().get("total_loan_value")
                 if set(self.filters["award_type_codes"]) <= set(loan_type_mapping)
