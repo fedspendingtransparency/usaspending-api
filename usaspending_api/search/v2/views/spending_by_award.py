@@ -131,9 +131,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             self.last_id = json_request.get("last_id")
             self.last_value = json_request.get("last_value")
             logger.info("Using experimental Elasticsearch functionality for 'spending_by_award'")
-            results = self.query_elasticsearch()
-            return Response(self.construct_es_reponse(results))
-
+            return Response(self.construct_es_reponse(self.query_elasticsearch()))
         return Response(self.create_response(self.construct_queryset()))
 
     @staticmethod
@@ -250,7 +248,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
 
         if self.last_id:
-            sort_by_fields.append({"generated_unique_award_id.keyword": "desc"})
+            sort_by_fields.append("generated_unique_award_id.keyword")
 
         return sort_by_fields
 
@@ -288,22 +286,41 @@ class SpendingByAwardVisualizationViewSet(APIView):
         filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters, query_type="awards")
         sort_field = self.get_elastic_sort_by_fields()
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
+        record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
+
+        if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and not self.last_id and not self.last_value:
+            sorts.append({"award_id": self.pagination["sort_order"]})
+            logger.warning("Jumping to random page past 50,000 records will have a performance hit when using Elasticsearch")
+            self.pagination["upper_bound"] = record_num
+            self.pagination["lower_bound"] = record_num - 1
+            queryset = self.construct_queryset()
+            if len(queryset) == 0:
+                return []
+            results = {}
+            for result in queryset:
+                results["award_id"] = result.get("award_id")
+                results["total_obligation"] = float(result.get("total_obligation"))
+            search = (
+                Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
+                    .filter(filter_query)
+                    .sort(*sorts)
+                    .extra(search_after=[results["total_obligation"], results["award_id"]])[0:self.pagination["limit"]]
+            )
+            response = es_client_query(search=search)
+            return response
+
         search = (
             (
                 Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
                 .filter(filter_query)
                 .sort(*sorts)
-                .extra(search_after=[self.last_value, self.last_id])[0 : self.pagination["limit"]]
+                .extra(search_after=[self.last_value, self.last_id])[0:self.pagination["limit"]]
             )
             if self.last_value and self.last_id
             else (
                 Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
                 .filter(filter_query)
-                .sort(*sorts)[
-                    ((self.pagination["page"] - 1) * self.pagination["limit"]) : (
-                        ((self.pagination["page"] - 1) * self.pagination["limit"]) + self.pagination["limit"]
-                    )
-                ]
+                .sort(*sorts)[record_num: record_num + self.pagination["limit"]]
             )
         )
         response = es_client_query(search=search)
