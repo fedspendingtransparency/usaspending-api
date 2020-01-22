@@ -6,7 +6,7 @@ from django.conf import settings
 from django.db.models import Count, Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from elasticsearch_dsl import Search, Q
+from elasticsearch_dsl import Q
 
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
@@ -15,7 +15,7 @@ from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_catego
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
-from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
@@ -140,15 +140,15 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch(self, filters) -> list:
-        filter_query = QueryWithFilters.generate_elasticsearch_query(filters, query_type="awards")
-        s = Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*").filter(filter_query)
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
+        s = AwardSearch().filter(filter_query)
 
         s.aggs.bucket(
             "types",
             "filters",
             filters={category: Q("terms", type=types) for category, types in all_award_types_mappings.items()},
         )
-        results = es_client_query(search=s)
+        results = s.handle_execute()
 
         contracts = results.aggregations.types.buckets.contracts.doc_count
         idvs = results.aggregations.types.buckets.idvs.doc_count
