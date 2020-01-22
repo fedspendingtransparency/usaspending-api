@@ -12,6 +12,8 @@ import traceback
 
 from datetime import datetime, timezone
 from django.conf import settings
+from ddtrace import tracer
+from ddtrace.ext import SpanTypes
 
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
@@ -281,7 +283,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         os.close(temp_file)
         os.remove(temp_file_path)
 
-
+@tracer.wrap(span_type="zip")
 def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_format, download_job=None):
     try:
         # Split data files into separate files
@@ -485,7 +487,7 @@ def _top_level_split(sql, splitter):
                 return [sql[:index], sql[index + len(splitter) :]]
     raise Exception(f"SQL string ${sql} cannot be split on ${splitter}")
 
-
+@tracer.wrap(span_type=SpanTypes.SQL)
 def execute_psql(temp_sql_file_path, source_path, download_job):
     """Executes a single PSQL command within its own Subprocess"""
     try:

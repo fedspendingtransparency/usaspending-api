@@ -149,6 +149,7 @@ DATADOG_TRACE = {
     "ENABLED": False,  # Replace during env-deploys to turn on
     "DEFAULT_SERVICE": "api",  # TODO:OPS-995 look into setting this to "bulk-download" for BD App Analytics presence
     "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
+    "ANALYTICS_SAMPLE_RATE": 1,  # Including 100% of traces in sample
     "DISTRIBUTED_TRACING": False,  # only needed if picking up disjoint traces by HTTP Header value
 }
 # TODO:OPS-995: Try these things
