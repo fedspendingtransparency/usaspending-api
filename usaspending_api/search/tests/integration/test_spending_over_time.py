@@ -1,6 +1,7 @@
 import json
 import pytest
 
+from django.conf import settings
 from rest_framework import status
 from model_mommy import mommy
 
@@ -258,6 +259,10 @@ def test_spending_over_time_elasticsearch_http_header(client, monkeypatch, elast
         "usaspending_api.search.v2.views.spending_over_time.logger.info",
         lambda message: logging_statements.append(message),
     )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+    )
 
     elasticsearch_transaction_index.update_index()
 
@@ -319,6 +324,10 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
         "usaspending_api.search.v2.views.spending_over_time.logger.info",
         lambda message: logging_statements.append(message),
     )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+    )
 
     for group in GROUPING_LOOKUP.keys():
         logging_statements.clear()
@@ -346,6 +355,10 @@ def test_correct_response_for_each_filter(
     monkeypatch.setattr(
         "usaspending_api.search.v2.views.spending_over_time.logger.info",
         lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
     )
 
     test_cases = [
@@ -1041,6 +1054,10 @@ def test_failure_with_invalid_group(client, monkeypatch, elasticsearch_transacti
     monkeypatch.setattr(
         "usaspending_api.search.v2.views.spending_over_time.logger.info",
         lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
     )
 
     elasticsearch_transaction_index.update_index()
