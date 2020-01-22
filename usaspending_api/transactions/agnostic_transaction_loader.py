@@ -192,6 +192,6 @@ class AgnosticTransactionLoader:
             predicate = [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
             with Timer(message="upsert", success_logger=logger.info, failure_logger=logger.error):
                 record_count = operations.upsert_records_with_predicate(source, destination, predicate, primary_key)
-            transactions_remaining_count -= record_count
+            transactions_remaining_count -= len(id_list)
             logger.info(f"{record_count:,} successful upserts, {transactions_remaining_count:,} remaining.")
             self.upsert_records += record_count
