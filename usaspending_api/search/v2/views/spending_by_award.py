@@ -152,13 +152,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "array_type": "integer",
                 "array_max": maxsize,
             },
-            {
-                "name": "last_id",
-                "key": "last_id",
-                "type": "integer",
-                "required": False,
-                "allow_nulls": True,
-            },
+            {"name": "last_id", "key": "last_id", "type": "integer", "required": False, "allow_nulls": True,},
             {"name": "last_value", "key": "last_value", "type": "float", "required": False, "allow_nulls": True},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
@@ -316,11 +310,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 .extra(search_after=[self.last_value, self.last_id])[0 : self.pagination["limit"]]
             )
             if self.last_value and self.last_id
-            else (
-                AwardSearch()
-                .filter(filter_query)
-                .sort(*sorts)[record_num : record_num + self.pagination["limit"]]
-            )
+            else (AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]])
         )
         response = search.handle_execute()
 
@@ -372,8 +362,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "results": results,
             "page_metadata": {
                 "page": self.pagination["page"],
-                "hasNext": total - (self.pagination["page"] - 1) * self.pagination["limit"]
-                > self.pagination["limit"],
+                "hasNext": total - (self.pagination["page"] - 1) * self.pagination["limit"] > self.pagination["limit"],
                 "last_id": last_id,
                 "last_value": last_value,
             },
