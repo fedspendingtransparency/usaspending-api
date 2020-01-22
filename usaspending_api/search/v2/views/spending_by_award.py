@@ -131,7 +131,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             self.last_id = json_request.get("last_id")
             self.last_value = json_request.get("last_value")
             logger.info("Using experimental Elasticsearch functionality for 'spending_by_award'")
-            return Response(self.construct_es_reponse(self.query_elasticsearch()))
+            return Response(self.construct_es_response(self.query_elasticsearch()))
         return Response(self.create_response(self.construct_queryset()))
 
     @staticmethod
@@ -290,21 +290,23 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and not self.last_id and not self.last_value:
             sorts.append({"award_id": self.pagination["sort_order"]})
-            logger.warning("Jumping to random page past 50,000 records will have a performance hit when using Elasticsearch")
+            logger.warning(
+                "Jumping to random page past 50,000 records will have a performance hit when using Elasticsearch"
+            )
             self.pagination["upper_bound"] = record_num
             self.pagination["lower_bound"] = record_num - 1
             queryset = self.construct_queryset()
-            if len(queryset) == 0:
-                return []
+            if len(queryset) != 1:
+                return {}
             results = {}
             for result in queryset:
                 results["award_id"] = result.get("award_id")
                 results["total_obligation"] = float(result.get("total_obligation"))
             search = (
                 Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
-                    .filter(filter_query)
-                    .sort(*sorts)
-                    .extra(search_after=[results["total_obligation"], results["award_id"]])[0:self.pagination["limit"]]
+                .filter(filter_query)
+                .sort(*sorts)
+                .extra(search_after=[results["total_obligation"], results["award_id"]])[0 : self.pagination["limit"]]
             )
             response = es_client_query(search=search)
             return response
@@ -314,20 +316,20 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
                 .filter(filter_query)
                 .sort(*sorts)
-                .extra(search_after=[self.last_value, self.last_id])[0:self.pagination["limit"]]
+                .extra(search_after=[self.last_value, self.last_id])[0 : self.pagination["limit"]]
             )
             if self.last_value and self.last_id
             else (
                 Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
                 .filter(filter_query)
-                .sort(*sorts)[record_num: record_num + self.pagination["limit"]]
+                .sort(*sorts)[record_num : record_num + self.pagination["limit"]]
             )
         )
         response = es_client_query(search=search)
 
         return response
 
-    def construct_es_reponse(self, response) -> dict:
+    def construct_es_response(self, response) -> dict:
         results = []
         for res in response:
             hit = res.to_dict()
@@ -365,12 +367,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 if set(self.filters["award_type_codes"]) <= set(loan_type_mapping)
                 else response[len(response) - 1].to_dict().get("total_obligation")
             )
+        total = 0
+        if response != {}:
+            total = response.hits.total
         return {
             "limit": self.pagination["limit"],
             "results": results,
             "page_metadata": {
                 "page": self.pagination["page"],
-                "hasNext": response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
+                "hasNext": total - (self.pagination["page"] - 1) * self.pagination["limit"]
                 > self.pagination["limit"],
                 "last_id": last_id,
                 "last_value": last_value,
