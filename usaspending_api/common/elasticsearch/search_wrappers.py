@@ -1,0 +1,93 @@
+import logging
+from ssl import CERT_NONE
+
+from typing import Optional, Union
+
+from django.conf import settings
+from elasticsearch.connection import create_ssl_context
+from elasticsearch_dsl import Search
+from elasticsearch_dsl.response import Response
+from elasticsearch import ConnectionError, Elasticsearch
+from elasticsearch import ConnectionTimeout
+from elasticsearch import NotFoundError
+from elasticsearch import TransportError
+
+logger = logging.getLogger("console")
+
+
+class _Search(Search):
+    _index_name = None
+
+    def __init__(self, **kwargs) -> None:
+        client = self._create_es_client()
+        kwargs.update({"index": self._index_name, "using": client})
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _create_es_client() -> Elasticsearch:
+        if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
+            logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
+        es_config = {"hosts": [settings.ES_HOSTNAME], "timeout": settings.ES_TIMEOUT}
+        try:
+            # If the connection string is using SSL with localhost, disable verifying
+            # the certificates to allow testing in a development environment
+            # Also allow host.docker.internal, when SSH-tunneling on localhost to a remote nonprod instance over HTTPS
+            if settings.ES_HOSTNAME.startswith(("https://localhost", "https://host.docker.internal")):
+                logger.warning("SSL cert verification is disabled. Safe only for local development")
+                import urllib3
+
+                urllib3.disable_warnings()
+                ssl_context = create_ssl_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = CERT_NONE
+                es_config["ssl_context"] = ssl_context
+
+            return Elasticsearch(**es_config)
+        except Exception as e:
+            logger.error("Error creating the elasticsearch client: {}".format(e))
+
+    def _handle_execute_retry(self, retries: int, timeout: str) -> Optional[Union[Response, int]]:
+        if retries > 20:
+            retries = 20
+        elif retries < 1:
+            retries = 1
+        for attempt in range(retries):
+            response = self.params(timeout=timeout).execute()
+            if response is None:
+                logger.info(f"Failure using these: Index='{self._index_name}', Body={self.to_dict()}")
+            else:
+                return response
+        logger.error(f"Unable to reach elasticsearch cluster. {retries} attempt(s) made.")
+        return None
+
+    def _handle_execute_errors(self, retries: int, timeout: str) -> Response:
+        error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
+        result = None
+        try:
+            result = self._handle_execute_retry(retries, timeout)
+        except NameError as e:
+            logger.error(error_template.format(type="Hostname", e=str(e)))
+        except (ConnectionError, ConnectionTimeout) as e:
+            logger.error(error_template.format(type="Connection", e=str(e)))
+        except NotFoundError as e:
+            logger.error(error_template.format(type="404 Not Found", e=str(e)))
+        except TransportError as e:
+            logger.error(error_template.format(type="Transport", e=str(e)))
+        except Exception as e:
+            logger.error(error_template.format(type="Generic", e=str(e)))
+        return result
+
+    def handle_execute(self, retries: int = 5, timeout: str = "1m") -> Response:
+        return self._handle_execute_errors(retries, timeout)
+
+    def handle_count(self, retries: int = 5, timeout: str = "1m") -> int:
+        self._handle_execute_errors(retries, timeout)
+        return self.count()
+
+
+class TransactionSearch(_Search):
+    _index_name = f"{settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX}*"
+
+
+class AwardSearch(_Search):
+    _index_name = f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*"
