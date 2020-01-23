@@ -4,7 +4,7 @@ from django.contrib.postgres.fields import ArrayField
 from usaspending_api.common.custom_django_fields import NumericField, NaiveTimestampField
 
 
-class SourceProcurmentTransaction(models.Model):
+class SourceProcurementTransaction(models.Model):
     """Raw procurement transaction record originating from FPDS-NG
 
         Model contains a 100% duplicate copy of award modifications

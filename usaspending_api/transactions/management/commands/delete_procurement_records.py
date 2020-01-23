@@ -10,14 +10,14 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from usaspending_api.transactions.agnostic_transaction_deletes import AgnosticDeletes
-from usaspending_api.transactions.models.source_procurement_transaction import SourceProcurmentTransaction
+from usaspending_api.transactions.models.source_procurement_transaction import SourceProcurementTransaction
 
 logger = logging.getLogger("script")
 
 
 class Command(AgnosticDeletes, BaseCommand):
     help = "Delete procurement transactions in an USAspending database"
-    destination_table_name = SourceProcurmentTransaction().table_name
+    destination_table_name = SourceProcurementTransaction().table_name
     shared_pk = "detached_award_procurement_id"
 
     def fetch_deleted_transactions(self, date):

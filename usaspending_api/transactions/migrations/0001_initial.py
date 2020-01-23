@@ -120,7 +120,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='SourceProcurmentTransaction',
+            name='SourceProcurementTransaction',
             fields=[
                 ('detached_award_procurement_id', models.IntegerField(help_text='surrogate primary key defined in Broker', primary_key=True, serialize=False)),
                 ('detached_award_proc_unique', models.TextField(help_text='natural key defined in Broker', unique=True)),
