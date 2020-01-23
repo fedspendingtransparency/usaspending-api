@@ -152,7 +152,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "array_type": "integer",
                 "array_max": maxsize,
             },
-            {"name": "last_id", "key": "last_id", "type": "integer", "required": False, "allow_nulls": True,},
+            {"name": "last_id", "key": "last_id", "type": "integer", "required": False, "allow_nulls": True},
             {"name": "last_value", "key": "last_value", "type": "float", "required": False, "allow_nulls": True},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
