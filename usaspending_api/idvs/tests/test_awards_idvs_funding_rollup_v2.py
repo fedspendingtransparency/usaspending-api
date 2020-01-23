@@ -70,7 +70,7 @@ class IDVFundingRollupTestCase(TestCase):
 
     def test_with_bogus_id(self):
 
-        self._test_post({"award_id": None}, (0,))
+        self._test_post({"award_id": "BOGUS_ID"}, (0,))
 
     def test_null_agencies_accounts(self):
         """

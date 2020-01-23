@@ -10,7 +10,7 @@ class UniversalTransactionView(models.Model):
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
     treasury_account_identifiers = ArrayField(models.IntegerField(), default=None)
-    transaction = models.OneToOneField(TransactionNormalized, primary_key=True)
+    transaction = models.OneToOneField(TransactionNormalized, on_delete=models.DO_NOTHING, primary_key=True)
     action_date = models.DateField(blank=True, null=False)
     last_modified_date = models.DateField(blank=True, null=False)
     fiscal_year = models.IntegerField()

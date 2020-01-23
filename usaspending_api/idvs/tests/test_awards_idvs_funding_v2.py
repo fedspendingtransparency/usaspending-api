@@ -95,7 +95,7 @@ class IDVFundingTestCase(TestCase):
 
     def test_with_bogus_id(self):
 
-        self._test_post({"award_id": None}, (None, None, 1, False, False))
+        self._test_post({"award_id": "BOGUS_ID"}, (None, None, 1, False, False))
 
     def test_piid_filter(self):
 
