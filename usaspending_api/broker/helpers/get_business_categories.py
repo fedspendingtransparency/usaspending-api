@@ -130,7 +130,7 @@ def get_business_categories(row, data_type):
 
         # MINORITY BUSINESS
         if business_categories_boolean_dict["alaskan_native_owned_corpo"] is True:
-            business_category_set.add("alaskan_native_owned_business")
+            business_category_set.add("alaskan_native_corporation_owned_firm")
 
         if business_categories_boolean_dict["american_indian_owned_busi"] is True:
             business_category_set.add("american_indian_owned_business")
@@ -148,13 +148,13 @@ def get_business_categories(row, data_type):
             business_category_set.add("native_american_owned_business")
 
         if business_categories_boolean_dict["native_hawaiian_owned_busi"] is True:
-            business_category_set.add("native_hawaiian_owned_business")
+            business_category_set.add("native_hawaiian_organization_owned_firm")
 
         if business_categories_boolean_dict["subcontinent_asian_asian_i"] is True:
             business_category_set.add("subcontinent_asian_indian_american_owned_business")
 
         if business_categories_boolean_dict["tribally_owned_business"] is True:
-            business_category_set.add("tribally_owned_business")
+            business_category_set.add("tribally_owned_firm")
 
         if business_categories_boolean_dict["other_minority_owned_busin"] is True:
             business_category_set.add("other_minority_owned_business")
@@ -162,15 +162,15 @@ def get_business_categories(row, data_type):
         if business_categories_boolean_dict["minority_owned_business"] is True or (
             business_category_set
             & {
-                "alaskan_native_owned_business",
+                "alaskan_native_corporation_owned_firm",
                 "american_indian_owned_business",
                 "asian_pacific_american_owned_business",
                 "black_american_owned_business",
                 "hispanic_american_owned_business",
                 "native_american_owned_business",
-                "native_hawaiian_owned_business",
+                "native_hawaiian_organization_owned_firm",
                 "subcontinent_asian_indian_american_owned_business",
-                "tribally_owned_business",
+                "tribally_owned_firm",
                 "other_minority_owned_business",
             }
         ):
@@ -259,7 +259,7 @@ def get_business_categories(row, data_type):
             row.get("domestic_or_foreign_entity") == "D"
             or business_categories_boolean_dict["foreign_owned_and_located"] is True
         ):
-            business_category_set.add("foreign_owned_and_located_business")
+            business_category_set.add("foreign_owned")
 
         if business_categories_boolean_dict["foreign_government"] is True:
             business_category_set.add("foreign_government")
@@ -291,7 +291,7 @@ def get_business_categories(row, data_type):
             "community_developed_corporation_owned_firm",
             "us_owned_business",
             "foreign_owned_and_us_located_business",
-            "foreign_owned_and_located_business",
+            "foreign_owned",
             "foreign_government",
             "international_organization",
             "domestic_shelter",

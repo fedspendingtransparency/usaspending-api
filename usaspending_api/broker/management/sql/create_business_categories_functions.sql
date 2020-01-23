@@ -178,7 +178,7 @@ begin
 -- MINORITY BUSINESS
     if alaskan_native_owned_corpo IS TRUE
     then
-        bc_arr := bc_arr || array['alaskan_native_owned_business'];
+        bc_arr := bc_arr || array['alaskan_native_corporation_owned_firm'];
     end if;
 
     if american_indian_owned_busi IS TRUE
@@ -208,7 +208,7 @@ begin
 
     if native_hawaiian_owned_busi IS TRUE
     then
-        bc_arr := bc_arr || array['native_hawaiian_owned_business'];
+        bc_arr := bc_arr || array['native_hawaiian_organization_owned_firm'];
     end if;
 
     if subcontinent_asian_asian_i IS TRUE
@@ -218,7 +218,7 @@ begin
 
     if tribally_owned_business IS TRUE
     then
-        bc_arr := bc_arr || array['tribally_owned_business'];
+        bc_arr := bc_arr || array['tribally_owned_firm'];
     end if;
 
     if other_minority_owned_busin IS TRUE
@@ -227,15 +227,15 @@ begin
     end if;
 
     if minority_owned_business IS TRUE or (bc_arr && array[
-        'alaskan_native_owned_business',
+        'alaskan_native_corporation_owned_firm',
         'american_indian_owned_business',
         'asian_pacific_american_owned_business',
         'black_american_owned_business',
         'hispanic_american_owned_business',
         'native_american_owned_business',
-        'native_hawaiian_owned_business',
+        'native_hawaiian_organization_owned_firm',
         'subcontinent_asian_indian_american_owned_business',
-        'tribally_owned_business',
+        'tribally_owned_firm',
         'other_minority_owned_business'
     ])
     then
@@ -362,7 +362,7 @@ begin
     -- Foreign-Owned Business Not Incorporated in the U.S.
     if domestic_or_foreign_entity = 'D' or foreign_owned_and_located IS TRUE
     then
-        bc_arr := bc_arr || array['foreign_owned_and_located_business'];
+        bc_arr := bc_arr || array['foreign_owned'];
     end if;
 
     if foreign_government IS TRUE
@@ -405,7 +405,7 @@ begin
         'community_developed_corporation_owned_firm',
         'us_owned_business',
         'foreign_owned_and_us_located_business',
-        'foreign_owned_and_located_business',
+        'foreign_owned',
         'foreign_government',
         'international_organization',
         'domestic_shelter',

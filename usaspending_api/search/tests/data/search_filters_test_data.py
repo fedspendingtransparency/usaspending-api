@@ -22,7 +22,7 @@ def non_legacy_filters():
         "psc_codes": ["1510"],
         "recipient_locations": [{"country": "XYZ"}, {"country": "USA"}, {"country": "ABC"}],
         "recipient_scope": "domestic",
-        "recipient_type_names": ["Small Business", "Alaskan Native Owned Business"],
+        "recipient_type_names": ["Small Business", "Alaskan Native Corporation Owned Firm"],
         "set_aside_type_codes": ["SAMPLECODE123"],
         "time_period": [{"start_date": "2016-10-01", "end_date": "2017-09-30"}],
         "tas_codes": [
