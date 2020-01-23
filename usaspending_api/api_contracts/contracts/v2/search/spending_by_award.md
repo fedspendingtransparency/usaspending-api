@@ -164,7 +164,7 @@ List of table columns
         + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
 + `recipient_type_names`: `category_business` (optional, array[string])
-+ `award_type_codes` (optional, FilterObjectAwardTypes)
++ `award_type_codes` (required, FilterObjectAwardTypes)
 + `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
