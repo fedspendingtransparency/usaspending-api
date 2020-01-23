@@ -9,7 +9,7 @@ import os
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
-from ddtrace import config as ddconfig, patch_all
+from ddtrace import patch_all
 
 # All paths inside the project should be additive to BASE_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -139,35 +139,19 @@ INTERNAL_IPS = ()
 
 # Datadog APM tracing configuration
 # patch_all(): Capture traces from integrated components' libraries by patching them. See:
-#   - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
-#   - If Automatically Instrumented = Yes, here: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
+# - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
+# - If Automatically Instrumented = Yes, here: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
 patch_all()
-# NOTE: Track these to see if these settings are even honored or buggy
-# - https://github.com/DataDog/dd-trace-py/issues/986
-# - https://github.com/DataDog/dd-trace-py/issues/798
 DATADOG_TRACE = {
     "ENABLED": False,  # Replace during env-deploys to turn on
-    "DEFAULT_SERVICE": "api",  # TODO:OPS-995 look into setting this to "bulk-download" for BD App Analytics presence
+    "DEFAULT_SERVICE": "api",
     "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
     "ANALYTICS_SAMPLE_RATE": 1,  # Including 100% of traces in sample
     "DISTRIBUTED_TRACING": False,  # only needed if picking up disjoint traces by HTTP Header value
 }
-# TODO:OPS-995: Try these things
-# 1) Doubly set these to true when running outside of Django web requests (e.g. Bulk Downloader)
-# ddconfig.analytics_enabled = True
-# ddconsfig.postgres.analytics_enabled = True
-# 2) Put another `patch_all()` call in the download_sqs_worker.py
-# 3) Research why spans don't continue on sub-processes
-#    - do I need to start a new child span in the worker
-#    - try wrapping the worker function body in a with tracer.trace so it spawns its own, non-read-only span
-#    - they will have different process IDs, so that may affect conjoining the span to its parent
-# 4) APM events seem to be registering though Traces are rejected. Research how to suppress APM events too (hits/sec)
-# 5) Sub-process trace may be read-only or disconnected from parent due to process affinity / process_id tag
-#    - Spawn a new child trace and see if it auto-connects to parent trace from parent process
-#    - Or forcibly (by trace_id or span_id) try to re-connect the disjointed/orphaned parent-child trace spans
-# 6) Tags probably aren't sticking to the BD trace because they're attempted to be set within the worker
-#    sub-process, which is either read-only, or a trace does not exist, or it's an orphaned span
-
+# NOTE: Track these to see if the above settings are even honored or buggy
+# - https://github.com/DataDog/dd-trace-py/issues/986
+# - https://github.com/DataDog/dd-trace-py/issues/798
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
@@ -319,12 +303,12 @@ LOGGING = {
             "formatter": "user_readable",
         },
         "console_file": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "logging.handlers.WatchedFileHandler",
             "filename": str(APP_DIR / "logs" / "console.log"),
             "formatter": "specifics",
         },
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simpletime"},
+        "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
     },
     "loggers": {
         # The root logger; i.e. "all modules"
@@ -336,9 +320,8 @@ LOGGING = {
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
         # ======== Module-specific loggers ========
-        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
-        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
-        "ddtrace": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
     },
 }
 

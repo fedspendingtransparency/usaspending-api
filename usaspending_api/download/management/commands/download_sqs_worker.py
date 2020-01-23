@@ -1,10 +1,7 @@
 import logging
 import time
 import traceback
-from ddtrace import patch_all
-from ddtrace.contrib.django.conf import settings as datadog_django_settings
 from ddtrace import tracer
-from ddtrace.contrib.django.patch import apply_django_patches
 from ddtrace.ext import SpanTypes
 from ddtrace.ext.priority import USER_REJECT
 from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
@@ -22,38 +19,14 @@ from usaspending_api.common.sqs.sqs_job_logging import log_job_message
 from usaspending_api.download.helpers.monthly_helpers import download_job_to_log_dict
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
-from usaspending_api import settings
 
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
-#tracer = datadog_django_settings.TRACER
-
-class DatadogEagerlyDropTraceFilter():
-    """
-    A trace filter that eagerly drops a trace, by filtering it out before sending it on to the Datadog Server API.
-    It uses the `self.EAGERLY_DROP_TRACE_KEY` as a sentinel value. If present within any span's tags, the whole
-    trace that the span is part of will be filtered out before being sent to the server.
-    """
-    EAGERLY_DROP_TRACE_KEY = "EAGERLY_DROP_TRACE"
-    def process_trace(self, trace):
-        """Drop trace if any span tag has key `ddtrace.constants.MANUAL_DROP_KEY`"""
-        return None if any(span.get_tag(self.EAGERLY_DROP_TRACE_KEY) for span in trace) else trace
-        # TODO:OPS-995 remove below diagnostic
-        # drop_trace = False
-        # for span in trace:
-        #     if span.get_tag(self.EAGERLY_DROP_TRACE_KEY):
-        #         logger.debug(f"DatadogEagerDropFilter: DROP SPAN FOUND\n{span.pprint()}")
-        #         drop_trace = True
-        #     else:
-        #         logger.debug(f"DatadogEagerDropFilter: KEEP SPAN FOUND\n{span.pprint()}")
-        # return None if drop_trace else trace
-
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        patch_all()
-        apply_django_patches(patch_rest_framework=False)
+        # Drop uninteresting polls of the queue from the Tracer
         if tracer.writer._filters:
             tracer.writer._filters.append(DatadogEagerlyDropTraceFilter())
         else:
@@ -106,53 +79,13 @@ class Command(BaseCommand):
 
                     # When you receive an empty response from the queue, wait before trying again
                     time.sleep(1)
-                else:
-                    root_span = tracer.current_root_span()
-                    if root_span:
-                        logger.warning(
-                            f"Datadog ROOT SPAN exists.\nSPAN DETAILS:\n{root_span}"
-                            f"\nspan.meta:\n{root_span.meta}"
-                            f"\nspan.metrics:\n{root_span.metrics}"
-                            f"\nTRACER DETAILS:\n{tracer}"
-                            f"\nTRACER DICT:\n{tracer.__dict__}"
-                            f"\nWRITER DETAILS:\n{tracer.writer}"
-                            f"\nWRITER DICT:\n{tracer.writer.__dict__}"
-                        )
-                    else:
-                        logger.warning(
-                            "Datadog ROOT span does NOT exist. Perhaps tracing is not enabled or a span needs to be "
-                            "started"
-                        )
 
                 # If this process is exiting, don't poll for more work
                 keep_polling = not dispatcher.is_exiting
 
 
 def download_service_app(download_job_id):
-    # TODO:remove below diagnostic once working
-    current_span = tracer.current_span()
-    if current_span:
-        logger.warning(
-            f"Datadog CURRENT span exists in subprocess.\nSPAN DETAILS:\n{current_span}"
-            f"\nspan.meta:\n{current_span.meta}"
-            f"\nspan.metrics:\n{current_span.metrics}"
-            f"\nTRACER DETAILS:\n{tracer}"
-            f"\nTRACER DICT:\n{tracer.__dict__}"
-            f"\nWRITER DETAILS:\n{tracer.writer}"
-            f"\nWRITER DICT:\n{tracer.writer.__dict__}"
-        )
-    else:
-        logger.warning(
-            "Datadog CURRENT span does NOT exist in subprocess."
-        )
-
-    #with tracer.trace(name=f"job.{JOB_TYPE}.download", resource=download_job_id) as span:
-    with tracer.trace(
-            name=f"job.{JOB_TYPE}.download",
-            service="bulk-download",
-            resource=str(download_job_id),
-            span_type=SpanTypes.WORKER
-    ) as span:
+    with tracer.trace(name=f"job.{JOB_TYPE}.download", service="bulk-download", span_type=SpanTypes.WORKER) as span:
         # Set True to add trace to App Analytics:
         # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
         span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1)
@@ -166,38 +99,8 @@ def download_service_app(download_job_id):
             job_id=download_job_id,
             other_params=download_job_details,
         )
-        # TODO:OPS-995, add download job tags back not too verbose
-        #span.set_tags(download_job_details)
-
-        if span:
-            logger.warning(
-                f"Datadog CHILD span was created in subprocess.\nSPAN DETAILS:\n{span}"
-                f"\nspan.meta:\n{span.meta}"
-                f"\nspan.metrics:\n{span.metrics}"
-                f"\nTRACER DETAILS:\n{tracer}"
-                f"\nTRACER DICT:\n{tracer.__dict__}"
-                f"\nWRITER DETAILS:\n{tracer.writer}"
-                f"\nWRITER DICT:\n{tracer.writer.__dict__}"
-            )
-        else:
-            logger.warning(
-                "Datadog CHILD span was NOT created in subprocess."
-            )
-
+        span.set_tags(download_job_details)
         generate_download(download_job=download_job)
-
-    logger.debug(
-        f"Writer Queue Details:\n{tracer.writer._trace_queue}" 
-        f"Writer Queue Dict:\n{tracer.writer._trace_queue.__dict__}"
-        f"Writer queue has {tracer.writer._trace_queue.accepted} traces "
-        f"and {tracer.writer._trace_queue.accepted_lengths} total spans"
-    )
-    tracer.writer.flush_queue()
-    logger.debug("Manually flushed writer queue")
-
-    logger.debug("Sleeping 1 second after trace span finished")
-    time.sleep(1)  # Give a second for tracing to finish for this span
-    logger.debug("DONE Sleeping 1 second after trace span finished")
 
 
 def _retrieve_download_job_from_db(download_job_id):
@@ -280,3 +183,17 @@ class DownloadJobNoneError(ValueError):
         else:
             super().__init__(default_message)
         self.download_job_id = download_job_id
+
+
+class DatadogEagerlyDropTraceFilter:
+    """
+    A trace filter that eagerly drops a trace, by filtering it out before sending it on to the Datadog Server API.
+    It uses the `self.EAGERLY_DROP_TRACE_KEY` as a sentinel value. If present within any span's tags, the whole
+    trace that the span is part of will be filtered out before being sent to the server.
+    """
+
+    EAGERLY_DROP_TRACE_KEY = "EAGERLY_DROP_TRACE"
+
+    def process_trace(self, trace):
+        """Drop trace if any span tag has tag with key 'EAGERLY_DROP_TRACE'"""
+        return None if any(span.get_tag(self.EAGERLY_DROP_TRACE_KEY) for span in trace) else trace
