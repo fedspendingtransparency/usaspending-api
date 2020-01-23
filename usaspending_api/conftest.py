@@ -7,7 +7,6 @@ import tempfile
 from django.conf import settings
 from django.db import connections
 from django.test import override_settings
-from django_mock_queries.query import MockSet
 from pathlib import Path
 
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
@@ -17,7 +16,6 @@ from usaspending_api.common.sqs.sqs_handler import (
     _FakeUnitTestFileBackedSQSQueue,
 )
 from usaspending_api.common.helpers.generic_helper import generate_matviews
-from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
     ensure_broker_server_dblink_exists,
@@ -26,148 +24,6 @@ from usaspending_api.conftest_helpers import (
 
 
 logger = logging.getLogger("console")
-
-
-@pytest.fixture()
-def mock_psc(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_psc_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.references.models.PSC.objects", mock_psc_qs)
-
-    yield mock_psc_qs
-
-    mock_psc_qs.delete()
-
-
-@pytest.fixture()
-def mock_cfda(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_cfda_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.references.models.Cfda.objects", mock_cfda_qs)
-
-    yield mock_cfda_qs
-
-    mock_cfda_qs.delete()
-
-
-@pytest.fixture()
-def mock_naics(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_naics_qs = MockSet()
-    monkeypatch.setattr("usaspending_api.references.models.NAICS.objects", mock_naics_qs)
-    yield mock_naics_qs
-    mock_naics_qs.delete()
-
-
-@pytest.fixture()
-def mock_federal_account(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_federal_accounts_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.accounts.models.FederalAccount.objects", mock_federal_accounts_qs)
-
-    yield mock_federal_accounts_qs
-
-    mock_federal_accounts_qs.delete()
-
-
-@pytest.fixture()
-def mock_tas(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_tas_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.accounts.models.TreasuryAppropriationAccount.objects", mock_tas_qs)
-
-    yield mock_tas_qs
-
-    mock_tas_qs.delete()
-
-
-@pytest.fixture()
-def mock_award(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_award_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.awards.models.Award.objects", mock_award_qs)
-
-    yield mock_award_qs
-
-    mock_award_qs.delete()
-
-
-@pytest.fixture()
-def mock_subaward(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_subaward_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.awards.models.Subaward.objects", mock_subaward_qs)
-
-    yield mock_subaward_qs
-
-    mock_subaward_qs.delete()
-
-
-@pytest.fixture()
-def mock_financial_account(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_financial_accounts_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.awards.models.FinancialAccountsByAwards.objects", mock_financial_accounts_qs)
-
-    yield mock_financial_accounts_qs
-
-    mock_financial_accounts_qs.delete()
-
-
-@pytest.fixture()
-def mock_transaction(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_transaciton_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.awards.models.TransactionNormalized.objects", mock_transaciton_qs)
-
-    yield mock_transaciton_qs
-
-    mock_transaciton_qs.delete()
-
-
-@pytest.fixture()
-def mock_agencies(monkeypatch):
-    """Mocks all agency querysets into a single mock"""
-    mock_agency_qs = MockSet()
-    mock_toptier_agency_qs = MockSet()
-    mock_subtier_agency_qs = MockSet()
-
-    monkeypatch.setattr("usaspending_api.references.models.Agency.objects", mock_agency_qs)
-    monkeypatch.setattr("usaspending_api.references.models.ToptierAgency.objects", mock_toptier_agency_qs)
-    monkeypatch.setattr("usaspending_api.references.models.SubtierAgency.objects", mock_subtier_agency_qs)
-
-    mocked_agencies = {
-        "agency": mock_agency_qs,
-        "toptier_agency": mock_toptier_agency_qs,
-        "subtier_agency": mock_subtier_agency_qs,
-    }
-
-    yield mocked_agencies
-
-    mock_agency_qs.delete()
-    mock_toptier_agency_qs.delete()
-    mock_subtier_agency_qs.delete()
-
-
-@pytest.fixture()
-def mock_matviews_qs(monkeypatch):
-    """Mocks all matvies to a single mock queryset"""
-    mock_qs = MockSet()  # mock queryset
-    for k, v in MATERIALIZED_VIEWS.items():
-        if k not in ["tas_autocomplete_matview"]:
-            monkeypatch.setattr("usaspending_api.search.models.{}.objects".format(v["model"].__name__), mock_qs)
-
-    yield mock_qs
-
-    mock_qs.delete()
 
 
 def pytest_configure():
