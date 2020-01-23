@@ -100,7 +100,7 @@ class Award(DataSourceTrackedModel):
     )
     awarding_agency = models.ForeignKey(
         "references.Agency",
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name="+",
         null=True,
         help_text="The awarding agency for the award",
@@ -108,7 +108,7 @@ class Award(DataSourceTrackedModel):
     )
     funding_agency = models.ForeignKey(
         "references.Agency",
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name="+",
         null=True,
         help_text="The funding agency for the award",
@@ -154,14 +154,14 @@ class Award(DataSourceTrackedModel):
     )
     latest_transaction = models.ForeignKey(
         "awards.TransactionNormalized",
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name="latest_for_award",
         null=True,
         help_text="The latest transaction by action_date and mod associated with this award",
     )
     earliest_transaction = models.ForeignKey(
         "awards.TransactionNormalized",
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name="earliest_for_award",
         null=True,
         help_text="The earliest transaction by action_date and mod associated with this award",
