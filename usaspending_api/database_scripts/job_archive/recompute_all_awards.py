@@ -8,13 +8,12 @@ Expected CLI:
 
 Purpose:
 
-    Adding new earliest_transaction to awards
-    Improved logic for determining the initial transaction of an award which is
-    used as the "earliest transaction" FK. Also make a mirror alteration to
-    the logic determining "latest transaction" for an award.
-    Re-calculate awards using the unique_award_key
+    Re-calculate all award fields to ensure the awards are accurate and up-to-date
+    Can choose a range of award.id values to process, can also limit to FABS or FPDS
+    for subset update runs.
 
-    All of these changes requires updating 100% of award records
+    Same SQL used in usaspending_api/etl/award_helpers.py
+
 
 """
 import argparse
@@ -44,7 +43,7 @@ try:
     CONNECTION_STRING = environ["DATABASE_URL"]
 except Exception:
     print("SET env var DATABASE_URL!!!\nTerminating script")
-    raise SystemExit(1)
+    raise SystemExit(100)
 
 # Not a complete list of signals
 # NOTE: 1-15 are relatively standard on unix platforms; > 15 can change from platform to platform
@@ -64,10 +63,8 @@ BSD_SIGNALS = {
 }
 
 DEBUG, CLEANUP = False, False
-GET_FABS_AWARDS = (
-    "SELECT generated_unique_award_id FROM awards where is_fpds = FALSE AND id BETWEEN {minid} AND {maxid}"
-)
-GET_FPDS_AWARDS = "SELECT generated_unique_award_id FROM awards where is_fpds = TRUE AND id BETWEEN {minid} AND {maxid}"
+GET_FABS_AWARDS = "SELECT id FROM awards where is_fpds = FALSE AND id BETWEEN {minid} AND {maxid}"
+GET_FPDS_AWARDS = "SELECT id FROM awards where is_fpds = TRUE AND id BETWEEN {minid} AND {maxid}"
 GET_MIN_MAX_SQL = "SELECT MIN(id), MAX(id) FROM awards"
 MAX_ID, MIN_ID, CLOSING_TIME, ITERATION_ESTIMATED_SECONDS = None, None, None, None
 TOTAL_UPDATES, CHUNK_SIZE = 0, 20000
@@ -80,7 +77,7 @@ def _handle_exit_signal(signum, frame):
     signal_or_human = BSD_SIGNALS.get(signum, signum)
     logging.warning("Received signal {}. Attempting to gracefully exit".format(signal_or_human))
     teardown(successful_run=False)
-    raise SystemExit()
+    raise SystemExit(3)
 
 
 def datetime_command_line_argument_type(naive):
@@ -136,7 +133,7 @@ async def async_run_create(sql):
     except Exception:
         logging.exception("=== ERROR ===")
         logging.error("{}\n=============".format(sql))
-        raise SystemExit
+        raise SystemExit(1)
 
     if DEBUG:
         logging.info(sql)
@@ -149,16 +146,16 @@ def run_update_query(fabs_awards, fpds_awards):
     loop = asyncio.new_event_loop()
     statements = []
 
-    predicate = f"WHERE tn.unique_award_key IN ({','.join(fabs_awards + fpds_awards)})"
+    predicate = f"WHERE tn.award_id IN ({','.join(fabs_awards + fpds_awards)})"
     all_sql = general_award_update_sql_string.format(predicate=predicate)
     statements.append(asyncio.ensure_future(async_run_create(all_sql), loop=loop))
 
     if fabs_awards:
-        predicate = f"WHERE tn.unique_award_key IN ({','.join(fabs_awards)})"
+        predicate = f"WHERE tn.award_id IN ({','.join(fabs_awards)})"
         fabs_sql = fabs_award_update_sql_string.format(predicate=predicate)
         statements.append(asyncio.ensure_future(async_run_create(fabs_sql), loop=loop))
     if fpds_awards:
-        predicate = f"WHERE tn.unique_award_key IN ({','.join(fpds_awards)})"
+        predicate = f"WHERE tn.award_id IN ({','.join(fpds_awards)})"
         fpds_sql = fpds_award_update_sql_string.format(predicate=predicate)
         statements.append(asyncio.ensure_future(async_run_create(fpds_sql), loop=loop))
 

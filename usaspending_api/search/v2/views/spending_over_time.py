@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 from django.conf import settings
 from django.db.models import Sum
-from elasticsearch_dsl import A, Search
+from elasticsearch_dsl import A
 from elasticsearch_dsl.response import AggResponse
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -17,7 +17,7 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_over_time
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.orm_helpers import FiscalMonth, FiscalQuarter, FiscalYear
@@ -105,7 +105,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return queryset, values
 
-    def apply_elasticsearch_aggregations(self, search: Search) -> None:
+    def apply_elasticsearch_aggregations(self, search: TransactionSearch) -> None:
         """
         Takes in an instance of the elasticsearch-dsl.Search object and applies the necessary
         aggregations in a specific order to get expected results.
@@ -174,10 +174,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch(self, time_periods: list) -> list:
-        filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters, "transactions")
-        search = Search(index=f"{settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX}*").filter(filter_query)
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
+        search = TransactionSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
-        response = es_client_query(search=search)
+        response = search.handle_execute()
         return self.build_elasticsearch_result(response.aggs, time_periods)
 
     @cache_response()
