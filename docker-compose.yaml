@@ -53,7 +53,7 @@ services:
       DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
   usaspending-es:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
     environment:
     - cluster.name=usaspending
     - network.host=0.0.0.0
