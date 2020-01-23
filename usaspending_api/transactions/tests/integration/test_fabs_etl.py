@@ -1,11 +1,14 @@
 import pytest
+import datetime
 
 from django.core.management import call_command
 from django.db import connections, DEFAULT_DB_ALIAS
-
+from decimal import Decimal
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 
+
 BROKER_TABLE = SourceAssistanceTransaction().broker_source_table
+NUMBER_OF_RECORDS = 100
 
 
 @pytest.fixture()
@@ -118,9 +121,14 @@ VALUES
     with connections["data_broker"].cursor() as cursor:
         cursor.execute(insert_test_data)
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
-        assert cursor.fetchall()[0][0] == 100
-        yield
+        assert cursor.fetchall()[0][0] == NUMBER_OF_RECORDS
+
+    yield
+
+    with connections["data_broker"].cursor() as cursor:
         cursor.execute(f"TRUNCATE {BROKER_TABLE}")
+        cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
+        assert cursor.fetchall()[0][0] == 0
 
 
 def test_can_connect_to_broker_by_dblink(broker_server_dblink_setup, db):
@@ -144,15 +152,117 @@ def test_can_connect_to_broker_by_dblink(broker_server_dblink_setup, db):
     assert len(str(results[0][0])) > 0
 
 
-@pytest.mark.skip
 def test_data_transfer_from_broker(load_broker_data, monkeypatch):
-    def _execute(*args, **kwargs):
-        return connections[DEFAULT_DB_ALIAS]
-
-    monkeypatch.setattr("usaspending_api.common.helpers.sql_helpers.get_connection", _execute)
     call_command("transfer_assistance_records", "--reload-all")
+    table = SourceAssistanceTransaction().table_name
 
     with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
 
-        count = cursor.execute(f"SELECT COUNT(*) FROM {SourceAssistanceTransaction().table_name}")
-        assert count[0][0] == 100
+        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+        assert cursor.fetchall()[0][0] == NUMBER_OF_RECORDS
+
+        id_field = "published_award_financial_assistance_id"
+        cursor.execute(f"SELECT MIN({id_field}), MAX({id_field}) FROM {table}")
+        min_id, max_id = cursor.fetchall()[0]
+        assert min_id == 39706515
+        assert max_id == 89126476
+
+        cursor.execute(f"SELECT * FROM {table} WHERE afa_generated_unique = '9100_P033A173267_-none-_84.033_3'")
+        assert cursor.fetchall()[0] == (
+            40961579,
+            "9100_P033A173267_-none-_84.033_3",
+            "07/12/2017",
+            "C",
+            None,
+            "06",
+            None,
+            "UNKNOWN TITLE",
+            "3",
+            "Columbus State Community College",
+            None,
+            "091",
+            "Department of Education (ED)",
+            None,
+            None,
+            "9100",
+            "Department of Education",
+            None,
+            None,
+            "NON",
+            "06",
+            None,
+            "84.033",
+            "Federal Work-Study Program",
+            None,
+            None,
+            datetime.datetime(2017, 9, 16, 22, 22, 42, 760993),
+            Decimal("0"),
+            "P033A173267",
+            Decimal("520000"),
+            None,
+            "091",
+            "EDUCATION, DEPARTMENT OF (9100)",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            True,
+            True,
+            "550 E Spring St",
+            None,
+            None,
+            None,
+            "Columbus",
+            "03",
+            "USA",
+            "UNITED STATES",
+            "049",
+            "Franklin",
+            None,
+            None,
+            None,
+            None,
+            "OH",
+            "Ohio",
+            "43215",
+            "1722",
+            datetime.datetime(2017, 7, 21, 0, 0),
+            Decimal("0"),
+            Decimal("0"),
+            "08/31/2023",
+            None,
+            "OH",
+            "USA",
+            "UNITED STATES",
+            "041",
+            "Delaware",
+            "Ohio",
+            "1722",
+            "COLUMBUS",
+            "OH18000",
+            "03",
+            None,
+            "432151722",
+            "43215",
+            "Single ZIP Code",
+            2,
+            None,
+            None,
+            None,
+            "520000.0",
+            None,
+            None,
+            "ASST_NON_P033A173267_9100",
+            datetime.datetime(2017, 9, 16, 22, 22, 42, 760993),
+            None,
+        )

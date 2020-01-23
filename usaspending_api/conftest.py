@@ -5,6 +5,7 @@ import pytest
 import tempfile
 
 from django.conf import settings
+from django.core.management import call_command
 from django.db import connections
 from django.test import override_settings
 from django_mock_queries.query import MockSet
@@ -234,6 +235,7 @@ def django_db_setup(
             generate_matviews(materialized_views_as_traditional_views=True)
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
+            call_command("load_broker_static_data")
 
     def teardown_database():
         with django_db_blocker.unblock():
