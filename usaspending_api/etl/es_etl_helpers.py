@@ -420,10 +420,7 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
 def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None):
     success, failed = 0, 0
     try:
-        # "doc_type" is set in the index template file. Don't change this without changing in json file first
-        for ok, item in helpers.streaming_bulk(
-            client, chunk, index=index_name, doc_type="{}_mapping".format(type[:-1])
-        ):
+        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -750,7 +747,7 @@ def get_deleted_award_ids(client, id_list, config, index=None):
         for v in values_generator:
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
-            if response["hits"]["total"] != 0:
+            if response["hits"]["total"]["value"] != 0:
                 awards = [x["_source"]["generated_unique_award_id"] for x in response["hits"]["hits"]]
     return awards
 
@@ -780,7 +777,7 @@ def delete_awards_from_es(client, id_list, job_id, config, index=None):
 
     if index is None:
         index = "{}-*".format(config["root_index"])
-    start_ = client.search(index=index)["hits"]["total"]
+    start_ = client.search(index=index)["hits"]["total"]["value"]
     printf({"msg": "Starting amount of indices ----- {}".format(start_), "f": "ES Delete", "job": job_id})
     col_to_items_dict = defaultdict(list)
     for l in id_list:
@@ -801,7 +798,7 @@ def delete_awards_from_es(client, id_list, job_id, config, index=None):
                 )
             except Exception as e:
                 printf({"msg": "[ERROR][ERROR][ERROR]\n{}".format(str(e)), "f": "ES Delete", "job": job_id})
-    end_ = client.search(index=index)["hits"]["total"]
+    end_ = client.search(index=index)["hits"]["total"]["value"]
 
     t = perf_counter() - start
     total = str(start_ - end_)

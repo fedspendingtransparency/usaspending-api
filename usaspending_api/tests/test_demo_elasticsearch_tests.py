@@ -24,7 +24,7 @@ def test_positive_sample_query(award_data_fixture, elasticsearch_transaction_ind
     response = client.search(
         elasticsearch_transaction_index.index_name, elasticsearch_transaction_index.doc_type, query
     )
-    assert response["hits"]["total"] == 1
+    assert response["hits"]["total"]["value"] == 1
 
 
 def test_negative_sample_query(award_data_fixture, elasticsearch_transaction_index):
@@ -39,7 +39,7 @@ def test_negative_sample_query(award_data_fixture, elasticsearch_transaction_ind
     response = client.search(
         elasticsearch_transaction_index.index_name, elasticsearch_transaction_index.doc_type, query
     )
-    assert response["hits"]["total"] == 0
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_a_search_endpoint(client, award_data_fixture, elasticsearch_transaction_index):

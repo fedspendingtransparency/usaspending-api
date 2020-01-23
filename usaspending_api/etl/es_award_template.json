@@ -1,5 +1,4 @@
 {
-  "index_patterns": null,
   "settings": {
     "index.mapping.ignore_malformed": true,
     "index.max_result_window": null,
@@ -12,11 +11,7 @@
       "analyzer": {
         "stemmer_analyzer": {
           "tokenizer": "standard",
-          "filter": [
-            "standard",
-            "lowercase",
-            "singular_stemmer"
-          ]
+          "filter": ["lowercase", "singular_stemmer"]
         }
       },
       "filter": {
@@ -27,18 +22,7 @@
       }
     }
   },
-  "sort": {
-    "fields": [
-      "total_obligation",
-      "action_date"
-    ],
-    "order": [
-      "desc",
-      "desc"
-    ]
-  },
   "mappings": {
-    "award_mapping": {
       "properties": {
         "award_id": {
           "type": "integer"
@@ -434,6 +418,5 @@
           }
         }
       }
-    }
   }
 }

@@ -91,7 +91,7 @@ def search_transactions(request_data, lower_limit, limit):
 
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
-        total = response["hits"]["total"]
+        total = response["hits"]["total"]["value"]
         results = format_for_frontend(response["hits"]["hits"])
         return True, results, total
     else:

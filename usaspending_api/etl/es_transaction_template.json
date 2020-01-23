@@ -1,5 +1,4 @@
 {
-  "index_patterns": null,
   "settings": {
     "index.mapping.ignore_malformed": true,
     "index.max_result_window": null,

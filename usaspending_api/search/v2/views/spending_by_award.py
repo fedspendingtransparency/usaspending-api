@@ -352,7 +352,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "results": results,
             "page_metadata": {
                 "page": self.pagination["page"],
-                "hasNext": response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
+                "hasNext": response["hits"]["total"]["value"] - (self.pagination["page"] - 1) * self.pagination["limit"]
                 > self.pagination["limit"],
                 "last_id": last_id,
                 "last_value": last_value,
