@@ -29,10 +29,6 @@ from usaspending_api.download.v2.request_validations import (
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIView):
-    s3_handler = S3Handler(
-        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
-    )
-
     def post(self, request: Request, request_type: str = "award", origination: Optional[str] = None):
         if request_type == "award":
             json_request = validate_award_request(request.data)
@@ -92,10 +88,10 @@ class BaseDownloadViewSet(APIView):
         Generate download response which encompasses various elements to provide accurate status for state of a
         download job
         """
-        download_job = self._get_download_job(file_name)
+        download_job = get_download_job(file_name)
 
         # Compile url to file
-        file_path = self._get_file_path(file_name)
+        file_path = get_file_path(file_name)
 
         # Generate the status endpoint for the file
         status_url = self._get_status_url(file_name)
@@ -105,30 +101,6 @@ class BaseDownloadViewSet(APIView):
             "file_name": file_name,
             "file_url": file_path,
             "download_request": json.loads(download_job.json_request),
-        }
-
-        return Response(response)
-
-    def get_download_status_response(self, file_name: str):
-        """
-        Generate download status response which encompasses various elements to provide accurate
-        status for state of a download job
-        """
-        download_job = self._get_download_job(file_name)
-
-        # Compile url to file
-        file_path = self._get_file_path(file_name)
-
-        response = {
-            "status": download_job.job_status.name,
-            "message": download_job.error_message,
-            "file_name": file_name,
-            "file_url": file_path,
-            # converting size from bytes to kilobytes if file_size isn't None
-            "total_size": download_job.file_size / 1000 if download_job.file_size else None,
-            "total_columns": download_job.number_of_columns,
-            "total_rows": download_job.number_of_rows,
-            "seconds_elapsed": download_job.seconds_elapsed(),
         }
 
         return Response(response)
@@ -146,16 +118,21 @@ class BaseDownloadViewSet(APIView):
 
         return f"{protocol}://{host}/api/v2/download/status?file_name={file_name}"
 
-    def _get_download_job(self, file_name: str) -> DownloadJob:
-        download_job = DownloadJob.objects.filter(file_name=file_name).first()
-        if not download_job:
-            raise NotFound(f"Download job with filename {file_name} does not exist.")
-        return download_job
 
-    def _get_file_path(self, file_name: str) -> str:
-        if settings.IS_LOCAL:
-            file_path = settings.CSV_LOCAL_PATH + file_name
-        else:
-            file_path = self.s3_handler.get_simple_url(file_name=file_name)
+def get_file_path(file_name: str) -> str:
+    if settings.IS_LOCAL:
+        file_path = settings.CSV_LOCAL_PATH + file_name
+    else:
+        s3_handler = S3Handler(
+            bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
+        )
+        file_path = s3_handler.get_simple_url(file_name=file_name)
 
-        return file_path
+    return file_path
+
+
+def get_download_job(file_name: str) -> DownloadJob:
+    download_job = DownloadJob.objects.filter(file_name=file_name).first()
+    if not download_job:
+        raise NotFound(f"Download job with filename {file_name} does not exist.")
+    return download_job
