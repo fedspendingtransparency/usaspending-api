@@ -100,7 +100,7 @@ class Award(DataSourceTrackedModel):
     )
     awarding_agency = models.ForeignKey(
         "references.Agency",
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name="+",
         null=True,
         help_text="The awarding agency for the award",
@@ -108,7 +108,7 @@ class Award(DataSourceTrackedModel):
     )
     funding_agency = models.ForeignKey(
         "references.Agency",
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name="+",
         null=True,
         help_text="The funding agency for the award",
