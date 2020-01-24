@@ -1,4 +1,4 @@
-DROP VIEW IF EXISTS vw_award_search;
+DROP VIEW IF EXISTS vw_award_search CASCADE;
 
 CREATE VIEW vw_award_search AS (
   SELECT * FROM mv_contract_award_search

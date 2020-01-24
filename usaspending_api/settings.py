@@ -128,6 +128,7 @@ INSTALLED_APPS = [
     "usaspending_api.download",
     "usaspending_api.bulk_download",
     "usaspending_api.recipient",
+    "usaspending_api.transactions",
     "usaspending_api.search",
     "django_spaghetti",
     "simple_history",
@@ -276,6 +277,7 @@ LOGGING = {
             "format": "%(timestamp)s %(status)s %(method)s %(path)s %(status_code)s %(remote_addr)s %(host)s "
             + "%(response_ms)d %(message)s %(request)s %(traceback)s %(error_msg)s",
         },
+        "detailed": {"format": "[%(asctime)s] [%(levelname)s] - %(message)s", "datefmt": "%Y/%m/%d %H:%M:%S (%Z)"},
     },
     "handlers": {
         "server": {
@@ -291,6 +293,7 @@ LOGGING = {
             "formatter": "specifics",
         },
         "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
+        "script": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "detailed"},
     },
     "loggers": {
         # The root logger; i.e. "all modules"
@@ -299,6 +302,8 @@ LOGGING = {
         "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
         # Catch-all logger (over)used for non-Django-API commands that output to the console
         "console": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        # More-verbose logger for ETL scripts
+        "script": {"handlers": ["script"], "level": "INFO", "propagate": False},
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
         # ======== Module-specific loggers ========

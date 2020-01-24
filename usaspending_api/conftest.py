@@ -5,6 +5,7 @@ import pytest
 import tempfile
 
 from django.conf import settings
+from django.core.management import call_command
 from django.db import connections
 from django.test import override_settings
 from pathlib import Path
@@ -94,6 +95,7 @@ def django_db_setup(
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
             ensure_business_categories_functions_exist()
+            call_command("load_broker_static_data")
 
     def teardown_database():
         with django_db_blocker.unblock():
