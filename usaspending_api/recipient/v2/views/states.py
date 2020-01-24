@@ -67,7 +67,7 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
         return result
     except IndexError:
         # would prefer to catch an index error gracefully if the SQL query produces 0 rows
-        logger.warn("No results found for FIPS {} with filters: {}".format(fips, filters))
+        logger.warning("No results found for FIPS {} with filters: {}".format(fips, filters))
     return {"count": 0, "pop_state_code": None, "total": 0}
 
 

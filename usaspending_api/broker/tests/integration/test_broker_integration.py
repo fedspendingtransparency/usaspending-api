@@ -5,7 +5,7 @@ from django.test import TestCase
 
 
 class BrokerIntegrationTestCase(TestCase):
-    multi_db = True
+    databases = {"default", "data_broker"}
     dummy_table_name = "dummy_broker_table_to_be_rolled_back"
 
     @classmethod
