@@ -38,7 +38,7 @@ def get_endpoint_urls_doc_paths_and_docstrings(endpoint_prefixes=None):
 
     def _traverse_urls(base, url_patterns):
         for url in url_patterns:
-            cleaned = base + url.regex.pattern.lstrip("^").rstrip("$")
+            cleaned = base + url.pattern.regex.pattern.lstrip("^").rstrip("$")
             if hasattr(url, "url_patterns"):
                 _traverse_urls(cleaned, url.url_patterns)
             elif not endpoint_prefixes or cleaned.startswith(endpoint_prefixes):

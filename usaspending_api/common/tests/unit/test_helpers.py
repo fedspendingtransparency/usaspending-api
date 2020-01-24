@@ -1,31 +1,22 @@
-# Stdlib imports
+import pytest
 from datetime import datetime
 
-# Core Django imports
+from model_mommy import mommy
 
-# Third-party app imports
-from django_mock_queries.query import MockModel
-from django_mock_queries.query import MockSet
-import pytest
-
-# Imports from your apps
 from usaspending_api.common.helpers.generic_helper import check_valid_toptier_agency
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_period
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 
 
-# example of a mocked unit test
-def test_check_valid_toptier_agency_valid(monkeypatch):
-    agencies = MockSet()
-    monkeypatch.setattr("usaspending_api.references.models.Agency.objects", agencies)
-    agencies.add(MockModel(mock_name="toptier agency", id=12345, toptier_flag=True))
+@pytest.mark.django_db
+def test_check_valid_toptier_agency_valid():
+    mommy.make("references.Agency", id=12345, toptier_flag=True)
     assert check_valid_toptier_agency(12345)
 
 
-def test_check_valid_toptier_agency_invalid(monkeypatch):
-    agencies = MockSet()
-    monkeypatch.setattr("usaspending_api.references.models.Agency.objects", agencies)
-    agencies.add(MockModel(mock_name="subtier agency", id=54321, toptier_flag=False))
+@pytest.mark.django_db
+def test_check_valid_toptier_agency_invalid():
+    mommy.make("references.Agency", id=54321, toptier_flag=False)
     assert not check_valid_toptier_agency(54321)
 
 
