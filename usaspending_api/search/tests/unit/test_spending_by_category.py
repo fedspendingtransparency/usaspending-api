@@ -383,7 +383,7 @@ def geo_test_data(db):
         "awards.TransactionNormalized",
         id=2,
         award_id=2,
-        federal_action_obligation=1,
+        federal_action_obligation=2,
         action_date="2020-01-02",
         is_fpds=True,
     )
@@ -391,7 +391,7 @@ def geo_test_data(db):
         "awards.TransactionNormalized",
         id=3,
         award_id=3,
-        federal_action_obligation=1,
+        federal_action_obligation=3,
         action_date="2020-01-03",
         is_fpds=True,
     )
@@ -399,7 +399,7 @@ def geo_test_data(db):
         "awards.TransactionNormalized",
         id=4,
         award_id=4,
-        federal_action_obligation=1,
+        federal_action_obligation=4,
         action_date="2020-01-04",
         is_fpds=True,
     )
@@ -789,8 +789,8 @@ def test_category_county_awards(geo_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 2, "code": "001", "name": "SOMEWHEREVILLE", "id": None},
-            {"amount": 2, "code": "004", "name": "COUNTYSVILLE", "id": None},
+            {"amount": 7, "code": "001", "name": "SOMEWHEREVILLE", "id": None},
+            {"amount": 3, "code": "004", "name": "COUNTYSVILLE", "id": None},
         ],
         "messages": [get_time_period_message()],
     }
@@ -827,8 +827,8 @@ def test_category_district_awards(geo_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 2, "code": "06", "name": "XY-06", "id": None},
-            {"amount": 2, "code": "90", "name": "XY-MULTIPLE DISTRICTS", "id": None},
+            {"amount": 7, "code": "90", "name": "XY-MULTIPLE DISTRICTS", "id": None},
+            {"amount": 3, "code": "06", "name": "XY-06", "id": None},
         ],
         "messages": [get_time_period_message()],
     }
@@ -865,7 +865,7 @@ def test_category_state_territory(geo_test_data):
         "category": "state_territory",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 4, "code": "XY", "name": "Test State", "id": None}],
+        "results": [{"amount": 10, "code": "XY", "name": "Test State", "id": None}],
         "messages": [get_time_period_message()],
     }
 
@@ -899,7 +899,7 @@ def test_category_country(geo_test_data):
         "category": "country",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 4, "code": "US", "name": "UNITED STATES", "id": None}],
+        "results": [{"amount": 10, "code": "US", "name": "UNITED STATES", "id": None}],
         "messages": [get_time_period_message()],
     }
 
