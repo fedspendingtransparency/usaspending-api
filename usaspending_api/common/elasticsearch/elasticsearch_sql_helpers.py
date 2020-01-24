@@ -21,3 +21,10 @@ def ensure_view_exists(view_name: str, force: bool = False):
     view_sql = view_file_path.read_text()
     with connection.cursor() as cursor:
         cursor.execute(view_sql)
+
+
+def ensure_business_categories_functions_exist():
+    file_path = settings.APP_DIR / "broker" / "management" / "sql" / "create_business_categories_functions.sql"
+    sql = file_path.read_text()
+    with connection.cursor() as cursor:
+        cursor.execute(sql)

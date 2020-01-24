@@ -534,7 +534,7 @@ This endpoint returns a list of data that is associated with the award profile p
                     "parent_recipient_unique_id": "317771921",
                     "business_categories": [
                         "Category Business",
-                        "Foreign Owned and Located",
+                        "Foreign Owned",
                         "International Organization",
                         "Not Designated a Small Business",
                         "Special Designations"
