@@ -185,11 +185,16 @@ class AgnosticTransactionLoader:
 
         for id_list in read_file_for_database_ids(str(self.file_path), self.chunk_size):
             with Timer(message="upsert", success_logger=logger.info, failure_logger=logger.error):
-                if len(id_list) == 0:
+                if len(id_list) == 0 and self.options["reload_all"]:
+                    # This scenario shouldn't be reached when connected to an actual DB
+                    # It can occur during tests or local DB runs
                     record_count = operations.insert_missing_rows(source, destination)
-                else:
+                elif len(id_list) != 0:
                     predicate = [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
                     record_count = operations.upsert_records_with_predicate(source, destination, predicate, primary_key)
+                else:
+                    # If there are no IDs to obtain, don't connect to the source DB again
+                    record_count = 0
 
             transactions_remaining_count -= len(id_list)
             logger.info(f"{record_count:,} successful upserts, {transactions_remaining_count:,} remaining.")
