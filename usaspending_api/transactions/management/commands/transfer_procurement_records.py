@@ -13,4 +13,5 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     lookback_minutes = 0
     shared_pk = "detached_award_procurement_id"
     working_file_prefix = "procurement_load_ids"
-    broker_select_sql = 'SELECT "{id}" FROM "{table}" {optional_predicate}'
+    broker_full_select_sql = 'SELECT "{id}" FROM "{table}"'
+    broker_incremental_select_sql = 'SELECT "{id}" FROM "{table}" {optional_predicate}'

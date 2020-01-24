@@ -13,17 +13,19 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     lookback_minutes = 15
     shared_pk = "published_award_financial_assistance_id"
     working_file_prefix = "assistance_load_ids"
-    broker_select_sql = """
-        SELECT     "{id}"
-        FROM       "{table}"
-        WHERE
-              "is_active" IS TRUE
-          AND "submission_id" IN (
-            SELECT "submission_id"
-            FROM   "submission"
-            WHERE
-                  "d2_submission" IS TRUE
-              AND "publish_status_id" IN (2, 3)
-              {optional_predicate}
-          )
-    """
+    broker_full_select_sql = 'SELECT "{id}" FROM "{table}" WHERE "is_active" IS TRUE'
+    broker_incremental_select_sql = """
+SELECT "{id}"
+FROM   "{table}"
+WHERE
+  "is_active" IS TRUE
+  AND
+    "submission_id" IN (
+      SELECT "submission_id"
+      FROM   "submission"
+      WHERE
+        "d2_submission" IS TRUE
+        AND "publish_status_id" IN (2, 3)
+        {optional_predicate}
+  )
+"""

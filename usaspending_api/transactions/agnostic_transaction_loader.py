@@ -146,15 +146,6 @@ class AgnosticTransactionLoader:
         file_name = f"{self.working_file_prefix}_{self.start_time.strftime('%Y%m%d_%H%M%S_%f')}"
         return store_ids_in_file(ids, file_name)
 
-    def parse_options(self):
-        """Create the SQL predicate to limit which transaction records are transfered"""
-        if self.options["reload_all"]:
-            logger.info("FULL RELOAD")
-            return ""
-        elif self.options["datetime"]:
-            logger.info(f"Using datetime '{self.options['datetime']}'")
-            return f"\"updated_at\" >= '{self.options['datetime']}'"
-
     def generate_ids_from_broker(self):
         sql = self.combine_sql()
 
@@ -169,18 +160,22 @@ class AgnosticTransactionLoader:
                         yield broker_id
 
     def combine_sql(self):
-        predicate = self.parse_options()
+        """Create SQL used to fetch transaction ids for records marked to transfer"""
+        if self.options["reload_all"]:
+            logger.info("FULL RELOAD")
+            sql = self.broker_full_select_sql
+            optional_predicate = ""
+        elif self.options["datetime"]:
+            logger.info(f"Using datetime '{self.options['datetime']}'")
+            sql = self.broker_incremental_select_sql
+            predicate = f"\"updated_at\" >= '{self.options['datetime']}'"
 
-        if predicate == "":
-            optional_predicate = predicate
-        elif "WHERE" in self.broker_select_sql:
-            optional_predicate = f"AND {predicate}"
-        else:
-            optional_predicate = f"WHERE {predicate}"
+            if "WHERE" in sql:
+                optional_predicate = f"AND {predicate}"
+            else:
+                optional_predicate = f"WHERE {predicate}"
 
-        return self.broker_select_sql.format(
-            id=self.shared_pk, table=self.broker_source_table_name, optional_predicate=optional_predicate
-        )
+        return sql.format(id=self.shared_pk, table=self.broker_source_table_name, optional_predicate=optional_predicate)
 
     def copy_broker_table_data(self, source_tablename, dest_tablename, primary_key):
         """Loop through the batches of IDs and load using the ETL tables"""

@@ -131,27 +131,6 @@ VALUES
         assert cursor.fetchall()[0][0] == 0
 
 
-def test_can_connect_to_broker_by_dblink(broker_server_dblink_setup, db):
-    """Simple 'integration test' that checks the USAspending to Broker dblink works
-
-    It will be skipped if the `broker_server` server is not created in the USAspending database-under-test
-    """
-    connection = connections[DEFAULT_DB_ALIAS]
-    with connection.cursor() as cursor:
-        cursor.execute("select srvname from pg_foreign_server where srvname = 'broker_server'")
-        results = cursor.fetchall()
-        if not results or not results[0][0] == "broker_server":
-            pytest.skip(
-                "No foreign server named 'broker_server' has been setup on this USAspending database. "
-                "Skipping the test of integration with that server via dblink"
-            )
-        cursor.execute("SELECT * FROM dblink('broker_server','SELECT now()') AS broker_time(the_now timestamp)")
-        results = cursor.fetchall()
-    assert results is not None
-    assert len(results) > 0
-    assert len(str(results[0][0])) > 0
-
-
 def test_data_transfer_from_broker(load_broker_data, monkeypatch):
     call_command("transfer_procurement_records", "--reload-all")
     table = SourceProcurementTransaction().table_name
