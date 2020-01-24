@@ -146,7 +146,7 @@ DATADOG_TRACE = {
     "ENABLED": False,  # Replace during env-deploys to turn on
     "DEFAULT_SERVICE": "api",
     "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
-    "ANALYTICS_SAMPLE_RATE": 1,  # Including 100% of traces in sample
+    "ANALYTICS_SAMPLE_RATE": 1.0,  # Including 100% of traces in sample
     "DISTRIBUTED_TRACING": False,  # only needed if picking up disjoint traces by HTTP Header value
 }
 # NOTE: Track these to see if the above settings are even honored or buggy
