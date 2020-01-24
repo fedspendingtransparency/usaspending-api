@@ -332,9 +332,9 @@ class FilterGenerator:
                 # Check if this field is a foreign key
                 if mf.get_internal_type() in ["ForeignKey", "ManyToManyField", "OneToOneField"]:
                     # Continue traversal
-                    related = getattr(mf, "rel", None)
+                    related = getattr(mf, "remote_field", None)
                     if related:
-                        model_to_check = related.to
+                        model_to_check = related.model
                     else:
                         model_to_check = mf.related_model
                 else:

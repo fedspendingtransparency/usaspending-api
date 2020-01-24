@@ -2,12 +2,10 @@ import json
 import pytest
 from datetime import datetime
 
-from django_mock_queries.query import MockModel
 from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 
 
@@ -125,19 +123,18 @@ def test_spending_by_award_no_intersection(client, award_data_fixture):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subawards_no_intersection(client, mock_matviews_qs):
-    mock_model_1 = MockModel(
-        award_ts_vector="",
-        subaward_id=9999,
+def test_spending_by_award_subawards_no_intersection(client):
+    mommy.make("awards.Award", id=90)
+    mommy.make(
+        "awards.Subaward",
+        id=9999,
         award_type="grant",
         prime_award_type="02",
         award_id=90,
-        awarding_toptier_agency_name="Department of Pizza",
-        awarding_toptier_agency_abbreviation="DOP",
-        generated_pragmatic_obligation=10,
+        awarding_toptier_agency_name="Toptier Agency 1",
+        awarding_toptier_agency_abbreviation="TA1",
+        amount=10,
     )
-
-    add_to_mock_objects(mock_matviews_qs, [mock_model_1])
 
     request = {
         "subawards": True,
@@ -161,7 +158,7 @@ def test_spending_by_award_subawards_no_intersection(client, mock_matviews_qs):
 
 
 @pytest.fixture
-def awards_over_different_date_ranges_with_different_counts(mock_matviews_qs):
+def awards_over_different_date_ranges_with_different_counts():
     award_category_list_and_counts = {
         "contracts": 5,
         "direct_payments": 8,
@@ -198,37 +195,30 @@ def awards_over_different_date_ranges_with_different_counts(mock_matviews_qs):
     ]
 
     award_id = 0
-    mock_model_list = []
 
     for award_category, count in award_category_list_and_counts.items():
         for date_range in date_range_list[:count]:
             award_id += 1
             award_type_list = all_award_types_mappings[award_category]
             award_type = award_type_list[award_id % len(award_type_list)]
-
-            mock_model_list.append(
-                MockModel(
-                    award_ts_vector="",
-                    type=award_type,
-                    category=award_category,
-                    type_of_contract_pricing="",
-                    naics_code=str(9000 + award_id),
-                    cfda_number=str(900 + award_id),
-                    pulled_from=None,
-                    uri=None,
-                    piid="abcdefg{}".format(award_id),
-                    fain=None,
-                    award_id=award_id,
-                    awarding_toptier_agency_name="Department of {}".format(award_id),
-                    awarding_toptier_agency_abbreviation="DOP",
-                    generated_pragmatic_obligation=10,
-                    date_signed=date_range["date_signed"],
-                    action_date=date_range["action_date"],
-                    counts=1,
-                )
+            mommy.make(
+                "awards.Award",
+                id=award_id,
+                latest_transaction_id=award_id + 1000,
+                type=award_type,
+                category=award_category,
+                piid=f"abcdefg{award_id}",
+                uri=None,
+                fain=None,
+                date_signed=date_range["date_signed"],
             )
-
-    add_to_mock_objects(mock_matviews_qs, mock_model_list)
+            mommy.make(
+                "awards.TransactionNormalized",
+                id=award_id + 1000,
+                award_id=award_id,
+                action_date=date_range["action_date"],
+            )
+            mommy.make("awards.TransactionFPDS", transaction_id=award_id + 1000, pulled_from=None)
 
 
 @pytest.mark.django_db
