@@ -64,7 +64,7 @@ class Command(BaseCommand):
     def generate_matview_sql(self):
         """Convert JSON definition files to SQL"""
         if self.matview_dir.exists():
-            logger.warn("Clearing dir {}".format(self.matview_dir))
+            logger.warning("Clearing dir {}".format(self.matview_dir))
             recursive_delete(self.matview_dir)
         self.matview_dir.mkdir()
 

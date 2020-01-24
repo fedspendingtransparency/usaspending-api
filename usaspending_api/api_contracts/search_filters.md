@@ -273,7 +273,7 @@ Request parameter description:
 {
     "recipient_type_names": [
         "Small Business",
-        "Alaskan Native Owned Business"
+        "Alaskan Native Corporation Owned Firm"
         ]
 }
 ```
