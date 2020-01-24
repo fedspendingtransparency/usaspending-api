@@ -1,6 +1,6 @@
 """
-For more information on this file: https://docs.djangoproject.com/en/1.11/topics/settings/
-For the full list of settings and their values: https://docs.djangoproject.com/en/1.11/ref/settings/
+For more information on this file: https://docs.djangoproject.com/en/2.2/topics/settings/
+For the full list of settings and their values: https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import dj_database_url
@@ -29,7 +29,7 @@ API_MIN_DATE = "2000-10-01"  # Beginning of FY2001
 API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = get_random_string()
@@ -175,7 +175,7 @@ WSGI_APPLICATION = "usaspending_api.wsgi.application"
 CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 
 # Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 # import an environment variable, DATABASE_URL
 # see https://github.com/kennethreitz/dj-database-url for more info
@@ -222,7 +222,7 @@ if os.environ.get("DATA_BROKER_DATABASE_URL"):
     DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
 
 # Password validation
-# https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
+# https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -246,16 +246,19 @@ REST_FRAMEWORK = {
 }
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.11/topics/i18n/
+# https://docs.djangoproject.com/en/2.2/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
 USE_I18N = True
 USE_L10N = True
+
+
+# https://docs.djangoproject.com/en/2.2/ref/settings/#time-zone
 USE_TZ = True
+TIME_ZONE = None
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.11/howto/static-files/
+# https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = "/static/"
 STATIC_ROOT = str(APP_DIR / "static/") + "/"
