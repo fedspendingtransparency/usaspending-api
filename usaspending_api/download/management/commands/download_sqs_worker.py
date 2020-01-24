@@ -45,7 +45,7 @@ class Command(BaseCommand):
             ) as span:
                 # Set True to add trace to App Analytics:
                 # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
-                span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1)
+                span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1.0)
 
                 # Setup dispatcher that coordinates job activity on SQS
                 dispatcher = SQSWorkDispatcher(
@@ -88,7 +88,7 @@ def download_service_app(download_job_id):
     with tracer.trace(name=f"job.{JOB_TYPE}.download", service="bulk-download", span_type=SpanTypes.WORKER) as span:
         # Set True to add trace to App Analytics:
         # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
-        span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1)
+        span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1.0)
 
         download_job = _retrieve_download_job_from_db(download_job_id)
         download_job_details = download_job_to_log_dict(download_job)
