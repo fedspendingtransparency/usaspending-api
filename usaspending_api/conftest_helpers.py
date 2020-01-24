@@ -33,7 +33,6 @@ class TestElasticSearchIndex:
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
         self.template = retrieve_index_template("{}_template".format(self.index_type[:-1]))
         self.mappings = json.loads(self.template)["mappings"]
-        self.doc_type = "_doc"
 
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
@@ -68,10 +67,9 @@ class TestElasticSearchIndex:
 
         for transaction in transactions:
             self.client.index(
-                self.index_name,
-                self.doc_type,
-                json.dumps(transaction, cls=DjangoJSONEncoder),
-                transaction["{}_id".format(self.index_type[:-1])],
+                index=self.index_name,
+                body=json.dumps(transaction, cls=DjangoJSONEncoder),
+                id=transaction["{}_id".format(self.index_type[:-1])],
             )
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)

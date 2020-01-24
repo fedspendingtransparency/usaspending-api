@@ -20,8 +20,8 @@ djangorestframework==3.9.4
 docutils==0.15.2
 drf-extensions==0.3.1
 drf-tracking==1.4.0
-elasticsearch==6.3.0
-elasticsearch-dsl==6.4.0
+elasticsearch==7.1.0
+elasticsearch-dsl==7.1.0
 entrypoints==0.3
 et-xmlfile==1.0.1
 filechunkio==1.8
