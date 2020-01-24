@@ -93,7 +93,7 @@ class IDVAwardsTestCase(TestCase):
 
     def test_with_bogus_id(self):
 
-        self._test_post({"award_id": None}, (0, 10, 1))
+        self._test_post({"award_id": "BOGUS_ID"}, (0, 10, 1))
 
     def test_limit_values(self):
 
