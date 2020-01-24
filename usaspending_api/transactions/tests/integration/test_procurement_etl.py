@@ -131,7 +131,7 @@ VALUES
         assert cursor.fetchall()[0][0] == 0
 
 
-def test_data_transfer_from_broker(load_broker_data, monkeypatch):
+def test_data_transfer_from_broker(load_broker_data):
     call_command("transfer_procurement_records", "--reload-all")
     table = SourceProcurementTransaction().table_name
 
