@@ -41,7 +41,7 @@ def data_fixture(db, broker_db_setup):
         for broker_table_name, value in broker_objects_to_insert.items():
             broker_object = value["broker_object"]
             conflict_column = value["conflict_column"]
-            for load_object in [dict(**{broker_table_name: _}) for _ in broker_object]:
+            for load_object in [dict(**{broker_table_name: obj}) for obj in broker_object]:
                 columns, values, pairs = format_insert_or_update_column_sql(cursor, load_object, broker_table_name)
                 insert_sql = (
                     f"INSERT INTO {broker_table_name} {columns} VALUES {values}"
