@@ -1,26 +1,17 @@
 from datetime import datetime, timezone
+
 from django.core.management.base import BaseCommand
-from multiprocessing import Process, Queue
 from pathlib import Path
-from time import perf_counter, sleep
+from time import perf_counter
 
 from usaspending_api import settings
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_transaction_etl_view_exists
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type, fy as parse_fiscal_year
 from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
-from usaspending_api.etl.es_etl_helpers import (
-    DataJob,
-    deleted_transactions,
-    download_db_records,
-    es_data_loader,
-    printf,
-    process_guarddog,
-    set_final_index_config,
-    swap_aliases,
-    take_snapshot,
-)
+from usaspending_api.etl.es_etl_helpers import printf
+from usaspending_api.etl.rapidloader import Rapidloader
 
 
 class Command(BaseCommand):
@@ -49,6 +40,13 @@ class Command(BaseCommand):
     help = """Hopefully the code comments are helpful enough to figure this out...."""
 
     def add_arguments(self, parser):
+        parser.add_argument(
+            "--load_type",
+            type=str,
+            help="Select which type of load to perform, current options are transactions or awards.",
+            choices=["transactions", "awards"],
+            default="transactions",
+        )
         parser.add_argument(
             "fiscal_years",
             nargs="+",
@@ -103,111 +101,39 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        self.elasticsearch_client = instantiate_elasticsearch_client()
-        self.config = process_cli_parameters(options, self.elasticsearch_client)
+        elasticsearch_client = instantiate_elasticsearch_client()
+        config = process_cli_parameters(options, elasticsearch_client)
 
         start = perf_counter()
         printf({"msg": "Starting script\n{}".format("=" * 56)})
         start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
-        printf({"msg": start_msg.format(**self.config)})
-        ensure_transaction_etl_view_exists()
+        printf({"msg": start_msg.format(**config)})
 
-        self.run_load_steps()
-        self.complete_process()
+        if config["load_type"] == "transactions":
+            ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
+        elif config["load_type"] == "awards":
+            ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
+
+        loader = Rapidloader(config, elasticsearch_client)
+        loader.run_load_steps()
+        loader.complete_process()
 
         printf({"msg": "---------------------------------------------------------------"})
         printf({"msg": "Script completed in {} seconds".format(perf_counter() - start)})
         printf({"msg": "---------------------------------------------------------------"})
 
-    def run_load_steps(self) -> None:
 
-        download_queue = Queue()  # Queue for jobs whch need a csv downloaded
-        es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
-
-        job_number = 0
-        for fiscal_year in self.config["fiscal_years"]:
-            job_number += 1
-            index = self.config["index_name"]
-            filename = str(self.config["directory"] / "{fy}_transactions.csv".format(fy=fiscal_year))
-
-            new_job = DataJob(job_number, index, fiscal_year, filename)
-
-            if Path(filename).exists():
-                Path(filename).unlink()
-            download_queue.put(new_job)
-
-        printf({"msg": "There are {} jobs to process".format(job_number)})
-
-        process_list = []
-        process_list.append(
-            Process(
-                name="Download Proccess",
-                target=download_db_records,
-                args=(download_queue, es_ingest_queue, self.config),
-            )
-        )
-        process_list.append(
-            Process(
-                name="ES Index Process",
-                target=es_data_loader,
-                args=(self.elasticsearch_client, download_queue, es_ingest_queue, self.config),
-            )
-        )
-
-        process_list[0].start()  # Start Download process
-
-        if self.config["process_deletes"]:
-            process_list.append(
-                Process(
-                    name="S3 Deleted Records Scrapper Process",
-                    target=deleted_transactions,
-                    args=(self.elasticsearch_client, self.config),
-                )
-            )
-            process_list[-1].start()  # start S3 csv fetch proces
-            while process_list[-1].is_alive():
-                printf({"msg": "Waiting to start ES ingest until S3 deletes are complete"})
-                sleep(7)
-
-        process_list[1].start()  # start ES ingest process
-
-        while True:
-            sleep(10)
-            if process_guarddog(process_list):
-                raise SystemExit("Fatal error: review logs to determine why process died.")
-            elif all([not x.is_alive() for x in process_list]):
-                printf({"msg": "All ETL processes completed execution with no error codes"})
-                break
-
-    def complete_process(self) -> None:
-        if self.config["create_new_index"]:
-            set_final_index_config(self.elasticsearch_client, self.config["index_name"])
-            if self.config["skip_delete_index"]:
-                printf({"msg": "Skipping deletion of old indices"})
-            else:
-                printf({"msg": "Closing old indices and adding aliases"})
-                swap_aliases(self.elasticsearch_client, self.config["index_name"])
-
-        if self.config["snapshot"]:
-            printf({"msg": "Taking snapshot"})
-            take_snapshot(self.elasticsearch_client, self.config["index_name"], settings.ES_REPOSITORY)
-
-        if self.config["is_incremental_load"]:
-            msg = "Storing datetime {} for next incremental load"
-            printf({"msg": msg.format(self.config["processing_start_datetime"])})
-            update_last_load_date("es_transactions", self.config["processing_start_datetime"])
-
-
-def process_cli_parameters(options: dict, es_client) -> None:
+def process_cli_parameters(options: dict, es_client) -> dict:
     default_datetime = datetime.strptime("{}+0000".format(settings.API_SEARCH_MIN_DATE), "%Y-%m-%d%z")
     simple_args = (
+        "skip_delete_index",
         "process_deletes",
         "create_new_index",
         "snapshot",
         "index_name",
         "directory",
         "skip_counts",
-        "skip_delete_index",
+        "load_type",
     )
     config = set_config(simple_args, options)
 
@@ -219,7 +145,10 @@ def process_cli_parameters(options: dict, es_client) -> None:
     elif config["create_new_index"]:
         config["index_name"] = config["index_name"].lower()
         config["starting_date"] = default_datetime
-        check_new_index_name_is_ok(config["index_name"])
+        check_new_index_name_is_ok(
+            config["index_name"],
+            settings.ES_AWARDS_NAME_SUFFIX if config["load_type"] == "awards" else settings.ES_TRANSACTIONS_NAME_SUFFIX,
+        )
     elif options["start_datetime"]:
         config["starting_date"] = options["start_datetime"]
     else:
@@ -228,21 +157,26 @@ def process_cli_parameters(options: dict, es_client) -> None:
         #      - The earliest records in S3.
         #      - When all transaction records in the USAspending SQL database were updated.
         #   And keep it timezone-award for S3
-        config["starting_date"] = get_last_load_date("es_transactions", default=default_datetime)
+        config["starting_date"] = get_last_load_date("es_{}".format(options["load_type"]), default=default_datetime)
 
     config["max_query_size"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+    if options["load_type"] == "awards":
+        config["max_query_size"] = settings.ES_AWARDS_MAX_RESULT_WINDOW
 
     config["is_incremental_load"] = not bool(config["create_new_index"]) and (
         config["starting_date"] != default_datetime
     )
 
     if config["is_incremental_load"]:
+        write_alias = settings.ES_TRANSACTIONS_WRITE_ALIAS
+        if config["load_type"] == "awards":
+            write_alias = settings.ES_AWARDS_WRITE_ALIAS
         if config["index_name"]:
             msg = "Ignoring provided index name, using alias '{}' for incremental load"
-            printf({"msg": msg.format(settings.ES_TRANSACTIONS_WRITE_ALIAS)})
-        config["index_name"] = settings.ES_TRANSACTIONS_WRITE_ALIAS
-        if not es_client.cat.aliases(name=settings.ES_TRANSACTIONS_WRITE_ALIAS):
-            printf({"msg": "Fatal error: write alias '{}' is missing".format(settings.ES_TRANSACTIONS_WRITE_ALIAS)})
+            printf({"msg": msg.format(write_alias)})
+        config["index_name"] = write_alias
+        if not es_client.cat.aliases(name=write_alias):
+            printf({"msg": "Fatal error: write alias '{}' is missing".format(write_alias)})
             raise SystemExit(1)
     else:
         if es_client.indices.exists(config["index_name"]):
@@ -264,10 +198,13 @@ def process_cli_parameters(options: dict, es_client) -> None:
 
 def set_config(copy_args: list, arg_parse_options: dict) -> dict:
     """Set values based on env vars and when the script started"""
+    root_index = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX
+    if arg_parse_options["load_type"] == "awards":
+        root_index = settings.ES_AWARDS_QUERY_ALIAS_PREFIX
     config = {
         "aws_region": settings.USASPENDING_AWS_REGION,
         "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
-        "root_index": settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+        "root_index": root_index,
         "processing_start_datetime": datetime.now(timezone.utc),
         "verbose": arg_parse_options["verbosity"] > 1,  # convert the management command's levels of verbosity to a bool
     }
@@ -282,8 +219,6 @@ def fiscal_years_for_processing(options: list) -> list:
     return [int(x) for x in options["fiscal_years"]]
 
 
-def check_new_index_name_is_ok(provided_name: str) -> None:
-    if not provided_name.endswith(settings.ES_TRANSACTIONS_NAME_SUFFIX):
-        raise SystemExit(
-            "new index name doesn't end with the expected pattern: '{}'".format(settings.ES_TRANSACTIONS_NAME_SUFFIX)
-        )
+def check_new_index_name_is_ok(provided_name: str, suffix: str) -> None:
+    if not provided_name.endswith(suffix):
+        raise SystemExit("new index name doesn't end with the expected pattern: '{}'".format(suffix))

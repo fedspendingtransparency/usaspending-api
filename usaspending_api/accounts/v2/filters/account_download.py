@@ -1,6 +1,6 @@
 import datetime
 
-from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, Value, When
+from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, When, Func, F, Value
 from django.db.models.functions import Concat, Coalesce
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
@@ -8,8 +8,12 @@ from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter
+from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import CGAC, ToptierAgency
+from usaspending_api.settings import HOST
+
+AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
 
 """
 Account Download Logic
@@ -190,6 +194,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         ),
         "agency_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
+        "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR: Max("submission__certified_date"),
     }
 
     # Derive recipient_parent_name for award_financial downloads
@@ -265,4 +270,108 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction__contract_data__contract_award_type_desc",
         "award__latest_transaction__assistance_data__assistance_type_desc",
     )
+    derived_fields["awarding_agency_code"] = Coalesce(
+        "award__latest_transaction__contract_data__awarding_agency_code",
+        "award__latest_transaction__assistance_data__awarding_agency_code",
+    )
+    derived_fields["awarding_agency_name"] = Coalesce(
+        "award__latest_transaction__contract_data__awarding_agency_name",
+        "award__latest_transaction__assistance_data__awarding_agency_name",
+    )
+    derived_fields["awarding_subagency_code"] = Coalesce(
+        "award__latest_transaction__contract_data__awarding_sub_tier_agency_c",
+        "award__latest_transaction__assistance_data__awarding_sub_tier_agency_c",
+    )
+    derived_fields["awarding_subagency_name"] = Coalesce(
+        "award__latest_transaction__contract_data__awarding_sub_tier_agency_n",
+        "award__latest_transaction__assistance_data__awarding_sub_tier_agency_n",
+    )
+    derived_fields["awarding_office_code"] = Coalesce(
+        "award__latest_transaction__contract_data__awarding_office_code",
+        "award__latest_transaction__assistance_data__awarding_office_code",
+    )
+    derived_fields["awarding_office_name"] = Coalesce(
+        "award__latest_transaction__contract_data__awarding_office_name",
+        "award__latest_transaction__assistance_data__awarding_office_name",
+    )
+    derived_fields["funding_agency_code"] = Coalesce(
+        "award__latest_transaction__contract_data__funding_agency_code",
+        "award__latest_transaction__assistance_data__funding_agency_code",
+    )
+    derived_fields["funding_agency_name"] = Coalesce(
+        "award__latest_transaction__contract_data__funding_agency_name",
+        "award__latest_transaction__assistance_data__funding_agency_name",
+    )
+    derived_fields["funding_sub_agency_code"] = Coalesce(
+        "award__latest_transaction__contract_data__funding_sub_tier_agency_co",
+        "award__latest_transaction__assistance_data__funding_sub_tier_agency_co",
+    )
+    derived_fields["funding_sub_agency_name"] = Coalesce(
+        "award__latest_transaction__contract_data__funding_sub_tier_agency_na",
+        "award__latest_transaction__assistance_data__funding_sub_tier_agency_na",
+    )
+    derived_fields["funding_office_code"] = Coalesce(
+        "award__latest_transaction__contract_data__funding_office_code",
+        "award__latest_transaction__assistance_data__funding_office_code",
+    )
+    derived_fields["funding_office_name"] = Coalesce(
+        "award__latest_transaction__contract_data__funding_office_name",
+        "award__latest_transaction__assistance_data__funding_office_name",
+    )
+    derived_fields["recipient_duns"] = Coalesce(
+        "award__latest_transaction__contract_data__awardee_or_recipient_uniqu",
+        "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu",
+    )
+    derived_fields["recipient_name"] = Coalesce(
+        "award__latest_transaction__contract_data__awardee_or_recipient_legal",
+        "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
+    )
+    derived_fields["recipient_parent_duns"] = Coalesce(
+        "award__latest_transaction__contract_data__ultimate_parent_unique_ide",
+        "award__latest_transaction__assistance_data__ultimate_parent_unique_ide",
+    )
+    derived_fields["recipient_parent_name"] = Coalesce(
+        "award__latest_transaction__contract_data__ultimate_parent_legal_enti",
+        "award__latest_transaction__assistance_data__ultimate_parent_legal_enti",
+    )
+    derived_fields["recipient_country"] = Coalesce(
+        "award__latest_transaction__contract_data__legal_entity_country_code",
+        "award__latest_transaction__assistance_data__legal_entity_country_code",
+    )
+    derived_fields["recipient_state"] = Coalesce(
+        "award__latest_transaction__contract_data__legal_entity_state_code",
+        "award__latest_transaction__assistance_data__legal_entity_state_code",
+    )
+    derived_fields["recipient_county"] = Coalesce(
+        "award__latest_transaction__contract_data__legal_entity_county_name",
+        "award__latest_transaction__assistance_data__legal_entity_county_name",
+    )
+    derived_fields["recipient_city"] = Coalesce(
+        "award__latest_transaction__contract_data__legal_entity_city_name",
+        "award__latest_transaction__assistance_data__legal_entity_city_name",
+    )
+    derived_fields["recipient_congressional_district"] = Coalesce(
+        "award__latest_transaction__contract_data__legal_entity_congressional",
+        "award__latest_transaction__assistance_data__legal_entity_congressional",
+    )
+    derived_fields["recipient_zip_code"] = Coalesce(
+        "award__latest_transaction__contract_data__legal_entity_zip4",
+        Concat(
+            "award__latest_transaction__assistance_data__legal_entity_zip5",
+            "award__latest_transaction__assistance_data__legal_entity_zip_last4",
+        ),
+    )
+    derived_fields["usaspending_permalink"] = Case(
+        When(
+            **{
+                "award__generated_unique_award_id__isnull": False,
+                "then": Concat(
+                    Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
+                ),
+            }
+        ),
+        default=Value(""),
+        output_field=CharField(),
+    )
+
     return derived_fields

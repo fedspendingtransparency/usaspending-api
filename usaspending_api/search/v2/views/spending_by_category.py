@@ -12,14 +12,14 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import alias_response
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_time_period_message
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile, StateData
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
-from usaspending_api.references.models import Agency, Cfda, LegalEntity, NAICS, PSC, RefCountryCode
+from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, RefCountryCode
 
 
 logger = logging.getLogger(__name__)
@@ -179,6 +179,7 @@ class BusinessLogic:
             "page_metadata": page_metadata,
             # alias_response is a workaround for tests instead of applying any aliases in the querysets
             "results": results[: self.limit],
+            "messages": [get_time_period_message()],
         }
         return response
 
@@ -270,7 +271,7 @@ class BusinessLogic:
         elif self.category == "recipient_parent_duns":
             # TODO: check if we can aggregate on recipient name and parent duns,
             #    since parent recipient name isn't available
-            # Not implemented until Parent Recipient Name's in LegalEntity and matviews
+            # Not implemented until "Parent Recipient Name" is in matviews
             self.raise_not_implemented()
             # filters = {'parent_recipient_unique_id__isnull': False}
             # values = ['recipient_name', 'parent_recipient_unique_id']
@@ -402,15 +403,6 @@ def fetch_agency_tier_id_by_agency(agency_name, is_subtier=False):
     result = Agency.objects.filter(**filters).values(*columns).first()
     if not result:
         logger.warning("{} not found for agency_name: {}".format(",".join(columns), agency_name))
-        return None
-    return result[columns[0]]
-
-
-def fetch_recipient_id_by_duns(duns):
-    columns = ["legal_entity_id"]
-    result = LegalEntity.objects.filter(recipient_unique_id=duns).values(*columns).first()
-    if not result:
-        logger.warning("{} not found for duns: {}".format(",".join(columns), duns))
         return None
     return result[columns[0]]
 

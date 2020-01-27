@@ -5,24 +5,33 @@ from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection, DEFAULT_DB_ALIAS
 from elasticsearch import Elasticsearch
+from pathlib import Path
 from string import Template
+
+from usaspending_api.common.sqs.sqs_handler import (
+    UNITTEST_FAKE_QUEUE_NAME,
+    _FakeUnitTestFileBackedSQSQueue,
+    _FakeStatelessLoggingSQSDeadLetterQueue,
+    UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME,
+)
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.es_etl_helpers import create_aliases
-from usaspending_api.etl.management.commands.es_configure import retrieve_transaction_index_template
+from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
 
 class TestElasticSearchIndex:
-    def __init__(self):
+    def __init__(self, index_type):
         """
         We will be prefixing all aliases with the index name to ensure
         uniquity, otherwise, we may end up with aliases representing more
         than one index which may throw off our search results.
         """
+        self.index_type = index_type
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_transaction_index_template()
+        self.template = retrieve_index_template("{}_template".format(self.index_type[:-1]))
         self.mappings = json.loads(self.template)["mappings"]
         self.doc_type = str(list(self.mappings.keys())[0])
 
@@ -36,9 +45,8 @@ class TestElasticSearchIndex:
         for the index, and add contents.
         """
         self.delete_index()
-        self._refresh_materialized_views()
         self.client.indices.create(self.index_name, self.template)
-        create_aliases(self.client, self.index_name, True)
+        create_aliases(self.client, self.index_name, self.index_type, True)
         self._add_contents()
 
     def _add_contents(self):
@@ -46,35 +54,27 @@ class TestElasticSearchIndex:
         Get all of the transactions presented in the view and stuff them into the Elasticsearch index.
         The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
         """
-        transaction_delta_view_sql = open(
-            str(settings.APP_DIR / "database_scripts" / "etl" / "transaction_delta_view.sql"), "r"
-        ).read()
+        view_sql_file = "award_delta_view.sql" if self.index_type == "awards" else "transaction_delta_view.sql"
+        view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
         with connection.cursor() as cursor:
-            cursor.execute(transaction_delta_view_sql)
-            cursor.execute(f"SELECT * FROM {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
+            cursor.execute(view_sql)
+            if self.index_type == "transactions":
+                view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+            else:
+                view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+            cursor.execute(f"SELECT * FROM {view_name};")
             transactions = ordered_dictionary_fetcher(cursor)
-            cursor.execute(f"DROP VIEW {settings.ES_TRANSACTIONS_ETL_VIEW_NAME};")
+            cursor.execute(f"DROP VIEW {view_name};")
 
         for transaction in transactions:
             self.client.index(
                 self.index_name,
                 self.doc_type,
                 json.dumps(transaction, cls=DjangoJSONEncoder),
-                transaction["transaction_id"],
+                transaction["{}_id".format(self.index_type[:-1])],
             )
-
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)
-
-    @staticmethod
-    def _refresh_materialized_views():
-        """
-        This materialized view is used by the es etl view, so
-        we will need to refresh it in order for the view to see
-        changes to the underlying tables.
-        """
-        with connection.cursor() as cursor:
-            cursor.execute("REFRESH MATERIALIZED VIEW universal_transaction_matview;")
 
     @classmethod
     def _generate_index_name(cls):
@@ -122,3 +122,28 @@ def ensure_broker_server_dblink_exists():
         # Ensure foreign server setup to point to the broker DB for dblink to work
         broker_server_script_template = Template(broker_server_script)
         cursor.execute(broker_server_script_template.substitute(**db_conn_tokens_dict))
+
+
+def get_unittest_fake_sqs_queue(*args, **kwargs):
+    """Mocks sqs_handler.get_sqs_queue to instead return a fake queue used for unit testing"""
+    if "queue_name" in kwargs and kwargs["queue_name"] == UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME:
+        return _FakeStatelessLoggingSQSDeadLetterQueue()
+    else:
+        return _FakeUnitTestFileBackedSQSQueue.instance()
+
+
+def remove_unittest_queue_data_files(queue_to_tear_down):
+    """Delete any local files created to persist or access file-backed queue data from
+    ``_FakeUnittestFileBackedSQSQueue``
+    """
+    q = queue_to_tear_down
+
+    # Check that it's the unit test queue before removings
+    assert q.url.split("/")[-1] == UNITTEST_FAKE_QUEUE_NAME
+    queue_data_file = q._QUEUE_DATA_FILE
+    lock_file_path = Path(queue_data_file + ".lock")
+    if lock_file_path.exists():
+        lock_file_path.unlink()
+    queue_data_file_path = Path(queue_data_file)
+    if queue_data_file_path.exists():
+        queue_data_file_path.unlink()

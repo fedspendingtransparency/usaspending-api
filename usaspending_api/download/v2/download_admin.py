@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db.models import Q
 
-from usaspending_api.common.sqs_helpers import get_sqs_queue_resource
+from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
@@ -38,7 +38,7 @@ class DownloadAdministrator:
         self.download_job.save()
 
     def push_job_to_queue(self):  # Candidate for separate object or file
-        queue = get_sqs_queue_resource(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+        queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
         queue.send_message(MessageBody=str(self.download_job.download_job_id))
 
 

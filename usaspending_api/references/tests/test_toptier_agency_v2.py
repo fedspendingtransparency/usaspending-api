@@ -5,7 +5,7 @@ from rest_framework import status
 
 
 @pytest.fixture
-def create_agency_data(db):
+def create_agency_data():
     # Create agency - submission relationship
     # Create AGENCY AND TopTier AGENCY
     ttagency1 = mommy.make(

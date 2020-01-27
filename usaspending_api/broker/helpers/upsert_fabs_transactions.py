@@ -15,7 +15,7 @@ from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.etl.award_helpers import update_awards, update_assistance_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date, create_location
-from usaspending_api.references.models import LegalEntity, Agency
+from usaspending_api.references.models import Agency
 
 
 logger = logging.getLogger("console")
@@ -72,27 +72,6 @@ def insert_new_fabs(to_insert):
         "zip5": "place_of_performance_zip5",
     }
 
-    legal_entity_location_field_map = {
-        "location_country_code": "legal_entity_country_code",
-        "country_name": "legal_entity_country_name",
-        "state_code": "legal_entity_state_code",
-        "state_name": "legal_entity_state_name",
-        "city_name": "legal_entity_city_name",
-        "city_code": "legal_entity_city_code",
-        "county_name": "legal_entity_county_name",
-        "county_code": "legal_entity_county_code",
-        "address_line1": "legal_entity_address_line1",
-        "address_line2": "legal_entity_address_line2",
-        "address_line3": "legal_entity_address_line3",
-        "foreign_location_description": "legal_entity_foreign_descr",
-        "congressional_code": "legal_entity_congressional",
-        "zip_last4": "legal_entity_zip_last4",
-        "zip5": "legal_entity_zip5",
-        "foreign_postal_code": "legal_entity_foreign_posta",
-        "foreign_province": "legal_entity_foreign_provi",
-        "foreign_city_name": "legal_entity_foreign_city",
-    }
-
     fabs_normalized_field_map = {
         "type": "assistance_type",
         "description": "award_description",
@@ -115,20 +94,6 @@ def insert_new_fabs(to_insert):
     update_award_ids = []
     for row in to_insert:
         upper_case_dict_values(row)
-
-        # Create new LegalEntityLocation and LegalEntity from the row data
-        legal_entity_location = create_location(legal_entity_location_field_map, row, {"recipient_flag": True})
-        recipient_name = row["awardee_or_recipient_legal"]
-        legal_entity = LegalEntity.objects.create(
-            recipient_unique_id=row["awardee_or_recipient_uniqu"],
-            recipient_name=recipient_name if recipient_name is not None else "",
-            parent_recipient_unique_id=row["ultimate_parent_unique_ide"],
-        )
-        legal_entity_value_map = {
-            "location": legal_entity_location,
-            "business_types_description": row["business_types_desc"],
-        }
-        legal_entity = load_data_into_model(legal_entity, row, value_map=legal_entity_value_map, save=True)
 
         # Create the place of performance location
         pop_location = create_location(place_of_performance_field_map, row, {"place_of_performance_flag": True})
@@ -158,7 +123,6 @@ def insert_new_fabs(to_insert):
             "award": award,
             "awarding_agency": awarding_agency,
             "funding_agency": funding_agency,
-            "recipient": legal_entity,
             "place_of_performance": pop_location,
             "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
             "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
@@ -208,10 +172,6 @@ def insert_new_fabs(to_insert):
             # Create TransactionFABS
             transaction_fabs = TransactionFABS(transaction=transaction_normalized, **financial_assistance_data)
             transaction_fabs.save()
-
-        # Update legal entity to map back to transaction
-        legal_entity.transaction_unique_id = afa_generated_unique
-        legal_entity.save()
 
     return update_award_ids
 

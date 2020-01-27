@@ -1,6 +1,7 @@
 -- Needs to be present in the Postgres DB if data needs to be retrieved for Elasticsearch
+DROP VIEW IF EXISTS transaction_delta_view;
 
-CREATE OR REPLACE VIEW transaction_delta_view AS
+CREATE VIEW transaction_delta_view AS
 SELECT
   UTM.transaction_id,
   FPDS.detached_award_proc_unique,
@@ -33,10 +34,14 @@ SELECT
   UTM.naics_description,
   AWD.type_description,
   UTM.award_category,
+
   UTM.recipient_unique_id,
-  UTM.parent_recipient_unique_id,
-  CONCAT(UTM.recipient_hash, '-', case when UTM.parent_recipient_unique_id is null then 'R' else 'C' end) as recipient_hash,
   UTM.recipient_name,
+  UTM.recipient_hash,
+
+  UTM.parent_recipient_unique_id,
+  UPPER(PRL.legal_business_name) AS parent_recipient_name,
+  PRL.recipient_hash as parent_recipient_hash,
 
   UTM.action_date,
   DATE(UTM.action_date + interval '3 months') AS fiscal_action_date,
@@ -116,6 +121,7 @@ LEFT JOIN subtier_agency SAA ON (AA.subtier_agency_id = SAA.subtier_agency_id)
 LEFT JOIN toptier_agency TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
 LEFT JOIN subtier_agency SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT JOIN references_cfda CFDA ON (FABS.cfda_number = CFDA.program_number)
+LEFT JOIN recipient_lookup PRL ON (PRL.duns = UTM.parent_recipient_unique_id AND UTM.parent_recipient_unique_id IS NOT NULL)
 LEFT JOIN (
   SELECT
     faba.award_id,
@@ -126,7 +132,7 @@ LEFT JOIN (
         'main', taa.main_account_code,
         'sub', taa.sub_account_code,
         'bpoa', taa.beginning_period_of_availability,
-        'epoa', taa.beginning_period_of_availability,
+        'epoa', taa.ending_period_of_availability,
         'a', taa.availability_type_code
        )
      ) treasury_accounts

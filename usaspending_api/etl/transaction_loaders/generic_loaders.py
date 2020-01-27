@@ -4,24 +4,6 @@ from usaspending_api.etl.transaction_loaders.data_load_helpers import (
 )
 
 
-def bulk_insert_recipient_location(cursor, load_objects):
-    columns, values = format_bulk_insert_list_column_sql(cursor, load_objects, "recipient_location")
-    recipient_location_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(
-        columns, values
-    )
-
-    cursor.execute(recipient_location_sql)
-    return [tup[0] for tup in cursor.fetchall()]
-
-
-def bulk_insert_recipient(cursor, load_objects):
-    columns, values = format_bulk_insert_list_column_sql(cursor, load_objects, "legal_entity")
-    recipient_sql = "INSERT INTO legal_entity {} VALUES {} RETURNING legal_entity_id;".format(columns, values)
-
-    cursor.execute(recipient_sql)
-    return [tup[0] for tup in cursor.fetchall()]
-
-
 def bulk_insert_place_of_performance(cursor, load_objects):
     columns, values = format_bulk_insert_list_column_sql(cursor, load_objects, "place_of_performance_location")
     recipient_sql = "INSERT INTO references_location {} VALUES {} RETURNING location_id;".format(columns, values)
