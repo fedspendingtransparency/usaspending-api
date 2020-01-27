@@ -218,5 +218,7 @@ def validate_text(rule):
         #    ASCII escape characters
         val = rule["value"].translate(search_remap).strip()
         if val != rule["value"]:
-            logger.warn("Field {} value was changed from {} to {}".format(rule["key"], repr(rule["value"]), repr(val)))
+            logger.warning(
+                "Field {} value was changed from {} to {}".format(rule["key"], repr(rule["value"]), repr(val))
+            )
     return val

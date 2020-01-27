@@ -39,7 +39,7 @@ class IDVAccountsTestCase(TestCase):
 
     def test_with_bogus_id(self):
 
-        self._test_post({"award_id": None})
+        self._test_post({"award_id": "BOGUS_ID"})
 
     def test_sort_columns(self):
 
