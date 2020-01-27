@@ -1,5 +1,7 @@
 import copy
 
+
+from datetime import datetime
 from sys import maxsize
 from django.conf import settings
 from django.db.models import F
@@ -127,8 +129,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
 
         if self.elasticsearch and not self.is_subaward:
-            self.last_id = json_request.get("last_id")
-            self.last_value = json_request.get("last_value")
+            self.last_record_unique_id = json_request.get("last_record_unique_id")
+            self.last_record_sort_value = json_request.get("last_record_sort_value")
+            self.last_record_tie_break_value = json_request.get("last_record_tie_break_value")
             logger.info("Using experimental Elasticsearch functionality for 'spending_by_award'")
             return Response(self.construct_es_response(self.query_elasticsearch()))
         return Response(self.create_response(self.construct_queryset()))
@@ -152,8 +155,28 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "array_type": "integer",
                 "array_max": maxsize,
             },
-            {"name": "last_id", "key": "last_id", "type": "integer", "required": False, "allow_nulls": True},
-            {"name": "last_value", "key": "last_value", "type": "float", "required": False, "allow_nulls": True},
+            {
+                "name": "last_record_unique_id",
+                "key": "last_record_unique_id",
+                "type": "integer",
+                "required": False,
+                "allow_nulls": True,
+            },
+            {
+                "name": "last_record_sort_value",
+                "key": "last_record_sort_value",
+                "type": "text",
+                "text_type": "search",
+                "required": False,
+                "allow_nulls": True,
+            },
+            {
+                "name": "last_record_tie_break_value",
+                "key": "last_record_tie_break_value",
+                "type": "float",
+                "required": False,
+                "allow_nulls": True,
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -239,9 +262,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
             elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
                 sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
 
-        if self.last_id:
-            sort_by_fields.append("award_id")
-
         return sort_by_fields
 
     def get_database_fields(self):
@@ -274,42 +294,71 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "messages": [get_time_period_message()],
         }
 
+    def date_to_epoch_millis(self, date):
+        if "DATE" in self.pagination["sort_key"].upper():
+            if date is not None and type(date) != "str":
+                date = date.strftime("%Y-%m-%d")
+            d = datetime.strptime(date, "%Y-%m-%d")
+            print(d)
+            date = int(d.timestamp() * 1000)
+        return date
+
     def query_elasticsearch(self) -> list:
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         sort_field = self.get_elastic_sort_by_fields()
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
-        if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and not self.last_id and not self.last_value:
+
+        if (
+            self.last_record_unique_id is None and self.last_record_sort_value is None
+        ) or record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW:
+            sorts.append({"total_obligation": "desc"})
             sorts.append({"award_id": self.pagination["sort_order"]})
+
+        if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
+            self.last_record_unique_id is None and self.last_record_sort_value is None
+        ):
             logger.warning(
-                "Jumping to random page past 50,000 records will have a performance hit when using Elasticsearch"
+                "WARNING: Jumping to page {page} with page size {limit}. First record number: {record}. Retrieving records past {es_limit} records will have a performance hit when using Elasticsearch".format(
+                    page=self.pagination["page"],
+                    limit=self.pagination["limit"],
+                    record=self.pagination["lower_bound"],
+                    es_limit=settings.ES_AWARDS_MAX_RESULT_WINDOW,
+                )
             )
             self.pagination["upper_bound"] = record_num
             self.pagination["lower_bound"] = record_num - 1
             queryset = self.construct_queryset()
             if len(queryset) != 1:
                 return {}
-            results = {}
-            for result in queryset:
-                results["award_id"] = result.get("award_id")
-                results["total_obligation"] = float(result.get("total_obligation"))
+            results = []
+            results = [
+                self.date_to_epoch_millis(queryset[0].get(self.get_sort_by_fields()[0])),
+                float(queryset[0].get("total_obligation")),
+                queryset[0].get("award_id"),
+            ]
             search = (
                 AwardSearch()
                 .filter(filter_query)
                 .sort(*sorts)
-                .extra(search_after=[results["total_obligation"], results["award_id"]])[0 : self.pagination["limit"]]
+                .extra(search_after=[*results])[0 : self.pagination["limit"]]
             )
             response = search.handle_execute()
             return response
-
         search = (
             (
                 AwardSearch()
                 .filter(filter_query)
                 .sort(*sorts)
-                .extra(search_after=[self.last_value, self.last_id])[0 : self.pagination["limit"]]
+                .extra(
+                    search_after=[
+                        self.date_to_epoch_millis(self.last_record_sort_value),
+                        self.last_record_tie_break_value,
+                        self.last_record_unique_id,
+                    ]
+                )[0 : self.pagination["limit"]]
             )
-            if self.last_value and self.last_id
+            if self.last_record_sort_value is not None and self.last_record_unique_id is not None
             else (AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]])
         )
         response = search.handle_execute()
@@ -318,6 +367,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     def construct_es_response(self, response) -> dict:
         results = []
+        if response is None:
+            return {"There was an error connecting to the Elasticsearch cluster"}
         for res in response:
             hit = res.to_dict()
             row = {k: hit[v] for k, v in self.constants["internal_id_fields"].items()}
@@ -345,15 +396,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
             row = self.append_recipient_hash_level(row)
             row.pop("parent_recipient_unique_id")
             results.append(row)
-        last_id = None
-        last_value = None
         if len(response) > 0:
-            last_id = int(response[len(response) - 1].to_dict().get("award_id"))
-            last_value = (
-                response[len(response) - 1].to_dict().get("total_loan_value")
-                if set(self.filters["award_type_codes"]) <= set(loan_type_mapping)
-                else response[len(response) - 1].to_dict().get("total_obligation")
-            )
+            last_record_unique_id = int(response[len(response) - 1].to_dict().get("award_id"))
+            last_record_tie_break_value = float(response[len(response) - 1].to_dict().get("total_obligation"))
+            last_record_sort_value = response[len(response) - 1].to_dict().get(self.get_elastic_sort_by_fields()[0])
         total = 0
         if response != {}:
             total = response.hits.total
@@ -363,8 +409,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "page_metadata": {
                 "page": self.pagination["page"],
                 "hasNext": total - (self.pagination["page"] - 1) * self.pagination["limit"] > self.pagination["limit"],
-                "last_id": last_id,
-                "last_value": last_value,
+                "last_record_unique_id": last_record_unique_id,
+                "last_record_tie_break_value": last_record_sort_value,
+                "last_record_sort_value": last_record_tie_break_value,
             },
             "messages": [get_time_period_message()],
         }
