@@ -299,7 +299,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if date is not None and type(date) != "str":
                 date = date.strftime("%Y-%m-%d")
             d = datetime.strptime(date, "%Y-%m-%d")
-            print(d)
             date = int(d.timestamp() * 1000)
         return date
 
