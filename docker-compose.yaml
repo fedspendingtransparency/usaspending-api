@@ -53,21 +53,22 @@ services:
       DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
   usaspending-es:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.0
-    environment:
-    - cluster.name=usaspending
-    - network.host=0.0.0.0
-    - bootstrap.memory_lock=true
-    - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
-    - "discovery.zen.ping.unicast.hosts=usaspending-es"
-    - discovery.zen.minimum_master_nodes=1
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-    - type: bind
-      source: ${ES_CLUSTER_DIR}
-      target: /usr/share/elasticsearch/data
-    ports:
-    - 9200:9200
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.1.0
+      environment:
+        - node.name=usaspending-es
+        - discovery.seed_hosts=usaspending-es
+        - cluster.initial_master_nodes=usaspending-es
+        - cluster.name=usaspending
+        - network.host=0.0.0.0
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      volumes:
+      - type: bind
+        source: ${ES_CLUSTER_DIR}
+        target: /usr/share/elasticsearch/data
+      ports:
+        - 9200:9200
