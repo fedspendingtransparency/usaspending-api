@@ -52,6 +52,7 @@ before_script:
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
   # Run elasticsearch
+  - mkdir ../docker_es
   - docker-compose up usaspending-es
 #  - curl -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.1.0-amd64.deb && sudo dpkg -i --force-confnew elasticsearch-7.1.0-amd64.deb && sudo service elasticsearch restart
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
