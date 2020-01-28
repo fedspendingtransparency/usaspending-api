@@ -2,7 +2,6 @@ from rest_framework import serializers
 from usaspending_api.references.models import (
     Agency,
     Cfda,
-    Location,
     ObjectClass,
     RefProgramActivity,
     SubtierAgency,
@@ -41,26 +40,6 @@ class CfdaSerializer(LimitableSerializer):
         model = Cfda
         fields = "__all__"
         default_fields = ["id", "program_number", "program_title", "popular_name", "website_address", "objectives"]
-
-
-class LocationSerializer(LimitableSerializer):
-    class Meta:
-        model = Location
-        fields = "__all__"
-        default_fields = [
-            "address_line1",
-            "address_line2",
-            "address_line3",
-            "city_name",
-            "state_name",
-            "country_name",
-            "state_code",
-            "location_country_code",
-            "zip5",
-            "foreign_province",
-            "foreign_city_name",
-            "foreign_postal_code",
-        ]
 
 
 class ProgramActivitySerializer(LimitableSerializer):

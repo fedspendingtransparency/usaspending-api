@@ -2,6 +2,7 @@ import json
 import pytest
 from datetime import datetime
 
+from django.conf import settings
 from model_mommy import mommy
 from rest_framework import status
 
@@ -385,6 +386,10 @@ def test_spending_by_award_elasticsearch_http_header(client, monkeypatch, elasti
         "usaspending_api.search.v2.views.spending_by_award.logger.info",
         lambda message: logging_statements.append(message),
     )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
+        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
+    )
 
     elasticsearch_award_index.update_index()
 
@@ -520,6 +525,10 @@ def test_correct_response_for_each_filter(client, monkeypatch, spending_by_award
     monkeypatch.setattr(
         "usaspending_api.search.v2.views.spending_by_award.logger.info",
         lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
+        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
     )
 
     test_cases = [
@@ -1071,6 +1080,10 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
     monkeypatch.setattr(
         "usaspending_api.search.v2.views.spending_by_award.logger.info",
         lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
+        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
     )
 
     elasticsearch_award_index.update_index()

@@ -328,8 +328,14 @@ query_paths = {
                     "cost_accounting_standards_clause",
                     "award__latest_transaction__contract_data__cost_accounting_stand_desc",
                 ),
-                ("gfe_gfp_code", "award__latest_transaction__contract_data__government_furnished_prope"),
-                ("gfe_gfp", "award__latest_transaction__contract_data__government_furnished_prope"),
+                (
+                    "government_furnished_property_code",
+                    "award__latest_transaction__contract_data__government_furnished_prope",
+                ),
+                (
+                    "government_furnished_property",
+                    "award__latest_transaction__contract_data__government_furnished_prope",
+                ),
                 ("sea_transportation_code", "award__latest_transaction__contract_data__sea_transportation"),
                 ("sea_transportation", "award__latest_transaction__contract_data__sea_transportation_desc"),
                 ("consolidated_contract_code", "award__latest_transaction__contract_data__consolidated_contract"),
@@ -363,7 +369,7 @@ query_paths = {
                     "award__latest_transaction__contract_data__contingency_humanitar_desc",
                 ),
                 (
-                    "alaskan_native_owned_corporation_or_firm",
+                    "alaskan_native_corporation_owned_firm",
                     "award__latest_transaction__contract_data__alaskan_native_owned_corpo",
                 ),
                 (
@@ -375,10 +381,10 @@ query_paths = {
                     "award__latest_transaction__contract_data__indian_tribe_federally_rec",
                 ),
                 (
-                    "native_hawaiian_owned_business",
+                    "native_hawaiian_organization_owned_firm",
                     "award__latest_transaction__contract_data__native_hawaiian_owned_busi",
                 ),
-                ("tribally_owned_business", "award__latest_transaction__contract_data__tribally_owned_business"),
+                ("tribally_owned_firm", "award__latest_transaction__contract_data__tribally_owned_business"),
                 ("veteran_owned_business", "award__latest_transaction__contract_data__veteran_owned_business"),
                 (
                     "service_disabled_veteran_owned_business",
@@ -495,9 +501,9 @@ query_paths = {
                     "award__latest_transaction__contract_data__hispanic_servicing_institu",
                 ),
                 ("receives_contracts", "award__latest_transaction__contract_data__contracts"),
-                ("receives_grants", "award__latest_transaction__contract_data__grants"),
+                ("receives_financial_assistance", "award__latest_transaction__contract_data__grants"),
                 (
-                    "receives_contracts_and_grants",
+                    "receives_contracts_and_financial_assistance",
                     "award__latest_transaction__contract_data__receives_contracts_and_gra",
                 ),
                 ("airport_authority", "award__latest_transaction__contract_data__airport_authority"),
@@ -515,7 +521,7 @@ query_paths = {
                     "limited_liability_corporation",
                     "award__latest_transaction__contract_data__limited_liability_corporat",
                 ),
-                ("foreign_owned_and_located", "award__latest_transaction__contract_data__foreign_owned_and_located"),
+                ("foreign_owned", "award__latest_transaction__contract_data__foreign_owned_and_located"),
                 ("for_profit_organization", "award__latest_transaction__contract_data__for_profit_organization"),
                 ("nonprofit_organization", "award__latest_transaction__contract_data__nonprofit_organization"),
                 (
@@ -916,8 +922,8 @@ query_paths = {
                 ("cost_or_pricing_data", "transaction__contract_data__cost_or_pricing_data_desc"),
                 ("cost_accounting_standards_clause_code", "transaction__contract_data__cost_accounting_standards"),
                 ("cost_accounting_standards_clause", "transaction__contract_data__cost_accounting_stand_desc"),
-                ("gfe_gfp_code", "transaction__contract_data__government_furnished_prope"),
-                ("gfe_gfp", "transaction__contract_data__government_furnished_desc"),
+                ("government_furnished_property_code", "transaction__contract_data__government_furnished_prope"),
+                ("government_furnished_property", "transaction__contract_data__government_furnished_desc"),
                 ("sea_transportation_code", "transaction__contract_data__sea_transportation"),
                 ("sea_transportation", "transaction__contract_data__sea_transportation_desc"),
                 ("undefinitized_action_code", "transaction__contract_data__undefinitized_action"),
@@ -940,11 +946,11 @@ query_paths = {
                     "contingency_humanitarian_or_peacekeeping_operation",
                     "transaction__contract_data__contingency_humanitar_desc",
                 ),
-                ("alaskan_native_owned_corporation_or_firm", "transaction__contract_data__alaskan_native_owned_corpo"),
+                ("alaskan_native_corporation_owned_firm", "transaction__contract_data__alaskan_native_owned_corpo"),
                 ("american_indian_owned_business", "transaction__contract_data__american_indian_owned_busi"),
                 ("indian_tribe_federally_recognized", "transaction__contract_data__indian_tribe_federally_rec"),
-                ("native_hawaiian_owned_business", "transaction__contract_data__native_hawaiian_owned_busi"),
-                ("tribally_owned_business", "transaction__contract_data__tribally_owned_business"),
+                ("native_hawaiian_organization_owned_firm", "transaction__contract_data__native_hawaiian_owned_busi"),
+                ("tribally_owned_firm", "transaction__contract_data__tribally_owned_business"),
                 ("veteran_owned_business", "transaction__contract_data__veteran_owned_business"),
                 ("service_disabled_veteran_owned_business", "transaction__contract_data__service_disabled_veteran_o"),
                 ("woman_owned_business", "transaction__contract_data__woman_owned_business"),
@@ -1019,8 +1025,11 @@ query_paths = {
                 ("veterinary_hospital", "transaction__contract_data__veterinary_hospital"),
                 ("hispanic_servicing_institution", "transaction__contract_data__hispanic_servicing_institu"),
                 ("receives_contracts", "transaction__contract_data__contracts"),
-                ("receives_grants", "transaction__contract_data__grants"),
-                ("receives_contracts_and_grants", "transaction__contract_data__receives_contracts_and_gra"),
+                ("receives_financial_assistance", "transaction__contract_data__grants"),
+                (
+                    "receives_contracts_and_financial_assistance",
+                    "transaction__contract_data__receives_contracts_and_gra",
+                ),
                 ("airport_authority", "transaction__contract_data__airport_authority"),
                 ("council_of_governments", "transaction__contract_data__council_of_governments"),
                 ("housing_authorities_public_tribal", "transaction__contract_data__housing_authorities_public"),
@@ -1030,7 +1039,7 @@ query_paths = {
                 ("transit_authority", "transaction__contract_data__transit_authority"),
                 ("subchapter_scorporation", "transaction__contract_data__subchapter_s_corporation"),
                 ("limited_liability_corporation", "transaction__contract_data__limited_liability_corporat"),
-                ("foreign_owned_and_located", "transaction__contract_data__foreign_owned_and_located"),
+                ("foreign_owned", "transaction__contract_data__foreign_owned_and_located"),
                 ("for_profit_organization", "transaction__contract_data__for_profit_organization"),
                 ("nonprofit_organization", "transaction__contract_data__nonprofit_organization"),
                 ("other_not_for_profit_organization", "transaction__contract_data__other_not_for_profit_organ"),
@@ -1667,14 +1676,26 @@ query_paths = {
                 ("recipient_congressional_district", "recipient_congressional_district"),
                 # Column is annotated in account_download.py
                 ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
-                ("primary_place_of_performance_country", "award__place_of_performance__country_name"),
-                ("primary_place_of_performance_state", "award__place_of_performance__state_name"),
-                ("primary_place_of_performance_county", "award__place_of_performance__county_name"),
+                (
+                    "primary_place_of_performance_country",
+                    "primary_place_of_performance_country",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_state",
+                    "primary_place_of_performance_state",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_county",
+                    "primary_place_of_performance_county",
+                ),  # Column is annotated in account_download.py
                 (
                     "primary_place_of_performance_congressional_district",
-                    "award__place_of_performance__congressional_code",
-                ),
-                ("primary_place_of_performance_zip_code", "award__place_of_performance__zip4"),
+                    "primary_place_of_performance_congressional_district",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_zip_code",
+                    "primary_place_of_performance_zip_code",
+                ),  # Column is annotated in account_download.py
                 ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
                 ("product_or_service_code", "award__latest_transaction__contract_data__product_or_service_code"),
@@ -1738,14 +1759,26 @@ query_paths = {
                 ("recipient_congressional_district", "recipient_congressional_district"),
                 # Column is annotated in account_download.py
                 ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
-                ("primary_place_of_performance_country", "award__place_of_performance__country_name"),
-                ("primary_place_of_performance_state", "award__place_of_performance__state_name"),
-                ("primary_place_of_performance_county", "award__place_of_performance__county_name"),
+                (
+                    "primary_place_of_performance_country",
+                    "primary_place_of_performance_country",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_state",
+                    "primary_place_of_performance_state",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_county",
+                    "primary_place_of_performance_county",
+                ),  # Column is annotated in account_download.py
                 (
                     "primary_place_of_performance_congressional_district",
-                    "award__place_of_performance__congressional_code",
-                ),
-                ("primary_place_of_performance_zip_code", "award__place_of_performance__zip4"),
+                    "primary_place_of_performance_congressional_district",
+                ),  # Column is annotated in account_download.py
+                (
+                    "primary_place_of_performance_zip_code",
+                    "primary_place_of_performance_zip_code",
+                ),  # Column is annotated in account_download.py
                 ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
                 ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
                 ("product_or_service_code", "award__latest_transaction__contract_data__product_or_service_code"),

@@ -1,12 +1,8 @@
-from collections import OrderedDict
 from datetime import date, time, datetime
-
 from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from django.utils import timezone
-
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import Location
 
 
 class FiscalYear:
@@ -336,9 +332,9 @@ class FilterGenerator:
                 # Check if this field is a foreign key
                 if mf.get_internal_type() in ["ForeignKey", "ManyToManyField", "OneToOneField"]:
                     # Continue traversal
-                    related = getattr(mf, "rel", None)
+                    related = getattr(mf, "remote_field", None)
                     if related:
-                        model_to_check = related.to
+                        model_to_check = related.model
                     else:
                         model_to_check = mf.related_model
                 else:
@@ -440,107 +436,3 @@ class AutoCompleteHandler:
                 raise InvalidParameterException(
                     "Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"]
                 )
-
-
-class GeoCompleteHandler:
-    """ Handles geographical hierarchy searches """
-
-    def __init__(self, request_body):
-        self.request_body = request_body
-        self.search_fields = OrderedDict()
-        self.search_fields["country_name"] = {"type": "COUNTRY", "parent": "location_country_code"}
-        self.search_fields["state_code"] = {"type": "STATE", "parent": "country_name"}
-        self.search_fields["state_name"] = {"type": "STATE", "parent": "country_name"}
-        self.search_fields["city_name"] = {"type": "CITY", "parent": "state_name"}
-        self.search_fields["county_name"] = {"type": "COUNTY", "parent": "state_name"}
-        self.search_fields["zip5"] = {"type": "ZIP", "parent": "state_name"}
-        self.search_fields["foreign_postal_code"] = {"type": "POSTAL CODE", "parent": "country_name"}
-        self.search_fields["foreign_province"] = {"type": "PROVINCE", "parent": "country_name"}
-        self.search_fields["foreign_city_name"] = {"type": "CITY", "parent": "country_name"}
-
-    def build_response(self):
-        # Array of search fields, and their 'parent' fields and types
-        search_fields = self.search_fields
-        value = self.request_body.get("value", None)
-        mode = self.request_body.get("mode", "contains")
-        scope = self.request_body.get("scope", "all")
-        usage = self.request_body.get("usage", "all")
-        limit = self.request_body.get("limit", 10)
-
-        if mode == "contains":
-            mode = "__icontains"
-        elif mode == "startswith":
-            mode = "__istartswith"
-
-        scope_q = Q()
-        if scope == "foreign":
-            scope_q = ~Q(**{"location_country_code": "USA"})
-        elif scope == "domestic":
-            scope_q = Q(**{"location_country_code": "USA"})
-
-        usage_q = Q()
-        if usage == "recipient":
-            usage_q = Q(recipient_flag=True)
-        elif usage == "place_of_performance":
-            usage_q = Q(place_of_performance_flag=True)
-
-        response_object = []
-
-        """
-        The front end will send congressional codes as XX-## format, where XX
-        the state code (state_code) and ## is the two digit district
-        code. (congressional_code). If we find a '-' in the value,
-        attempt to parse it as a congressional code search before the others
-        """
-        if value and "-" in value:
-            temp_val = value.split("-")
-
-            q_kwargs = {}
-            q_kwargs["state_code"] = temp_val[0]
-
-            if len(temp_val) >= 2:
-                q_kwargs["congressional_code__istartswith"] = temp_val[1]
-
-            search_q = Q(**q_kwargs)
-            results = (
-                Location.objects.filter(search_q & scope_q & usage_q)
-                .order_by("state_code", "congressional_code")
-                .values_list("congressional_code", "state_code", "state_name")
-                .distinct()[:limit]
-            )
-            for row in results:
-                response_row = {
-                    "place": row[1] + "-" + str(row[0]),
-                    "place_type": "CONGRESSIONAL DISTRICT",
-                    "parent": row[2],
-                    "matched_ids": Location.objects.filter(
-                        Q(**{"congressional_code": row[0], "state_code": row[1], "state_name": row[2]})
-                    ).values_list("location_id", flat=True),
-                }
-                response_object.append(response_row)
-                if len(response_object) >= limit:
-                    return response_object
-
-        if value:
-            for searchable_field in search_fields.keys():
-                search_q = Q(**{searchable_field + mode: value})
-                results = (
-                    Location.objects.filter(search_q & scope_q & usage_q)
-                    .order_by(searchable_field)
-                    .values_list(searchable_field, search_fields[searchable_field]["parent"])
-                    .distinct()[:limit]
-                )
-                for row in results:
-                    response_row = {
-                        "place": row[0],
-                        "place_type": search_fields[searchable_field]["type"],
-                        "parent": row[1],
-                        "matched_ids": Location.objects.filter(
-                            Q(**{searchable_field: row[0], search_fields[searchable_field]["parent"]: row[1]})
-                        ).values_list("location_id", flat=True),
-                    }
-                    response_object.append(response_row)
-                    if len(response_object) >= limit:
-                        return response_object
-
-        return response_object

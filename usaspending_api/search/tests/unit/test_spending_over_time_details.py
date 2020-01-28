@@ -1,29 +1,81 @@
-# Stdlib imports
 import json
 import pytest
 
-from model_mommy import mommy
 from datetime import datetime
+from model_mommy import mommy
 from rest_framework import status
-from django_mock_queries.query import MockModel
 
 from usaspending_api.search.models import SummaryTransactionView
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 
 
 @pytest.fixture
-def populate_models(mock_matviews_qs):
-    mock_0 = MockModel(action_date=datetime(2010, 3, 1), generated_pragmatic_obligation=100.0)
-    mock_1 = MockModel(action_date=datetime(2011, 3, 1), generated_pragmatic_obligation=110.0)
-    mock_2 = MockModel(action_date=datetime(2012, 3, 1), generated_pragmatic_obligation=120.0)
-    mock_3 = MockModel(action_date=datetime(2013, 3, 1), generated_pragmatic_obligation=130.0)
-    mock_4 = MockModel(action_date=datetime(2014, 3, 1), generated_pragmatic_obligation=140.0)
-    mock_5 = MockModel(action_date=datetime(2015, 3, 1), generated_pragmatic_obligation=150.0)
-    mock_6 = MockModel(action_date=datetime(2016, 3, 1), generated_pragmatic_obligation=160.0)
-    mock_7 = MockModel(action_date=datetime(2017, 3, 1), generated_pragmatic_obligation=170.0)
+def populate_models(db):
+    mommy.make("awards.Award", id=1, latest_transaction_id=1)
+    mommy.make("awards.Award", id=2, latest_transaction_id=2)
+    mommy.make("awards.Award", id=3, latest_transaction_id=3)
+    mommy.make("awards.Award", id=4, latest_transaction_id=4)
+    mommy.make("awards.Award", id=5, latest_transaction_id=5)
+    mommy.make("awards.Award", id=6, latest_transaction_id=6)
+    mommy.make("awards.Award", id=7, latest_transaction_id=7)
+    mommy.make("awards.Award", id=8, latest_transaction_id=8)
 
-    add_to_mock_objects(mock_matviews_qs, [mock_0, mock_1, mock_2, mock_3, mock_4, mock_5, mock_6, mock_7])
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=1,
+        award_id=1,
+        action_date=datetime(2010, 3, 1),
+        federal_action_obligation=100.0,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=2,
+        award_id=2,
+        action_date=datetime(2011, 3, 1),
+        federal_action_obligation=110.0,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=3,
+        award_id=3,
+        action_date=datetime(2012, 3, 1),
+        federal_action_obligation=120.0,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=4,
+        award_id=4,
+        action_date=datetime(2013, 3, 1),
+        federal_action_obligation=130.0,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=5,
+        award_id=5,
+        action_date=datetime(2014, 3, 1),
+        federal_action_obligation=140.0,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=6,
+        award_id=6,
+        action_date=datetime(2015, 3, 1),
+        federal_action_obligation=150.0,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=7,
+        award_id=7,
+        action_date=datetime(2016, 3, 1),
+        federal_action_obligation=160.0,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=8,
+        award_id=8,
+        action_date=datetime(2017, 3, 1),
+        federal_action_obligation=170.0,
+    )
 
 
 @pytest.fixture
@@ -93,8 +145,7 @@ def confirm_proper_ordering(group, results):
                 period = int(result["time_period"][group])
 
 
-@pytest.mark.django_db
-def test_spending_over_time_fy_ordering(populate_models, client, mock_matviews_qs):
+def test_spending_over_time_fy_ordering(client, populate_models):
     group = "fiscal_year"
     test_payload = {
         "group": group,
@@ -132,8 +183,7 @@ def test_spending_over_time_fy_ordering(populate_models, client, mock_matviews_q
     confirm_proper_ordering(group, resp.data["results"])
 
 
-@pytest.mark.django_db
-def test_spending_over_time_month_ordering(populate_models, client, mock_matviews_qs):
+def test_spending_over_time_month_ordering(client, populate_models):
     group = "month"
     test_payload = {
         "group": group,
@@ -197,8 +247,7 @@ def test_spending_over_time_month_ordering(populate_models, client, mock_matview
     confirm_proper_ordering(group, resp.data["results"])
 
 
-@pytest.mark.django_db
-def test_spending_over_time_funny_dates_ordering(populate_models, client, mock_matviews_qs):
+def test_spending_over_time_funny_dates_ordering(client, populate_models):
     group = "month"
     test_payload = {
         "group": group,

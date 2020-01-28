@@ -88,7 +88,7 @@ FILTER_OBJ = {
         "recipient_search_text": ["D12345678"],
         "recipient_scope": "domestic",
         "recipient_locations": [{"country": "USA", "state": "VA", "county": "059"}],
-        "recipient_type_names": ["Small Business", "Alaskan Native Owned Business"],
+        "recipient_type_names": ["Small Business", "Alaskan Native Corporation Owned Firm"],
         "award_ids": ["1605SS17F00018"],
         "award_amounts": [
             {"lower_bound": 1000000.00, "upper_bound": 25000000.00},

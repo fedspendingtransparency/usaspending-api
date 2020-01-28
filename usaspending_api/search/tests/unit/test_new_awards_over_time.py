@@ -1,18 +1,12 @@
-# Stdlib imports
-from datetime import datetime
 import json
 import pytest
 
-# Core Django imports
+from datetime import datetime
+from model_mommy import mommy
 
-# Third-party app imports
-from django_mock_queries.query import MockModel, MockSet
-
-# Imports from your apps
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.common.helpers.unit_test_helper import add_to_mock_objects
 from usaspending_api.search.v2.views.new_awards_over_time import NewAwardsOverTimeVisualizationViewSet
 
 
@@ -41,70 +35,65 @@ def catch_filter_errors(viewset, filters, expected_exception):
 
 
 @pytest.fixture
-def add_award_recipients(monkeypatch):
-    mock_awards_recipients = MockSet()
-    monkeypatch.setattr("usaspending_api.recipient.models.SummaryAwardRecipient.objects", mock_awards_recipients)
-    mock_model_list = []
+def add_award_recipients(db):
     current_id = 1
     new_award_count = 12
     for i in range(current_id, current_id + new_award_count):
-        mock_model_list.append(
-            MockModel(
-                award_id=i,
-                recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
-                parent_recipient_unique_id=None,
-                action_date=datetime(2009, 5, 30),
-            )
+        mommy.make("awards.Award", id=i)
+        mommy.make(
+            "recipient.SummaryAwardRecipient",
+            award_id=i,
+            action_date=datetime(2009, 5, 30),
+            recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
+            parent_recipient_unique_id=None,
         )
     current_id += new_award_count
     new_award_count = 3
     for i in range(current_id, current_id + new_award_count):
-        mock_model_list.append(
-            MockModel(
-                award_id=i,
-                recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
-                parent_recipient_unique_id=None,
-                action_date=datetime(2009, 5, 1),
-            )
+        mommy.make("awards.Award", id=i)
+        mommy.make(
+            "recipient.SummaryAwardRecipient",
+            award_id=i,
+            action_date=datetime(2009, 5, 1),
+            recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
+            parent_recipient_unique_id=None,
         )
     current_id += new_award_count
     new_award_count = 1
     for i in range(current_id, current_id + new_award_count):
-        mock_model_list.append(
-            MockModel(
-                award_id=i,
-                recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
-                parent_recipient_unique_id=None,
-                action_date=datetime(2009, 7, 2),
-            )
+        mommy.make("awards.Award", id=i)
+        mommy.make(
+            "recipient.SummaryAwardRecipient",
+            award_id=i,
+            action_date=datetime(2009, 7, 2),
+            recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
+            parent_recipient_unique_id=None,
         )
     current_id += new_award_count
     new_award_count = 2
     for i in range(current_id, current_id + new_award_count):
-        mock_model_list.append(
-            MockModel(
-                award_id=i,
-                recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
-                parent_recipient_unique_id=None,
-                action_date=datetime(2008, 1, 10),
-            )
+        mommy.make("awards.Award", id=i)
+        mommy.make(
+            "recipient.SummaryAwardRecipient",
+            award_id=i,
+            action_date=datetime(2008, 1, 10),
+            recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
+            parent_recipient_unique_id=None,
         )
     current_id += new_award_count
     new_award_count = 6
     for i in range(current_id, current_id + new_award_count):
-        mock_model_list.append(
-            MockModel(
-                award_id=i,
-                recipient_hash="4e418651-4b83-8722-ab4e-e68d80bfb3b3",
-                parent_recipient_unique_id=None,
-                action_date=datetime(2009, 7, 30),
-            )
+        mommy.make("awards.Award", id=i)
+        mommy.make(
+            "recipient.SummaryAwardRecipient",
+            award_id=i,
+            action_date=datetime(2009, 7, 30),
+            recipient_hash="4e418651-4b83-8722-ab4e-e68d80bfb3b3",
+            parent_recipient_unique_id=None,
         )
-    add_to_mock_objects(mock_awards_recipients, mock_model_list)
 
 
-@pytest.mark.django_db
-def test_new_awards_month(add_award_recipients, client):
+def test_new_awards_month(client, add_award_recipients):
     test_payload = {
         "group": "month",
         "filters": {
@@ -169,8 +158,7 @@ def test_new_awards_month(add_award_recipients, client):
     assert expected_response == resp.data
 
 
-@pytest.mark.django_db
-def test_new_awards_quarter(add_award_recipients, client):
+def test_new_awards_quarter(client, add_award_recipients):
     test_payload = {
         "group": "quarter",
         "filters": {
@@ -236,8 +224,7 @@ def test_new_awards_quarter(add_award_recipients, client):
     assert expected_response == resp.data
 
 
-@pytest.mark.django_db
-def test_new_awards_fiscal_year(add_award_recipients, client):
+def test_new_awards_fiscal_year(client, add_award_recipients):
     test_payload = {
         "group": "fiscal_year",
         "filters": {
@@ -276,8 +263,7 @@ def test_new_awards_fiscal_year(add_award_recipients, client):
     assert expected_response == resp.data
 
 
-@pytest.mark.django_db
-def test_new_awards_failures(add_award_recipients, client):
+def test_new_awards_failures(client, add_award_recipients):
     test_payload = {
         "group": "quarter",
         "filters": {
@@ -293,7 +279,6 @@ def test_new_awards_failures(add_award_recipients, client):
     assert resp.status_code == 400  # might reject text as non UUID in future?
 
 
-@pytest.mark.django_db
 def test_new_awards_filter_errors():
     new_awards_viewset = NewAwardsOverTimeVisualizationViewSet()
     filters = {"group": "baseball"}

@@ -5,7 +5,6 @@ from django.conf import settings
 from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from elasticsearch_dsl import Search
 
 import logging
 from usaspending_api.awards.models import Award
@@ -34,12 +33,12 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     loan_mapping,
     non_loan_assist_mapping,
 )
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
@@ -285,19 +284,19 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
 
     def query_elasticsearch(self) -> list:
-        filter_query = QueryWithFilters.generate_elasticsearch_query(self.filters, query_type="awards")
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         sort_field = self.get_elastic_sort_by_fields()
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         search = (
             (
-                Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
+                AwardSearch()
                 .filter(filter_query)
                 .sort(*sorts)
                 .extra(search_after=[self.last_value, self.last_id])[0 : self.pagination["limit"]]
             )
             if self.last_value and self.last_id
             else (
-                Search(index=f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*")
+                AwardSearch()
                 .filter(filter_query)
                 .sort(*sorts)[
                     ((self.pagination["page"] - 1) * self.pagination["limit"]) : (
@@ -306,7 +305,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 ]
             )
         )
-        response = es_client_query(search=search)
+        response = search.handle_execute()
 
         return response
 
@@ -342,11 +341,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
         last_id = None
         last_value = None
         if len(response) > 0:
-            last_id = (response[len(response) - 1].to_dict().get("generated_unique_award_id"),)
+            last_id = response[len(response) - 1].to_dict().get("generated_unique_award_id")
             last_value = (
                 response[len(response) - 1].to_dict().get("total_loan_value")
                 if set(self.filters["award_type_codes"]) <= set(loan_type_mapping)
-                else response[len(response) - 1].to_dict().get("total_obligation"),
+                else response[len(response) - 1].to_dict().get("total_obligation")
             )
         return {
             "limit": self.pagination["limit"],
@@ -355,9 +354,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "page": self.pagination["page"],
                 "hasNext": response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
                 > self.pagination["limit"],
+                "last_id": last_id,
+                "last_value": last_value,
             },
-            "last_id": last_id,
-            "last_value": last_value,
             "messages": [get_time_period_message()],
         }
 

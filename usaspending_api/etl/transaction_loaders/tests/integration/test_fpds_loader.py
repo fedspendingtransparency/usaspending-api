@@ -11,7 +11,6 @@ from usaspending_api.awards.models import Award, TransactionFPDS
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
-    place_of_performance_nonboolean_columns,
     transaction_fpds_boolean_columns,
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_bulk_insert_list_column_sql
@@ -19,7 +18,7 @@ from usaspending_api.etl.transaction_loaders.data_load_helpers import format_bul
 
 class FPDSLoaderIntegrationTestCase(TestCase):
     logger = logging.getLogger(__name__)
-    multi_db = True
+    databases = {"default", "data_broker"}
 
     @classmethod
     def setUpClass(cls):
@@ -113,7 +112,6 @@ def _assemble_dummy_broker_data():
     return {
         **transaction_fpds_nonboolean_columns,
         **transaction_normalized_nonboolean_columns,
-        **place_of_performance_nonboolean_columns,
         **{key: str(random.choice([True, False])) for key in transaction_fpds_boolean_columns},
     }
 

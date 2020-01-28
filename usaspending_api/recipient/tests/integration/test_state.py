@@ -84,30 +84,31 @@ def sort_states_response(response_list):
 
 @pytest.fixture
 def state_data(db):
-    location_ts = mommy.make("references.Location", location_country_code="USA", state_code="TS")
-    location_td = mommy.make("references.Location", location_country_code="USA", state_code="TD")
-    location_tt = mommy.make("references.Location", location_country_code="USA", state_code="TT")
     mommy.make(
         "awards.TransactionNormalized",
-        place_of_performance=location_ts,
+        assistance_data__place_of_perfor_state_code="TS",
+        assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=100000,
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
     mommy.make(
         "awards.TransactionNormalized",
-        place_of_performance=location_ts,
+        assistance_data__place_of_perfor_state_code="TS",
+        assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=100000,
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
     )
     mommy.make(
         "awards.TransactionNormalized",
-        place_of_performance=location_td,
+        assistance_data__place_of_perfor_state_code="TD",
+        assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=1000,
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
     mommy.make(
         "awards.TransactionNormalized",
-        place_of_performance=location_tt,
+        assistance_data__place_of_perfor_state_code="TT",
+        assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=1000,
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
@@ -169,8 +170,6 @@ def state_data(db):
 def state_view_data(db, monkeypatch):
     monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"01": {"code": "AB"}})
 
-    location = mommy.make("references.Location", location_country_code="USA", state_code="AB")
-
     award_old = mommy.make("awards.Award", type="A")
 
     award_cur = mommy.make("awards.Award", type="B")
@@ -179,7 +178,8 @@ def state_view_data(db, monkeypatch):
         "awards.TransactionNormalized",
         award=award_old,
         type="A",
-        place_of_performance=location,
+        assistance_data__place_of_perfor_state_code="AB",
+        assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=10,
         fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
@@ -189,7 +189,8 @@ def state_view_data(db, monkeypatch):
         "awards.TransactionNormalized",
         award=award_cur,
         type="B",
-        place_of_performance=location,
+        assistance_data__place_of_perfor_state_code="AB",
+        assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=15,
         fiscal_year=generate_fiscal_year(TODAY),
         action_date=TODAY.strftime("%Y-%m-%d"),

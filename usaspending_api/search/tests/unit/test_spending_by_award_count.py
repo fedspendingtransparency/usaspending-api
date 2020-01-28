@@ -1,8 +1,11 @@
 import json
 import pytest
+from django.conf import settings
 
 from model_mommy import mommy
 from rest_framework import status
+
+from usaspending_api.common.experimental_api_flags import EXPERIMENTAL_API_HEADER, ELASTICSEARCH_HEADER_VALUE
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 
 
@@ -176,5 +179,42 @@ def test_spending_by_award_count_idvs(client, award_data_fixture):
         get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+
+def test_spending_by_award_elasticsearch(client, award_data_fixture, monkeypatch, elasticsearch_award_index):
+    logging_statements = []
+    monkeypatch.setattr(
+        "usaspending_api.search.v2.views.spending_by_award.logger.info",
+        lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
+        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
+    )
+    elasticsearch_award_index.update_index()
+    resp = client.post(
+        "/api/v2/search/spending_by_award_count/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "subawards": False,
+                "filters": {
+                    "time_period": [
+                        {"start_date": "2009-10-01", "end_date": "2017-09-30"},
+                        {"start_date": "2017-10-01", "end_date": "2018-09-30"},
+                    ]
+                },
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_response = {
+        "results": {"contracts": 2, "idvs": 4, "loans": 1, "direct_payments": 0, "grants": 0, "other": 1},
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(logging_statements) == 1
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.data, "Unexpected or missing content!"

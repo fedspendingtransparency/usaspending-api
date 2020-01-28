@@ -26,7 +26,6 @@ txn_latest AS (
     tn.funding_agency_id,
     tn.last_modified_date,
     tn.period_of_performance_current_end_date,
-    tn.place_of_performance_id,
     CASE
       WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
       WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
@@ -71,7 +70,6 @@ SET
   funding_agency_id                       = l.funding_agency_id,
   last_modified_date                      = l.last_modified_date,
   period_of_performance_current_end_date  = l.period_of_performance_current_end_date,
-  place_of_performance_id                 = l.place_of_performance_id,
 
   non_federal_funding_amount              = t.non_federal_funding_amount,
   total_funding_amount                    = t.total_funding_amount,
@@ -99,7 +97,6 @@ WHERE
     OR a.funding_agency_id                       IS DISTINCT FROM l.funding_agency_id
     OR a.last_modified_date                      IS DISTINCT FROM l.last_modified_date
     OR a.period_of_performance_current_end_date  IS DISTINCT FROM l.period_of_performance_current_end_date
-    OR a.place_of_performance_id                 IS DISTINCT FROM l.place_of_performance_id
     OR a.non_federal_funding_amount              IS DISTINCT FROM t.non_federal_funding_amount
     OR a.total_funding_amount                    IS DISTINCT FROM t.total_funding_amount
     OR a.total_loan_value                        IS DISTINCT FROM t.total_loan_value

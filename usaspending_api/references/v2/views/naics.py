@@ -13,6 +13,8 @@ from usaspending_api.references.models import NAICS
 
 logger = logging.getLogger("console")
 
+DEFAULT_CHILDREN = 0
+
 
 class NAICSViewSet(APIView):
     """
@@ -63,7 +65,7 @@ class NAICSViewSet(APIView):
                 result = OrderedDict()
                 result["naics"] = naic.code
                 result["naics_description"] = naic.description
-                result["count"] = 1
+                result["count"] = DEFAULT_CHILDREN
             results.append(result)
         results.sort(key=lambda x: x["naics"])
         return results
@@ -109,7 +111,7 @@ class NAICSViewSet(APIView):
             result = OrderedDict()
             result["naics"] = naic.code
             result["naics_description"] = naic.description
-            result["count"] = 1
+            result["count"] = DEFAULT_CHILDREN
             tier2_results[naic.code[:4]]["children"].append(result)
             tier2_results[naic.code[:4]]["children"].sort(key=lambda x: x["naics"])
         tier1_results = {}
@@ -176,7 +178,7 @@ class NAICSViewSet(APIView):
             else:
                 result["naics"] = naic.code
                 result["naics_description"] = naic.description
-                result["count"] = 1
+                result["count"] = DEFAULT_CHILDREN
             results.append(result)
 
         response_content = OrderedDict({"results": results})

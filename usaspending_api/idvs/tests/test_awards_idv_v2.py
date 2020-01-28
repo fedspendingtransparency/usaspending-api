@@ -5,45 +5,11 @@ from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, Location, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
 def awards_and_transactions(db):
-    parent_loc = {
-        "pk": 2,
-        "location_country_code": "USA",
-        "country_name": "UNITED STATES",
-        "state_code": "SC",
-        "city_name": "Charleston",
-        "county_name": "CHARLESTON",
-        "address_line1": "123 calhoun st",
-        "address_line2": None,
-        "address_line3": None,
-        "zip4": 294245897,
-        "congressional_code": "90",
-        "zip5": 29424,
-        "foreign_postal_code": None,
-        "foreign_province": None,
-    }
-    loc = {
-        "pk": 1,
-        "location_country_code": "USA",
-        "country_name": "UNITED STATES",
-        "state_code": "NC",
-        "city_name": "Charlotte",
-        "county_name": "BUNCOMBE",
-        "address_line1": "123 main st",
-        "address_line2": None,
-        "address_line3": None,
-        "zip4": 122045312,
-        "congressional_code": "90",
-        "zip5": 12204,
-        "foreign_postal_code": None,
-        "foreign_province": None,
-    }
-    mommy.make("references.Location", **parent_loc)
-    mommy.make("references.Location", **loc)
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
     mommy.make("references.SubtierAgency", subtier_code="def", **subag)
@@ -91,7 +57,6 @@ def awards_and_transactions(db):
         "subaward_count": 10,
         "awarding_agency": Agency.objects.get(pk=1),
         "funding_agency": Agency.objects.get(pk=1),
-        "place_of_performance": Location.objects.get(pk=1),
         "date_signed": "2005-04-03",
     }
     award_2_model = {
