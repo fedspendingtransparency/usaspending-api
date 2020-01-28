@@ -309,7 +309,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
 
         if (
-            self.last_record_unique_id is None and self.last_record_sort_value is None
+            self.last_record_unique_id is not None and self.last_record_sort_value is not None
         ) or record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW:
             sorts.append({"total_obligation": "desc"})
             sorts.append({"award_id": self.pagination["sort_order"]})
@@ -330,7 +330,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
             queryset = self.construct_queryset()
             if len(queryset) != 1:
                 return {}
-            results = []
             results = [
                 self.date_to_epoch_millis(queryset[0].get(self.get_sort_by_fields()[0])),
                 float(queryset[0].get("total_obligation")),
@@ -366,8 +365,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     def construct_es_response(self, response) -> dict:
         results = []
-        if response is None:
-            return {"There was an error connecting to the Elasticsearch cluster"}
         for res in response:
             hit = res.to_dict()
             row = {k: hit[v] for k, v in self.constants["internal_id_fields"].items()}
