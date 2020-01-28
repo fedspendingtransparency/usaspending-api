@@ -1,6 +1,10 @@
 import logging
 import time
 import traceback
+from ddtrace import tracer
+from ddtrace.ext import SpanTypes
+from ddtrace.ext.priority import USER_REJECT
+from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
 
 from django.core.management.base import BaseCommand
 
@@ -22,54 +26,81 @@ JOB_TYPE = "USAspendingDownloader"
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        # Drop uninteresting polls of the queue from the Tracer
+        if tracer.writer._filters:
+            tracer.writer._filters.append(DatadogEagerlyDropTraceFilter())
+        else:
+            tracer.writer._filters = [DatadogEagerlyDropTraceFilter()]
+
         queue = get_sqs_queue()
         log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
 
         message_found = None
         keep_polling = True
         while keep_polling:
-            # Setup dispatcher that coordinates job activity on SQS
-            dispatcher = SQSWorkDispatcher(queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True)
 
-            try:
+            # Start a Datadog Trace for this poll iter to capture activity in APM
+            with tracer.trace(
+                name=f"job.{JOB_TYPE}", service="bulk-download", resource=queue.url, span_type=SpanTypes.WORKER
+            ) as span:
+                # Set True to add trace to App Analytics:
+                # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
+                span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1.0)
 
-                # Check the queue for work and hand it to the given processing function
-                message_found = dispatcher.dispatch(download_service_app)
+                # Setup dispatcher that coordinates job activity on SQS
+                dispatcher = SQSWorkDispatcher(
+                    queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True
+                )
 
-                # Mark the job as failed if: there was an error processing the download; retries after interrupt
-                # are not allowed; or all retries have been exhausted
-                # If the job is interrupted by an OS signal, the dispatcher's signal handling logic will log and
-                # handle this case
-                # Retries are allowed or denied by the SQS queue's RedrivePolicy config
-                # That is, if maxReceiveCount > 1 in the policy, then retries are allowed
-                # - if queue retries are allowed, the queue message will retry to the max allowed by the queue
-                # - As coded, no cleanup should be needed to retry a download
-                #   - the psql -o will overwrite the output file
-                #   - the zip will use 'w' write mode to create from scratch each time
-                # The worker function controls the maximum allowed runtime of the job
+                try:
 
-            except (QueueWorkerProcessError, QueueWorkDispatcherError) as exc:
-                _handle_queue_error(exc)
+                    # Check the queue for work and hand it to the given processing function
+                    message_found = dispatcher.dispatch(download_service_app)
 
-            # When you receive an empty response from the queue, wait before trying again
-            if not message_found:
-                time.sleep(1)
+                    # Mark the job as failed if: there was an error processing the download; retries after interrupt
+                    # are not allowed; or all retries have been exhausted
+                    # If the job is interrupted by an OS signal, the dispatcher's signal handling logic will log and
+                    # handle this case
+                    # Retries are allowed or denied by the SQS queue's RedrivePolicy config
+                    # That is, if maxReceiveCount > 1 in the policy, then retries are allowed
+                    # - if queue retries are allowed, the queue message will retry to the max allowed by the queue
+                    # - As coded, no cleanup should be needed to retry a download
+                    #   - the psql -o will overwrite the output file
+                    #   - the zip will use 'w' write mode to create from scratch each time
+                    # The worker function controls the maximum allowed runtime of the job
 
-            # If this process is exiting, don't poll for more work
-            keep_polling = not dispatcher.is_exiting
+                except (QueueWorkerProcessError, QueueWorkDispatcherError) as exc:
+                    _handle_queue_error(exc)
+
+                if not message_found:
+                    # Drop the Datadog trace, since no trace-worthy activity happened on this poll
+                    tracer.context_provider.active().sampling_priority = USER_REJECT
+                    span.set_tag(DatadogEagerlyDropTraceFilter.EAGERLY_DROP_TRACE_KEY, True)
+
+                    # When you receive an empty response from the queue, wait before trying again
+                    time.sleep(1)
+
+                # If this process is exiting, don't poll for more work
+                keep_polling = not dispatcher.is_exiting
 
 
 def download_service_app(download_job_id):
-    download_job = _retrieve_download_job_from_db(download_job_id)
-    download_job_details = download_job_to_log_dict(download_job)
-    log_job_message(
-        logger=logger,
-        message="Starting processing of download request",
-        job_type=JOB_TYPE,
-        job_id=download_job_id,
-        other_params=download_job_details,
-    )
-    generate_download(download_job=download_job)
+    with tracer.trace(name=f"job.{JOB_TYPE}.download", service="bulk-download", span_type=SpanTypes.WORKER) as span:
+        # Set True to add trace to App Analytics:
+        # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
+        span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1.0)
+
+        download_job = _retrieve_download_job_from_db(download_job_id)
+        download_job_details = download_job_to_log_dict(download_job)
+        log_job_message(
+            logger=logger,
+            message="Starting processing of download request",
+            job_type=JOB_TYPE,
+            job_id=download_job_id,
+            other_params=download_job_details,
+        )
+        span.set_tags(download_job_details)
+        generate_download(download_job=download_job)
 
 
 def _retrieve_download_job_from_db(download_job_id):
@@ -152,3 +183,17 @@ class DownloadJobNoneError(ValueError):
         else:
             super().__init__(default_message)
         self.download_job_id = download_job_id
+
+
+class DatadogEagerlyDropTraceFilter:
+    """
+    A trace filter that eagerly drops a trace, by filtering it out before sending it on to the Datadog Server API.
+    It uses the `self.EAGERLY_DROP_TRACE_KEY` as a sentinel value. If present within any span's tags, the whole
+    trace that the span is part of will be filtered out before being sent to the server.
+    """
+
+    EAGERLY_DROP_TRACE_KEY = "EAGERLY_DROP_TRACE"
+
+    def process_trace(self, trace):
+        """Drop trace if any span tag has tag with key 'EAGERLY_DROP_TRACE'"""
+        return None if any(span.get_tag(self.EAGERLY_DROP_TRACE_KEY) for span in trace) else trace
