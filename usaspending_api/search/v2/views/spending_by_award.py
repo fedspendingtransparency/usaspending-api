@@ -395,6 +395,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             row = self.append_recipient_hash_level(row)
             row.pop("parent_recipient_unique_id")
             results.append(row)
+        last_record_unique_id = None
+        last_record_sort_value = None
+        last_record_tie_break_value = None
         if len(response) > 0:
             last_record_unique_id = int(response[len(response) - 1].to_dict().get("award_id"))
             last_record_tie_break_value = float(response[len(response) - 1].to_dict().get("total_obligation"))
