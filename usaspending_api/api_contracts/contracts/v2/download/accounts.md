@@ -33,7 +33,7 @@ Generate files and return metadata using filters on custom account
                 "filters": {
                     "fy": "2018",
                     "quarter": "1",
-                    "submission_type": "account_balances"
+                    "submission_types": ["account_balances", "award_financial"]
                 }
             }
 
@@ -51,14 +51,15 @@ Generate files and return metadata using filters on custom account
 
             {
                 "status_url": "http://localhost:8000/api/v2/download/status?file_name=FY2018Q1_All_TAS_AccountBalances_2020-01-13_H21M00S18407575.zip",
-                "file_name": "FY2018Q1_All_TAS_AccountBalances_2020-01-13_H21M00S18407575.zip",
-                "file_url": "/csv_downloads/FY2018Q1_All_TAS_AccountBalances_2020-01-13_H21M00S18407575.zip",
+                "file_name": "FY2018Q1_All_TAS_AccountData_2020-01-13_H21M00S18407575.zip",
+                "file_url": "/csv_downloads/FY2018Q1_All_TAS_AccountData_2020-01-13_H21M00S18407575.zip",
                 "download_request": {
                     "account_level": "treasury_account",
                     "agency": "all",
                     "columns": [],
                     "download_types": [
-                        "account_balances"
+                        "account_balances",
+                        "award_financial"
                     ],
                     "file_format": "csv",
                     "filters": {
@@ -68,7 +69,7 @@ Generate files and return metadata using filters on custom account
                     "request_type": "account"
                 }
             }
-            
+
 
 
 # Data Structures
@@ -79,8 +80,8 @@ Generate files and return metadata using filters on custom account
     + Default: `all`
 + `federal_account`(optional, string)
     This field is an internal id.
-+ `submission_type` (required, enum[string])
-    + Members
++ `submission_types` (required, array)
+    + (enum[string])
         + `account_balances`
         + `object_class_program_activity`
         + `award_financial`

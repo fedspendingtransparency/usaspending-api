@@ -5,6 +5,7 @@ import random
 from model_mommy import mommy
 from rest_framework import status
 from unittest.mock import Mock
+from itertools import chain, combinations
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.awards.models import (
@@ -16,7 +17,7 @@ from usaspending_api.awards.models import (
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
-from usaspending_api.download.lookups import JOB_STATUS
+from usaspending_api.download.lookups import JOB_STATUS, VALID_ACCOUNT_SUBMISSION_TYPES
 from usaspending_api.etl.award_helpers import update_awards
 
 
@@ -126,7 +127,7 @@ def test_tas_a_defaults_success(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "treasury_account",
-                "filters": {"submission_type": "account_balances", "fy": "2017", "quarter": "3"},
+                "filters": {"submission_types": ["account_balances"], "fy": "2017", "quarter": "3"},
                 "file_format": "csv",
             }
         ),
@@ -144,7 +145,7 @@ def test_tas_b_defaults_success(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "treasury_account",
-                "filters": {"submission_type": "object_class_program_activity", "fy": "2018", "quarter": "1"},
+                "filters": {"submission_types": ["object_class_program_activity"], "fy": "2018", "quarter": "1"},
                 "file_format": "csv",
             }
         ),
@@ -162,7 +163,7 @@ def test_tas_c_defaults_success(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "treasury_account",
-                "filters": {"submission_type": "award_financial", "fy": "2016", "quarter": "4"},
+                "filters": {"submission_types": ["award_financial"], "fy": "2016", "quarter": "4"},
                 "file_format": "csv",
             }
         ),
@@ -180,7 +181,7 @@ def test_federal_account_a_defaults_success(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "federal_account",
-                "filters": {"submission_type": "account_balances", "fy": "2017", "quarter": "3"},
+                "filters": {"submission_types": ["account_balances"], "fy": "2017", "quarter": "3"},
                 "file_format": "csv",
             }
         ),
@@ -198,7 +199,7 @@ def test_federal_account_b_defaults_success(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "federal_account",
-                "filters": {"submission_type": "object_class_program_activity", "fy": "2018", "quarter": "1"},
+                "filters": {"submission_types": ["object_class_program_activity"], "fy": "2018", "quarter": "1"},
                 "file_format": "csv",
             }
         ),
@@ -216,7 +217,7 @@ def test_federal_account_c_defaults_success(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "federal_account",
-                "filters": {"submission_type": "award_financial", "fy": "2016", "quarter": "4"},
+                "filters": {"submission_types": ["award_financial"], "fy": "2016", "quarter": "4"},
                 "file_format": "csv",
             }
         ),
@@ -234,7 +235,7 @@ def test_agency_filter_success(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "federal_account",
-                "filters": {"submission_type": "account_balances", "fy": "2017", "quarter": "4", "agency": "100"},
+                "filters": {"submission_types": ["account_balances"], "fy": "2017", "quarter": "4", "agency": "100"},
                 "file_format": "csv",
             }
         ),
@@ -252,7 +253,7 @@ def test_agency_filter_failure(client, download_test_data):
             {
                 "account_level": "treasury_account",
                 "filters": {
-                    "submission_type": "object_class_program_activity",
+                    "submission_types": ["object_class_program_activity"],
                     "fy": "2017",
                     "quarter": "4",
                     "agency": "-2",
@@ -274,7 +275,7 @@ def test_federal_account_filter_success(client, download_test_data):
             {
                 "account_level": "treasury_account",
                 "filters": {
-                    "submission_type": "award_financial",
+                    "submission_types": ["award_financial"],
                     "fy": "2017",
                     "quarter": "4",
                     "federal_account": "10",
@@ -296,7 +297,7 @@ def test_federal_account_filter_failure(client, download_test_data):
             {
                 "account_level": "federal_account",
                 "filters": {
-                    "submission_type": "account_balances",
+                    "submission_types": ["account_balances"],
                     "fy": "2017",
                     "quarter": "4",
                     "federal_account": "-1",
@@ -317,7 +318,7 @@ def test_account_level_failure(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "not_tas_or_fa",
-                "filters": {"submission_type": "account_balances", "fy": "2017", "quarter": "4"},
+                "filters": {"submission_types": ["account_balances"], "fy": "2017", "quarter": "4"},
                 "file_format": "csv",
             }
         ),
@@ -334,7 +335,7 @@ def test_submission_type_failure(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "treasury_account",
-                "filters": {"submission_type": "not_a_b_or_c", "fy": "2018", "quarter": "2"},
+                "filters": {"submission_types": ["not_a_b_or_c"], "fy": "2018", "quarter": "2"},
                 "file_format": "csv",
             }
         ),
@@ -351,7 +352,7 @@ def test_fy_failure(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "federal_account",
-                "filters": {"submission_type": "award_financial", "fy": "string_not_int", "quarter": "4"},
+                "filters": {"submission_types": ["award_financial"], "fy": "string_not_int", "quarter": "4"},
                 "file_format": "csv",
             }
         ),
@@ -368,7 +369,7 @@ def test_quarter_failure(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "treasury_account",
-                "filters": {"submission_type": "award_financial", "fy": "2017", "quarter": "string_not_int"},
+                "filters": {"submission_types": ["award_financial"], "fy": "2017", "quarter": "string_not_int"},
                 "file_format": "csv",
             }
         ),
@@ -383,3 +384,29 @@ def test_download_accounts_bad_filter_type_raises(client, download_test_data):
     resp = client.post("/api/v2/download/accounts/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Filters parameter not provided as a dict"
+
+
+def test_multiple_submission_types_success(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    valid_submissions = VALID_ACCOUNT_SUBMISSION_TYPES
+
+    def all_subsets(ss):
+        return chain(*map(lambda x: combinations(ss, x), range(1, len(ss) + 1)))
+
+    for submission_list in all_subsets(valid_submissions):
+        resp = client.post(
+            "/api/v2/download/accounts/",
+            content_type="application/json",
+            data=json.dumps(
+                {
+                    "account_level": "treasury_account",
+                    "filters": {"submission_types": submission_list, "fy": "2017", "quarter": "3"},
+                    "file_format": "csv",
+                }
+            ),
+        )
+
+        assert resp.status_code == status.HTTP_200_OK
+        assert ".zip" in resp.json()["file_url"]
+        if len(submission_list) > 1:
+            assert "AccountData" in resp.json()["file_url"]

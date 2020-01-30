@@ -21,6 +21,7 @@ from usaspending_api.download.lookups import (
     ROW_CONSTRAINT_FILTER_DEFAULTS,
     ACCOUNT_FILTER_DEFAULTS,
     FILE_FORMATS,
+    VALID_ACCOUNT_SUBMISSION_TYPES,
 )
 
 
@@ -186,14 +187,18 @@ def validate_account_request(request_data):
     if json_request["filters"]["quarter"] not in [1, 2, 3, 4]:
         raise InvalidParameterException("quarter filter must be a valid fiscal quarter (1, 2, 3, or 4)")
 
-    # Validate submission_type parameters
-    valid_submissions = ["account_balances", "object_class_program_activity", "award_financial"]
-    submission_type = filters.get("submission_type", None)
+    # Validate submission_type parameter
+    submission_types = filters.get("submission_types") or [filters.get("submission_type")]
 
-    if submission_type not in valid_submissions:
-        raise InvalidParameterException("Invalid Parameter: submission_type must be {}".format(valid_submissions))
+    if submission_types == [None]:  # this is the awkward default value if neither filter is provided
+        raise InvalidParameterException("Missing required filter: submission_types")
 
-    json_request["download_types"] = [filters["submission_type"]]
+    for submission_type in submission_types:
+        if submission_type not in VALID_ACCOUNT_SUBMISSION_TYPES:
+            msg = f"Invalid value for submission_type: `{submission_type}` not in {VALID_ACCOUNT_SUBMISSION_TYPES}"
+            raise InvalidParameterException(msg)
+
+    json_request["download_types"] = submission_types
     json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
 
     # Validate the rest of the filters
