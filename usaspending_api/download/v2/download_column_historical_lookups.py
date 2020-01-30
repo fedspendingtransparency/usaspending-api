@@ -1652,7 +1652,7 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("unique_award_key", "award__generated_unique_award_id"),
+                ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
                 ("award_type", "award_type"),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
@@ -1736,7 +1736,7 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("unique_award_key", "award__generated_unique_award_id"),
+                ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
                 ("award_type", "award_type"),  # Column is appended to in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
