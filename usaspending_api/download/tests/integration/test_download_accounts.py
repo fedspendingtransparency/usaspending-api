@@ -388,12 +388,11 @@ def test_download_accounts_bad_filter_type_raises(client, download_test_data):
 
 def test_multiple_submission_types_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
-    valid_submissions = VALID_ACCOUNT_SUBMISSION_TYPES
 
     def all_subsets(ss):
         return chain(*map(lambda x: combinations(ss, x), range(1, len(ss) + 1)))
 
-    for submission_list in all_subsets(valid_submissions):
+    for submission_list in all_subsets(VALID_ACCOUNT_SUBMISSION_TYPES):
         resp = client.post(
             "/api/v2/download/accounts/",
             content_type="application/json",
@@ -410,3 +409,45 @@ def test_multiple_submission_types_success(client, download_test_data):
         assert ".zip" in resp.json()["file_url"]
         if len(submission_list) > 1:
             assert "AccountData" in resp.json()["file_url"]
+
+
+def test_duplicate_submission_types_success(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    duplicated_submission_list = VALID_ACCOUNT_SUBMISSION_TYPES * 11
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "treasury_account",
+                "filters": {"submission_types": duplicated_submission_list, "fy": "2017", "quarter": "3"},
+                "file_format": "tsv",
+            }
+        ),
+    )
+
+    download_types = resp.json()["download_request"]["download_types"]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(download_types) == len(VALID_ACCOUNT_SUBMISSION_TYPES), "De-duplication failed"
+    assert set(download_types) == set(VALID_ACCOUNT_SUBMISSION_TYPES), "Wrong values in response"
+
+
+def test_empty_submission_types_fail(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "treasury_account",
+                "filters": {"submission_types": [], "fy": "2017", "quarter": "3"},
+                "file_format": "tsv",
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Provide at least one value" in resp.json()["detail"], "Incorrect error message"
