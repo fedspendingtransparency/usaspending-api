@@ -1,7 +1,7 @@
 from typing import Optional
 
 from usaspending_api.references.models.cgac import CGAC
-from usaspending_api.references.models.toptier_agency import ToptierAgency
+from usaspending_api.references.models.frec import FREC
 
 
 def canonicalize_string(val):
@@ -22,8 +22,8 @@ def retrive_agency_name_from_code(code: str) -> Optional[str]:
     if cgac_agency:
         return cgac_agency["agency_name"]
 
-    toptier_agency = ToptierAgency.objects.filter(toptier_code=code).values("name").first()
-    if toptier_agency:
-        return toptier_agency["name"]
+    frec_agency = FREC.objects.filter(frec_code=code).values("agency_name").first()
+    if frec_agency:
+        return frec_agency["agency_name"]
 
     return None
