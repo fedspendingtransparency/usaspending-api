@@ -164,12 +164,17 @@ def validate_assistance_request(request_data):
 def validate_account_request(request_data):
     json_request = {"columns": request_data.get("columns", []), "filters": {}}
 
+    _validate_submission_type(request_data)
     _validate_required_parameters(request_data, ["account_level", "filters"])
     json_request["account_level"] = _validate_account_level(request_data, ["federal_account", "treasury_account"])
 
     filters = _validate_filters(request_data)
 
+    json_request["download_types"] = request_data["filters"]["submission_types"]
+    json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
+
     json_request["file_format"] = str(request_data.get("file_format", "csv")).lower()
+
     _validate_file_format(json_request)
 
     # Validate required filters
@@ -186,20 +191,6 @@ def validate_account_request(request_data):
     # Validate fiscal_quarter
     if json_request["filters"]["quarter"] not in [1, 2, 3, 4]:
         raise InvalidParameterException("quarter filter must be a valid fiscal quarter (1, 2, 3, or 4)")
-
-    # Validate submission_type parameter
-    submission_types = filters.get("submission_types") or [filters.get("submission_type")]
-
-    if submission_types == [None]:  # this is the awkward default value if neither filter is provided
-        raise InvalidParameterException("Missing required filter: submission_types")
-
-    for submission_type in submission_types:
-        if submission_type not in VALID_ACCOUNT_SUBMISSION_TYPES:
-            msg = f"Invalid value for submission_type: `{submission_type}` not in {VALID_ACCOUNT_SUBMISSION_TYPES}"
-            raise InvalidParameterException(msg)
-
-    json_request["download_types"] = submission_types
-    json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
 
     # Validate the rest of the filters
     check_types_and_assign_defaults(filters, json_request["filters"], ACCOUNT_FILTER_DEFAULTS)
@@ -303,3 +294,33 @@ def _validate_file_format(json_request: dict) -> None:
     if val not in FILE_FORMATS:
         msg = f"'{val}' is not an acceptable value for 'file_format'. Valid options: {tuple(FILE_FORMATS.keys())}"
         raise InvalidParameterException(msg)
+
+
+def _validate_submission_type(json_request: dict) -> None:
+    """Validate submission_type/submission_types parameter
+
+    In February 2020 submission_type became the legacy filter, replaced by submission_types
+    submission_type was left in-place for backward compatibility but hidden in API Contract and error messages
+    """
+    legacy_submission_type = json_request.get("filters").get("submission_type", ...)
+    submission_types = json_request.get("filters").get("submission_types", ...)
+
+    if submission_types == ... and legacy_submission_type == ...:
+        raise InvalidParameterException("Missing required filter: submission_types")
+
+    elif submission_types == ... and legacy_submission_type != ...:
+        del json_request["filters"]["submission_type"]
+        if not isinstance(legacy_submission_type, list):
+            submission_types = [legacy_submission_type]
+        else:
+            submission_types = legacy_submission_type
+    else:
+        if not isinstance(submission_types, list):
+            submission_types = [submission_types]
+
+    for submission_type in submission_types:
+        if submission_type not in VALID_ACCOUNT_SUBMISSION_TYPES:
+            msg = f"Invalid value for submission_type: `{submission_type}` not in {VALID_ACCOUNT_SUBMISSION_TYPES}"
+            raise InvalidParameterException(msg)
+
+    json_request["filters"]["submission_types"] = list(set(submission_types))
