@@ -18,7 +18,7 @@ from usaspending_api.etl.transaction_loaders.data_load_helpers import format_bul
 
 class FPDSLoaderIntegrationTestCase(TestCase):
     logger = logging.getLogger(__name__)
-    multi_db = True
+    databases = {"default", "data_broker"}
 
     @classmethod
     def setUpClass(cls):

@@ -11,12 +11,12 @@ logger = logging.getLogger("console")
 
 def store_deleted_fabs(ids_to_delete):
     seconds = int(time.time())  # adds enough uniqueness to filename
-    file_name = datetime.now(timezone.utc).strftime("%Y-%m-%d") + "_FABSdeletions_" + str(seconds) + ".csv"
+    file_name = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d')}_FABSdeletions_{seconds}.csv"
     file_with_headers = ["afa_generated_unique"] + list(ids_to_delete)
 
     if settings.IS_LOCAL:
         file_path = settings.CSV_LOCAL_PATH + file_name
-        logger.info("storing deleted transaction IDs at: {}".format(file_path))
+        logger.info(f"storing deleted transaction IDs at: {file_path}")
         with open(file_path, "w") as writer:
             for row in file_with_headers:
                 writer.write(row + "\n")

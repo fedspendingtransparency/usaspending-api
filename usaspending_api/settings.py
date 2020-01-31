@@ -1,6 +1,6 @@
 """
-For more information on this file: https://docs.djangoproject.com/en/1.11/topics/settings/
-For the full list of settings and their values: https://docs.djangoproject.com/en/1.11/ref/settings/
+For more information on this file: https://docs.djangoproject.com/en/2.2/topics/settings/
+For the full list of settings and their values: https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import dj_database_url
@@ -9,6 +9,7 @@ import os
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
+from ddtrace import patch_all
 
 # All paths inside the project should be additive to BASE_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -29,7 +30,7 @@ API_MIN_DATE = "2000-10-01"  # Beginning of FY2001
 API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
+# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = get_random_string()
@@ -128,12 +129,30 @@ INSTALLED_APPS = [
     "usaspending_api.download",
     "usaspending_api.bulk_download",
     "usaspending_api.recipient",
+    "usaspending_api.transactions",
     "usaspending_api.search",
     "django_spaghetti",
     "simple_history",
+    "ddtrace.contrib.django",  # Datadog APM tracing
 ]
 
 INTERNAL_IPS = ()
+
+# Datadog APM tracing configuration
+# patch_all(): Capture traces from integrated components' libraries by patching them. See:
+# - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
+# - If Automatically Instrumented = Yes, here: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
+patch_all()
+DATADOG_TRACE = {
+    "ENABLED": False,  # Replace during env-deploys to turn on
+    "DEFAULT_SERVICE": "api",
+    "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
+    "ANALYTICS_SAMPLE_RATE": 1.0,  # Including 100% of traces in sample
+    "DISTRIBUTED_TRACING": False,  # only needed if picking up disjoint traces by HTTP Header value
+}
+# NOTE: Track these to see if the above settings are even honored or buggy
+# - https://github.com/DataDog/dd-trace-py/issues/986
+# - https://github.com/DataDog/dd-trace-py/issues/798
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
@@ -175,7 +194,7 @@ WSGI_APPLICATION = "usaspending_api.wsgi.application"
 CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 
 # Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 # import an environment variable, DATABASE_URL
 # see https://github.com/kennethreitz/dj-database-url for more info
@@ -222,7 +241,7 @@ if os.environ.get("DATA_BROKER_DATABASE_URL"):
     DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
 
 # Password validation
-# https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
+# https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -246,7 +265,7 @@ REST_FRAMEWORK = {
 }
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.11/topics/i18n/
+# https://docs.djangoproject.com/en/2.2/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
@@ -255,7 +274,7 @@ USE_L10N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.11/howto/static-files/
+# https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = "/static/"
 STATIC_ROOT = str(APP_DIR / "static/") + "/"
@@ -276,6 +295,7 @@ LOGGING = {
             "format": "%(timestamp)s %(status)s %(method)s %(path)s %(status_code)s %(remote_addr)s %(host)s "
             + "%(response_ms)d %(message)s %(request)s %(traceback)s %(error_msg)s",
         },
+        "detailed": {"format": "[%(asctime)s] [%(levelname)s] - %(message)s", "datefmt": "%Y/%m/%d %H:%M:%S (%Z)"},
     },
     "handlers": {
         "server": {
@@ -291,6 +311,7 @@ LOGGING = {
             "formatter": "specifics",
         },
         "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
+        "script": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "detailed"},
     },
     "loggers": {
         # The root logger; i.e. "all modules"
@@ -299,6 +320,8 @@ LOGGING = {
         "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
         # Catch-all logger (over)used for non-Django-API commands that output to the console
         "console": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        # More-verbose logger for ETL scripts
+        "script": {"handlers": ["script"], "level": "INFO", "propagate": False},
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
         # ======== Module-specific loggers ========
