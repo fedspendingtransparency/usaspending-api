@@ -29,11 +29,9 @@
   },
   "sort": {
     "fields": [
-      "total_obligation",
-      "action_date"
+      "total_obligation"
     ],
     "order": [
-      "desc",
       "desc"
     ]
   },
@@ -62,12 +60,7 @@
           "null_value": "NULL"
         },
         "type_description": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "keyword"
         },
         "piid": {
           "type": "text",
@@ -99,7 +92,12 @@
         },
         "description": {
           "type": "text",
-          "analyzer": "stemmer_analyzer"
+          "analyzer": "stemmer_analyzer",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "total_obl_bin": {
           "type": "keyword"
@@ -338,6 +336,14 @@
           "type": "keyword"
         },
         "pop_city_name": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "pop_city_code": {
           "type": "text",
           "fields": {
             "keyword": {

@@ -131,7 +131,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if self.elasticsearch and not self.is_subaward:
             self.last_record_unique_id = json_request.get("last_record_unique_id")
             self.last_record_sort_value = json_request.get("last_record_sort_value")
-            self.last_record_tie_break_value = json_request.get("last_record_tie_break_value")
             logger.info("Using experimental Elasticsearch functionality for 'spending_by_award'")
             return Response(self.construct_es_response(self.query_elasticsearch()))
         return Response(self.create_response(self.construct_queryset()))
@@ -169,14 +168,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "text_type": "search",
                 "required": False,
                 "allow_nulls": True,
-            },
-            {
-                "name": "last_record_tie_break_value",
-                "key": "last_record_tie_break_value",
-                "type": "float",
-                "required": False,
-                "allow_nulls": True,
-            },
+            }
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -311,7 +303,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if (
             self.last_record_unique_id is not None and self.last_record_sort_value is not None
         ) or record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW:
-            sorts.append({"total_obligation": "desc"})
             sorts.append({"award_id": self.pagination["sort_order"]})
 
         if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
@@ -325,21 +316,25 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     es_limit=settings.ES_AWARDS_MAX_RESULT_WINDOW,
                 )
             )
-            self.pagination["upper_bound"] = record_num
-            self.pagination["lower_bound"] = record_num - 1
-            queryset = self.construct_queryset()
+            sort_by_fields = self.get_sort_by_fields()
+            sort_by_fields.append("award_id")
+            database_fields = self.get_database_fields()
+            base_queryset = self.constants["filter_queryset_func"](self.filters)
+            queryset = self.annotate_queryset(base_queryset)
+            queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
+            queryset = queryset.values(*list(database_fields))[record_num - 1: record_num]
+
             if len(queryset) != 1:
                 return {}
             results = [
                 self.date_to_epoch_millis(queryset[0].get(self.get_sort_by_fields()[0])),
-                float(queryset[0].get("total_obligation")),
                 queryset[0].get("award_id"),
             ]
             search = (
                 AwardSearch()
                 .filter(filter_query)
                 .sort(*sorts)
-                .extra(search_after=[*results])[0 : self.pagination["limit"]]
+                .extra(search_after=[*results])[0 : self.pagination["limit"] + 1]
             )
             response = search.handle_execute()
             return response
@@ -351,10 +346,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 .extra(
                     search_after=[
                         self.date_to_epoch_millis(self.last_record_sort_value),
-                        self.last_record_tie_break_value,
                         self.last_record_unique_id,
                     ]
-                )[0 : self.pagination["limit"]]
+                )[0 : self.pagination["limit"] + 1]
             )
             if self.last_record_sort_value is not None and self.last_record_unique_id is not None
             else (AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]])
@@ -373,7 +367,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 row[field] = hit.get(
                     self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]].get(
                         field
-                    )
+                    ).replace(".keyword", "")
                 )
 
             row["internal_id"] = int(row["internal_id"])
@@ -392,25 +386,26 @@ class SpendingByAwardVisualizationViewSet(APIView):
             row = self.append_recipient_hash_level(row)
             row.pop("parent_recipient_unique_id")
             results.append(row)
+
         last_record_unique_id = None
         last_record_sort_value = None
-        last_record_tie_break_value = None
-        if len(response) > 0:
-            last_record_unique_id = int(response[len(response) - 1].to_dict().get("award_id"))
-            last_record_tie_break_value = float(response[len(response) - 1].to_dict().get("total_obligation"))
-            last_record_sort_value = response[len(response) - 1].to_dict().get(self.get_elastic_sort_by_fields()[0])
-        total = 0
-        if response != {}:
-            total = response.hits.total
+
+        has_next = False
+        if len(results) > self.pagination["limit"]:
+            has_next = True
+
+        if len(response) > 0 and has_next:
+            last_record_unique_id = response[len(response) - 2].meta.sort[1]
+            last_record_sort_value = response[len(response) - 2].meta.sort[0]
+
         return {
             "limit": self.pagination["limit"],
-            "results": results,
+            "results": results[0:self.pagination["limit"]],
             "page_metadata": {
                 "page": self.pagination["page"],
-                "hasNext": total - (self.pagination["page"] - 1) * self.pagination["limit"] > self.pagination["limit"],
+                "hasNext": has_next,
                 "last_record_unique_id": last_record_unique_id,
-                "last_record_tie_break_value": last_record_sort_value,
-                "last_record_sort_value": last_record_tie_break_value,
+                "last_record_sort_value": last_record_sort_value,
             },
             "messages": [get_time_period_message()],
         }
