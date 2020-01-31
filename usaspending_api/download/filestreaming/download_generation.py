@@ -2,6 +2,8 @@ import json
 import logging
 import multiprocessing
 import os
+from pathlib import Path
+
 import psutil as ps
 import re
 import shutil
@@ -577,6 +579,5 @@ def create_empty_data_file(
     write_to_log(
         message=f"Skipping download of {source.file_name} due to no valid columns provided", download_job=download_job
     )
-    with open(source_path, "w") as _:
-        pass
+    Path(source_path).touch()
     append_files_to_zip_file([source_path], zip_file_path)
