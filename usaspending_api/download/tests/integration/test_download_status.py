@@ -110,6 +110,15 @@ def download_test_data(transactional_db):
     update_awards()
 
 
+def get_number_of_columns_for_query_paths(*download_tuples):
+    count = 0
+    for download_tuple in download_tuples:
+        model_type = download_tuple[0]
+        file_type = download_tuple[1]
+        count += len(query_paths[model_type][file_type])
+    return count
+
+
 def test_download_assistance_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
@@ -121,23 +130,35 @@ def test_download_assistance_status(client, download_test_data):
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
+    expected_number_of_columns = get_number_of_columns_for_query_paths(
+        ("award_financial", "treasury_account"), ("assistance_transaction_history", "d2"), ("subaward", "d2")
+    )
+
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == 90
+    assert resp.json()["total_columns"] == expected_number_of_columns
 
     # Test with columns specified
     dl_resp = client.post(
         "/api/v2/download/assistance/",
         content_type="application/json",
         data=json.dumps(
-            {"award_id": 789, "columns": ["prime_award_unique_key", "prime_award_amount", "program_activity_name"]}
+            {
+                "award_id": 789,
+                "columns": [
+                    "assistance_transaction_unique_key",
+                    "prime_award_unique_key",
+                    "prime_award_amount",
+                    "program_activity_name",
+                ],
+            }
         ),
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == 2
+    assert resp.json()["total_columns"] == 4
 
 
 def test_download_awards_status(client, download_test_data):
@@ -151,9 +172,13 @@ def test_download_awards_status(client, download_test_data):
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
+    expected_number_of_columns = get_number_of_columns_for_query_paths(
+        ("award", "d1"), ("award", "d2"), ("subaward", "d1"), ("subaward", "d2")
+    )
+
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 3
-    assert resp.json()["total_columns"] == len(query_paths["award"]["d1"])
+    assert resp.json()["total_columns"] == expected_number_of_columns
 
     # Test with columns specified
     dl_resp = client.post(
@@ -176,7 +201,7 @@ def test_download_awards_status(client, download_test_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 3
-    assert resp.json()["total_columns"] == 5
+    assert resp.json()["total_columns"] == 6
 
 
 def test_download_contract_status(client, download_test_data):
@@ -188,9 +213,13 @@ def test_download_contract_status(client, download_test_data):
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
+    expected_number_of_columns = get_number_of_columns_for_query_paths(
+        ("award_financial", "treasury_account"), ("idv_transaction_history", "d1"), ("subaward", "d1"),
+    )
+
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
+    assert resp.json()["total_columns"] == expected_number_of_columns
 
     # Test with columns specified
     dl_resp = client.post(
@@ -213,7 +242,7 @@ def test_download_contract_status(client, download_test_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == 2
+    assert resp.json()["total_columns"] == 5
 
 
 def test_download_idv_status(client, download_test_data):
@@ -225,9 +254,13 @@ def test_download_idv_status(client, download_test_data):
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
+    expected_number_of_columns = get_number_of_columns_for_query_paths(
+        ("award_financial", "treasury_account"), ("idv_orders", "d1"), ("idv_transaction_history", "d1")
+    )
+
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
+    assert resp.json()["total_columns"] == expected_number_of_columns
 
     # Test with columns specified
     dl_resp = client.post(
@@ -244,7 +277,7 @@ def test_download_idv_status(client, download_test_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 1
-    assert resp.json()["total_columns"] == 2
+    assert resp.json()["total_columns"] == 5
 
 
 def test_download_transactions_status(client, download_test_data):
@@ -264,9 +297,13 @@ def test_download_transactions_status(client, download_test_data):
 
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
+    expected_number_of_columns = get_number_of_columns_for_query_paths(
+        ("transaction", "d1"), ("transaction", "d2"), ("subaward", "d1"), ("subaward", "d2")
+    )
+
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 2
-    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
+    assert resp.json()["total_columns"] == expected_number_of_columns
 
     # Test with columns specified
     dl_resp = client.post(
@@ -288,7 +325,7 @@ def test_download_transactions_status(client, download_test_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 3
-    assert resp.json()["total_columns"] == 2
+    assert resp.json()["total_columns"] == 3
 
 
 def test_download_transactions_limit(client, download_test_data):
@@ -301,6 +338,10 @@ def test_download_transactions_limit(client, download_test_data):
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
+    expected_number_of_columns = get_number_of_columns_for_query_paths(
+        ("transaction", "d1"), ("transaction", "d2"), ("subaward", "d1"), ("subaward", "d2")
+    )
+
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 2
-    assert resp.json()["total_columns"] == len(query_paths["transaction"]["d1"])
+    assert resp.json()["total_columns"] == expected_number_of_columns

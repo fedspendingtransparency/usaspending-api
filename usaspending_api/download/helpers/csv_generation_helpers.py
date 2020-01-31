@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 def verify_requested_columns_available(sources, requested):
-    """Ensures the user-requested columns are availble to write to"""
+    """Ensures the user-requested columns are available to write to"""
     bad_cols = set(requested)
     for source in sources:
         bad_cols -= set(source.columns(requested))
