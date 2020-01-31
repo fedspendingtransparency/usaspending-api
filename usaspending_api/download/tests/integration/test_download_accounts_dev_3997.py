@@ -310,7 +310,7 @@ def test_download_accounts_dev_3997(client):
                 "filters": {
                     "budget_function": "all",
                     "agency": "all",
-                    "submission_type": "object_class_program_activity",
+                    "submission_types": ["object_class_program_activity"],
                     "fy": "2018",
                     "quarter": "4",
                 },
@@ -443,7 +443,7 @@ def test_download_accounts_dev_3997(client):
                 "filters": {
                     "budget_function": "all",
                     "agency": "all",
-                    "submission_type": "object_class_program_activity",
+                    "submission_types": ["object_class_program_activity"],
                     "fy": "2018",
                     "quarter": "4",
                 },

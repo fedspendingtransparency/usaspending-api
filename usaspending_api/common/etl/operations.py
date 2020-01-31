@@ -1,7 +1,7 @@
 """ Functions to generate SQL for several higher level ETL operations. """
 
 
-from psycopg2.sql import SQL
+from psycopg2.sql import SQL, Identifier
 from typing import List
 from usaspending_api.common.etl import ETLObjectBase, ETLWritableObjectBase, ETLTemporaryTable, primatives
 from usaspending_api.common.helpers import sql_helpers
@@ -164,10 +164,47 @@ def update_changed_rows(source: ETLObjectBase, destination: ETLWritableObjectBas
     return sql_helpers.execute_dml_sql(sql)
 
 
+def upsert_records_with_predicate(
+    source: ETLObjectBase, destination: ETLWritableObjectBase, predicate: list, primary_key: str
+) -> int:
+    # Destination columns that are in source or are overridden.
+    insertable_columns = _get_shared_columns(source.columns + list(destination.insert_overrides), destination.columns)
+
+    excluded = SQL(", ").join(
+        [
+            SQL("{dest} = {source}").format(dest=Identifier(field), source=SQL("EXCLUDED.") + Identifier(field))
+            for field in insertable_columns
+        ]
+    )
+
+    upsert_sql_template = """
+        INSERT INTO {destination_object_representation} ({insert_columns})
+        SELECT      {select_columns}
+        FROM        {source_object} AS {alias}
+        ON CONFLICT ({primary_key}) DO UPDATE SET
+        {excluded}
+        RETURNING {primary_key}
+    """
+    alias = "s"
+
+    sql = SQL(upsert_sql_template).format(
+        primary_key=Identifier(primary_key),
+        alias=Identifier(alias),
+        destination_object_representation=destination.object_representation,
+        insert_columns=primatives.make_column_list(insertable_columns),
+        select_columns=primatives.make_column_list(insertable_columns, alias, destination.insert_overrides),
+        source_object=source.object_representation_custom_predicate(predicate),
+        excluded=excluded,
+    )
+
+    return sql_helpers.execute_dml_sql(sql)
+
+
 __all__ = [
     "delete_obsolete_rows",
     "identify_new_or_updated",
     "insert_missing_rows",
     "stage_table",
     "update_changed_rows",
+    "upsert_records_with_predicate",
 ]

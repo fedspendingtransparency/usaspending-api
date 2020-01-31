@@ -837,17 +837,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionnormalized',
             name='award',
-            field=models.ForeignKey(help_text='The award which this transaction is contained in', on_delete=django.db.models.deletion.CASCADE, to='awards.Award'),
+            field=models.ForeignKey(help_text='The award which this transaction is contained in', on_delete=django.db.models.deletion.DO_NOTHING, to='awards.Award'),
         ),
         migrations.AddField(
             model_name='transactionnormalized',
             name='awarding_agency',
-            field=models.ForeignKey(help_text='The agency which awarded this transaction', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='awards_transactionnormalized_awarding_agency', to='references.Agency'),
+            field=models.ForeignKey(help_text='The agency which awarded this transaction', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='awards_transactionnormalized_awarding_agency', to='references.Agency'),
         ),
         migrations.AddField(
             model_name='transactionnormalized',
             name='funding_agency',
-            field=models.ForeignKey(help_text='The agency which is funding this transaction', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='awards_transactionnormalized_funding_agency', to='references.Agency'),
+            field=models.ForeignKey(help_text='The agency which is funding this transaction', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='awards_transactionnormalized_funding_agency', to='references.Agency'),
         ),
         migrations.AddField(
             model_name='transactionnormalized',
@@ -907,22 +907,22 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='award',
             name='awarding_agency',
-            field=models.ForeignKey(help_text='The awarding agency for the award', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='+', to='references.Agency'),
+            field=models.ForeignKey(help_text='The awarding agency for the award', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='references.Agency'),
         ),
         migrations.AddField(
             model_name='award',
             name='earliest_transaction',
-            field=models.ForeignKey(help_text='The earliest transaction by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='earliest_for_award', to='awards.TransactionNormalized'),
+            field=models.ForeignKey(help_text='The earliest transaction by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='earliest_for_award', to='awards.TransactionNormalized'),
         ),
         migrations.AddField(
             model_name='award',
             name='funding_agency',
-            field=models.ForeignKey(help_text='The funding agency for the award', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='+', to='references.Agency'),
+            field=models.ForeignKey(help_text='The funding agency for the award', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='references.Agency'),
         ),
         migrations.AddField(
             model_name='award',
             name='latest_transaction',
-            field=models.ForeignKey(help_text='The latest transaction by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='latest_for_award', to='awards.TransactionNormalized'),
+            field=models.ForeignKey(help_text='The latest transaction by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='latest_for_award', to='awards.TransactionNormalized'),
         ),
         migrations.AddField(
             model_name='award',
