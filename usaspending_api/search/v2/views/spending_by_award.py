@@ -168,7 +168,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "text_type": "search",
                 "required": False,
                 "allow_nulls": True,
-            }
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -322,7 +322,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             base_queryset = self.constants["filter_queryset_func"](self.filters)
             queryset = self.annotate_queryset(base_queryset)
             queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
-            queryset = queryset.values(*list(database_fields))[record_num - 1: record_num]
+            queryset = queryset.values(*list(database_fields))[record_num - 1 : record_num]
 
             if len(queryset) != 1:
                 return {}
@@ -344,10 +344,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 .filter(filter_query)
                 .sort(*sorts)
                 .extra(
-                    search_after=[
-                        self.date_to_epoch_millis(self.last_record_sort_value),
-                        self.last_record_unique_id,
-                    ]
+                    search_after=[self.date_to_epoch_millis(self.last_record_sort_value), self.last_record_unique_id]
                 )[0 : self.pagination["limit"] + 1]
             )
             if self.last_record_sort_value is not None and self.last_record_unique_id is not None
@@ -365,9 +362,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             for field in self.fields:
                 row[field] = hit.get(
-                    self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]].get(
-                        field
-                    ).replace(".keyword", "")
+                    self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]]
+                    .get(field)
+                    .replace(".keyword", "")
                 )
 
             row["internal_id"] = int(row["internal_id"])
@@ -400,7 +397,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return {
             "limit": self.pagination["limit"],
-            "results": results[0:self.pagination["limit"]],
+            "results": results[0 : self.pagination["limit"]],
             "page_metadata": {
                 "page": self.pagination["page"],
                 "hasNext": has_next,
