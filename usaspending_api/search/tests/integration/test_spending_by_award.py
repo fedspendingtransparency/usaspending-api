@@ -1133,3 +1133,44 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert len(logging_statements) == 0, "Expected zero logging statements"
     assert resp.json().get("detail") == "Field 'fields' value '[]' is below min '1' items"
+
+
+@pytest.mark.django_db
+def test_search_after(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
+    logging_statements = []
+    monkeypatch.setattr(
+        "usaspending_api.search.v2.views.spending_by_award.logger.info",
+        lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
+        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
+    )
+
+    elasticsearch_award_index.update_index()
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["A", "B", "C", "D"]},
+                "fields": ["Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "asc",
+                "subawards": False,
+                "last_record_unique_id": 1,
+                "last_record_sort_value": "abc111",
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2", "recipient_id": None},
+        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3", "recipient_id": None},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(logging_statements) == 1
+    assert len(resp.json().get("results")) == 2
+    assert resp.json().get("results") == expected_result, "Award Type Code filter does not match expected result"

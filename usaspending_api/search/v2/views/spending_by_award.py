@@ -362,9 +362,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             for field in self.fields:
                 row[field] = hit.get(
-                    self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]]
-                    .get(field)
-                    .replace(".keyword", "")
+                    str(
+                        self.constants["elasticsearch_type_code_to_field_map"][
+                            hit[self.constants["award_semaphore"]]
+                        ].get(field)
+                    ).replace(".keyword", "")
                 )
 
             row["internal_id"] = int(row["internal_id"])
