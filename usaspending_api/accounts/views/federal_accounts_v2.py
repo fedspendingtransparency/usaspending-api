@@ -12,9 +12,10 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.helpers import dod_tas_agency_filter
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
+from usaspending_api.references.constants import DOD_CGAC
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
@@ -515,9 +516,17 @@ class FederalAccountsViewSet(APIView):
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
+        if agency_id == DOD_CGAC:
+            taa_filter = dod_tas_agency_filter("treasuryappropriationaccount")
+        elif agency_id is not None:
+            taa_filter = Q(treasuryappropriationaccount__agency_id=agency_id)
+        else:
+            taa_filter = Q()
+
         agency_subquery = ToptierAgency.objects.filter(toptier_code=OuterRef("corrected_agency_identifier"))
         queryset = (
             FederalAccount.objects.filter(
+                taa_filter,
                 treasuryappropriationaccount__account_balances__final_of_fy=True,
                 treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy,
             )
@@ -542,13 +551,6 @@ class FederalAccountsViewSet(APIView):
                 | Q(managing_agency__icontains=keyword)
                 | Q(managing_agency_acronym__contains=keyword.upper())
             )
-
-        if agency_id is not None:
-            tta_list = DOD_ARMED_FORCES_CGAC if agency_id == DOD_CGAC else [agency_id]
-            tta_filter = Q()
-            for tta in tta_list:
-                tta_filter |= Q(account_number__startswith=tta)
-            queryset &= queryset.filter(tta_filter)
 
         if sort_direction == "desc":
             queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))
