@@ -2,6 +2,8 @@ import json
 import logging
 import multiprocessing
 import os
+from pathlib import Path
+
 import psutil as ps
 import re
 import shutil
@@ -32,7 +34,7 @@ from usaspending_api.download.helpers import (
     write_to_download_log as write_to_log,
 )
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
-
+from usaspending_api.download.models import DownloadJob
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
@@ -71,11 +73,17 @@ def generate_download(download_job):
         # Generate sources from the JSON request object
         sources = get_download_sources(json_request)
         for source in sources:
-            # Parse and write data to the file
-            download_job.number_of_columns = max(download_job.number_of_columns, len(source.columns(columns)))
-            parse_source(
-                source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format
-            )
+            # Parse and write data to the file; if there are no matching columns for a source then add an empty file
+            source_column_count = len(source.columns(columns))
+            if source_column_count == 0:
+                create_empty_data_file(
+                    source, download_job, working_dir, piid, assistance_id, zip_file_path, file_format
+                )
+            else:
+                download_job.number_of_columns += source_column_count
+                parse_source(
+                    source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format
+                )
         include_data_dictionary = json_request.get("include_data_dictionary")
         if include_data_dictionary:
             add_data_dictionary_to_zip(working_dir, zip_file_path)
@@ -553,3 +561,23 @@ def _kill_spawned_processes(download_job=None):
             spawn_of_job.kill()
         except ps.NoSuchProcess:
             pass
+
+
+def create_empty_data_file(
+    source: DownloadSource,
+    download_job: DownloadJob,
+    working_dir: str,
+    piid: str,
+    assistance_id: str,
+    zip_file_path: str,
+    file_format: str,
+) -> None:
+    data_file_name = build_data_file_name(source, download_job, piid, assistance_id)
+    extension = FILE_FORMATS[file_format]["extension"]
+    source.file_name = f"{data_file_name}.{extension}"
+    source_path = os.path.join(working_dir, source.file_name)
+    write_to_log(
+        message=f"Skipping download of {source.file_name} due to no valid columns provided", download_job=download_job
+    )
+    Path(source_path).touch()
+    append_files_to_zip_file([source_path], zip_file_path)
