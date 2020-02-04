@@ -59,7 +59,7 @@ class AgnosticDeletes:
                 if len(ids) == 1:  # handle case with single-value Python tuples contain a trailing comma "(id,)"
                     ids = ids + ids
                 sql = delete_template.format(
-                    table=self.destination_table_name, key=self.shared_unique_key, ids=tuple(ids), date=date
+                    table=self.destination_table_name, key=self.shared_pk, ids=tuple(ids), date=date
                 )
                 cursor.execute(sql)
                 logger.info(f"Removed {cursor.rowcount} rows from {date} delete records")
