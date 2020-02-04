@@ -574,9 +574,7 @@ def _test_correct_response_for_keywords(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
-    ]
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
@@ -602,9 +600,7 @@ def _test_correct_response_for_time_period(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
-    ]
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
@@ -631,9 +627,9 @@ def _test_correct_response_for_award_type_codes(client):
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
-        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3", "recipient_id": None},
-        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2", "recipient_id": None},
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None},
+        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
+        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 3
@@ -664,9 +660,7 @@ def _test_correct_response_for_agencies(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
-    ]
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Agency filter does not match expected result"
@@ -693,9 +687,7 @@ def _test_correct_response_for_tas_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
-    ]
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "TAS Codes filter does not match expected result"
@@ -722,9 +714,7 @@ def _test_correct_response_for_pop_location(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
-    ]
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Place of Performance filter does not match expected result"
@@ -755,8 +745,8 @@ def _test_correct_response_for_recipient_location(client):
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None},
-        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2", "recipient_id": None},
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
+        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
@@ -784,14 +774,7 @@ def _test_correct_response_for_recipient_search_text(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {
-            "internal_id": 4,
-            "Award ID": "abc444",
-            "generated_internal_id": "ASST_NON_TESTING_4",
-            "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9-R",
-        }
-    ]
+    expected_result = [{"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Recipient Search Text filter does not match expected result"
@@ -819,8 +802,8 @@ def _test_correct_response_for_recipient_type_names(client):
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None},
-        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3", "recipient_id": None},
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
+        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
@@ -849,8 +832,8 @@ def _test_correct_response_for_award_amounts(client):
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None},
-        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2", "recipient_id": None},
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
+        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
@@ -878,14 +861,7 @@ def _test_correct_response_for_cfda_program(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {
-            "internal_id": 4,
-            "Award ID": "abc444",
-            "generated_internal_id": "ASST_NON_TESTING_4",
-            "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9-R",
-        }
-    ]
+    expected_result = [{"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "CFDA Program filter does not match expected result"
@@ -912,9 +888,7 @@ def _test_correct_response_for_naics_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
-    ]
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "NAICS Code filter does not match expected result"
@@ -941,9 +915,7 @@ def _test_correct_response_for_psc_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
-    ]
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
@@ -970,9 +942,7 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
-    ]
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert (
@@ -1001,9 +971,7 @@ def _test_correct_response_for_set_aside_type_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
-    ]
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
@@ -1030,9 +998,7 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1", "recipient_id": None}
-    ]
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert (
@@ -1061,14 +1027,7 @@ def _test_correct_response_for_recipient_id(client):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {
-            "internal_id": 4,
-            "Award ID": "abc444",
-            "generated_internal_id": "ASST_NON_TESTING_4",
-            "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9-R",
-        }
-    ]
+    expected_result = [{"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Recipient ID filter does not match expected result"
@@ -1167,8 +1126,8 @@ def test_search_after(client, monkeypatch, spending_by_award_test_data, elastics
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
-        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2", "recipient_id": None},
-        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3", "recipient_id": None},
+        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
+        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(logging_statements) == 1
