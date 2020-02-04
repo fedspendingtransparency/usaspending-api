@@ -700,7 +700,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
 
     if index is None:
         index = "{}-*".format(config["root_index"])
-    start_ = client.search(index=index)["hits"]["total"]
+    start_ = client.search(index=index)["hits"]["total"]["value"]
     printf({"msg": "Starting amount of indices ----- {}".format(start_), "f": "ES Delete", "job": job_id})
     col_to_items_dict = defaultdict(list)
     for l in id_list:
@@ -722,7 +722,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
                 )
             except Exception as e:
                 printf({"msg": "[ERROR][ERROR][ERROR]\n{}".format(str(e)), "f": "ES Delete", "job": job_id})
-    end_ = client.search(index=index)["hits"]["total"]
+    end_ = client.search(index=index)["hits"]["total"]["value"]
 
     t = perf_counter() - start
     total = str(start_ - end_)
