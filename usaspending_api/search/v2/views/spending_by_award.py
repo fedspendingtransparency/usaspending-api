@@ -399,7 +399,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return {
             "limit": self.pagination["limit"],
-            "results": results[0 : self.pagination["limit"]],
+            "results": results[:self.pagination["limit"]],
             "page_metadata": {
                 "page": self.pagination["page"],
                 "hasNext": has_next,
