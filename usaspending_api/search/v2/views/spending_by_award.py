@@ -334,7 +334,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 AwardSearch()
                 .filter(filter_query)
                 .sort(*sorts)
-                .extra(search_after=[*results])[0 : self.pagination["limit"] + 1]
+                .extra(search_after=[*results])[: self.pagination["limit"] + 1]
             )
             response = search.handle_execute()
             return response
@@ -345,7 +345,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 .sort(*sorts)
                 .extra(
                     search_after=[self.date_to_epoch_millis(self.last_record_sort_value), self.last_record_unique_id]
-                )[0 : self.pagination["limit"] + 1]
+                )[: self.pagination["limit"] + 1]
             )
             if self.last_record_sort_value is not None and self.last_record_unique_id is not None
             else (AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]])
@@ -399,7 +399,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return {
             "limit": self.pagination["limit"],
-            "results": results[:self.pagination["limit"]],
+            "results": results[: self.pagination["limit"]],
             "page_metadata": {
                 "page": self.pagination["page"],
                 "hasNext": has_next,
