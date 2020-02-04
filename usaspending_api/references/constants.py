@@ -13,6 +13,7 @@ DOD_CGAC = "097"  # DoD's toptier identifier.
 DOD_SUBSUMED_CGAC = ["017", "021", "057"]  # Toptier identifiers for Air Force, Army, and Navy.
 DOD_ARMED_FORCES_CGAC = [DOD_CGAC] + DOD_SUBSUMED_CGAC  # The list of ALL agencies reported under DoD.
 DOD_ARMED_FORCES_TAS_CGAC_FREC = [("011", "1137"), ("011", "DE00")]  # TAS (CGAC, FREC)s for additional DoD agencies.
+DOD_FEDERAL_ACCOUNTS = [("011", "1082")]  # Federal Account (AID, MAIN) requiring special handling.
 
 # Agencies which should be excluded from dropdowns.
 EXCLUDE_CGAC = ["000", "067"]

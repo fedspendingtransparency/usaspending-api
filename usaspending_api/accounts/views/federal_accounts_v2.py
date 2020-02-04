@@ -516,12 +516,11 @@ class FederalAccountsViewSet(APIView):
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
+        taa_filter = Q()
         if agency_id == DOD_CGAC:
             taa_filter = dod_tas_agency_filter("treasuryappropriationaccount")
         elif agency_id is not None:
             taa_filter = Q(treasuryappropriationaccount__agency_id=agency_id)
-        else:
-            taa_filter = Q()
 
         agency_subquery = ToptierAgency.objects.filter(toptier_code=OuterRef("corrected_agency_identifier"))
         queryset = (
