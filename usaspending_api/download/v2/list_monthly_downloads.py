@@ -68,36 +68,6 @@ class ListMonthlyDownloadsViewSet(APIView):
             )
         )
 
-        ##########################################
-        # TEMPORARY 2019/12/12. REMOVE after 2020/01/15
-        # KEEP old_* prefix  and regex around until monthly files using the new format are
-        # generated and accessible in S3
-        if agency["toptier_code"] == "All":
-            agency["toptier_code"] = "all"
-        old_monthly_download_prefixes = "{}_{}_{}".format(fiscal_year, agency["toptier_code"], download_type)
-        old_monthly_download_regex = r"{}_Full_.*\.zip".format(old_monthly_download_prefixes)
-        old_delta_download_prefixes = "{}_{}".format(agency["toptier_code"], download_type)
-        old_delta_download_regex = r"{}_Delta_.*\.zip".format(old_delta_download_prefixes)
-
-        monthly_download_names.extend(
-            list(
-                filter(
-                    re.compile(old_monthly_download_regex).search,
-                    [key.key for key in bucket.objects.filter(Prefix=old_monthly_download_prefixes)],
-                )
-            )
-        )
-        delta_download_names.extend(
-            list(
-                filter(
-                    re.compile(old_delta_download_regex).search,
-                    [key.key for key in bucket.objects.filter(Prefix=old_delta_download_prefixes)],
-                )
-            )
-        )
-        ##########################################
-        ##########################################
-
         # Generate response
         downloads = []
         for filename in monthly_download_names:
