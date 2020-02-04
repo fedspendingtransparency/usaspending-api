@@ -12,6 +12,7 @@ from usaspending_api.awards.v2.filters.view_selector import spending_by_category
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.api_helper import alias_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_time_period_message
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
@@ -28,18 +29,14 @@ from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_country_name_from_code,
     fetch_state_name_from_code,
 )
+from usaspending_api.search.v2.views.spending_by_category_views.awarding_agency import AwardingAgencyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.awarding_subagency import AwardingSubagencyViewSet
 
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
 
 ALIAS_DICT = {
-    "awarding_agency": {
-        "awarding_toptier_agency_name": "name",
-        "awarding_subtier_agency_name": "name",
-        "awarding_toptier_agency_abbreviation": "code",
-        "awarding_subtier_agency_abbreviation": "code",
-    },
     "funding_agency": {
         "funding_toptier_agency_name": "name",
         "funding_subtier_agency_name": "name",
@@ -67,7 +64,6 @@ ALIAS_DICT = {
     "federal_account": {"federal_account_id": "id", "federal_account_display": "code", "account_title": "name"},
 }
 
-ALIAS_DICT["awarding_subagency"] = ALIAS_DICT["awarding_agency"]
 ALIAS_DICT["funding_subagency"] = ALIAS_DICT["funding_agency"]
 ALIAS_DICT["recipient_parent_duns"] = ALIAS_DICT["recipient_duns"]
 
@@ -109,6 +105,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         # Apply/enforce POST body schema and data validation in request
         validated_payload = TinyShield(models).block(request.data)
+
+        validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
+
+        if validated_payload["category"] == "awarding_agency":
+            return AwardingAgencyViewSet().handle_business_logic(validated_payload)
+        elif validated_payload["category"] == "awarding_subagency":
+            return AwardingSubagencyViewSet().handle_business_logic(validated_payload)
 
         # Execute the business logic for the endpoint and return a python dict to be converted to a Django response
         return Response(BusinessLogic(validated_payload).results())
@@ -165,9 +168,7 @@ class BusinessLogic:
     def results(self) -> dict:
         results = []
         # filter the transactions by category
-        if self.category in ("awarding_agency", "awarding_subagency"):
-            results = self.awarding_agency()
-        elif self.category in ("funding_agency", "funding_subagency"):
+        if self.category in ("funding_agency", "funding_subagency"):
             results = self.funding_agency()
         elif self.category in ("recipient_duns", "recipient_parent_duns"):
             results = self.recipient()
@@ -189,22 +190,6 @@ class BusinessLogic:
             "messages": [get_time_period_message()],
         }
         return response
-
-    def awarding_agency(self) -> list:
-        if self.category == "awarding_agency":
-            filters = {"awarding_toptier_agency_name__isnull": False}
-            values = ["awarding_toptier_agency_name", "awarding_toptier_agency_abbreviation"]
-        elif self.category == "awarding_subagency":
-            filters = {"awarding_subtier_agency_name__isnull": False}
-            values = ["awarding_subtier_agency_name", "awarding_subtier_agency_abbreviation"]
-
-        self.queryset = self.common_db_query(filters, values)
-        # DB hit here
-        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
-        results = alias_response(ALIAS_DICT[self.category], query_results)
-        for row in results:
-            row["id"] = fetch_agency_tier_id_by_agency(row["name"], self.category == "awarding_subagency")
-        return results
 
     def funding_agency(self) -> list:
         """

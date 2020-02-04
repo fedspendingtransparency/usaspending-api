@@ -39,11 +39,12 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     Base class inherited by the different category endpoints.
     """
 
-    category: Category = None
-    filters: dict = None
-    obligation_column: int = None
-    pagination: dict = None
-    subawards: bool = None
+    category: Category
+    elasticsearch: bool
+    filters: dict
+    obligation_column: int
+    pagination: dict
+    subawards: bool
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -55,7 +56,14 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         validated_payload = TinyShield(models).block(request.data)
 
+        validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
+
+        return self.handle_business_logic(validated_payload)
+
+    def handle_business_logic(self, validated_payload: dict) -> Response:
+
         self.filters = validated_payload.get("filters", {})
+        self.elasticsearch = validated_payload["elasticsearch"]
         self.subawards = validated_payload["subawards"]
         self.pagination = {
             "page": validated_payload["page"],
@@ -64,7 +72,7 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             "upper_limit": validated_payload["page"] * validated_payload["limit"] + 1,
         }
 
-        if is_experimental_elasticsearch_api(request) and not self.subawards:
+        if self.elasticsearch and not self.subawards:
             logger.info(
                 f"Using experimental Elasticsearch functionality for 'spending_by_category/{self.category.name}'"
             )

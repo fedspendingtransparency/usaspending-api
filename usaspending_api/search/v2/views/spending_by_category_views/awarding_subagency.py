@@ -11,8 +11,8 @@ from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by
 )
 
 
-class AwardingAgencyViewSet(BaseSpendingByCategoryViewSet):
-    category = Category(name="awarding_agency", primary_field="awarding_toptier_agency_name.keyword")
+class AwardingSubagencyViewSet(BaseSpendingByCategoryViewSet):
+    category = Category(name="awarding_subagency", primary_field="awarding_subtier_agency_name.keyword")
 
     def apply_elasticsearch_aggregations(
         self, search: TransactionSearch, curr_partition: int, num_partitions: int, size: int
@@ -20,12 +20,12 @@ class AwardingAgencyViewSet(BaseSpendingByCategoryViewSet):
         # Define all aggregations needed to build the response
         group_by_agency_name = A(
             "terms",
-            field="awarding_toptier_agency_name.keyword",
+            field="awarding_subtier_agency_name.keyword",
             include={"partition": curr_partition, "num_partitions": num_partitions},
             size=size,
         )
-        group_by_agency_abbreviation = A("terms", field="awarding_toptier_agency_abbreviation.keyword")
-        group_by_agency_id = A("terms", field="awarding_toptier_agency_id")
+        group_by_agency_abbreviation = A("terms", field="awarding_subtier_agency_abbreviation.keyword")
+        group_by_agency_id = A("terms", field="awarding_subtier_agency_id")
         sum_as_cents = A("sum", field="generated_pragmatic_obligation", script={"source": "_value * 100"})
         sum_as_dollars = A(
             "bucket_script", buckets_path={"sum_as_cents": "sum_as_cents"}, script="params.sum_as_cents / 100"
@@ -64,16 +64,16 @@ class AwardingAgencyViewSet(BaseSpendingByCategoryViewSet):
         return results
 
     def handle_django_logic(self, base_queryset: QuerySet):
-        django_filters = {"awarding_toptier_agency_name__isnull": False}
-        django_values = ["awarding_toptier_agency_name", "awarding_toptier_agency_abbreviation"]
+        django_filters = {"awarding_subtier_agency_name__isnull": False}
+        django_values = ["awarding_subtier_agency_name", "awarding_subtier_agency_abbreviation"]
         queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(
-            name=F("awarding_toptier_agency_name"), code=F("awarding_toptier_agency_abbreviation")
+            name=F("awarding_subtier_agency_name"), code=F("awarding_subtier_agency_abbreviation")
         )
         lower_limit = self.pagination["lower_limit"]
         upper_limit = self.pagination["upper_limit"]
         query_results = list(queryset[lower_limit:upper_limit])
         for row in query_results:
-            row["id"] = fetch_agency_tier_id_by_agency(agency_name=row["name"], is_subtier=False)
-            row.pop("awarding_toptier_agency_name")
-            row.pop("awarding_toptier_agency_abbreviation")
+            row["id"] = fetch_agency_tier_id_by_agency(agency_name=row["name"], is_subtier=True)
+            row.pop("awarding_subtier_agency_name")
+            row.pop("awarding_subtier_agency_abbreviation")
         return query_results
