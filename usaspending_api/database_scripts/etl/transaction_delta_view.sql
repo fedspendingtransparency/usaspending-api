@@ -58,10 +58,14 @@ SELECT
 
   UTM.awarding_agency_id,
   UTM.funding_agency_id,
-  AA.toptier_agency_id AS awarding_toptier_agency_id,
-  FA.toptier_agency_id AS funding_toptier_agency_id,
-  AA.subtier_agency_id AS awarding_subtier_agency_id,
-  FA.subtier_agency_id AS funding_subtier_agency_id,
+  TAA_LOOKUP.id AS awarding_toptier_agency_id,
+  TFA_LOOKUP.id AS funding_toptier_agency_id,
+  SAA_LOOKUP.id AS awarding_subtier_agency_id,
+  SFA_LOOKUP.id AS funding_subtier_agency_id,
+  AA.toptier_agency_id AS awarding_toptier_id,
+  FA.toptier_agency_id AS funding_toptier_id,
+  AA.subtier_agency_id AS awarding_subtier_id,
+  FA.subtier_agency_id AS funding_subtier_id,
   UTM.awarding_toptier_agency_name,
   UTM.funding_toptier_agency_name,
   UTM.awarding_subtier_agency_name,
@@ -120,6 +124,28 @@ LEFT JOIN toptier_agency TAA ON (AA.toptier_agency_id = TAA.toptier_agency_id)
 LEFT JOIN subtier_agency SAA ON (AA.subtier_agency_id = SAA.subtier_agency_id)
 LEFT JOIN toptier_agency TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
 LEFT JOIN subtier_agency SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
+-- The next four joins are needed to get the Agency ID for all combinations of Awarding / Funding
+-- and Toptier / Subtier agencies
+LEFT JOIN (
+    SELECT id, toptier_agency_id, toptier_flag
+    FROM agency
+    WHERE toptier_flag = true
+) TAA_LOOKUP on (AA.toptier_agency_id = TAA_LOOKUP.toptier_agency_id)
+LEFT JOIN (
+    SELECT id, toptier_agency_id, toptier_flag
+    FROM agency
+    WHERE toptier_flag = true
+) TFA_LOOKUP on (FA.toptier_agency_id = TFA_LOOKUP.toptier_agency_id)
+LEFT JOIN (
+    SELECT id, subtier_agency_id, toptier_flag
+    FROM agency
+    WHERE toptier_flag = false
+) SAA_LOOKUP on (AA.subtier_agency_id = SAA_LOOKUP.subtier_agency_id)
+LEFT JOIN (
+    SELECT id, subtier_agency_id, toptier_flag
+    FROM agency
+    WHERE toptier_flag = false
+) SFA_LOOKUP on (FA.subtier_agency_id = SFA_LOOKUP.subtier_agency_id)
 LEFT JOIN references_cfda CFDA ON (FABS.cfda_number = CFDA.program_number)
 LEFT JOIN recipient_lookup PRL ON (PRL.duns = UTM.parent_recipient_unique_id AND UTM.parent_recipient_unique_id IS NOT NULL)
 LEFT JOIN (

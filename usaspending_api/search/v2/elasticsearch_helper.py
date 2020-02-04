@@ -2,6 +2,7 @@ import logging
 import re
 
 from django.conf import settings
+from elasticsearch_dsl import A
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     TRANSACTIONS_LOOKUP,
@@ -10,6 +11,7 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     INDEX_ALIASES_TO_AWARD_TYPES,
 )
 from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 
 logger = logging.getLogger("console")
 
@@ -225,3 +227,11 @@ def concat_if_array(data):
             # This should never happen if TinyShield is functioning properly
             logger.error("Keyword submitted was not a string or array")
             return ""
+
+
+def get_number_of_unique_terms(search: TransactionSearch, field: str) -> int:
+    cardinality_aggregation = A("cardinality", field=field)
+    search.aggs.metric("field_count", cardinality_aggregation)
+    response = search.handle_execute()
+    response_dict = response.aggs.to_dict()
+    return response_dict.get("field_count", {"value": 0})["value"]
