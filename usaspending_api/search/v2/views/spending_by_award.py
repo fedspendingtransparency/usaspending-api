@@ -254,6 +254,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
                 sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
 
+        sort_by_fields.append("award_id")
+
         return sort_by_fields
 
     def get_database_fields(self):
@@ -299,7 +301,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         sort_field = self.get_elastic_sort_by_fields()
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
-        sorts.append({"award_id": self.pagination["sort_order"]})
 
         if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
             self.last_record_unique_id is None and self.last_record_sort_value is None
@@ -385,10 +386,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
         last_record_unique_id = None
         last_record_sort_value = None
 
-        has_next = False
         if self.last_record_unique_id is not None:
-            if len(results) > self.pagination["limit"]:
-                has_next = True
+            has_next = len(results) > self.pagination["limit"]
         else:
             has_next = (
                 response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
