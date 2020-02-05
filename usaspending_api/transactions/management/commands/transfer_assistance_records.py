@@ -11,7 +11,7 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     destination_table_name = SourceAssistanceTransaction().table_name
     last_load_record = "source_assistance_transaction"
     lookback_minutes = 15
-    shared_pk = "published_award_financial_assistance_id"
+    shared_pk = "afa_generated_unique"
     working_file_prefix = "assistance_load_ids"
     broker_full_select_sql = 'SELECT "{id}" FROM "{table}" WHERE "is_active" IS TRUE'
     broker_incremental_select_sql = """

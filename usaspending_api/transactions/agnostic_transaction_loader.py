@@ -147,7 +147,7 @@ class AgnosticTransactionLoader:
             ids = self.generate_ids_from_broker()
 
         file_name = f"{self.working_file_prefix}_{self.start_time.strftime('%Y%m%d_%H%M%S_%f')}"
-        return store_ids_in_file(ids, file_name)
+        return store_ids_in_file(ids, file_name, is_numeric=False)
 
     def generate_ids_from_broker(self):
         sql = self.combine_sql()
@@ -186,7 +186,7 @@ class AgnosticTransactionLoader:
         source = ETLDBLinkTable(source_tablename, "broker_server", destination.data_types)
         transactions_remaining_count = self.total_ids_to_process
 
-        for id_list in read_file_for_database_ids(str(self.file_path), self.chunk_size):
+        for id_list in read_file_for_database_ids(str(self.file_path), self.chunk_size, is_numeric=False):
             with Timer(message="Batch upsert", success_logger=logger.info, failure_logger=logger.error):
                 if len(id_list) != 0:
                     predicate = [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
