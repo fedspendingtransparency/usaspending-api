@@ -34,6 +34,10 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     idv_mapping,
     loan_mapping,
     non_loan_assist_mapping,
+    CONTRACT_SOURCE_LOOKUP,
+    IDV_SOURCE_LOOKUP,
+    NON_LOAN_ASST_SOURCE_LOOKUP,
+    LOAN_SOURCE_LOOKUP,
 )
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
@@ -52,6 +56,11 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
 
 logger = logging.getLogger("console")
+
+CONTRACT_SOURCE_LOOKUP.update({v: k for k, v in CONTRACT_SOURCE_LOOKUP.items()})
+IDV_SOURCE_LOOKUP.update({v: k for k, v in IDV_SOURCE_LOOKUP.items()})
+NON_LOAN_ASST_SOURCE_LOOKUP.update({v: k for k, v in NON_LOAN_ASST_SOURCE_LOOKUP.items()})
+LOAN_SOURCE_LOOKUP.update({v: k for k, v in LOAN_SOURCE_LOOKUP.items()})
 
 GLOBAL_MAP = {
     "award": {
@@ -73,10 +82,10 @@ GLOBAL_MAP = {
             **{award_type: non_loan_assistance_award_mapping for award_type in non_loan_assistance_type_mapping},
         },
         "elasticsearch_type_code_to_field_map": {
-            **{award_type: contracts_mapping for award_type in contract_type_mapping},
-            **{award_type: idv_mapping for award_type in idv_type_mapping},
-            **{award_type: loan_mapping for award_type in loan_type_mapping},
-            **{award_type: non_loan_assist_mapping for award_type in non_loan_assistance_type_mapping},
+            **{award_type: CONTRACT_SOURCE_LOOKUP for award_type in contract_type_mapping},
+            **{award_type: IDV_SOURCE_LOOKUP for award_type in idv_type_mapping},
+            **{award_type: LOAN_SOURCE_LOOKUP for award_type in loan_type_mapping},
+            **{award_type: NON_LOAN_ASST_SOURCE_LOOKUP for award_type in non_loan_assistance_type_mapping},
         },
         "annotations": {"_recipient_id": annotate_recipient_id},
         "filter_queryset_func": matview_search_filter_determine_award_matview_model,
@@ -302,6 +311,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
 
+        # API request is asking to jump to a random, non-sequential page of results
         if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
             self.last_record_unique_id is None and self.last_record_sort_value is None
         ):
@@ -335,18 +345,21 @@ class SpendingByAwardVisualizationViewSet(APIView):
             )
             response = search.handle_execute()
             return response
-        search = (
-            (
+
+        # Search_after values are provided in the API request - use search after
+        if self.last_record_sort_value is not None and self.last_record_unique_id is not None:
+            search = (
                 AwardSearch()
                 .filter(filter_query)
                 .sort(*sorts)
-                .extra(
-                    search_after=[self.date_to_epoch_millis(self.last_record_sort_value), self.last_record_unique_id]
-                )[: self.pagination["limit"] + 1]
+                .extra(search_after=[self.last_record_sort_value, self.last_record_unique_id])[
+                    : self.pagination["limit"] + 1
+                ]  # add extra result to check for next page
             )
-            if self.last_record_sort_value is not None and self.last_record_unique_id is not None
-            else (AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]])
-        )
+        # no values, within result window, use regular elasticsearch
+        else:
+            search = AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]]
+
         response = search.handle_execute()
 
         return response
@@ -357,13 +370,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
             hit = res.to_dict()
             row = {k: hit[v] for k, v in self.constants["internal_id_fields"].items()}
 
+            # Parsing API response values from ES query result JSON
+            # We parse the `hit` (result from elasticsearch) to get the award type, use the type to determine
+            # which lookup dict to use, and then use that lookup to retrieve the correct value requested from `fields`
             for field in self.fields:
                 row[field] = hit.get(
-                    str(
-                        self.constants["elasticsearch_type_code_to_field_map"][
-                            hit[self.constants["award_semaphore"]]
-                        ].get(field)
-                    ).replace(".keyword", "")
+                    self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]].get(
+                        field
+                    )
                 )
 
             row["internal_id"] = int(row["internal_id"])
@@ -385,9 +399,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         last_record_unique_id = None
         last_record_sort_value = None
-
+        offset = 1
         if self.last_record_unique_id is not None:
             has_next = len(results) > self.pagination["limit"]
+            offset = 2
         else:
             has_next = (
                 response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
@@ -395,8 +410,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             )
 
         if len(response) > 0 and has_next:
-            last_record_unique_id = response[len(response) - 2].meta.sort[1]
-            last_record_sort_value = response[len(response) - 2].meta.sort[0]
+            last_record_unique_id = response[len(response) - offset].meta.sort[1]
+            last_record_sort_value = response[len(response) - offset].meta.sort[0]
 
         return {
             "limit": self.pagination["limit"],

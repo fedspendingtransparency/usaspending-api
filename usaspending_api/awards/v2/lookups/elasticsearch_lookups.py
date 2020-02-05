@@ -90,6 +90,11 @@ non_loan_assist_mapping = {
 
 TRANSACTIONS_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in TRANSACTIONS_LOOKUP.items()}
 
+CONTRACT_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in contracts_mapping.items()}
+IDV_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in idv_mapping.items()}
+NON_LOAN_ASST_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in non_loan_assist_mapping.items()}
+LOAN_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in loan_mapping.items()}
+
 INDEX_ALIASES_TO_AWARD_TYPES = deepcopy(all_award_types_mappings)
 INDEX_ALIASES_TO_AWARD_TYPES["directpayments"] = INDEX_ALIASES_TO_AWARD_TYPES.pop("direct_payments")
 INDEX_ALIASES_TO_AWARD_TYPES["other"] = INDEX_ALIASES_TO_AWARD_TYPES.pop("other_financial_assistance")
