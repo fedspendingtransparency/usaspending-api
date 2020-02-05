@@ -311,6 +311,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
 
+        if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
+            self.last_record_sort_value is not None and self.last_record_unique_id is None
+        ):
+            # malformed request
+            raise Exception(
+                "Using search_after functionality in Elasticsearch requires both last_record_sort_value and last_record_unique_id."
+            )
+
         # API request is asking to jump to a random, non-sequential page of results
         if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
             self.last_record_unique_id is None and self.last_record_sort_value is None
@@ -420,7 +428,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "page": self.pagination["page"],
                 "hasNext": has_next,
                 "last_record_unique_id": last_record_unique_id,
-                "last_record_sort_value": last_record_sort_value,
+                "last_record_sort_value": str(last_record_sort_value),
             },
             "messages": [get_time_period_message()],
         }
