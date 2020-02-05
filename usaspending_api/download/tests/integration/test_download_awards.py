@@ -164,6 +164,24 @@ def test_download_awards_with_columns(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
+def test_download_awards_with_columns_in_only_one_file(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    resp = client.post(
+        "/api/v2/download/awards/",
+        content_type="application/json",
+        data=json.dumps({"filters": {"award_type_codes": []}, "columns": ["award_id_piid"]}),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert ".zip" in resp.json()["file_url"]
+
+    status_url = resp.json()["status_url"]
+    status_resp = client.get(status_url)
+
+    assert status_resp.status_code == status.HTTP_200_OK
+    assert status_resp.json()["total_columns"] == 1
+
+
 def test_download_awards_bad_filter_type_raises(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     payload = {"filters": "01", "columns": []}
