@@ -4,6 +4,8 @@ from model_mommy import mommy
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.v2.views.spending_by_category import BusinessLogic
+from usaspending_api.search.v2.views.spending_by_category_views.awarding_agency import AwardingAgencyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.awarding_subagency import AwardingSubagencyViewSet
 
 
 @pytest.fixture
@@ -522,7 +524,7 @@ def federal_accounts_test_data(db):
 def test_category_awarding_agency_awards(agency_test_data):
     test_payload = {"category": "awarding_agency", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = AwardingAgencyViewSet().handle_business_logic(test_payload)
 
     expected_response = {
         "category": "awarding_agency",
@@ -538,7 +540,7 @@ def test_category_awarding_agency_awards(agency_test_data):
 def test_category_awarding_agency_subawards(agency_test_data):
     test_payload = {"category": "awarding_agency", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = AwardingAgencyViewSet().handle_business_logic(test_payload)
 
     expected_response = {
         "category": "awarding_agency",
@@ -554,7 +556,7 @@ def test_category_awarding_agency_subawards(agency_test_data):
 def test_category_awarding_subagency_awards(agency_test_data):
     test_payload = {"category": "awarding_subagency", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = AwardingSubagencyViewSet().handle_business_logic(test_payload)
 
     expected_response = {
         "category": "awarding_subagency",
@@ -570,7 +572,7 @@ def test_category_awarding_subagency_awards(agency_test_data):
 def test_category_awarding_subagency_subawards(agency_test_data):
     test_payload = {"category": "awarding_subagency", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = AwardingSubagencyViewSet().handle_business_logic(test_payload)
 
     expected_response = {
         "category": "awarding_subagency",

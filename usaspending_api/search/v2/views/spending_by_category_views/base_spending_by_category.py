@@ -58,12 +58,12 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
 
-        return self.handle_business_logic(validated_payload)
+        return Response(self.handle_business_logic(validated_payload))
 
-    def handle_business_logic(self, validated_payload: dict) -> Response:
+    def handle_business_logic(self, validated_payload: dict) -> dict:
 
         self.filters = validated_payload.get("filters", {})
-        self.elasticsearch = validated_payload["elasticsearch"]
+        self.elasticsearch = validated_payload.get("elasticsearch")
         self.subawards = validated_payload["subawards"]
         self.pagination = {
             "page": validated_payload["page"],
@@ -97,7 +97,7 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             "messages": [get_time_period_message()],
         }
 
-        return Response(response)
+        return response
 
     def common_db_query(self, queryset: QuerySet, django_filters: dict, django_values: list) -> QuerySet:
         return (

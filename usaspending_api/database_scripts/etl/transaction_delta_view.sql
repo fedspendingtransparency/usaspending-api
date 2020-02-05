@@ -139,12 +139,10 @@ LEFT JOIN (
 LEFT JOIN (
     SELECT id, subtier_agency_id, toptier_flag
     FROM agency
-    WHERE toptier_flag = false
 ) SAA_LOOKUP on (AA.subtier_agency_id = SAA_LOOKUP.subtier_agency_id)
 LEFT JOIN (
     SELECT id, subtier_agency_id, toptier_flag
     FROM agency
-    WHERE toptier_flag = false
 ) SFA_LOOKUP on (FA.subtier_agency_id = SFA_LOOKUP.subtier_agency_id)
 LEFT JOIN references_cfda CFDA ON (FABS.cfda_number = CFDA.program_number)
 LEFT JOIN recipient_lookup PRL ON (PRL.duns = UTM.parent_recipient_unique_id AND UTM.parent_recipient_unique_id IS NOT NULL)
