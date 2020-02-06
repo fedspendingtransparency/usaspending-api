@@ -29,9 +29,11 @@
   },
   "sort": {
     "fields": [
-      "total_obligation"
+      "total_obligation",
+      "action_date"
     ],
     "order": [
+      "desc",
       "desc"
     ]
   },
