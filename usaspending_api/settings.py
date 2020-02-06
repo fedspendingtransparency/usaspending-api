@@ -240,6 +240,8 @@ DOWNLOAD_DATABASE_URL = os.environ.get("DOWNLOAD_DATABASE_URL")
 if os.environ.get("DATA_BROKER_DATABASE_URL"):
     DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
 
+DATA_BROKER_DBLINK_NAME = "broker_server"
+
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 

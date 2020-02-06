@@ -1,6 +1,7 @@
 from usaspending_api.references.models.agency import Agency
 from usaspending_api.references.models.cfda import Cfda
 from usaspending_api.references.models.cgac import CGAC
+from usaspending_api.references.models.city_county_state_code import CityCountyStateCode
 from usaspending_api.references.models.definition import Definition
 from usaspending_api.references.models.filter_hash import FilterHash
 from usaspending_api.references.models.frec import FREC
@@ -10,7 +11,6 @@ from usaspending_api.references.models.naics import NAICS
 from usaspending_api.references.models.object_class import ObjectClass
 from usaspending_api.references.models.overall_totals import OverallTotals
 from usaspending_api.references.models.psc import PSC
-from usaspending_api.references.models.ref_city_county_code import RefCityCountyCode
 from usaspending_api.references.models.ref_country_code import RefCountryCode
 from usaspending_api.references.models.ref_program_activity import RefProgramActivity
 from usaspending_api.references.models.rosetta import Rosetta
@@ -21,6 +21,7 @@ __all__ = [
     "Agency",
     "Cfda",
     "CGAC",
+    "CityCountyStateCode",
     "Definition",
     "FilterHash",
     "FREC",
@@ -30,7 +31,6 @@ __all__ = [
     "ObjectClass",
     "OverallTotals",
     "PSC",
-    "RefCityCountyCode",
     "RefCountryCode",
     "RefProgramActivity",
     "Rosetta",
