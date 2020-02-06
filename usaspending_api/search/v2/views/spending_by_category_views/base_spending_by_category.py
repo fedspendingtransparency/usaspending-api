@@ -7,6 +7,7 @@ from typing import List
 
 from django.conf import settings
 from django.db.models import QuerySet, Sum
+from elasticsearch_dsl import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,13 +25,21 @@ from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 
 @dataclass
 class Category:
     name: str
     primary_field: str
+
+
+@dataclass
+class Pagination:
+    page: int
+    limit: int
+    lower_limit: int
+    upper_limit: int
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -43,7 +52,7 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     elasticsearch: bool
     filters: dict
     obligation_column: int
-    pagination: dict
+    pagination: Pagination
     subawards: bool
 
     @cache_response()
@@ -55,7 +64,6 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         models.extend(copy.deepcopy(PAGINATION))
 
         validated_payload = TinyShield(models).block(request.data)
-
         validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
 
         return Response(self.handle_business_logic(validated_payload))
@@ -65,39 +73,43 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         self.filters = validated_payload.get("filters", {})
         self.elasticsearch = validated_payload.get("elasticsearch")
         self.subawards = validated_payload["subawards"]
-        self.pagination = {
-            "page": validated_payload["page"],
-            "limit": validated_payload["limit"],
-            "lower_limit": (validated_payload["page"] - 1) * validated_payload["limit"],
-            "upper_limit": validated_payload["page"] * validated_payload["limit"] + 1,
-        }
+        self.pagination = self._get_pagination(validated_payload)
 
-        if self.elasticsearch and not self.subawards:
+        if self.subawards:
+            base_queryset = subaward_filter(self.filters)
+            self.obligation_column = "amount"
+            results = self.query_django(base_queryset)
+        elif self.elasticsearch:
             logger.info(
                 f"Using experimental Elasticsearch functionality for 'spending_by_category/{self.category.name}'"
             )
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
-            search = TransactionSearch().filter(filter_query)
-            results = self.handle_elasticsearch_logic(search)
+            results = self.query_elasticsearch(filter_query)
         else:
-            if self.subawards:
-                base_queryset = subaward_filter(self.filters)
-                self.obligation_column = "amount"
-            else:
-                base_queryset = spending_by_category_view_queryset(self.category, self.filters)
-                self.obligation_column = "generated_pragmatic_obligation"
-            results = self.handle_django_logic(base_queryset)
+            base_queryset = spending_by_category_view_queryset(self.category, self.filters)
+            self.obligation_column = "generated_pragmatic_obligation"
+            results = self.query_django(base_queryset)
 
-        page_metadata = get_simple_pagination_metadata(len(results), self.pagination["limit"], self.pagination["page"])
+        page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
+
         response = {
             "category": self.category.name,
-            "limit": self.pagination["limit"],
+            "limit": self.pagination.limit,
             "page_metadata": page_metadata,
-            "results": results[: self.pagination["limit"]],
+            "results": results[: self.pagination.limit],
             "messages": [get_time_period_message()],
         }
 
         return response
+
+    @staticmethod
+    def _get_pagination(payload):
+        return Pagination(
+            page=payload["page"],
+            limit=payload["limit"],
+            lower_limit=(payload["page"] - 1) * payload["limit"],
+            upper_limit=payload["page"] * payload["limit"] + 1,
+        )
 
     def common_db_query(self, queryset: QuerySet, django_filters: dict, django_values: list) -> QuerySet:
         return (
@@ -107,34 +119,34 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             .order_by("-amount")
         )
 
-    def get_elasticsearch_results_generator(self, search: TransactionSearch, size: int = 1000) -> list:
+    def elasticsearch_results_generator(self, filter_query: ES_Q, size: int = 1000) -> list:
         """
         The number of buckets required across the different categories varies. To solve this a generator is created
         with the assumption that the "apply_elasticsearch_aggregations" implementation makes use of partitions.
         This will allow for any number of results to be retrieved regardless of the number of buckets.
         """
-        bucket_count = get_number_of_unique_terms(search, self.category.primary_field)
+        bucket_count = get_number_of_unique_terms(filter_query, self.category.primary_field)
         num_partitions = (bucket_count // size) + 1
 
         for partition in range(num_partitions):
-            self.apply_elasticsearch_aggregations(search, partition, num_partitions, size)
+            search = self.build_elasticsearch_search_with_aggregations(filter_query, partition, num_partitions, size)
             response = search.handle_execute()
             if response is None:
                 raise Exception("Breaking generator, unable to reach cluster")
             results = self.build_elasticsearch_result(response.aggs.to_dict())
             yield results
 
-    def handle_elasticsearch_logic(self, search: TransactionSearch) -> list:
-        results = self.get_elasticsearch_results_generator(search)
+    def query_elasticsearch(self, filter_query: ES_Q) -> list:
+        results = self.elasticsearch_results_generator(filter_query)
         flat_results = list(itertools.chain.from_iterable(results))
         return flat_results
 
     @abstractmethod
-    def apply_elasticsearch_aggregations(
-        self, search: TransactionSearch, curr_partition: int, num_partitions: int, size: int
-    ) -> None:
+    def build_elasticsearch_search_with_aggregations(
+        self, filter_query: ES_Q, curr_partition: int, num_partitions: int, size: int
+    ) -> TransactionSearch:
         """
-        Takes in an instance of TransactionSearch and applies the necessary aggregations.
+        Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
         All aggregations are applied in a specific order to insure the correct nested aggregations.
 
         The top-most aggregation is expected to use partitions to make sure that all buckets are retrieved.
@@ -149,5 +161,5 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def handle_django_logic(self, base_queryset: QuerySet) -> List[dict]:
+    def query_django(self, base_queryset: QuerySet) -> List[dict]:
         pass

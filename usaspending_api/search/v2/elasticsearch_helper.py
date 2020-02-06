@@ -2,7 +2,7 @@ import logging
 import re
 
 from django.conf import settings
-from elasticsearch_dsl import A
+from elasticsearch_dsl import A, Q as ES_Q
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     TRANSACTIONS_LOOKUP,
@@ -229,7 +229,8 @@ def concat_if_array(data):
             return ""
 
 
-def get_number_of_unique_terms(search: TransactionSearch, field: str) -> int:
+def get_number_of_unique_terms(filter_query: ES_Q, field: str) -> int:
+    search = TransactionSearch().filter(filter_query)
     cardinality_aggregation = A("cardinality", field=field)
     search.aggs.metric("field_count", cardinality_aggregation)
     response = search.handle_execute()

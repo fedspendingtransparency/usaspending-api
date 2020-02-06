@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import Tuple, Optional
 
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import Agency, Cfda, PSC, RefCountryCode, NAICS
@@ -7,7 +7,7 @@ from usaspending_api.references.models import Agency, Cfda, PSC, RefCountryCode,
 logger = logging.getLogger(__name__)
 
 
-def fetch_agency_tier_id_by_agency(agency_name: str, is_subtier: bool = False) -> int:
+def fetch_agency_tier_id_by_agency(agency_name: str, is_subtier: bool = False) -> Optional[int]:
     agency_type = "subtier_agency" if is_subtier else "toptier_agency"
     columns = ["id"]
     filters = {"{}__name".format(agency_type): agency_name}
@@ -21,7 +21,7 @@ def fetch_agency_tier_id_by_agency(agency_name: str, is_subtier: bool = False) -
     return result[columns[0]]
 
 
-def fetch_cfda_id_title_by_number(cfda_number: str) -> Tuple[int, str]:
+def fetch_cfda_id_title_by_number(cfda_number: str) -> Optional[Tuple[int, str]]:
     columns = ["id", "program_title"]
     result = Cfda.objects.filter(program_number=cfda_number).values(*columns).first()
     if not result:
@@ -30,7 +30,7 @@ def fetch_cfda_id_title_by_number(cfda_number: str) -> Tuple[int, str]:
     return result[columns[0]], result[columns[1]]
 
 
-def fetch_psc_description_by_code(psc_code: str) -> str:
+def fetch_psc_description_by_code(psc_code: str) -> Optional[str]:
     columns = ["description"]
     result = PSC.objects.filter(code=psc_code).values(*columns).first()
     if not result:
@@ -39,7 +39,7 @@ def fetch_psc_description_by_code(psc_code: str) -> str:
     return result[columns[0]]
 
 
-def fetch_country_name_from_code(country_code: str) -> str:
+def fetch_country_name_from_code(country_code: str) -> Optional[str]:
     columns = ["country_name"]
     result = RefCountryCode.objects.filter(country_code=country_code).values(*columns).first()
     if not result:
@@ -48,7 +48,7 @@ def fetch_country_name_from_code(country_code: str) -> str:
     return result[columns[0]]
 
 
-def fetch_state_name_from_code(state_code: str) -> str:
+def fetch_state_name_from_code(state_code: str) -> Optional[str]:
     columns = ["name"]
     result = StateData.objects.filter(code=state_code).values(*columns).first()
     if not result:
@@ -57,7 +57,7 @@ def fetch_state_name_from_code(state_code: str) -> str:
     return result[columns[0]]
 
 
-def fetch_naics_description_from_code(naics_code: str, passthrough: str = None) -> str:
+def fetch_naics_description_from_code(naics_code: str, passthrough: str = None) -> Optional[str]:
     columns = ["description"]
     result = NAICS.objects.filter(code=naics_code).values(*columns).first()
     if not result:
