@@ -375,25 +375,25 @@ class _TasCodes(_Filter):
         tas_codes_query = []
 
         for v in filter_values:
-            code_query = []
             code_lookup = {
-                "aid": v.get("aid"),
-                "ata": v.get("ata"),
-                "main": v.get("main"),
-                "sub": v.get("sub"),
-                "bpoa": v.get("bpoa"),
-                "epoa": v.get("epoa"),
-                "a": v.get("a"),
+                "aid": v.get("aid", ".*"),
+                "ata": v.get("ata", ".*"),
+                "main": v.get("main", ".*"),
+                "sub": v.get("sub", ".*"),
+                "bpoa": v.get("bpoa", ".*"),
+                "epoa": v.get("epoa", ".*"),
+                "a": v.get("a", ".*"),
             }
-
-            for code_key, code_value in code_lookup.items():
-                if code_value is not None:
-                    code_query.append(ES_Q("match", **{f"treasury_accounts__{code_key}": code_value}))
-
+            search_regex = (
+                '\\"a\\": \\"{a}\\", \\"aid\\": \\"{aid}\\", \\"ata\\": \\"{ata}\\",'
+                ' \\"sub\\": \\"{sub}\\", \\"bpoa\\": \\"{bpoa}\\", \\"epoa\\": \\"{epoa}\\",'
+                ' \\"main\\": \\"{main}\\"'.format(**code_lookup)
+            )
+            search_regex = "{" + search_regex + "}"
+            code_query = ES_Q("regexp", treasury_accounts={"value": search_regex})
             tas_codes_query.append(ES_Q("bool", must=code_query))
 
-        nested_query = ES_Q("bool", should=tas_codes_query, minimum_should_match=1)
-        return ES_Q("nested", path="treasury_accounts", query=nested_query)
+        return ES_Q("bool", should=tas_codes_query, minimum_should_match=1)
 
 
 class QueryWithFilters:
