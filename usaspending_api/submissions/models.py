@@ -7,6 +7,7 @@ class SubmissionAttributes(models.Model):
     certified_date = models.DateField(blank=True, null=True)
     usaspending_update = models.DateField(blank=True, null=True)
     toptier_code = models.TextField(blank=True, null=True)
+    reporting_agency_name = models.TextField(blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
     reporting_fiscal_year = models.IntegerField(blank=True, null=True)
