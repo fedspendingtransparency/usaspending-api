@@ -101,7 +101,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         self._execute_etl_dml_sql_directory_file("080_enhance_with_funding_agency")
 
         with Timer("Enhance with city and county information"):
-            update_subaward_city_county("temp_load_subawards_broker_subaward")
+            update_subaward_city_county("temp_load_subawards_subaward")
 
         self._execute_etl_dml_sql_directory_file("110_enhance_with_pop_country")
         self._execute_etl_dml_sql_directory_file("130_enhance_with_recipient_location_country")
