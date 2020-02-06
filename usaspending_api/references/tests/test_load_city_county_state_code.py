@@ -70,7 +70,7 @@ def test_no_file_provided():
 
 
 @pytest.mark.django_db
-def test_change_reversion(disable_vacuuming, monkeypatch):
+def test_change_reversion(disable_vacuuming):
     """ Let's make some very targeted changes and ensure that they are all resolved correctly on a followup load. """
 
     # Mock a subaward.
