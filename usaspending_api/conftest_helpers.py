@@ -1,6 +1,7 @@
 import json
 
 from datetime import datetime, timezone
+from typing import Optional, List
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection, DEFAULT_DB_ALIAS
@@ -67,6 +68,12 @@ class TestElasticSearchIndex:
             cursor.execute(f"DROP VIEW {view_name};")
 
         for transaction in transactions:
+            # Special cases where we convert array of JSON to an array of strings to avoid nested types
+            if self.index_type == "transactions":
+                transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
+                transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
+            else:
+                transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
             self.client.index(
                 self.index_name,
                 self.doc_type,
@@ -82,6 +89,19 @@ class TestElasticSearchIndex:
             datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
         )
 
+    @staticmethod
+    def convert_json_arrays_to_list(json_array: Optional[List[dict]]) -> Optional[List[str]]:
+        if json_array is None:
+            return None
+        result = []
+        for j in json_array:
+            for key, value in j.items():
+                if value is None:
+                    j[key] = ""
+                else:
+                    j[key] = str(value)
+            result.append(json.dumps(j))
+        return result
 
 def ensure_broker_server_dblink_exists():
     """Ensure that all the database extensions exist, and the the broker database is setup as a foreign data server

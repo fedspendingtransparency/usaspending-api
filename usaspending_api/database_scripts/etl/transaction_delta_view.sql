@@ -137,8 +137,7 @@ LEFT JOIN (
        )
      ) treasury_accounts
  FROM
-   federal_account fa
-   INNER JOIN treasury_appropriation_account taa ON (fa.id = taa.federal_account_id)
+   treasury_appropriation_account taa
    INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
  WHERE
    faba.award_id IS NOT NULL

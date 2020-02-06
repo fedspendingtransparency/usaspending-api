@@ -102,38 +102,38 @@ def test_date_range(award_data_fixture, elasticsearch_award_index):
 
 def test_tas(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
-    should = {
-        "nested": {
-            "path": "treasury_accounts",
-            "query": {
-                "bool": {
-                    "should": [
-                        {"match": {"treasury_accounts.aid": "097"}},
-                        {"match": {"treasury_accounts.main": "4930"}},
-                    ],
-                    "minimum_should_match": 2,
-                }
-            },
-        }
+    search_regex = (
+        '\\"a\\": \\"{a}\\", \\"aid\\": \\"{aid}\\", \\"ata\\": \\"{ata}\\",'
+        ' \\"sub\\": \\"{sub}\\", \\"bpoa\\": \\"{bpoa}\\", \\"epoa\\": \\"{epoa}\\",'
+        ' \\"main\\": \\"{main}\\"'
+    )
+
+    tas_code_regexes1 = {
+        "aid": "097",
+        "ata": ".*",
+        "main": "4930",
+        "sub": ".*",
+        "bpoa": ".*",
+        "epoa": ".*",
+        "a": ".*",
     }
+    value_regex1 = "{" + search_regex.format(**tas_code_regexes1) + "}"
+    should = {"regexp": {"treasury_accounts": {"value": value_regex1}}}
     query = create_query(should)
     client = elasticsearch_award_index.client
     response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
     assert response["hits"]["total"] == 1
-    should = {
-        "nested": {
-            "path": "treasury_accounts",
-            "query": {
-                "bool": {
-                    "should": [
-                        {"match": {"treasury_accounts.aid": "028"}},
-                        {"match": {"treasury_accounts.main": "8006"}},
-                    ],
-                    "minimum_should_match": 2,
-                }
-            },
-        }
+    tas_code_regexes2 = {
+        "aid": "028",
+        "ata": ".*",
+        "main": "8006",
+        "sub": ".*",
+        "bpoa": ".*",
+        "epoa": ".*",
+        "a": ".*",
     }
+    value_regex2 = "{" + search_regex.format(**tas_code_regexes2) + "}"
+    should = {"regexp": {"treasury_accounts": {"value": value_regex2}}}
     query = create_query(should)
     response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
     assert response["hits"]["total"] == 0

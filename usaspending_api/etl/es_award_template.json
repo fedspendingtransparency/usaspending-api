@@ -408,30 +408,7 @@
           "type": "text"
         },
         "treasury_accounts": {
-          "type": "nested",
-          "properties": {
-            "aid": {
-              "type": "integer"
-            },
-            "ata": {
-              "type": "integer"
-            },
-            "main": {
-              "type": "integer"
-            },
-            "sub": {
-              "type": "integer"
-            },
-            "bpoa": {
-              "type": "integer"
-            },
-            "epoa": {
-              "type": "integer"
-            },
-            "a": {
-              "type": "text"
-            }
-          }
+          "type": "keyword"
         }
       }
     }

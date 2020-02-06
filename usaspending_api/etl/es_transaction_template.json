@@ -395,16 +395,7 @@
           }
         },
         "treasury_accounts": {
-          "type": "nested",
-          "properties": {
-            "aid": {"type": "keyword"},
-            "ata": {"type": "keyword"},
-            "main": {"type": "keyword"},
-            "sub": {"type": "keyword"},
-            "bpoa": {"type": "keyword"},
-            "epoa": {"type": "keyword"},
-            "a": {"type": "keyword"}
-          }
+          "type": "keyword"
         },
         "federal_accounts": {
           "type": "nested",
