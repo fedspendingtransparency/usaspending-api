@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             name='SourceAssistanceTransaction',
             fields=[
                 ('published_award_financial_assistance_id', models.IntegerField(help_text='surrogate primary key defined in Broker', primary_key=True, serialize=False)),
-                ('afa_generated_unique', models.TextField(help_text='natural key defined in Broker')),
+                ('afa_generated_unique', models.TextField(help_text='natural key defined in Broker', unique=True)),
                 ('action_date', models.TextField(blank=True, null=True)),
                 ('action_type', models.TextField(blank=True, null=True)),
                 ('action_type_description', models.TextField(blank=True, null=True)),
