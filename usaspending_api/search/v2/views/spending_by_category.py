@@ -109,9 +109,9 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
 
         if validated_payload["category"] == "awarding_agency":
-            return Response(AwardingAgencyViewSet().handle_business_logic(validated_payload))
+            return Response(AwardingAgencyViewSet().perform_search(validated_payload))
         elif validated_payload["category"] == "awarding_subagency":
-            return Response(AwardingSubagencyViewSet().handle_business_logic(validated_payload))
+            return Response(AwardingSubagencyViewSet().perform_search(validated_payload))
 
         # Execute the business logic for the endpoint and return a python dict to be converted to a Django response
         return Response(BusinessLogic(validated_payload).results())

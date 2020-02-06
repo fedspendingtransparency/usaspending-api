@@ -66,9 +66,9 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         validated_payload = TinyShield(models).block(request.data)
         validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
 
-        return Response(self.handle_business_logic(validated_payload))
+        return Response(self.perform_search(validated_payload))
 
-    def handle_business_logic(self, validated_payload: dict) -> dict:
+    def perform_search(self, validated_payload: dict) -> dict:
 
         self.filters = validated_payload.get("filters", {})
         self.elasticsearch = validated_payload.get("elasticsearch")
