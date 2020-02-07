@@ -52,7 +52,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             yield results
 
     @classmethod
-    def _get_download_ids(cls, filters: dict, size: int = 100000) -> QuerySet:
+    def _get_download_ids(cls, filters: dict, size: int = 10000) -> QuerySet:
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """

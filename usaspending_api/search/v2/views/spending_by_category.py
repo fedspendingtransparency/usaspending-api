@@ -3,36 +3,40 @@ import logging
 
 from django.conf import settings
 from django.db.models import Case, IntegerField, Sum, Value, When
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.awards.v2.filters.view_selector import spending_by_category as sbc_view_queryset
+from usaspending_api.awards.v2.filters.view_selector import spending_by_category_view_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.api_helper import alias_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_time_period_message
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.recipient.models import RecipientLookup, RecipientProfile, StateData
+from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
-from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, RefCountryCode
-
+from usaspending_api.search.helpers.spending_by_category_helpers import (
+    fetch_agency_tier_id_by_agency,
+    fetch_cfda_id_title_by_number,
+    fetch_psc_description_by_code,
+    fetch_naics_description_from_code,
+    fetch_country_name_from_code,
+    fetch_state_name_from_code,
+)
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import AwardingAgencyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import AwardingSubagencyViewSet
 
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
 
 ALIAS_DICT = {
-    "awarding_agency": {
-        "awarding_toptier_agency_name": "name",
-        "awarding_subtier_agency_name": "name",
-        "awarding_toptier_agency_abbreviation": "code",
-        "awarding_subtier_agency_abbreviation": "code",
-    },
     "funding_agency": {
         "funding_toptier_agency_name": "name",
         "funding_subtier_agency_name": "name",
@@ -60,7 +64,6 @@ ALIAS_DICT = {
     "federal_account": {"federal_account_id": "id", "federal_account_display": "code", "account_title": "name"},
 }
 
-ALIAS_DICT["awarding_subagency"] = ALIAS_DICT["awarding_agency"]
 ALIAS_DICT["funding_subagency"] = ALIAS_DICT["funding_agency"]
 ALIAS_DICT["recipient_parent_duns"] = ALIAS_DICT["recipient_duns"]
 
@@ -75,7 +78,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category.md"
 
     @cache_response()
-    def post(self, request: dict):
+    def post(self, request: Request) -> Response:
         """Return all budget function/subfunction titles matching the provided search text"""
         categories = [
             "awarding_agency",
@@ -102,6 +105,13 @@ class SpendingByCategoryVisualizationViewSet(APIView):
 
         # Apply/enforce POST body schema and data validation in request
         validated_payload = TinyShield(models).block(request.data)
+
+        validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
+
+        if validated_payload["category"] == "awarding_agency":
+            return Response(AwardingAgencyViewSet().perform_search(validated_payload))
+        elif validated_payload["category"] == "awarding_subagency":
+            return Response(AwardingSubagencyViewSet().perform_search(validated_payload))
 
         # Execute the business logic for the endpoint and return a python dict to be converted to a Django response
         return Response(BusinessLogic(validated_payload).results())
@@ -138,7 +148,7 @@ class BusinessLogic:
             self.queryset = subaward_filter(self.filters)
             self.obligation_column = "amount"
         else:
-            self.queryset = sbc_view_queryset(self.category, self.filters)
+            self.queryset = spending_by_category_view_queryset(self.category, self.filters)
             self.obligation_column = "generated_pragmatic_obligation"
 
     def raise_not_implemented(self):
@@ -158,9 +168,7 @@ class BusinessLogic:
     def results(self) -> dict:
         results = []
         # filter the transactions by category
-        if self.category in ("awarding_agency", "awarding_subagency"):
-            results = self.awarding_agency()
-        elif self.category in ("funding_agency", "funding_subagency"):
+        if self.category in ("funding_agency", "funding_subagency"):
             results = self.funding_agency()
         elif self.category in ("recipient_duns", "recipient_parent_duns"):
             results = self.recipient()
@@ -182,22 +190,6 @@ class BusinessLogic:
             "messages": [get_time_period_message()],
         }
         return response
-
-    def awarding_agency(self) -> list:
-        if self.category == "awarding_agency":
-            filters = {"awarding_toptier_agency_name__isnull": False}
-            values = ["awarding_toptier_agency_name", "awarding_toptier_agency_abbreviation"]
-        elif self.category == "awarding_subagency":
-            filters = {"awarding_subtier_agency_name__isnull": False}
-            values = ["awarding_subtier_agency_name", "awarding_subtier_agency_abbreviation"]
-
-        self.queryset = self.common_db_query(filters, values)
-        # DB hit here
-        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
-        results = alias_response(ALIAS_DICT[self.category], query_results)
-        for row in results:
-            row["id"] = fetch_agency_tier_id_by_agency(row["name"], self.category == "awarding_subagency")
-        return results
 
     def funding_agency(self) -> list:
         """
@@ -391,62 +383,3 @@ class BusinessLogic:
         # DB hit here
         query_results = list(self.queryset[self.lower_limit : self.upper_limit])
         return alias_response(ALIAS_DICT[self.category], query_results)
-
-
-def fetch_agency_tier_id_by_agency(agency_name, is_subtier=False):
-    agency_type = "subtier_agency" if is_subtier else "toptier_agency"
-    columns = ["id"]
-    filters = {"{}__name".format(agency_type): agency_name}
-    if not is_subtier:
-        # Note: The awarded/funded subagency can be a toptier agency, so we don't filter only subtiers in that case.
-        filters["toptier_flag"] = True
-    result = Agency.objects.filter(**filters).values(*columns).first()
-    if not result:
-        logger.warning("{} not found for agency_name: {}".format(",".join(columns), agency_name))
-        return None
-    return result[columns[0]]
-
-
-def fetch_cfda_id_title_by_number(cfda_number):
-    columns = ["id", "program_title"]
-    result = Cfda.objects.filter(program_number=cfda_number).values(*columns).first()
-    if not result:
-        logger.warning("{} not found for cfda_number: {}".format(",".join(columns), cfda_number))
-        return None, None
-    return result[columns[0]], result[columns[1]]
-
-
-def fetch_psc_description_by_code(psc_code):
-    columns = ["description"]
-    result = PSC.objects.filter(code=psc_code).values(*columns).first()
-    if not result:
-        logger.warning("{} not found for psc_code: {}".format(",".join(columns), psc_code))
-        return None
-    return result[columns[0]]
-
-
-def fetch_country_name_from_code(country_code):
-    columns = ["country_name"]
-    result = RefCountryCode.objects.filter(country_code=country_code).values(*columns).first()
-    if not result:
-        logger.warning("{} not found for country_code: {}".format(",".join(columns), country_code))
-        return None
-    return result[columns[0]]
-
-
-def fetch_state_name_from_code(state_code):
-    columns = ["name"]
-    result = StateData.objects.filter(code=state_code).values(*columns).first()
-    if not result:
-        logger.warning("{} not found for state_code: {}".format(",".join(columns), state_code))
-        return None
-    return result[columns[0]]
-
-
-def fetch_naics_description_from_code(naics_code, passthrough=None):
-    columns = ["description"]
-    result = NAICS.objects.filter(code=naics_code).values(*columns).first()
-    if not result:
-        logger.warning("{} not found for naics_code: {}".format(",".join(columns), naics_code))
-        return passthrough
-    return result[columns[0]]
