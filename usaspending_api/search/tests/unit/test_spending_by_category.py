@@ -4,8 +4,12 @@ from model_mommy import mommy
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.v2.views.spending_by_category import BusinessLogic
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import AwardingAgencyViewSet
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import AwardingSubagencyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import (
+    AwardingAgencyViewSet,
+    AwardingSubagencyViewSet,
+    FundingAgencyViewSet,
+    FundingSubagencyViewSet,
+)
 
 
 @pytest.fixture
@@ -588,7 +592,7 @@ def test_category_awarding_subagency_subawards(agency_test_data):
 def test_category_funding_agency_awards(agency_test_data):
     test_payload = {"category": "funding_agency", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = FundingAgencyViewSet().perform_search(test_payload)
 
     expected_response = {
         "category": "funding_agency",
@@ -604,7 +608,7 @@ def test_category_funding_agency_awards(agency_test_data):
 def test_category_funding_agency_subawards(agency_test_data):
     test_payload = {"category": "funding_agency", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = FundingAgencyViewSet().perform_search(test_payload)
 
     expected_response = {
         "category": "funding_agency",
@@ -620,7 +624,7 @@ def test_category_funding_agency_subawards(agency_test_data):
 def test_category_funding_subagency_awards(agency_test_data):
     test_payload = {"category": "funding_subagency", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = FundingSubagencyViewSet().perform_search(test_payload)
 
     expected_response = {
         "category": "funding_subagency",
@@ -636,7 +640,7 @@ def test_category_funding_subagency_awards(agency_test_data):
 def test_category_funding_subagency_subawards(agency_test_data):
     test_payload = {"category": "funding_subagency", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = FundingSubagencyViewSet().perform_search(test_payload)
 
     expected_response = {
         "category": "funding_subagency",

@@ -22,27 +22,24 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.helpers.spending_by_category_helpers import (
-    fetch_agency_tier_id_by_agency,
     fetch_cfda_id_title_by_number,
     fetch_psc_description_by_code,
     fetch_naics_description_from_code,
     fetch_country_name_from_code,
     fetch_state_name_from_code,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import AwardingAgencyViewSet
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import AwardingSubagencyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import (
+    AwardingAgencyViewSet,
+    AwardingSubagencyViewSet,
+    FundingAgencyViewSet,
+    FundingSubagencyViewSet,
+)
 
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
 
 ALIAS_DICT = {
-    "funding_agency": {
-        "funding_toptier_agency_name": "name",
-        "funding_subtier_agency_name": "name",
-        "funding_toptier_agency_abbreviation": "code",
-        "funding_subtier_agency_abbreviation": "code",
-    },
     "recipient_duns": {
         "recipient_id": "recipient_id",
         "recipient_name": "name",
@@ -64,7 +61,6 @@ ALIAS_DICT = {
     "federal_account": {"federal_account_id": "id", "federal_account_display": "code", "account_title": "name"},
 }
 
-ALIAS_DICT["funding_subagency"] = ALIAS_DICT["funding_agency"]
 ALIAS_DICT["recipient_parent_duns"] = ALIAS_DICT["recipient_duns"]
 
 
@@ -112,6 +108,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             return Response(AwardingAgencyViewSet().perform_search(validated_payload))
         elif validated_payload["category"] == "awarding_subagency":
             return Response(AwardingSubagencyViewSet().perform_search(validated_payload))
+        elif validated_payload["category"] == "funding_agency":
+            return Response(FundingAgencyViewSet().perform_search(validated_payload))
+        elif validated_payload["category"] == "funding_subagency":
+            return Response(FundingSubagencyViewSet().perform_search(validated_payload))
 
         # Execute the business logic for the endpoint and return a python dict to be converted to a Django response
         return Response(BusinessLogic(validated_payload).results())
@@ -168,9 +168,7 @@ class BusinessLogic:
     def results(self) -> dict:
         results = []
         # filter the transactions by category
-        if self.category in ("funding_agency", "funding_subagency"):
-            results = self.funding_agency()
-        elif self.category in ("recipient_duns", "recipient_parent_duns"):
+        if self.category in ("recipient_duns", "recipient_parent_duns"):
             results = self.recipient()
         elif self.category in ("cfda", "psc", "naics"):
             results = self.industry_and_other_codes()
@@ -190,29 +188,6 @@ class BusinessLogic:
             "messages": [get_time_period_message()],
         }
         return response
-
-    def funding_agency(self) -> list:
-        """
-        NOTICE: These categories were originally included for both Prime and Sub awards.
-        However, there are concerns with the data sparsity so it is unlikely to be used immediately.
-        So this category will be "dark" for now (removed from API doc). If undesired long-term they should be
-        removed from code and API contract.
-        """
-        if self.category == "funding_agency":
-            filters = {"funding_toptier_agency_name__isnull": False}
-            values = ["funding_toptier_agency_name", "funding_toptier_agency_abbreviation"]
-        elif self.category == "funding_subagency":
-            filters = {"funding_subtier_agency_name__isnull": False}
-            values = ["funding_subtier_agency_name", "funding_subtier_agency_abbreviation"]
-
-        self.queryset = self.common_db_query(filters, values)
-        # DB hit here
-        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
-
-        results = alias_response(ALIAS_DICT[self.category], query_results)
-        for row in results:
-            row["id"] = fetch_agency_tier_id_by_agency(row["name"], self.category == "funding_subagency")
-        return results
 
     @staticmethod
     def _get_recipient_id(row):
