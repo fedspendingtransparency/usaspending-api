@@ -19,7 +19,7 @@ SELECT
     ELSE UTM.uri
   END AS display_award_id,
 
-  TM.update_date,
+  TN.update_date,
   UTM.modification_number,
   AWD.generated_unique_award_id,
   UTM.award_id,
@@ -58,10 +58,15 @@ SELECT
 
   UTM.awarding_agency_id,
   UTM.funding_agency_id,
-  AA.toptier_agency_id AS awarding_toptier_agency_id,
-  FA.toptier_agency_id AS funding_toptier_agency_id,
-  AA.subtier_agency_id AS awarding_subtier_agency_id,
-  FA.subtier_agency_id AS funding_subtier_agency_id,
+
+  TAA.id AS awarding_toptier_agency_id,
+  TFA.id AS funding_toptier_agency_id,
+  UTM.awarding_agency_id AS awarding_subtier_agency_id,
+  UTM.funding_agency_id AS funding_subtier_agency_id,
+  AA.toptier_agency_id AS awarding_toptier_id,
+  FA.toptier_agency_id AS funding_toptier_id,
+  AA.subtier_agency_id AS awarding_subtier_id,
+  FA.subtier_agency_id AS funding_subtier_id,
   UTM.awarding_toptier_agency_name,
   UTM.funding_toptier_agency_name,
   UTM.awarding_subtier_agency_name,
@@ -107,18 +112,28 @@ SELECT
   UTM.business_categories
 
 FROM universal_transaction_matview UTM
-INNER JOIN transaction_normalized TM ON (UTM.transaction_id = TM.id)
+INNER JOIN transaction_normalized TN ON (UTM.transaction_id = TN.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
 LEFT JOIN awards AWD ON (UTM.award_id = AWD.id)
 -- Similar joins are already performed on universal_transaction_matview, however, to avoid making the matview larger
 -- than needed they have been placed here. Feel free to phase out if the columns gained from the following joins are
 -- added to the universal_transaction_matview.
-LEFT JOIN agency AA ON (TM.awarding_agency_id = AA.id)
-LEFT JOIN agency FA ON (TM.funding_agency_id = FA.id)
-LEFT JOIN toptier_agency TAA ON (AA.toptier_agency_id = TAA.toptier_agency_id)
+LEFT JOIN agency AA on (TN.awarding_agency_id = AA.id)
+LEFT JOIN (
+  SELECT a.id, a.toptier_agency_id, a.toptier_flag, ta.name, ta.abbreviation, ta.toptier_code
+  FROM agency a
+  INNER JOIN toptier_agency ta ON (a.toptier_agency_id = ta.toptier_agency_id)
+  WHERE a.toptier_flag = TRUE
+) TAA ON (AA.toptier_agency_id = TAA.toptier_agency_id)
 LEFT JOIN subtier_agency SAA ON (AA.subtier_agency_id = SAA.subtier_agency_id)
-LEFT JOIN toptier_agency TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
+LEFT JOIN agency FA on (TN.funding_agency_id = FA.id)
+LEFT JOIN (
+  SELECT a.id, a.toptier_agency_id, a.toptier_flag, ta.name, ta.abbreviation, ta.toptier_code
+  FROM agency a
+  INNER JOIN toptier_agency ta ON (a.toptier_agency_id = ta.toptier_agency_id)
+  WHERE a.toptier_flag = TRUE
+) TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
 LEFT JOIN subtier_agency SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT JOIN references_cfda CFDA ON (FABS.cfda_number = CFDA.program_number)
 LEFT JOIN recipient_lookup PRL ON (PRL.duns = UTM.parent_recipient_unique_id AND UTM.parent_recipient_unique_id IS NOT NULL)

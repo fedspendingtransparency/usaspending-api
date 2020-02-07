@@ -300,7 +300,7 @@ def recipient_totals(filters):
     return queryset, model
 
 
-def spending_by_category(category, filters):
+def spending_by_category_view_queryset(category, filters):
     # category is a string of <category>.
     view_chain = []
     if category in ["awarding_agency", "funding_agency", "awarding_subagency", "funding_subagency"]:

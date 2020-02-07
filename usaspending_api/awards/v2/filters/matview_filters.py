@@ -12,7 +12,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
-from usaspending_api.search.helpers import build_tas_codes_filter, build_award_ids_filter
+from usaspending_api.search.helpers.matview_filter_helpers import build_tas_codes_filter, build_award_ids_filter
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 

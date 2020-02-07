@@ -100,6 +100,8 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/search/spending_by_award/](/api/v2/search/spending_by_award/)|POST| Returns the fields of the filtered awards|
 |[/api/v2/search/spending_by_award_count/](/api/v2/search/spending_by_award_count/)|POST| Returns the number of awards in each award type (Contracts, IDV, Loans, Direct Payments, Grants, and Other)|
 |[/api/v2/search/spending_by_category/](/api/v2/search/spending_by_category/)|POST| Returns data that is grouped in preset units to support the various data visualizations on USAspending.gov's Advanced Search page|
+|[/api/v2/search/spending_by_category/awarding_agency/](/api/v2/search/spending_by_category/awarding_agency/)|POST| Returns data that is grouped in preset units to support the Spending by Awarding Agency data visualizations on USAspending.gov's Advanced Search page|
+|[/api/v2/search/spending_by_category/awarding_subagency/](/api/v2/search/spending_by_category/awarding_subagency/)|POST| Returns data that is grouped in preset units to support the Spending by Awarding Subgency data visualizations on USAspending.gov's Advanced Search page|
 |[/api/v2/search/spending_by_geography/](/api/v2/search/spending_by_geography/)|POST| Returns spending by state code, county code, or congressional district code|
 |[/api/v2/search/spending_by_transaction/](/api/v2/search/spending_by_transaction/)|POST| Returns awards where a certain subset of fields match against search term|
 |[/api/v2/search/spending_by_transaction_count/](/api/v2/search/spending_by_transaction_count/)|POST| Returns awards where a certain subset of fields match against search term|
