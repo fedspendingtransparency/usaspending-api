@@ -1,11 +1,11 @@
 from django.db.models import F, Sum
-from usaspending_api.accounts.models import AppropriationAccountBalances
+
 from usaspending_api.accounts.serializers import FederalAccountByObligationSerializer
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import CachedDetailViewSet
-from usaspending_api.references.constants import DOD_CGAC
-from usaspending_api.references.helpers import dod_tas_agency_filter
+from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models import Agency
+from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
 class FederalAccountByObligationViewSet(CachedDetailViewSet):
@@ -37,8 +37,10 @@ class FederalAccountByObligationViewSet(CachedDetailViewSet):
         # set of financial information for each fiscal year
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
         if toptier_agency.toptier_code == DOD_CGAC:
+            tta_list = DOD_ARMED_FORCES_CGAC
             queryset = AppropriationAccountBalances.final_objects.filter(
-                dod_tas_agency_filter("treasury_account_identifier"), submission__reporting_fiscal_year=fiscal_year
+                submission__reporting_fiscal_year=fiscal_year,
+                treasury_account_identifier__funding_toptier_agency__toptier_code__in=tta_list,
             )
         else:
             queryset = AppropriationAccountBalances.final_objects.filter(
@@ -57,7 +59,7 @@ class FederalAccountByObligationViewSet(CachedDetailViewSet):
                 account_number=F("treasury_account_identifier__federal_account__federal_account_code"),
                 obligated_amount=Sum("obligations_incurred_total_by_tas_cpe"),
             )
-            .order_by("-obligated_amount", "treasury_account_identifier__federal_account__federal_account_code")
+            .order_by("-obligated_amount")
         )
         # Return minor object class vars
         return queryset

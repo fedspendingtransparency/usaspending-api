@@ -1,9 +1,8 @@
-from decimal import Decimal
 from django.db.models import F, Sum, Value, CharField, Q, Case, When
 from django.db.models.functions import Coalesce
-from usaspending_api.references.constants import DOD_CGAC
-from usaspending_api.references.helpers import dod_tas_agency_filter
+from decimal import Decimal
 from usaspending_api.references.models import Agency
+from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
 class Explorer(object):
@@ -127,19 +126,23 @@ class Explorer(object):
         return alt_set
 
     def agency(self):
-        dod_filter = dod_tas_agency_filter("treasury_account")
-
         # Funding Top Tier Agencies Querysets
         queryset = (
             self.queryset.filter(treasury_account__funding_toptier_agency__isnull=False)
             .annotate(
                 type=Value("agency", output_field=CharField()),
                 name=Case(
-                    When(dod_filter, then=Value("Department of Defense")),
+                    When(
+                        treasury_account__funding_toptier_agency__toptier_code__in=DOD_ARMED_FORCES_CGAC,
+                        then=Value("Department of Defense"),
+                    ),
                     default=F("treasury_account__funding_toptier_agency__name"),
                 ),
                 code=Case(
-                    When(dod_filter, then=Value(DOD_CGAC)),
+                    When(
+                        treasury_account__funding_toptier_agency__toptier_code__in=DOD_ARMED_FORCES_CGAC,
+                        then=Value(DOD_CGAC),
+                    ),
                     default=F("treasury_account__funding_toptier_agency__toptier_code"),
                 ),
             )

@@ -1,12 +1,14 @@
 from django.db.models import F, Sum
+from usaspending_api.references.models import Agency
+from usaspending_api.submissions.models import SubmissionAttributes
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.accounts.models import AppropriationAccountBalances
+
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY, DOD_CGAC
-from usaspending_api.references.helpers import dod_tas_agency_filter
-from usaspending_api.references.models import Agency
-from usaspending_api.submissions.models import SubmissionAttributes
+
+from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY, DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
 class AgencyViewSet(APIView):
@@ -55,10 +57,11 @@ class AgencyViewSet(APIView):
         # error on a bad agency id)
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
         if toptier_agency.toptier_code == DOD_CGAC:
+            tta_list = DOD_ARMED_FORCES_CGAC
             queryset = queryset.filter(
-                dod_tas_agency_filter("treasury_account_identifier"),
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
+                treasury_account_identifier__funding_toptier_agency__toptier_code__in=tta_list,
             )
         else:
             queryset = queryset.filter(
