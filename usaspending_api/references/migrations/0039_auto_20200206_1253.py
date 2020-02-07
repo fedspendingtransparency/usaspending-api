@@ -35,9 +35,6 @@ class Migration(migrations.Migration):
                 'db_table': 'ref_city_county_state_code',
             },
         ),
-        migrations.DeleteModel(
-            name='RefCityCountyCode',
-        ),
 
         # Special index used to guarantee uniquity on the natural key columns.
         migrations.RunSQL(
