@@ -45,7 +45,12 @@ class RetrieveFileFromUri:
             create a copy of the file and place at "dest_file_path" which
             currently must be a filesystem path (not s3 or http).
         """
-        if self.parsed_url_obj.scheme.startswith("http"):
+        if self.parsed_url_obj.scheme == "s3":
+            file_path = self.parsed_url_obj.path[1:]  # remove leading '/' character
+            boto3_s3 = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)
+            s3_bucket = boto3_s3.Bucket(self.parsed_url_obj.netloc)
+            s3_bucket.download_file(file_path, dest_file_path)
+        elif self.parsed_url_obj.scheme.startswith("http"):
             urllib.request.urlretrieve(self.ruri, dest_file_path)
         elif self.parsed_url_obj.scheme in ("file", ""):
             copyfile(self.ruri, dest_file_path)
