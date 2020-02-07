@@ -375,7 +375,6 @@ class _TasCodes(_Filter):
         tas_codes_query = []
 
         for v in filter_values:
-            code_query = []
             code_lookup = {
                 "aid": v.get("aid", ".*"),
                 "ata": v.get("ata", ".*"),
@@ -387,9 +386,9 @@ class _TasCodes(_Filter):
             }
 
             search_regex = (
-                '\\"a\\": \\"{a}\\", \\"aid\\": \\"{aid}\\", \\"ata\\": \\"{ata}\\",'
+                '\\"aid\\": \\"{aid}\\", \\"ata\\": \\"{ata}\\", \\"main\\": \\"{main}\\",'
                 ' \\"sub\\": \\"{sub}\\", \\"bpoa\\": \\"{bpoa}\\", \\"epoa\\": \\"{epoa}\\",'
-                ' \\"main\\": \\"{main}\\"'.format(**code_lookup)
+                ' \\"a\\": \\"{a}\\"'.format(**code_lookup)
             )
             search_regex = "{" + search_regex + "}"
             code_query = ES_Q("regexp", treasury_accounts={"value": search_regex})

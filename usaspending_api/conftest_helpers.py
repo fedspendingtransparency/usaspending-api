@@ -17,7 +17,7 @@ from usaspending_api.common.sqs.sqs_handler import (
 )
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
-from usaspending_api.etl.es_etl_helpers import create_aliases
+from usaspending_api.etl.es_etl_helpers import create_aliases, TREASURY_ACCOUNTS_KEY_ORDER, FEDERAL_ACCOUNTS_KEY_ORDER
 from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
 
@@ -70,10 +70,16 @@ class TestElasticSearchIndex:
         for transaction in transactions:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
             if self.index_type == "transactions":
-                transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
-                transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
+                transaction["treasury_accounts"] = self.convert_json_arrays_to_list(
+                    transaction["treasury_accounts"], TREASURY_ACCOUNTS_KEY_ORDER
+                )
+                transaction["federal_accounts"] = self.convert_json_arrays_to_list(
+                    transaction["federal_accounts"], FEDERAL_ACCOUNTS_KEY_ORDER
+                )
             else:
-                transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
+                transaction["treasury_accounts"] = self.convert_json_arrays_to_list(
+                    transaction["treasury_accounts"], TREASURY_ACCOUNTS_KEY_ORDER
+                )
             self.client.index(
                 self.index_name,
                 self.doc_type,
@@ -90,17 +96,16 @@ class TestElasticSearchIndex:
         )
 
     @staticmethod
-    def convert_json_arrays_to_list(json_array: Optional[List[dict]]) -> Optional[List[str]]:
+    def convert_json_arrays_to_list(json_array: Optional[List[dict]], key_order: list) -> Optional[List[str]]:
         if json_array is None:
             return None
         result = []
         for j in json_array:
-            for key, value in j.items():
-                if value is None:
-                    j[key] = ""
-                else:
-                    j[key] = str(value)
-            result.append(json.dumps(j))
+            ordered_dict = {}
+            for key in key_order:
+                value = "" if j[key] is None else str(j[key])
+                ordered_dict[key] = value
+            result.append(json.dumps(ordered_dict))
         return result
 
 
