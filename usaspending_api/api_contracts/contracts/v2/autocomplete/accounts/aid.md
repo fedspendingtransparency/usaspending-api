@@ -53,7 +53,8 @@ List of potential Agency Identifiers
                 ]
             }
 
-# Data Structures
+# Data Structure
+
 
 # AIDMatch (object)
 + `aid` (required, string)
@@ -65,16 +66,16 @@ List of potential Agency Identifiers
 Each component listed here may be omitted, null, or a string value.  If omitted, no filtering will be performed on that component.  If null, the filter will include account numbers missing that component.  If a string, the filter will perform an exact match on account numbers where that component matches the string provided except in the case of aid where a partial match will be performed on the aid component starting with the provided value.
 
 + `ata` (optional, string, nullable)
-    Allocation Transfer Agency Identifier (3 characters). TAS only.
+    Allocation Transfer Agency Identifier (020). TAS only.
 + `aid` (optional, string, nullable)
-    Agency Identifier (3 characters).
+    Agency Identifier (021).
 + `bpoa` (optional, string, nullable)
-    Beginning Period of Availability (4 characters). TAS only.
+    Beginning Period of Availability (023). TAS only.
 + `epoa` (optional, string, nullable)
-    Ending Period of Availability (4 characters). TAS only.
+    Ending Period of Availability (Main). TAS only.
 + `a` (optional, string, nullable)
-    Availability Type Code (1 character). Will either be 'X' or null. TAS only.
+    Availability Type Code ('a'). Will either be 'X' or null. TAS only.
 + `main` (optional, string, nullable)
-    Main Account Code (4 characters).
+    Main Account Code (Main).
 + `sub` (optional, string, nullable)
-    Sub Account Code (3 characters). TAS only.
+    Sub Account Code (Sub). TAS only.
