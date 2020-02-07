@@ -5,7 +5,7 @@ from typing import List, Tuple
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 
-def store_ids_in_file(id_iter: List, file_name: str = "temp_file") -> Tuple[Path, int]:
+def store_ids_in_file(id_iter: List, file_name: str = "temp_file", is_numeric: bool = True) -> Tuple[Path, int]:
     """Store the provided values in a file
         returning filepath and count of ids
     """
@@ -17,8 +17,11 @@ def store_ids_in_file(id_iter: List, file_name: str = "temp_file") -> Tuple[Path
             if not id_string:
                 continue
             total_ids += 1
-            int_characters = regex(r"\d+", str(id_string)).group()
-            f.writelines("{}\n".format(int_characters))
+            if is_numeric:
+                id_characters = regex(r"\d+", str(id_string)).group()
+            else:
+                id_characters = id_string
+            f.writelines("{}\n".format(id_characters))
 
     return file_path.resolve(), total_ids
 
@@ -32,16 +35,22 @@ def filepath_command_line_argument_type(chunk_count):
     return _filepath_command_line_argument_type
 
 
-def read_file_for_database_ids(provided_uri, chunk_count):
+def read_file_for_database_ids(provided_uri, chunk_count, is_numeric: bool = True):
     """wrapped generator to read file and stream IDs"""
+
+    use_binary = not is_numeric
     try:
-        with RetrieveFileFromUri(provided_uri).get_file_object() as file:
+        with RetrieveFileFromUri(provided_uri).get_file_object(text=use_binary) as file:
             chunk_list = []
             while True:
                 line = file.readline()
                 if not line:
                     break
-                chunk_list.append(int(line))
+                elif is_numeric:
+                    chunk_list.append(int(line))
+                else:
+                    chunk_list.append(line.strip())
+
                 if len(chunk_list) >= chunk_count:
                     yield chunk_list
                     chunk_list = []

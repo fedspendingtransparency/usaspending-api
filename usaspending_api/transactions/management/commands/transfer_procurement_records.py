@@ -11,7 +11,7 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     destination_table_name = SourceProcurementTransaction().table_name
     last_load_record = "source_procurement_transaction"
     lookback_minutes = 0
-    shared_pk = "detached_award_procurement_id"
+    shared_pk = "detached_award_proc_unique"
     working_file_prefix = "procurement_load_ids"
     broker_full_select_sql = 'SELECT "{id}" FROM "{table}"'
     broker_incremental_select_sql = 'SELECT "{id}" FROM "{table}" {optional_predicate}'

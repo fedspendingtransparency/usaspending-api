@@ -15,18 +15,18 @@ from usaspending_api.accounts.models import (
     TreasuryAppropriationAccount,
 )
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
+from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
+from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
+from usaspending_api.etl.management import load_base
+from usaspending_api.etl.management.load_base import load_data_into_model
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass,
     TasProgramActivityObjectClassQuarterly,
 )
-from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
+from usaspending_api.references.helpers import retrive_agency_name_from_code
 from usaspending_api.references.models import ObjectClass, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
-from usaspending_api.etl.broker_etl_helpers import dictfetchall
-
-from usaspending_api.etl.management import load_base
-from usaspending_api.etl.management.load_base import load_data_into_model
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't keep hitting the databroker DB for
 # account data
@@ -294,6 +294,7 @@ def get_submission_attributes(broker_submission_id, submission_data):
     submission_data["toptier_code"] = (
         submission_data["cgac_code"] if submission_data["cgac_code"] else submission_data["frec_code"]
     )
+    submission_data["reporting_agency_name"] = retrive_agency_name_from_code(submission_data["toptier_code"])
 
     # Find the previous submission for this CGAC and fiscal year (if there is one)
     previous_submission = get_previous_submission(
