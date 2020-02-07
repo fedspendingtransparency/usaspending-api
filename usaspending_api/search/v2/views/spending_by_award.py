@@ -1,5 +1,7 @@
 import copy
 
+
+from datetime import datetime
 from sys import maxsize
 from django.conf import settings
 from django.db.models import F
@@ -32,6 +34,10 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     idv_mapping,
     loan_mapping,
     non_loan_assist_mapping,
+    CONTRACT_SOURCE_LOOKUP,
+    IDV_SOURCE_LOOKUP,
+    NON_LOAN_ASST_SOURCE_LOOKUP,
+    LOAN_SOURCE_LOOKUP,
 )
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
@@ -71,10 +77,10 @@ GLOBAL_MAP = {
             **{award_type: non_loan_assistance_award_mapping for award_type in non_loan_assistance_type_mapping},
         },
         "elasticsearch_type_code_to_field_map": {
-            **{award_type: contracts_mapping for award_type in contract_type_mapping},
-            **{award_type: idv_mapping for award_type in idv_type_mapping},
-            **{award_type: loan_mapping for award_type in loan_type_mapping},
-            **{award_type: non_loan_assist_mapping for award_type in non_loan_assistance_type_mapping},
+            **{award_type: CONTRACT_SOURCE_LOOKUP for award_type in contract_type_mapping},
+            **{award_type: IDV_SOURCE_LOOKUP for award_type in idv_type_mapping},
+            **{award_type: LOAN_SOURCE_LOOKUP for award_type in loan_type_mapping},
+            **{award_type: NON_LOAN_ASST_SOURCE_LOOKUP for award_type in non_loan_assistance_type_mapping},
         },
         "annotations": {"_recipient_id": annotate_recipient_id},
         "filter_queryset_func": matview_search_filter_determine_award_matview_model,
@@ -127,12 +133,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
 
         if self.elasticsearch and not self.is_subaward:
-            self.last_id = json_request.get("last_id")
-            self.last_value = json_request.get("last_value")
+            self.last_record_unique_id = json_request.get("last_record_unique_id")
+            self.last_record_sort_value = json_request.get("last_record_sort_value")
             logger.info("Using experimental Elasticsearch functionality for 'spending_by_award'")
-            results = self.query_elasticsearch()
-            return Response(self.construct_es_reponse(results))
-
+            return Response(self.construct_es_response(self.query_elasticsearch()))
         return Response(self.create_response(self.construct_queryset()))
 
     @staticmethod
@@ -155,14 +159,20 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "array_max": maxsize,
             },
             {
-                "name": "last_id",
-                "key": "last_id",
+                "name": "last_record_unique_id",
+                "key": "last_record_unique_id",
+                "type": "integer",
+                "required": False,
+                "allow_nulls": True,
+            },
+            {
+                "name": "last_record_sort_value",
+                "key": "last_record_sort_value",
                 "type": "text",
                 "text_type": "search",
                 "required": False,
                 "allow_nulls": True,
             },
-            {"name": "last_value", "key": "last_value", "type": "float", "required": False, "allow_nulls": True},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -248,8 +258,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
                 sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
 
-        if self.last_id:
-            sort_by_fields.append({"generated_unique_award_id.keyword": "desc"})
+        sort_by_fields.append("award_id")
 
         return sort_by_fields
 
@@ -283,38 +292,90 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "messages": [get_time_period_message()],
         }
 
+    def date_to_epoch_millis(self, date):
+        if "DATE" in self.pagination["sort_key"].upper():
+            if date is not None and type(date) != "str":
+                date = date.strftime("%Y-%m-%d")
+            d = datetime.strptime(date, "%Y-%m-%d")
+            date = int(d.timestamp() * 1000)
+        return date
+
     def query_elasticsearch(self) -> list:
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         sort_field = self.get_elastic_sort_by_fields()
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
-        search = (
-            (
+        record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
+
+        if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
+            self.last_record_sort_value is not None and self.last_record_unique_id is None
+        ):
+            # malformed request
+            raise Exception(
+                "Using search_after functionality in Elasticsearch requires both last_record_sort_value and last_record_unique_id."
+            )
+
+        # API request is asking to jump to a random, non-sequential page of results
+        if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
+            self.last_record_unique_id is None and self.last_record_sort_value is None
+        ):
+            logger.warning(
+                "WARNING: Jumping to page {page} with page size {limit}. First record number: {record}. Retrieving records past {es_limit} records will have a performance hit when using Elasticsearch".format(
+                    page=self.pagination["page"],
+                    limit=self.pagination["limit"],
+                    record=self.pagination["lower_bound"],
+                    es_limit=settings.ES_AWARDS_MAX_RESULT_WINDOW,
+                )
+            )
+            sort_by_fields = self.get_sort_by_fields()
+            sort_by_fields.append("award_id")
+            database_fields = self.get_database_fields()
+            base_queryset = self.constants["filter_queryset_func"](self.filters)
+            queryset = self.annotate_queryset(base_queryset)
+            queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
+            queryset = queryset.values(*list(database_fields))[record_num - 1 : record_num]
+
+            if len(queryset) != 1:
+                return {}
+            results = [
+                self.date_to_epoch_millis(queryset[0].get(self.get_sort_by_fields()[0])),
+                queryset[0].get("award_id"),
+            ]
+            search = (
                 AwardSearch()
                 .filter(filter_query)
                 .sort(*sorts)
-                .extra(search_after=[self.last_value, self.last_id])[0 : self.pagination["limit"]]
+                .extra(search_after=[*results])[: self.pagination["limit"] + 1]
             )
-            if self.last_value and self.last_id
-            else (
+            response = search.handle_execute()
+            return response
+
+        # Search_after values are provided in the API request - use search after
+        if self.last_record_sort_value is not None and self.last_record_unique_id is not None:
+            search = (
                 AwardSearch()
                 .filter(filter_query)
-                .sort(*sorts)[
-                    ((self.pagination["page"] - 1) * self.pagination["limit"]) : (
-                        ((self.pagination["page"] - 1) * self.pagination["limit"]) + self.pagination["limit"]
-                    )
-                ]
+                .sort(*sorts)
+                .extra(search_after=[self.last_record_sort_value, self.last_record_unique_id])[
+                    : self.pagination["limit"] + 1
+                ]  # add extra result to check for next page
             )
-        )
+        # no values, within result window, use regular elasticsearch
+        else:
+            search = AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]]
+
         response = search.handle_execute()
 
         return response
 
-    def construct_es_reponse(self, response) -> dict:
+    def construct_es_response(self, response) -> dict:
         results = []
         for res in response:
             hit = res.to_dict()
             row = {k: hit[v] for k, v in self.constants["internal_id_fields"].items()}
 
+            # Parsing API response values from ES query result JSON
+            # We parse the `hit` (result from elasticsearch) to get the award type, use the type to determine
+            # which lookup dict to use, and then use that lookup to retrieve the correct value requested from `fields`
             for field in self.fields:
                 row[field] = hit.get(
                     self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]].get(
@@ -338,29 +399,39 @@ class SpendingByAwardVisualizationViewSet(APIView):
             row = self.append_recipient_hash_level(row)
             row.pop("parent_recipient_unique_id")
             results.append(row)
-        last_id = None
-        last_value = None
-        if len(response) > 0:
-            last_id = response[len(response) - 1].to_dict().get("generated_unique_award_id")
-            last_value = (
-                response[len(response) - 1].to_dict().get("total_loan_value")
-                if set(self.filters["award_type_codes"]) <= set(loan_type_mapping)
-                else response[len(response) - 1].to_dict().get("total_obligation")
+
+        last_record_unique_id = None
+        last_record_sort_value = None
+        offset = 1
+        if self.last_record_unique_id is not None:
+            has_next = len(results) > self.pagination["limit"]
+            offset = 2
+        else:
+            has_next = (
+                response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
+                > self.pagination["limit"]
             )
+
+        if len(response) > 0 and has_next:
+            last_record_unique_id = response[len(response) - offset].meta.sort[1]
+            last_record_sort_value = response[len(response) - offset].meta.sort[0]
+
         return {
             "limit": self.pagination["limit"],
-            "results": results,
+            "results": results[: self.pagination["limit"]],
             "page_metadata": {
                 "page": self.pagination["page"],
-                "hasNext": response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
-                > self.pagination["limit"],
-                "last_id": last_id,
-                "last_value": last_value,
+                "hasNext": has_next,
+                "last_record_unique_id": last_record_unique_id,
+                "last_record_sort_value": str(last_record_sort_value),
             },
             "messages": [get_time_period_message()],
         }
 
     def append_recipient_hash_level(self, result) -> dict:
+        if "recipient_id" not in self.fields:
+            result.pop("recipient_id")
+            return result
 
         id = result.get("recipient_id")
         parent_id = result.get("parent_recipient_unique_id")
