@@ -30,7 +30,7 @@
   "sort": {
     "fields": [
       "total_obligation",
-      "action_date"
+      "award_id"
     ],
     "order": [
       "desc",
