@@ -15,7 +15,7 @@ from usaspending_api.etl.operations.subaward.update_city_county import update_su
 from usaspending_api.references.models import CityCountyStateCode
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 MAX_CHANGE_PERCENT = 20
