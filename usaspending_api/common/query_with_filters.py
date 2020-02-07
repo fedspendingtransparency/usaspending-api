@@ -395,7 +395,6 @@ class _TasCodes(_Filter):
             code_query = ES_Q("regexp", treasury_accounts={"value": search_regex})
             tas_codes_query.append(ES_Q("bool", must=code_query))
 
-        nested_query = ES_Q("bool", should=tas_codes_query, minimum_should_match=1)
         return ES_Q("bool", should=tas_codes_query, minimum_should_match=1)
 
 

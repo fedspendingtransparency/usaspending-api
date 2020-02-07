@@ -103,6 +103,7 @@ class TestElasticSearchIndex:
             result.append(json.dumps(j))
         return result
 
+
 def ensure_broker_server_dblink_exists():
     """Ensure that all the database extensions exist, and the the broker database is setup as a foreign data server
 

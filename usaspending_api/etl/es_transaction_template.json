@@ -398,12 +398,7 @@
           "type": "keyword"
         },
         "federal_accounts": {
-          "type": "nested",
-          "properties": {
-            "id": {"type": "integer"},
-            "account_title": {"type": "keyword"},
-            "federal_account_code": {"type": "keyword"}
-          }
+          "type": "keyword"
         },
         "business_categories": {
           "type": "keyword"
