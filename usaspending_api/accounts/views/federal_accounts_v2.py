@@ -1,6 +1,7 @@
 import ast
+
 from collections import OrderedDict
-from django.db.models import F, Func, OuterRef, Q, Subquery, Sum
+from django.db.models import F, Func, OuterRef, Q, Subquery, Sum, When, Value, CharField, Case
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime
 from rest_framework.response import Response
@@ -15,7 +16,7 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 from usaspending_api.references.helpers import dod_tas_agency_filter
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.constants import DOD_CGAC
+from usaspending_api.references.constants import DOD_CGAC, DOD_FEDERAL_ACCOUNTS
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
@@ -522,6 +523,11 @@ class FederalAccountsViewSet(APIView):
         elif agency_id is not None:
             taa_filter = Q(treasuryappropriationaccount__agency_id=agency_id)
 
+        dod_whens = [
+            When(agency_identifier=aid, main_account_code=main, then=Value(DOD_CGAC))
+            for aid, main in DOD_FEDERAL_ACCOUNTS
+        ]
+
         agency_subquery = ToptierAgency.objects.filter(toptier_code=OuterRef("corrected_agency_identifier"))
         queryset = (
             FederalAccount.objects.filter(
@@ -529,7 +535,13 @@ class FederalAccountsViewSet(APIView):
                 treasuryappropriationaccount__account_balances__final_of_fy=True,
                 treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy,
             )
-            .annotate(corrected_agency_identifier=Func(F("agency_identifier"), function="CORRECTED_CGAC"))
+            .annotate(
+                corrected_agency_identifier=Case(
+                    *dod_whens,
+                    default=Func(F("agency_identifier"), function="CORRECTED_CGAC"),
+                    output_field=CharField(),
+                )
+            )
             .annotate(
                 account_id=F("id"),
                 account_name=F("account_title"),
