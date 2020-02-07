@@ -1,10 +1,12 @@
 import logging
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from pathlib import Path
 from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, ETLTemporaryTable, operations, mixins
 from usaspending_api.common.helpers.timing_helpers import Timer
+from usaspending_api.etl.operations.subaward.update_city_county import update_subaward_city_county
 
 
 logger = logging.getLogger("console")
@@ -49,7 +51,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         broker_subaward = ETLTable("broker_subaward")
         subaward = ETLTable("subaward")
 
-        remote_subaward = ETLDBLinkTable("subaward", "broker_server", broker_subaward.data_types)
+        remote_subaward = ETLDBLinkTable("subaward", settings.DATA_BROKER_DBLINK_NAME, broker_subaward.data_types)
 
         temp_broker_subaward = ETLTemporaryTable("temp_load_subawards_broker_subaward")
         temp_new_or_updated = ETLTemporaryTable("temp_load_subawards_new_or_updated")
@@ -97,10 +99,11 @@ class Command(mixins.ETLMixin, BaseCommand):
         self._execute_etl_dml_sql_directory_file("060_enhance_with_cfda_data")
         self._execute_etl_dml_sql_directory_file("070_enhance_with_awarding_agency")
         self._execute_etl_dml_sql_directory_file("080_enhance_with_funding_agency")
-        self._execute_etl_dml_sql_directory_file("090_create_temp_address_table")
-        self._execute_etl_dml_sql_directory_file("100_enhance_with_pop_county_city")
+
+        with Timer("Enhance with city and county information"):
+            update_subaward_city_county("temp_load_subawards_subaward")
+
         self._execute_etl_dml_sql_directory_file("110_enhance_with_pop_country")
-        self._execute_etl_dml_sql_directory_file("120_enhance_with_recipient_location_county_city")
         self._execute_etl_dml_sql_directory_file("130_enhance_with_recipient_location_country")
 
         # Delete from broker_subaward because temp_subaward only has new/updated rows.

@@ -1,7 +1,9 @@
-from django.core.management.base import BaseCommand
-from usaspending_api.references.models import RefCityCountyCode, RefCountryCode, ObjectClass, RefProgramActivity
-from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
 import logging
+
+from django.core.management.base import BaseCommand
+from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
+from usaspending_api.references.models import RefCountryCode, ObjectClass, RefProgramActivity
+
 
 logger = logging.getLogger("console")
 
@@ -17,7 +19,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         possible_models = {
-            "RefCityCountyCode": RefCityCountyCode,
             "RefCountryCode": RefCountryCode,
             "ObjectClass": ObjectClass,
             "RefProgramActivity": RefProgramActivity,
