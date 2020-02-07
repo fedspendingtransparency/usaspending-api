@@ -1,8 +1,8 @@
-from django.core.management.base import BaseCommand
-from django.core.management import call_command
-from django.conf import settings
 import logging
-from usaspending_api.references.models import RefCityCountyCode
+
+from django.conf import settings
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -37,11 +37,10 @@ class Command(BaseCommand):
         else:
             call_command("load_program_activity")
 
-        self.logger.info("Loading ref_city_county_code.csv")
+        self.logger.info("Loading ref_city_county_state_code")
         call_command(
-            "load_reference_csv", "RefCityCountyCode", "usaspending_api/data/ref_city_county_code.csv", "Latin-1"
+            "load_city_county_state_code", "https://geonames.usgs.gov/docs/federalcodes/NationalFedCodes.zip", "--force"
         )
-        RefCityCountyCode.canonicalize()
 
         self.logger.info("Loading CFDA data")
         call_command("loadcfda", "https://files.usaspending.gov/reference_data/cfda.csv")

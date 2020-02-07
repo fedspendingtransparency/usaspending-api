@@ -2,6 +2,7 @@ import logging
 import psycopg2
 
 from datetime import datetime, timezone
+from django.conf import settings
 from django.core.management import call_command
 from pathlib import Path
 from typing import Tuple
@@ -183,7 +184,7 @@ class AgnosticTransactionLoader:
     def copy_broker_table_data(self, source_tablename, dest_tablename, primary_key):
         """Loop through the batches of IDs and load using the ETL tables"""
         destination = ETLTable(dest_tablename)
-        source = ETLDBLinkTable(source_tablename, "broker_server", destination.data_types)
+        source = ETLDBLinkTable(source_tablename, settings.DATA_BROKER_DBLINK_NAME, destination.data_types)
         transactions_remaining_count = self.total_ids_to_process
 
         for id_list in read_file_for_database_ids(str(self.file_path), self.chunk_size, is_numeric=False):
