@@ -16,6 +16,7 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category_view_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_time_period_message
@@ -32,14 +33,6 @@ logger = logging.getLogger(__name__)
 class Category:
     name: str
     primary_field: str
-
-
-@dataclass
-class Pagination:
-    page: int
-    limit: int
-    lower_limit: int
-    upper_limit: int
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)

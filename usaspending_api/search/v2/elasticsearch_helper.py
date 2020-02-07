@@ -1,5 +1,6 @@
 import logging
 import re
+from typing import Dict
 
 from django.conf import settings
 from elasticsearch_dsl import A, Q as ES_Q
@@ -10,6 +11,7 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     KEYWORD_DATATYPE_FIELDS,
     INDEX_ALIASES_TO_AWARD_TYPES,
 )
+from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 
@@ -236,3 +238,20 @@ def get_number_of_unique_terms(filter_query: ES_Q, field: str) -> int:
     response = search.handle_execute()
     response_dict = response.aggs.to_dict()
     return response_dict.get("field_count", {"value": 0})["value"]
+
+
+def get_sum_aggregations(field_to_sum: str, pagination: Pagination) -> Dict[str, A]:
+    sum_as_cents = A("sum", field=field_to_sum, script={"source": "_value * 100"})
+    sum_as_dollars = A(
+        "bucket_script", buckets_path={"sum_as_cents": "sum_as_cents"}, script="params.sum_as_cents / 100"
+    )
+
+    # Have to create a separate dictionary for the bucket_sort values since "from" is a reserved word
+    bucket_sort_values = {
+        "sort": {"sum_as_dollars": {"order": "desc"}},
+        "from": (pagination.page - 1) * pagination.limit,
+        "size": pagination.limit + 1,
+    }
+    sum_bucket_sort = A("bucket_sort", **bucket_sort_values)
+
+    return {"sum_as_cents": sum_as_cents, "sum_as_dollars": sum_as_dollars, "sum_bucket_sort": sum_bucket_sort}

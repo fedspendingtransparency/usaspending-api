@@ -29,8 +29,8 @@ from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_country_name_from_code,
     fetch_state_name_from_code,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.awarding_agency import AwardingAgencyViewSet
-from usaspending_api.search.v2.views.spending_by_category_views.awarding_subagency import AwardingSubagencyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import AwardingAgencyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import AwardingSubagencyViewSet
 
 logger = logging.getLogger(__name__)
 

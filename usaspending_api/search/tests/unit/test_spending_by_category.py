@@ -4,8 +4,8 @@ from model_mommy import mommy
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.v2.views.spending_by_category import BusinessLogic
-from usaspending_api.search.v2.views.spending_by_category_views.awarding_agency import AwardingAgencyViewSet
-from usaspending_api.search.v2.views.spending_by_category_views.awarding_subagency import AwardingSubagencyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import AwardingAgencyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import AwardingSubagencyViewSet
 
 
 @pytest.fixture
