@@ -37,7 +37,7 @@ AWARD_MAPPINGS = {
             1: "parent_award_agency_id",
             2: "award_id_piid",
             3: "modification_number",
-            4: "parent_award_id",
+            4: "parent_award_id_piid",
             5: "transaction_number",
             6: "contract_transaction_unique_key",
         },
