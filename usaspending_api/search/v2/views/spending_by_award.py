@@ -57,11 +57,6 @@ from usaspending_api.common.recipient_lookups import annotate_recipient_id, anno
 
 logger = logging.getLogger("console")
 
-CONTRACT_SOURCE_LOOKUP.update({v: k for k, v in CONTRACT_SOURCE_LOOKUP.items()})
-IDV_SOURCE_LOOKUP.update({v: k for k, v in IDV_SOURCE_LOOKUP.items()})
-NON_LOAN_ASST_SOURCE_LOOKUP.update({v: k for k, v in NON_LOAN_ASST_SOURCE_LOOKUP.items()})
-LOAN_SOURCE_LOOKUP.update({v: k for k, v in LOAN_SOURCE_LOOKUP.items()})
-
 GLOBAL_MAP = {
     "award": {
         "minimum_db_fields": {"award_id", "piid", "fain", "uri", "type"},
