@@ -63,12 +63,3 @@ def test_http_copy(temp_file_path):
         c = f.read()
         assert type(c) is str
         assert len(c) > 0
-
-
-def test_s3_copy(temp_file_path):
-
-    # Again, need an actual file to test against.
-
-    with pytest.raises(NotImplementedError):
-        with RetrieveFileFromUri("s3://whatever/file.txt").copy(temp_file_path):
-            pass

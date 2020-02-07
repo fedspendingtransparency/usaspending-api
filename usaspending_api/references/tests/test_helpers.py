@@ -29,10 +29,6 @@ def load_agency_data(db):
     mommy.make("references.FREC", agency_name="frec_4090", frec_code="4090")
 
 
-def test_canonicalize_string():
-    assert helpers.canonicalize_string(" Däytön\n") == "DÄYTÖN"
-
-
 def test_obtain_agency_name_from_frec(load_agency_data):
     assert helpers.retrive_agency_name_from_code("400") == "frec_400"
     assert helpers.retrive_agency_name_from_code("401") == "frec_401"

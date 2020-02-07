@@ -1,5 +1,6 @@
 import pytest
 
+from django.conf import settings
 from django.db import connections, DEFAULT_DB_ALIAS
 from django.test import TestCase
 
@@ -79,18 +80,21 @@ class BrokerIntegrationTestCase(TestCase):
 def test_can_connect_to_broker_by_dblink(broker_server_dblink_setup, db):
     """Simple 'integration test' that checks the USAspending to Broker dblink works
 
-    It will be skipped if the `broker_server` server is not created in the USAspending database-under-test
+    It will be skipped if a broker foreign data wrapper is not created in the USAspending database-under-test
     """
     connection = connections[DEFAULT_DB_ALIAS]
     with connection.cursor() as cursor:
-        cursor.execute("select srvname from pg_foreign_server where srvname = 'broker_server'")
+        cursor.execute(f"select srvname from pg_foreign_server where srvname = '{settings.DATA_BROKER_DBLINK_NAME}'")
         results = cursor.fetchall()
-        if not results or not results[0][0] == "broker_server":
+        if not results or not results[0][0] == settings.DATA_BROKER_DBLINK_NAME:
             pytest.skip(
-                "No foreign server named 'broker_server' has been setup on this USAspending database. "
-                "Skipping the test of integration with that server via dblink"
+                f"No foreign server named '{settings.DATA_BROKER_DBLINK_NAME}' has been setup on this "
+                "USAspending database.  Skipping the test of integration with that server via dblink"
             )
-        cursor.execute("SELECT * FROM dblink('broker_server','SELECT now()') AS broker_time(the_now timestamp)")
+        cursor.execute(
+            f"SELECT * FROM dblink('{settings.DATA_BROKER_DBLINK_NAME}','SELECT now()') "
+            "AS broker_time(the_now timestamp)"
+        )
         results = cursor.fetchall()
     assert results is not None
     assert len(results) > 0
