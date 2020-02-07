@@ -11,6 +11,8 @@ from usaspending_api.common.experimental_api_flags import ELASTICSEARCH_HEADER_V
 def test_elasticsearch_headers(client, monkeypatch, elasticsearch_transaction_index):
     elasticsearch_http_header_helper(client, monkeypatch, elasticsearch_transaction_index, "awarding_agency")
     elasticsearch_http_header_helper(client, monkeypatch, elasticsearch_transaction_index, "awarding_subagency")
+    elasticsearch_http_header_helper(client, monkeypatch, elasticsearch_transaction_index, "funding_agency")
+    elasticsearch_http_header_helper(client, monkeypatch, elasticsearch_transaction_index, "funding_subagency")
 
 
 def elasticsearch_http_header_helper(client, monkeypatch, elasticsearch_transaction_index, endpoint_name):
