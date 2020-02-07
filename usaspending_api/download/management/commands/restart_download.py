@@ -34,6 +34,11 @@ class Command(BaseCommand):
             type=str,
             help="A string to search on the final zip product filename of a DownloadJob to restart a download",
         )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Throw caution into the wind and force that DownloadJob file generation to restart!",
+        )
 
     def handle(self, *args, **options):  # used by parent class
         logger.info("Beginning management command")
@@ -41,7 +46,8 @@ class Command(BaseCommand):
 
         self.download = DownloadAdministrator()
         self.download.search_for_a_download(**self.get_custom_arguments(**options))
-        self.validate_download_job()
+        if not options["force"]:
+            self.validate_download_job()
         self.download.restart_download_operation()
         logger.info("OK")
 
