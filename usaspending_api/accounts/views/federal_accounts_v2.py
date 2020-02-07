@@ -1,6 +1,7 @@
 import ast
+
 from collections import OrderedDict
-from django.db.models import F, Func, OuterRef, Q, Subquery, Sum
+from django.db.models import F, Func, OuterRef, Q, Subquery, Sum, When, Value, CharField, Case
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime
 from rest_framework.response import Response
@@ -12,9 +13,10 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.helpers import dod_tas_agency_filter
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
+from usaspending_api.references.constants import DOD_CGAC, DOD_FEDERAL_ACCOUNTS
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
@@ -515,13 +517,31 @@ class FederalAccountsViewSet(APIView):
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
+        taa_filter = Q()
+        if agency_id == DOD_CGAC:
+            taa_filter = dod_tas_agency_filter("treasuryappropriationaccount")
+        elif agency_id is not None:
+            taa_filter = Q(treasuryappropriationaccount__agency_id=agency_id)
+
+        dod_whens = [
+            When(agency_identifier=aid, main_account_code=main, then=Value(DOD_CGAC))
+            for aid, main in DOD_FEDERAL_ACCOUNTS
+        ]
+
         agency_subquery = ToptierAgency.objects.filter(toptier_code=OuterRef("corrected_agency_identifier"))
         queryset = (
             FederalAccount.objects.filter(
+                taa_filter,
                 treasuryappropriationaccount__account_balances__final_of_fy=True,
                 treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy,
             )
-            .annotate(corrected_agency_identifier=Func(F("agency_identifier"), function="CORRECTED_CGAC"))
+            .annotate(
+                corrected_agency_identifier=Case(
+                    *dod_whens,
+                    default=Func(F("agency_identifier"), function="CORRECTED_CGAC"),
+                    output_field=CharField(),
+                )
+            )
             .annotate(
                 account_id=F("id"),
                 account_name=F("account_title"),
@@ -542,13 +562,6 @@ class FederalAccountsViewSet(APIView):
                 | Q(managing_agency__icontains=keyword)
                 | Q(managing_agency_acronym__contains=keyword.upper())
             )
-
-        if agency_id is not None:
-            tta_list = DOD_ARMED_FORCES_CGAC if agency_id == DOD_CGAC else [agency_id]
-            tta_filter = Q()
-            for tta in tta_list:
-                tta_filter |= Q(account_number__startswith=tta)
-            queryset &= queryset.filter(tta_filter)
 
         if sort_direction == "desc":
             queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))

@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
         # Special index used to guarantee uniquity on the natural key columns.
         migrations.RunSQL(
             sql=["""
-                create index idx_ref_city_county_state_code_natural_key on ref_city_county_state_code (
+                create unique index idx_ref_city_county_state_code_natural_key on ref_city_county_state_code (
                     feature_id,
                     state_alpha,
                     coalesce(county_sequence, -1),

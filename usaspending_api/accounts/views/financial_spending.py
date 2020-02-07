@@ -3,12 +3,13 @@ from usaspending_api.accounts.serializers import (
     ObjectClassFinancialSpendingSerializer,
     MinorObjectClassFinancialSpendingSerializer,
 )
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.models import Agency
-from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
-from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.views import CachedDetailViewSet
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.constants import DOD_CGAC
+from usaspending_api.references.helpers import dod_tas_agency_filter
+from usaspending_api.references.models import Agency
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
@@ -61,11 +62,10 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
         # error on a bad agency id)
         # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
         if toptier_agency.toptier_code == DOD_CGAC:
-            tta_list = DOD_ARMED_FORCES_CGAC
             queryset = queryset.filter(
+                dod_tas_agency_filter("treasury_account"),
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
-                treasury_account__funding_toptier_agency__toptier_code__in=tta_list,
             )
         else:
             queryset = queryset.filter(
@@ -83,8 +83,10 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
             major_object_class_code=F("object_class__major_object_class"),
         )
         # sum obligated_mount by object class
-        queryset = queryset.values("major_object_class_name", "major_object_class_code").annotate(
-            obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe")
+        queryset = (
+            queryset.values("major_object_class_name", "major_object_class_code")
+            .annotate(obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"))
+            .order_by("major_object_class_code")
         )
         # get minor object class vars
 
