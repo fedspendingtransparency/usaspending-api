@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connection, connections
 
@@ -128,6 +129,7 @@ class Command(BaseCommand):
             "broker_cols": broker_cols,
             "dblink_cols_type": broker_cols_type,
             "website_cols": website_cols,
+            "broker_server": settings.DATA_BROKER_DBLINK_NAME,
         }
 
         if file_type == "C":
@@ -142,7 +144,7 @@ class Command(BaseCommand):
         sql_statement = """
         CREATE TEMPORARY TABLE {broker_tmp_table} AS
         SELECT * from dblink(
-            'broker_server',
+            '{broker_server}',
             'SELECT
                 {broker_cols}
                 FROM {broker_table} db_file_table

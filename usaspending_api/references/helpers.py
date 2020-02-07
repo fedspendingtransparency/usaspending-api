@@ -5,17 +5,6 @@ from usaspending_api.references.models.cgac import CGAC
 from usaspending_api.references.models.frec import FREC
 
 
-def canonicalize_string(val):
-    """
-    Return version of string in UPPERCASE and without redundant whitespace.
-    """
-
-    try:
-        return " ".join(val.upper().split())
-    except AttributeError:  # was not upper-able, so was not a string
-        return val
-
-
 def dod_tas_agency_filter(field_name=None, funding=True):
     """
     IMPORANT:  As of this writing, we do not receive FREC (fr_entity_code) for Awarding Agencies so any
