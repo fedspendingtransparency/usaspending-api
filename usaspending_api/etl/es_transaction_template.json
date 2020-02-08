@@ -407,10 +407,24 @@
           }
         },
         "treasury_accounts": {
-          "type": "keyword"
+          "type": "nested",
+          "properties": {
+            "aid": {"type": "keyword"},
+            "ata": {"type": "keyword"},
+            "main": {"type": "keyword"},
+            "sub": {"type": "keyword"},
+            "bpoa": {"type": "keyword"},
+            "epoa": {"type": "keyword"},
+            "a": {"type": "keyword"}
+          }
         },
         "federal_accounts": {
-          "type": "keyword"
+          "type": "nested",
+          "properties": {
+            "id": {"type": "integer"},
+            "account_title": {"type": "keyword"},
+            "federal_account_code": {"type": "keyword"}
+          }
         },
         "business_categories": {
           "type": "keyword"
