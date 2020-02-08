@@ -103,9 +103,9 @@ def test_date_range(award_data_fixture, elasticsearch_award_index):
 def test_tas(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     search_regex = (
-        '\\"a\\": \\"{a}\\", \\"aid\\": \\"{aid}\\", \\"ata\\": \\"{ata}\\",'
+        '\\"aid\\": \\"{aid}\\", \\"ata\\": \\"{ata}\\", \\"main\\": \\"{main}\\",'
         ' \\"sub\\": \\"{sub}\\", \\"bpoa\\": \\"{bpoa}\\", \\"epoa\\": \\"{epoa}\\",'
-        ' \\"main\\": \\"{main}\\"'
+        ' \\"a\\": \\"{a}\\"'
     )
 
     tas_code_regexes1 = {
