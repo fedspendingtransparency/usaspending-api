@@ -104,8 +104,8 @@ def test_tas(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     search_regex = (
         '\\"a\\": \\"{a}\\", \\"aid\\": \\"{aid}\\", \\"ata\\": \\"{ata}\\",'
-        ' \\"sub\\": \\"{sub}\\", \\"bpoa\\": \\"{bpoa}\\", \\"epoa\\": \\"{epoa}\\",'
-        ' \\"main\\": \\"{main}\\"'
+        ' \\"bpoa\\": \\"{bpoa}\\", \\"epoa\\": \\"{epoa}\\", \\"main\\": \\"{main}\\",'
+        ' \\"sub\\": \\"{sub}\\"'
     )
 
     tas_code_regexes1 = {

@@ -227,9 +227,6 @@ AWARD_DESC_CATEGORIES = {
 UNIVERSAL_TRANSACTION_ID_NAME = "generated_unique_transaction_id"
 UNIVERSAL_AWARD_ID_NAME = "generated_unique_award_id"
 
-TREASURY_ACCOUNTS_KEY_ORDER = ["aid", "ata", "main", "sub", "bpoa", "epoa", "a"]
-FEDERAL_ACCOUNTS_KEY_ORDER = ["id", "account_title", "federal_account_code"]
-
 
 class DataJob:
     def __init__(self, *args):
@@ -254,7 +251,7 @@ def convert_postgres_array_as_string_to_list(array_as_string: str) -> Optional[l
     return array_as_string[1:-1].split(",") if len(array_as_string) > 2 else None
 
 
-def convert_postgres_json_array_as_string_to_list(json_array_as_string: str, key_order: list) -> Optional[dict]:
+def convert_postgres_json_array_as_string_to_list(json_array_as_string: str) -> Optional[dict]:
     """
         Postgres JSON arrays (jsonb) are stored in CSVs as strings. Since we want to avoid nested types
         in Elasticsearch the JSON arrays are converted to dictionaries to make parsing easier and then
@@ -265,11 +262,9 @@ def convert_postgres_json_array_as_string_to_list(json_array_as_string: str, key
     result = []
     json_array = json.loads(json_array_as_string)
     for j in json_array:
-        ordered_dict = {}
-        for key in key_order:
-            value = "" if j[key] is None else str(j[key])
-            ordered_dict[key] = value
-        result.append(json.dumps(ordered_dict))
+        for key, value in j.items():
+            j[key] = "" if value is None else str(j[key])
+        result.append(json.dumps(j, sort_keys=True))
     return result
 
 
@@ -405,12 +400,8 @@ def csv_chunk_gen(filename, chunksize, job_id, awards):
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
     converters = {
         "business_categories": convert_postgres_array_as_string_to_list,
-        "treasury_accounts": lambda json_array_as_string: convert_postgres_json_array_as_string_to_list(
-            json_array_as_string, TREASURY_ACCOUNTS_KEY_ORDER
-        ),
-        "federal_accounts": lambda json_array_as_string: convert_postgres_json_array_as_string_to_list(
-            json_array_as_string, FEDERAL_ACCOUNTS_KEY_ORDER
-        ),
+        "treasury_accounts": convert_postgres_json_array_as_string_to_list,
+        "federal_accounts": convert_postgres_json_array_as_string_to_list,
     }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
     dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
