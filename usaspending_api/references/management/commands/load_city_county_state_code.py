@@ -8,7 +8,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from usaspending_api.common.etl import ETLTable, ETLTemporaryTable, operations
 from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
-from usaspending_api.common.helpers.timing_helpers import Timer
+from usaspending_api.common.helpers.timing_helpers import Timer as OriginalTimer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.zip import extract_single_file_zip
 from usaspending_api.etl.operations.subaward.update_city_county import update_subaward_city_county
@@ -19,6 +19,13 @@ logger = logging.getLogger("script")
 
 
 MAX_CHANGE_PERCENT = 20
+
+
+class Timer(OriginalTimer):
+    """ Override the default logging to use our new "script" logging. """
+
+    def __init__(self, message=None):
+        super().__init__(message=message, success_logger=logger.info, failure_logger=logger.error)
 
 
 class Command(BaseCommand):
