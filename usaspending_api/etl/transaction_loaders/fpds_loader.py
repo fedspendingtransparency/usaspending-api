@@ -7,8 +7,6 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
     transaction_normalized_functions,
-    place_of_performance_nonboolean_columns,
-    place_of_performance_functions,
     award_nonboolean_columns,
     award_functions,
     transaction_fpds_boolean_columns,
@@ -25,7 +23,6 @@ from usaspending_api.etl.transaction_loaders.generic_loaders import (
     update_transaction_normalized,
     insert_transaction_normalized,
     insert_transaction_fpds,
-    bulk_insert_place_of_performance,
     insert_award,
 )
 from usaspending_api.common.helpers.timing_helpers import Timer
@@ -143,9 +140,6 @@ def _transform_objects(broker_objects):
 
     for broker_object in broker_objects:
         connected_objects = {
-            "place_of_performance_location": _create_load_object(
-                broker_object, place_of_performance_nonboolean_columns, None, place_of_performance_functions
-            ),
             # award. NOT used if a matching award is found later
             "award": _create_load_object(broker_object, award_nonboolean_columns, None, award_functions),
             "transaction_normalized": _create_load_object(
@@ -168,9 +162,6 @@ def _load_transactions(load_objects):
     ids_of_awards_created_or_updated = set()
     connection.ensure_connection()
     with connection.connection.cursor(cursor_factory=DictCursor) as cursor:
-
-        # Handle objects that can be inserted in groups Insert these always, even if duplicative.
-        load_objects = _load_and_link_leaf_objects(cursor, load_objects)
 
         # Handle transaction-to-award relationship for each transaction to be loaded
         for load_object in load_objects:
@@ -205,19 +196,6 @@ def _load_transactions(load_objects):
                 failed_ids.append(load_object["transaction_fpds"]["detached_award_procurement_id"])
 
     return list(ids_of_awards_created_or_updated)
-
-
-def _load_and_link_leaf_objects(cursor, load_objects):
-    """
-    First create the records that don't have a foreign key out to anything else in one transaction per type,
-    then put foreign keys to those objects into the load objects still to be loaded
-    """
-    inserted_place_of_performance = bulk_insert_place_of_performance(cursor, load_objects)
-    for index, elem in enumerate(inserted_place_of_performance):
-        load_objects[index]["transaction_normalized"]["place_of_performance_id"] = inserted_place_of_performance[index]
-        load_objects[index]["award"]["place_of_performance_id"] = inserted_place_of_performance[index]
-
-    return load_objects
 
 
 def _matching_award(cursor, load_object):

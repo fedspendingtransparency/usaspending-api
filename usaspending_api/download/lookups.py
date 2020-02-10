@@ -13,6 +13,10 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.download.helpers.elasticsearch_download_functions import (
+    AwardsElasticsearchDownload,
+    TransactionsElasticsearchDownload,
+)
 from usaspending_api.search.models import AwardSearchView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
@@ -73,6 +77,19 @@ VALUE_MAPPINGS = {
         "filter_function": universal_award_matview_filter,
         "annotations_function": universal_award_matview_annotations,
     },
+    # Elasticsearch Award Level
+    # Lives alongside Postgres functionality for /api/v2/download/awards/ as of 1/17/2020
+    "elasticsearch_awards": {
+        "source_type": "award",
+        "table": AwardSearchView,
+        "table_name": "award",
+        "type_name": "PrimeAwardSummaries",
+        "download_name": "{agency}{type}_PrimeAwardSummaries_{timestamp}",
+        "contract_data": "award__latest_transaction__contract_data",
+        "assistance_data": "award__latest_transaction__assistance_data",
+        "filter_function": AwardsElasticsearchDownload.query,
+        "annotations_function": universal_award_matview_annotations,
+    },
     # Transaction Level
     "transactions": {
         "source_type": "award",
@@ -83,6 +100,19 @@ VALUE_MAPPINGS = {
         "contract_data": "transaction__contract_data",
         "assistance_data": "transaction__assistance_data",
         "filter_function": universal_transaction_matview_filter,
+        "annotations_function": universal_transaction_matview_annotations,
+    },
+    # Elasticsearch Transaction Level
+    # Lives alongside Postgres functionality for /api/v2/download/transactions/ as of 1/17/2020
+    "elasticsearch_transactions": {
+        "source_type": "award",
+        "table": UniversalTransactionView,
+        "table_name": "transaction",
+        "type_name": "PrimeTransactions",
+        "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
+        "contract_data": "transaction__contract_data",
+        "assistance_data": "transaction__assistance_data",
+        "filter_function": TransactionsElasticsearchDownload.query,
         "annotations_function": universal_transaction_matview_annotations,
     },
     # SubAward Level

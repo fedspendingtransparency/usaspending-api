@@ -99,10 +99,20 @@ class Award(DataSourceTrackedModel):
         help_text="The total of the face_value_loan_guarantee from associated transactions",
     )
     awarding_agency = models.ForeignKey(
-        "references.Agency", related_name="+", null=True, help_text="The awarding agency for the award", db_index=True
+        "references.Agency",
+        on_delete=models.DO_NOTHING,
+        related_name="+",
+        null=True,
+        help_text="The awarding agency for the award",
+        db_index=True,
     )
     funding_agency = models.ForeignKey(
-        "references.Agency", related_name="+", null=True, help_text="The funding agency for the award", db_index=True
+        "references.Agency",
+        on_delete=models.DO_NOTHING,
+        related_name="+",
+        null=True,
+        help_text="The funding agency for the award",
+        db_index=True,
     )
     date_signed = models.DateField(
         null=True, db_index=False, verbose_name="Award Date", help_text="The date the award was signed"
@@ -116,14 +126,6 @@ class Award(DataSourceTrackedModel):
         db_index=True,
         verbose_name="End Date",
         help_text="The current, not original, period of performance end date",
-    )
-    place_of_performance = models.ForeignKey(
-        "references.Location",
-        null=True,
-        help_text="The principal place of business, where the majority of the "
-        "work is performed. For example, in a manufacturing contract, "
-        "this would be the main plant where items are produced.",
-        db_index=True,
     )
     base_and_all_options_value = models.DecimalField(
         max_digits=23,
@@ -152,12 +154,14 @@ class Award(DataSourceTrackedModel):
     )
     latest_transaction = models.ForeignKey(
         "awards.TransactionNormalized",
+        on_delete=models.DO_NOTHING,
         related_name="latest_for_award",
         null=True,
         help_text="The latest transaction by action_date and mod associated with this award",
     )
     earliest_transaction = models.ForeignKey(
         "awards.TransactionNormalized",
+        on_delete=models.DO_NOTHING,
         related_name="earliest_for_award",
         null=True,
         help_text="The earliest transaction by action_date and mod associated with this award",

@@ -7,7 +7,7 @@ from usaspending_api.common.helpers.date_helper import fy
 class TransactionNormalized(models.Model):
     id = models.BigAutoField(primary_key=True)
     award = models.ForeignKey(
-        "awards.Award", models.CASCADE, help_text="The award which this transaction is contained in"
+        "awards.Award", on_delete=models.DO_NOTHING, help_text="The award which this transaction is contained in"
     )
     usaspending_unique_transaction_id = models.TextField(
         blank=True,
@@ -70,20 +70,19 @@ class TransactionNormalized(models.Model):
     )
     awarding_agency = models.ForeignKey(
         "references.Agency",
+        on_delete=models.DO_NOTHING,
         related_name="%(app_label)s_%(class)s_awarding_agency",
         null=True,
         help_text="The agency which awarded this transaction",
     )
     funding_agency = models.ForeignKey(
         "references.Agency",
+        on_delete=models.DO_NOTHING,
         related_name="%(app_label)s_%(class)s_funding_agency",
         null=True,
         help_text="The agency which is funding this transaction",
     )
     description = models.TextField(null=True, help_text="The description of this transaction")
-    place_of_performance = models.ForeignKey(
-        "references.Location", null=True, help_text="The location where the work on this transaction was performed"
-    )
     drv_award_transaction_usaspend = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     drv_current_total_award_value_amount_adjustment = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True

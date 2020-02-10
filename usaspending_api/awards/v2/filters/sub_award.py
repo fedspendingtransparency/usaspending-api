@@ -185,7 +185,7 @@ def subaward_filter(filters, for_downloads=False):
                 raise InvalidParameterException("Invalid filter: recipient_scope type is invalid.")
 
         elif key == "recipient_locations":
-            queryset = queryset.filter(geocode_filter_locations("recipient_location", value, True))
+            queryset = queryset.filter(geocode_filter_locations("recipient_location", value))
 
         elif key == "recipient_type_names":
             if len(value) != 0:
@@ -200,7 +200,7 @@ def subaward_filter(filters, for_downloads=False):
                 raise InvalidParameterException("Invalid filter: place_of_performance_scope is invalid.")
 
         elif key == "place_of_performance_locations":
-            queryset = queryset.filter(geocode_filter_locations("pop", value, True))
+            queryset = queryset.filter(geocode_filter_locations("pop", value))
 
         elif key == "award_amounts":
             queryset &= total_obligation_queryset(value, SubawardView, filters)

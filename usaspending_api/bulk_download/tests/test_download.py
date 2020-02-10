@@ -15,9 +15,6 @@ def award_data(db):
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
-    # Create Locations
-    mommy.make("references.Location")
-
     # Create Awarding Top Agency
     ata1 = mommy.make(
         "references.ToptierAgency",
