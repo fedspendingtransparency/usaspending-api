@@ -328,9 +328,6 @@ LOGGING = {
         "script": {"handlers": ["script"], "level": "INFO", "propagate": False},
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
-        # ======== Module-specific loggers ========
-        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
-        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
     },
 }
 
