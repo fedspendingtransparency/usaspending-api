@@ -27,6 +27,10 @@ This endpoint takes award filters and fields, and returns the fields of the filt
             Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
         + `subawards` (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
+        + `last_record_unique_id` (optional, number)
+            The unique id of the last record in the results set. Used in the experimental Elasticsearch API functionality.
+        + `last_record_sort_value` (optional, string)
+            The value of the last record that is being sorted on. Used in the experimental Elasticsearch API functionality.
     + Body
 
             {
@@ -144,6 +148,8 @@ List of table columns
 ## PageMetadataObject (object)
 + `page` (required, number)
 + `hasNext` (required, boolean)
++ `last_record_unique_id` (optional, number)
++ `last_record_sort_value` (optional, string)
 
 ## Filter Objects
 ### FilterObject (object)

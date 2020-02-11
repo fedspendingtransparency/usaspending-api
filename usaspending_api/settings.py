@@ -25,7 +25,7 @@ DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS", 0))
 CONNECTION_MAX_SECONDS = 10
 
-API_MAX_DATE = "2020-09-30"  # End of FY2020
+API_MAX_DATE = "2024-09-30"  # End of FY2024
 API_MIN_DATE = "2000-10-01"  # Beginning of FY2001
 API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 
@@ -240,6 +240,8 @@ DOWNLOAD_DATABASE_URL = os.environ.get("DOWNLOAD_DATABASE_URL")
 if os.environ.get("DATA_BROKER_DATABASE_URL"):
     DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
 
+DATA_BROKER_DBLINK_NAME = "broker_server"
+
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
@@ -316,6 +318,8 @@ LOGGING = {
     "loggers": {
         # The root logger; i.e. "all modules"
         "": {"handlers": ["console", "console_file"], "level": "WARNING", "propagate": False},
+        # The "root" logger for all usaspending_api modules
+        "usaspending_api": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
         # Logger for Django API requests via middleware. See logging.py
         "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
         # Catch-all logger (over)used for non-Django-API commands that output to the console
@@ -324,9 +328,6 @@ LOGGING = {
         "script": {"handlers": ["script"], "level": "INFO", "propagate": False},
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
-        # ======== Module-specific loggers ========
-        "usaspending_api.common.sqs": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
-        "usaspending_api.download": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
     },
 }
 
