@@ -13,11 +13,6 @@ from usaspending_api.search.tests.integration.spending_by_category.spending_test
 from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
 
 
-@pytest.fixture
-def agency_test_data(db):
-    pass
-
-
 """
 As of 02/04/2020 these are intended for the experimental Elasticsearch functionality that lives alongside the Postgres
 implementation. These tests verify that ES performs as expected, but that it also respects the header put in place
