@@ -2,13 +2,9 @@ from model_mommy import mommy
 
 
 def setup_basic_agencies():
-    mommy.make("references.ToptierAgency", toptier_agency_id=2001, name="Awarding Toptier Agency 1", abbreviation="TA1")
-    mommy.make("references.SubtierAgency", subtier_agency_id=3001, name="Awarding Subtier Agency 1", abbreviation="SA1")
-    mommy.make("references.Agency", id=1001, toptier_agency_id=2001, subtier_agency_id=3001, toptier_flag=True)
+    _setup_agency(1, [], "Awarding")
 
-    mommy.make("references.ToptierAgency", toptier_agency_id=2004, name="Funding Toptier Agency 4", abbreviation="TA4")
-    mommy.make("references.SubtierAgency", subtier_agency_id=3004, name="Funding Subtier Agency 4", abbreviation="SA4")
-    mommy.make("references.Agency", id=1004, toptier_agency_id=2004, subtier_agency_id=3004, toptier_flag=True)
+    _setup_agency(4, [], "Funding")
 
     mommy.make("awards.Award", id=1, latest_transaction_id=1)
 
@@ -25,17 +21,9 @@ def setup_basic_agencies():
 
 def setup_non_linear_agency_trees():
     """Create some agencies with more than one subtier to toptier"""
-    mommy.make("references.ToptierAgency", toptier_agency_id=2003, name="Awarding Toptier Agency 3", abbreviation="TA3")
-    mommy.make("references.SubtierAgency", subtier_agency_id=3003, name="Awarding Subtier Agency 3", abbreviation="SA3")
-    mommy.make("references.SubtierAgency", subtier_agency_id=3005, name="Awarding Subtier Agency 5", abbreviation="SA5")
-    mommy.make("references.Agency", id=1003, toptier_agency_id=2003, subtier_agency_id=3003, toptier_flag=False)
-    mommy.make("references.Agency", id=1005, toptier_agency_id=2003, subtier_agency_id=3005, toptier_flag=True)
+    _setup_agency(3, [5], "Awarding")
 
-    mommy.make("references.ToptierAgency", toptier_agency_id=2002, name="Funding Toptier Agency 2", abbreviation="TA2")
-    mommy.make("references.SubtierAgency", subtier_agency_id=3002, name="Funding Subtier Agency 2", abbreviation="SA2")
-    mommy.make("references.SubtierAgency", subtier_agency_id=3006, name="Funding Subtier Agency 6", abbreviation="SA6")
-    mommy.make("references.Agency", id=1002, toptier_agency_id=2002, subtier_agency_id=3002, toptier_flag=False)
-    mommy.make("references.Agency", id=1006, toptier_agency_id=2002, subtier_agency_id=3006, toptier_flag=True)
+    _setup_agency(2, [6], "Funding")
 
     mommy.make("awards.Award", id=2, latest_transaction_id=2)
 
@@ -48,3 +36,36 @@ def setup_non_linear_agency_trees():
         federal_action_obligation=10,
         action_date="2020-01-02",
     )
+
+
+def _setup_agency(id, subteirs, special_name):
+    mommy.make(
+        "references.ToptierAgency",
+        toptier_agency_id=id + 2000,
+        name=f"{special_name} Toptier Agency {id}",
+        abbreviation=f"TA{id}",
+    )
+    mommy.make(
+        "references.SubtierAgency",
+        subtier_agency_id=id + 3000,
+        name=f"{special_name} Subtier Agency {id}",
+        abbreviation=f"SA{id}",
+    )
+    mommy.make(
+        "references.Agency", id=id + 1000, toptier_agency_id=id + 2000, subtier_agency_id=id + 3000, toptier_flag=True
+    )
+
+    for sub_id in subteirs:
+        mommy.make(
+            "references.SubtierAgency",
+            subtier_agency_id=sub_id + 3000,
+            name=f"{special_name} Subtier Agency {sub_id}",
+            abbreviation=f"SA{sub_id}",
+        )
+        mommy.make(
+            "references.Agency",
+            id=sub_id + 1000,
+            toptier_agency_id=id + 2000,
+            subtier_agency_id=sub_id + 3000,
+            toptier_flag=False,
+        )
