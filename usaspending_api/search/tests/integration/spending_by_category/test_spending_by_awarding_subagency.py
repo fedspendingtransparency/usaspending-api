@@ -7,7 +7,7 @@ from usaspending_api.common.experimental_api_flags import ELASTICSEARCH_HEADER_V
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.integration.spending_by_category.spending_test_fixtures import (
- setup_basic_agencies,
+    setup_basic_agencies,
     setup_non_linear_agency_trees,
 )
 from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
@@ -31,6 +31,8 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
     """
+    setup_basic_agencies()
+
     logging_statements = []
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
@@ -46,6 +48,9 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
 
 @pytest.mark.django_db
 def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, agency_test_data):
+    setup_basic_agencies()
+    setup_non_linear_agency_trees()
+
     logging_statements = []
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 

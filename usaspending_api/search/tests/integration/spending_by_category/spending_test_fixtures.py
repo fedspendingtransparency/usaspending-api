@@ -44,7 +44,7 @@ def setup_non_linear_agency_trees():
         id=2,
         award_id=2,
         awarding_agency_id=1003,
-        funding_agency_id=1004,
+        funding_agency_id=1006,
         federal_action_obligation=10,
         action_date="2020-01-02",
     )

@@ -31,6 +31,8 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
     """
+    setup_basic_agencies()
+
     logging_statements = []
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
@@ -46,6 +48,9 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
 
 @pytest.mark.django_db
 def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, agency_test_data):
+    setup_basic_agencies()
+    setup_non_linear_agency_trees()
+
     logging_statements = []
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
@@ -60,8 +65,8 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Funding Subtier Agency 4", "code": "SA4", "id": 1004},
-            {"amount": 5.0, "name": "Funding Subtier Agency 2", "code": "SA2", "id": 1002},
+            {"amount": 10.0, "name": "Funding Subtier Agency 6", "code": "SA6", "id": 1006},
+            {"amount": 5.0, "name": "Funding Subtier Agency 4", "code": "SA4", "id": 1004},
         ],
         "messages": [get_time_period_message()],
     }
