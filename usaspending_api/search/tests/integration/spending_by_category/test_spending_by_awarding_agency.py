@@ -6,10 +6,7 @@ from usaspending_api.common.experimental_api_flags import ELASTICSEARCH_HEADER_V
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
-from usaspending_api.search.tests.integration.spending_by_category.spending_test_fixtures import (
-    basic_agencies,
-    agencies_with_subagencies,
-)
+
 
 """
 As of 02/04/2020 these are intended for the experimental Elasticsearch functionality that lives alongside the Postgres
