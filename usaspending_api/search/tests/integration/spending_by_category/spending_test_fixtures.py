@@ -38,7 +38,7 @@ def setup_non_linear_agency_trees():
     )
 
 
-def _setup_agency(id, subteirs, special_name):
+def _setup_agency(id, subtiers, special_name):
     mommy.make(
         "references.ToptierAgency",
         toptier_agency_id=id + 2000,
@@ -55,7 +55,7 @@ def _setup_agency(id, subteirs, special_name):
         "references.Agency", id=id + 1000, toptier_agency_id=id + 2000, subtier_agency_id=id + 3000, toptier_flag=True
     )
 
-    for sub_id in subteirs:
+    for sub_id in subtiers:
         mommy.make(
             "references.SubtierAgency",
             subtier_agency_id=sub_id + 3000,
