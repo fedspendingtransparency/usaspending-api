@@ -42,7 +42,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
 
 
 @pytest.mark.django_db
-def test_correct_response_with_more_awards(client, monkeypatch, elasticsearch_transaction_index, agency_test_data):
+def test_correct_response_with_more_awards(client, monkeypatch, elasticsearch_transaction_index):
     setup_basic_agencies()
     setup_non_linear_agency_trees()
 
@@ -71,7 +71,7 @@ def test_correct_response_with_more_awards(client, monkeypatch, elasticsearch_tr
 
 
 @pytest.mark.django_db
-def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, agency_test_data):
+def test_correct_response(client, monkeypatch, elasticsearch_transaction_index):
     setup_basic_agencies()
 
     logging_statements = []
