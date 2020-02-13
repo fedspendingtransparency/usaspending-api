@@ -106,10 +106,9 @@ def load_fpds_transactions(chunk):
 
 def _extract_broker_objects(id_list):
 
-    broker_conn = connections["data_broker"]
-    broker_conn.ensure_connection()
-    with broker_conn.connection.cursor(cursor_factory=DictCursor) as cursor:
-        sql = "SELECT {} from detached_award_procurement where detached_award_procurement_id in %s".format(
+    connection.ensure_connection()
+    with connection.connection.cursor(cursor_factory=DictCursor) as cursor:
+        sql = "SELECT {} from source_procurement_transaction where detached_award_procurement_id in %s".format(
             ",".join(all_broker_columns())
         )
         cursor.execute(sql, (tuple(id_list),))
