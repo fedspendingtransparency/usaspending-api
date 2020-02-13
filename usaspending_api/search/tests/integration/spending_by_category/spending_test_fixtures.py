@@ -1,7 +1,9 @@
 from model_mommy import mommy
+import pytest
 
 
-def setup_basic_agencies():
+@pytest.fixture
+def basic_agencies(db):
     _setup_agency(1, [], "Awarding")
 
     _setup_agency(4, [], "Funding")
@@ -19,7 +21,8 @@ def setup_basic_agencies():
     )
 
 
-def setup_non_linear_agency_trees():
+@pytest.fixture
+def agencies_with_subagencies(db):
     """Create some agencies with more than one subtier to toptier"""
     _setup_agency(3, [5], "Awarding")
 

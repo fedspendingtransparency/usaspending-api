@@ -1,17 +1,15 @@
 import json
 
-import pytest
 from rest_framework import status
 
 from usaspending_api.common.experimental_api_flags import ELASTICSEARCH_HEADER_VALUE, EXPERIMENTAL_API_HEADER
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
-from usaspending_api.search.tests.integration.spending_by_category.spending_test_fixtures import (
-    setup_basic_agencies,
-    setup_non_linear_agency_trees,
-)
 from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
-
+from usaspending_api.search.tests.integration.spending_by_category.spending_test_fixtures import (
+    basic_agencies,
+    agencies_with_subagencies,
+)
 
 """
 As of 02/04/2020 these are intended for the experimental Elasticsearch functionality that lives alongside the Postgres
@@ -21,12 +19,10 @@ the endpoint these tests should be updated to reflect the change.
 """
 
 
-@pytest.mark.django_db
-def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index):
+def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, basic_agencies):
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
     """
-    setup_basic_agencies()
 
     logging_statements = []
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
@@ -41,10 +37,9 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
     assert len(logging_statements) == 1, "Expected one logging statement"
 
 
-@pytest.mark.django_db
-def test_correct_response_with_more_awards(client, monkeypatch, elasticsearch_transaction_index):
-    setup_basic_agencies()
-    setup_non_linear_agency_trees()
+def test_correct_response_with_more_awards(
+    client, monkeypatch, elasticsearch_transaction_index, basic_agencies, agencies_with_subagencies
+):
 
     logging_statements = []
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
@@ -70,9 +65,7 @@ def test_correct_response_with_more_awards(client, monkeypatch, elasticsearch_tr
     assert resp.json() == expected_response
 
 
-@pytest.mark.django_db
-def test_correct_response(client, monkeypatch, elasticsearch_transaction_index):
-    setup_basic_agencies()
+def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, basic_agencies):
 
     logging_statements = []
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
