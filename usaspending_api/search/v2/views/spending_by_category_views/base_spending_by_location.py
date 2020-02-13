@@ -64,7 +64,6 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
         results = []
         country_code_buckets = response.get("group_by_country_code", {}).get("buckets", [])
         for bucket in country_code_buckets:
-            print(bucket)
             results.append(
                 {
                     "amount": bucket.get("sum_as_dollars", {"value": 0})["value"],
@@ -72,7 +71,6 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
                     "id": None,
                     # we're hitting the DB here because otherwise we have no guarantee that the transactions will have the country_name filled in
                     "name": fetch_country_name_from_code(bucket.get("key")),
-
                 }
             )
         return results
@@ -93,7 +91,8 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
             filters = {"pop_state_code__isnull": False}
             values = ["pop_state_code"]
 
-        queryset = (base_queryset.filter(**filters)
+        queryset = (
+            base_queryset.filter(**filters)
             .values(*values)
             .annotate(amount=Sum(self.obligation_column))
             .order_by("-amount")
