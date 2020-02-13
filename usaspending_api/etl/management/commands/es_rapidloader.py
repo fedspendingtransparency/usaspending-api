@@ -203,7 +203,7 @@ def set_config(copy_args: list, arg_parse_options: dict) -> dict:
         root_index = settings.ES_AWARDS_QUERY_ALIAS_PREFIX
     config = {
         "aws_region": settings.USASPENDING_AWS_REGION,
-        "s3_bucket": settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME,
+        "s3_bucket": settings.DELETED_TRANSACTION_JOURNAL_S3_BUCKET,
         "root_index": root_index,
         "processing_start_datetime": datetime.now(timezone.utc),
         "verbose": arg_parse_options["verbosity"] > 1,  # convert the management command's levels of verbosity to a bool

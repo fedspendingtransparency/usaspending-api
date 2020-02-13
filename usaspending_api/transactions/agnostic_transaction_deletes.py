@@ -25,8 +25,8 @@ class AgnosticDeletes:
         )
 
     def handle(self, *args, **options):
-        if not (settings.USASPENDING_AWS_REGION and settings.FPDS_BUCKET_NAME):
-            raise Exception("Missing one or more environment variables: 'USASPENDING_AWS_REGION', 'FPDS_BUCKET_NAME'")
+        if not (settings.USASPENDING_AWS_REGION and settings.DELETED_TRANSACTION_JOURNAL_S3_BUCKET):
+            raise Exception("Missing one or more environment variables: 'USASPENDING_AWS_REGION', 'DELETED_TRANSACTION_JOURNAL_S3_BUCKET'")
 
         logger.info(f"Starting processing deletes from {options['datetime']}")
         try:
