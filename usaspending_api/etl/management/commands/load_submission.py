@@ -1,13 +1,11 @@
-from datetime import datetime
 import logging
 import re
 import signal
 
-from django.core.management.base import CommandError
+from datetime import datetime
 from django.core.management import call_command
-from django.db import connections, transaction
-import pandas as pd
-import numpy as np
+from django.core.management.base import CommandError
+from django.db import transaction
 
 from usaspending_api.accounts.models import (
     AppropriationAccountBalances,
@@ -15,18 +13,22 @@ from usaspending_api.accounts.models import (
     TreasuryAppropriationAccount,
 )
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
+from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
+from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
+from usaspending_api.etl.management import load_base
+from usaspending_api.etl.management.helpers.load_submission import (
+    CertifiedAwardFinancial,
+    get_object_class,
+    get_or_create_program_activity,
+)
+from usaspending_api.etl.management.load_base import load_data_into_model
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass,
     TasProgramActivityObjectClassQuarterly,
 )
-from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
-from usaspending_api.references.models import ObjectClass, RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
-from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
-from usaspending_api.etl.management import load_base
-from usaspending_api.etl.management.load_base import load_data_into_model
 
 # This dictionary will hold a map of tas_id -> treasury_account to ensure we don't keep hitting the databroker DB for
 # account data
@@ -49,7 +51,6 @@ class Command(load_base.Command):
 
     def add_arguments(self, parser):
         parser.add_argument("submission_id", nargs=1, help="the data broker submission id to load", type=int)
-        parser.add_argument("-q", "--quick", action="store_true", help="experimental SQL-based load")
         super(Command, self).add_arguments(parser)
 
     @transaction.atomic
@@ -109,23 +110,14 @@ class Command(load_base.Command):
         logger.info("Finished loading File B data, took {}".format(datetime.now() - start_time))
 
         logger.info("Getting File C data")
-        # we dont have sub-tier agency info, so we'll do our best
-        # to match them to the more specific award records
-        award_financial_query = (
-            "SELECT * FROM certified_award_financial"
-            f" WHERE submission_id = {submission_id}"
-            " AND transaction_obligated_amou IS NOT NULL AND transaction_obligated_amou != 0"
-        )
-
-        award_financial_frame = pd.read_sql(award_financial_query, connections["data_broker"])
+        certified_award_financial = CertifiedAwardFinancial(submission_attributes)
         logger.info(
-            "Acquired File C (award financial) data for {}, there are {} rows.".format(
-                submission_id, award_financial_frame.shape[0]
-            )
+            f"Acquired File C (award financial) data for {submission_id}, "
+            f"there are {certified_award_financial.count} rows."
         )
         logger.info("Loading File C data")
         start_time = datetime.now()
-        load_file_c(submission_attributes, db_cursor, award_financial_frame)
+        load_file_c(submission_attributes, db_cursor, certified_award_financial)
         logger.info("Finished loading File C data, took {}".format(datetime.now() - start_time))
 
         # Once all the files have been processed, run any global cleanup/post-load tasks.
@@ -141,96 +133,6 @@ def update_skipped_tas(row, tas_rendering_label, skipped_tas):
     else:
         skipped_tas[tas_rendering_label]["count"] += 1
         skipped_tas[tas_rendering_label]["rows"] += [row["row_number"]]
-
-
-def get_object_class(row_object_class, row_direct_reimbursable):
-    """Lookup an object class record.
-
-        Args:
-            row_object_class: object class from the broker
-            row_direct_reimbursable: direct/reimbursable flag from the broker
-                (used only when the object_class is 3 digits instead of 4)
-    """
-
-    row = Bunch(object_class=row_object_class, by_direct_reimbursable_fun=row_direct_reimbursable)
-    return get_object_class_row(row)
-
-
-class Bunch:
-    """Generic class to hold a group of attributes."""
-
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
-
-
-def get_object_class_row(row):
-    """Lookup an object class record.
-
-       (As ``get_object_class``, but arguments are bunched into a ``row`` object.)
-
-        Args:
-            row.object_class: object class from the broker
-            row.by_direct_reimbursable_fun: direct/reimbursable flag from the broker
-                (used only when the object_class is 3 digits instead of 4)
-    """
-
-    # Object classes are numeric strings so let's ensure the one we're passed is actually a string before we begin.
-    object_class = str(row.object_class).zfill(3) if type(row.object_class) is int else row.object_class
-
-    # As per DEV-4030, "000" object class is a special case due to common spreadsheet mangling issues.  If
-    # we receive an object class that is all zeroes, convert it to "000".  This also handles the special
-    # case of "0000".
-    if object_class is not None and object_class == "0" * len(object_class):
-        object_class = "000"
-
-    # Alias this to cut down on line lengths a little below.
-    ocdr = ObjectClass.DIRECT_REIMBURSABLE
-
-    if len(object_class) == 4:
-        # this is a 4 digit object class, 1st digit = direct/reimbursable information
-        direct_reimbursable = ocdr.LEADING_DIGIT_MAPPING[object_class[0]]
-        object_class = object_class[1:]
-    else:
-        # the object class field is the 3 digit version, so grab direct/reimbursable information from a separate field
-        try:
-            direct_reimbursable = ocdr.BY_DIRECT_REIMBURSABLE_FUN_MAPPING[row.by_direct_reimbursable_fun]
-        except KeyError:
-            # So Broker sort of validates this data, but not really.  It warns submitters that their data
-            # is bad but doesn't force them to actually fix it.  As such, we are going to just ignore
-            # anything we do not recognize.  Terrible solution, but it's what we've been doing to date
-            # and I don't have a better one.
-            direct_reimbursable = None
-
-    # This will throw an exception if the object class does not exist which is the new desired behavior.
-    try:
-        return ObjectClass.objects.get(object_class=object_class, direct_reimbursable=direct_reimbursable)
-    except ObjectClass.DoesNotExist:
-        raise ObjectClass.DoesNotExist(
-            f"Unable to find object class for object_class={object_class}, direct_reimbursable={direct_reimbursable}."
-        )
-
-
-def get_or_create_program_activity(row, submission_attributes):
-    # We do it this way rather than .get_or_create because we do not want to duplicate existing pk's with null values
-    filters = {
-        "program_activity_code": row["program_activity_code"],
-        "program_activity_name": row["program_activity_name"].upper()
-        if row["program_activity_name"]
-        else row["program_activity_name"],
-        "budget_year": submission_attributes.reporting_fiscal_year,
-        "responsible_agency_id": row["agency_identifier"],
-        "allocation_transfer_agency_id": row["allocation_transfer_agency"],
-        "main_account_code": row["main_account_code"],
-    }
-    prg_activity = RefProgramActivity.objects.filter(**filters).first()
-    if prg_activity is None and row["program_activity_code"] is not None:
-        # If the PA has a blank name, create it with the value in the row.
-        # PA loader should overwrite the names for the unique PAs from the official
-        # domain values list if the title needs updating, but for now grab it from the submission
-        prg_activity = RefProgramActivity.objects.create(**filters)
-        # logger.warning('Created missing program activity record for {}'.format(str(filters)))
-
-    return prg_activity
 
 
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
@@ -643,7 +545,7 @@ def find_matching_award(piid=None, parent_piid=None, fain=None, uri=None):
         return None
 
 
-def load_file_c(submission_attributes, db_cursor, award_financial_frame):
+def load_file_c(submission_attributes, db_cursor, certified_award_financial):
     """
     Process and load file C broker data.
     Note: this should run AFTER the D1 and D2 files are loaded because we try to join to those records to retrieve some
@@ -652,7 +554,7 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     # this matches the file b reverse directive, but am repeating it here to ensure that we don't overwrite it as we
     # change up the order of file loading
 
-    if not award_financial_frame.size:
+    if certified_award_financial.count == 0:
         logger.warning("No File C (award financial) data found, skipping...")
         return
 
@@ -663,20 +565,11 @@ def load_file_c(submission_attributes, db_cursor, award_financial_frame):
     # count = number of rows skipped
     # rows = row numbers skipped, corresponding to the original row numbers in the file that was submitted
     skipped_tas = {}
-
-    award_financial_frame["object_class"] = award_financial_frame.apply(get_object_class_row, axis=1)
-    award_financial_frame["program_activity"] = award_financial_frame.apply(
-        get_or_create_program_activity, axis=1, submission_attributes=submission_attributes
-    )
-
-    total_rows = award_financial_frame.shape[0]
+    total_rows = certified_award_financial.count
     start_time = datetime.now()
     awards_touched = []
 
-    # format award_financial_frame
-    award_financial_frame = award_financial_frame.replace({np.nan: None})
-
-    for index, row in enumerate(award_financial_frame.to_dict(orient="records"), 1):
+    for index, row in enumerate(certified_award_financial, 1):
         if not (index % 100):
             logger.info(
                 "C File Load: Loading row {} of {} ({})".format(
