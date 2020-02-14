@@ -9,6 +9,7 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     broker_source_table_name = SourceProcurementTransaction().broker_source_table
     delete_management_command = "delete_procurement_records"
     destination_table_name = SourceProcurementTransaction().table_name
+    extra_predicate = []
     last_load_record = "source_procurement_transaction"
     lookback_minutes = 0
     shared_pk = "detached_award_proc_unique"
