@@ -23,10 +23,17 @@ def setup_basic_agency_tree():
     mommy.make("references.Agency", id=1005, toptier_agency_id=2003, subtier_agency_id=3005, toptier_flag=True)
 
 
+def setup_country_data():
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+    mommy.make("references.RefCountryCode", country_code="IRQ", country_name="IRAQ")
+
+
 def setup_basic_awards_and_transactions():
     mommy.make("awards.Award", id=1, latest_transaction_id=1)
     mommy.make("awards.Award", id=2, latest_transaction_id=2)
 
+    mommy.make("awards.TransactionFABS", transaction_id=1, place_of_perform_country_c="IRQ")
+    mommy.make("awards.TransactionFABS", transaction_id=2, place_of_perform_country_c="USA")
     mommy.make(
         "awards.TransactionNormalized",
         id=1,
