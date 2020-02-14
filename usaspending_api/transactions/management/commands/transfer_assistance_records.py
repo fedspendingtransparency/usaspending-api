@@ -9,6 +9,7 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     broker_source_table_name = SourceAssistanceTransaction().broker_source_table
     delete_management_command = "delete_assistance_records"
     destination_table_name = SourceAssistanceTransaction().table_name
+    extra_predicate = [{"field": "is_active", "op": "EQUAL", "value": "true"}]
     last_load_record = "source_assistance_transaction"
     lookback_minutes = 15
     shared_pk = "afa_generated_unique"
