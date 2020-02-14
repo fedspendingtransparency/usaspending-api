@@ -53,8 +53,8 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
         sum_bucket_sort = sum_aggregations["sum_bucket_sort"]
 
         # Apply the aggregations to TransactionSearch object
-        search.aggs.bucket("group_by_country_code", group_by_location)
-        search.aggs["group_by_country_code"].metric("sum_as_cents", sum_as_cents).pipeline(
+        search.aggs.bucket("group_by_location", group_by_location)
+        search.aggs["group_by_location"].metric("sum_as_cents", sum_as_cents).pipeline(
             "sum_as_dollars", sum_as_dollars
         ).pipeline("sum_bucket_sort", sum_bucket_sort)
 
@@ -62,7 +62,7 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
-        country_code_buckets = response.get("group_by_country_code", {}).get("buckets", [])
+        country_code_buckets = response.get("group_by_location", {}).get("buckets", [])
         for bucket in country_code_buckets:
             results.append(
                 {

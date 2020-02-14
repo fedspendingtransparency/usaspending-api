@@ -10,11 +10,13 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 from usaspending_api.search.tests.integration.spending_test_fixtures import (
     setup_basic_awards_and_transactions,
     setup_country_data,
+    setup_basic_agency_tree,
 )
 
 
 @pytest.fixture
 def country_test_data(db):
+    setup_basic_agency_tree()
     setup_basic_awards_and_transactions()
     setup_country_data()
 
