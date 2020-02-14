@@ -6,7 +6,7 @@
     "index": {
       "number_of_shards": 5,
       "number_of_replicas": 0,
-      "sort.field" : ["total_obligation.keyword", "action_date"],
+      "sort.field" : ["total_obligation.keyword", "award_id"],
       "sort.order" : ["desc", "desc"],
       "sort.missing": ["_last", "_last"]
     },

@@ -67,6 +67,10 @@ VIEW_COLUMNS = [
     "funding_toptier_agency_id",
     "awarding_subtier_agency_id",
     "funding_subtier_agency_id",
+    "awarding_toptier_id",
+    "funding_toptier_id",
+    "awarding_subtier_id",
+    "funding_subtier_id",
     "awarding_toptier_agency_name",
     "funding_toptier_agency_name",
     "awarding_subtier_agency_name",
@@ -163,6 +167,7 @@ AWARD_VIEW_COLUMNS = [
     "pop_zip5",
     "pop_congressional_code",
     "pop_city_name",
+    "pop_city_code",
     "cfda_number",
     "sai_number",
     "type_of_contract_pricing",
@@ -258,11 +263,8 @@ def convert_postgres_json_array_as_string_to_list(json_array_as_string: str) -> 
     json_array = json.loads(json_array_as_string)
     for j in json_array:
         for key, value in j.items():
-            if value is None:
-                j[key] = ""
-            else:
-                j[key] = str(value)
-        result.append(json.dumps(j))
+            j[key] = "" if value is None else str(j[key])
+        result.append(json.dumps(j, sort_keys=True))
     return result
 
 

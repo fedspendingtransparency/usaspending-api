@@ -2,7 +2,6 @@ import json
 
 from datetime import datetime, timezone
 from typing import Optional, List
-
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection, DEFAULT_DB_ALIAS
@@ -95,11 +94,8 @@ class TestElasticSearchIndex:
         result = []
         for j in json_array:
             for key, value in j.items():
-                if value is None:
-                    j[key] = ""
-                else:
-                    j[key] = str(value)
-            result.append(json.dumps(j))
+                j[key] = "" if value is None else str(j[key])
+            result.append(json.dumps(j, sort_keys=True))
         return result
 
 

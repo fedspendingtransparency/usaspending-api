@@ -56,6 +56,8 @@ class AgnosticDeletes:
         connection = get_connection(read_only=False)
         with connection.cursor() as cursor:
             for date, ids in removed_records.items():
+                if len(ids) == 1:  # handle case with single-value Python tuples contain a trailing comma "(id,)"
+                    ids = ids + ids
                 sql = delete_template.format(
                     table=self.destination_table_name, key=self.shared_pk, ids=tuple(ids), date=date
                 )

@@ -68,6 +68,7 @@ SELECT
   vw_award_search.pop_zip5,
   vw_award_search.pop_congressional_code,
   vw_award_search.pop_city_name,
+  vw_award_search.pop_city_code,
 
   vw_award_search.cfda_number,
   vw_award_search.sai_number,

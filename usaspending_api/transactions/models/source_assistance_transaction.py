@@ -19,7 +19,7 @@ class SourceAssistanceTransaction(models.Model):
     published_award_financial_assistance_id = models.IntegerField(
         primary_key=True, help_text="surrogate primary key defined in Broker"
     )
-    afa_generated_unique = models.TextField(help_text="natural key defined in Broker")
+    afa_generated_unique = models.TextField(unique=True, help_text="natural key defined in Broker")
     action_date = models.TextField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)
     action_type_description = models.TextField(blank=True, null=True)

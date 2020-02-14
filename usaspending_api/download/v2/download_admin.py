@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from django.conf import settings
 from django.db.models import Q
 
@@ -25,12 +26,19 @@ class DownloadAdministrator:
         self.download_job = query_database_for_record(queryset_filter)
 
     def restart_download_operation(self):
+        self.update_download_job(
+            error_message=None,
+            file_size=0,
+            job_status_id=JOB_STATUS_DICT["queued"] if process_is_local() else JOB_STATUS_DICT["ready"],
+            number_of_columns=0,
+            number_of_rows=0,
+            update_date=datetime.now(timezone.utc),
+        )
+
         if process_is_local():
-            self.update_download_job(job_status_id=JOB_STATUS_DICT["ready"], error_message=None)
             download_generation.generate_download(download_job=self.download_job)
         else:
             self.push_job_to_queue()
-            self.update_download_job(job_status_id=JOB_STATUS_DICT["queued"], error_message=None)
 
     def update_download_job(self, **kwargs):
         for field, value in kwargs.items():
