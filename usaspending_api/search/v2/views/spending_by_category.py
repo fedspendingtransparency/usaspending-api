@@ -28,6 +28,7 @@ from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_country_name_from_code,
     fetch_state_name_from_code,
 )
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_location_types import CountryViewSet
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import (
     AwardingAgencyViewSet,
     AwardingSubagencyViewSet,
@@ -113,6 +114,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             response = FundingAgencyViewSet().perform_search(validated_payload)
         elif validated_payload["category"] == "funding_subagency":
             response = FundingSubagencyViewSet().perform_search(validated_payload)
+        elif validated_payload["category"] == "country":
+            response = CountryViewSet().perform_search(validated_payload)
         else:
             response = BusinessLogic(validated_payload).results()
 

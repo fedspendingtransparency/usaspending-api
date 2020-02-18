@@ -12,7 +12,6 @@ from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_state_name_from_code,
 )
 from usaspending_api.search.v2.elasticsearch_helper import get_sum_aggregations
-from usaspending_api.search.v2.views.spending_by_category import ALIAS_DICT
 from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category import (
     BaseSpendingByCategoryViewSet,
 )
@@ -95,11 +94,15 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
             .annotate(amount=Sum(self.obligation_column))
             .order_by("-amount")
         )
-
+        code_lookup = {
+            "county": {"pop_county_code": "code", "pop_county_name": "name"},
+            "district": {"pop_congressional_code": "code"},
+            "state_territory": {"pop_state_code": "code"},
+            "country": {"pop_country_code": "code"},
+        }
         # DB hit here
         query_results = list(queryset[self.pagination.lower_limit : self.pagination.upper_limit])
-
-        results = alias_response(ALIAS_DICT[self.category.name], query_results)
+        results = alias_response(code_lookup[self.category.name], query_results)
         for row in results:
             row["id"] = None
             if self.category.name == "district":
