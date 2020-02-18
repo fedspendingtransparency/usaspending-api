@@ -26,9 +26,7 @@ class LocationType(Enum):
 
 
 class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
-    """
-    Base class used by the different Awarding / Funding Agencies and Subagencies
-    """
+    """Base class used by the different Location categories for Spending By Category"""
 
     location_type: LocationType
 
