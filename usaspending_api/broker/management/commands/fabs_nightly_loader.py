@@ -113,12 +113,12 @@ def get_fabs_records_to_delete(start_datetime, end_datetime):
     start = perf_counter()
     try:
         s3 = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)
-        bucket = s3.Bucket(settings.DELETED_TRANSACTION_JOURNAL_S3_BUCKET)
+        bucket = s3.Bucket(settings.DELETED_TRANSACTION_JOURNAL_FILES)
         bucket_objects = list(bucket.objects.all())
     except Exception as e:
         print("\n[ERROR]\n")
-        print("Verify settings.USASPENDING_AWS_REGION and settings.DELETED_TRANSACTION_JOURNAL_S3_BUCKET are correct")
-        print("  or is using env variables: USASPENDING_AWS_REGION and DELETED_TRANSACTION_JOURNAL_S3_BUCKET")
+        print("Verify settings.USASPENDING_AWS_REGION and settings.DELETED_TRANSACTION_JOURNAL_FILES are correct")
+        print("  or is using env variables: USASPENDING_AWS_REGION and DELETED_TRANSACTION_JOURNAL_FILES")
         print("\n {} \n".format(e))
         raise SystemExit(1)
 

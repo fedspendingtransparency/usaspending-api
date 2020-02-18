@@ -23,9 +23,9 @@ def store_deleted_fabs(ids_to_delete):
     else:
         logger.info("Uploading FABS delete data to S3 bucket")
         aws_region = settings.USASPENDING_AWS_REGION
-        DELETED_TRANSACTION_JOURNAL_S3_BUCKET = settings.DELETED_TRANSACTION_JOURNAL_S3_BUCKET
+        DELETED_TRANSACTION_JOURNAL_FILES = settings.DELETED_TRANSACTION_JOURNAL_FILES
         s3client = boto3.client("s3", region_name=aws_region)
         contents = bytes()
         for row in file_with_headers:
             contents += bytes("{}\n".format(row).encode())
-        s3client.put_object(Bucket=DELETED_TRANSACTION_JOURNAL_S3_BUCKET, Key=file_name, Body=contents)
+        s3client.put_object(Bucket=DELETED_TRANSACTION_JOURNAL_FILES, Key=file_name, Body=contents)

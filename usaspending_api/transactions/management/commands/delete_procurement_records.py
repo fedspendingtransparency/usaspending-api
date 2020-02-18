@@ -29,7 +29,7 @@ class Command(AgnosticDeletes, BaseCommand):
             return None
 
         s3 = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)
-        s3_bucket = s3.Bucket(settings.DELETED_TRANSACTION_JOURNAL_S3_BUCKET)
+        s3_bucket = s3.Bucket(settings.DELETED_TRANSACTION_JOURNAL_FILES)
 
         # Only use files that match the date we're currently checking
         for obj in s3_bucket.objects.all():

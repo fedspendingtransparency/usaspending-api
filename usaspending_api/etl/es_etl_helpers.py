@@ -638,8 +638,8 @@ def gather_deleted_ids(config):
         bucket_objects = list(bucket.objects.all())
     except Exception as e:
         print("\n[ERROR]\n")
-        print("Verify settings.USASPENDING_AWS_REGION and settings.DELETED_TRANSACTION_JOURNAL_S3_BUCKET are correct")
-        print("  or is using env variables: USASPENDING_AWS_REGION and DELETED_TRANSACTION_JOURNAL_S3_BUCKET")
+        print("Verify settings.USASPENDING_AWS_REGION and settings.DELETED_TRANSACTION_JOURNAL_FILES are correct")
+        print("  or is using env variables: USASPENDING_AWS_REGION and DELETED_TRANSACTION_JOURNAL_FILES")
         print("\n {} \n".format(e))
         raise SystemExit(1)
 
