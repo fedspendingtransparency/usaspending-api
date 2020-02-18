@@ -95,4 +95,4 @@ class Rapidloader:
         if self.config["is_incremental_load"]:
             msg = "Storing datetime {} for next incremental load"
             printf({"msg": msg.format(self.config["processing_start_datetime"])})
-            update_last_load_date("es_transactions", self.config["processing_start_datetime"])
+            update_last_load_date("es_{}".format(self.config["load_type"]), self.config["processing_start_datetime"])
