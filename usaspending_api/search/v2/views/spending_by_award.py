@@ -50,7 +50,7 @@ from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_v
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
@@ -174,7 +174,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "allow_nulls": True,
             },
         ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
         for m in models:
             if m["name"] in ("award_type_codes", "fields"):

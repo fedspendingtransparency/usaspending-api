@@ -21,7 +21,7 @@ from usaspending_api.common.experimental_api_flags import is_experimental_elasti
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.common.helpers.orm_helpers import category_to_award_materialized_views
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 
@@ -56,7 +56,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 "array_max": maxsize,
             },
         ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
         subawards = json_request["subawards"]
