@@ -519,3 +519,29 @@ def test_agency_failure(client):
         data=json.dumps({"type": "agency", "filters": {"fy": "23", "quarter": "3"}}),
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+@pytest.mark.django_db
+def test_object_budget_match(client):
+    models = copy.deepcopy(GLOBAL_MOCK_DICT)
+    for entry in models:
+        mommy.make(entry.pop("model"), **entry)
+
+    resp = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps(
+            {"type": "object_class", "filters": {"fy": "2017"}}
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    data1 = resp.data
+
+    resp = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps(
+            {"type": "budget_function", "filters": {"fy": "2017"}}
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    data2 = resp.data
