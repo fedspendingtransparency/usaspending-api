@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods, get_time_period_message
+from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods, get_generic_filters_message
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile, SummaryAwardRecipient
@@ -97,6 +97,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
+        self.original_filters = request.data.get("filters")
         self.json_request = self.validate_api_request(request.data)
         self.filters = self.json_request.get("filters", None)
 
@@ -114,6 +115,8 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         response = {
             "group": self.groupings[self.json_request["group"]],
             "results": results,
-            "messages": [get_time_period_message()],
+            "messages": get_generic_filters_message(
+                set(list(self.original_filters.keys())), {"time_period", "recipient_id"}
+            ),
         }
         return Response(response)

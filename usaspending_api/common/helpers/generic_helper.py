@@ -348,6 +348,13 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
     return page_metadata
 
 
+def get_generic_filters_message(original_filters, allowed_filters):
+    retval = [get_time_period_message()]
+    if original_filters.difference(allowed_filters):
+        retval.extend(unused_filters_message(original_filters.difference(allowed_filters)))
+    return retval
+
+
 def get_time_period_message():
     return (
         "For searches, time period start and end dates are currently limited to an earliest date of "
@@ -355,6 +362,10 @@ def get_time_period_message():
         "Award Download feature on the website or one of our download or bulk_download API endpoints as "
         "listed on https://api.usaspending.gov/docs/endpoints."
     )
+
+
+def unused_filters_message(filters):
+    return f"The following filters were not used, as they were not appropriate for this data: {filters}"
 
 
 # Raw SQL run during a migration

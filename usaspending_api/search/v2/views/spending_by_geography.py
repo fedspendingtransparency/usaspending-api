@@ -14,7 +14,7 @@ from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_fi
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
-from usaspending_api.common.helpers.generic_helper import get_time_period_message
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -66,6 +66,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
+        self.original_filters = request.data.get("filters")
         json_request = TinyShield(models).block(request.data)
 
         self.subawards = json_request["subawards"]
@@ -114,7 +115,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "scope": self.scope,
                 "geo_layer": self.geo_layer,
                 "results": self.state_results(kwargs, fields_list, loc_lookup),
-                "messages": [get_time_period_message()],
+                "messages": get_generic_filters_message(
+                    set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER]
+                ),
             }
 
             return Response(state_response)
@@ -138,7 +141,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "scope": self.scope,
                     "geo_layer": self.geo_layer,
                     "results": self.county_results(state_lookup, county_name_lookup),
-                    "messages": [get_time_period_message()],
+                    "messages": get_generic_filters_message(
+                        set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER]
+                    ),
                 }
 
                 return Response(county_response)
@@ -149,7 +154,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "scope": self.scope,
                     "geo_layer": self.geo_layer,
                     "results": self.district_results(state_lookup),
-                    "messages": [get_time_period_message()],
+                    "messages": get_generic_filters_message(
+                        set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER]
+                    ),
                 }
 
                 return Response(district_response)
