@@ -522,26 +522,21 @@ def test_agency_failure(client):
 
 @pytest.mark.django_db
 def test_object_budget_match(client):
+
     models = copy.deepcopy(GLOBAL_MOCK_DICT)
     for entry in models:
         mommy.make(entry.pop("model"), **entry)
 
-    resp = client.post(
-        "/api/v2/spending/",
-        content_type="application/json",
-        data=json.dumps(
-            {"type": "object_class", "filters": {"fy": "2017"}}
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    data1 = resp.data
+    json_request = {"type": "budget_function", "filters": {"fy": "1600", "quarter": "1"}}
 
-    resp = client.post(
-        "/api/v2/spending/",
-        content_type="application/json",
-        data=json.dumps(
-            {"type": "budget_function", "filters": {"fy": "2017"}}
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    data2 = resp.data
+    response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
+
+    assert response.status_code == status.HTTP_200_OK
+
+    json_response_1 = response.json()
+
+    json_request = {"type": "object_class", "filters": {"fy": "1600", "quarter": "1"}}
+
+    response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
+    json_response_2 = response.json()
+    assert json_response_1["results"][0]["amount"] == json_response_2["results"][0]["amount"]
