@@ -104,6 +104,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         validated_payload = TinyShield(models).block(request.data)
 
         validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
+        validated_payload["original_filters"] = original_filters
 
         # Execute the business logic for the endpoint and return a python dict to be converted to a Django response
         if validated_payload["category"] == "awarding_agency":

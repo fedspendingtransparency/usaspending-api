@@ -19,9 +19,9 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_time_period_message
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms
@@ -53,11 +53,13 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
         ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
 
+        original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
         validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
+        validated_payload["original_filters"] = original_filters
 
         return Response(self.perform_search(validated_payload))
 
@@ -90,10 +92,19 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             "limit": self.pagination.limit,
             "page_metadata": page_metadata,
             "results": results[: self.pagination.limit],
-            "messages": [get_time_period_message()],
+            "messages": self._get_messages(validated_payload),
         }
 
         return response
+
+    @staticmethod
+    def _get_messages(payload) -> List:
+        if payload.get("original_filters"):
+            return get_generic_filters_message(
+                set(list(payload["original_filters"].keys())), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+            )
+        else:
+            return get_generic_filters_message(set(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID])
 
     @staticmethod
     def _get_pagination(payload):
