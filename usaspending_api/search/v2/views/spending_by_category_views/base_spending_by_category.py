@@ -101,7 +101,7 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def _get_messages(payload) -> List:
         if payload.get("original_filters"):
             return get_generic_filters_message(
-                set(list(payload["original_filters"].keys())), [elem["name"] for elem in AWARD_FILTER]
+                payload["original_filters"].keys(), [elem["name"] for elem in AWARD_FILTER]
             )
         else:
             return get_generic_filters_message(set(), [elem["name"] for elem in AWARD_FILTER])

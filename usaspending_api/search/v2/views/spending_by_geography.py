@@ -116,7 +116,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "geo_layer": self.geo_layer,
                 "results": self.state_results(kwargs, fields_list, loc_lookup),
                 "messages": get_generic_filters_message(
-                    set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER]
+                    self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
                 ),
             }
 
@@ -142,7 +142,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "geo_layer": self.geo_layer,
                     "results": self.county_results(state_lookup, county_name_lookup),
                     "messages": get_generic_filters_message(
-                        set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER]
+                        self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
                     ),
                 }
 
@@ -155,7 +155,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "geo_layer": self.geo_layer,
                     "results": self.district_results(state_lookup),
                     "messages": get_generic_filters_message(
-                        set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER]
+                        self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
                     ),
                 }
 

@@ -73,7 +73,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 {
                     "results": results,
                     "messages": get_generic_filters_message(
-                        set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                        self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
                     ),
                 }
             )
@@ -98,7 +98,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             {
                 "results": results,
                 "messages": get_generic_filters_message(
-                    set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                    self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
                 ),
             }
         )

@@ -222,7 +222,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     (
                         "messages",
                         get_generic_filters_message(
-                            set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER]
+                            self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
                         ),
                     ),
                 ]

@@ -350,8 +350,8 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
 
 def get_generic_filters_message(original_filters, allowed_filters):
     retval = [get_time_period_message()]
-    if original_filters.difference(allowed_filters):
-        retval.append(unused_filters_message(original_filters.difference(allowed_filters)))
+    if set(original_filters).difference(allowed_filters):
+        retval.append(unused_filters_message(set(original_filters).difference(allowed_filters)))
     return retval
 
 

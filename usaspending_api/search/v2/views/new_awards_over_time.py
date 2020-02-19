@@ -115,8 +115,6 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         response = {
             "group": self.groupings[self.json_request["group"]],
             "results": results,
-            "messages": get_generic_filters_message(
-                set(list(self.original_filters.keys())), {"time_period", "recipient_id"}
-            ),
+            "messages": get_generic_filters_message(self.original_filters.keys(), {"time_period", "recipient_id"}),
         }
         return Response(response)

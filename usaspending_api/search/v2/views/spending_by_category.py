@@ -192,7 +192,7 @@ class BusinessLogic:
             # alias_response is a workaround for tests instead of applying any aliases in the querysets
             "results": results[: self.limit],
             "messages": get_generic_filters_message(
-                set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER]
+                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
             ),
         }
         return response

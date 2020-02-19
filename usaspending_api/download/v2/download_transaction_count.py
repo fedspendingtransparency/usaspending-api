@@ -49,9 +49,7 @@ class DownloadTransactionCountViewSet(APIView):
             "maximum_transaction_limit": settings.MAX_DOWNLOAD_LIMIT,
             "transaction_rows_gt_limit": total_count > settings.MAX_DOWNLOAD_LIMIT,
             "messages": [
-                get_generic_filters_message(
-                    set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER]
-                )
+                get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER])
             ],
         }
 

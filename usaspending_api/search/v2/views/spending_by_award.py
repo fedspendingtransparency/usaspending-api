@@ -291,7 +291,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "results": results,
             "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
             "messages": get_generic_filters_message(
-                set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
             ),
         }
 
@@ -430,7 +430,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             },
             "messages": [
                 get_generic_filters_message(
-                    set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                    self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
                 )
             ],
         }
