@@ -94,7 +94,7 @@ SELECT
   SELECT
     faba.award_id,
     JSONB_AGG(
-      JSONB_BUILD_OBJECT(
+      DISTINCT JSONB_BUILD_OBJECT(
         'aid', taa.agency_id,
         'ata', taa.allocation_transfer_agency_id,
         'main', taa.main_account_code,
