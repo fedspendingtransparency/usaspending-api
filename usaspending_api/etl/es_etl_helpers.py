@@ -15,7 +15,7 @@ from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, execute_sql_to_ordered_dictionary
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
@@ -764,7 +764,7 @@ def check_awards_for_deletes(id_list):
         SELECT x.generated_unique_award_id FROM (values {ids}) AS x(generated_unique_award_id)
         LEFT JOIN awards a ON a.generated_unique_award_id = x.generated_unique_award_id
         WHERE a.generated_unique_award_id is null"""
-    results = execute_sql_to_ordered_dictionary(sql.format(ids=formatted_value_ids[:-1]))
+    results = execute_sql_statement(sql.format(ids=formatted_value_ids[:-1]), results=True)
     return results
 
 
