@@ -21,7 +21,7 @@ from usaspending_api.common.elasticsearch.search_wrappers import TransactionSear
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
+from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms
@@ -53,7 +53,7 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
         ]
-        models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
+        models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
 
         original_filters = request.data.get("filters")
@@ -101,10 +101,10 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def _get_messages(payload) -> List:
         if payload.get("original_filters"):
             return get_generic_filters_message(
-                set(list(payload["original_filters"].keys())), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                set(list(payload["original_filters"].keys())), [elem["name"] for elem in AWARD_FILTER]
             )
         else:
-            return get_generic_filters_message(set(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID])
+            return get_generic_filters_message(set(), [elem["name"] for elem in AWARD_FILTER])
 
     @staticmethod
     def _get_pagination(payload):
