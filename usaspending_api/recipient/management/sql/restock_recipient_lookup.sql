@@ -423,7 +423,7 @@ ON CONFLICT (recipient_hash) DO NOTHING;
 VACUUM ANALYZE public.temporary_restock_recipient_lookup;
 DO $$ BEGIN RAISE NOTICE 'Step 6: Restocking destination table: recipient_lookup'; END $$;
 BEGIN;
-TRUNCATE TABLE public.recipient_lookup RESTART IDENTITY;
+DELETE FROM public.recipient_lookup;
 INSERT INTO public.recipient_lookup (
     recipient_hash, legal_business_name, duns, address_line_1, address_line_2,
     city, state, zip5, zip4, country_code,
