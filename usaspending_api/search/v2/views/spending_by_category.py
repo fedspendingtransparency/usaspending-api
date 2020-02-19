@@ -14,7 +14,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.api_helper import alias_response
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_time_period_message
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -100,6 +100,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         models.extend(copy.deepcopy(PAGINATION))
 
         # Apply/enforce POST body schema and data validation in request
+        original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
 
         validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
@@ -114,7 +115,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         elif validated_payload["category"] == "funding_subagency":
             response = FundingSubagencyViewSet().perform_search(validated_payload)
         else:
-            response = BusinessLogic(validated_payload).results()
+            response = BusinessLogic(validated_payload, original_filters).results()
 
         return Response(response)
 
@@ -131,12 +132,14 @@ class BusinessLogic:
         "upper_limit",
         "filters",
         "queryset",
+        "original_filters",
     )
 
-    def __init__(self, payload: dict):
+    def __init__(self, payload: dict, original_filters):
         """
             payload is tightly integrated with
         """
+        self.original_filters = original_filters
         self.subawards = payload["subawards"]
         self.category = payload["category"]
         self.page = payload["page"]
@@ -187,7 +190,9 @@ class BusinessLogic:
             "page_metadata": page_metadata,
             # alias_response is a workaround for tests instead of applying any aliases in the querysets
             "results": results[: self.limit],
-            "messages": [get_time_period_message()],
+            "messages": get_generic_filters_message(
+                set(list(self.original_filters.keys())), [elem["name"] for elem in AWARD_FILTER]
+            ),
         }
         return response
 
