@@ -365,7 +365,7 @@ def get_time_period_message():
 
 
 def unused_filters_message(filters):
-    return f"The following filters were not used, as they were not appropriate for this data: {filters}"
+    return f"The following filters from the request were not used: {filters}. See https://api.usaspending.gov/docs/endpoints for a list of appropriate filters"
 
 
 # Raw SQL run during a migration
