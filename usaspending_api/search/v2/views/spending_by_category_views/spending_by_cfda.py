@@ -33,7 +33,6 @@ class CFDAView(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
     def build_elasticsearch_search_with_aggregations(
         self, filter_query: ES_Q, curr_partition: int, num_partitions: int, size: int
     ) -> TransactionSearch:
-        print(f"\n\n>>>>>>>>>>>>>we got here<<<<<<<<<<<<<")
         # Create filtered Search object
         search = TransactionSearch().filter(filter_query)
 
@@ -41,6 +40,18 @@ class CFDAView(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
         group_by_cfda_id = A(
             "terms",
             field=f"cfda_id",
+            include={"partition": curr_partition, "num_partitions": num_partitions},
+            size=size,
+        )
+        group_by_cfda_number = A(
+            "terms",
+            field=f"cfda_number",
+            include={"partition": curr_partition, "num_partitions": num_partitions},
+            size=size,
+        )
+        group_by_cfda_title = A(
+            "terms",
+            field=f"cfda_title.keyword",
             include={"partition": curr_partition, "num_partitions": num_partitions},
             size=size,
         )
@@ -52,6 +63,8 @@ class CFDAView(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
 
         # Apply the aggregations to TransactionSearch object
         search.aggs.bucket("group_by_cfda_id", group_by_cfda_id)
+        search.aggs["group_by_cfda_id"].bucket("group_by_cfda_number", group_by_cfda_number)
+        search.aggs["group_by_cfda_id"].bucket("group_by_cfda_title", group_by_cfda_title)
         search.aggs["group_by_cfda_id"].metric("sum_as_cents", sum_as_cents).pipeline(
             "sum_as_dollars", sum_as_dollars
         ).pipeline("sum_bucket_sort", sum_bucket_sort)
@@ -62,12 +75,14 @@ class CFDAView(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
         results = []
         cfda_buckets = response.get("group_by_cfda_id", {}).get("buckets", [])
         for bucket in cfda_buckets:
+            cfda_number_buckets = bucket.get("group_by_cfda_number", {}).get("buckets", [])
+            cfda_title_buckets = bucket.get("group_by_cfda_title", {}).get("buckets", [])
             results.append(
                 {
                     "amount": bucket.get("sum_as_dollars", {"value": 0})["value"],
-                    "code": "dummy",
-                    "id": 0,
-                    "name": bucket.get("key"),
+                    "code": cfda_number_buckets[0].get("key") if len(cfda_number_buckets) > 0 else None,
+                    "id": bucket.get("key"),
+                    "name": cfda_title_buckets[0].get("key") if len(cfda_title_buckets) > 0 else None,
                 }
             )
         return results
