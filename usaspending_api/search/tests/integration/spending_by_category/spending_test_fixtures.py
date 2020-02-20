@@ -8,8 +8,10 @@ def basic_agencies(db):
 
     _setup_agency(4, [], "Funding")
 
-    mommy.make("awards.Award", id=1, latest_transaction_id=1)
 
+@pytest.fixture
+def basic_award(db, basic_agencies):
+    mommy.make("awards.Award", id=1, latest_transaction_id=1)
     mommy.make(
         "awards.TransactionNormalized",
         id=1,
@@ -28,6 +30,9 @@ def agencies_with_subagencies(db):
 
     _setup_agency(2, [6], "Funding")
 
+
+@pytest.fixture
+def subagency_award(db, agencies_with_subagencies):
     mommy.make("awards.Award", id=2, latest_transaction_id=2)
 
     mommy.make(
