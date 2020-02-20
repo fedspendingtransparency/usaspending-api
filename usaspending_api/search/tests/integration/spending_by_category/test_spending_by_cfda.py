@@ -42,16 +42,42 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
     resp = client.post(
         "/api/v2/search/spending_by_category/cfda",
         content_type="application/json",
-        data=json.dumps({"filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]}}),
+        data=json.dumps({"filters": {"time_period": [{"start_date": "2009-10-01", "end_date": "2024-09-30"}]}}),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "category": "cfda",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 5.0, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001}],
+        "results": [
+            {"amount": 10.0, "code": "102.0", "id": 102, "name": "One hundred and two"},
+            {"amount": 10.0, "code": "101.0", "id": 101, "name": "One hundred and one"},
+        ],
         "messages": [get_time_period_message()],
     }
-    # assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    # assert len(logging_statements) == 1, "Expected one logging statement"
-    # assert resp.json() == expected_response
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert len(logging_statements) == 1, "Expected one logging statement"
+    assert resp.json() == expected_response
+
+
+def test_aggregation_across_awards(client, monkeypatch, elasticsearch_transaction_index, single_cfda_2_awards):
+
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/cfda",
+        content_type="application/json",
+        data=json.dumps({"filters": {"time_period": [{"start_date": "2009-10-01", "end_date": "2024-09-30"}]}}),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_response = {
+        "category": "cfda",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 20.0, "code": "101.0", "id": 101, "name": "One hundred and one"}],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert len(logging_statements) == 1, "Expected one logging statement"
+    assert resp.json() == expected_response

@@ -6,6 +6,7 @@ from usaspending_api.search.tests.integration.spending_by_category.spending_test
     basic_cfda,
     cfda_award,
     subagency_award,
+    single_cfda_2_awards,
 )
 
 
@@ -17,4 +18,5 @@ __all__ = [
     "cfda_award",
     "agencies_with_subagencies",
     "subagency_award",
+    "single_cfda_2_awards",
 ]

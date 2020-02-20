@@ -53,7 +53,7 @@ def basic_cfda(db, basic_agencies):
 
 
 @pytest.fixture
-def cfda_award(db, basic_cfda):
+def cfda_award(db, basic_award, basic_cfda):
     mommy.make(
         "awards.TransactionNormalized",
         id=333,
@@ -61,10 +61,53 @@ def cfda_award(db, basic_cfda):
         awarding_agency_id=1001,
         funding_agency_id=1004,
         federal_action_obligation=10,
-        action_date="2020-01-02",
+        action_date="2010-01-02",
     )
     mommy.make(
-        "awards.TransactionFABS", transaction_id=333, cfda_number=101,
+        "awards.TransactionFABS", transaction_id=333, cfda_number="101.0",
+    )
+
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=334,
+        award_id=1,
+        awarding_agency_id=1001,
+        funding_agency_id=1004,
+        federal_action_obligation=10,
+        action_date="2010-01-02",
+    )
+    mommy.make(
+        "awards.TransactionFABS", transaction_id=334, cfda_number="102.0",
+    )
+
+
+@pytest.fixture
+def single_cfda_2_awards(db, basic_award, basic_cfda):
+    mommy.make("awards.Award", id=2, latest_transaction_id=334)
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=333,
+        award_id=1,
+        awarding_agency_id=1001,
+        funding_agency_id=1004,
+        federal_action_obligation=10,
+        action_date="2010-01-02",
+    )
+    mommy.make(
+        "awards.TransactionFABS", transaction_id=333, cfda_number="101.0",
+    )
+
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=334,
+        award_id=2,
+        awarding_agency_id=1001,
+        funding_agency_id=1004,
+        federal_action_obligation=10,
+        action_date="2010-01-02",
+    )
+    mommy.make(
+        "awards.TransactionFABS", transaction_id=334, cfda_number="101.0",
     )
 
 
