@@ -26,7 +26,9 @@ class AgnosticDeletes:
 
     def handle(self, *args, **options):
         if not (settings.USASPENDING_AWS_REGION and settings.DELETED_TRANSACTION_JOURNAL_FILES):
-            raise Exception("Missing one or more environment variables: 'USASPENDING_AWS_REGION', 'DELETED_TRANSACTION_JOURNAL_FILES'")
+            raise Exception(
+                "Missing one or more environment variables: 'USASPENDING_AWS_REGION', 'DELETED_TRANSACTION_JOURNAL_FILES'"
+            )
 
         logger.info(f"Starting processing deletes from {options['datetime']}")
         try:

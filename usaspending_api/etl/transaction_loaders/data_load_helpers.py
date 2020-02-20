@@ -94,7 +94,9 @@ def get_deleted_fpds_data_from_s3(date):
         DELETED_TRANSACTION_JOURNAL_FILES = settings.DELETED_TRANSACTION_JOURNAL_FILES
 
         if not (aws_region and DELETED_TRANSACTION_JOURNAL_FILES):
-            raise Exception("Missing required environment variables: USASPENDING_AWS_REGION, DELETED_TRANSACTION_JOURNAL_FILES")
+            raise Exception(
+                "Missing required environment variables: USASPENDING_AWS_REGION, DELETED_TRANSACTION_JOURNAL_FILES"
+            )
 
         s3client = boto3.client("s3", region_name=aws_region)
         s3resource = boto3.resource("s3", region_name=aws_region)

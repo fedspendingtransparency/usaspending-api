@@ -1,7 +1,7 @@
 import logging
 from psycopg2.extras import DictCursor
 from psycopg2 import Error
-from django.db import connections, connection
+from django.db import connection
 
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
@@ -15,8 +15,7 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
 )
 from usaspending_api.etl.transaction_loaders.data_load_helpers import (
     capitalize_if_string,
-    false_if_null,
-    get_deleted_fpds_data_from_s3,
+    false_if_null
 )
 from usaspending_api.etl.transaction_loaders.generic_loaders import (
     update_transaction_fpds,
@@ -26,6 +25,8 @@ from usaspending_api.etl.transaction_loaders.generic_loaders import (
     insert_award,
 )
 from usaspending_api.common.helpers.timing_helpers import Timer
+
+from usaspending_api.transactions.transaction_delete_journal_helpers import retrieve_deleted_fpds_transactions
 
 logger = logging.getLogger("console")
 
@@ -39,7 +40,7 @@ def delete_stale_fpds(date):
     Returns list of awards touched
     """
 
-    detached_award_procurement_ids = get_deleted_fpds_data_from_s3(date)
+    detached_award_procurement_ids = retrieve_deleted_fpds_transactions(start_datetime=date)
 
     if not detached_award_procurement_ids:
         return []

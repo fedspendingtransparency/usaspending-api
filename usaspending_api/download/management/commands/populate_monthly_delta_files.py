@@ -236,7 +236,9 @@ class Command(BaseCommand):
         )
 
         # Create a list of keys in the bucket that match the date range we want
-        bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(settings.DELETED_TRANSACTION_JOURNAL_FILES)
+        bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(
+            settings.DELETED_TRANSACTION_JOURNAL_FILES
+        )
 
         all_deletions = pd.DataFrame()
         for key in bucket.objects.all():
