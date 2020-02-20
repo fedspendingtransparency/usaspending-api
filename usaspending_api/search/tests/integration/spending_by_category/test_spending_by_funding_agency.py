@@ -18,7 +18,7 @@ the endpoint these tests should be updated to reflect the change.
 
 
 @pytest.mark.django_db
-def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, basic_agencies):
+def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, basic_award):
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
     """
@@ -37,9 +37,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
 
 
 @pytest.mark.django_db
-def test_correct_response(
-    client, monkeypatch, elasticsearch_transaction_index, basic_agencies, agencies_with_subagencies
-):
+def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, basic_award, subagency_award):
 
     logging_statements = []
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
