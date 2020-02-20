@@ -12,12 +12,12 @@ from usaspending_api.financial_activities.models import (
     TreasuryAppropriationAccount,
 )
 from usaspending_api.accounts.models import FederalAccount
-from usaspending_api.references.models import Agency, GTASTotalObligation, ToptierAgency
-
+from usaspending_api.references.models import Agency, GTASTotalObligation, ToptierAgency, ObjectClass
 
 ENDPOINT_URL = "/api/v2/spending/"
 CONTENT_TYPE = "application/json"
 GLOBAL_MOCK_DICT = [
+    {"model": ObjectClass, "id": 1},
     {"model": GTASTotalObligation, "fiscal_year": 1600, "fiscal_quarter": 1, "total_obligation": -10},
     {"model": SubmissionAttributes, "submission_id": -1, "reporting_fiscal_year": 1600, "reporting_fiscal_quarter": 1},
     {
@@ -74,6 +74,7 @@ GLOBAL_MOCK_DICT = [
         "submission_id": -1,
         "treasury_account_id": -2,
         "obligations_incurred_by_program_object_class_cpe": -1,
+        "object_class_id": 1,
     },
 ]
 
@@ -527,6 +528,16 @@ def test_object_budget_match(client):
     models = copy.deepcopy(GLOBAL_MOCK_DICT)
     for entry in models:
         mommy.make(entry.pop("model"), **entry)
+    mommy.make(
+        FinancialAccountsByProgramActivityObjectClass,
+        **{
+            "financial_accounts_by_program_activity_object_class_id": -4,
+            "submission_id": -1,
+            "treasury_account_id": -1,
+            "obligations_incurred_by_program_object_class_cpe": -5,
+            "object_class_id": 1,
+        },
+    )
 
     json_request = {"type": "budget_function", "filters": {"fy": "1600", "quarter": "1"}}
 
