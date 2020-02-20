@@ -42,7 +42,7 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
             include={"partition": curr_partition, "num_partitions": num_partitions},
             size=size,
         )
-
+        group_by_location_name = A("terms", field=f"pop_{self.location_type.value}_name")
         sum_aggregations = get_sum_aggregations("generated_pragmatic_obligation", self.pagination)
 
         sum_as_cents = sum_aggregations["sum_as_cents"]
@@ -51,6 +51,7 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
 
         # Apply the aggregations to TransactionSearch object
         search.aggs.bucket("group_by_location", group_by_location)
+        search.aggs["group_by_location"].bucket("group_by_location_name", group_by_location_name)
         search.aggs["group_by_location"].metric("sum_as_cents", sum_as_cents).pipeline(
             "sum_as_dollars", sum_as_dollars
         ).pipeline("sum_bucket_sort", sum_bucket_sort)
@@ -61,13 +62,13 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
         results = []
         country_code_buckets = response.get("group_by_location", {}).get("buckets", [])
         for bucket in country_code_buckets:
+            location_name_buckets = bucket.get("group_by_location_name", {}).get("buckets", [])
             results.append(
                 {
                     "amount": bucket.get("sum_as_dollars", {"value": 0})["value"],
                     "code": bucket.get("key"),
                     "id": None,
-                    # we're hitting the DB here because otherwise we have no guarantee that the transactions will have the country_name filled in
-                    "name": fetch_country_name_from_code(bucket.get("key")),
+                    "name": location_name_buckets[0].get("key") if len(location_name_buckets) > 0 else None,
                 }
             )
         return results

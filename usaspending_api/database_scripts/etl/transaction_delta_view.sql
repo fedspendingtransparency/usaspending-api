@@ -90,7 +90,7 @@ SELECT
   UTM.type,
 
   UTM.pop_country_code,
-  UTM.pop_country_name,
+  RCC.country_name AS pop_country_name,
   UTM.pop_state_code,
   UTM.pop_county_code,
   UTM.pop_county_name,
@@ -137,6 +137,7 @@ LEFT JOIN (
 LEFT JOIN subtier_agency SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT JOIN references_cfda CFDA ON (FABS.cfda_number = CFDA.program_number)
 LEFT JOIN recipient_lookup PRL ON (PRL.duns = UTM.parent_recipient_unique_id AND UTM.parent_recipient_unique_id IS NOT NULL)
+LEFT JOIN ref_country_code RCC ON (UTM.pop_country_code = RCC.country_code)
 LEFT JOIN (
   SELECT
     faba.award_id,

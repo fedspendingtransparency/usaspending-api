@@ -342,7 +342,7 @@
           "type": "keyword"
         },
         "pop_country_name": {
-          "type": "text"
+          "type": "keyword"
         },
         "pop_state_code": {
           "type": "keyword"
