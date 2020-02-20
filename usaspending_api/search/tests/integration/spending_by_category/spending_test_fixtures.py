@@ -83,23 +83,18 @@ def setup_country_data():
     mommy.make("references.RefCountryCode", country_code="IRQ", country_name="IRAQ")
 
 
-def setup_basic_awards_and_transactions():
-    mommy.make("awards.Award", id=1, latest_transaction_id=1)
-    mommy.make("awards.Award", id=2, latest_transaction_id=2)
-
+def setup_country_transactions():
     mommy.make("awards.TransactionFABS", transaction_id=1, place_of_perform_country_c="IRQ")
     mommy.make("awards.TransactionFABS", transaction_id=2, place_of_perform_country_c="USA")
     mommy.make(
         "awards.TransactionNormalized",
         id=1,
-        award_id=1,
         federal_action_obligation=5,
         action_date="2020-01-01",
     )
     mommy.make(
         "awards.TransactionNormalized",
         id=2,
-        award_id=2,
         federal_action_obligation=10,
         action_date="2020-01-02",
     )

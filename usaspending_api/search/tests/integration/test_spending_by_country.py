@@ -8,13 +8,13 @@ from usaspending_api.common.experimental_api_flags import ELASTICSEARCH_HEADER_V
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.integration.spending_by_category.spending_test_fixtures import (
-    setup_basic_awards_and_transactions,
+    setup_country_transactions,
     setup_country_data
 )
 
 @pytest.fixture
 def country_test_data(db):
-    setup_basic_awards_and_transactions()
+    setup_country_transactions()
     setup_country_data()
 
 
