@@ -41,6 +41,28 @@ def agencies_with_subagencies(db):
     )
 
 
+@pytest.fixture
+def basic_cfda(db, basic_agencies):
+    mommy.make("references.Cfda", id=101, program_number="101.0", program_title="One hundred and one")
+    mommy.make("references.Cfda", id=102, program_number="102.0", program_title="One hundred and two")
+
+
+@pytest.fixture
+def cfda_award(db, basic_cfda):
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=333,
+        award_id=1,
+        awarding_agency_id=1001,
+        funding_agency_id=1004,
+        federal_action_obligation=10,
+        action_date="2020-01-02",
+    )
+    mommy.make(
+        "awards.TransactionFABS", transaction_id=333, cfda_number=101,
+    )
+
+
 def _setup_agency(id, subtiers, special_name):
     mommy.make(
         "references.ToptierAgency",
