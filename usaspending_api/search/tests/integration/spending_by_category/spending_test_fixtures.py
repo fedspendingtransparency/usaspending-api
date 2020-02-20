@@ -78,6 +78,7 @@ def _setup_agency(id, subtiers, special_name):
             toptier_flag=False,
         )
 
+
 def setup_country_data():
     mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
     mommy.make("references.RefCountryCode", country_code="IRQ", country_name="IRAQ")
@@ -87,14 +88,8 @@ def setup_country_transactions():
     mommy.make("awards.TransactionFABS", transaction_id=1, place_of_perform_country_c="IRQ")
     mommy.make("awards.TransactionFABS", transaction_id=2, place_of_perform_country_c="USA")
     mommy.make(
-        "awards.TransactionNormalized",
-        id=1,
-        federal_action_obligation=5,
-        action_date="2020-01-01",
+        "awards.TransactionNormalized", id=1, federal_action_obligation=5, action_date="2020-01-01",
     )
     mommy.make(
-        "awards.TransactionNormalized",
-        id=2,
-        federal_action_obligation=10,
-        action_date="2020-01-02",
+        "awards.TransactionNormalized", id=2, federal_action_obligation=10, action_date="2020-01-02",
     )
