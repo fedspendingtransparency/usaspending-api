@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending By Funding Subagency [/api/v2/search/spending_by_category/cfda/]
+# Spending By CFDA [/api/v2/search/spending_by_category/cfda/]
 
 This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
 
 ## POST
 
-This endpoint returns a list of the top results of Funding Subagencies sorted by the total amounts in descending order.
+This endpoint returns a list of the top results of CFDS codes sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Attributes (object)
@@ -29,7 +29,7 @@ This endpoint returns a list of the top results of Funding Subagencies sorted by
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `funding_subagency` (required, string)
+        + `category`: `cfda` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)

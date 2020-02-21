@@ -23,6 +23,9 @@ ALIAS_DICT = {
 
 
 class CFDAView(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
+    """
+        This route takes award filters, and returns spending by CFDA.
+    """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/cfda.md"
     category = Category(name="cfda", primary_field="cfda_number")
