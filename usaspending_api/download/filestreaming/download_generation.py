@@ -25,7 +25,6 @@ from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.download.download_utils import construct_data_date_range
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_source import DownloadSource
-from usaspending_api.download.filestreaming.generate_export_query import generate_default_export_query
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.helpers import (
@@ -236,9 +235,6 @@ def build_data_file_name(source, download_job, piid, assistance_id):
 
 def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format):
     """Write to delimited text file(s) and zip file(s) using the source data"""
-    export_function = generate_default_export_query
-    if source and source.source_type in VALUE_MAPPINGS:
-        export_function = VALUE_MAPPINGS[source.source_type].get("export_query_function") or export_function
 
     data_file_name = build_data_file_name(source, download_job, piid, assistance_id)
 
@@ -250,7 +246,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
     write_to_log(message=f"Preparing to download data as {source.file_name}", download_job=download_job)
 
     # Generate the query file; values, limits, dates fixed
-    export_query = generate_export_query(source_query, limit, source, columns, file_format, export_function)
+    export_query = generate_export_query(source_query, limit, source, columns, file_format)
     temp_file, temp_file_path = generate_export_query_temp_file(export_query, download_job)
 
     start_time = time.perf_counter()
@@ -383,12 +379,12 @@ def wait_for_process(process, start_time, download_job):
     return time.perf_counter() - log_time
 
 
-def generate_export_query(source_query, limit, source, columns, file_format, generate_export_query_function):
+def generate_export_query(source_query, limit, source, columns, file_format):
     if limit:
         source_query = source_query[:limit]
     query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
     options = FILE_FORMATS[file_format]["options"]
-    return generate_export_query_function(source, query_annotated, options)
+    return r"\COPY ({}) TO STDOUT {}".format(query_annotated, options)
 
 
 def generate_export_query_temp_file(export_query, download_job):
