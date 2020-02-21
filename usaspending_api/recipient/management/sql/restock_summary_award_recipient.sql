@@ -28,7 +28,7 @@ CREATE TABLE public.earliest_transaction_temp AS (
 DO $$ BEGIN RAISE NOTICE 'Step 2: Create summary_award_recipient'; END $$;
 
 BEGIN;
-TRUNCATE TABLE public.summary_award_recipient RESTART IDENTITY;
+DELETE FROM public.summary_award_recipient;
 INSERT INTO public.summary_award_recipient
   (award_id, action_date, recipient_hash, parent_recipient_unique_id)
   SELECT

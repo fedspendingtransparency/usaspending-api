@@ -313,7 +313,7 @@ DELETE FROM public.temporary_restock_recipient_profile WHERE unused = true;
 DO $$ BEGIN RAISE NOTICE 'Step 10: restocking destination table'; END $$;
 
 BEGIN;
-TRUNCATE TABLE public.recipient_profile RESTART IDENTITY;
+DELETE FROM public.recipient_profile;
 INSERT INTO public.recipient_profile (
     recipient_level, recipient_hash, recipient_unique_id,
     recipient_name, recipient_affiliations, award_types, last_12_months,

@@ -41,7 +41,7 @@ class AgnosticDeletes:
     def execute_script(self, options):
         removed_records = self.fetch_deleted_transactions(options["datetime"])
         if removed_records is None:
-            raise SystemExit(1)
+            return
 
         if self.dry_run and removed_records:
             logger.warn(f"--dry-run flag used, skipping delete operations. IDs: {removed_records}")

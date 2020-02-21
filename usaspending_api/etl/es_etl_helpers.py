@@ -598,7 +598,7 @@ def deleted_awards(client, config):
     if len(deleted_award_ids) != 0:
         award_id_list = [
             {"key": deleted_award["generated_unique_award_id"], "col": UNIVERSAL_AWARD_ID_NAME}
-            for deleted_award in deleted_awards
+            for deleted_award in deleted_award_ids
         ]
         delete_awards_from_es(client, award_id_list, None, config, None)
     else:
