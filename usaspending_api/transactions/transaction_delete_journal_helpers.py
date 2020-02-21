@@ -66,7 +66,7 @@ def limit_objects_to_date_range(
     end_datetime: Optional[datetime] = None,
 ):
     results = []
-    for obj in objects:
+    for obj in (objects or []):
         file_date = datetime.strptime(obj.key[: obj.key.find("_")], date_format)
         # Only keep S3 objects which fall between the provided dates
         if file_date < start_datetime:
@@ -98,7 +98,7 @@ def access_s3_object_list(
         logger.exception(msg)
         bucket_objects = None
 
-    if regex_pattern:
+    if regex_pattern and bucket_objects:
         bucket_objects = [obj for obj in bucket_objects if re.search(regex_pattern, obj.key)]
 
     return bucket_objects
