@@ -35,7 +35,42 @@ This endpoint returns a list of the top results of Countries sorted by the total
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
-
+    + Body
+        
+            {
+                "category": "country",
+                "limit": 10,
+                "page_metadata": {
+                    "page": 1,
+                    "next": 2,
+                    "previous": null,
+                    "hasNext": true,
+                    "hasPrevious": false
+                },
+                "results": [
+                    {
+                        "amount": 93215735059.18,
+                        "code": "USA",
+                        "id": null,
+                        "name": "UNITED STATES"
+                    },
+                    {
+                        "amount": 221375643.45,
+                        "code": "IRQ",
+                        "id": null,
+                        "name": "IRAQ"
+                    },
+                    {
+                        "amount": 209412026.79,
+                        "code": "AFG",
+                        "id": null,
+                        "name": "AFGHANISTAN"
+                    }
+                ],
+                "messages": [
+                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
+                ]
+            }
 # Data Structures
 
 ## CategoryResult (object)
