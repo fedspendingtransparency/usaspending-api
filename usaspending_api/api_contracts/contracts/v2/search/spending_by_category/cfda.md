@@ -35,7 +35,43 @@ This endpoint returns a list of the top results of CFDS codes sorted by the tota
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
-
+    + Body
+        ```
+        {
+            "category": "cfda",
+            "limit": 3,
+            "page_metadata": {
+                "page": 1,
+                "next": 2,
+                "previous": null,
+                "hasNext": true,
+                "hasPrevious": false
+            },
+            "results": [
+                {
+                    "amount": 8773345655.0,
+                    "code": "93.778",
+                    "id": 2014,
+                    "name": "Medical Assistance Program"
+                },
+                {
+                    "amount": 2418744812.0,
+                    "code": "96.002",
+                    "id": 2165,
+                    "name": "Social Security Retirement Insurance"
+                },
+                {
+                    "amount": 1172423875.0,
+                    "code": "93.640",
+                    "id": 1952,
+                    "name": "Basic Health Program (Affordable Care Act)"
+                }
+            ],
+            "messages": [
+                "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
+            ]
+        }
+        ```
 # Data Structures
 
 ## CategoryResult (object)
