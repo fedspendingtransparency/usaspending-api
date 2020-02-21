@@ -21,11 +21,24 @@ This endpoint returns a list of the top results of CFDA codes sorted by the tota
             Determines whether Prime Awards or Sub Awards are searched
     + Body
         
+            ```
             {
-                "filters": { 
-                    "keywords": ["Filter is required"] 
-                }
+                "filters": {
+                    "time_period": [
+                        {
+                            "start_date": "2018-10-01",
+                            "end_date": "2019-09-30"
+                        },
+                        {
+                            "start_date": "2012-10-01",
+                            "end_date": "2013-09-30"
+                        }
+                    ]
+                },
+                "limit": 3,
+                "page": 1
             }
+            ```
 
 + Response 200 (application/json)
     + Attributes (object)
