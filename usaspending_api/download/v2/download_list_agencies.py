@@ -14,8 +14,8 @@ AGENCY_LIST_TYPES = (ACCOUNT_AGENCIES, AWARD_AGENCIES)
 
 class DownloadListAgenciesViewSet(APIView):
     """
-    This route returns one of three result set flavors.  For "account_agencies" requests, it returns a list
-    of all toptier agencies with at least one DABS submission.  For "award_agencies" requests, it returns a
+    This route returns one of three result set flavors.  For "account_agencies" requests it returns a list
+    of all toptier agencies with at least one DABS submission.  For "award_agencies" requests it returns a
     list of all user selectable flagged toptier agencies with at least one subtier agency.  For specific agency
     requests it returns a list of all user selectable flagged subtier agencies.
     """
