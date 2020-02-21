@@ -5,30 +5,36 @@ HOST: https://api.usaspending.gov
 
 ## POST
 
-This route lists all the agencies and the subagencies or federal accounts associated under specific agencies.
-        
+This route returns one of three result set flavors.  For "account_agencies" requests, it returns a list
+of all toptier agencies with at least one DABS submission.  For "award_agencies" requests, it returns a
+list of all user selectable flagged toptier agencies with at least one subtier agency.  For specific agency
+requests it returns a list of all user selectable flagged subtier agencies.
+
 + Request (application/json)
     + Attributes (object)
-        + `agency` (required, number)
+        + `type` (required, enum[string])
+            + Members
+                + `account_agencies`
+                + `award_agencies`
+        + `agency` (required, optional)
 
 + Response 200 (application/json)
     + Attributes (object)
         + `agencies` (required, object)
             + `cfo_agencies` (required, array[Agency], fixed-type)
             + `other_agencies` (required, array[Agency], fixed-type)
-        + `federal_accounts` (required, array[FederalAgency], fixed-type)
         + `sub_agencies` (required, array[SubAgency], fixed-type)
 
 # Data Structures
 
 ## Agency (object)
+For "account_agencies" requests, it returns a list of all toptier agencies with at least one DABS submission.
+For "award_agencies" requests, it returns a list of all user selectable flagged toptier agencies with at least
+one subtier agency. 
 + `toptier_code` (required, string)
 + `name` (required, string)
 + `toptier_agency_id` (required, number)
 
-## FederalAgency (object)
-+ `federal_account_id` (required, number)
-+ `federal_account_name` (required, string)
-
 ## SubAgency (object)
+Returns a list of all user selectable flagged subtier agencies for the agency specified in the request.
 + `subtier_agency_name` (required, string)
