@@ -109,7 +109,7 @@ def get_total_results(keyword, sub_index, retries=3):
     response = es_client_query(index=index_name, body=query, retries=retries)
     if response:
         try:
-            return response["hits"]["total"]
+            return response["hits"]["total"]["value"]
         except KeyError:
             logger.error("Unexpected Response")
     else:
