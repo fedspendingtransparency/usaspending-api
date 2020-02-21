@@ -196,7 +196,7 @@ def type_filter(_type, filters, limit=None):
             queryset = exp.agency()
 
         # Actual total value of filtered results
-        actual_total = queryset.aggregate(total=Sum("obligations_incurred_by_program_object_class_cpe"))["total"]
+        actual_total = queryset.aggregate(total=Sum("amount"))["total"]
 
         result_set, expected_total = get_unreported_data_obj(
             queryset=queryset,
