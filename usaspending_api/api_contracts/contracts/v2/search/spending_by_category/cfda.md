@@ -7,7 +7,7 @@ This endpoint supports the advanced search page and allow for complex filtering 
 
 ## POST
 
-This endpoint returns a list of the top results of CFDS codes sorted by the total amounts in descending order.
+This endpoint returns a list of the top results of CFDA codes sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Attributes (object)
