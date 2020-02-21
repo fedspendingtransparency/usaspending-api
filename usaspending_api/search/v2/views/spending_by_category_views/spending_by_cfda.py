@@ -23,9 +23,6 @@ ALIAS_DICT = {
 
 
 class CFDAView(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
-    """
-    Base class used by the different Awarding / Funding Agencies and Subagencies
-    """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/cfda.md"
     category = Category(name="cfda", primary_field="cfda_number")
