@@ -65,8 +65,16 @@ BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
+
+############################################################
+# Note 2020/02/21
+# FPDS_BUCKET_NAME and DELETED_TRANSACTIONS_S3_BUCKET_NAME are used in different
+#  places with the same string value in deployed envs
+# Merging together into a new variable: DELETED_TRANSACTION_JOURNAL_FILES
+# After the new variable reaches master, work with OPS to discard old variables
 FPDS_BUCKET_NAME = ""
 DELETED_TRANSACTIONS_S3_BUCKET_NAME = ""
+DELETED_TRANSACTION_JOURNAL_FILES = ""
 
 if not FPDS_BUCKET_NAME:
     FPDS_BUCKET_NAME = os.environ.get("FPDS_BUCKET_NAME")
@@ -76,6 +84,8 @@ if not DELETED_TRANSACTIONS_S3_BUCKET_NAME:
 DELETED_TRANSACTION_JOURNAL_FILES = FPDS_BUCKET_NAME or DELETED_TRANSACTIONS_S3_BUCKET_NAME
 if not DELETED_TRANSACTION_JOURNAL_FILES:
     DELETED_TRANSACTION_JOURNAL_FILES = os.environ.get("DELETED_TRANSACTION_JOURNAL_FILES")
+
+############################################################
 
 STATE_DATA_BUCKET = ""
 if not STATE_DATA_BUCKET:
