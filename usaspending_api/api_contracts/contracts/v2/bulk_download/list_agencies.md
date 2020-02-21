@@ -16,7 +16,7 @@ requests it returns a list of all user selectable flagged subtier agencies.
             + Members
                 + `account_agencies`
                 + `award_agencies`
-        + `agency` (required, optional)
+        + `agency` (optional, number)
 
 + Response 200 (application/json)
     + Attributes (object)
