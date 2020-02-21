@@ -50,8 +50,6 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
-+ `recipient_id` (optional, string)
-    A hash of recipient DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`
