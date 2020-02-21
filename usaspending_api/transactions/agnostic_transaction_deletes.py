@@ -18,10 +18,7 @@ class AgnosticDeletes:
             help="Load/Reload records from the provided datetime to the script execution start time.",
         )
         parser.add_argument(
-            "--dry-run",
-            dest="skip_deletes",
-            action="store_true",
-            help="Obtain the list of removed transactions, but skip the delete step.",
+            "--dry-run", action="store_true", help="Obtain the list of removed transactions, but skip the delete step.",
         )
 
     def handle(self, *args, **options):
@@ -29,6 +26,8 @@ class AgnosticDeletes:
             raise Exception(
                 "Missing one or more environment variables: 'USASPENDING_AWS_REGION', 'DELETED_TRANSACTION_JOURNAL_FILES'"
             )
+
+        self.dry_run = options["dry_run"]
 
         logger.info(f"Starting processing deletes from {options['datetime']}")
         try:
@@ -40,11 +39,11 @@ class AgnosticDeletes:
         return 0
 
     def execute_script(self, options):
-        removed_records = self.fetch_deleted_transactions(options["datetime"].date())
+        removed_records = self.fetch_deleted_transactions(options["datetime"])
         if removed_records is None:
             raise SystemExit(1)
 
-        if options["skip_deletes"] and removed_records:
+        if self.dry_run and removed_records:
             logger.warn(f"--dry-run flag used, skipping delete operations. IDs: {removed_records}")
         elif removed_records:
             self.delete_rows(removed_records)

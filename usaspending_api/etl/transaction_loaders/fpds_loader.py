@@ -13,10 +13,7 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_functions,
     all_broker_columns,
 )
-from usaspending_api.etl.transaction_loaders.data_load_helpers import (
-    capitalize_if_string,
-    false_if_null
-)
+from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_if_string, false_if_null
 from usaspending_api.etl.transaction_loaders.generic_loaders import (
     update_transaction_fpds,
     update_transaction_normalized,

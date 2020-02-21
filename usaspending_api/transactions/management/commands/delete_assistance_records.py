@@ -37,4 +37,5 @@ class Command(AgnosticDeletes, BaseCommand):
             return {date: [row[0] for row in cursor.fetchall()]}
 
     def store_delete_records(self, id_list):
-        store_deleted_fabs(id_list)
+        if not self.dry_run:
+            store_deleted_fabs(id_list)

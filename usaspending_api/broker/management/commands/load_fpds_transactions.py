@@ -49,7 +49,7 @@ class Command(BaseCommand):
         else:
             logger.info(f"Handling fpds transactions since {date}...")
 
-            stale_awards = delete_stale_fpds(date.date())
+            stale_awards = delete_stale_fpds(date)
             self.update_award_records(awards=stale_awards, skip_cd_linkage=True)
 
         with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
