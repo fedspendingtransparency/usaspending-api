@@ -59,11 +59,10 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
         validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
-        validated_payload["original_filters"] = original_filters
 
-        return Response(self.perform_search(validated_payload))
+        return Response(self.perform_search(validated_payload, original_filters))
 
-    def perform_search(self, validated_payload: dict) -> dict:
+    def perform_search(self, validated_payload: dict, original_filters: dict) -> dict:
 
         self.filters = validated_payload.get("filters", {})
         self.elasticsearch = validated_payload.get("elasticsearch")
@@ -92,17 +91,15 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             "limit": self.pagination.limit,
             "page_metadata": page_metadata,
             "results": results[: self.pagination.limit],
-            "messages": self._get_messages(validated_payload),
+            "messages": self._get_messages(original_filters),
         }
 
         return response
 
     @staticmethod
-    def _get_messages(payload) -> List:
-        if payload.get("original_filters"):
-            return get_generic_filters_message(
-                payload["original_filters"].keys(), [elem["name"] for elem in AWARD_FILTER]
-            )
+    def _get_messages(original_filters) -> List:
+        if original_filters:
+            return get_generic_filters_message(original_filters.keys(), [elem["name"] for elem in AWARD_FILTER])
         else:
             return get_generic_filters_message(set(), [elem["name"] for elem in AWARD_FILTER])
 
