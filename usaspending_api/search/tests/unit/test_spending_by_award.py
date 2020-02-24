@@ -12,6 +12,7 @@ def instantiate_view_for_tests():
     view.is_subaward = False
     view.constants = GLOBAL_MAP["award"]
     view.filters = {"award_type_codes": ["A"]}
+    view.original_filters = {"award_type_codes": ["A"]}
     view.fields = ["Award ID", "Start Date", "End Date", "Award Amount", "Description"]
     view.pagination = {
         "limit": 5,
