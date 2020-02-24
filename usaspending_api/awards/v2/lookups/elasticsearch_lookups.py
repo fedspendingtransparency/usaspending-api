@@ -27,22 +27,22 @@ TRANSACTIONS_LOOKUP = {
 
 base_mapping = {
     "Award ID": "display_award_id",
-    "Recipient Name": "recipient_name",
-    "Recipient DUNS Number": "recipient_unique_id",
-    "recipient_id": "recipient_unique_id",
-    "Awarding Agency": "awarding_toptier_agency_name",
-    "Awarding Agency Code": "awarding_toptier_agency_code",
-    "Awarding Sub Agency": "awarding_subtier_agency_name",
-    "Awarding Sub Agency Code": "awarding_subtier_agency_code",
-    "Funding Agency": "funding_toptier_agency_name",
-    "Funding Agency Code": "funding_toptier_agency_code",
-    "Funding Sub Agency": "funding_subtier_agency_name",
-    "Funding Sub Agency Code": "funding_subtier_agency_code",
-    "Place of Performance City Code": "pop_city_code",
+    "Recipient Name": "recipient_name.keyword",
+    "Recipient DUNS Number": "recipient_unique_id.keyword",
+    "recipient_id": "recipient_unique_id.keyword",
+    "Awarding Agency": "awarding_toptier_agency_name.keyword",
+    "Awarding Agency Code": "awarding_toptier_agency_code.keyword",
+    "Awarding Sub Agency": "awarding_subtier_agency_name.keyword",
+    "Awarding Sub Agency Code": "awarding_subtier_agency_code.keyword",
+    "Funding Agency": "funding_toptier_agency_name.keyword",
+    "Funding Agency Code": "funding_toptier_agency_code.keyword",
+    "Funding Sub Agency": "funding_subtier_agency_name.keyword",
+    "Funding Sub Agency Code": "funding_subtier_agency_code.keyword",
+    "Place of Performance City Code": "pop_city_code.keyword",
     "Place of Performance State Code": "pop_state_code",
     "Place of Performance Country Code": "pop_country_code",
-    "Place of Performance Zip5": "pop_zip5",
-    "Description": "description",
+    "Place of Performance Zip5": "pop_zip5.keyword",
+    "Description": "description.keyword",
     "Last Modified Date": "last_modified_date",
     "Base Obligation Date": "date_signed",
     "prime_award_recipient_id": "prime_award_recipient_id",
@@ -72,8 +72,8 @@ loan_mapping = {
         "Issued Date": "action_date",
         "Loan Value": "total_loan_value",
         "Subsidy Cost": "total_subsidy_cost",
-        "SAI Number": "sai_number",
-        "CFDA Number": "cfda_number",
+        "SAI Number": "sai_number.keyword",
+        "CFDA Number": "cfda_number.keyword",
     },
 }
 non_loan_assist_mapping = {
@@ -83,12 +83,17 @@ non_loan_assist_mapping = {
         "End Date": "period_of_performance_current_end_date",
         "Award Amount": "total_obligation",
         "Award Type": "type_description",
-        "SAI Number": "sai_number",
-        "CFDA Number": "cfda_number",
+        "SAI Number": "sai_number.keyword",
+        "CFDA Number": "cfda_number.keyword",
     },
 }
 
 TRANSACTIONS_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in TRANSACTIONS_LOOKUP.items()}
+
+CONTRACT_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in contracts_mapping.items()}
+IDV_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in idv_mapping.items()}
+NON_LOAN_ASST_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in non_loan_assist_mapping.items()}
+LOAN_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in loan_mapping.items()}
 
 INDEX_ALIASES_TO_AWARD_TYPES = deepcopy(all_award_types_mappings)
 INDEX_ALIASES_TO_AWARD_TYPES["directpayments"] = INDEX_ALIASES_TO_AWARD_TYPES.pop("direct_payments")

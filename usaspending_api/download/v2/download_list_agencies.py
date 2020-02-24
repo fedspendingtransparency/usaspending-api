@@ -6,6 +6,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import CFO_CGACS
 from usaspending_api.references.models import Agency
 from usaspending_api.references.models import SubtierAgency, ToptierAgency
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class DownloadListAgenciesViewSet(APIView):
@@ -28,10 +29,6 @@ class DownloadListAgenciesViewSet(APIView):
         """Return list of agencies if no POST data is provided.
         Otherwise, returns sub_agencies/federal_accounts associated with the agency provided"""
         response_data = {"agencies": [], "sub_agencies": [], "federal_accounts": []}
-        if not self.sub_agencies_map:
-            # populate the sub_agencies dictionary
-            self.pull_modified_agencies_cgacs_subtiers()
-        used_cgacs = set(self.sub_agencies_map.values())
 
         agency_id = None
         post_data = request.data
@@ -40,9 +37,10 @@ class DownloadListAgenciesViewSet(APIView):
                 raise InvalidParameterException("Missing one or more required body parameters: agency")
             agency_id = post_data["agency"]
 
-        # Get all the top tier agencies
+        # Get all the top tier agencies that have submissions.
+        submitters = SubmissionAttributes.objects.filter(toptier_code__isnull=False).distinct().values("toptier_code")
         toptier_agencies = list(
-            ToptierAgency.objects.filter(toptier_code__in=used_cgacs).values(
+            ToptierAgency.objects.filter(toptier_code__in=submitters).values(
                 "name", "toptier_agency_id", "toptier_code"
             )
         )
@@ -50,14 +48,18 @@ class DownloadListAgenciesViewSet(APIView):
         if not agency_id:
             # Return all the agencies if no agency id provided
             cfo_agencies = sorted(
-                list(filter(lambda agency: agency["toptier_code"] in CFO_CGACS, toptier_agencies)),
-                key=lambda agency: CFO_CGACS.index(agency["toptier_code"]),
+                [a for a in toptier_agencies if a["toptier_code"] in CFO_CGACS],
+                key=lambda a: CFO_CGACS.index(a["toptier_code"]),
             )
             other_agencies = sorted(
-                [agency for agency in toptier_agencies if agency not in cfo_agencies], key=lambda agency: agency["name"]
+                [a for a in toptier_agencies if a["toptier_code"] not in CFO_CGACS], key=lambda a: a["name"]
             )
             response_data["agencies"] = {"cfo_agencies": cfo_agencies, "other_agencies": other_agencies}
         else:
+            if not self.sub_agencies_map:
+                # populate the sub_agencies dictionary
+                self.pull_modified_agencies_cgacs_subtiers()
+
             # Get the top tier agency object based on the agency id provided
             top_tier_agency = list(filter(lambda toptier: toptier["toptier_agency_id"] == agency_id, toptier_agencies))
             if not top_tier_agency:

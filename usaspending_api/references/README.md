@@ -52,6 +52,23 @@ reporting purposes:
 
 This rollup largely occurs in code rather than in the database (see DOD_SUBSUMED_CGAC).
 
+Additionally, there are two FREC agencies that get rolled into Department of Defense.  These agencies
+fall under 011 Executive Office of the President but are entirely funded by Department of Defense:
+
+* 1137 (only as part of CGAC 011)
+* DE00 (only as part of CGAC 011)
+
+These FREC agencies do not show up in our toptier table and therefore require special handling when
+querying Federal or Treasury Account data (see DOD_ARMED_FORCES_TAS_CGAC_FREC).
+
+Finally, there is a special case Federal Account that is primarily (but not entirely) funded by
+Department of Defense but falls under Executive Office of the President.
+
+* 011-1082
+
+This account occasionally requires special handling when querying aggregated account level data since
+we want to to display as a Department of Defense account (see DOD_FEDERAL_ACCOUNTS).
+
 ## FEMA
 
 058 Federal Emergency Management Agency (FEMA) is also a special case.  FEMA was originally a

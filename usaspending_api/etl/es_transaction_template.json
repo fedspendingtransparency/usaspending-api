@@ -204,6 +204,18 @@
         "funding_subtier_agency_id": {
           "type": "integer"
         },
+        "awarding_toptier_id": {
+          "type": "integer"
+        },
+        "awarding_subtier_id": {
+          "type": "integer"
+        },
+        "funding_toptier_id": {
+          "type": "integer"
+        },
+        "funding_subtier_id": {
+          "type": "integer"
+        },
         "awarding_toptier_agency_name": {
           "type": "text",
           "fields": {
@@ -395,24 +407,10 @@
           }
         },
         "treasury_accounts": {
-          "type": "nested",
-          "properties": {
-            "aid": {"type": "keyword"},
-            "ata": {"type": "keyword"},
-            "main": {"type": "keyword"},
-            "sub": {"type": "keyword"},
-            "bpoa": {"type": "keyword"},
-            "epoa": {"type": "keyword"},
-            "a": {"type": "keyword"}
-          }
+          "type": "keyword"
         },
         "federal_accounts": {
-          "type": "nested",
-          "properties": {
-            "id": {"type": "integer"},
-            "account_title": {"type": "keyword"},
-            "federal_account_code": {"type": "keyword"}
-          }
+          "type": "keyword"
         },
         "business_categories": {
           "type": "keyword"

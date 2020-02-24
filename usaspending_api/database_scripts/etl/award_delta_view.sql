@@ -68,6 +68,7 @@ SELECT
   vw_award_search.pop_zip5,
   vw_award_search.pop_congressional_code,
   vw_award_search.pop_city_name,
+  vw_award_search.pop_city_code,
 
   vw_award_search.cfda_number,
   vw_award_search.sai_number,
@@ -80,17 +81,18 @@ SELECT
   vw_award_search.product_or_service_description,
   vw_award_search.naics_code,
   vw_award_search.naics_description,
-  TREASURY_ACCT.treasury_account_identifiers as treasury_accounts
-  FROM vw_award_search
-  INNER JOIN awards a ON a.id = vw_award_search.award_id
-  LEFT JOIN
-  (SELECT
+  TREASURY_ACCT.treasury_accounts
+FROM vw_award_search
+INNER JOIN awards a ON (a.id = vw_award_search.award_id)
+LEFT JOIN (
+  SELECT
     recipient_hash,
     legal_business_name AS recipient_name,
     duns
-  FROM recipient_lookup AS rlv
-  ) recipient_lookup ON recipient_lookup.duns = vw_award_search.recipient_unique_id AND vw_award_search.recipient_unique_id IS NOT NULL
-  LEFT OUTER JOIN (
+  FROM
+    recipient_lookup AS rlv
+) recipient_lookup ON (recipient_lookup.duns = vw_award_search.recipient_unique_id AND vw_award_search.recipient_unique_id IS NOT NULL)
+LEFT JOIN (
   SELECT
     faba.award_id,
     JSONB_AGG(
@@ -102,14 +104,13 @@ SELECT
         'bpoa', taa.beginning_period_of_availability,
         'epoa', taa.ending_period_of_availability,
         'a', taa.availability_type_code
-      )
-    ) treasury_account_identifiers
-  FROM
-    federal_account fa
-    INNER JOIN treasury_appropriation_account taa ON fa.id = taa.federal_account_id
-    INNER JOIN financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
-  WHERE
-    faba.award_id IS NOT NULL
-  GROUP BY
-    faba.award_id)
- TREASURY_ACCT ON (TREASURY_ACCT.award_id = vw_award_search.award_id);
+       )
+     ) treasury_accounts
+ FROM
+   treasury_appropriation_account taa
+   INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
+ WHERE
+   faba.award_id IS NOT NULL
+ GROUP BY
+   faba.award_id
+) TREASURY_ACCT ON (TREASURY_ACCT.award_id = vw_award_search.award_id);

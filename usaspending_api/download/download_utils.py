@@ -42,8 +42,8 @@ def create_unique_filename(json_request, origination=None):
 
 def obtain_zip_filename_format(download_types):
     if len(download_types) > 1:
-        raise NotImplementedError
-    return VALUE_MAPPINGS[download_types[0]]["zipfile_template"] + ".zip"
+        return "{data_quarters}_{agency}_{level}_AccountData_{timestamp}.zip"
+    return f"{VALUE_MAPPINGS[download_types[0]]['zipfile_template']}.zip"
 
 
 def obtain_filename_prefix_from_agency_id(request_agency):

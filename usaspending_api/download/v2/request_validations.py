@@ -21,6 +21,7 @@ from usaspending_api.download.lookups import (
     ROW_CONSTRAINT_FILTER_DEFAULTS,
     ACCOUNT_FILTER_DEFAULTS,
     FILE_FORMATS,
+    VALID_ACCOUNT_SUBMISSION_TYPES,
 )
 
 
@@ -186,14 +187,9 @@ def validate_account_request(request_data):
     if json_request["filters"]["quarter"] not in [1, 2, 3, 4]:
         raise InvalidParameterException("quarter filter must be a valid fiscal quarter (1, 2, 3, or 4)")
 
-    # Validate submission_type parameters
-    valid_submissions = ["account_balances", "object_class_program_activity", "award_financial"]
-    submission_type = filters.get("submission_type", None)
+    _validate_submission_type(filters)
 
-    if submission_type not in valid_submissions:
-        raise InvalidParameterException("Invalid Parameter: submission_type must be {}".format(valid_submissions))
-
-    json_request["download_types"] = [filters["submission_type"]]
+    json_request["download_types"] = request_data["filters"]["submission_types"]
     json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
 
     # Validate the rest of the filters
@@ -298,3 +294,36 @@ def _validate_file_format(json_request: dict) -> None:
     if val not in FILE_FORMATS:
         msg = f"'{val}' is not an acceptable value for 'file_format'. Valid options: {tuple(FILE_FORMATS.keys())}"
         raise InvalidParameterException(msg)
+
+
+def _validate_submission_type(filters: dict) -> None:
+    """Validate submission_type/submission_types parameter
+
+    In February 2020 submission_type became the legacy filter, replaced by submission_types
+    submission_type was left in-place for backward compatibility but hidden in API Contract and error messages
+    """
+    legacy_submission_type = filters.get("submission_type", ...)
+    submission_types = filters.get("submission_types", ...)
+
+    if submission_types == ... and legacy_submission_type == ...:
+        raise InvalidParameterException("Missing required filter: submission_types")
+
+    elif submission_types == ... and legacy_submission_type != ...:
+        del filters["submission_type"]
+        if isinstance(legacy_submission_type, list):
+            raise InvalidParameterException("Use filter `submission_types` to request multiple submission types")
+        else:
+            submission_types = [legacy_submission_type]
+    else:
+        if not isinstance(submission_types, list):
+            submission_types = [submission_types]
+
+    if len(submission_types) == 0:
+        msg = f"Provide at least one value in submission_types: {' '.join(VALID_ACCOUNT_SUBMISSION_TYPES)}"
+        raise InvalidParameterException(msg)
+
+    if any(True for submission_type in submission_types if submission_type not in VALID_ACCOUNT_SUBMISSION_TYPES):
+        msg = f"Invalid value in submission_types. Options: [{', '.join(VALID_ACCOUNT_SUBMISSION_TYPES)}]"
+        raise InvalidParameterException(msg)
+
+    filters["submission_types"] = list(set(submission_types))

@@ -315,3 +315,5 @@ FILE_FORMATS = {
     "tsv": {"delimiter": "\t", "extension": "tsv", "options": r"WITH CSV DELIMITER E'\t' HEADER"},
     "pstxt": {"delimiter": "|", "extension": "txt", "options": "WITH CSV DELIMITER '|' HEADER"},
 }
+
+VALID_ACCOUNT_SUBMISSION_TYPES = ("account_balances", "object_class_program_activity", "award_financial")

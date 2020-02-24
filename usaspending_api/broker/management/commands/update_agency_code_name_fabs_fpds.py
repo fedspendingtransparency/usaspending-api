@@ -2,6 +2,7 @@ import logging
 import time
 import datetime
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
 
@@ -54,7 +55,7 @@ class Command(BaseCommand):
 
         sql_statment = """
         CREATE TEMPORARY TABLE {table_type}_agencies_to_update_{fy} AS
-        SELECT * FROM dblink('broker_server',
+        SELECT * FROM dblink('{broker_server}',
         '
         SELECT
             {table}_id,
@@ -94,6 +95,7 @@ class Command(BaseCommand):
             fy=fiscal_year,
             broker_where=broker_where,
             usaspending_where=usaspending_where,
+            broker_server=settings.DATA_BROKER_DBLINK_NAME,
         )
         return sql_statment
 
