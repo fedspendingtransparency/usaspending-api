@@ -1,5 +1,6 @@
 from sys import maxsize
 from django.conf import settings
+import copy
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
@@ -121,3 +122,5 @@ AWARD_FILTER = [
 for a in AWARD_FILTER:
     a["optional"] = a.get("optional", True)  # future TODO: want to make time_period required
     a["key"] = "filters{sep}{name}".format(sep=TINY_SHIELD_SEPARATOR, name=a["name"])
+
+AWARD_FILTER_NO_RECIPIENT_ID = [elem for elem in copy.deepcopy(AWARD_FILTER) if elem["name"] != "recipient_id"]
