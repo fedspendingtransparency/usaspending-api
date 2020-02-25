@@ -16,13 +16,13 @@ class Command(AgnosticDeletes, BaseCommand):
     destination_table_name = SourceAssistanceTransaction().table_name
     shared_pk = "published_award_financial_assistance_id"
 
-    def fetch_deleted_transactions(self, date):
+    def fetch_deleted_transactions(self, date_time):
         if settings.IS_LOCAL:
             logger.info("Local mode does not handle deleted records")
             return None
 
         sql = """
-        select  published_award_financial_assistance_id
+        select  DISTINCT published_award_financial_assistance_id
         from    published_award_financial_assistance p
         where   correction_delete_indicatr = 'D' and
                 not exists (
@@ -33,9 +33,15 @@ class Command(AgnosticDeletes, BaseCommand):
                 and updated_at >= %s
         """
         with connections["data_broker"].cursor() as cursor:
-            cursor.execute(sql, [date])
+            cursor.execute(sql, [date_time])
             results = cursor.fetchall()
-            return {date: [row[0] for row in results]} if results else None
+
+        if results is None:
+            logger.info("No new inactive records found")
+            return None
+        else:
+            logger.info(f"Found {len(results)} inactive transactions to remove")
+            return {date_time: [row[0] for row in results]}
 
     def store_delete_records(self, id_list):
         """FABS needs to store IDs for downline ETL, run that here"""
