@@ -49,8 +49,8 @@ from usaspending_api.common.experimental_api_flags import is_experimental_elasti
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
@@ -110,6 +110,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         """Return all awards matching the provided filters and limits"""
+        self.original_filters = request.data.get("filters")
         json_request = self.validate_request_data(request.data)
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
@@ -174,7 +175,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "allow_nulls": True,
             },
         ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
         for m in models:
             if m["name"] in ("award_type_codes", "fields"):
@@ -289,7 +290,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "limit": self.pagination["limit"],
             "results": results,
             "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
-            "messages": [get_time_period_message()],
+            "messages": get_generic_filters_message(
+                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+            ),
         }
 
     def date_to_epoch_millis(self, date):
@@ -408,7 +411,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             offset = 2
         else:
             has_next = (
-                response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
+                response.hits.total.value - (self.pagination["page"] - 1) * self.pagination["limit"]
                 > self.pagination["limit"]
             )
 
@@ -425,7 +428,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "last_record_unique_id": last_record_unique_id,
                 "last_record_sort_value": str(last_record_sort_value),
             },
-            "messages": [get_time_period_message()],
+            "messages": [
+                get_generic_filters_message(
+                    self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                )
+            ],
         }
 
     def append_recipient_hash_level(self, result) -> dict:

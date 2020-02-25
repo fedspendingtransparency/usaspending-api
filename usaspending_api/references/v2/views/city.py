@@ -142,7 +142,7 @@ def query_elasticsearch(query):
     hits = es_client_query(index="{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX), body=query)
 
     results = []
-    if hits and hits["hits"]["total"] > 0:
+    if hits and hits["hits"]["total"]["value"] > 0:
         results = parse_elasticsearch_response(hits)
         results = sorted(results, key=lambda x: x.pop("hits"), reverse=True)
     return results

@@ -11,6 +11,7 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     KEYWORD_DATATYPE_FIELDS,
     INDEX_ALIASES_TO_AWARD_TYPES,
 )
+from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
@@ -95,21 +96,29 @@ def search_transactions(request_data, lower_limit, limit):
 
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
-        total = response["hits"]["total"]
+        total = response["hits"]["total"]["value"]
         results = format_for_frontend(response["hits"]["hits"])
         return True, results, total
     else:
         return False, "There was an error connecting to the ElasticSearch cluster", None
 
 
-def get_total_results(keyword, sub_index, retries=3):
-    index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, sub_index.replace("_", ""))
-    query = {"query": base_query(keyword)}
-
+def get_total_results(keyword, retries=3):
+    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
+    aggregations = {
+        "types": {
+            "filters": {
+                "filters": {
+                    category: {"terms": {"type": types}} for category, types in all_award_types_mappings.items()
+                }
+            }
+        }
+    }
+    query = {"query": base_query(keyword), "aggs": aggregations}
     response = es_client_query(index=index_name, body=query, retries=retries)
     if response:
         try:
-            return response["hits"]["total"]
+            return response["aggregations"]["types"]["buckets"]
         except KeyError:
             logger.error("Unexpected Response")
     else:
@@ -120,15 +129,16 @@ def get_total_results(keyword, sub_index, retries=3):
 def spending_by_transaction_count(request_data):
     keyword = request_data["filters"]["keywords"]
     response = {}
-
+    results = get_total_results(keyword)
     for category in INDEX_ALIASES_TO_AWARD_TYPES.keys():
-        total = get_total_results(keyword, category)
-        if total is not None:
+        if results is not None:
             if category == "directpayments":
                 category = "direct_payments"
-            response[category] = total
+            if category == "other":
+                category = "other_financial_assistance"
+            response[category] = results[category]["doc_count"]
         else:
-            return total
+            return results
     return response
 
 

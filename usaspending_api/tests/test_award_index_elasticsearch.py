@@ -77,27 +77,27 @@ def test_date_range(award_data_fixture, elasticsearch_award_index):
         "bool": {
             "should": [
                 {"range": {"action_date": {"gte": "2010-10-01"}}},
-                {"range": {"date_signed": {"lte": "2011-9-30"}}},
+                {"range": {"date_signed": {"lte": "2011-09-30"}}},
             ],
             "minimum_should_match": 2,
         }
     }
     query = create_query(should)
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     should = {
         "bool": {
             "should": [
                 {"range": {"action_date": {"gte": "2011-10-01"}}},
-                {"range": {"date_signed": {"lte": "2012-9-30"}}},
+                {"range": {"date_signed": {"lte": "2012-09-30"}}},
             ],
             "minimum_should_match": 2,
         }
     }
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_tas(award_data_fixture, elasticsearch_award_index):
@@ -121,8 +121,8 @@ def test_tas(award_data_fixture, elasticsearch_award_index):
     should = {"regexp": {"treasury_accounts": {"value": value_regex1}}}
     query = create_query(should)
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     tas_code_regexes2 = {
         "aid": "028",
         "ata": ".*",
@@ -135,8 +135,8 @@ def test_tas(award_data_fixture, elasticsearch_award_index):
     value_regex2 = "{" + search_regex.format(**tas_code_regexes2) + "}"
     should = {"regexp": {"treasury_accounts": {"value": value_regex2}}}
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_agency(award_data_fixture, elasticsearch_award_index):
@@ -144,13 +144,13 @@ def test_agency(award_data_fixture, elasticsearch_award_index):
     should = {"match": {"funding_toptier_agency_name.keyword": "Department of Transportation"}}
     client = elasticsearch_award_index.client
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     elasticsearch_award_index.update_index()
     should = {"match": {"funding_toptier_agency_name.keyword": "Department of Labor"}}
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_award_type(award_data_fixture, elasticsearch_award_index):
@@ -158,12 +158,12 @@ def test_award_type(award_data_fixture, elasticsearch_award_index):
     should = {"match": {"type": "A"}}
     query = create_query(should)
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     should = {"match": {"type": "D"}}
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_award_id(award_data_fixture, elasticsearch_award_index):
@@ -171,12 +171,12 @@ def test_award_id(award_data_fixture, elasticsearch_award_index):
     should = {"match": {"display_award_id": "IND12PB00323"}}
     query = create_query(should)
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     should = {"match": {"display_award_id": "whatever"}}
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_cfda(award_data_fixture, elasticsearch_award_index):
@@ -184,12 +184,12 @@ def test_cfda(award_data_fixture, elasticsearch_award_index):
     should = {"match": {"cfda_number.keyword": "84.063"}}
     query = create_query(should)
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     should = {"match": {"cfda_number.keyword": "whatever"}}
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_recipient_location(award_data_fixture, elasticsearch_award_index):
@@ -202,8 +202,8 @@ def test_recipient_location(award_data_fixture, elasticsearch_award_index):
     query = create_query(should)
     query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 3
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
 
     should = [
         {"match": {"recipient_location_country_code": "USA"}},
@@ -212,8 +212,8 @@ def test_recipient_location(award_data_fixture, elasticsearch_award_index):
     ]
     query = create_query(should)
     query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 3
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_pop_location(award_data_fixture, elasticsearch_award_index):
@@ -226,8 +226,8 @@ def test_pop_location(award_data_fixture, elasticsearch_award_index):
     query = create_query(should)
     query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 3
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     should = [
         {"match": {"pop_country_code": "USA"}},
         {"match": {"pop_state_code": "VA"}},
@@ -235,8 +235,8 @@ def test_pop_location(award_data_fixture, elasticsearch_award_index):
     ]
     query = create_query(should)
     query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 3
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_naics(award_data_fixture, elasticsearch_award_index):
@@ -244,12 +244,12 @@ def test_naics(award_data_fixture, elasticsearch_award_index):
     should = {"match": {"naics_code.keyword": "331122"}}
     query = create_query(should)
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     should = {"match": {"naics_code.keyword": "331120"}}
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_psc(award_data_fixture, elasticsearch_award_index):
@@ -257,12 +257,12 @@ def test_psc(award_data_fixture, elasticsearch_award_index):
     should = {"match": {"product_or_service_code.keyword": "1510"}}
     query = create_query(should)
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     should = {"match": {"product_or_service_code.keyword": "1511s"}}
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_type_set_aside(award_data_fixture, elasticsearch_award_index):
@@ -270,12 +270,12 @@ def test_type_set_aside(award_data_fixture, elasticsearch_award_index):
     should = {"match": {"type_set_aside.keyword": "8AN"}}
     query = create_query(should)
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     should = {"match": {"type_set_aside.keyword": "8A"}}
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_contract_pricing(award_data_fixture, elasticsearch_award_index):
@@ -283,12 +283,12 @@ def test_contract_pricing(award_data_fixture, elasticsearch_award_index):
     should = {"match": {"type_of_contract_pricing.keyword": "2"}}
     query = create_query(should)
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     should = {"match": {"type_of_contract_pricing.keyword": "1"}}
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_extent_competed(award_data_fixture, elasticsearch_award_index):
@@ -296,12 +296,12 @@ def test_extent_competed(award_data_fixture, elasticsearch_award_index):
     should = {"match": {"extent_competed": "F"}}
     query = create_query(should)
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     should = {"match": {"extent_competed": "J"}}
     query = create_query(should)
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_award_keyword(award_data_fixture, elasticsearch_award_index):
@@ -311,11 +311,11 @@ def test_award_keyword(award_data_fixture, elasticsearch_award_index):
         "_source": ["award_id"],
     }
     client = elasticsearch_award_index.client
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
     query = {
         "query": {"bool": {"filter": {"dis_max": {"queries": [{"query_string": {"query": "jonathan simms"}}]}}}},
         "_source": ["award_id"],
     }
-    response = client.search(elasticsearch_award_index.index_name, elasticsearch_award_index.doc_type, query)
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
