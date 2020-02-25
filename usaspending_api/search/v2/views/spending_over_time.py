@@ -26,7 +26,7 @@ from usaspending_api.common.helpers.generic_helper import (
     generate_fiscal_date_range,
     generate_fiscal_month,
     generate_fiscal_year,
-    get_time_period_message,
+    get_generic_filters_message,
     min_and_max_from_date_ranges,
 )
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -182,6 +182,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request: Request) -> Response:
+        self.original_filters = request.data.get("filters")
         json_request = self.validate_request_data(request.data)
         self.group = GROUPING_LOOKUP[json_request["group"]]
         self.subawards = json_request["subawards"]
@@ -214,5 +215,16 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             )
 
         return Response(
-            OrderedDict([("group", self.group), ("results", results), ("messages", [get_time_period_message()])])
+            OrderedDict(
+                [
+                    ("group", self.group),
+                    ("results", results),
+                    (
+                        "messages",
+                        get_generic_filters_message(
+                            self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
+                        ),
+                    ),
+                ]
+            )
         )
