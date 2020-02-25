@@ -163,9 +163,13 @@ class _RecipientId(_Filter):
         if filter_value.endswith("P"):
             return ES_Q("match", parent_recipient_hash=recipient_hash)
         elif filter_value.endswith("C"):
-            return ES_Q("match", recipient_hash=recipient_hash) & ~ES_Q("match", parent_recipient_unique_id="NULL")
+            return ES_Q("match", recipient_hash=recipient_hash) & ~ES_Q(
+                "match", parent_recipient_unique_id__keyword="NULL"
+            )
         else:
-            return ES_Q("match", recipient_hash=recipient_hash) & ES_Q("match", parent_recipient_unique_id="NULL")
+            return ES_Q("match", recipient_hash=recipient_hash) & ES_Q(
+                "match", parent_recipient_unique_id__keyword="NULL"
+            )
 
 
 class _RecipientScope(_Filter):
