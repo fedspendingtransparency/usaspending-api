@@ -411,7 +411,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             offset = 2
         else:
             has_next = (
-                response.hits.total - (self.pagination["page"] - 1) * self.pagination["limit"]
+                response.hits.total.value - (self.pagination["page"] - 1) * self.pagination["limit"]
                 > self.pagination["limit"]
             )
 
