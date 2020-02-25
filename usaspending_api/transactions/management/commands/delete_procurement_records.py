@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from typing import Optional
 
 from usaspending_api.transactions.agnostic_transaction_deletes import AgnosticDeletes
 from usaspending_api.transactions.models.source_procurement_transaction import SourceProcurementTransaction
@@ -17,7 +18,7 @@ class Command(AgnosticDeletes, BaseCommand):
     destination_table_name = SourceProcurementTransaction().table_name
     shared_pk = "detached_award_procurement_id"
 
-    def fetch_deleted_transactions(self, date_time: datetime):
+    def fetch_deleted_transactions(self, date_time: datetime) -> Optional[dict]:
         ids_to_delete = defaultdict(list)
 
         if settings.IS_LOCAL:
@@ -43,5 +44,5 @@ class Command(AgnosticDeletes, BaseCommand):
         logger.info(f"Total number of delete records to process: {total_ids}")
         return full_key_list
 
-    def store_delete_records(self, id_list):
+    def store_delete_records(self, deleted_dict: dict) -> None:
         logger.info("Nothing to store for procurement deletes")

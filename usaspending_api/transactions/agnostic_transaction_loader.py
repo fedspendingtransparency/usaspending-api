@@ -90,7 +90,9 @@ class AgnosticTransactionLoader:
             delete_date = self.options["datetime"]
             if not delete_date:
                 delete_date = self.begining_of_time
-            delete_job_status = call_command(self.delete_management_command, f"--date={delete_date}")
+
+            with Timer(message="Processing deletes", success_logger=logger.info, failure_logger=logger.error):
+                delete_job_status = call_command(self.delete_management_command, f"--date={delete_date}")
 
             if delete_job_status != 0:
                 raise RuntimeError("Fatal error. Problem with the deletes")
