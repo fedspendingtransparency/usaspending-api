@@ -1,9 +1,8 @@
 import json
+import pytest
 
 from model_mommy import mommy
-import pytest
 from rest_framework import status
-
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
@@ -163,10 +162,6 @@ def test_download_status_nonexistent_file_404(client):
     resp = client.get("/api/v2/bulk_download/status/?file_name=there_is_no_such_file.zip")
 
     assert resp.status_code == status.HTTP_404_NOT_FOUND
-
-
-def sort_function(agency):
-    return agency["toptier_code"]
 
 
 def test_list_agencies(client, award_data):
