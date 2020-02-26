@@ -197,7 +197,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     def create_response(self, queryset):
         results = []
-        for record in queryset[: self.pagination["limit"]]:
+        rows = list(queryset)
+        for record in rows[: self.pagination["limit"]]:
             row = {k: record[v] for k, v in self.constants["internal_id_fields"].items()}
 
             for field in self.fields:
@@ -214,7 +215,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         results = self.add_award_generated_id_field(results)
 
-        return self.populate_response(results=results, has_next=len(queryset) > self.pagination["limit"])
+        return self.populate_response(results=results, has_next=len(rows) > self.pagination["limit"])
 
     def add_award_generated_id_field(self, records):
         """Obtain the generated_unique_award_id and add to response"""
