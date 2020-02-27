@@ -101,7 +101,7 @@ def get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_date
     sql = """
         select  distinct upper(afa_generated_unique)
         from    published_award_financial_assistance p
-        where   correction_delete_indicatr = 'D' and
+        where   UPPER(correction_delete_indicatr = 'D') and
                 not exists (
                     select  *
                     from    published_award_financial_assistance
