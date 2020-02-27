@@ -11,9 +11,8 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     KEYWORD_DATATYPE_FIELDS,
     INDEX_ALIASES_TO_AWARD_TYPES,
 )
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.elasticsearch.client import es_client_query, es_client_count
+from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 
 logger = logging.getLogger("console")
@@ -103,28 +102,13 @@ def search_transactions(request_data, lower_limit, limit):
         return False, "There was an error connecting to the ElasticSearch cluster", None
 
 
-def get_total_results(keyword, sub_index, retries=3):
-    index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, sub_index.replace("_", ""))
-    query = {"query": base_query(keyword)}
-
-    response = es_client_count(index=index_name, body=query, retries=retries)
-    if response:
-        try:
-            return response["count"]
-        except KeyError:
-            logger.error("Unexpected Response")
-    else:
-        logger.error("No Response")
-        return None
-
-
-def get_total_aggregation_results(keyword, retries=3):
+def get_total_results(keyword, retries=3):
     index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
     aggregations = {
         "types": {
             "filters": {
                 "filters": {
-                    category: {"terms": {"type": types}} for category, types in all_award_types_mappings.items()
+                    category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()
                 }
             }
         }
@@ -144,14 +128,13 @@ def get_total_aggregation_results(keyword, retries=3):
 def spending_by_transaction_count(request_data):
     keyword = request_data["filters"]["keywords"]
     response = {}
-    results = get_total_aggregation_results(keyword)
+    results = get_total_results(keyword)
     for category in INDEX_ALIASES_TO_AWARD_TYPES.keys():
         if results is not None:
             if category == "directpayments":
-                category = "direct_payments"
-            if category == "other":
-                category = "other_financial_assistance"
-            response[category] = results[category]["doc_count"]
+                response["direct_payments"] = results[category]["doc_count"]
+            else:
+                response[category] = results[category]["doc_count"]
         else:
             return results
     return response
@@ -187,7 +170,11 @@ def get_download_ids(keyword, field, size=10000):
     n_iter = DOWNLOAD_QUERY_SIZE // size
 
     max_iterations = 10
-    total = get_total_results(keyword, "*", max_iterations)
+    results = get_total_results(keyword, max_iterations)
+    total = 0
+    for category in INDEX_ALIASES_TO_AWARD_TYPES.keys():
+        if results is not None:
+            total += results[category]["doc_count"]
     if total is None:
         logger.error("Error retrieving total results. Max number of attempts reached")
         return
