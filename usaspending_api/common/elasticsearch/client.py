@@ -123,9 +123,7 @@ def es_client_count(
     return None
 
 
-def _es_count(
-    index: str = None, body: dict = None, search: Search = None,
-) -> ElasticsearchResponse:
+def _es_count(index: str = None, body: dict = None, search: Search = None,) -> ElasticsearchResponse:
     error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
     result = None
     try:
