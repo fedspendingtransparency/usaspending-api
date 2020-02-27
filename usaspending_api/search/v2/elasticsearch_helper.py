@@ -171,13 +171,10 @@ def get_download_ids(keyword, field, size=10000):
 
     max_iterations = 10
     results = get_total_results(keyword, max_iterations)
-    total = 0
-    for category in INDEX_ALIASES_TO_AWARD_TYPES.keys():
-        if results is not None:
-            total += results[category]["doc_count"]
-    if total is None:
+    if results is None:
         logger.error("Error retrieving total results. Max number of attempts reached")
         return
+    total = sum(results[category]["doc_count"] for category in INDEX_ALIASES_TO_AWARD_TYPES.keys())
     required_iter = (total // size) + 1
     n_iter = min(max(1, required_iter), n_iter)
     for i in range(n_iter):
