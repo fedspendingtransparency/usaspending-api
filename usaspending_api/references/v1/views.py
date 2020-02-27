@@ -27,6 +27,7 @@ class FilterEndpoint(APIView):
         m = hashlib.md5()
         m.update(json_req)
         hash = m.hexdigest().encode("utf8")
+        hash = str(hash)[2:-1]
         # check for hash in db, store if not in db
         try:
             fh = FilterHash.objects.get(hash=hash)
