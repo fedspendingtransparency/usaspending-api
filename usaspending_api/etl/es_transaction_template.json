@@ -103,7 +103,12 @@
           "type": "keyword"
         },
         "recipient_unique_id": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_name": {
           "type": "text",
@@ -117,8 +122,13 @@
           "type": "keyword"
         },
         "parent_recipient_unique_id": {
-          "type": "keyword",
-          "null_value": "NULL"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "null_value": "NULL"
+            }
+          }
         },
         "parent_recipient_name": {
           "type": "text",
