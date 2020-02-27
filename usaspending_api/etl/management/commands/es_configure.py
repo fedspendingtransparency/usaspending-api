@@ -105,9 +105,7 @@ class Command(BaseCommand):
         return json_to_dict
 
     def validate_known_fields(self, template):
-        defined_fields = set(
-            [field for field in template["mappings"]["{view}_mapping".format(view=self.load_type[:-1])]["properties"]]
-        )
+        defined_fields = set([field for field in template["mappings"]["properties"]])
         load_columns = set(self.load_columns)
         if defined_fields ^ load_columns:  # check if any fields are not in both sets
             raise RuntimeError("Mismatch between template and fields in ETL! Resolve before continuing!")

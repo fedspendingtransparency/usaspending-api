@@ -73,7 +73,7 @@ class DownloadListAgenciesViewSet(APIView):
                 raise InvalidParameterException("Agency ID not found")
 
             # Get the subtier agencies associated with the toptier agency but only if they're user selectable.
-            response_data["sub_agency"] = (
+            response_data["sub_agencies"] = list(
                 SubtierAgency.objects.annotate(
                     include_agency=Exists(
                         Agency.objects.filter(

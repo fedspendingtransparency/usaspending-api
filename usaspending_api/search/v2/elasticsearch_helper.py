@@ -95,21 +95,29 @@ def search_transactions(request_data, lower_limit, limit):
 
     response = es_client_query(index=index_name, body=query, retries=10)
     if response:
-        total = response["hits"]["total"]
+        total = response["hits"]["total"]["value"]
         results = format_for_frontend(response["hits"]["hits"])
         return True, results, total
     else:
         return False, "There was an error connecting to the ElasticSearch cluster", None
 
 
-def get_total_results(keyword, sub_index, retries=3):
-    index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, sub_index.replace("_", ""))
-    query = {"query": base_query(keyword)}
-
+def get_total_results(keyword, retries=3):
+    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
+    aggregations = {
+        "types": {
+            "filters": {
+                "filters": {
+                    category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()
+                }
+            }
+        }
+    }
+    query = {"query": base_query(keyword), "aggs": aggregations}
     response = es_client_query(index=index_name, body=query, retries=retries)
     if response:
         try:
-            return response["hits"]["total"]
+            return response["aggregations"]["types"]["buckets"]
         except KeyError:
             logger.error("Unexpected Response")
     else:
@@ -120,15 +128,15 @@ def get_total_results(keyword, sub_index, retries=3):
 def spending_by_transaction_count(request_data):
     keyword = request_data["filters"]["keywords"]
     response = {}
-
+    results = get_total_results(keyword)
     for category in INDEX_ALIASES_TO_AWARD_TYPES.keys():
-        total = get_total_results(keyword, category)
-        if total is not None:
+        if results is not None:
             if category == "directpayments":
-                category = "direct_payments"
-            response[category] = total
+                response["direct_payments"] = results[category]["doc_count"]
+            else:
+                response[category] = results[category]["doc_count"]
         else:
-            return total
+            return results
     return response
 
 
@@ -162,10 +170,11 @@ def get_download_ids(keyword, field, size=10000):
     n_iter = DOWNLOAD_QUERY_SIZE // size
 
     max_iterations = 10
-    total = get_total_results(keyword, "*", max_iterations)
-    if total is None:
+    results = get_total_results(keyword, max_iterations)
+    if results is None:
         logger.error("Error retrieving total results. Max number of attempts reached")
         return
+    total = sum(results[category]["doc_count"] for category in INDEX_ALIASES_TO_AWARD_TYPES.keys())
     required_iter = (total // size) + 1
     n_iter = min(max(1, required_iter), n_iter)
     for i in range(n_iter):
