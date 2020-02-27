@@ -13,7 +13,7 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
 )
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.elasticsearch.client import es_client_query, es_client_count
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 
 logger = logging.getLogger("console")
@@ -103,7 +103,22 @@ def search_transactions(request_data, lower_limit, limit):
         return False, "There was an error connecting to the ElasticSearch cluster", None
 
 
-def get_total_results(keyword, retries=3):
+def get_total_results(keyword, sub_index, retries=3):
+    index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, sub_index.replace("_", ""))
+    query = {"query": base_query(keyword)}
+
+    response = es_client_count(index=index_name, body=query, retries=retries)
+    if response:
+        try:
+            return response["hits"]["total"]
+        except KeyError:
+            logger.error("Unexpected Response")
+    else:
+        logger.error("No Response")
+        return None
+
+
+def get_total_aggregation_results(keyword, retries=3):
     index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
     aggregations = {
         "types": {
@@ -129,7 +144,7 @@ def get_total_results(keyword, retries=3):
 def spending_by_transaction_count(request_data):
     keyword = request_data["filters"]["keywords"]
     response = {}
-    results = get_total_results(keyword)
+    results = get_total_aggregation_results(keyword)
     for category in INDEX_ALIASES_TO_AWARD_TYPES.keys():
         if results is not None:
             if category == "directpayments":
