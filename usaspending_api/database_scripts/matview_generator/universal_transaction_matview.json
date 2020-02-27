@@ -32,7 +32,7 @@
     "  awards.total_obligation,",
     "  awards.total_subsidy_cost,",
     "  awards.total_loan_value,",
-    "  obligation_to_enum(awards.total_obligation) AS total_obl_bin,",
+    "  obligation_to_enum(COALESCE(awards.total_obligation, 0) + COALESCE(awards.total_subsidy_cost, 0)) AS total_obl_bin,",
     "  awards.fain,",
     "  awards.uri,",
     "  awards.piid,",

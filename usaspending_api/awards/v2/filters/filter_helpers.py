@@ -166,11 +166,13 @@ def total_obligation_queryset(amount_obj, model, filters):
         lower_bound = v.get("lower_bound")
         upper_bound = v.get("upper_bound")
         for key, limits in WEBSITE_AWARD_BINS.items():
+            if limits["lower"] == limits["upper"] and lower_bound == limits["lower"]:
+                bins.append(key)
             if lower_bound == limits["lower"] and upper_bound == limits["upper"]:
                 bins.append(key)
                 break
 
-    if len(bins) == len(amount_obj):
+    if len(bins) >= len(amount_obj):
         or_queryset = model.objects.filter(total_obl_bin__in=bins)
     else:
         total_transaction_columns = get_total_transaction_columns(filters, model)

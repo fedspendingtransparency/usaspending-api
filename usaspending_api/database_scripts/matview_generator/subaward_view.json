@@ -19,7 +19,7 @@
     "  last_modified_date,",
     "  subaward_number,",
     "  amount AS amount,",
-    "  obligation_to_enum(amount) AS total_obl_bin,",
+    "  obligation_to_enum(COALESCE(amount, 0)) AS total_obl_bin,",
     "  sub.description,",
     "  fy(action_date) AS fiscal_year,",
     "  action_date,",
