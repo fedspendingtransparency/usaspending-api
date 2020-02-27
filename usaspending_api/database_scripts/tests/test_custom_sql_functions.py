@@ -49,6 +49,8 @@ def test_urlencoding_no_change(add_fun_awards):
 
     for i in range(4):
         print(results[i][0], results[i][1])
+
+    for i in range(4):
         assert results[i][0] == results[i][1], "Safe ASCII characters were incorrectly modified!"
 
 
