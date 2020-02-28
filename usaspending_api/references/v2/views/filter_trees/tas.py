@@ -53,7 +53,7 @@ class TASFilterTree(FilterTree):
             return self._generate_agency_node(data, populate_children)
         if tier == 1:  # A tier one search is returning a FederalAccount object
             return self._generate_federal_account_node(data, populate_children)
-        if tier == 2 or tier == 3:  # A tier two search will be returning a TreasuryAppropriationAccount object
+        if tier == 2 or tier == 3:  # A tier two or three search will be returning a TreasuryAppropriationAccount object
             return Node(
                 id=data.tas_rendering_label,
                 ancestors=[],
