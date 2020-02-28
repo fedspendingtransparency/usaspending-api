@@ -29,7 +29,7 @@ class FilterTree(metaclass=ABCMeta):
         elif tier1:
             return [self.construct_node_from_raw(1, data) for data in self.tier_one_search(tier1)]
         else:
-            return [self.construct_node_from_raw(1, data) for data in self.toptier_search()]
+            return [self.construct_node_from_raw(0, data) for data in self.toptier_search()]
 
     @abstractmethod
     def toptier_search(self):
