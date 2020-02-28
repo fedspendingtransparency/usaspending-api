@@ -123,7 +123,7 @@ AWARD_VIEW_COLUMNS = [
     "uri",
     "total_obligation",
     "description",
-    "total_obl_bin",
+    "award_amount",
     "total_subsidy_cost",
     "total_loan_value",
     "update_date",
