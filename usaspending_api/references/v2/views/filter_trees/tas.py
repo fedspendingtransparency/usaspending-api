@@ -30,9 +30,7 @@ class TASViewSet(APIView):
         request_values = self._parse_and_validate(request.GET)
 
         filter_tree = TASFilterTree()
-        return Response(
-            [elem.toJSON() for elem in filter_tree.basic_search(tier1, tier2, tier3, request_values["depth"])]
-        )
+        return Response([elem.toJSON() for elem in filter_tree.search(tier1, tier2, tier3, request_values["depth"])])
 
 
 class TASFilterTree(FilterTree):
@@ -48,60 +46,70 @@ class TASFilterTree(FilterTree):
     def tier_three_search(self, tas_code):
         return TreasuryAppropriationAccount.objects.filter(tas_rendering_label=tas_code)
 
-    def construct_node_from_raw(self, tier: int, data, populate_children) -> Node:
+    def construct_node_from_raw(self, tier: int, ancestors: list, data, populate_children) -> Node:
         if tier == 0:  # A tier zero search is returning an agency code
-            return self._generate_agency_node(data, populate_children)
+            return self._generate_agency_node(ancestors, data, populate_children)
         if tier == 1:  # A tier one search is returning a FederalAccount object
-            return self._generate_federal_account_node(data, populate_children)
+            return self._generate_federal_account_node(ancestors, data, populate_children)
         if tier == 2 or tier == 3:  # A tier two or three search will be returning a TreasuryAppropriationAccount object
             return Node(
                 id=data.tas_rendering_label,
-                ancestors=[],
+                ancestors=ancestors,
                 description=data.account_title,
                 count=DEFAULT_CHILDREN,
-                children=[],
+                children=None,
             )
 
-    def _generate_agency_node(self, data, populate_children):
+    def _generate_agency_node(self, ancestors, data, populate_children):
         matching_agency = agency_from_identifiers(data["agency_id"], data["fr_entity_code"])
         if matching_agency:
             if populate_children:
                 raw_children = self.tier_one_search(matching_agency.toptier_code)
                 generated_children = [
-                    self.construct_node_from_raw(1, elem, populate_children - 1).toJSON() for elem in raw_children
+                    self.construct_node_from_raw(
+                        1, ancestors + [data["agency_id"]], elem, populate_children - 1
+                    ).toJSON()
+                    for elem in raw_children
                 ]
+                count = len(generated_children)
             else:
-                generated_children = []
+                generated_children = None
+                count = DEFAULT_CHILDREN
 
             return Node(
                 id=data["agency_id"],
-                ancestors=[],
+                ancestors=ancestors,
                 description=matching_agency.name,
-                count=len(generated_children),
+                count=count,
                 children=generated_children,
             )
         else:
             return Node(
                 id="NOT FOUND",
-                ancestors=[],
+                ancestors=ancestors,
                 description=f"Failed to find {data['agency_id']},{data['fr_entity_code']}",
                 count=-1,
-                children=[],
+                children=None,
             )
 
-    def _generate_federal_account_node(self, data, populate_children):
+    def _generate_federal_account_node(self, ancestors, data, populate_children):
         if populate_children:
             raw_children = self.tier_two_search(data.federal_account_code)
             generated_children = [
-                self.construct_node_from_raw(2, elem, populate_children - 1).toJSON() for elem in raw_children
+                self.construct_node_from_raw(
+                    2, ancestors + [data.federal_account_code], elem, populate_children - 1
+                ).toJSON()
+                for elem in raw_children
             ]
+            count = len(generated_children)
         else:
-            generated_children = []
+            generated_children = None
+            count = DEFAULT_CHILDREN
 
         return Node(
             id=data.federal_account_code,
-            ancestors=[],
+            ancestors=ancestors,
             description=data.account_title,
-            count=len(generated_children),
+            count=count,
             children=generated_children,
         )
