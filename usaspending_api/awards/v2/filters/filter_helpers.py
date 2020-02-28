@@ -162,6 +162,8 @@ def get_total_transaction_columns(filters, model):
 
 def total_obligation_queryset(amount_obj, model, filters):
     bins = []
+    previous_items = 0
+    able_to_use_enum = True
     for v in amount_obj:
         lower_bound = v.get("lower_bound")
         upper_bound = v.get("upper_bound")
@@ -172,8 +174,10 @@ def total_obligation_queryset(amount_obj, model, filters):
                 bins.append(key)
             if lower_bound == limits["lower"] and upper_bound == limits["upper"]:
                 bins.append(key)
+        if len(bins) <= previous_items:
+            able_to_use_enum = False
 
-    if len(bins) >= len(amount_obj):
+    if able_to_use_enum:
         or_queryset = model.objects.filter(total_obl_bin__in=bins)
     else:
         total_transaction_columns = get_total_transaction_columns(filters, model)
