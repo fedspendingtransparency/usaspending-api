@@ -107,6 +107,7 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("legal_entity_zip_last4", "_rl_zip4"),
         ("legal_entity_zip5", "_rl_zip5"),
         ("legal_entity_foreign_posta", "_rl_foreign_postal_code"),
+        ("legal_entity_foreign_city", "_rl_foreign_city"),
         ("legal_entity_foreign_provi", "_rl_foreign_province"),
         # "Place of Performance" fields below
         ("place_of_perform_country_c", "_pop_location_country_code"),

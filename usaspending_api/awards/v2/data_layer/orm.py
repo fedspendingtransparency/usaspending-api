@@ -204,6 +204,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                         ("zip5", db_row_dict["_rl_zip5"]),
                         ("foreign_postal_code", db_row_dict.get("_rl_foreign_postal_code")),
                         ("foreign_province", db_row_dict.get("_rl_foreign_province")),
+                        ("foreign_city", db_row_dict.get("_rl_foreign_city"))
                     ]
                 ),
             ),
