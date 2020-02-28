@@ -1,10 +1,12 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 
+DEFAULT_CHILDREN = 0
+
 
 @dataclass
 class Node:
-    name: str
+    id: str
     ancestors: list
     description: str
     count: int
@@ -12,7 +14,7 @@ class Node:
 
     def toJSON(self):
         return {
-            "name": self.name,
+            "id": self.id,
             "ancestors": self.ancestors,
             "description": self.description,
             "count": self.count,
@@ -21,15 +23,15 @@ class Node:
 
 
 class FilterTree(metaclass=ABCMeta):
-    def basic_search(self, tier1, tier2, tier3) -> list:
+    def basic_search(self, tier1, tier2, tier3, populate_children) -> list:
         if tier3:
-            return [self.construct_node_from_raw(3, data) for data in self.tier_three_search(tier3)]
+            return [self.construct_node_from_raw(3, data, populate_children) for data in self.tier_three_search(tier3)]
         elif tier2:
-            return [self.construct_node_from_raw(2, data) for data in self.tier_two_search(tier2)]
+            return [self.construct_node_from_raw(2, data, populate_children) for data in self.tier_two_search(tier2)]
         elif tier1:
-            return [self.construct_node_from_raw(1, data) for data in self.tier_one_search(tier1)]
+            return [self.construct_node_from_raw(1, data, populate_children) for data in self.tier_one_search(tier1)]
         else:
-            return [self.construct_node_from_raw(0, data) for data in self.toptier_search()]
+            return [self.construct_node_from_raw(0, data, populate_children) for data in self.toptier_search()]
 
     @abstractmethod
     def toptier_search(self):
@@ -48,5 +50,5 @@ class FilterTree(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def construct_node_from_raw(self, tier: int, data) -> Node:
+    def construct_node_from_raw(self, tier: int, data, poulate_children: bool) -> Node:
         pass

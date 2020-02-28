@@ -10,10 +10,9 @@ from django.db.models import Q
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models import NAICS
+from usaspending_api.references.v2.views.filter_trees.filter_tree import DEFAULT_CHILDREN
 
 logger = logging.getLogger("console")
-
-DEFAULT_CHILDREN = 0
 
 
 class NAICSViewSet(APIView):
