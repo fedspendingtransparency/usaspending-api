@@ -2,7 +2,7 @@ TOTAL_BUDGET_AUTHORITY = 8361447130497.72
 TOTAL_OBLIGATIONS_INCURRED = 4690484214947.31
 WEBSITE_AWARD_BINS = {
     "<1M": {"lower": None, "upper": 1000000},
-    "1M": {"lower": 1000000, "upper": 1000000},
+    # "1M": {"lower": 1000000, "upper": 1000000},  -- U/I filter doesn't need 1M in multiple options
     "1M..25M": {"lower": 1000000, "upper": 25000000},
     "25M": {"lower": 25000000, "upper": 25000000},
     "25M..100M": {"lower": 25000000, "upper": 100000000},

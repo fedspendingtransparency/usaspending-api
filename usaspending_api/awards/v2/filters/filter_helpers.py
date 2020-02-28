@@ -168,9 +168,10 @@ def total_obligation_queryset(amount_obj, model, filters):
         for key, limits in WEBSITE_AWARD_BINS.items():
             if limits["lower"] == limits["upper"] and lower_bound == limits["lower"]:
                 bins.append(key)
+            if limits["lower"] == limits["upper"] and upper_bound == limits["upper"]:
+                bins.append(key)
             if lower_bound == limits["lower"] and upper_bound == limits["upper"]:
                 bins.append(key)
-                break
 
     if len(bins) >= len(amount_obj):
         or_queryset = model.objects.filter(total_obl_bin__in=bins)

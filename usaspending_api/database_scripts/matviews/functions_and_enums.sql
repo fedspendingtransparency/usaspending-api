@@ -21,7 +21,7 @@ AS $$
     DECLARE result text;
   BEGIN
     IF award < 1000000.0 THEN result='<1M';              -- under $1 million
-    ELSIF award = 1000000.0 THEN result='1M';            -- $1 million
+    -- ELSIF award = 1000000.0 THEN result='1M';  -- U/I filter doesn't need 1M in multiple selections
     ELSIF award < 25000000.0 THEN result='1M..25M';      -- under $25 million
     ELSIF award = 25000000.0 THEN result='25M';          -- $25 million
     ELSIF award < 100000000.0 THEN result='25M..100M';   -- under $100 million
