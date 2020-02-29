@@ -161,24 +161,16 @@ def get_total_transaction_columns(filters, model):
 
 
 def total_obligation_queryset(amount_obj, model, filters):
-    bins = []
-    previous_items = 0
-    able_to_use_enum = True
-    for v in amount_obj:
-        lower_bound = v.get("lower_bound")
-        upper_bound = v.get("upper_bound")
-        for key, limits in WEBSITE_AWARD_BINS.items():
-            if limits["lower"] == limits["upper"] and lower_bound == limits["lower"]:
-                bins.append(key)
-            if limits["lower"] == limits["upper"] and upper_bound == limits["upper"]:
-                bins.append(key)
-            if lower_bound == limits["lower"] and upper_bound == limits["upper"]:
-                bins.append(key)
-        if len(bins) <= previous_items:
-            able_to_use_enum = False
-
-    if able_to_use_enum:
-        or_queryset = model.objects.filter(total_obl_bin__in=bins)
+    if can_use_total_obligation_enum(amount_obj):
+        bins = []
+        for v in amount_obj:
+            lower_bound = v.get("lower_bound")
+            upper_bound = v.get("upper_bound")
+            for key, values in WEBSITE_AWARD_BINS.items():
+                if lower_bound == values["lower"] and upper_bound == values["upper"]:
+                    bins.extend(values["enums"])
+                    break
+        or_queryset = model.objects.filter(total_obl_bin__in=set(bins))
     else:
         total_transaction_columns = get_total_transaction_columns(filters, model)
         bound_filters = Q()
@@ -218,18 +210,16 @@ def can_use_month_aggregation(time_period):
 
 
 def can_use_total_obligation_enum(amount_obj):
-    bins = []
     try:
         for v in amount_obj:
             lower_bound = v.get("lower_bound")
             upper_bound = v.get("upper_bound")
-            for key, limits in WEBSITE_AWARD_BINS.items():
-                if lower_bound == limits["lower"] and upper_bound == limits["upper"]:
-                    bins.append(key)
+            for key, values in WEBSITE_AWARD_BINS.items():
+                if lower_bound == values["lower"] and upper_bound == values["upper"]:
                     break
-
-        if len(bins) == len(amount_obj):
-            return True
+            else:
+                return False
+        return True
     except Exception:
         pass
     return False
