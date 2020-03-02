@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from pathlib import Path
 
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
-from usaspending_api.common.helpers.timing_helpers import Timer
+from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.common.matview_manager import (
     DEFAULT_MATIVEW_DIR,
     DEPENDENCY_FILEPATH,
