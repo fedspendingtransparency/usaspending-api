@@ -11,7 +11,6 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     KEYWORD_DATATYPE_FIELDS,
     INDEX_ALIASES_TO_AWARD_TYPES,
 )
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
@@ -109,7 +108,7 @@ def get_total_results(keyword, retries=3):
         "types": {
             "filters": {
                 "filters": {
-                    category: {"terms": {"type": types}} for category, types in all_award_types_mappings.items()
+                    category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()
                 }
             }
         }
@@ -133,10 +132,9 @@ def spending_by_transaction_count(request_data):
     for category in INDEX_ALIASES_TO_AWARD_TYPES.keys():
         if results is not None:
             if category == "directpayments":
-                category = "direct_payments"
-            if category == "other":
-                category = "other_financial_assistance"
-            response[category] = results[category]["doc_count"]
+                response["direct_payments"] = results[category]["doc_count"]
+            else:
+                response[category] = results[category]["doc_count"]
         else:
             return results
     return response
@@ -172,10 +170,11 @@ def get_download_ids(keyword, field, size=10000):
     n_iter = DOWNLOAD_QUERY_SIZE // size
 
     max_iterations = 10
-    total = get_total_results(keyword, "*", max_iterations)
-    if total is None:
+    results = get_total_results(keyword, max_iterations)
+    if results is None:
         logger.error("Error retrieving total results. Max number of attempts reached")
         return
+    total = sum(results[category]["doc_count"] for category in INDEX_ALIASES_TO_AWARD_TYPES.keys())
     required_iter = (total // size) + 1
     n_iter = min(max(1, required_iter), n_iter)
     for i in range(n_iter):
