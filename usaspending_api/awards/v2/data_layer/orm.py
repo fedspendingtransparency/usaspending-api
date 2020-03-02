@@ -318,8 +318,14 @@ def _fetch_parent_award_details(parent_award_ids: dict) -> Optional[OrderedDict]
         .first()
     )
     parent_agency = (
-        Agency.objects.filter(subtier_agency_id=parent_sub_agency["subtier_agency_id"]).values("id", "toptier_agency__name").first()
-    ) if parent_sub_agency else None
+        (
+            Agency.objects.filter(subtier_agency_id=parent_sub_agency["subtier_agency_id"])
+            .values("id", "toptier_agency__name")
+            .first()
+        )
+        if parent_sub_agency
+        else None
+    )
 
     parent_object = OrderedDict(
         [
