@@ -837,7 +837,6 @@ This endpoint returns a list of data that is associated with the award profile p
 + `country_name` (required, string, nullable)
 + `location_country_code` (required, string, nullable)
 + `congressional_code` (required, string, nullable)
-+ `foreign_city` (optional, string, nullable)
 
 ## ContractDetails (object)
 + `clinger_cohen_act_planning` (required, string, nullable)
