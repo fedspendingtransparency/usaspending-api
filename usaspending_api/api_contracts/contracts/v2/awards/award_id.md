@@ -177,8 +177,7 @@ This endpoint returns a list of data that is associated with the award profile p
                         "zip4": "3558",
                         "zip5": "95691",
                         "foreign_postal_code": null,
-                        "foreign_province": null,
-                        "foreign_city": null,
+                        "foreign_province": null
                     }
                 },
                 "executive_details": {
