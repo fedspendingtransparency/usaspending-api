@@ -1,19 +1,25 @@
-from usaspending_api.references.models import ToptierAgency
 from usaspending_api.download.lookups import CFO_CGACS
-from usaspending_api.references.constants import DOD_SUBSUMED_CGAC, DOD_CGAC
+from usaspending_api.references.constants import DOD_SUBSUMED_CGAC, DOD_CGAC, DOD_ARMED_FORCES_TAS_CGAC_FREC
+from usaspending_api.references.models import ToptierAgency
 
 
 def agency_from_identifiers(cgac, frec):
-    if frec:
-        matching_agency = ToptierAgency.objects.filter(toptier_code=frec).first()
-    if not frec or not matching_agency:
-        matching_agency = ToptierAgency.objects.filter(toptier_code=cgac).first()
+    """
+    General logic for what agency to include a given CGAC/FREC combination under, accounting for all rollups.
+    :param cgac:
+    :param frec:
+    :return: string, which is the toptier_code for the correct agency to count this combination under
+    """
+    if (cgac, frec) in DOD_ARMED_FORCES_TAS_CGAC_FREC:
+        return DOD_CGAC
 
-    # the army, navy, and air force are considered part of the DoD, despite being labled as toptier
-    if matching_agency and matching_agency.toptier_code in DOD_SUBSUMED_CGAC:
-        matching_agency = ToptierAgency.objects.filter(toptier_code=DOD_CGAC).first()
+    if cgac in DOD_SUBSUMED_CGAC:
+        return DOD_CGAC
 
-    return matching_agency
+    if frec and len(ToptierAgency.objects.filter(toptier_code=frec)) > 0:
+        return frec
+    else:
+        return cgac
 
 
 def cfo_presentation_order(agency_list):

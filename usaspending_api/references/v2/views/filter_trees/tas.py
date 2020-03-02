@@ -8,6 +8,7 @@ from usaspending_api.common.helpers.agency_logic_helpers import cfo_presentation
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from usaspending_api.common.helpers.agency_logic_helpers import agency_from_identifiers
 from usaspending_api.references.v2.views.filter_trees.filter_tree import DEFAULT_CHILDREN, Node, FilterTree
+from usaspending_api.references.models import ToptierAgency
 
 
 class TASViewSet(APIView):
@@ -38,7 +39,12 @@ class TASFilterTree(FilterTree):
         agency_id_sets = TreasuryAppropriationAccount.objects.values("fr_entity_code", "agency_id").distinct(
             "agency_id"
         )
-        agency_list = [agency_from_identifiers(elem["agency_id"], elem["fr_entity_code"]) for elem in agency_id_sets]
+        agency_list = [
+            ToptierAgency.objects.filter(
+                toptier_code=agency_from_identifiers(elem["agency_id"], elem["fr_entity_code"])
+            ).first()
+            for elem in agency_id_sets
+        ]
         agency_dictionaries = [self._dictionary_from_agency(agency) for agency in agency_list]
         cfo_sort_results = cfo_presentation_order(agency_dictionaries)
         return cfo_sort_results["cfo_agencies"] + cfo_sort_results["other_agencies"]
@@ -50,7 +56,7 @@ class TASFilterTree(FilterTree):
             return {"toptier_code": -1, "name": "failed to find agency"}
 
     def tier_one_search(self, agency):
-        return FederalAccount.objects.filter(agency_identifier=agency)
+        return FederalAccount.objects.filter(agency_identifier=agency_from_identifiers(agency, None))
 
     def tier_two_search(self, fed_account):
         return TreasuryAppropriationAccount.objects.filter(federal_account__federal_account_code=fed_account)
