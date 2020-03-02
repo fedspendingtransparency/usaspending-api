@@ -1,5 +1,6 @@
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.download.lookups import CFO_CGACS
+from usaspending_api.references.constants import DOD_SUBSUMED_CGAC, DOD_CGAC
 
 
 def agency_from_identifiers(cgac, frec):
@@ -7,6 +8,11 @@ def agency_from_identifiers(cgac, frec):
         matching_agency = ToptierAgency.objects.filter(toptier_code=frec).first()
     if not frec or not matching_agency:
         matching_agency = ToptierAgency.objects.filter(toptier_code=cgac).first()
+
+    # the army, navy, and air force are considered part of the DoD, despite being labled as toptier
+    if matching_agency and matching_agency.toptier_code in DOD_SUBSUMED_CGAC:
+        matching_agency = ToptierAgency.objects.filter(toptier_code=DOD_CGAC).first()
+
     return matching_agency
 
 
