@@ -177,7 +177,8 @@ This endpoint returns a list of data that is associated with the award profile p
                         "zip4": "3558",
                         "zip5": "95691",
                         "foreign_postal_code": null,
-                        "foreign_province": null
+                        "foreign_province": null,
+                        "foreign_city": null,
                     }
                 },
                 "executive_details": {
@@ -836,6 +837,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `country_name` (required, string, nullable)
 + `location_country_code` (required, string, nullable)
 + `congressional_code` (required, string, nullable)
++ `foreign_city` (optional, string, nullable)
 
 ## ContractDetails (object)
 + `clinger_cohen_act_planning` (required, string, nullable)
