@@ -19,7 +19,7 @@
     "  NULL::text AS piid,",
     "  awards.fain,",
     "  awards.uri,",
-    "  0::NUMERIC(23,2) AS total_obligation,",
+    "  COALESCE(awards.total_subsidy_cost, 0)::NUMERIC(23,2) AS total_obligation,",
     "  awards.description,",
     "  obligation_to_enum(COALESCE(awards.total_subsidy_cost, 0)) AS total_obl_bin,",
     "  COALESCE(awards.total_subsidy_cost, 0)::NUMERIC(23,2) AS total_subsidy_cost,",
