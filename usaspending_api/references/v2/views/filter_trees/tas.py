@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
-
+from usaspending_api.common.helpers.agency_logic_helpers import cfo_presentation_order
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from usaspending_api.common.helpers.agency_logic_helpers import agency_from_identifiers
 from usaspending_api.references.v2.views.filter_trees.filter_tree import DEFAULT_CHILDREN, Node, FilterTree
@@ -35,7 +35,19 @@ class TASViewSet(APIView):
 
 class TASFilterTree(FilterTree):
     def toptier_search(self):
-        return TreasuryAppropriationAccount.objects.values("fr_entity_code", "agency_id").distinct()
+        agency_id_sets = TreasuryAppropriationAccount.objects.values("fr_entity_code", "agency_id").distinct(
+            "agency_id"
+        )
+        agency_list = [agency_from_identifiers(elem["agency_id"], elem["fr_entity_code"]) for elem in agency_id_sets]
+        agency_dictionaries = [self._dictionary_from_agency(agency) for agency in agency_list]
+        cfo_sort_results = cfo_presentation_order(agency_dictionaries)
+        return cfo_sort_results["cfo_agencies"] + cfo_sort_results["other_agencies"]
+
+    def _dictionary_from_agency(self, agency):
+        if agency:
+            return {"toptier_code": agency.toptier_code, "name": agency.name}
+        else:
+            return {"toptier_code": -1, "name": "failed to find agency"}
 
     def tier_one_search(self, agency):
         return FederalAccount.objects.filter(agency_identifier=agency)
@@ -47,7 +59,7 @@ class TASFilterTree(FilterTree):
         return TreasuryAppropriationAccount.objects.filter(tas_rendering_label=tas_code)
 
     def construct_node_from_raw(self, tier: int, ancestors: list, data, populate_children) -> Node:
-        if tier == 0:  # A tier zero search is returning an agency code
+        if tier == 0:  # A tier zero search is returning an agency dictionary
             return self._generate_agency_node(ancestors, data, populate_children)
         if tier == 1:  # A tier one search is returning a FederalAccount object
             return self._generate_federal_account_node(ancestors, data, populate_children)
@@ -61,36 +73,26 @@ class TASFilterTree(FilterTree):
             )
 
     def _generate_agency_node(self, ancestors, data, populate_children):
-        matching_agency = agency_from_identifiers(data["agency_id"], data["fr_entity_code"])
-        if matching_agency:
-            if populate_children:
-                raw_children = self.tier_one_search(matching_agency.toptier_code)
-                generated_children = [
-                    self.construct_node_from_raw(
-                        1, ancestors + [data["agency_id"]], elem, populate_children - 1
-                    ).toJSON()
-                    for elem in raw_children
-                ]
-                count = len(generated_children)
-            else:
-                generated_children = None
-                count = DEFAULT_CHILDREN
-
-            return Node(
-                id=data["agency_id"],
-                ancestors=ancestors,
-                description=matching_agency.name,
-                count=count,
-                children=generated_children,
-            )
+        if populate_children:
+            raw_children = self.tier_one_search(data["toptier_code"])
+            generated_children = [
+                self.construct_node_from_raw(
+                    1, ancestors + [data["toptier_code"]], elem, populate_children - 1
+                ).toJSON()
+                for elem in raw_children
+            ]
+            count = len(generated_children)
         else:
-            return Node(
-                id="NOT FOUND",
-                ancestors=ancestors,
-                description=f"Failed to find {data['agency_id']},{data['fr_entity_code']}",
-                count=-1,
-                children=None,
-            )
+            generated_children = None
+            count = DEFAULT_CHILDREN
+
+        return Node(
+            id=data["toptier_code"],
+            ancestors=ancestors,
+            description=data["name"],
+            count=count,
+            children=generated_children,
+        )
 
     def _generate_federal_account_node(self, ancestors, data, populate_children):
         if populate_children:
