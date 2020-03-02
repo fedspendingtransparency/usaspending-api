@@ -76,8 +76,10 @@ def awards_and_transactions(db):
 
     # Toptier Agency
     toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
+    toptier_agency_2 = {"pk": 2, "abbreviation": "TA2", "name": "TOPTIER AGENCY 2", "toptier_code": "002"}
 
     mommy.make("references.ToptierAgency", **toptier_agency_1)
+    mommy.make("references.ToptierAgency", **toptier_agency_2)
 
     # Subtier Agency
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
@@ -92,8 +94,14 @@ def awards_and_transactions(db):
         "subtier_agency": SubtierAgency.objects.get(pk=1),
         "toptier_agency": ToptierAgency.objects.get(pk=1),
     }
+    agency_2 = {
+        "pk": 2,
+        "subtier_agency": SubtierAgency.objects.get(pk=2),
+        "toptier_agency": ToptierAgency.objects.get(pk=2),
+    }
 
     mommy.make("references.Agency", **agency)
+    mommy.make("references.Agency", **agency_2)
 
     # Transaction Normalized
     bc = {"business_categories": ["small_business"]}
@@ -1215,6 +1223,8 @@ expected_response_cont = {
     "parent_award": {
         "agency_id": None,
         "agency_name": None,
+        "sub_agency_id": None,
+        "sub_agency_name": None,
         "award_id": 4,
         "generated_unique_award_id": "CONT_IDV_1234_9700",
         "idv_type_description": None,
@@ -1225,8 +1235,10 @@ expected_response_cont = {
 }
 
 expected_contract_award_parent = {
-    "agency_id": "1000",
-    "agency_name": "SUBTIER AGENCY 2",
+    "agency_id": 2,
+    "agency_name": "TOPTIER AGENCY 2",
+    "sub_agency_id": "1000",
+    "sub_agency_name": "SUBTIER AGENCY 2",
     "award_id": 8,
     "generated_unique_award_id": "CONT_IDV_AWARD8_1000",
     "idv_type_description": "TYPE DESCRIPTION TRANS 9",
@@ -1236,8 +1248,10 @@ expected_contract_award_parent = {
 }
 
 expected_idv_award_parent = {
-    "agency_id": "1000",
-    "agency_name": "SUBTIER AGENCY 2",
+    "agency_id": 2,
+    "agency_name": "TOPTIER AGENCY 2",
+    "sub_agency_id": "1000",
+    "sub_agency_name": "SUBTIER AGENCY 2",
     "award_id": 9,
     "generated_unique_award_id": "CONT_IDV_AWARD9_1000",
     "idv_type_description": "TYPE DESCRIPTION TRANS 10",

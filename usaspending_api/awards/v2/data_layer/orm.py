@@ -312,16 +312,21 @@ def _fetch_parent_award_details(parent_award_ids: dict) -> Optional[OrderedDict]
         logging.debug("Unable to find award for award id %s" % parent_award_award_id)
         return None
 
-    parent_agency = (
+    parent_sub_agency = (
         SubtierAgency.objects.filter(subtier_code=parent_award["latest_transaction__contract_data__agency_id"])
-        .values("name")
+        .values("name", "subtier_agency_id")
         .first()
     )
+    parent_agency = (
+        Agency.objects.filter(subtier_agency_id=parent_sub_agency["subtier_agency_id"]).values("id", "toptier_agency__name").first()
+    ) if parent_sub_agency else None
 
     parent_object = OrderedDict(
         [
-            ("agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
-            ("agency_name", parent_agency["name"] if parent_agency else None),
+            ("agency_id", parent_agency["id"] if parent_agency else None),
+            ("agency_name", parent_agency["toptier_agency__name"] if parent_agency else None),
+            ("sub_agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
+            ("sub_agency_name", parent_sub_agency["name"] if parent_sub_agency else None),
             ("award_id", parent_award_award_id),
             ("generated_unique_award_id", parent_award_guai),
             ("idv_type_description", parent_award["latest_transaction__contract_data__idv_type_description"]),
