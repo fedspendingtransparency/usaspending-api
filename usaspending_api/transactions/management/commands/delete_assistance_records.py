@@ -26,7 +26,7 @@ class Command(AgnosticDeletes, BaseCommand):
         sql = """
         select  published_award_financial_assistance_id
         from    published_award_financial_assistance p
-        where   correction_delete_indicatr = 'D' and
+        where   UPPER(correction_delete_indicatr) = 'D' and
                 not exists (
                     select  *
                     from    published_award_financial_assistance
