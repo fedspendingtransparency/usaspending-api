@@ -4,9 +4,7 @@ import math
 import time
 
 from datetime import timedelta
-
-
-logger = logging.getLogger("console")
+from typing import Callable, Optional
 
 
 @contextlib.contextmanager
@@ -65,7 +63,9 @@ class Timer:
 
     _formats = "{:,} d", "{} h", "{} m", "{} s", "{} ms"
 
-    def __init__(self, message=None, success_logger=logger.info, failure_logger=logger.error):
+    def __init__(
+        self, message: Optional[str] = None, success_logger: Callable = print, failure_logger: Callable = print
+    ):
         """
         For automatic logging, include a message.  By default, non-error messages
         are logged to the console info logger and errors are logged to the console
@@ -164,3 +164,25 @@ class Timer:
             " ".join(f.format(b) for f, b in zip(cls._formats, tuple(int(n) for n in (d, h, m, s, ms))) if b > 0)
             or "less than a millisecond"
         )
+
+
+class ConsoleTimer(Timer):
+    """
+    Convenience class to log to the Django "console" logs.  To use in standalone scripts you will need to
+    define your own "console" log handler.
+    """
+
+    def __init__(self, message=None):
+        logger = logging.getLogger("console")
+        super().__init__(message=message, success_logger=logger.info, failure_logger=logger.error)
+
+
+class ScriptTimer(Timer):
+    """
+    Convenience class to log to the Django "script" logs.  To use in standalone scripts you will need to
+    define your own "script" log handler.
+    """
+
+    def __init__(self, message=None):
+        logger = logging.getLogger("script")
+        super().__init__(message=message, success_logger=logger.info, failure_logger=logger.error)
