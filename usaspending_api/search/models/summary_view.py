@@ -6,7 +6,6 @@ class SummaryView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
-    pulled_from = models.TextField()
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()
     awarding_toptier_agency_name = models.TextField()

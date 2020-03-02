@@ -6,7 +6,6 @@ class SummaryPscCodesView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
-    pulled_from = models.TextField()
     product_or_service_code = models.TextField(blank=True, null=True)
     generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)

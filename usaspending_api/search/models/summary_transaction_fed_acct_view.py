@@ -6,7 +6,6 @@ class SummaryTransactionFedAcctView(models.Model):
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
-    pulled_from = models.TextField()
 
     federal_account_id = models.IntegerField()
     treasury_account_id = models.IntegerField()

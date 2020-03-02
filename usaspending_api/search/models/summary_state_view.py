@@ -7,7 +7,6 @@ class SummaryStateView(models.Model):
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
-    pulled_from = models.TextField()
     distinct_awards = ArrayField(models.TextField(), default=list)
 
     pop_country_code = models.TextField()

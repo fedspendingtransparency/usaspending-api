@@ -8,7 +8,6 @@
     "    transaction_normalized.action_date,",
     "    transaction_normalized.fiscal_year,",
     "    transaction_normalized.type,",
-    "    transaction_fpds.pulled_from,",
     "",
     "    TR_ACCT.federal_account_id,",
     "    FABA.treasury_account_id,",
@@ -24,7 +23,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "",
     "  TR_ACCT.federal_account_id,",
     "  FABA.treasury_account_id,",
@@ -75,7 +73,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "",
     "  TR_ACCT.federal_account_id,",
     "  FABA.treasury_account_id,",
@@ -107,10 +104,6 @@
       "name": "type",
       "where":"type IS NOT NULL",
       "columns": [{"name": "type"}]
-    }, {
-      "name": "pulled_from",
-      "where": "pulled_from IS NOT NULL",
-      "columns": [{"name": "pulled_from", "order": "DESC NULLS LAST"}]
     }, {
       "name": "federal_account_id",
       "where": "federal_account_id IS NOT NULL",

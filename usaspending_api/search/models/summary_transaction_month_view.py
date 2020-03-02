@@ -7,7 +7,6 @@ class SummaryTransactionMonthView(models.Model):
     action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
-    pulled_from = models.TextField()
 
     recipient_location_country_name = models.TextField()
     recipient_location_country_code = models.TextField()

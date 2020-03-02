@@ -7,7 +7,6 @@ class AwardSummaryMatview(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
-    pulled_from = models.TextField()
     category = models.TextField(blank=True, null=True)
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()

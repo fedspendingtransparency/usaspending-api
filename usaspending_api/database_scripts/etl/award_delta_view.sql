@@ -72,7 +72,6 @@ SELECT
 
   vw_award_search.cfda_number,
   vw_award_search.sai_number,
-  vw_award_search.pulled_from,
   vw_award_search.type_of_contract_pricing,
   vw_award_search.extent_competed,
   vw_award_search.type_set_aside,

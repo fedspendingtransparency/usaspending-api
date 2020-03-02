@@ -82,7 +82,6 @@ class BaseAwardSearchModel(models.Model):
 
     cfda_number = models.TextField()
     sai_number = models.TextField()
-    pulled_from = models.TextField()
     type_of_contract_pricing = models.TextField()
     extent_competed = models.TextField()
     type_set_aside = models.TextField()

@@ -8,7 +8,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "",
     "  COALESCE(recipient_lookup.recipient_hash, MD5(",
     "    UPPER(COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)))::uuid",
@@ -44,7 +43,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "",
     "  COALESCE(recipient_lookup.recipient_hash, MD5(",
     "    UPPER(COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)))::uuid),",
@@ -70,10 +68,6 @@
       "name": "type",
       "where": "type IS NOT NULL",
       "columns": [{"name": "type"}]
-    }, {
-      "name": "pulled_from",
-      "where": "pulled_from IS NOT NULL",
-      "columns": [{"name": "pulled_from", "order": "DESC NULLS LAST"}]
     }, {
       "name": "recipient_unique_id",
       "columns": [{"name": "recipient_unique_id"}]

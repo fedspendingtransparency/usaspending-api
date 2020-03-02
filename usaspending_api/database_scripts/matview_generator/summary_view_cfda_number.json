@@ -8,7 +8,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "  transaction_fabs.cfda_number,",
     "  transaction_fabs.cfda_title,",
     "",
@@ -32,7 +31,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "  transaction_fabs.cfda_number,",
     "  transaction_fabs.cfda_title"
   ],
@@ -47,10 +45,6 @@
     }, {
       "name": "type",
       "columns": [{"name": "type"}]
-    }, {
-      "name": "pulled_from",
-      "where": "pulled_from IS NOT NULL",
-      "columns": [{"name": "pulled_from"}]
     }
   ]
 }

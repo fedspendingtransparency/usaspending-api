@@ -6,7 +6,6 @@ class SummaryNaicsCodesView(models.Model):
     action_date = models.DateField(blank=True, null=True)
     fiscal_year = models.IntegerField()
     type = models.TextField(blank=True, null=True)
-    pulled_from = models.TextField()
     naics_code = models.TextField(blank=True, null=True)
     naics_description = models.TextField(blank=True, null=True)
 

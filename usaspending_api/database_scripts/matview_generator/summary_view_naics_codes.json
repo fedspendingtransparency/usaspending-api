@@ -8,7 +8,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "  transaction_fpds.naics AS naics_code,",
     "  transaction_fpds.naics_description,",
     "",
@@ -30,7 +29,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "  transaction_fpds.naics,",
     "  transaction_fpds.naics_description"
   ],
@@ -49,10 +47,6 @@
       "name": "naics",
       "where": "naics_code IS NOT NULL",
       "columns": [{"name": "naics_code"}]
-    }, {
-      "name": "pulled_from",
-      "where": "pulled_from IS NOT NULL",
-      "columns": [{"name": "pulled_from"}]
     }
   ]
 }

@@ -54,7 +54,6 @@ class UniversalTransactionView(models.Model):
     naics_description = models.TextField()
     product_or_service_code = models.TextField()
     product_or_service_description = models.TextField()
-    pulled_from = models.TextField()
     type_of_contract_pricing = models.TextField()
     type_set_aside = models.TextField()
     extent_competed = models.TextField()
