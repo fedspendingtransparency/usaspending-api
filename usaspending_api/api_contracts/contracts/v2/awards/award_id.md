@@ -777,8 +777,9 @@ This endpoint returns a list of data that is associated with the award profile p
 
 ## ParentDetails (object)
 + `agency_id` (required, string)
-    This is the subtier agency id
 + `agency_name` (required, string)
++ `sub_agency_id` (required, string)
++ `sub_agency_name` (required, string)
 + `award_id` (required, number, nullable)
 + `generated_unique_award_id` (required, string)
 + `idv_type_description` (required, string, nullable)
