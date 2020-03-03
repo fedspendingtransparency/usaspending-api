@@ -1,22 +1,20 @@
 {
-  "index_patterns": null,
   "settings": {
     "index.mapping.ignore_malformed": true,
     "index.max_result_window": null,
     "index.refresh_interval": -1,
     "index": {
       "number_of_shards": 5,
-      "number_of_replicas": 0
+      "number_of_replicas": 0,
+      "sort.field" : ["total_obligation.keyword", "award_id"],
+      "sort.order" : ["desc", "desc"],
+      "sort.missing": ["_last", "_last"]
     },
     "analysis": {
       "analyzer": {
         "stemmer_analyzer": {
           "tokenizer": "standard",
-          "filter": [
-            "standard",
-            "lowercase",
-            "singular_stemmer"
-          ]
+          "filter": ["lowercase", "singular_stemmer"]
         }
       },
       "filter": {
@@ -27,19 +25,8 @@
       }
     }
   },
-  "sort": {
-    "fields": [
-      "total_obligation.keyword",
-      "award_id"
-    ],
-    "order": [
-      "desc",
-      "desc"
-    ]
-  },
   "mappings": {
-    "award_mapping": {
-      "properties": {
+   "properties": {
         "award_id": {
           "type": "integer"
         },
@@ -142,8 +129,13 @@
           }
         },
         "parent_recipient_unique_id": {
-          "type": "keyword",
-          "null_value": "NULL"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "null_value": "NULL"
+            }
+          }
         },
         "business_categories": {
           "type": "text",
@@ -424,6 +416,5 @@
           "type": "keyword"
         }
       }
-    }
   }
 }

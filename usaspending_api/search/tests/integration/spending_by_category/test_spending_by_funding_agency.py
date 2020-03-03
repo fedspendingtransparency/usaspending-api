@@ -1,22 +1,12 @@
 import json
 
 import pytest
-from django.conf import settings
 from rest_framework import status
 
 from usaspending_api.common.experimental_api_flags import ELASTICSEARCH_HEADER_VALUE, EXPERIMENTAL_API_HEADER
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
-from usaspending_api.search.tests.integration.spending_test_fixtures import (
-    setup_basic_agency_tree,
-    setup_basic_awards_and_transactions,
-)
-
-
-@pytest.fixture
-def agency_test_data(db):
-    setup_basic_agency_tree()
-    setup_basic_awards_and_transactions()
+from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
 
 
 """
@@ -28,24 +18,16 @@ the endpoint these tests should be updated to reflect the change.
 
 
 @pytest.mark.django_db
-def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index):
+def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, basic_award):
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
     """
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-    )
 
-    elasticsearch_transaction_index.update_index()
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
     resp = client.post(
-        "/api/v2/search/spending_by_category/awarding_agency",
+        "/api/v2/search/spending_by_category/funding_agency",
         content_type="application/json",
         data=json.dumps({"filters": non_legacy_filters()}),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
@@ -55,32 +37,24 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
 
 
 @pytest.mark.django_db
-def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, agency_test_data):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-    )
+def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, basic_award, subagency_award):
 
-    elasticsearch_transaction_index.update_index()
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
     resp = client.post(
-        "/api/v2/search/spending_by_category/awarding_agency",
+        "/api/v2/search/spending_by_category/funding_agency",
         content_type="application/json",
         data=json.dumps({"filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]}}),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
-        "category": "awarding_agency",
+        "category": "funding_agency",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1005},
-            {"amount": 5.0, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001},
+            {"amount": 10.0, "name": "Funding Toptier Agency 2", "code": "TA2", "id": 1002},
+            {"amount": 5.0, "name": "Funding Toptier Agency 4", "code": "TA4", "id": 1004},
         ],
         "messages": [get_time_period_message()],
     }

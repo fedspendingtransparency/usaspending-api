@@ -34,15 +34,18 @@ class ETLDBLinkTable(ETLObjectBase):
 
     def _custom_predicate(self, custom_predicate: List[dict]) -> Composed:
         """Add a predicate to the object representation"""
-        predicate = SQL(" where ")
+        predicate = []
         for item in custom_predicate:
-            if "values" in item:
-                predicate += Identifier(item["field"]) + SQL(" {} ".format(item["op"])) + Literal(item["values"])
+            if item.get("op", "") == "IN":
+                predicate.append(Identifier(item["field"]) + SQL(f" {item['op']} ") + Literal(item["values"]))
+            elif item.get("op", "") == "EQUAL":
+                predicate.append(Identifier(item["field"]) + SQL(" = ") + Literal(item["value"]))
             else:
                 raise NotImplementedError(
                     "object_representation_custom_predicate() isn't that complex. Please add new functionality"
                 )
-        return predicate
+
+        return SQL(" where ") + SQL(" and ").join(predicate)
 
 
 __all__ = ["ETLDBLinkTable"]

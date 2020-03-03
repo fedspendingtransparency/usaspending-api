@@ -1,18 +1,20 @@
 {
-  "index_patterns": null,
   "settings": {
     "index.mapping.ignore_malformed": true,
     "index.max_result_window": null,
     "index.refresh_interval": -1,
     "index": {
       "number_of_shards" : 5,
-      "number_of_replicas" : 0
+      "number_of_replicas" : 0,
+      "sort.field" : ["transaction_amount.keyword", "action_date"],
+      "sort.order" : ["desc", "desc"],
+      "sort.missing": ["_last", "_last"]
     },
     "analysis": {
       "analyzer": {
         "stemmer_analyzer": {
             "tokenizer": "standard",
-            "filter": ["standard", "lowercase", "singular_stemmer"]
+            "filter": ["lowercase", "singular_stemmer"]
         }
       },
       "filter": {
@@ -23,19 +25,8 @@
       }
     }
   },
-  "sort": {
-    "fields": [
-      "transaction_amount",
-      "action_date"
-    ],
-    "order": [
-      "desc",
-      "desc"
-    ]
-  },
   "mappings": {
-    "transaction_mapping": {
-      "properties": {
+    "properties": {
         "transaction_id": {
           "type": "integer"
         },
@@ -112,7 +103,12 @@
           "type": "keyword"
         },
         "recipient_unique_id": {
-          "type": "keyword"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "recipient_name": {
           "type": "text",
@@ -126,8 +122,13 @@
           "type": "keyword"
         },
         "parent_recipient_unique_id": {
-          "type": "keyword",
-          "null_value": "NULL"
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "null_value": "NULL"
+            }
+          }
         },
         "parent_recipient_name": {
           "type": "text",
@@ -172,7 +173,12 @@
         },
         "transaction_amount": {
           "type": "scaled_float",
-          "scaling_factor": 100
+          "scaling_factor": 100,
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
         },
         "face_value_loan_guarantee": {
           "type": "scaled_float",
@@ -416,6 +422,5 @@
           "type": "keyword"
         }
       }
-    }
   }
 }

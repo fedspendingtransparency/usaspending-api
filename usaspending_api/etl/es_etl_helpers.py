@@ -17,7 +17,7 @@ from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, execute_sql_to_ordered_dictionary
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
@@ -435,10 +435,7 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
 def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None):
     success, failed = 0, 0
     try:
-        # "doc_type" is set in the index template file. Don't change this without changing in json file first
-        for ok, item in helpers.streaming_bulk(
-            client, chunk, index=index_name, doc_type="{}_mapping".format(type[:-1])
-        ):
+        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
@@ -598,7 +595,7 @@ def deleted_awards(client, config):
     if len(deleted_award_ids) != 0:
         award_id_list = [
             {"key": deleted_award["generated_unique_award_id"], "col": UNIVERSAL_AWARD_ID_NAME}
-            for deleted_award in deleted_awards
+            for deleted_award in deleted_award_ids
         ]
         delete_awards_from_es(client, award_id_list, None, config, None)
     else:
@@ -718,7 +715,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
 
     if index is None:
         index = "{}-*".format(config["root_index"])
-    start_ = client.search(index=index)["hits"]["total"]
+    start_ = client.search(index=index)["hits"]["total"]["value"]
     printf({"msg": "Starting amount of indices ----- {}".format(start_), "f": "ES Delete", "job": job_id})
     col_to_items_dict = defaultdict(list)
     for l in id_list:
@@ -740,7 +737,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
                 )
             except Exception as e:
                 printf({"msg": "[ERROR][ERROR][ERROR]\n{}".format(str(e)), "f": "ES Delete", "job": job_id})
-    end_ = client.search(index=index)["hits"]["total"]
+    end_ = client.search(index=index)["hits"]["total"]["value"]
 
     t = perf_counter() - start
     total = str(start_ - end_)
@@ -765,7 +762,7 @@ def get_deleted_award_ids(client, id_list, config, index=None):
         for v in values_generator:
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
-            if response["hits"]["total"] != 0:
+            if response["hits"]["total"]["value"] != 0:
                 awards = [x["_source"]["generated_unique_award_id"] for x in response["hits"]["hits"]]
     return awards
 
@@ -779,7 +776,7 @@ def check_awards_for_deletes(id_list):
         SELECT x.generated_unique_award_id FROM (values {ids}) AS x(generated_unique_award_id)
         LEFT JOIN awards a ON a.generated_unique_award_id = x.generated_unique_award_id
         WHERE a.generated_unique_award_id is null"""
-    results = execute_sql_to_ordered_dictionary(sql.format(ids=formatted_value_ids[:-1]))
+    results = execute_sql_statement(sql.format(ids=formatted_value_ids[:-1]), results=True)
     return results
 
 
@@ -795,7 +792,7 @@ def delete_awards_from_es(client, id_list, job_id, config, index=None):
 
     if index is None:
         index = "{}-*".format(config["root_index"])
-    start_ = client.search(index=index)["hits"]["total"]
+    start_ = client.search(index=index)["hits"]["total"]["value"]
     printf({"msg": "Starting amount of indices ----- {}".format(start_), "f": "ES Delete", "job": job_id})
     col_to_items_dict = defaultdict(list)
     for l in id_list:
@@ -816,7 +813,7 @@ def delete_awards_from_es(client, id_list, job_id, config, index=None):
                 )
             except Exception as e:
                 printf({"msg": "[ERROR][ERROR][ERROR]\n{}".format(str(e)), "f": "ES Delete", "job": job_id})
-    end_ = client.search(index=index)["hits"]["total"]
+    end_ = client.search(index=index)["hits"]["total"]["value"]
 
     t = perf_counter() - start
     total = str(start_ - end_)

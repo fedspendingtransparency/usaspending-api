@@ -21,10 +21,8 @@ def test_positive_sample_query(award_data_fixture, elasticsearch_transaction_ind
     query = {"query": {"bool": {"must": [{"match": {"recipient_location_zip5": "abcde"}}]}}, "_source": ["award_id"]}
 
     client = elasticsearch_transaction_index.client
-    response = client.search(
-        elasticsearch_transaction_index.index_name, elasticsearch_transaction_index.doc_type, query
-    )
-    assert response["hits"]["total"] == 1
+    response = client.search(index=elasticsearch_transaction_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
 
 
 def test_negative_sample_query(award_data_fixture, elasticsearch_transaction_index):
@@ -36,10 +34,8 @@ def test_negative_sample_query(award_data_fixture, elasticsearch_transaction_ind
     query = {"query": {"bool": {"must": [{"match": {"recipient_location_zip5": "edcba"}}]}}, "_source": ["award_id"]}
 
     client = elasticsearch_transaction_index.client
-    response = client.search(
-        elasticsearch_transaction_index.index_name, elasticsearch_transaction_index.doc_type, query
-    )
-    assert response["hits"]["total"] == 0
+    response = client.search(index=elasticsearch_transaction_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 0
 
 
 def test_a_search_endpoint(client, award_data_fixture, elasticsearch_transaction_index):

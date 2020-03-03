@@ -25,7 +25,7 @@ from usaspending_api.etl.transaction_loaders.generic_loaders import (
     insert_transaction_fpds,
     insert_award,
 )
-from usaspending_api.common.helpers.timing_helpers import Timer
+from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
 logger = logging.getLogger("console")
 

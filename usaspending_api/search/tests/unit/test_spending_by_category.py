@@ -528,7 +528,7 @@ def federal_accounts_test_data(db):
 def test_category_awarding_agency_awards(agency_test_data):
     test_payload = {"category": "awarding_agency", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = AwardingAgencyViewSet().perform_search(test_payload)
+    spending_by_category_logic = AwardingAgencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "awarding_agency",
@@ -544,7 +544,7 @@ def test_category_awarding_agency_awards(agency_test_data):
 def test_category_awarding_agency_subawards(agency_test_data):
     test_payload = {"category": "awarding_agency", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = AwardingAgencyViewSet().perform_search(test_payload)
+    spending_by_category_logic = AwardingAgencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "awarding_agency",
@@ -560,7 +560,7 @@ def test_category_awarding_agency_subawards(agency_test_data):
 def test_category_awarding_subagency_awards(agency_test_data):
     test_payload = {"category": "awarding_subagency", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = AwardingSubagencyViewSet().perform_search(test_payload)
+    spending_by_category_logic = AwardingSubagencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "awarding_subagency",
@@ -576,7 +576,7 @@ def test_category_awarding_subagency_awards(agency_test_data):
 def test_category_awarding_subagency_subawards(agency_test_data):
     test_payload = {"category": "awarding_subagency", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = AwardingSubagencyViewSet().perform_search(test_payload)
+    spending_by_category_logic = AwardingSubagencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "awarding_subagency",
@@ -592,7 +592,7 @@ def test_category_awarding_subagency_subawards(agency_test_data):
 def test_category_funding_agency_awards(agency_test_data):
     test_payload = {"category": "funding_agency", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = FundingAgencyViewSet().perform_search(test_payload)
+    spending_by_category_logic = FundingAgencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "funding_agency",
@@ -608,7 +608,7 @@ def test_category_funding_agency_awards(agency_test_data):
 def test_category_funding_agency_subawards(agency_test_data):
     test_payload = {"category": "funding_agency", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = FundingAgencyViewSet().perform_search(test_payload)
+    spending_by_category_logic = FundingAgencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "funding_agency",
@@ -624,7 +624,7 @@ def test_category_funding_agency_subawards(agency_test_data):
 def test_category_funding_subagency_awards(agency_test_data):
     test_payload = {"category": "funding_subagency", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = FundingSubagencyViewSet().perform_search(test_payload)
+    spending_by_category_logic = FundingSubagencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "funding_subagency",
@@ -640,7 +640,7 @@ def test_category_funding_subagency_awards(agency_test_data):
 def test_category_funding_subagency_subawards(agency_test_data):
     test_payload = {"category": "funding_subagency", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = FundingSubagencyViewSet().perform_search(test_payload)
+    spending_by_category_logic = FundingSubagencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "funding_subagency",
@@ -657,7 +657,7 @@ def test_category_funding_subagency_subawards(agency_test_data):
 def test_category_recipient_duns_awards(recipient_test_data):
     test_payload = {"category": "recipient_duns", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "recipient_duns",
@@ -688,7 +688,7 @@ def test_category_recipient_duns_awards(recipient_test_data):
 def test_category_recipient_duns_subawards(recipient_test_data):
     test_payload = {"category": "recipient_duns", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "recipient_duns",
@@ -718,7 +718,7 @@ def test_category_recipient_duns_subawards(recipient_test_data):
 def test_category_cfda_awards(cfda_test_data):
     test_payload = {"category": "cfda", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "cfda",
@@ -734,7 +734,7 @@ def test_category_cfda_awards(cfda_test_data):
 def test_category_cfda_subawards(cfda_test_data):
     test_payload = {"category": "cfda", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "cfda",
@@ -750,7 +750,7 @@ def test_category_cfda_subawards(cfda_test_data):
 def test_category_psc_awards(psc_test_data):
     test_payload = {"category": "psc", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "psc",
@@ -769,7 +769,7 @@ def test_category_psc_awards(psc_test_data):
 def test_category_naics_awards(naics_test_data):
     test_payload = {"category": "naics", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "naics",
@@ -788,7 +788,7 @@ def test_category_naics_awards(naics_test_data):
 def test_category_county_awards(geo_test_data):
     test_payload = {"category": "county", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "county",
@@ -807,7 +807,7 @@ def test_category_county_awards(geo_test_data):
 def test_category_county_subawards(geo_test_data):
     test_payload = {"category": "county", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "county",
@@ -826,7 +826,7 @@ def test_category_county_subawards(geo_test_data):
 def test_category_district_awards(geo_test_data):
     test_payload = {"category": "district", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "district",
@@ -845,7 +845,7 @@ def test_category_district_awards(geo_test_data):
 def test_category_district_subawards(geo_test_data):
     test_payload = {"category": "district", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "district",
@@ -865,7 +865,7 @@ def test_category_district_subawards(geo_test_data):
 def test_category_state_territory(geo_test_data):
     test_payload = {"category": "state_territory", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "state_territory",
@@ -882,7 +882,7 @@ def test_category_state_territory(geo_test_data):
 def test_category_state_territory_subawards(geo_test_data):
     test_payload = {"category": "state_territory", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "state_territory",
@@ -899,7 +899,7 @@ def test_category_state_territory_subawards(geo_test_data):
 def test_category_country(geo_test_data):
     test_payload = {"category": "country", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "country",
@@ -916,7 +916,7 @@ def test_category_country(geo_test_data):
 def test_category_country_subawards(geo_test_data):
     test_payload = {"category": "country", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
 
     expected_response = {
         "category": "country",
@@ -939,7 +939,7 @@ def test_category_federal_accounts(federal_accounts_test_data):
         "limit": 50,
     }
 
-    spending_by_category_logic = BusinessLogic(test_payload).results()
+    spending_by_category_logic = BusinessLogic(test_payload, test_payload["filters"]).results()
 
     expected_response = {
         "category": "federal_account",

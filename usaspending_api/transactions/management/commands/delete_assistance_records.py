@@ -34,7 +34,9 @@ class Command(AgnosticDeletes, BaseCommand):
         """
         with connections["data_broker"].cursor() as cursor:
             cursor.execute(sql, [date])
-            return {date: [row[0] for row in cursor.fetchall()]}
+            results = cursor.fetchall()
+            return {date: [row[0] for row in results]} if results else None
 
     def store_delete_records(self, id_list):
+        """FABS needs to store IDs for downline ETL, run that here"""
         store_deleted_fabs(id_list)

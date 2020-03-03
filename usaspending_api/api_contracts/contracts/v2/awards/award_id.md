@@ -771,6 +771,7 @@ This endpoint returns a list of data that is associated with the award profile p
 
 ## Agency (object)
 + `id` (required, number)
++ `has_agency_page` (required, boolean)
 + `toptier_agency` (required, TopTierAgency, nullable)
 + `subtier_agency` (required, SubTierAgency, nullable)
 + `office_agency_name` (required, string, nullable)
