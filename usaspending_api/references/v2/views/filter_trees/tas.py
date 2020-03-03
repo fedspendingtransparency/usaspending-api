@@ -9,7 +9,7 @@ from usaspending_api.references.v2.views.filter_trees.tas_filter_tree import TAS
 
 class TASViewSet(APIView):
     """
-
+    Returns a list of TAS search tree nodes, with populated children if depth > 0. The top level nodes represent agencies, the tier below represents federal accounts, and the third tier represents treasury appropriation accounts.
     """
 
     endpoint_doc = ""
