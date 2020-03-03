@@ -10,7 +10,7 @@ from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictiona
 from usaspending_api.common.etl import ETLTable, mixins, ETLTemporaryTable
 from usaspending_api.common.etl.operations import insert_missing_rows, update_changed_rows
 from usaspending_api.common.helpers.sql_helpers import get_connection
-from usaspending_api.common.helpers.timing_helpers import Timer
+from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.references.models import ObjectClass
 
 
