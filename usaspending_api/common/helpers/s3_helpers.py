@@ -23,11 +23,7 @@ def access_s3_object_list(
         bucket = get_s3_bucket(bucket_name=bucket_name)
         bucket_objects = list(bucket.objects.all())
     except Exception:
-        msg = (
-            "Verify settings.USASPENDING_AWS_REGION and settings.DELETED_TRANSACTION_JOURNAL_FILES are correct "
-            "or env variables: USASPENDING_AWS_REGION and DELETED_TRANSACTION_JOURNAL_FILES are set"
-        )
-        logger.exception(msg)
+        logger.exception("Most likely the AWS region or bucket name are configured incorrectly")
         bucket_objects = None
 
     if regex_pattern and bucket_objects:

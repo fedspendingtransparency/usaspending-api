@@ -91,7 +91,7 @@ class AgnosticTransactionLoader:
             if not delete_date:
                 delete_date = self.begining_of_time
 
-            with Timer(message="Processing deletes", success_logger=logger.info, failure_logger=logger.error):
+            with Timer(message="Processing deletes"):
                 delete_job_status = call_command(self.delete_management_command, f"--date={delete_date}")
 
             if delete_job_status != 0:

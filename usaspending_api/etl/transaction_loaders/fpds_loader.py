@@ -42,7 +42,7 @@ def delete_stale_fpds(date):
     if not detached_award_procurement_ids:
         return []
 
-    ids_to_delete = ",".join([str(id) for id in detached_award_procurement_ids])
+    ids_to_delete = ",".join([str(id) for ids in detached_award_procurement_ids.values() for id in ids])
     logger.debug(f"Obtained these delete record IDs: [{ids_to_delete}]")
 
     with connection.cursor() as cursor:

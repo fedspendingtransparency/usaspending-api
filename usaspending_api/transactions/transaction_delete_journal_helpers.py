@@ -30,6 +30,8 @@ def retrieve_deleted_transactions(
 ) -> dict:
     with Timer("Obtaining S3 Object list"):
         objects = access_s3_object_list(settings.DELETED_TRANSACTION_JOURNAL_FILES, regex_pattern=regex)
+        if objects is None:
+            raise Exception("Problem accessing S3 for deleted records")
         objects = limit_objects_to_date_range(objects, date_fmt, start_datetime, end_datetime)
 
     deleted_records = defaultdict(list)

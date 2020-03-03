@@ -28,21 +28,21 @@ class Command(AgnosticDeletes, BaseCommand):
         full_key_list = retrieve_deleted_fpds_transactions(start_datetime=date_time)
 
         for date, transaction_ids in full_key_list.items():
-            numeric_keys = list([int(row) for row in transaction_ids if row.isnumeric()])
-            odd_ids = set(transaction_ids).symmetric_difference([str(id) for id in numeric_keys])
+            numeric_ids = list([int(row) for row in transaction_ids if row.isnumeric()])
+            string_ids = list([row for row in transaction_ids if not row.isnumeric()])
 
-            if odd_ids:
-                logger.info(f"Unexpected non-numeric IDs in file: {list(odd_ids)}")
+            if string_ids:
+                logger.info(f"Unexpected non-numeric IDs in file: {string_ids}")
 
-            if numeric_keys:
-                logger.info(f"Obtained {len(numeric_keys)} IDs in file")
-                ids_to_delete[date].extend(numeric_keys)
+            if numeric_ids:
+                logger.info(f"Obtained {len(numeric_ids)} IDs in file")
+                ids_to_delete[date].extend(numeric_ids)
             else:
-                logger.warn("No IDs in file!")
+                logger.warn(f"No {'valid ' if bool(string_ids) else ''}IDs in file!")
 
         total_ids = sum([len(v) for v in ids_to_delete.values()])
         logger.info(f"Total number of delete records to process: {total_ids}")
-        return full_key_list
+        return ids_to_delete
 
     def store_delete_records(self, deleted_dict: dict) -> None:
         logger.info("Nothing to store for procurement deletes")
