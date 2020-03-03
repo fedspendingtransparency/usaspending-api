@@ -18,7 +18,7 @@ SELECT
   vw_award_search.uri,
   vw_award_search.total_obligation,
   vw_award_search.description,
-  COALESCE(vw_award_search.total_obligation, 0) + COALESCE(vw_award_search.total_subsidy_cost, 0) AS award_amount,
+  vw_award_search.award_amount,
   vw_award_search.total_subsidy_cost,
   vw_award_search.total_loan_value,
   a.update_date,

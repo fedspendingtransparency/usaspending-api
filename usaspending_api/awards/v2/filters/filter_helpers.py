@@ -125,19 +125,18 @@ def total_obligation_queryset(amount_obj, model, filters):
 
         for v in amount_obj:
             if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
-                bound_dict = {
-                    "{}__gte".format(column): v["lower_bound"],
-                    "{}__lte".format(column): v["upper_bound"],
-                }
-
+                bound_dict = {f"{column}__gte": v["lower_bound"], f"{column}__lte": v["upper_bound"]}
             elif v.get("lower_bound") is not None:
-                bound_dict = {"{}__gte".format(column): v["lower_bound"]}
+                bound_dict = {f"{column}__gte": v["lower_bound"]}
             elif v.get("upper_bound") is not None:
-                bound_dict = {"{}__lte".format(column): v["upper_bound"]}
+                bound_dict = {f"{column}__lte": v["upper_bound"]}
             else:
                 raise InvalidParameterException("Invalid filter: award amount has incorrect object.")
-                bound_filters |= Q(**bound_dict)
+
+            bound_filters |= Q(**bound_dict)
+
         or_queryset = model.objects.filter(bound_filters)
+
     return or_queryset
 
 
