@@ -9,14 +9,15 @@ from usaspending_api.references.v2.views.filter_trees.tas_filter_tree import TAS
 
 class TASViewSet(APIView):
     """
-    Returns a list of TAS search tree nodes, with populated children if depth > 0. The top level nodes represent agencies, the tier below represents federal accounts, and the third tier represents treasury appropriation accounts.
+    Returns a list of TAS search tree nodes, with populated children if depth > 0. The top level nodes represent
+    agencies, the tier below represents federal accounts, and the third tier represents treasury appropriation accounts.
     """
 
-    endpoint_doc = ""
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/filter_tree/tas.md"
 
     def _parse_and_validate(self, request):
 
-        data = {"depth": request.get("depth") or 1}
+        data = {"depth": request.get("depth") or 0}
         models = [
             {"key": "depth", "name": "depth", "type": "integer", "allow_nulls": True, "default": 1, "optional": True}
         ]
