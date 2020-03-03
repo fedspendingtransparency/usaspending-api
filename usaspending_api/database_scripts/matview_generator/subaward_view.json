@@ -18,7 +18,7 @@
     "  latest_transaction_id,",
     "  last_modified_date,",
     "  subaward_number,",
-    "  COALESCE(amount, 0)::NUMERIC(23,2) AS amount,",
+    "  COALESCE(amount, 0)::NUMERIC(23, 2) AS amount,",
     "  obligation_to_enum(COALESCE(amount, 0)) AS total_obl_bin,",
     "  sub.description,",
     "  fy(action_date) AS fiscal_year,",

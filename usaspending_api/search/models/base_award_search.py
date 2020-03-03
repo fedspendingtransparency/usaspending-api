@@ -26,6 +26,7 @@ class BaseAwardSearchModel(models.Model):
     piid = models.TextField()
     fain = models.TextField()
     uri = models.TextField()
+    award_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     description = models.TextField()
     total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)

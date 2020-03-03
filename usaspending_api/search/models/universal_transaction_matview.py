@@ -18,6 +18,7 @@ class UniversalTransactionView(models.Model):
     action_type = models.TextField()
     award_id = models.BigIntegerField()
     award_category = models.TextField()
+    award_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)

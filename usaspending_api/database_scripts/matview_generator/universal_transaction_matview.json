@@ -26,12 +26,16 @@
     "  awards.category AS award_category,",
     "",
     "  COALESCE(CASE",
+    "    WHEN transaction_normalized.type IN('07','08') THEN awards.total_subsidy_cost",
+    "    ELSE awards.total_obligation",
+    "  END, 0)::NUMERIC(23, 2) AS award_amount,",
+    "  COALESCE(CASE",
     "    WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost",
     "    ELSE transaction_normalized.federal_action_obligation",
     "  END, 0)::NUMERIC(23, 2) AS generated_pragmatic_obligation,",
-    "  COALESCE(awards.total_obligation, 0)::NUMERIC(23,2) AS total_obligation,",
-    "  COALESCE(awards.total_subsidy_cost, 0)::NUMERIC(23,2) AS total_subsidy_cost,",
-    "  COALESCE(awards.total_loan_value, 0)::NUMERIC(23,2) AS total_loan_value,",
+    "  COALESCE(awards.total_obligation, 0)::NUMERIC(23, 2) AS total_obligation,",
+    "  COALESCE(awards.total_subsidy_cost, 0)::NUMERIC(23, 2) AS total_subsidy_cost,",
+    "  COALESCE(awards.total_loan_value, 0)::NUMERIC(23, 2) AS total_loan_value,",
     "  obligation_to_enum(COALESCE(CASE",
     "    WHEN transaction_normalized.type IN('07','08') THEN awards.total_subsidy_cost",
     "    ELSE awards.total_obligation",
@@ -185,6 +189,10 @@
       "name": "award_category",
       "where": "award_category IS NOT NULL AND action_date >= '2007-10-01'",
       "columns": [{"name": "award_category"}]
+    }, {
+      "name": "ordered_award_amount",
+      "where": "action_date >= '2007-10-01'",
+      "columns": [{"name": "award_amount", "order": "DESC NULLS LAST"}]
     }, {
       "name": "ordered_total_obligation",
       "where": "action_date >= '2007-10-01'",

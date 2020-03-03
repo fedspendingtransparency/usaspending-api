@@ -19,11 +19,12 @@
     "  NULL::text AS piid,",
     "  awards.fain,",
     "  awards.uri,",
-    "  COALESCE(awards.total_subsidy_cost, 0)::NUMERIC(23,2) AS total_obligation,",
+    "  COALESCE(awards.total_subsidy_cost, 0)::NUMERIC(23, 2) AS award_amount,",
+    "  0::NUMERIC(23, 2) as total_obligation,",
     "  awards.description,",
     "  obligation_to_enum(COALESCE(awards.total_subsidy_cost, 0)) AS total_obl_bin,",
-    "  COALESCE(awards.total_subsidy_cost, 0)::NUMERIC(23,2) AS total_subsidy_cost,",
-    "  COALESCE(awards.total_loan_value, 0)::NUMERIC(23,2) AS total_loan_value,",
+    "  COALESCE(awards.total_subsidy_cost, 0)::NUMERIC(23, 2) AS total_subsidy_cost,",
+    "  COALESCE(awards.total_loan_value, 0)::NUMERIC(23, 2) AS total_loan_value,",
     "",
     "  UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,",
     "  transaction_fabs.awardee_or_recipient_uniqu AS recipient_unique_id,",
@@ -38,8 +39,8 @@
     "  awards.date_signed,",
     "  NULL::date AS ordering_period_end_date,",
     "",
-    "  COALESCE(transaction_fabs.original_loan_subsidy_cost, 0)::NUMERIC(23,2) AS original_loan_subsidy_cost,",
-    "  COALESCE(transaction_fabs.face_value_loan_guarantee, 0)::NUMERIC(23,2) AS face_value_loan_guarantee,",
+    "  COALESCE(transaction_fabs.original_loan_subsidy_cost, 0)::NUMERIC(23, 2) AS original_loan_subsidy_cost,",
+    "  COALESCE(transaction_fabs.face_value_loan_guarantee, 0)::NUMERIC(23, 2) AS face_value_loan_guarantee,",
     "",
     "  latest_transaction.awarding_agency_id,",
     "  latest_transaction.funding_agency_id,",
@@ -154,8 +155,8 @@
       "where": "fain IS NOT NULL",
       "columns": [{"name": "UPPER(fain)", "order": "DESC NULLS LAST"}]
     }, {
-      "name": "ordered_total_obligation",
-      "columns": [{"name": "total_obligation", "order": "DESC NULLS LAST"}]
+      "name": "ordered_award_amount",
+      "columns": [{"name": "award_amount", "order": "DESC NULLS LAST"}]
     }, {
       "name": "total_obl_bin",
       "columns": [{"name": "total_obl_bin"}]
