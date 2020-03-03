@@ -36,8 +36,10 @@ This endpoint returns a list of data that is associated with the award profile p
                 "base_exercised_options": 61241.34,
                 "base_and_all_options": 61241.34,
                 "parent_award": {
-                    "agency_id": "9700",
+                    "agency_id": "1173,
                     "agency_name": "Department of Defense",
+                    "sub_agency_id": "9700",
+                    "sub_agency_name": "Department of Defense",
                     "award_id": 69513842,
                     "generated_unique_award_id": "CONT_IDV_SPE2DX16D1500_9700",
                     "idv_type_description": "IDC",
