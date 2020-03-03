@@ -32,13 +32,13 @@ class Command(AgnosticDeletes, BaseCommand):
             string_ids = list([row for row in transaction_ids if not row.isnumeric()])
 
             if string_ids:
-                logger.info(f"Unexpected non-numeric IDs in file: {string_ids}")
+                logger.info(f"Unexpected non-numeric IDs for {date}: {string_ids}")
 
             if numeric_ids:
-                logger.info(f"Obtained {len(numeric_ids)} IDs in file")
+                logger.info(f"Obtained {len(numeric_ids)} IDs for {date}")
                 ids_to_delete[date].extend(numeric_ids)
             else:
-                logger.warn(f"No {'valid ' if bool(string_ids) else ''}IDs in file!")
+                logger.warn(f"No {'valid ' if bool(string_ids) else ''}IDs for {date}!")
 
         total_ids = sum([len(v) for v in ids_to_delete.values()])
         logger.info(f"Total number of delete records to process: {total_ids}")

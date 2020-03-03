@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from usaspending_api import settings
-from usaspending_api.common.helpers.timing_helpers import Timer
+from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 from usaspending_api.common.helpers.s3_helpers import access_s3_object, access_s3_object_list
 
 
