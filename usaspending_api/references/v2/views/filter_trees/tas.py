@@ -45,6 +45,10 @@ class TASFilterTree(FilterTree):
             ).first()
             for elem in agency_id_sets
         ]
+        # dbug
+        for i in range(0, len(agency_id_sets)):
+            if agency_list[i] is None:
+                print(agency_id_sets[i])
         agency_dictionaries = [self._dictionary_from_agency(agency) for agency in agency_list]
         cfo_sort_results = cfo_presentation_order(agency_dictionaries)
         return cfo_sort_results["cfo_agencies"] + cfo_sort_results["other_agencies"]
