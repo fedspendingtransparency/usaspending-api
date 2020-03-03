@@ -7,6 +7,8 @@ from usaspending_api.references.tests.integration.filter_tree.tas_data_fixtures 
     tas_for_dod_subs,
     basic_cfo_and_non_cfo_agencies,
     one_tas_per_agency,
+    tas_for_frec,
+    frec_tas_with_no_match,
 )
 
 
@@ -19,4 +21,6 @@ __all__ = [
     "tas_for_dod_subs",
     "basic_dod_agencies",
     "tas_for_dod",
+    "frec_tas_with_no_match",
+    "tas_for_frec",
 ]

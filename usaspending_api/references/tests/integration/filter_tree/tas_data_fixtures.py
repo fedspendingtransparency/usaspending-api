@@ -20,6 +20,16 @@ def basic_tas(db):
 
 
 @pytest.fixture
+def tas_for_frec(db, basic_agencies):
+    _setup_basic_frec_tas(1)
+
+
+@pytest.fixture
+def frec_tas_with_no_match(db, basic_agencies):
+    mommy.make("accounts.TreasuryAppropriationAccount", agency_id="001", fr_entity_code="not gonna match")
+
+
+@pytest.fixture
 def basic_cfo_agencies(db):
     for i in aribitrary_cfo_cgac_sample:
         _setup_basic_cgac(CFO_CGACS[i], "CFO ")
@@ -66,7 +76,7 @@ def _setup_basic_cgac(id, name_prefix=""):
 
 
 def _setup_basic_cgac_tas(id):
-    mommy.make("accounts.TreasuryAppropriationAccount", agency_id=str(id).zfill(3), fr_entity_code="not gonna match")
+    mommy.make("accounts.TreasuryAppropriationAccount", agency_id=str(id).zfill(3))
 
 
 def _setup_basic_frec(id, name_prefix=""):
@@ -76,4 +86,8 @@ def _setup_basic_frec(id, name_prefix=""):
 
 
 def _setup_basic_frec_tas(id):
-    mommy.make("accounts.TreasuryAppropriationAccount", agency_id=str(id).zfill(4), fr_entity_code="not gonna match")
+    mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        agency_id="Some CGAC that should not be used",
+        fr_entity_code=str(id).zfill(4),
+    )
