@@ -2,7 +2,7 @@ from model_mommy import mommy
 import pytest
 
 from usaspending_api.download.lookups import CFO_CGACS
-from usaspending_api.references.constants import DOD_SUBSUMED_CGAC, DOD_CGAC
+from usaspending_api.references.constants import DOD_SUBSUMED_CGAC, DOD_CGAC, DHS_SUBSUMED_CGAC
 
 # intentionally out of order to test CFO agency sorting
 aribitrary_cfo_cgac_sample = [2, 1, 3, 13, 7]
@@ -38,7 +38,11 @@ def basic_cfo_agencies(db):
 @pytest.fixture
 def basic_cfo_and_non_cfo_agencies(db, basic_cfo_agencies):
     for x in range(1, 100):
-        if str(x).zfill(3) not in CFO_CGACS:
+        if (
+            str(x).zfill(3) not in CFO_CGACS
+            and str(x).zfill(3) not in DOD_SUBSUMED_CGAC
+            and str(x).zfill(3) not in DHS_SUBSUMED_CGAC
+        ):
             _setup_basic_cgac(x)
 
 
@@ -47,7 +51,11 @@ def one_tas_per_agency(db, basic_cfo_and_non_cfo_agencies):
     for i in aribitrary_cfo_cgac_sample:
         _setup_basic_cgac_tas(CFO_CGACS[i])
     for x in range(1, 100):
-        if str(x).zfill(3) not in CFO_CGACS and str(x).zfill(3) not in DOD_SUBSUMED_CGAC:
+        if (
+            str(x).zfill(3) not in CFO_CGACS
+            and str(x).zfill(3) not in DOD_SUBSUMED_CGAC
+            and str(x).zfill(3) not in DHS_SUBSUMED_CGAC
+        ):
             _setup_basic_cgac_tas(x)
 
 
