@@ -12,7 +12,13 @@ def test_one_agency(client, basic_agencies, basic_tas):
     assert resp.json() == [{"id": "001", "ancestors": [], "description": "Agency 001", "count": 0, "children": None}]
 
 
-# Do the agency sort in desired order?
+# Do agencies NOT appear when there is no matching TAS?
+def test_no_tas(client, basic_agencies):
+    resp = _call_and_expect_200(client, common_query)
+    assert resp.json() == []
+
+
+# Do the agencies sort in desired order?
 def test_sorted_agencies(client, one_tas_per_agency):
     resp = _call_and_expect_200(client, common_query)
     ids = [elem["description"] for elem in resp.json()]  # ensure that this test fails for only one reason
