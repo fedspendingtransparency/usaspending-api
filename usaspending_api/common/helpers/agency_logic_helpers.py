@@ -8,6 +8,8 @@ from usaspending_api.references.constants import (
 )
 from usaspending_api.references.models import ToptierAgency
 
+TOPTIER_FREC_CACHE = None
+
 
 def agency_from_identifiers(cgac, frec):
     """
@@ -16,6 +18,11 @@ def agency_from_identifiers(cgac, frec):
     :param frec:
     :return: string, which is the toptier_code for the correct agency to count this combination under
     """
+    global TOPTIER_FREC_CACHE
+    # If this function hasn't been called, populate the cache for future reference
+    if not TOPTIER_FREC_CACHE:
+        TOPTIER_FREC_CACHE = [elem["toptier_code"] for elem in ToptierAgency.objects.values("toptier_code")]
+
     if (cgac, frec) in DOD_ARMED_FORCES_TAS_CGAC_FREC:
         return DOD_CGAC
 
@@ -25,7 +32,7 @@ def agency_from_identifiers(cgac, frec):
     if cgac in DHS_SUBSUMED_CGAC:
         return DHS_CGAC
 
-    if frec and len(ToptierAgency.objects.filter(toptier_code=frec)) > 0:
+    if frec and frec in TOPTIER_FREC_CACHE:
         return frec
     else:
         return cgac
