@@ -9,6 +9,8 @@ class AgencyAutocompleteMatview(models.Model):
 
     agency_id = models.IntegerField(primary_key=True)
     toptier_flag = models.BooleanField()
+    toptier_agency_id = models.IntegerField()
+    toptier_code = models.TextField(null=True)
     toptier_abbreviation = models.TextField(null=True)
     toptier_name = models.TextField()
     subtier_abbreviation = models.TextField(null=True)

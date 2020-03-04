@@ -55,14 +55,26 @@ class BaseAutocompleteViewSet(APIView):
             )
             .order_by("is_toptier_fema", "-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
         ).values(
-            "agency_id", "toptier_flag", "toptier_abbreviation", "toptier_name", "subtier_abbreviation", "subtier_name"
+            "agency_id",
+            "toptier_flag",
+            "toptier_agency_id",
+            "toptier_code",
+            "toptier_abbreviation",
+            "toptier_name",
+            "subtier_abbreviation",
+            "subtier_name",
         )
 
         results = [
             {
                 "id": agency["agency_id"],
                 "toptier_flag": agency["toptier_flag"],
-                "toptier_agency": {"abbreviation": agency["toptier_abbreviation"], "name": agency["toptier_name"]},
+                "toptier_agency": {
+                    "id": agency["toptier_agency_id"],
+                    "toptier_code": agency["toptier_code"],
+                    "abbreviation": agency["toptier_abbreviation"],
+                    "name": agency["toptier_name"],
+                },
                 "subtier_agency": {"abbreviation": agency["subtier_abbreviation"], "name": agency["subtier_name"]},
             }
             for agency in agencies[:limit]
