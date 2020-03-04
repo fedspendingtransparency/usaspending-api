@@ -17,7 +17,7 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 from time import perf_counter
 
-from usaspending_api.common.helpers.timing_helpers import Timer
+from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.common.operations_reporter import OpsReporter
 
 
