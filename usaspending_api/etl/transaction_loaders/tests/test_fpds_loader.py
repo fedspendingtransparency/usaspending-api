@@ -2,7 +2,6 @@ import usaspending_api.etl.transaction_loaders.fpds_loader as fpds_loader
 import random
 import datetime
 from usaspending_api.etl.transaction_loaders.fpds_loader import (
-    _extract_broker_objects,
     _create_load_object,
     _transform_objects,
     _load_transactions,
@@ -180,22 +179,6 @@ def test_setup_load_lists(monkeypatch):
     assert columns == '("val1","string_val")' or columns == '("string_val","val1")'
     assert values == "(4,bob)" or values == "(bob,4)"
     assert pairs == " val1=4, string_val=bob" or pairs == " string_val=bob, val1=4"
-
-
-def test_load_from_broker():
-    # There isn't much to test here since this is just a basic DB query
-
-    # Setup Mocks
-    dummy_data = ["mock thing 1", "mock thing 2"]
-    mock_cursor = MagicMock()
-    mock_cursor.execute.return_value = None
-    mock_cursor.fetchall.return_value = dummy_data
-    mock_cursor.mogrify = lambda val1, val2: str(val2[0]).encode()
-    mock_broker_conn = MagicMock()
-    mock_broker_conn.connection.cursor().__enter__.return_value = mock_cursor
-
-    with patch.dict("usaspending_api.etl.transaction_loaders.fpds_loader.connections", data_broker=mock_broker_conn):
-        assert _extract_broker_objects([17459650, 678]) == ["mock thing 1", "mock thing 2"]
 
 
 # This only runs for one of the most simple tables, since this is supposed to be a test to ensure that the loader works,
