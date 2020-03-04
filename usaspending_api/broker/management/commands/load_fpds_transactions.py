@@ -9,20 +9,20 @@ from typing import IO, List, AnyStr, Optional
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
-from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, prune_empty_awards
 from usaspending_api.etl.transaction_loaders.fpds_loader import load_fpds_transactions, failed_ids, delete_stale_fpds
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 CHUNK_SIZE = 15000
 
-ALL_FPDS_QUERY = "SELECT {} FROM detached_award_procurement"
+ALL_FPDS_QUERY = "SELECT {} FROM source_procurement_transaction"
 
 
 class Command(BaseCommand):
-    help = "Sync USAspending DB FPDS data using Broker for new or modified records and S3 for deleted IDs"
+    help = "Sync USAspending DB FPDS data using source transaction for new or modified records and S3 for deleted IDs"
 
     modified_award_ids = []
 
@@ -49,10 +49,10 @@ class Command(BaseCommand):
         else:
             logger.info(f"Handling fpds transactions since {date}...")
 
-            stale_awards = delete_stale_fpds(date.date())
+            stale_awards = delete_stale_fpds(date)
             self.update_award_records(awards=stale_awards, skip_cd_linkage=True)
 
-        with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
+        with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
             logger.info("Fetching records to update")
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0
@@ -135,7 +135,7 @@ class Command(BaseCommand):
         mutually_exclusive_group.add_argument(
             "--reload-all",
             action="store_true",
-            help="Script will load or reload all FPDS records in broker database, from all time. This does NOT clear the USASpending database first",
+            help="Script will load or reload all FPDS records in source tables, from all time. This does NOT clear the USAspending database first",
         )
 
     def handle(self, *args, **options):
