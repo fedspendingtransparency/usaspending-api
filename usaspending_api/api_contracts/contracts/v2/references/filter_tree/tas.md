@@ -12,7 +12,11 @@ database fields based on depth in the tree.
 Returns a list of toptier agencies that have at least one TAS affiliated with them
 + Request A request with a contract id (application/json)
     + Parameters
-        + `depth`: `0` (optional, number) How many levels deep the search will populate each tree. 
+        + `depth`: `0` (optional, enum[number]) How many levels deep the search will populate each tree. 
+            + Members
+                    + `0`
+                    + `1`
+                    + `2`
         0 will return only agencies, 1 will return agencies and any federal accounts under them, and so on.
 + Response 200 (application/json)
     + Attributes (object)
@@ -24,7 +28,11 @@ Returns a list of federal accounts associated with the specified agency
 + Request A request with a naics id (application/json)
     + Parameters
         + `agency`: `020` (required, string) 
-        + `depth`: `0` (optional, number) How many levels deep the search will populate each tree. 
+        + `depth`: `0` (optional, enum[number]) How many levels deep the search will populate each tree. 
+            + Members
+                    + `0`
+                    + `1`
+                    + `2`        
         0 will return only federal accounts, and 1 will return federal accounts and any TAS under them
 
 + Response 200 (application/json)
@@ -38,7 +46,11 @@ Returns a list of Treasury Account Symbols associated with the specified federal
     + Parameters
         + `agency`: `020` (required, string) 
         + `federal_account`: `0550`
-        + `depth`: `0` (optional, number) How many levels deep the search will populate each tree. 
+        + `depth`: `0` (optional, enum[number]) How many levels deep the search will populate each tree.
+            + Members
+                    + `0`
+                    + `1`
+                    + `2` 
         With this tree structure, only TAS will be returned, and the tree depth will always be one, reguardless of provided depth.
 
 + Response 200 (application/json)
