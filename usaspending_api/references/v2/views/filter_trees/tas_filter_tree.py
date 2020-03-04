@@ -24,7 +24,7 @@ class TASFilterTree(FilterTree):
         if agency:
             return {"toptier_code": agency.toptier_code, "name": agency.name}
         else:
-            return {"toptier_code": -1, "name": "failed to find agency"}
+            return {"toptier_code": "-1", "name": "failed to find agency"}
 
     def tier_one_search(self, agency):
         return FederalAccount.objects.filter(agency_identifier=agency_from_identifiers(agency, None))

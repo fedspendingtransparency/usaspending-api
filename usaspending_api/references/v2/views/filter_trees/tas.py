@@ -28,4 +28,6 @@ class TASViewSet(APIView):
         request_values = self._parse_and_validate(request.GET)
 
         filter_tree = TASFilterTree()
-        return Response([elem.toJSON() for elem in filter_tree.search(tier1, tier2, tier3, request_values["depth"])])
+        return Response(
+            {"results": [elem.toJSON() for elem in filter_tree.search(tier1, tier2, tier3, request_values["depth"])]}
+        )
