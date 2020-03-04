@@ -3,6 +3,8 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
+from usaspending_api.search.models import AgencyAutocompleteMatview
+
 
 @pytest.fixture
 def agency_data(db):
@@ -10,6 +12,7 @@ def agency_data(db):
 
     a = mommy.make(
         "references.Agency",
+        id=1,
         toptier_agency__name="Really Old Agency That Shouldn't Show Up In Any Results",
         toptier_agency__toptier_code="ROATSSUIAR",
         subtier_agency__name="ROATSSUIAR subtier",
@@ -21,6 +24,7 @@ def agency_data(db):
 
     a = mommy.make(
         "references.Agency",
+        id=2,
         toptier_agency__name="Agency With No Subtier That Shouldn't Show Up In Any Results",
         toptier_agency__toptier_code="AWNSTSSUIAR",
         subtier_agency=None,
@@ -30,6 +34,7 @@ def agency_data(db):
 
     a = mommy.make(
         "references.Agency",
+        id=3,
         toptier_agency__name="Lunar Colonization Society",
         toptier_agency__toptier_code="LCS123",
         subtier_agency__name="Darkside Chapter",
@@ -39,6 +44,7 @@ def agency_data(db):
 
     a = mommy.make(
         "references.Agency",
+        id=4,
         toptier_agency__name="Cerean Mineral Extraction Corp.",
         toptier_agency__toptier_code="CMEC",
         subtier_agency__name="Copper Division",
@@ -48,6 +54,7 @@ def agency_data(db):
 
     a = mommy.make(
         "references.Agency",
+        id=5,
         toptier_agency__name="Department of Transportation",
         subtier_agency__name="Department of Transportation",
         toptier_flag=True,
@@ -57,6 +64,7 @@ def agency_data(db):
 
     a = mommy.make(
         "references.Agency",
+        id=6,
         toptier_agency__name="Department of Defence",
         subtier_agency__name="Department of the Army",
         subtier_agency__abbreviation="USA",
@@ -153,3 +161,19 @@ def test_awarding_agency_autocomplete_by_abbrev(client, agency_data):
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 0
+
+
+@pytest.mark.django_db
+def test_for_bogus_agencies(client, agency_data):
+    """ Ensure our bogus agencies do not show up in results. """
+
+    resp = client.post(
+        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "Results"},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 0
+
+    # Just double check that our bogus agencies are not in the materialized view.
+    assert AgencyAutocompleteMatview.objects.filter(agency_id=1).count() == 0
+    assert AgencyAutocompleteMatview.objects.filter(agency_id=2).count() == 0
+    assert AgencyAutocompleteMatview.objects.count() == 4
