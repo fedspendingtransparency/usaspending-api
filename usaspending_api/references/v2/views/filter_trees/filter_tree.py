@@ -12,7 +12,7 @@ class Node:
     count: int
     children: list
 
-    def toJSON(self):
+    def to_JSON(self):
         return {
             "id": self.id,
             "ancestors": self.ancestors,

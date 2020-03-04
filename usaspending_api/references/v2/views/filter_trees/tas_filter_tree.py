@@ -55,7 +55,7 @@ class TASFilterTree(FilterTree):
             generated_children = [
                 self.construct_node_from_raw(
                     1, ancestors + [data["toptier_code"]], elem, populate_children - 1
-                ).toJSON()
+                ).to_JSON()
                 for elem in raw_children
             ]
             count = len(generated_children)
@@ -77,7 +77,7 @@ class TASFilterTree(FilterTree):
             generated_children = [
                 self.construct_node_from_raw(
                     2, ancestors + [data.federal_account_code], elem, populate_children - 1
-                ).toJSON()
+                ).to_JSON()
                 for elem in raw_children
             ]
             count = len(generated_children)
