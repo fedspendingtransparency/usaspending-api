@@ -53,7 +53,7 @@ def test_tier_three_search():
 
 
 def _nodes_to_json(nodes):
-    return [node.toJSON() for node in nodes]
+    return [node.to_JSON() for node in nodes]
 
 
 def _node_by_id(id, ancestors=[]):

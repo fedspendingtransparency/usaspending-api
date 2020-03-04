@@ -29,5 +29,5 @@ class TASViewSet(APIView):
 
         filter_tree = TASFilterTree()
         return Response(
-            {"results": [elem.toJSON() for elem in filter_tree.search(tier1, tier2, tier3, request_values["depth"])]}
+            {"results": [elem.to_JSON() for elem in filter_tree.search(tier1, tier2, tier3, request_values["depth"])]}
         )
