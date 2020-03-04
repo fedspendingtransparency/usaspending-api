@@ -10,13 +10,11 @@ class TASFilterTree(FilterTree):
         agency_id_sets = TreasuryAppropriationAccount.objects.values("fr_entity_code", "agency_id").distinct(
             "agency_id"
         )
-        agency_set = set(
-            ToptierAgency.objects.filter(
-                toptier_code__in=[
-                    agency_from_identifiers(elem["agency_id"], elem["fr_entity_code"]) for elem in agency_id_sets
-                ]
-            )
-        )
+        agency_set = ToptierAgency.objects.filter(
+            toptier_code__in=[
+                agency_from_identifiers(elem["agency_id"], elem["fr_entity_code"]) for elem in agency_id_sets
+            ]
+        ).distinct()
         agency_dictionaries = [self._dictionary_from_agency(agency) for agency in agency_set]
         cfo_sort_results = cfo_presentation_order(agency_dictionaries)
         return cfo_sort_results["cfo_agencies"] + cfo_sort_results["other_agencies"]
