@@ -1,12 +1,10 @@
 from typing import Optional
 
-import boto3
 import json
 import os
 import pandas as pd
 import psycopg2
 import subprocess
-import tempfile
 
 from collections import defaultdict
 from datetime import datetime
@@ -17,6 +15,7 @@ from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
+from usaspending_api.common.helpers.s3_helpers import access_s3_object_list, access_s3_object
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 # ==============================================================================
@@ -629,19 +628,13 @@ def gather_deleted_ids(config):
         return
     printf({"msg": "Gathering all deleted transactions from S3"})
     start = perf_counter()
-    try:
-        s3 = boto3.resource("s3", region_name=config["aws_region"])
-        bucket = s3.Bucket(config["s3_bucket"])
-        bucket_objects = list(bucket.objects.all())
-    except Exception as e:
-        print("\n[ERROR]\n")
-        print("Verify settings.USASPENDING_AWS_REGION and settings.DELETED_TRANSACTIONS_S3_BUCKET_NAME are correct")
-        print("  or is using env variables: USASPENDING_AWS_REGION and DELETED_TRANSACTIONS_S3_BUCKET_NAME")
-        print("\n {} \n".format(e))
-        raise SystemExit(1)
+
+    bucket_objects = access_s3_object_list(bucket_name=config["s3_bucket"])
+    if bucket_objects is None:
+        raise Exception(f"Issue connecting to {config['s3_bucket']} in s3")
 
     if config["verbose"]:
-        printf({"msg": "CSV data from {} to now".format(config["starting_date"])})
+        printf({"msg": f"CSV data from {config['starting_date']} to now"})
 
     filtered_csv_list = [
         x
@@ -650,28 +643,22 @@ def gather_deleted_ids(config):
     ]
 
     if config["verbose"]:
-        printf({"msg": "Found {} csv files".format(len(filtered_csv_list))})
+        printf({"msg": f"Found {len(filtered_csv_list)} csv files"})
 
     deleted_ids = {}
 
     for obj in filtered_csv_list:
-        # Use temporary files to facilitate date moving from csv files on S3 into pands
-        (file, file_path) = tempfile.mkstemp()
-        bucket.download_file(obj.key, file_path)
+        object_data = access_s3_object(bucket_name=config["s3_bucket"], obj=obj)
 
         # Ingests the CSV into a dataframe. pandas thinks some ids are dates, so disable parsing
-        data = pd.read_csv(file_path, dtype=str)
+        data = pd.read_csv(object_data, dtype=str)
 
         if "detached_award_proc_unique" in data:
             new_ids = ["CONT_TX_" + x.upper() for x in data["detached_award_proc_unique"].values]
         elif "afa_generated_unique" in data:
             new_ids = ["ASST_TX_" + x.upper() for x in data["afa_generated_unique"].values]
         else:
-            printf({"msg": "  [Missing valid col] in {}".format(obj.key)})
-
-        # Next statements are ugly, but properly handle the temp files
-        os.close(file)
-        os.remove(file_path)
+            printf({"msg": f"  [Missing valid col] in {obj.key}"})
 
         for uid in new_ids:
             if uid in deleted_ids:

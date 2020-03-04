@@ -44,7 +44,9 @@ class SourceAssistanceTransaction(models.Model):
     cfda_title = models.TextField(blank=True, null=True)
     correction_delete_ind_desc = models.TextField(blank=True, null=True)
     correction_delete_indicatr = models.TextField(blank=True, null=True)
-    created_at = NaiveTimestampField(help_text="record creation datetime in Broker", blank=True, null=True)
+    created_at = NaiveTimestampField(
+        help_text="record creation datetime in Broker", blank=True, null=True, db_index=True
+    )
     face_value_loan_guarantee = NumericField(blank=True, null=True)
     fain = models.TextField(blank=True, null=True, db_index=True)
     federal_action_obligation = NumericField(blank=True, null=True)
@@ -112,7 +114,9 @@ class SourceAssistanceTransaction(models.Model):
     ultimate_parent_legal_enti = models.TextField(blank=True, null=True)
     ultimate_parent_unique_ide = models.TextField(blank=True, null=True)
     unique_award_key = models.TextField(null=True, db_index=True)
-    updated_at = NaiveTimestampField(help_text="record last update datetime in Broker", blank=True, null=True)
+    updated_at = NaiveTimestampField(
+        help_text="record last update datetime in Broker", blank=True, null=True, db_index=True
+    )
     uri = models.TextField(blank=True, null=True, db_index=True)
 
     class Meta:
