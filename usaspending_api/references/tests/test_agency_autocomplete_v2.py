@@ -1,43 +1,69 @@
-import json
-
 import pytest
+
 from model_mommy import mommy
 from rest_framework import status
-
-from usaspending_api.references.models import Agency
 
 
 @pytest.fixture
 def agency_data(db):
-    mommy.make(
-        Agency,
+    tn = mommy.make("awards.TransactionNormalized", action_date="1900-01-01")
+
+    a = mommy.make(
+        "references.Agency",
+        toptier_agency__name="Really Old Agency That Shouldn't Show Up In Any Results",
+        toptier_agency__toptier_code="ROATSSUIAR",
+        subtier_agency__name="ROATSSUIAR subtier",
+        _fill_optional=True,
+    )
+    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+
+    tn = mommy.make("awards.TransactionNormalized", action_date="2020-01-01")
+
+    a = mommy.make(
+        "references.Agency",
+        toptier_agency__name="Agency With No Subtier That Shouldn't Show Up In Any Results",
+        toptier_agency__toptier_code="AWNSTSSUIAR",
+        subtier_agency=None,
+        _fill_optional=True,
+    )
+    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+
+    a = mommy.make(
+        "references.Agency",
         toptier_agency__name="Lunar Colonization Society",
         toptier_agency__toptier_code="LCS123",
-        subtier_agency=None,
+        subtier_agency__name="Darkside Chapter",
         _fill_optional=True,
-    ),
-    mommy.make(
-        Agency,
+    )
+    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+
+    a = mommy.make(
+        "references.Agency",
         toptier_agency__name="Cerean Mineral Extraction Corp.",
         toptier_agency__toptier_code="CMEC",
-        subtier_agency=None,
+        subtier_agency__name="Copper Division",
         _fill_optional=True,
-    ),
-    mommy.make(
-        Agency,
+    )
+    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+
+    a = mommy.make(
+        "references.Agency",
         toptier_agency__name="Department of Transportation",
         subtier_agency__name="Department of Transportation",
         toptier_flag=True,
         _fill_optional=True,
     )
-    mommy.make(
-        Agency,
+    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+
+    a = mommy.make(
+        "references.Agency",
         toptier_agency__name="Department of Defence",
         subtier_agency__name="Department of the Army",
         subtier_agency__abbreviation="USA",
         toptier_flag=False,
         _fill_optional=True,
     )
+    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
 
 
 @pytest.mark.django_db
@@ -47,7 +73,7 @@ def test_awarding_agency_autocomplete_success(client, agency_data):
     resp = client.post(
         "/api/v2/autocomplete/awarding_agency/",
         content_type="application/json",
-        data=json.dumps({"search_text": "Department of Transportation"}),
+        data={"search_text": "Department of Transportation"},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -57,7 +83,7 @@ def test_awarding_agency_autocomplete_success(client, agency_data):
     resp = client.post(
         "/api/v2/autocomplete/awarding_agency/",
         content_type="application/json",
-        data=json.dumps({"search_text": "department", "limit": 3}),
+        data={"search_text": "department", "limit": 3},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
@@ -71,7 +97,7 @@ def test_awarding_agency_autocomplete_success(client, agency_data):
 def test_awarding_agency_autocomplete_failure(client):
     """Verify error on bad autocomplete request for awarding agency."""
 
-    resp = client.post("/api/v2/autocomplete/awarding_agency/", content_type="application/json", data=json.dumps({}))
+    resp = client.post("/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={})
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
@@ -82,7 +108,7 @@ def test_funding_agency_autocomplete_success(client, agency_data):
     resp = client.post(
         "/api/v2/autocomplete/funding_agency/",
         content_type="application/json",
-        data=json.dumps({"search_text": "Department of Transportation"}),
+        data={"search_text": "Department of Transportation"},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -92,7 +118,7 @@ def test_funding_agency_autocomplete_success(client, agency_data):
     resp = client.post(
         "/api/v2/autocomplete/funding_agency/",
         content_type="application/json",
-        data=json.dumps({"search_text": "department", "limit": 3}),
+        data={"search_text": "department", "limit": 3},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
@@ -105,19 +131,17 @@ def test_funding_agency_autocomplete_success(client, agency_data):
 @pytest.mark.django_db
 def test_funding_agency_autocomplete_failure(client):
     """Empty string test"""
-    resp = client.post("/api/v2/autocomplete/funding_agency/", content_type="application/json", data=json.dumps({}))
+    resp = client.post("/api/v2/autocomplete/funding_agency/", content_type="application/json", data={})
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
 def test_awarding_agency_autocomplete_by_abbrev(client, agency_data):
-    "Verify that search on subtier abbreviation works"
+    """Verify that search on subtier abbreviation works"""
 
     # test for exact match
     resp = client.post(
-        "/api/v2/autocomplete/awarding_agency/",
-        content_type="application/json",
-        data=json.dumps({"search_text": "USA"}),
+        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "USA"},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -125,9 +149,7 @@ def test_awarding_agency_autocomplete_by_abbrev(client, agency_data):
 
     # test for failure
     resp = client.post(
-        "/api/v2/autocomplete/awarding_agency/",
-        content_type="application/json",
-        data=json.dumps({"search_text": "ABC"}),
+        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "ABC"},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 0

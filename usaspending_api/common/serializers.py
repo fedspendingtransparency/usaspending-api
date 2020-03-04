@@ -140,7 +140,7 @@ class LimitableSerializer(serializers.ModelSerializer):
         The prefix flag is for cascading down to children, that is, when we eager load
         a child of this serializer, we must prefix that child's field name to their field name.
         For example:
-        AgencySerializer has a nested serializer of toptier_agency with a nested serializer for toptier agency
+        TasSerializer has a nested serializer of toptier_agency with a nested serializer for toptier agency
         Thus, when we prefetch, we want to prefetch 'toptier_agency'
         This prefix flag allows us to accomplish this.
         N.B.: When doing a 1-1 fk relation, select_related() should be used (this join is performed in the SQL);
