@@ -53,7 +53,6 @@
     "  transaction_fpds.naics AS naics_code,",
     "  naics.description AS naics_description,",
     "",
-    "  obligation_to_enum(COALESCE(awards.total_obligation, 0) + COALESCE(awards.total_subsidy_cost, 0)) AS total_obl_bin,",
     "  transaction_fpds.type_of_contract_pricing,",
     "  transaction_fpds.type_set_aside,",
     "  transaction_fpds.extent_competed,",
@@ -65,6 +64,10 @@
     "  COALESCE(SUM(transaction_normalized.federal_action_obligation), 0)::NUMERIC(23, 2) AS federal_action_obligation,",
     "  COALESCE(SUM(transaction_normalized.original_loan_subsidy_cost), 0)::NUMERIC(23, 2) AS original_loan_subsidy_cost,",
     "  COALESCE(SUM(transaction_normalized.face_value_loan_guarantee), 0)::NUMERIC(23, 2) AS face_value_loan_guarantee,",
+    "  obligation_to_enum(COALESCE(CASE",
+    "    WHEN transaction_normalized.type IN('07','08') THEN awards.total_subsidy_cost",
+    "    ELSE awards.total_obligation",
+    "  END, 0)::NUMERIC(23, 2)) AS total_obl_bin,",
     "  count(*) AS counts",
     "FROM",
     "  transaction_normalized",
@@ -155,10 +158,13 @@
     "  psc.description,",
     "  transaction_fpds.naics,",
     "  naics.description,",
-    "  obligation_to_enum(COALESCE(awards.total_obligation, 0) + COALESCE(awards.total_subsidy_cost, 0)),",
     "  transaction_fpds.type_of_contract_pricing,",
     "  transaction_fpds.type_set_aside,",
-    "  transaction_fpds.extent_competed"
+    "  transaction_fpds.extent_competed,",
+    "  obligation_to_enum(COALESCE(CASE",
+    "    WHEN transaction_normalized.type IN('07','08') THEN awards.total_subsidy_cost",
+    "    ELSE awards.total_obligation",
+    "  END, 0)::NUMERIC(23, 2))"
   ],
   "indexes": [
     {

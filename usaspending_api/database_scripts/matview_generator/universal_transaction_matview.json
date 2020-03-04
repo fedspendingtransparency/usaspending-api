@@ -186,10 +186,6 @@
       "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "award_id"}]
     }, {
-      "name": "award_category",
-      "where": "award_category IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "award_category"}]
-    }, {
       "name": "ordered_award_amount",
       "where": "action_date >= '2007-10-01'",
       "columns": [{"name": "award_amount", "order": "DESC NULLS LAST"}]

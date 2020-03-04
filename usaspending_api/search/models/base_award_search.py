@@ -26,11 +26,11 @@ class BaseAwardSearchModel(models.Model):
     piid = models.TextField()
     fain = models.TextField()
     uri = models.TextField()
-    award_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    award_amount = models.DecimalField(max_digits=23, decimal_places=2)
+    total_obligation = models.DecimalField(max_digits=23, decimal_places=2)
     description = models.TextField()
-    total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
-    total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2)
+    total_loan_value = models.DecimalField(max_digits=23, decimal_places=2)
     total_obl_bin = models.TextField()
 
     recipient_name = models.TextField()
@@ -47,8 +47,8 @@ class BaseAwardSearchModel(models.Model):
     date_signed = models.DateField()
     ordering_period_end_date = models.DateField(null=True)
 
-    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
-    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2)
+    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2)
 
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()

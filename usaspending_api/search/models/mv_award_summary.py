@@ -18,9 +18,9 @@ class AwardSummaryMatview(models.Model):
     funding_toptier_agency_abbreviation = models.TextField()
     awarding_subtier_agency_abbreviation = models.TextField()
     funding_subtier_agency_abbreviation = models.TextField()
-    federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
-    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
+    federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2)
+    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2)
+    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2)
     counts = models.IntegerField()
 
     class Meta:
