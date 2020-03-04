@@ -54,7 +54,7 @@ def limit_objects_to_date_range(
     date_format: str,
     start_datetime: datetime,
     end_datetime: Optional[datetime] = None,
-):
+) -> List["boto3.resources.factory.s3.ObjectSummary"]:
     results = []
     for obj in objects or []:
         file_date = datetime.strptime(obj.key[: obj.key.find("_")], date_format)

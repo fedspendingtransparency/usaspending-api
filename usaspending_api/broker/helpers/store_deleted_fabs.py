@@ -12,19 +12,19 @@ logger = logging.getLogger("console")
 def store_deleted_fabs(ids_to_delete):
     seconds = int(time.time())  # adds enough uniqueness to filename
     file_name = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d')}_FABSdeletions_{seconds}.csv"
-    file_with_headers = ["afa_generated_unique"] + list(ids_to_delete)
+    rows_with_header = ["afa_generated_unique"] + list(ids_to_delete)
 
     if settings.IS_LOCAL:
         file_path = settings.CSV_LOCAL_PATH + file_name
         logger.info(f"storing deleted transaction IDs at: {file_path}")
-        with open(file_path, "w") as writer:
-            for row in file_with_headers:
-                writer.write(row + "\n")
+        with open(file_path, "w") as f:
+            for row in rows_with_header:
+                f.write(row + "\n")
     else:
         logger.info("Uploading FABS delete data to S3 bucket")
-        aws_region = settings.USASPENDING_AWS_REGION
-        s3client = boto3.client("s3", region_name=aws_region)
         contents = bytes()
-        for row in file_with_headers:
-            contents += bytes("{}\n".format(row).encode())
+        for row in rows_with_header:
+            contents += bytes(f"{row}\n".encode())
+
+        s3client = boto3.client("s3", region_name=settings.USASPENDING_AWS_REGION)
         s3client.put_object(Bucket=settings.DELETED_TRANSACTION_JOURNAL_FILES, Key=file_name, Body=contents)

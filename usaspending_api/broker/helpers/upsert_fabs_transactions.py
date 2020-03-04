@@ -37,11 +37,10 @@ def fetch_fabs_data_generator(dap_uid_list):
         max_index = i + BATCH_FETCH_SIZE if i + BATCH_FETCH_SIZE < total_uid_count else total_uid_count
         fabs_ids_batch = dap_uid_list[i:max_index]
 
-        log_msg = "Fetching {}-{} out of {} records from source table"
-        logger.info(log_msg.format(i + 1, max_index, total_uid_count))
-
+        logger.info(f"Fetching {i + 1}-{max_index} out of {total_uid_count} records from source table")
         db_cursor.execute(db_query, [tuple(fabs_ids_batch)])
         logger.info("Fetching records took {:.2f}s".format(time.perf_counter() - start_time))
+
         yield dictfetchall(db_cursor)
 
 
