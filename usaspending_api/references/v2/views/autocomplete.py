@@ -49,14 +49,14 @@ class BaseAutocompleteViewSet(APIView):
         agencies = (
             AgencyAutocompleteMatview.objects.filter(agency_filter)
             .annotate(
-                is_toptier_fema=Case(
+                fema_sort=Case(
                     When(toptier_abbreviation="FEMA", subtier_abbreviation="FEMA", then=1),
                     When(toptier_abbreviation="FEMA", then=2),
                     default=0,
                     output_field=IntegerField(),
                 )
             )
-            .order_by("is_toptier_fema", "-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
+            .order_by("fema_sort", "-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
         ).values(
             "agency_id",
             "toptier_flag",
