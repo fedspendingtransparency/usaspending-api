@@ -88,7 +88,7 @@ other_award_mapping.update(
         "Award ID": "fain",
         "Start Date": "period_of_performance_start_date",
         "End Date": "period_of_performance_current_end_date",
-        "Award Amount": "total_obligation",
+        "Award Amount": "award_amount",
         "Award Type": "type_description",
         "SAI Number": "sai_number",
         "CFDA Number": "cfda_number",
