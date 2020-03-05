@@ -33,7 +33,7 @@ award_contracts_mapping.update(
         "Award ID": "piid",
         "Start Date": "period_of_performance_start_date",
         "End Date": "period_of_performance_current_end_date",
-        "Award Amount": "total_obligation",
+        "Award Amount": "award_amount",
         "Contract Award Type": "type_description",
     }
 )
@@ -42,7 +42,7 @@ award_idv_mapping.update(
     {
         "Award ID": "piid",
         "Start Date": "period_of_performance_start_date",
-        "Award Amount": "total_obligation",
+        "Award Amount": "award_amount",
         "Contract Award Type": "type_description",
         "Last Date to Order": "ordering_period_end_date",
     }
@@ -53,7 +53,7 @@ grant_award_mapping.update(
         "Award ID": "fain",
         "Start Date": "period_of_performance_start_date",
         "End Date": "period_of_performance_current_end_date",
-        "Award Amount": "total_obligation",
+        "Award Amount": "award_amount",
         "Award Type": "type_description",
         "SAI Number": "sai_number",
         "CFDA Number": "cfda_number",
@@ -65,7 +65,7 @@ loan_award_mapping.update(
         "Award ID": "fain",
         "Issued Date": "action_date",
         "Loan Value": "total_loan_value",
-        "Subsidy Cost": "total_subsidy_cost",
+        "Subsidy Cost": "award_amount",
         "SAI Number": "sai_number",
         "CFDA Number": "cfda_number",
     }
@@ -76,7 +76,7 @@ direct_payment_award_mapping.update(
         "Award ID": "fain",
         "Start Date": "period_of_performance_start_date",
         "End Date": "period_of_performance_current_end_date",
-        "Award Amount": "total_obligation",
+        "Award Amount": "award_amount",
         "Award Type": "type_description",
         "SAI Number": "sai_number",
         "CFDA Number": "cfda_number",
