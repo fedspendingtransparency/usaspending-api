@@ -64,7 +64,6 @@ def matview_search_filter(filters, model, for_downloads=False):
             "award_ids",
             "program_numbers",
             "naics_codes",
-            "exclude_naics_codes",
             "psc_codes",
             "contract_pricing_type_codes",
             "set_aside_type_codes",
