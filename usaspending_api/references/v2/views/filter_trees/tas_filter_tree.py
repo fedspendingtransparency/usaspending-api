@@ -20,10 +20,7 @@ class TASFilterTree(FilterTree):
         return cfo_sort_results["cfo_agencies"] + cfo_sort_results["other_agencies"]
 
     def _dictionary_from_agency(self, agency):
-        if agency:
-            return {"toptier_code": agency.toptier_code, "name": agency.name}
-        else:
-            return {"toptier_code": "-1", "name": "failed to find agency"}
+        return {"toptier_code": agency.toptier_code, "name": agency.name}
 
     def tier_one_search(self, agency):
         return FederalAccount.objects.filter(agency_identifier=agency_from_identifiers(agency, None))
