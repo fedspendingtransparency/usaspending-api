@@ -91,14 +91,16 @@ def get_deleted_fpds_data_from_s3(date):
     else:
         # Connect to AWS
         aws_region = settings.USASPENDING_AWS_REGION
-        fpds_bucket_name = settings.FPDS_BUCKET_NAME
+        DELETED_TRANSACTION_JOURNAL_FILES = settings.DELETED_TRANSACTION_JOURNAL_FILES
 
-        if not (aws_region and fpds_bucket_name):
-            raise Exception("Missing required environment variables: USASPENDING_AWS_REGION, FPDS_BUCKET_NAME")
+        if not (aws_region and DELETED_TRANSACTION_JOURNAL_FILES):
+            raise Exception(
+                "Missing required environment variables: USASPENDING_AWS_REGION, DELETED_TRANSACTION_JOURNAL_FILES"
+            )
 
         s3client = boto3.client("s3", region_name=aws_region)
         s3resource = boto3.resource("s3", region_name=aws_region)
-        s3_bucket = s3resource.Bucket(fpds_bucket_name)
+        s3_bucket = s3resource.Bucket(DELETED_TRANSACTION_JOURNAL_FILES)
 
         # make an array of all the keys in the bucket
         file_list = [item.key for item in s3_bucket.objects.all()]
@@ -111,7 +113,7 @@ def get_deleted_fpds_data_from_s3(date):
                 and "/" not in item
                 and datetime.strptime(item[: item.find("_")], "%m-%d-%Y").date() >= date
             ):
-                s3_item = s3client.get_object(Bucket=fpds_bucket_name, Key=item)
+                s3_item = s3client.get_object(Bucket=DELETED_TRANSACTION_JOURNAL_FILES, Key=item)
                 reader = csv.reader(s3_item["Body"].read().decode("utf-8").splitlines())
 
                 # skip the header, the reader doesn't ignore it for some reason

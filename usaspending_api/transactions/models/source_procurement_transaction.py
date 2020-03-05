@@ -88,7 +88,9 @@ class SourceProcurementTransaction(models.Model):
     country_of_product_or_desc = models.TextField(blank=True, null=True)
     country_of_product_or_serv = models.TextField(blank=True, null=True)
     county_local_government = models.TextField(blank=True, null=True)
-    created_at = NaiveTimestampField(help_text="record creation datetime in Broker", blank=True, null=True)
+    created_at = NaiveTimestampField(
+        help_text="record creation datetime in Broker", blank=True, null=True, db_index=True
+    )
     current_total_value_award = models.TextField(blank=True, null=True)
     division_name = models.TextField(blank=True, null=True)
     division_number_or_office = models.TextField(blank=True, null=True)
@@ -301,7 +303,9 @@ class SourceProcurementTransaction(models.Model):
     undefinitized_action = models.TextField(blank=True, null=True)
     undefinitized_action_desc = models.TextField(blank=True, null=True)
     unique_award_key = models.TextField(blank=True, null=True)
-    updated_at = NaiveTimestampField(help_text="record last update datetime in Broker", blank=True, null=True)
+    updated_at = NaiveTimestampField(
+        help_text="record last update datetime in Broker", blank=True, null=True, db_index=True
+    )
     us_federal_government = models.TextField(blank=True, null=True)
     us_government_entity = models.TextField(blank=True, null=True)
     us_local_government = models.TextField(blank=True, null=True)

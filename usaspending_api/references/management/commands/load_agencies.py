@@ -11,7 +11,7 @@ from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictiona
 from usaspending_api.common.etl import ETLQueryFile, ETLTable, mixins
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.text_helpers import standardize_nullable_whitespace as prep
-from usaspending_api.common.helpers.timing_helpers import Timer
+from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
 logger = logging.getLogger("console")
 

@@ -102,6 +102,7 @@ def awards_and_transactions(db):
     asst_trans_norm_2 = {"pk": 3, "award_id": 3, **bc}
     asst_trans_norm_3 = {"pk": 4, "award_id": 3, **bc}
     asst_trans_norm_4 = {"pk": 5, "award_id": 3, **bc}
+    asst_trans_norm_5 = {"pk": 13, "award_id": 13, **bc}
 
     cont_trans_norm_1 = {"pk": 2, "award_id": 2, **bc}
     cont_trans_norm_2 = {"pk": 6, "award_id": 5, **bc}
@@ -115,6 +116,7 @@ def awards_and_transactions(db):
     mommy.make("awards.TransactionNormalized", **asst_trans_norm_2)
     mommy.make("awards.TransactionNormalized", **asst_trans_norm_3)
     mommy.make("awards.TransactionNormalized", **asst_trans_norm_4)
+    mommy.make("awards.TransactionNormalized", **asst_trans_norm_5)
 
     mommy.make("awards.TransactionNormalized", **cont_trans_norm_1)
     mommy.make("awards.TransactionNormalized", **cont_trans_norm_2)
@@ -299,10 +301,57 @@ def awards_and_transactions(db):
         "ultimate_parent_unique_ide": "123",
     }
 
+    asst_trans_5 = {
+        "pk": 13,
+        "record_type": 666,
+        "transaction": TransactionNormalized.objects.get(pk=13),
+        "awardee_or_recipient_legal": "LEGAL ENTITY",
+        "awardee_or_recipient_uniqu": "456",
+        "awarding_office_name": "awarding_office",
+        "cfda_number": "10.002",
+        "cfda_title": "CFDA Title 2",
+        "federal_action_obligation": 100,
+        "funding_office_name": "funding_office",
+        "legal_entity_address_line1": "123 main st",
+        "legal_entity_address_line2": None,
+        "legal_entity_address_line3": None,
+        "legal_entity_city_name": None,
+        "legal_entity_foreign_city": "Ontario",
+        "legal_entity_congressional": "90",
+        "legal_entity_country_code": "CAN",
+        "legal_entity_country_name": "CANADA",
+        "legal_entity_county_code": "019",
+        "legal_entity_county_name": None,
+        "legal_entity_state_code": "ONT",
+        "legal_entity_state_name": None,
+        "legal_entity_zip_last4": "5312",
+        "legal_entity_zip5": "12204",
+        "modified_at": "2000-01-02T00:00:00Z",
+        "non_federal_funding_amount": 0,
+        "officer_1_amount": 50000.00,
+        "officer_1_name": "John Apple",
+        "officer_2_amount": 4623.00,
+        "officer_2_name": "Wally World",
+        "place_of_perfor_state_code": "TX",
+        "place_of_perform_country_c": "PDA",
+        "place_of_perform_country_n": "Pacific Delta Amazon",
+        "place_of_perform_county_co": "023",
+        "place_of_perform_county_na": "Tripoli",
+        "place_of_perform_zip_last4": "2135",
+        "place_of_performance_city": "Austin",
+        "place_of_performance_congr": "-0-",
+        "place_of_performance_forei": None,
+        "place_of_performance_zip5": "40221",
+        "total_funding_amount": 100,
+        "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
+        "ultimate_parent_unique_ide": "123",
+    }
+
     mommy.make("awards.TransactionFABS", **asst_trans_1)
     mommy.make("awards.TransactionFABS", **asst_trans_2)
     mommy.make("awards.TransactionFABS", **asst_trans_3)
     mommy.make("awards.TransactionFABS", **asst_trans_4)
+    mommy.make("awards.TransactionFABS", **asst_trans_5)
 
     # Transaction FPDS
     cont_trans_1 = {
@@ -781,6 +830,27 @@ def awards_and_transactions(db):
         "subaward_count": 0,
         "date_signed": "2004-03-02",
     }
+    award_13 = {
+        "pk": 13,
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
+        "latest_transaction": TransactionNormalized.objects.get(pk=13),
+        "category": "grant",
+        "date_signed": "2005-04-03",
+        "description": "lorem ipsum",
+        "generated_unique_award_id": "ASST_AGG_whatever_3620",
+        "officer_1_amount": 50000.00,
+        "officer_1_name": "John Apple",
+        "officer_2_amount": 4623.00,
+        "officer_2_name": "Wally World",
+        "period_of_performance_current_end_date": "2005-02-04",
+        "period_of_performance_start_date": "2004-02-04",
+        "subaward_count": 10,
+        "total_subaward_amount": 12345.00,
+        "type": "11",
+        "type_description": "OTHER FINANCIAL ASSISTA1NCE",
+        "uri": 1234,
+    }
 
     mommy.make("awards.Award", **award_1)
     mommy.make("awards.Award", **award_2)
@@ -793,6 +863,7 @@ def awards_and_transactions(db):
     mommy.make("awards.Award", **award_9)
     mommy.make("awards.Award", **award_10)
     mommy.make("awards.Award", **award_11)
+    mommy.make("awards.Award", **award_13)
 
     # Parent Award
     parent_award_1 = {
@@ -930,6 +1001,28 @@ def test_award_psc_hierarchy_types(client, awards_and_transactions):
     }
 
 
+def test_foreign_city(client, awards_and_transactions):
+    resp = client.get("/api/v2/awards/13/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["recipient"]["location"] == {
+        "address_line1": "123 main st",
+        "address_line2": None,
+        "address_line3": None,
+        "foreign_province": None,
+        "city_name": "Ontario",
+        "county_code": "019",
+        "county_name": None,
+        "state_code": "ONT",
+        "state_name": None,
+        "zip5": "12204",
+        "zip4": "5312",
+        "foreign_postal_code": None,
+        "country_name": "CANADA",
+        "location_country_code": "CAN",
+        "congressional_code": "90",
+    }
+
+
 def test_special_characters(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
     assert resp.status_code == status.HTTP_200_OK
@@ -979,12 +1072,14 @@ expected_response_asst = {
     "transaction_obligated_amount": None,
     "awarding_agency": {
         "id": 1,
+        "has_agency_page": False,
         "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
+        "has_agency_page": False,
         "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "funding_office",
@@ -1058,12 +1153,14 @@ expected_response_cont = {
     "description": "lorem ipsum",
     "awarding_agency": {
         "id": 1,
+        "has_agency_page": False,
         "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
+        "has_agency_page": False,
         "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "funding_office",
