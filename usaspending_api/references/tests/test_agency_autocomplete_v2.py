@@ -132,8 +132,9 @@ def test_funding_agency_autocomplete_success(client, agency_data):
     assert len(resp.data["results"]) == 2
 
     # test toptier match at top
-    assert resp.data["results"][0]["subtier_agency"]["name"] == "Department of Transportation"
-    assert resp.data["results"][1]["subtier_agency"]["name"] == "Department of the Army"
+    assert sorted(
+        [resp.data["results"][0]["subtier_agency"]["name"], resp.data["results"][1]["subtier_agency"]["name"]]
+    ) == ["Department of Transportation", "Department of the Army"]
 
 
 @pytest.mark.django_db
@@ -149,7 +150,7 @@ def test_awarding_agency_autocomplete_by_abbrev(client, agency_data):
 
     # test for exact match
     resp = client.post(
-        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "USA"},
+        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "USA"}
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -157,7 +158,7 @@ def test_awarding_agency_autocomplete_by_abbrev(client, agency_data):
 
     # test for failure
     resp = client.post(
-        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "ABC"},
+        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "ABC"}
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 0
@@ -168,7 +169,7 @@ def test_for_bogus_agencies(client, agency_data):
     """ Ensure our bogus agencies do not show up in results. """
 
     resp = client.post(
-        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "Results"},
+        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "Results"}
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 0
