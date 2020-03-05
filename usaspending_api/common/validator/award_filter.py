@@ -25,6 +25,7 @@ AWARD_FILTER = [
     {"name": "keywords", "type": "array", "array_type": "text", "text_type": "search", "text_min": 3},
     {"name": "legal_entities", "type": "array", "array_type": "integer", "array_max": maxsize},
     {"name": "naics_codes", "type": "array", "array_type": "text", "text_type": "search"},
+    {"name": "exclude_naics_codes", "type": "array", "array_type": "text", "text_type": "search"},
     {"name": "place_of_performance_scope", "type": "enum", "enum_values": ["domestic", "foreign"]},
     {"name": "program_numbers", "type": "array", "array_type": "text", "text_type": "search"},
     {"name": "psc_codes", "type": "array", "array_type": "text", "text_type": "search"},
