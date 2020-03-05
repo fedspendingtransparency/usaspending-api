@@ -1,3 +1,4 @@
+DROP MATERIALIZED VIEW IF EXISTS mv_agency_autocomplete;
 DROP MATERIALIZED VIEW IF EXISTS mv_award_summary_old;
 DROP MATERIALIZED VIEW IF EXISTS mv_contract_award_search_old;
 DROP MATERIALIZED VIEW IF EXISTS mv_directpayment_award_search_old;

@@ -109,5 +109,11 @@
     "    toptier_name, ",
     "    upper(subtier_name) "
   ],
-  "indexes": []
+  "indexes": [
+    {
+      "name": "agency_id",
+      "unique": true,
+      "columns": [{"name": "agency_id"}]
+    }
+  ]
 }
