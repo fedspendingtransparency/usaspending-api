@@ -58,9 +58,9 @@ def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
     # without disrupting the primary request
     try:
         if request.method == "GET":
-            requests.get(url, data, headers=headers, timeout=0.1)
+            requests.get(url, data, headers=headers, timeout=0.01)
         else:
-            requests.post(url, data, headers=headers, timeout=0.1)
+            requests.post(url, data, headers=headers, timeout=0.01)
     # TODO: Preemptive timeout still seems to cause the request to be recorded as 500 with:
     # ConnectionResetError: [Errno 54] Connection reset by peer.
     # See if this can be avoided in a different way than forcing an early timeout
