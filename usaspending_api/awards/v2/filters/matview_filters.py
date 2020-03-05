@@ -64,6 +64,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             "award_ids",
             "program_numbers",
             "naics_codes",
+            "exclude_naics_codes",
             "psc_codes",
             "contract_pricing_type_codes",
             "set_aside_type_codes",
@@ -249,9 +250,9 @@ def matview_search_filter(filters, model, for_downloads=False):
                 queryset = queryset.filter(cfda_number__in=in_query)
 
         elif key == "naics_codes":
-            in_query = [v for v in value]
-            if len(in_query) != 0:
-                queryset = queryset.filter(naics_code__in=in_query)
+            if value:
+                regex = f"^({'|'.join(value)}).*"
+                queryset = queryset.filter(naics_code__regex=regex)
 
         elif key == "psc_codes":
             in_query = [v for v in value]
