@@ -3,6 +3,7 @@ import logging
 import multiprocessing
 import os
 from pathlib import Path
+from typing import Optional
 
 import psutil as ps
 import re
@@ -43,7 +44,7 @@ WAIT_FOR_PROCESS_SLEEP = 5
 logger = logging.getLogger(__name__)
 
 
-def generate_download(download_job):
+def generate_download(download_job: DownloadJob, origination: Optional[str] = None):
     """Create data archive files from the download job object"""
 
     # Parse data from download_job
@@ -70,7 +71,7 @@ def generate_download(download_job):
         write_to_log(message=f"Generating {file_name}", download_job=download_job)
 
         # Generate sources from the JSON request object
-        sources = get_download_sources(json_request)
+        sources = get_download_sources(json_request, origination)
         for source in sources:
             # Parse and write data to the file; if there are no matching columns for a source then add an empty file
             source_column_count = len(source.columns(columns))
@@ -138,7 +139,7 @@ def generate_download(download_job):
     return finish_download(download_job)
 
 
-def get_download_sources(json_request):
+def get_download_sources(json_request: dict, origination: Optional[str] = None):
     download_sources = []
     for download_type in json_request["download_types"]:
         agency_id = json_request.get("agency", "all")
@@ -158,16 +159,22 @@ def get_download_sources(json_request):
             )
 
             queryset = filter_function(filters)
-            award_type_codes = set(filters["award_type_codes"])
+            if origination == "bulk_download":
+                award_type_codes = set(filters["prime_and_sub_award_types"][download_type])
+            else:
+                award_type_codes = set(filters["award_type_codes"])
 
-            if award_type_codes & (set(contract_type_mapping.keys()) | set(idv_type_mapping.keys())):
+            if (
+                award_type_codes & (set(contract_type_mapping.keys()) | set(idv_type_mapping.keys()))
+                or "procurement" in award_type_codes
+            ):
                 # only generate d1 files if the user is asking for contract data
                 d1_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id)
                 d1_filters = {f"{VALUE_MAPPINGS[download_type]['contract_data']}__isnull": False}
                 d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
                 download_sources.append(d1_source)
 
-            if award_type_codes & set(assistance_type_mapping.keys()):
+            if award_type_codes & set(assistance_type_mapping.keys()) or ("grant" in award_type_codes):
                 # only generate d2 files if the user is asking for assistance data
                 d2_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d2", download_type, agency_id)
                 d2_filters = {f"{VALUE_MAPPINGS[download_type]['assistance_data']}__isnull": False}
