@@ -1,12 +1,12 @@
-from django.db.models import F, Q
+from django.db.models import Case, F, IntegerField, Q, When
+from django.db.models.functions import Upper
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.constants import EXCLUDE_CGAC
-from usaspending_api.references.models import Agency, Cfda, NAICS, PSC, Definition
-from usaspending_api.references.v1.serializers import AgencySerializer
+from usaspending_api.references.models import Cfda, Definition, NAICS, PSC
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
+from usaspending_api.search.models import AgencyAutocompleteMatview
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -38,23 +38,52 @@ class BaseAutocompleteViewSet(APIView):
 
     # Shared autocomplete...
     def agency_autocomplete(self, request):
-        """Search by subtier agencies, return all, with toptiers first"""
+        """Search by subtier agencies, return those with award data, toptiers first"""
 
         search_text, limit = self.get_request_payload(request)
 
-        queryset = (
-            Agency.objects.exclude(toptier_agency__toptier_code__in=EXCLUDE_CGAC)
-            .filter(
-                Q(subtier_agency__name__icontains=search_text) | Q(subtier_agency__abbreviation__icontains=search_text)
-            )
-            .order_by("-toptier_flag", "toptier_agency_id", "subtier_agency__name")
-            .distinct("toptier_flag", "toptier_agency_id", "subtier_agency__name")
+        agency_filter = Q(**{self.filter_field: True}) & (
+            Q(subtier_name__icontains=search_text) | Q(subtier_abbreviation__icontains=search_text)
         )
-        # The below is a one-off fix to promote FEMA as a subtier to the top when "FEMA" is searched
-        # This is the only way to do this because you cannot use annotate and distinct together
-        evaled = AgencySerializer(queryset[:limit], many=True).data
-        evaled.sort(key=lambda x: x["toptier_agency"]["toptier_code"] == "058")
-        return Response({"results": evaled})
+
+        agencies = (
+            AgencyAutocompleteMatview.objects.filter(agency_filter)
+            .annotate(
+                fema_sort=Case(
+                    When(toptier_abbreviation="FEMA", subtier_abbreviation="FEMA", then=1),
+                    When(toptier_abbreviation="FEMA", then=2),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            )
+            .order_by("fema_sort", "-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
+        ).values(
+            "agency_id",
+            "toptier_flag",
+            "toptier_agency_id",
+            "toptier_code",
+            "toptier_abbreviation",
+            "toptier_name",
+            "subtier_abbreviation",
+            "subtier_name",
+        )
+
+        results = [
+            {
+                "id": agency["agency_id"],
+                "toptier_flag": agency["toptier_flag"],
+                "toptier_agency": {
+                    "id": agency["toptier_agency_id"],
+                    "toptier_code": agency["toptier_code"],
+                    "abbreviation": agency["toptier_abbreviation"],
+                    "name": agency["toptier_name"],
+                },
+                "subtier_agency": {"abbreviation": agency["subtier_abbreviation"], "name": agency["subtier_name"]},
+            }
+            for agency in agencies[:limit]
+        ]
+
+        return Response({"results": results})
 
 
 class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
@@ -63,6 +92,7 @@ class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/awarding_agency.md"
+    filter_field = "has_awarding_data"
 
     @cache_response()
     def post(self, request):
@@ -75,6 +105,7 @@ class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/funding_agency.md"
+    filter_field = "has_funding_data"
 
     @cache_response()
     def post(self, request):
