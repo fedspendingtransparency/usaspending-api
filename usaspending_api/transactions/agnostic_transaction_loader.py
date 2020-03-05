@@ -51,7 +51,7 @@ class AgnosticTransactionLoader:
         mutually_exclusive_group.add_argument(
             "--file",
             dest="file",
-            type=filepath_command_line_argument_type(chunk_count=1),
+            type=filepath_command_line_argument_type(chunk_count=self.chunk_size),
             help=(
                 f"Load/Reload transactions using {self.shared_pk} values stored at this file path"
                 f" (one ID per line) {SCHEMA_HELP_TEXT}"
@@ -90,7 +90,9 @@ class AgnosticTransactionLoader:
             delete_date = self.options["datetime"]
             if not delete_date:
                 delete_date = self.begining_of_time
-            delete_job_status = call_command(self.delete_management_command, f"--date={delete_date}")
+
+            with Timer(message="Processing deletes"):
+                delete_job_status = call_command(self.delete_management_command, f"--date={delete_date}")
 
             if delete_job_status != 0:
                 raise RuntimeError("Fatal error. Problem with the deletes")
@@ -188,7 +190,7 @@ class AgnosticTransactionLoader:
         transactions_remaining_count = self.total_ids_to_process
 
         for id_list in read_file_for_database_ids(str(self.file_path), self.chunk_size, is_numeric=False):
-            with Timer(message="Batch upsert"):
+            with Timer(message=f"Upsert {len(id_list):,} records"):
                 if len(id_list) != 0:
                     predicate = self.extra_predicate + [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
                     record_count = operations.upsert_records_with_predicate(source, destination, predicate, primary_key)
@@ -196,6 +198,9 @@ class AgnosticTransactionLoader:
                     logger.warning("No records to load. Please check parameters and settings to confirm accuracy")
                     record_count = 0
 
-            transactions_remaining_count -= len(id_list)
-            logger.info(f"{record_count:,} successful upserts, {transactions_remaining_count:,} remaining.")
+            if transactions_remaining_count > len(id_list):
+                transactions_remaining_count -= len(id_list)
+            else:
+                transactions_remaining_count = 0
             self.upsert_records += record_count
+            logger.info(f"{self.upsert_records:,} successful upserts, {transactions_remaining_count:,} remaining.")
