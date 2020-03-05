@@ -7,8 +7,7 @@ This endpoint is used by the Funding Agency autocomplete filter on the Advanced 
 
 ## POST
 
-This route sends a request to the backend to retrieve funding agencies matching the specified search text.  Agencies are returned in the order
-they are expected to be displayed.
+This route sends a request to the backend to retrieve funding agencies matching the specified search text.
 
 + Request (application/json)
     + Attributes (object)
