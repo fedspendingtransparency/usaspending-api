@@ -55,8 +55,6 @@ from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
 
-from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
-
 logger = logging.getLogger("console")
 
 GLOBAL_MAP = {
@@ -200,7 +198,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def create_response(self, queryset):
         results = []
         rows = list(queryset)
-        print(generate_raw_quoted_query(queryset))
         for record in rows[: self.pagination["limit"]]:
             row = {k: record[v] for k, v in self.constants["internal_id_fields"].items()}
 
