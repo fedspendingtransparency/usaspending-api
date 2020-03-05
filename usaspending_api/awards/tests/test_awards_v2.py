@@ -93,11 +93,13 @@ def awards_and_transactions(db):
         "pk": 1,
         "subtier_agency": SubtierAgency.objects.get(pk=1),
         "toptier_agency": ToptierAgency.objects.get(pk=1),
+        "toptier_flag": True,
     }
     agency_2 = {
         "pk": 2,
         "subtier_agency": SubtierAgency.objects.get(pk=2),
         "toptier_agency": ToptierAgency.objects.get(pk=2),
+        "toptier_flag": True,
     }
 
     mommy.make("references.Agency", **agency)
