@@ -1,4 +1,5 @@
-from django.db.models import F, Q
+from django.db.models import Case, F, IntegerField, Q, When
+from django.db.models.functions import Upper
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
@@ -37,15 +38,25 @@ class BaseAutocompleteViewSet(APIView):
 
     # Shared autocomplete...
     def agency_autocomplete(self, request):
-        """Search by subtier agencies, return those with award data"""
+        """Search by subtier agencies, return those with award data, toptiers first"""
 
         search_text, limit = self.get_request_payload(request)
 
+        agency_filter = Q(**{self.filter_field: True}) & (
+            Q(subtier_name__icontains=search_text) | Q(subtier_abbreviation__icontains=search_text)
+        )
+
         agencies = (
-            AgencyAutocompleteMatview.objects.filter(
-                Q(**{self.filter_field: True})
-                & (Q(subtier_name__icontains=search_text) | Q(subtier_abbreviation__icontains=search_text))
+            AgencyAutocompleteMatview.objects.filter(agency_filter)
+            .annotate(
+                is_toptier_fema=Case(
+                    When(toptier_abbreviation="FEMA", subtier_abbreviation="FEMA", then=1),
+                    When(toptier_abbreviation="FEMA", then=2),
+                    default=0,
+                    output_field=IntegerField(),
+                )
             )
+            .order_by("is_toptier_fema", "-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
         ).values(
             "agency_id",
             "toptier_flag",
