@@ -76,6 +76,7 @@ MATVIEW_SELECTOR = {
             "recipient_type_names",
             "place_of_performance_scope",
             "place_of_performance_locations",
+            "award_amounts",
             "naics_codes",
             "exclude_naics_codes",
             "psc_codes",
@@ -84,7 +85,7 @@ MATVIEW_SELECTOR = {
             "extent_competed_type_codes",
         ],
         "prevent_values": {},
-        "examine_values": {"time_period": [only_action_date_type]},
+        "examine_values": {"time_period": [only_action_date_type], "award_amounts": [can_use_total_obligation_enum]},
         "model": SummaryTransactionView,
     },
     "SummaryTransactionMonthView": {

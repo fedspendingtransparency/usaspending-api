@@ -251,7 +251,7 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         elif key == "naics_codes":
             if value:
-                regex = f"^({'|'.join(value)}).*"
+                regex = f"^({'|'.join([str(elem) for elem in value])}).*"
                 queryset = queryset.filter(naics_code__regex=regex)
 
         elif key == "exclude_naics_codes":

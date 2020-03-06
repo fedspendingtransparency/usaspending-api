@@ -19,11 +19,12 @@
     "  NULL::text AS piid,",
     "  awards.fain,",
     "  awards.uri,",
-    "  awards.total_obligation,",
+    "  COALESCE(awards.total_obligation, 0)::NUMERIC(23, 2) AS award_amount,",
+    "  COALESCE(awards.total_obligation, 0)::NUMERIC(23, 2) AS total_obligation,",
     "  awards.description,",
-    "  obligation_to_enum(awards.total_obligation) AS total_obl_bin,",
-    "  awards.total_subsidy_cost,",
-    "  awards.total_loan_value,",
+    "  obligation_to_enum(COALESCE(awards.total_obligation, 0)) AS total_obl_bin,",
+    "  0::NUMERIC(23, 2) AS total_subsidy_cost,",
+    "  0::NUMERIC(23, 2) AS total_loan_value,",
     "",
     "  UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,",
     "  transaction_fabs.awardee_or_recipient_uniqu AS recipient_unique_id,",
@@ -38,8 +39,8 @@
     "  awards.date_signed,",
     "  NULL::date AS ordering_period_end_date,",
     "",
-    "  transaction_fabs.original_loan_subsidy_cost,",
-    "  transaction_fabs.face_value_loan_guarantee,",
+    "  COALESCE(transaction_fabs.original_loan_subsidy_cost, 0)::NUMERIC(23, 2) AS original_loan_subsidy_cost,",
+    "  COALESCE(transaction_fabs.face_value_loan_guarantee, 0)::NUMERIC(23, 2) AS face_value_loan_guarantee,",
     "",
     "  latest_transaction.awarding_agency_id,",
     "  latest_transaction.funding_agency_id,",
@@ -73,7 +74,6 @@
     "",
     "  transaction_fabs.cfda_number,",
     "  transaction_fabs.sai_number,",
-    "  NULL::text AS pulled_from,",
     "  NULL::text AS type_of_contract_pricing,",
     "  NULL::text AS extent_competed,",
     "  NULL::text AS type_set_aside,",
@@ -155,27 +155,14 @@
       "where": "fain IS NOT NULL",
       "columns": [{"name": "UPPER(fain)", "order": "DESC NULLS LAST"}]
     }, {
-      "name": "ordered_piid",
-      "where": "piid IS NOT NULL",
-      "columns": [{"name": "UPPER(piid)", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "total_obligation",
-      "where": "total_obligation IS NOT NULL",
-      "columns": [{"name": "total_obligation"}]
+      "name": "ordered_award_amount",
+      "columns": [{"name": "award_amount", "order": "DESC NULLS LAST"}]
     }, {
       "name": "ordered_total_obligation",
       "columns": [{"name": "total_obligation", "order": "DESC NULLS LAST"}]
     }, {
       "name": "total_obl_bin",
       "columns": [{"name": "total_obl_bin"}]
-    }, {
-      "name": "total_subsidy_cost",
-      "where": "total_subsidy_cost IS NOT NULL",
-      "columns": [{"name": "total_subsidy_cost"}]
-    }, {
-      "name": "total_loan_value",
-      "where": "total_loan_value IS NOT NULL",
-      "columns": [{"name": "total_loan_value"}]
     }, {
       "name": "ordered_total_subsidy_cost",
       "columns": [{"name": "total_subsidy_cost", "order": "DESC NULLS LAST"}]
@@ -188,9 +175,6 @@
     }, {
       "name": "period_of_performance_current_end_date",
       "columns": [{"name": "period_of_performance_current_end_date", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "ordered_ordering_period_end_date",
-      "columns": [{"name": "ordering_period_end_date", "order": "DESC NULLS LAST"}]
     }, {
       "name": "recipient_name",
       "where": "recipient_name IS NOT NULL",
@@ -327,42 +311,6 @@
       "where": "cfda_number IS NOT NULL",
       "columns": [{"name": "cfda_number"}]
     }, {
-      "name": "pulled_from",
-      "where": "pulled_from IS NOT NULL",
-      "columns": [{"name": "pulled_from"}]
-    }, {
-      "name": "type_of_contract_pricing",
-      "where": "type_of_contract_pricing IS NOT NULL",
-      "columns": [{"name": "type_of_contract_pricing"}]
-    }, {
-      "name": "extent_competed",
-      "where": "extent_competed IS NOT NULL",
-      "columns": [{"name": "extent_competed"}]
-    }, {
-      "name": "type_set_aside",
-      "where": "type_set_aside IS NOT NULL",
-      "columns": [{"name": "type_set_aside"}]
-    }, {
-      "name": "product_or_service_code",
-      "where": "product_or_service_code IS NOT NULL",
-      "columns": [{"name": "product_or_service_code"}]
-    }, {
-      "name": "gin_product_or_service_description",
-      "method": "GIN",
-      "columns": [{"name": "(product_or_service_description)", "opclass": "gin_trgm_ops"}]
-    }, {
-      "name": "naics",
-      "where": "naics_code IS NOT NULL",
-      "columns": [{"name": "naics_code"}]
-    }, {
-      "name": "gin_naics_code",
-      "method": "GIN",
-      "columns": [{"name": "naics_code", "opclass": "gin_trgm_ops"}]
-    }, {
-      "name": "gin_naics_description",
-      "method": "GIN",
-      "columns": [{"name": "UPPER(naics_description)", "opclass": "gin_trgm_ops"}]
-    }, {
       "name": "gin_business_categories",
       "method": "GIN",
       "columns": [{"name": "business_categories"}]
@@ -382,12 +330,6 @@
       "name": "treasury_account_identifiers",
       "method": "GIN",
       "columns": [{"name": "treasury_account_identifiers", "opclass": "gin__int_ops"}]
-    }, {
-      "name": "compound_psc_action_date",
-      "columns": [{"name": "product_or_service_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_naics_action_date",
-      "columns": [{"name": "naics_code"}, {"name": "action_date"}]
     }, {
       "name": "compound_cfda_action_date",
       "columns": [{"name": "cfda_number"}, {"name": "action_date"}]

@@ -9,7 +9,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  awards.type,",
-    "  transaction_fpds.pulled_from,",
     "  awards.category,",
     "",
     "  transaction_normalized.awarding_agency_id,",
@@ -52,7 +51,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  awards.type,",
-    "  transaction_fpds.pulled_from,",
     "  awards.category,",
     "  transaction_normalized.awarding_agency_id,",
     "  transaction_normalized.funding_agency_id,",
@@ -79,10 +77,6 @@
     }, {
       "name": "type",
       "columns": [{"name": "type"}]
-    }, {
-      "name": "pulled_from",
-      "where": "pulled_from IS NOT NULL",
-      "columns": [{"name": "pulled_from"}]
     }, {
       "name": "awarding_agency_id",
       "where": "awarding_agency_id IS NOT NULL",
