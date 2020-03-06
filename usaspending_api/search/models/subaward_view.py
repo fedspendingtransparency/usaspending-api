@@ -54,7 +54,6 @@ class SubawardView(models.Model):
     business_categories = ArrayField(models.TextField(), default=list)
     prime_recipient_name = models.TextField()
 
-    pulled_from = models.TextField()
     type_of_contract_pricing = models.TextField()
     type_set_aside = models.TextField()
     extent_competed = models.TextField()

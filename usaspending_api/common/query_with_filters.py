@@ -275,8 +275,6 @@ class _AwardAmounts(_Filter):
             lower_bound = v.get("lower_bound")
             upper_bound = v.get("upper_bound")
             award_amounts_query.append(ES_Q("range", award_amount={"gte": lower_bound, "lte": upper_bound}))
-            if query_type == _QueryType.AWARDS:
-                award_amounts_query.append(ES_Q("range", total_obligation={"gte": lower_bound, "lte": upper_bound}))
         return ES_Q("bool", should=award_amounts_query, minimum_should_match=1)
 
 

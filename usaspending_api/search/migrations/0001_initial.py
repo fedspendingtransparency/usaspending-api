@@ -18,6 +18,14 @@ class Migration(migrations.Migration):
     # fields unless they are referenced by another model so this should cause no harm.
     operations = [
         migrations.CreateModel(
+            name='AgencyAutocompleteMatview',
+            fields=[],
+            options={
+                'db_table': 'mv_agency_autocomplete',
+                'managed': False,
+            },
+        ),
+        migrations.CreateModel(
             name='AwardSearchView',
             fields=[],
             options={
