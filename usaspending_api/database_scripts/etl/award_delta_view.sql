@@ -18,7 +18,7 @@ SELECT
   vw_award_search.uri,
   vw_award_search.total_obligation,
   vw_award_search.description,
-  vw_award_search.total_obl_bin,
+  vw_award_search.award_amount,
   vw_award_search.total_subsidy_cost,
   vw_award_search.total_loan_value,
   a.update_date,
@@ -72,7 +72,6 @@ SELECT
 
   vw_award_search.cfda_number,
   vw_award_search.sai_number,
-  vw_award_search.pulled_from,
   vw_award_search.type_of_contract_pricing,
   vw_award_search.extent_competed,
   vw_award_search.type_set_aside,
