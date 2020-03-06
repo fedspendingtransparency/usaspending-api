@@ -19,7 +19,10 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
+from usaspending_api.common.experimental_api_flags import (
+    is_experimental_elasticsearch_api,
+    mirror_request_to_elasticsearch,
+)
 from usaspending_api.common.helpers.orm_helpers import FiscalMonth, FiscalQuarter, FiscalYear
 from usaspending_api.common.helpers.generic_helper import (
     bolster_missing_time_periods,
@@ -188,6 +191,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         self.subawards = json_request["subawards"]
         self.filters = json_request["filters"]
         self.elasticsearch = is_experimental_elasticsearch_api(request)
+        if not self.elasticsearch:
+            mirror_request_to_elasticsearch(request)
 
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
         # Otherwise, users will see blank results for years
