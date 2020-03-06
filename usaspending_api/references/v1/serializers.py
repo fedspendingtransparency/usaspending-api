@@ -1,13 +1,6 @@
 from rest_framework import serializers
-from usaspending_api.references.models import (
-    Agency,
-    Cfda,
-    ObjectClass,
-    RefProgramActivity,
-    SubtierAgency,
-    ToptierAgency,
-)
 from usaspending_api.common.serializers import LimitableSerializer
+from usaspending_api.references.models import Cfda, ObjectClass, RefProgramActivity, SubtierAgency, ToptierAgency
 
 
 class ToptierAgencySerializer(LimitableSerializer):
@@ -22,17 +15,6 @@ class SubtierAgencySerializer(LimitableSerializer):
         model = SubtierAgency
         fields = "__all__"
         default_fields = ["subtier_code", "name", "abbreviation"]
-
-
-class AgencySerializer(LimitableSerializer):
-    class Meta:
-        model = Agency
-        fields = "__all__"
-        default_fields = ["id", "toptier_agency", "subtier_agency", "toptier_flag"]
-        nested_serializers = {
-            "toptier_agency": {"class": ToptierAgencySerializer, "kwargs": {"read_only": True}},
-            "subtier_agency": {"class": SubtierAgencySerializer, "kwargs": {"read_only": True}},
-        }
 
 
 class CfdaSerializer(LimitableSerializer):

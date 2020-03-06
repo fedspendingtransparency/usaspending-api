@@ -31,6 +31,7 @@ class Command(BaseCommand):
             self.matviews = {args["only"]: MATERIALIZED_VIEWS[args["only"]]}
         self.matview_dir = args["temp_dir"]
         self.no_cleanup = args["leave_sql"]
+        self.remove_matviews = not args["leave_old"]
         self.run_dependencies = args["dependencies"]
 
     def add_arguments(self, parser):
@@ -39,6 +40,11 @@ class Command(BaseCommand):
             "--leave-sql",
             action="store_true",
             help="Leave the generated SQL files instead of cleaning them after script completion.",
+        )
+        parser.add_argument(
+            "--leave-old",
+            action="store_true",
+            help="Leave the old materialzied views instead of dropping them from the DB.",
         )
         parser.add_argument(
             "--temp-dir",
@@ -90,7 +96,8 @@ class Command(BaseCommand):
         for view in OVERLAY_VIEWS:
             run_sql(view.read_text(), "Creating Views")
 
-        run_sql(DROP_OLD_MATVIEWS.read_text(), "Drop Old Materialized Views")
+        if self.remove_matviews:
+            run_sql(DROP_OLD_MATVIEWS.read_text(), "Drop Old Materialized Views")
 
 
 def create_dependencies():
