@@ -314,7 +314,7 @@ class _NaicsCodes(_Filter):
         naics_codes_query = []
 
         for v in filter_values:
-            naics_codes_query.append(ES_Q("match", naics_code__keyword=v))
+            naics_codes_query.append(ES_Q("match_phrase_prefix", naics_code__keyword=v))
 
         return ES_Q("bool", should=naics_codes_query, minimum_should_match=1)
 
