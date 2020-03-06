@@ -32,8 +32,7 @@ This route sends a request to the backend to begin generating a zipfile of award
                         "end_date": "2019-12-31"
                     },
                     "date_type": "action_date"
-                },
-                "award_levels": ["prime_awards", "sub_awards"]
+                }
             }
 
 
