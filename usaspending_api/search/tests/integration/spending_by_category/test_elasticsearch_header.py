@@ -114,6 +114,5 @@ def test_mirror_requests(client, monkeypatch, elasticsearch_award_index):
     assert resp.status_code == status.HTTP_200_OK
     assert len(logging_statements) == 1, "Expected one logging statement"
     assert (
-        logging_statements[0]
-        == """Mirroring inbound request with elasticsearch experimental header.\n\tOriginial Request details: <WSGIRequest: POST '/api/v2/search/spending_by_award/'>\n\tMirrored Request details: \n\t\turl = http://testserver/api/v2/search/spending_by_award/, \n\t\tdata = {"filters": {"time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}], "award_type_codes": ["A", "B", "C", "D"]}, "fields": ["Award ID"], "page": 1, "limit": 60, "sort": "Award ID", "order": "desc", "subawards": false}, \n\t\theaders = {'Cookie': '', 'Content-Length': '233', 'Content-Type': 'application/json', 'X-Experimental-Api': 'elasticsearch'}"""
+        logging_statements[0] == f"Mirroring inbound request with elasticsearch experimental header."
     ), "Expected a different logging statement"

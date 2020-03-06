@@ -25,15 +25,7 @@ def is_experimental_elasticsearch_api(request: Request) -> bool:
     """
     Returns True or False depending on if the expected_header_value matches what is sent with the request.
     """
-    use_es = request.META.get(EXPERIMENTAL_API_HEADER) == ELASTICSEARCH_HEADER_VALUE
-    if not use_es:
-        mirror_request_to_elasticsearch(request)
-    else:
-        logger.info(
-            f"Found {EXPERIMENTAL_API_HEADER} request header. "
-            f"Will use Elasticsearch for backing store where implemented"
-        )
-    return use_es
+    return request.META.get(EXPERIMENTAL_API_HEADER) == ELASTICSEARCH_HEADER_VALUE
 
 
 def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
@@ -47,11 +39,7 @@ def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
         HttpHeaders.parse_header_name(EXPERIMENTAL_API_HEADER): ELASTICSEARCH_HEADER_VALUE,
     }
 
-    logger.warning(
-        f"Mirroring inbound request with elasticsearch experimental header.\n"
-        f"\tOriginial Request details: {request._request}\n"
-        f"\tMirrored Request details: \n\t\turl = {url}, \n\t\tdata = {data}, \n\t\theaders = {headers}"
-    )
+    logger.warning(f"Mirroring inbound request with elasticsearch experimental header.")
 
     # NOTE: Purposely desiring an immediate timeout, with ignoring of that timeout error,
     # since this is a fire-and-forget way to siphon off duplicate load-testing traffic to the server,
@@ -59,8 +47,10 @@ def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
     try:
         if request.method == "GET":
             requests.get(url, data, headers=headers, timeout=0.01)
-        else:
+        elif request.method == "POST":
             requests.post(url, data, headers=headers, timeout=0.01)
+        else:
+            pass
     # TODO: Preemptive timeout still seems to cause the request to be recorded as 500 with:
     # ConnectionResetError: [Errno 54] Connection reset by peer.
     # See if this can be avoided in a different way than forcing an early timeout
