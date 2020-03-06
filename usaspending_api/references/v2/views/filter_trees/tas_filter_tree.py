@@ -1,5 +1,6 @@
 from usaspending_api.common.helpers.agency_logic_helpers import cfo_presentation_order
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
+from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.common.helpers.agency_logic_helpers import agency_from_identifiers
 from usaspending_api.references.v2.views.filter_trees.filter_tree import DEFAULT_CHILDREN, Node, FilterTree
 from usaspending_api.references.models import ToptierAgency
@@ -7,12 +8,13 @@ from usaspending_api.references.models import ToptierAgency
 
 class TASFilterTree(FilterTree):
     def toptier_search(self):
-        agency_id_sets = TreasuryAppropriationAccount.objects.values("fr_entity_code", "agency_id").distinct(
-            "agency_id"
+        agency_id_sets = FinancialAccountsByAwards.objects.filter(award__isnull=False).prefetch_related(
+            "treasury_account"
         )
         agency_set = ToptierAgency.objects.filter(
             toptier_code__in=[
-                agency_from_identifiers(elem["agency_id"], elem["fr_entity_code"]) for elem in agency_id_sets
+                agency_from_identifiers(elem.treasury_account.agency_id, elem.treasury_account.fr_entity_code)
+                for elem in agency_id_sets
             ]
         ).distinct()
         agency_dictionaries = [self._dictionary_from_agency(agency) for agency in agency_set]

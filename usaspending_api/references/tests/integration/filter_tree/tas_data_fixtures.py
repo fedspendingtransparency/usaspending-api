@@ -9,24 +9,36 @@ aribitrary_cfo_cgac_sample = [2, 1, 3, 13, 7]
 
 
 @pytest.fixture
+def dummy_award(db):
+    # because we only need to confirm the award pointer isn't null, we can get away with just having one dummy
+    mommy.make("awards.Award", id=1)
+
+
+@pytest.fixture
 def basic_agencies(db):
     _setup_basic_cgac(1)
     _setup_basic_frec(1)
 
 
 @pytest.fixture
-def basic_tas(db):
-    mommy.make("accounts.TreasuryAppropriationAccount", agency_id="001")
+def basic_tas(db, dummy_award):
+    _setup_basic_cgac_tas(1)
 
 
 @pytest.fixture
-def tas_for_frec(db, basic_agencies):
+def tas_for_frec(db, basic_agencies, dummy_award):
     _setup_basic_frec_tas(1)
 
 
 @pytest.fixture
-def frec_tas_with_no_match(db, basic_agencies):
-    mommy.make("accounts.TreasuryAppropriationAccount", agency_id="001", fr_entity_code="not gonna match")
+def frec_tas_with_no_match(db, basic_agencies, dummy_award):
+    mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        treasury_account_identifier=1,
+        agency_id="001",
+        fr_entity_code="not gonna match",
+    )
+    mommy.make("awards.FinancialAccountsByAwards", award_id=1, treasury_account_id=1)
 
 
 @pytest.fixture
@@ -47,7 +59,7 @@ def basic_cfo_and_non_cfo_agencies(db, basic_cfo_agencies):
 
 
 @pytest.fixture
-def one_tas_per_agency(db, basic_cfo_and_non_cfo_agencies):
+def one_tas_per_agency(db, basic_cfo_and_non_cfo_agencies, dummy_award):
     for i in aribitrary_cfo_cgac_sample:
         _setup_basic_cgac_tas(CFO_CGACS[i])
     for x in range(1, 100):
@@ -60,7 +72,7 @@ def one_tas_per_agency(db, basic_cfo_and_non_cfo_agencies):
 
 
 @pytest.fixture
-def basic_dod_agencies(db):
+def basic_dod_agencies(db, dummy_award):
     _setup_basic_cgac(DOD_CGAC, "Department of Defense")
     for cgac in DOD_SUBSUMED_CGAC:
         _setup_basic_cgac(cgac, "DoD subsumed ")
@@ -73,7 +85,7 @@ def tas_for_dod_subs(db, basic_dod_agencies):
 
 
 @pytest.fixture
-def tas_for_dod(db, basic_dod_agencies):
+def tas_for_dod(db, basic_dod_agencies, dummy_award):
     _setup_basic_cgac_tas(DOD_CGAC)
 
 
@@ -84,7 +96,10 @@ def _setup_basic_cgac(id, name_prefix=""):
 
 
 def _setup_basic_cgac_tas(id):
-    mommy.make("accounts.TreasuryAppropriationAccount", agency_id=str(id).zfill(3))
+    mommy.make(
+        "accounts.TreasuryAppropriationAccount", treasury_account_identifier=int(id) * 123, agency_id=str(id).zfill(3)
+    )
+    mommy.make("awards.FinancialAccountsByAwards", award_id=1, treasury_account_id=int(id) * 123)
 
 
 def _setup_basic_frec(id, name_prefix=""):
@@ -96,6 +111,8 @@ def _setup_basic_frec(id, name_prefix=""):
 def _setup_basic_frec_tas(id):
     mommy.make(
         "accounts.TreasuryAppropriationAccount",
+        treasury_account_identifier=int(id) * 122,
         agency_id="Some CGAC that should not be used",
         fr_entity_code=str(id).zfill(4),
     )
+    mommy.make("awards.FinancialAccountsByAwards", award_id=1, treasury_account_id=int(id) * 122)
