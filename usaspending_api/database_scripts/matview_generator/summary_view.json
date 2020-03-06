@@ -8,7 +8,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "",
     "  transaction_normalized.awarding_agency_id,",
     "  transaction_normalized.funding_agency_id,",
@@ -21,13 +20,13 @@
     "  SAA.abbreviation AS awarding_subtier_agency_abbreviation,",
     "  SFA.abbreviation AS funding_subtier_agency_abbreviation,",
     "",
-    "  SUM(COALESCE(CASE",
+    "  COALESCE(SUM(CASE",
     "    WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost",
     "    ELSE transaction_normalized.federal_action_obligation",
-    "  END, 0)::NUMERIC(23, 2))::NUMERIC(23, 2) AS generated_pragmatic_obligation,",
-    "  SUM(COALESCE(transaction_normalized.federal_action_obligation, 0))::NUMERIC(23, 2) AS federal_action_obligation,",
-    "  SUM(COALESCE(transaction_normalized.original_loan_subsidy_cost, 0))::NUMERIC(23, 2) AS original_loan_subsidy_cost,",
-    "  SUM(COALESCE(transaction_normalized.face_value_loan_guarantee, 0))::NUMERIC(23, 2) AS face_value_loan_guarantee,",
+    "  END), 0)::NUMERIC(23, 2) AS generated_pragmatic_obligation,",
+    "  COALESCE(SUM(transaction_normalized.federal_action_obligation), 0)::NUMERIC(23, 2) AS federal_action_obligation,",
+    "  COALESCE(SUM(transaction_normalized.original_loan_subsidy_cost), 0)::NUMERIC(23, 2) AS original_loan_subsidy_cost,",
+    "  COALESCE(SUM(transaction_normalized.face_value_loan_guarantee), 0)::NUMERIC(23, 2) AS face_value_loan_guarantee,",
     "  COUNT(*) AS counts",
     "FROM",
     "  transaction_normalized",
@@ -51,7 +50,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "",
     "  transaction_normalized.awarding_agency_id,",
     "  transaction_normalized.funding_agency_id,",
@@ -78,10 +76,6 @@
     }, {
       "name": "fy",
       "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "pulled_from",
-      "where": "pulled_from IS NOT NULL",
-      "columns": [{"name": "pulled_from"}]
     }, {
       "name": "awarding_agency_id",
       "where": "awarding_agency_id IS NOT NULL",
