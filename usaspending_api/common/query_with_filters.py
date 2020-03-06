@@ -319,6 +319,19 @@ class _NaicsCodes(_Filter):
         return ES_Q("bool", should=naics_codes_query, minimum_should_match=1)
 
 
+class _ExcludeNaicsCodes(_Filter):
+    underscore_name = "exclude_naics_codes"
+
+    @classmethod
+    def _generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
+        naics_codes_query = []
+
+        for v in filter_values:
+            naics_codes_query.append(~ES_Q("match_phrase_prefix", naics_code=v))
+
+        return ES_Q("bool", should=naics_codes_query, minimum_should_match=1)
+
+
 class _PscCodes(_Filter):
     underscore_name = "psc_codes"
 
@@ -419,6 +432,7 @@ class QueryWithFilters:
         _AwardIds.underscore_name: _AwardIds,
         _ProgramNumbers.underscore_name: _ProgramNumbers,
         _NaicsCodes.underscore_name: _NaicsCodes,
+        _ExcludeNaicsCodes.underscore_name: _ExcludeNaicsCodes,
         _PscCodes.underscore_name: _PscCodes,
         _ContractPricingTypeCodes.underscore_name: _ContractPricingTypeCodes,
         _SetAsideTypeCodes.underscore_name: _SetAsideTypeCodes,
