@@ -38,6 +38,7 @@ def subaward_filter(filters, for_downloads=False):
             "elasticsearch_keyword",
             "time_period",
             "award_type_codes",
+            "prime_and_sub_award_types",
             "agencies",
             "legal_entities",
             "recipient_search_text",
@@ -107,6 +108,11 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "award_type_codes":
             queryset = queryset.filter(prime_award_type__in=value)
+
+        elif key == "prime_and_sub_award_types":
+            award_types = value.get("sub_awards")
+            if award_types:
+                queryset = queryset.filter(award_type__in=award_types)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error

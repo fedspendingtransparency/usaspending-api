@@ -31,7 +31,7 @@ from usaspending_api.download.v2.request_validations import (
 class BaseDownloadViewSet(APIView):
     def post(self, request: Request, request_type: str = "award", origination: Optional[str] = None):
         if request_type == "award":
-            json_request = validate_award_request(request.data)
+            json_request = validate_award_request(request.data, origination)
         elif request_type == "idv":
             json_request = validate_idv_request(request.data)
         elif request_type == "contract":
@@ -66,14 +66,14 @@ class BaseDownloadViewSet(APIView):
         )
 
         log_new_download_job(request, download_job)
-        self.process_request(download_job)
+        self.process_request(download_job, origination)
 
         return self.get_download_response(file_name=final_output_zip_name)
 
-    def process_request(self, download_job: DownloadJob):
+    def process_request(self, download_job: DownloadJob, origination: Optional[str] = None):
         if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
-            download_generation.generate_download(download_job=download_job)
+            download_generation.generate_download(download_job, origination)
         else:
             # Send a SQS message that will be processed by another server which will eventually run
             # download_generation.generate_download(download_source) (see download_sqs_worker.py)

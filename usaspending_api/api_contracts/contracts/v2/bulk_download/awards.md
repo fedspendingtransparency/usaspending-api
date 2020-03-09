@@ -11,10 +11,6 @@ This route sends a request to the backend to begin generating a zipfile of award
 
 + Request (application/json)
     + Attributes (object)
-        + `award_levels` (required, array[enum[string]])
-            + Members
-                + `prime_awards`
-                + `sub_awards`
         + `filters` (required, Filters, fixed-type)
         + `columns` (optional, array[string])
         + `file_format` (optional, enum[string])
@@ -29,14 +25,14 @@ This route sends a request to the backend to begin generating a zipfile of award
             {
                 "filters": {
                     "agency": 50,
-                    "award_types": ["contracts", "grants"],
+                    "prime_award_types": ["contracts", "grants"],
+                    "sub_award_types": ["procurement"],
                     "date_range": {
                         "start_date": "2019-01-01",
                         "end_date": "2019-12-31"
                     },
                     "date_type": "action_date"
-                },
-                "award_levels": ["prime_awards", "sub_awards"]
+                }
             }
 
 
@@ -102,7 +98,7 @@ This route sends a request to the backend to begin generating a zipfile of award
 ### Filters (object)
 + `agency` (required, string)
     Agency database id to include, 'all' is also an option to include all agencies
-+ `award_types` (required, array[enum[string]])
++ `prime_award_types` (optional, array[enum[string]])
     + Members
         + `contracts`
         + `direct_payments`
@@ -121,6 +117,10 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `recipient_locations` (optional, array[Location], fixed-type)
 + `sub_agency` (optional, string)
     Sub-agency name to include (based on the agency filter)
++ `sub_award_types` (optional, array[enum[string]])
+    + Members
+        + `grant`
+        + `procurement`
 
 ### TimePeriod (object)
 + `start_date` (required, string)
