@@ -3,13 +3,23 @@ import pytest
 
 from model_mommy import mommy
 from rest_framework import status
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from unittest.mock import Mock
+
+from usaspending_api.awards.models import (
+    TransactionNormalized,
+    TransactionFABS,
+    TransactionFPDS,
+    Subaward,
+    BrokerSubaward,
+)
+from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 
 
 @pytest.fixture
-def award_data(db):
+def award_data(transactional_db):
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
@@ -49,6 +59,7 @@ def award_data(db):
     # Create Funding Top Agency
     fta = mommy.make(
         "references.ToptierAgency",
+        toptier_agency_id=3,
         name="Bureau of Money",
         toptier_code="102",
         website="http://test.com",
@@ -66,33 +77,161 @@ def award_data(db):
     mommy.make("accounts.FederalAccount", account_title="Compensation to Accounts", agency_identifier="102", id=1)
 
     # Create Awards
-    award1 = mommy.make("awards.Award", category="contracts", generated_unique_award_id="TEST_AWARD_1")
-    award2 = mommy.make("awards.Award", category="contracts", generated_unique_award_id="TEST_AWARD_2")
-    award3 = mommy.make("awards.Award", category="assistance", generated_unique_award_id="TEST_AWARD_3")
+    mommy.make("awards.Award", id=1, category="contracts", generated_unique_award_id="TEST_AWARD_1")
+    mommy.make("awards.Award", id=2, category="contracts", generated_unique_award_id="TEST_AWARD_2")
+    mommy.make("awards.Award", id=3, category="assistance", generated_unique_award_id="TEST_AWARD_3")
+    mommy.make("awards.Award", id=4, category="contracts", generated_unique_award_id="TEST_AWARD_4")
+    mommy.make("awards.Award", id=5, category="assistance", generated_unique_award_id="TEST_AWARD_5")
+    mommy.make("awards.Award", id=6, category="assistance", generated_unique_award_id="TEST_AWARD_6")
 
     # Create Transactions
-    trann1 = mommy.make(
-        TransactionNormalized, award=award1, modification_number=1, awarding_agency=aa1, unique_award_key="TEST_AWARD_1"
+    mommy.make(
+        TransactionNormalized,
+        id=1,
+        award_id=1,
+        modification_number=1,
+        awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_1",
+        action_date="2017-01-01",
+        type="A",
     )
-    trann2 = mommy.make(
-        TransactionNormalized, award=award2, modification_number=1, awarding_agency=aa2, unique_award_key="TEST_AWARD_2"
+    mommy.make(
+        TransactionNormalized,
+        id=2,
+        award_id=2,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_2",
+        action_date="2017-04-01",
+        type="IDV_B",
     )
-    trann3 = mommy.make(
-        TransactionNormalized, award=award3, modification_number=1, awarding_agency=aa2, unique_award_key="TEST_AWARD_3"
+    mommy.make(
+        TransactionNormalized,
+        id=3,
+        award_id=3,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_3",
+        action_date="2017-06-01",
+        type="02",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=4,
+        award_id=4,
+        modification_number=1,
+        awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_4",
+        action_date="2018-01-15",
+        type="A",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=5,
+        award_id=5,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_5",
+        action_date="2018-03-15",
+        type="07",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=6,
+        award_id=6,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_6",
+        action_date="2018-06-15",
+        type="02",
+    )
+
+    # Create Transactions
+    mommy.make(
+        TransactionNormalized,
+        id=1,
+        award_id=1,
+        modification_number=1,
+        awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_1",
+        action_date="2017-01-01",
+        type="A",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=2,
+        award_id=2,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_2",
+        action_date="2017-04-01",
+        type="IDV_B",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=3,
+        award_id=3,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_3",
+        action_date="2017-06-01",
+        type="02",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=4,
+        award_id=4,
+        modification_number=1,
+        awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_4",
+        action_date="2018-01-15",
+        type="A",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=5,
+        award_id=5,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_5",
+        action_date="2018-03-15",
+        type="07",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=6,
+        award_id=6,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_6",
+        action_date="2018-06-15",
+        type="02",
     )
 
     # Create TransactionContract
-    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="TEST_AWARD_1")
-    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="TEST_AWARD_2")
+    mommy.make(TransactionFPDS, transaction_id=1, piid="tc1piid", unique_award_key="TEST_AWARD_1")
+    mommy.make(TransactionFPDS, transaction_id=2, piid="tc2piid", unique_award_key="TEST_AWARD_2")
+    mommy.make(TransactionFPDS, transaction_id=4, piid="tc4piid", unique_award_key="TEST_AWARD_4")
 
     # Create TransactionAssistance
-    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="TEST_AWARD_3")
+    mommy.make(TransactionFABS, transaction_id=3, fain="ta1fain", unique_award_key="TEST_AWARD_3")
+    mommy.make(TransactionFABS, transaction_id=5, fain="ta5fain", unique_award_key="TEST_AWARD_5")
+    mommy.make(TransactionFABS, transaction_id=6, fain="ta6fain", unique_award_key="TEST_AWARD_6")
+
+    # Create Subaward
+    mommy.make(Subaward, id=1, award_id=4, latest_transaction_id=4, action_date="2018-01-15", award_type="procurement")
+    mommy.make(Subaward, id=2, award_id=5, latest_transaction_id=5, action_date="2018-03-15", award_type="grant")
+    mommy.make(Subaward, id=3, award_id=6, latest_transaction_id=6, action_date="2018-06-15", award_type="grant")
+
+    # Create BrokerSubaward
+    mommy.make(BrokerSubaward, id=1, prime_id=4, action_date="2018-01-15", subaward_type="sub-contract")
+    mommy.make(BrokerSubaward, id=2, prime_id=5, action_date="2018-03-15", subaward_type="sub-grant")
+    mommy.make(BrokerSubaward, id=3, prime_id=6, action_date="2018-06-15", subaward_type="sub-grant")
 
     # Set latest_award for each award
     update_awards()
 
 
-@pytest.mark.django_db
 @pytest.mark.skip
 def test_download_transactions_v2_endpoint(client, award_data):
     """test the transaction endpoint."""
@@ -107,7 +246,6 @@ def test_download_transactions_v2_endpoint(client, award_data):
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 @pytest.mark.skip
 def test_download_awards_v2_endpoint(client, award_data):
     """test the awards endpoint."""
@@ -120,7 +258,6 @@ def test_download_awards_v2_endpoint(client, award_data):
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 @pytest.mark.skip
 def test_download_transactions_v2_status_endpoint(client, award_data):
     """Test the transaction status endpoint."""
@@ -138,24 +275,95 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
     assert resp.json()["total_columns"] > 100
 
 
-@pytest.mark.django_db
-@pytest.mark.skip
-def test_download_awards_v2_status_endpoint(client, award_data):
-    """Test the transaction status endpoint."""
-
+def test_download_awards_with_all_prime_awards(client, award_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "prime_award_types": ["contracts", "direct_payments", "grants", "idvs", "loans", "other_financial_assistance"],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+    }
     dl_resp = client.post(
-        "/api/v2/bulk_download/awards", content_type="application/json", data=json.dumps({"filters": {}, "columns": []})
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
     )
+    assert dl_resp.status_code == status.HTTP_200_OK
 
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["total_rows"] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1``0`
-    assert resp.json()["total_columns"] > 100
+    assert resp.json()["total_rows"] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1
+    assert resp.json()["total_columns"] == 366
+
+
+def test_download_awards_with_some_prime_awards(client, award_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "prime_award_types": ["contracts", "direct_payments", "idvs"],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 2
+    assert resp.json()["total_columns"] == 366
+
+
+def test_download_awards_with_all_sub_awards(client, award_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "sub_award_types": ["procurement", "grant"],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2017-10-01", "end_date": "2018-09-30"},
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1
+    assert resp.json()["total_columns"] == 179
+
+
+def test_download_awards_with_some_sub_awards(client, award_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "sub_award_types": ["grant"],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2017-10-01", "end_date": "2018-09-30"},
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 2
+    assert resp.json()["total_columns"] == 89
 
 
 @pytest.mark.django_db
-@pytest.mark.skip
 def test_download_status_nonexistent_file_404(client):
     """Requesting status of nonexistent file should produce HTTP 404"""
 
