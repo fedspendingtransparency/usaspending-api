@@ -159,7 +159,7 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
             )
 
             queryset = filter_function(filters)
-            if origination == "bulk_download":
+            if filters.get("prime_and_sub_award_types") is not None:
                 award_type_codes = set(filters["prime_and_sub_award_types"][download_type])
             else:
                 award_type_codes = set(filters["award_type_codes"])

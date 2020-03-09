@@ -45,7 +45,7 @@ def validate_award_request(request_data: dict, origination: Optional[str] = None
     check_types_and_assign_defaults(filters, json_request["filters"], SHARED_AWARD_FILTER_DEFAULTS)
 
     # Award type validation depends on the
-    if origination == "bulk_download":
+    if filters.get("prime_and_sub_award_types") is not None:
         json_request["filters"]["prime_and_sub_award_types"] = _validate_award_and_subaward_types(filters)
     else:
         json_request["filters"]["award_type_codes"] = _validate_award_type_codes(filters)
