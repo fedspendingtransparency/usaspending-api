@@ -1,6 +1,4 @@
 from copy import deepcopy
-from typing import Optional
-
 from django.conf import settings
 
 from usaspending_api.awards.models import Award
@@ -28,7 +26,7 @@ from usaspending_api.download.lookups import (
 )
 
 
-def validate_award_request(request_data: dict, origination: Optional[str] = None):
+def validate_award_request(request_data: dict):
     """Analyze request and raise any formatting errors as Exceptions"""
 
     _validate_required_parameters(request_data, ["filters"])
