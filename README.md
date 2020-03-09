@@ -24,7 +24,7 @@ Ensure the following dependencies are installed and working prior to continuing:
     - MacOS users will use [`Homebrew`](https://brew.sh/)
     - Linux users already know their package manager (yum, apt, pacman, etc.)
 - [`PostgreSQL`](https://www.postgresql.org/download/) version 10.x (with a dedicated `data_store_api` database)
-- [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 6.3
+- [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 7.1
 - Python 3.7 environment
   - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
 

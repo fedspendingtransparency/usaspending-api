@@ -18,10 +18,10 @@ from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg impo
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
-from usaspending_api.common.helpers.generic_helper import get_time_period_message
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.helpers.orm_helpers import category_to_award_materialized_views
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 
@@ -56,8 +56,9 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 "array_max": maxsize,
             },
         ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
+        self.original_filters = request.data.get("filters")
         json_request = TinyShield(models).block(request.data)
         subawards = json_request["subawards"]
         filters = add_date_range_comparison_types(
@@ -68,7 +69,14 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if elasticsearch and not subawards:
             logger.info("Using experimental Elasticsearch functionality for 'spending_by_award_count'")
             results = self.query_elasticsearch(filters)
-            return Response({"results": results, "messages": [get_time_period_message()]})
+            return Response(
+                {
+                    "results": results,
+                    "messages": get_generic_filters_message(
+                        self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                    ),
+                }
+            )
 
         if filters is None:
             raise InvalidParameterException("Missing required request parameters: 'filters'")
@@ -86,7 +94,14 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         else:
             results = self.handle_awards(filters, empty_results)
 
-        return Response({"results": results, "messages": [get_time_period_message()]})
+        return Response(
+            {
+                "results": results,
+                "messages": get_generic_filters_message(
+                    self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                ),
+            }
+        )
 
     @staticmethod
     def handle_awards(filters: dict, results_object: dict) -> dict:
