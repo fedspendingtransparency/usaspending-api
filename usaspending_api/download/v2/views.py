@@ -1,6 +1,9 @@
 import logging
 
-from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
+from usaspending_api.common.experimental_api_flags import (
+    is_experimental_elasticsearch_api,
+    mirror_request_to_elasticsearch,
+)
 from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
 
 logger = logging.getLogger("console")
@@ -72,6 +75,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
             logger.info("Using experimental Elasticsearch functionality for '/download/transactions'")
             request.data["award_levels"] = ["elasticsearch_transactions", "sub_awards"]
         else:
+            mirror_request_to_elasticsearch(request)
             request.data["award_levels"] = ["transactions", "sub_awards"]
         request.data["constraint_type"] = "row_count"
         return BaseDownloadViewSet.post(self, request, "award")

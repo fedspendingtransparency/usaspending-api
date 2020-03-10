@@ -18,7 +18,10 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
+from usaspending_api.common.experimental_api_flags import (
+    is_experimental_elasticsearch_api,
+    mirror_request_to_elasticsearch,
+)
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
@@ -59,7 +62,8 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
         validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
-
+        if not validated_payload["elasticsearch"]:
+            mirror_request_to_elasticsearch(request)
         return Response(self.perform_search(validated_payload, original_filters))
 
     def perform_search(self, validated_payload: dict, original_filters: dict) -> dict:

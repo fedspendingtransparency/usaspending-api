@@ -51,6 +51,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             "elasticsearch_keyword",
             "time_period",
             "award_type_codes",
+            "prime_and_sub_award_types",
             "agencies",
             "legal_entities",
             "recipient_id",
@@ -123,6 +124,11 @@ def matview_search_filter(filters, model, for_downloads=False):
 
         elif key == "award_type_codes":
             queryset = queryset.filter(type__in=value)
+
+        elif key == "prime_and_sub_award_types":
+            award_types = value.get("prime_awards")
+            if award_types:
+                queryset = queryset.filter(type__in=award_types)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
