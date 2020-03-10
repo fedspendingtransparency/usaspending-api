@@ -26,7 +26,7 @@ This route sends a request to the backend to begin generating a zipfile of award
                 "filters": {
                     "agency": 50,
                     "prime_award_types": ["02", "03", "04", "05", "A", "B", "C", "D"],
-                    "sub_award_types": ["procurement"]
+                    "sub_award_types": ["procurement"],
                     "date_range": {
                         "start_date": "2019-01-01",
                         "end_date": "2019-12-31"
