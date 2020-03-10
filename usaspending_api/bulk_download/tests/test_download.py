@@ -12,6 +12,7 @@ from usaspending_api.awards.models import (
     Subaward,
     BrokerSubaward,
 )
+from usaspending_api.awards.v2.lookups.lookups import all_subaward_types, award_type_mapping
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
@@ -83,6 +84,9 @@ def award_data(transactional_db):
     mommy.make("awards.Award", id=4, category="contracts", generated_unique_award_id="TEST_AWARD_4")
     mommy.make("awards.Award", id=5, category="assistance", generated_unique_award_id="TEST_AWARD_5")
     mommy.make("awards.Award", id=6, category="assistance", generated_unique_award_id="TEST_AWARD_6")
+    mommy.make("awards.Award", id=7, category="contracts", generated_unique_award_id="TEST_AWARD_7")
+    mommy.make("awards.Award", id=8, category="assistance", generated_unique_award_id="TEST_AWARD_8")
+    mommy.make("awards.Award", id=9, category="assistance", generated_unique_award_id="TEST_AWARD_9")
 
     # Create Transactions
     mommy.make(
@@ -205,6 +209,36 @@ def award_data(transactional_db):
         awarding_agency=aa2,
         unique_award_key="TEST_AWARD_6",
         action_date="2018-06-15",
+        type="02",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=7,
+        award_id=7,
+        modification_number=1,
+        awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_7",
+        action_date="2017-01-15",
+        type="A",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=8,
+        award_id=8,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_8",
+        action_date="2017-03-15",
+        type="07",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=9,
+        award_id=9,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_9",
+        action_date="2017-06-15",
         type="02",
     )
 
@@ -212,21 +246,30 @@ def award_data(transactional_db):
     mommy.make(TransactionFPDS, transaction_id=1, piid="tc1piid", unique_award_key="TEST_AWARD_1")
     mommy.make(TransactionFPDS, transaction_id=2, piid="tc2piid", unique_award_key="TEST_AWARD_2")
     mommy.make(TransactionFPDS, transaction_id=4, piid="tc4piid", unique_award_key="TEST_AWARD_4")
+    mommy.make(TransactionFPDS, transaction_id=7, piid="tc7piid", unique_award_key="TEST_AWARD_7")
 
     # Create TransactionAssistance
     mommy.make(TransactionFABS, transaction_id=3, fain="ta1fain", unique_award_key="TEST_AWARD_3")
     mommy.make(TransactionFABS, transaction_id=5, fain="ta5fain", unique_award_key="TEST_AWARD_5")
     mommy.make(TransactionFABS, transaction_id=6, fain="ta6fain", unique_award_key="TEST_AWARD_6")
+    mommy.make(TransactionFABS, transaction_id=8, fain="ta8fain", unique_award_key="TEST_AWARD_8")
+    mommy.make(TransactionFABS, transaction_id=9, fain="ta9fain", unique_award_key="TEST_AWARD_9")
 
     # Create Subaward
     mommy.make(Subaward, id=1, award_id=4, latest_transaction_id=4, action_date="2018-01-15", award_type="procurement")
     mommy.make(Subaward, id=2, award_id=5, latest_transaction_id=5, action_date="2018-03-15", award_type="grant")
     mommy.make(Subaward, id=3, award_id=6, latest_transaction_id=6, action_date="2018-06-15", award_type="grant")
+    mommy.make(Subaward, id=4, award_id=7, latest_transaction_id=7, action_date="2017-01-15", award_type="procurement")
+    mommy.make(Subaward, id=5, award_id=8, latest_transaction_id=8, action_date="2017-03-15", award_type="grant")
+    mommy.make(Subaward, id=6, award_id=9, latest_transaction_id=9, action_date="2017-06-15", award_type="grant")
 
     # Create BrokerSubaward
     mommy.make(BrokerSubaward, id=1, prime_id=4, action_date="2018-01-15", subaward_type="sub-contract")
     mommy.make(BrokerSubaward, id=2, prime_id=5, action_date="2018-03-15", subaward_type="sub-grant")
     mommy.make(BrokerSubaward, id=3, prime_id=6, action_date="2018-06-15", subaward_type="sub-grant")
+    mommy.make(BrokerSubaward, id=4, prime_id=7, action_date="2017-01-15", subaward_type="sub-contract")
+    mommy.make(BrokerSubaward, id=5, prime_id=8, action_date="2017-03-15", subaward_type="sub-grant")
+    mommy.make(BrokerSubaward, id=6, prime_id=9, action_date="2017-06-15", subaward_type="sub-grant")
 
     # Set latest_award for each award
     update_awards()
@@ -275,11 +318,12 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
     assert resp.json()["total_columns"] > 100
 
 
-def test_download_awards_with_all_prime_awards(client, award_data):
+def test_download_awards_with_all_award_types(client, award_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     filters = {
         "agency": "all",
-        "prime_award_types": ["contracts", "direct_payments", "grants", "idvs", "loans", "other_financial_assistance"],
+        "prime_award_types": [*list(award_type_mapping.keys())],
+        "sub_award_types": [*all_subaward_types],
         "date_type": "action_date",
         "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
     }
@@ -293,7 +337,29 @@ def test_download_awards_with_all_prime_awards(client, award_data):
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["total_rows"] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1
+    assert resp.json()["total_rows"] == 9
+    assert resp.json()["total_columns"] == 545
+
+
+def test_download_awards_with_all_prime_awards(client, award_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "prime_award_types": list(award_type_mapping.keys()),
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 6
     assert resp.json()["total_columns"] == 366
 
 
@@ -301,7 +367,7 @@ def test_download_awards_with_some_prime_awards(client, award_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     filters = {
         "agency": "all",
-        "prime_award_types": ["contracts", "direct_payments", "idvs"],
+        "prime_award_types": ["A", "IDV_B"],
         "date_type": "action_date",
         "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
     }
@@ -315,15 +381,15 @@ def test_download_awards_with_some_prime_awards(client, award_data):
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["total_rows"] == 2
-    assert resp.json()["total_columns"] == 366
+    assert resp.json()["total_rows"] == 3
+    assert resp.json()["total_columns"] == 276
 
 
 def test_download_awards_with_all_sub_awards(client, award_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     filters = {
         "agency": "all",
-        "sub_award_types": ["procurement", "grant"],
+        "sub_award_types": all_subaward_types,
         "date_type": "action_date",
         "date_range": {"start_date": "2017-10-01", "end_date": "2018-09-30"},
     }
