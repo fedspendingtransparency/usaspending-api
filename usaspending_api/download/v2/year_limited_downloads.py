@@ -1,4 +1,3 @@
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings, all_subaward_types
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
@@ -34,7 +33,10 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             return
 
         # Validate award and subaward type separately since only one is required
-        if filters.get("prime_award_types") is None and filters.get("sub_award_types") is None:
+        prime_award_types = filters.get("prime_award_types")
+        sub_award_types = filters.get("sub_award_types")
+
+        if prime_award_types is None and sub_award_types is None:
             raise InvalidParameterException(
                 "Missing one or more required body parameters: prime_award_types or sub_award_types"
             )
@@ -44,36 +46,26 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             if required_param not in filters:
                 raise InvalidParameterException(f"Missing one or more required body parameters: {required_param}")
 
-        # Replacing award_types with award_type_codes and creating new filter for
-        # custom award download to keep Prime and Sub Awards separate;
+        # Creating new filter for custom award download to keep Prime and Sub Awards separate;
         # Also adding award levels based on filters passed
         request_data["award_levels"] = []
         filters["prime_and_sub_award_types"] = {}
-        if filters.get("prime_award_types"):
-            prime_award_type_codes = []
+
+        if prime_award_types is not None:
             try:
-                for prime_award_type_code in filters["prime_award_types"]:
-                    if prime_award_type_code in all_award_types_mappings:
-                        prime_award_type_codes.extend(all_award_types_mappings[prime_award_type_code])
-                    else:
-                        raise InvalidParameterException(f"Invalid prime_award_type: {prime_award_type_code}")
+                if len(prime_award_types) > 0:
+                    filters["prime_and_sub_award_types"]["prime_awards"] = prime_award_types
+                    request_data["award_levels"].append("prime_awards")
                 del filters["prime_award_types"]
-                filters["prime_and_sub_award_types"]["prime_awards"] = prime_award_type_codes
-                request_data["award_levels"].append("prime_awards")
             except TypeError:
                 raise InvalidParameterException("prime_award_types parameter not provided as a list")
 
-        if filters.get("sub_award_types"):
-            sub_award_types = []
+        if sub_award_types is not None:
             try:
-                for sub_award_type in filters["sub_award_types"]:
-                    if sub_award_type in all_subaward_types:
-                        sub_award_types.append(sub_award_type)
-                    else:
-                        raise InvalidParameterException(f"Invalid sub_award_type: {sub_award_type}")
+                if len(sub_award_types) > 0:
+                    filters["prime_and_sub_award_types"]["sub_awards"] = sub_award_types
+                    request_data["award_levels"].append("sub_awards")
                 del filters["sub_award_types"]
-                filters["prime_and_sub_award_types"]["sub_awards"] = sub_award_types
-                request_data["award_levels"].append("sub_awards")
             except TypeError:
                 raise InvalidParameterException("sub_award_types parameter not provided as a list")
 
