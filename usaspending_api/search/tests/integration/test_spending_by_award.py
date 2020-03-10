@@ -875,7 +875,7 @@ def _test_correct_response_for_naics_codes(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "naics_codes": ["NACIS_test"],
+                    "naics_codes": ["112233"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
