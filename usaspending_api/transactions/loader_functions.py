@@ -19,6 +19,8 @@ def store_ids_in_file(id_iter: List, file_name: str = "temp_file", is_numeric: b
             total_ids += 1
             if is_numeric:
                 id_characters = regex(r"\d+", str(id_string)).group()
+            elif isinstance(id_string, list):
+                id_characters = "\n".join([str(id) for id in id_string])
             else:
                 id_characters = id_string
             f.writelines("{}\n".format(id_characters))
@@ -30,7 +32,7 @@ def filepath_command_line_argument_type(chunk_count):
     """helper function for parsing files provided by the user"""
 
     def _filepath_command_line_argument_type(provided_uri):
-        return read_file_for_database_ids(provided_uri, chunk_count)
+        return read_file_for_database_ids(provided_uri, chunk_count, is_numeric=False)
 
     return _filepath_command_line_argument_type
 
@@ -58,4 +60,4 @@ def read_file_for_database_ids(provided_uri, chunk_count, is_numeric: bool = Tru
             yield chunk_list
 
     except Exception as e:
-        raise RuntimeError("Issue with reading/parsing file: {}".format(e))
+        raise RuntimeError(f"Issue with reading/parsing file: {e}")

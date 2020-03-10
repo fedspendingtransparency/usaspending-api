@@ -17,7 +17,10 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
+from usaspending_api.common.experimental_api_flags import (
+    is_experimental_elasticsearch_api,
+    mirror_request_to_elasticsearch,
+)
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.helpers.orm_helpers import category_to_award_materialized_views
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -65,6 +68,8 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             json_request.get("filters", None), subawards, gte_date_type="action_date", lte_date_type="date_signed"
         )
         elasticsearch = is_experimental_elasticsearch_api(request)
+        if not elasticsearch:
+            mirror_request_to_elasticsearch(request)
 
         if elasticsearch and not subawards:
             logger.info("Using experimental Elasticsearch functionality for 'spending_by_award_count'")

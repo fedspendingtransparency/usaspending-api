@@ -149,3 +149,5 @@ all_award_types_mappings = {
 all_awards_types_to_category = {
     type_code: category for category, type_codes in all_award_types_mappings.items() for type_code in type_codes
 }
+
+all_subaward_types = ["grant", "procurement"]

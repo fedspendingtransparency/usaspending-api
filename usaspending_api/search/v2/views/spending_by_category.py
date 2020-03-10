@@ -12,7 +12,10 @@ from usaspending_api.awards.v2.filters.view_selector import spending_by_category
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
+from usaspending_api.common.experimental_api_flags import (
+    is_experimental_elasticsearch_api,
+    mirror_request_to_elasticsearch,
+)
 from usaspending_api.common.helpers.api_helper import alias_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
@@ -104,6 +107,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         validated_payload = TinyShield(models).block(request.data)
 
         validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
+        if not validated_payload["elasticsearch"]:
+            mirror_request_to_elasticsearch(request)
 
         # Execute the business logic for the endpoint and return a python dict to be converted to a Django response
         if validated_payload["category"] == "awarding_agency":

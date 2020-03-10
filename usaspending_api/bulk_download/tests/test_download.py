@@ -1,16 +1,26 @@
 import json
+import pytest
 
 from model_mommy import mommy
-import pytest
 from rest_framework import status
+from unittest.mock import Mock
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.awards.models import (
+    TransactionNormalized,
+    TransactionFABS,
+    TransactionFPDS,
+    Subaward,
+    BrokerSubaward,
+)
+from usaspending_api.awards.v2.lookups.lookups import all_subaward_types, award_type_mapping
+from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 
 
 @pytest.fixture
-def award_data(db):
+def award_data(transactional_db):
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
@@ -18,6 +28,7 @@ def award_data(db):
     # Create Awarding Top Agency
     ata1 = mommy.make(
         "references.ToptierAgency",
+        toptier_agency_id=1,
         name="Bureau of Things",
         toptier_code="100",
         website="http://test.com",
@@ -26,6 +37,7 @@ def award_data(db):
     )
     ata2 = mommy.make(
         "references.ToptierAgency",
+        toptier_agency_id=2,
         name="Bureau of Stuff",
         toptier_code="101",
         website="http://test.com",
@@ -34,16 +46,21 @@ def award_data(db):
     )
 
     # Create Awarding subs
-    asa1 = mommy.make("references.SubtierAgency", name="Bureau of Things")
-    asa2 = mommy.make("references.SubtierAgency", name="Bureau of Stuff")
+    asa1 = mommy.make("references.SubtierAgency", name="SubBureau of Things")
+    asa2 = mommy.make("references.SubtierAgency", name="SubBureau of Stuff")
 
     # Create Awarding Agencies
-    aa1 = mommy.make("references.Agency", toptier_agency=ata1, subtier_agency=asa1, toptier_flag=False)
-    aa2 = mommy.make("references.Agency", toptier_agency=ata2, subtier_agency=asa2, toptier_flag=False)
+    aa1 = mommy.make(
+        "references.Agency", toptier_agency=ata1, subtier_agency=asa1, toptier_flag=False, user_selectable=True
+    )
+    aa2 = mommy.make(
+        "references.Agency", toptier_agency=ata2, subtier_agency=asa2, toptier_flag=False, user_selectable=True
+    )
 
     # Create Funding Top Agency
     fta = mommy.make(
         "references.ToptierAgency",
+        toptier_agency_id=3,
         name="Bureau of Money",
         toptier_code="102",
         website="http://test.com",
@@ -61,33 +78,203 @@ def award_data(db):
     mommy.make("accounts.FederalAccount", account_title="Compensation to Accounts", agency_identifier="102", id=1)
 
     # Create Awards
-    award1 = mommy.make("awards.Award", category="contracts", generated_unique_award_id="TEST_AWARD_1")
-    award2 = mommy.make("awards.Award", category="contracts", generated_unique_award_id="TEST_AWARD_2")
-    award3 = mommy.make("awards.Award", category="assistance", generated_unique_award_id="TEST_AWARD_3")
+    mommy.make("awards.Award", id=1, category="contracts", generated_unique_award_id="TEST_AWARD_1")
+    mommy.make("awards.Award", id=2, category="contracts", generated_unique_award_id="TEST_AWARD_2")
+    mommy.make("awards.Award", id=3, category="assistance", generated_unique_award_id="TEST_AWARD_3")
+    mommy.make("awards.Award", id=4, category="contracts", generated_unique_award_id="TEST_AWARD_4")
+    mommy.make("awards.Award", id=5, category="assistance", generated_unique_award_id="TEST_AWARD_5")
+    mommy.make("awards.Award", id=6, category="assistance", generated_unique_award_id="TEST_AWARD_6")
+    mommy.make("awards.Award", id=7, category="contracts", generated_unique_award_id="TEST_AWARD_7")
+    mommy.make("awards.Award", id=8, category="assistance", generated_unique_award_id="TEST_AWARD_8")
+    mommy.make("awards.Award", id=9, category="assistance", generated_unique_award_id="TEST_AWARD_9")
 
     # Create Transactions
-    trann1 = mommy.make(
-        TransactionNormalized, award=award1, modification_number=1, awarding_agency=aa1, unique_award_key="TEST_AWARD_1"
+    mommy.make(
+        TransactionNormalized,
+        id=1,
+        award_id=1,
+        modification_number=1,
+        awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_1",
+        action_date="2017-01-01",
+        type="A",
     )
-    trann2 = mommy.make(
-        TransactionNormalized, award=award2, modification_number=1, awarding_agency=aa2, unique_award_key="TEST_AWARD_2"
+    mommy.make(
+        TransactionNormalized,
+        id=2,
+        award_id=2,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_2",
+        action_date="2017-04-01",
+        type="IDV_B",
     )
-    trann3 = mommy.make(
-        TransactionNormalized, award=award3, modification_number=1, awarding_agency=aa2, unique_award_key="TEST_AWARD_3"
+    mommy.make(
+        TransactionNormalized,
+        id=3,
+        award_id=3,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_3",
+        action_date="2017-06-01",
+        type="02",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=4,
+        award_id=4,
+        modification_number=1,
+        awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_4",
+        action_date="2018-01-15",
+        type="A",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=5,
+        award_id=5,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_5",
+        action_date="2018-03-15",
+        type="07",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=6,
+        award_id=6,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_6",
+        action_date="2018-06-15",
+        type="02",
+    )
+
+    # Create Transactions
+    mommy.make(
+        TransactionNormalized,
+        id=1,
+        award_id=1,
+        modification_number=1,
+        awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_1",
+        action_date="2017-01-01",
+        type="A",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=2,
+        award_id=2,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_2",
+        action_date="2017-04-01",
+        type="IDV_B",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=3,
+        award_id=3,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_3",
+        action_date="2017-06-01",
+        type="02",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=4,
+        award_id=4,
+        modification_number=1,
+        awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_4",
+        action_date="2018-01-15",
+        type="A",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=5,
+        award_id=5,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_5",
+        action_date="2018-03-15",
+        type="07",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=6,
+        award_id=6,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_6",
+        action_date="2018-06-15",
+        type="02",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=7,
+        award_id=7,
+        modification_number=1,
+        awarding_agency=aa1,
+        unique_award_key="TEST_AWARD_7",
+        action_date="2017-01-15",
+        type="A",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=8,
+        award_id=8,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_8",
+        action_date="2017-03-15",
+        type="07",
+    )
+    mommy.make(
+        TransactionNormalized,
+        id=9,
+        award_id=9,
+        modification_number=1,
+        awarding_agency=aa2,
+        unique_award_key="TEST_AWARD_9",
+        action_date="2017-06-15",
+        type="02",
     )
 
     # Create TransactionContract
-    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="TEST_AWARD_1")
-    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="TEST_AWARD_2")
+    mommy.make(TransactionFPDS, transaction_id=1, piid="tc1piid", unique_award_key="TEST_AWARD_1")
+    mommy.make(TransactionFPDS, transaction_id=2, piid="tc2piid", unique_award_key="TEST_AWARD_2")
+    mommy.make(TransactionFPDS, transaction_id=4, piid="tc4piid", unique_award_key="TEST_AWARD_4")
+    mommy.make(TransactionFPDS, transaction_id=7, piid="tc7piid", unique_award_key="TEST_AWARD_7")
 
     # Create TransactionAssistance
-    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="TEST_AWARD_3")
+    mommy.make(TransactionFABS, transaction_id=3, fain="ta1fain", unique_award_key="TEST_AWARD_3")
+    mommy.make(TransactionFABS, transaction_id=5, fain="ta5fain", unique_award_key="TEST_AWARD_5")
+    mommy.make(TransactionFABS, transaction_id=6, fain="ta6fain", unique_award_key="TEST_AWARD_6")
+    mommy.make(TransactionFABS, transaction_id=8, fain="ta8fain", unique_award_key="TEST_AWARD_8")
+    mommy.make(TransactionFABS, transaction_id=9, fain="ta9fain", unique_award_key="TEST_AWARD_9")
+
+    # Create Subaward
+    mommy.make(Subaward, id=1, award_id=4, latest_transaction_id=4, action_date="2018-01-15", award_type="procurement")
+    mommy.make(Subaward, id=2, award_id=5, latest_transaction_id=5, action_date="2018-03-15", award_type="grant")
+    mommy.make(Subaward, id=3, award_id=6, latest_transaction_id=6, action_date="2018-06-15", award_type="grant")
+    mommy.make(Subaward, id=4, award_id=7, latest_transaction_id=7, action_date="2017-01-15", award_type="procurement")
+    mommy.make(Subaward, id=5, award_id=8, latest_transaction_id=8, action_date="2017-03-15", award_type="grant")
+    mommy.make(Subaward, id=6, award_id=9, latest_transaction_id=9, action_date="2017-06-15", award_type="grant")
+
+    # Create BrokerSubaward
+    mommy.make(BrokerSubaward, id=1, prime_id=4, action_date="2018-01-15", subaward_type="sub-contract")
+    mommy.make(BrokerSubaward, id=2, prime_id=5, action_date="2018-03-15", subaward_type="sub-grant")
+    mommy.make(BrokerSubaward, id=3, prime_id=6, action_date="2018-06-15", subaward_type="sub-grant")
+    mommy.make(BrokerSubaward, id=4, prime_id=7, action_date="2017-01-15", subaward_type="sub-contract")
+    mommy.make(BrokerSubaward, id=5, prime_id=8, action_date="2017-03-15", subaward_type="sub-grant")
+    mommy.make(BrokerSubaward, id=6, prime_id=9, action_date="2017-06-15", subaward_type="sub-grant")
 
     # Set latest_award for each award
     update_awards()
 
 
-@pytest.mark.django_db
 @pytest.mark.skip
 def test_download_transactions_v2_endpoint(client, award_data):
     """test the transaction endpoint."""
@@ -102,7 +289,6 @@ def test_download_transactions_v2_endpoint(client, award_data):
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 @pytest.mark.skip
 def test_download_awards_v2_endpoint(client, award_data):
     """test the awards endpoint."""
@@ -115,7 +301,6 @@ def test_download_awards_v2_endpoint(client, award_data):
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 @pytest.mark.skip
 def test_download_transactions_v2_status_endpoint(client, award_data):
     """Test the transaction status endpoint."""
@@ -133,24 +318,118 @@ def test_download_transactions_v2_status_endpoint(client, award_data):
     assert resp.json()["total_columns"] > 100
 
 
-@pytest.mark.django_db
-@pytest.mark.skip
-def test_download_awards_v2_status_endpoint(client, award_data):
-    """Test the transaction status endpoint."""
-
+def test_download_awards_with_all_award_types(client, award_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "prime_award_types": [*list(award_type_mapping.keys())],
+        "sub_award_types": [*all_subaward_types],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+    }
     dl_resp = client.post(
-        "/api/v2/bulk_download/awards", content_type="application/json", data=json.dumps({"filters": {}, "columns": []})
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
     )
+    assert dl_resp.status_code == status.HTTP_200_OK
 
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["total_rows"] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1``0`
-    assert resp.json()["total_columns"] > 100
+    assert resp.json()["total_rows"] == 9
+    assert resp.json()["total_columns"] == 545
+
+
+def test_download_awards_with_all_prime_awards(client, award_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "prime_award_types": list(award_type_mapping.keys()),
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 6
+    assert resp.json()["total_columns"] == 366
+
+
+def test_download_awards_with_some_prime_awards(client, award_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "prime_award_types": ["A", "IDV_B"],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 3
+    assert resp.json()["total_columns"] == 276
+
+
+def test_download_awards_with_all_sub_awards(client, award_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "sub_award_types": all_subaward_types,
+        "date_type": "action_date",
+        "date_range": {"start_date": "2017-10-01", "end_date": "2018-09-30"},
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1
+    assert resp.json()["total_columns"] == 179
+
+
+def test_download_awards_with_some_sub_awards(client, award_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "sub_award_types": ["grant"],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2017-10-01", "end_date": "2018-09-30"},
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 2
+    assert resp.json()["total_columns"] == 89
 
 
 @pytest.mark.django_db
-@pytest.mark.skip
 def test_download_status_nonexistent_file_404(client):
     """Requesting status of nonexistent file should produce HTTP 404"""
 
@@ -159,59 +438,31 @@ def test_download_status_nonexistent_file_404(client):
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
 
-def sort_function(agency):
-    return agency["toptier_code"]
-
-
-@pytest.mark.skip
 def test_list_agencies(client, award_data):
     """Test transaction list agencies endpoint"""
-    resp = client.post("/api/v2/bulk_download/list_agencies", content_type="application/json", data=json.dumps({}))
+    resp = client.post(
+        "/api/v2/bulk_download/list_agencies",
+        content_type="application/json",
+        data=json.dumps({"type": "award_agencies"}),
+    )
 
-    all_toptiers = [
-        {"name": "Bureau of Things", "toptier_code": "100"},
-        {"name": "Bureau of Stuff", "toptier_code": "101"},
-        {"name": "Bureau of Money", "toptier_code": "102"},
-    ]
-
-    index = 0
-    agency_ids = []
-    for toptier in sorted(resp.json()["agencies"]["other_agencies"], key=sort_function):
-        assert toptier["name"] == all_toptiers[index]["name"]
-        assert toptier["toptier_code"] == all_toptiers[index]["toptier_code"]
-        agency_ids.append(toptier["toptier_agency_id"])
-        index += 1
-    assert resp.json()["sub_agencies"] == []
-    assert resp.json()["federal_accounts"] == []
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == {
+        "agencies": {
+            "cfo_agencies": [],
+            "other_agencies": [
+                {"name": "Bureau of Stuff", "toptier_agency_id": 2, "toptier_code": "101"},
+                {"name": "Bureau of Things", "toptier_agency_id": 1, "toptier_code": "100"},
+            ],
+        },
+        "sub_agencies": [],
+    }
 
     resp = client.post(
         "/api/v2/bulk_download/list_agencies",
         content_type="application/json",
-        data=json.dumps({"agency": agency_ids[0]}),
+        data=json.dumps({"type": "award_agencies", "agency": 2}),
     )
 
-    assert resp.json()["agencies"] == []
-    assert resp.json()["sub_agencies"] == [{"subtier_agency_name": "Bureau of Things", "subtier_agency_id": 1}]
-    assert resp.json()["federal_accounts"] == []
-
-    resp = client.post(
-        "/api/v2/bulk_download/list_agencies",
-        content_type="application/json",
-        data=json.dumps({"agency": agency_ids[1]}),
-    )
-
-    assert resp.json()["agencies"] == []
-    assert resp.json()["sub_agencies"] == [{"subtier_agency_name": "Bureau of Stuff", "subtier_agency_id": 2}]
-    assert resp.json()["federal_accounts"] == []
-
-    resp = client.post(
-        "/api/v2/bulk_download/list_agencies",
-        content_type="application/json",
-        data=json.dumps({"agency": agency_ids[2]}),
-    )
-
-    assert resp.json()["agencies"] == []
-    assert resp.json()["sub_agencies"] == [{"subtier_agency_name": "Bureau of Things", "subtier_agency_id": 3}]
-    assert resp.json()["federal_accounts"] == [
-        {"federal_account_name": "Compensation to Accounts", "federal_account_id": 1}
-    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == {"agencies": [], "sub_agencies": [{"subtier_agency_name": "SubBureau of Stuff"}]}

@@ -45,7 +45,10 @@ from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
+from usaspending_api.common.experimental_api_flags import (
+    is_experimental_elasticsearch_api,
+    mirror_request_to_elasticsearch,
+)
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -127,7 +130,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "upper_bound": json_request["page"] * json_request["limit"] + 1,
         }
         self.elasticsearch = is_experimental_elasticsearch_api(request)
-
+        if not self.elasticsearch:
+            mirror_request_to_elasticsearch(request)
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
             return Response(self.populate_response(results=[], has_next=False))
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
