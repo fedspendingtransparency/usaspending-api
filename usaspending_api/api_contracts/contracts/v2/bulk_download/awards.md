@@ -25,7 +25,7 @@ This route sends a request to the backend to begin generating a zipfile of award
             {
                 "filters": {
                     "agency": 50,
-                    "prime_award_types": ["contracts", "grants"],
+                    "prime_award_types": ["02", "03", "04", "05", "A", "B", "C", "D"],
                     "sub_award_types": ["procurement"],
                     "date_range": {
                         "start_date": "2019-01-01",
@@ -69,16 +69,10 @@ This route sends a request to the backend to begin generating a zipfile of award
                                 "type": "awarding"
                             }
                         ],
-                        "award_type_codes": [
-                            "02",
-                            "03",
-                            "04",
-                            "05",
-                            "A",
-                            "B",
-                            "C",
-                            "D"
-                        ],
+                        "prime_and_sub_award_types": {
+                            "prime_award_types": ["02", "03", "04", "05", "A", "B", "C", "D"],
+                            "sub_award_types": ["procurement"]
+                        },
                         "time_period": [
                             {
                                 "date_type": "action_date",
@@ -100,12 +94,28 @@ This route sends a request to the backend to begin generating a zipfile of award
     Agency database id to include, 'all' is also an option to include all agencies
 + `prime_award_types` (optional, array[enum[string]])
     + Members
-        + `contracts`
-        + `direct_payments`
-        + `grants`
-        + `idvs`
-        + `loans`
-        + `other_financial_assistance`
+        + `IDV_A`
+        + `IDV_B`
+        + `IDV_B_A`
+        + `IDV_B_B`
+        + `IDV_B_C`
+        + `IDV_C`
+        + `IDV_D`
+        + `IDV_E`
+        + `02`
+        + `03`
+        + `04`
+        + `05`
+        + `06`
+        + `07`
+        + `08`
+        + `09`
+        + `10`
+        + `11`
+        + `A`
+        + `B`
+        + `C`
+        + `D`
 + `date_range` (required, TimePeriod, fixed-type)
     Object with start and end dates
 + `date_type` (required, enum[string])
