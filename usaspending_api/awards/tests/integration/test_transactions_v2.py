@@ -25,7 +25,13 @@ def cfda_transactions(db):
         "face_value_loan_guarantee": "10.00",
         "original_loan_subsidy_cost": "10.00",
     }
-    trx_fabs_1 = {"pk": 1, "transaction_id": 1, "cfda_number": 12.345, "cfda_title": "Shiloh", "afa_generated_unique": "Q25B9A1MQ0"}
+    trx_fabs_1 = {
+        "pk": 1,
+        "transaction_id": 1,
+        "cfda_number": 12.345,
+        "cfda_title": "Shiloh",
+        "afa_generated_unique": "Q25B9A1MQ0",
+    }
 
     mommy.make("awards.Award", **award_1)
     mommy.make("awards.TransactionNormalized", **trx_norm_1)
@@ -34,24 +40,24 @@ def cfda_transactions(db):
 
 def test_transaction_cfda(client, cfda_transactions):
     expected_response = {
-            "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-            "results": [
-                {
-                    "id": "ASST_TX_Q25B9A1MQ0",
-                    "type": "02",
-                    "type_description": "Green",
-                    "action_date": "2008-11-22",
-                    "action_type": None,
-                    "action_type_description": "grant",
-                    "modification_number": "0",
-                    "description": "ligula in lacus curabitur at ipsum ac tellus semper interdum mauris",
-                    "federal_action_obligation": 10.00,
-                    "face_value_loan_guarantee": 10.00,
-                    "original_loan_subsidy_cost": 10.00,
-                    "cfda_number": "12.345",
-                }
-            ],
-        }
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {
+                "id": "ASST_TX_Q25B9A1MQ0",
+                "type": "02",
+                "type_description": "Green",
+                "action_date": "2008-11-22",
+                "action_type": None,
+                "action_type_description": "grant",
+                "modification_number": "0",
+                "description": "ligula in lacus curabitur at ipsum ac tellus semper interdum mauris",
+                "federal_action_obligation": 10.00,
+                "face_value_loan_guarantee": 10.00,
+                "original_loan_subsidy_cost": 10.00,
+                "cfda_number": "12.345",
+            }
+        ],
+    }
 
     resp = client.post(
         "/api/v2/transactions/",
