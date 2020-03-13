@@ -58,15 +58,6 @@ SELECT
 
   UTM.awarding_agency_id,
   UTM.funding_agency_id,
-
-  TAA.id AS awarding_toptier_agency_id,
-  TFA.id AS funding_toptier_agency_id,
-  UTM.awarding_agency_id AS awarding_subtier_agency_id,
-  UTM.funding_agency_id AS funding_subtier_agency_id,
-  AA.toptier_agency_id AS awarding_toptier_id,
-  FA.toptier_agency_id AS funding_toptier_id,
-  AA.subtier_agency_id AS awarding_subtier_id,
-  FA.subtier_agency_id AS funding_subtier_id,
   UTM.awarding_toptier_agency_name,
   UTM.funding_toptier_agency_name,
   UTM.awarding_subtier_agency_name,
@@ -75,15 +66,34 @@ SELECT
   UTM.funding_toptier_agency_abbreviation,
   UTM.awarding_subtier_agency_abbreviation,
   UTM.funding_subtier_agency_abbreviation,
-  TAA.toptier_code AS awarding_toptier_agency_code,
-  TFA.toptier_code AS funding_toptier_agency_code,
-  SAA.subtier_code AS awarding_subtier_agency_code,
-  SFA.subtier_code AS funding_subtier_agency_code,
+  CASE
+    WHEN UTM.awarding_toptier_agency_name IS NOT NULL
+      THEN CONCAT('{"name":"', UTM.awarding_toptier_agency_name, '","abbreviation":"', UTM.awarding_toptier_agency_abbreviation, '","id":"', TAA.id, '"}')
+    ELSE NULL
+  END AS awarding_toptier_agency_agg_field,
+  CASE
+    WHEN UTM.funding_toptier_agency_name IS NOT NULL
+      THEN CONCAT('{"name":"', UTM.funding_toptier_agency_name, '","abbreviation":"', UTM.funding_toptier_agency_abbreviation, '","id":"', TFA.id, '"}')
+    ELSE NULL
+  END AS funding_toptier_agency_agg_field,
+  CASE
+    WHEN UTM.awarding_subtier_agency_name IS NOT NULL
+      THEN CONCAT('{"name":"', UTM.awarding_subtier_agency_name, '","abbreviation":"', UTM.awarding_subtier_agency_abbreviation, '","id":"', AA.id, '"}')
+    ELSE NULL
+  END AS awarding_subtier_agency_agg_field,
+  CASE
+    WHEN UTM.funding_subtier_agency_name IS NOT NULL
+      THEN CONCAT('{"name":"', UTM.funding_subtier_agency_name, '","abbreviation":"', UTM.funding_subtier_agency_abbreviation, '","id":"', FA.id, '"}')
+    ELSE NULL
+  END AS funding_subtier_agency_agg_field,
 
-  CFDA.id AS cfda_id,
   UTM.cfda_number,
-  UTM.cfda_title,
-  '' AS cfda_popular_name,
+  CFDA.program_title AS cfda_title,
+  CASE
+    WHEN UTM.cfda_number IS NOT NULL THEN CONCAT('{"number":"', UTM.cfda_number, '","title":"', CFDA.program_title, '","id":"', CFDA.id, '"}')
+    ELSE NULL
+  END AS cfda_agg_field,
+
   UTM.type_of_contract_pricing,
   UTM.type_set_aside,
   UTM.extent_competed,
@@ -109,7 +119,15 @@ SELECT
 
   TREASURY_ACCT.treasury_accounts,
   FEDERAL_ACCT.federal_accounts,
-  UTM.business_categories
+  UTM.business_categories,
+
+  -- ALL COLUMNS BELOW THIS CAN BE REMOVED AS A WARMFIX INTO STAGING;
+  -- LEAVING FOR NOW SINCE STAGING AND DEV SHARE AN ELASTICSEARCH CLUSTER;
+  -- WILL NEED TO ALSO DELETE CORRESPONDING TEMPLATE FIELD
+  TAA.id AS awarding_toptier_agency_id,
+  TFA.id AS funding_toptier_agency_id,
+  UTM.awarding_agency_id AS awarding_subtier_agency_id,
+  UTM.funding_agency_id AS funding_subtier_agency_id
 
 FROM universal_transaction_matview UTM
 INNER JOIN transaction_normalized TN ON (UTM.transaction_id = TN.id)
