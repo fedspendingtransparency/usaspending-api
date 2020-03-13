@@ -88,7 +88,7 @@ class TransactionViewSet(APIView):
         results = []
         for row in rows:
             unique_prefix = "ASST_TX"
-            result = {k: row[v] for k, v in self.transaction_lookup.items() if k != "award_id"}
+            result = {k: row.get(v) for k, v in self.transaction_lookup.items() if k != "award_id"}
             if result["is_fpds"]:
                 unique_prefix = "CONT_TX"
                 del result["cfda_number"]
