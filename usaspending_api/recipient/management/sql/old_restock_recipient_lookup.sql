@@ -24,9 +24,7 @@ CREATE TABLE public.temporary_restock_recipient_lookup (
     zip4 text,
     country_code text,
     congressional_district text,
-    business_types_codes text[],
-    source text,
-    alternate_names text[]
+    business_types_codes text[]
 );
 
 CREATE UNIQUE INDEX idx_temporary_restock_recipient_lookup_unique_duns ON public.temporary_restock_recipient_lookup (duns);
@@ -46,10 +44,7 @@ CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
     COALESCE(fpds.legal_entity_address_line1, fabs.legal_entity_address_line1) AS address_line1,
     COALESCE(fpds.legal_entity_address_line2, fabs.legal_entity_address_line1) AS address_line2,
     COALESCE(fpds.legal_entity_country_code, fabs.legal_entity_country_code) AS country_code,
-    tn.action_date,
-    CASE
-      WHEN tn.is_fpds = TRUE THEN 'fpds'::TEXT
-      ELSE 'fabs'::TEXT AS source
+    tn.action_date
   FROM
     transaction_normalized AS tn
   LEFT OUTER JOIN transaction_fpds AS fpds ON
@@ -73,7 +68,7 @@ INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash, legal_business_name, duns,
   parent_duns, parent_legal_business_name, address_line_1,
   address_line_2, city, state, zip5, zip4, country_code,
-  congressional_district, business_types_codes, source, update_date
+  congressional_district, business_types_codes
   )
   SELECT
     DISTINCT ON (awardee_or_recipient_uniqu, legal_business_name)
