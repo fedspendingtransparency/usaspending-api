@@ -1,11 +1,11 @@
 from copy import deepcopy
 
-from django.db.models import F, OuterRef, Subquery
+from django.db.models import F
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator import (
@@ -38,12 +38,13 @@ class TransactionViewSet(APIView):
         "face_value_loan_guarantee": "face_value_loan_guarantee",
         "original_loan_subsidy_cost": "original_loan_subsidy_cost",
         "is_fpds": "is_fpds",
+        "cfda_number": "assistance_data__cfda_number",
     }
 
     def __init__(self):
-        sort_cols = list(TransactionViewSet.transaction_lookup.keys())
-        sort_cols.append("cfda_number")
-        models = customize_pagination_with_sort_columns(sort_cols, "action_date")
+        models = customize_pagination_with_sort_columns(
+            list(TransactionViewSet.transaction_lookup.keys()), "action_date"
+        )
         models.extend(
             [
                 get_internal_or_generated_award_id_model(),
@@ -64,21 +65,16 @@ class TransactionViewSet(APIView):
         award_id = request_data["award_id"]
         award_id_column = "award_id" if type(award_id) is int else "award__generated_unique_award_id"
         filter = {award_id_column: award_id}
-
+        if request_data["sort"] == "cfda_number":
+            request_data["sort"] = "assistance_data__cfda_number"
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
         queryset = (
             TransactionNormalized.objects.all()
-            .values(*list(self.transaction_lookup.values()))
-            .annotate(
-                cfda_number=Subquery(
-                    TransactionFABS.objects.filter(afa_generated_unique=OuterRef("transaction_unique_id")).values(
-                        "cfda_number"
-                    )
-                )
-            )
             .filter(**filter)
+            .select_related("assistance_data")
+            .values(*list(self.transaction_lookup.values()))
         )
         if request_data["order"] == "desc":
             queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))
@@ -95,8 +91,7 @@ class TransactionViewSet(APIView):
             result = {k: row[v] for k, v in self.transaction_lookup.items() if k != "award_id"}
             if result["is_fpds"]:
                 unique_prefix = "CONT_TX"
-            else:
-                result["cfda_number"] = row["cfda_number"]
+                del result["cfda_number"]
             result["id"] = f"{unique_prefix}_{result['id']}"
             del result["is_fpds"]
             results.append(result)
