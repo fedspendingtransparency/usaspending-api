@@ -52,12 +52,17 @@ class Command(AgnosticDeletes, BaseCommand):
             FROM   published_award_financial_assistance
             WHERE  published_award_financial_assistance_id IN {ids}
         """
+        records = []
+
         if not self.dry_run:
             id_list = [item for row in deleted_dict.values() for item in row]
             if len(id_list) == 1:
                 id_list += id_list
-            with connections["data_broker"].cursor() as cursor:
-                cursor.execute(sql.format(ids=tuple(id_list)))
-                afa_id_list = cursor.fetchall()
 
-            store_deleted_fabs([afa_id[0] for afa_id in afa_id_list])
+            if len(id_list) > 0:
+                with connections["data_broker"].cursor() as cursor:
+                    cursor.execute(sql.format(ids=tuple(id_list)))
+                    afa_id_list = cursor.fetchall()
+                    records = [afa_id[0] for afa_id in afa_id_list]
+
+            store_deleted_fabs(records)
