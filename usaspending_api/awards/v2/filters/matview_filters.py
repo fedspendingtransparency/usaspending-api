@@ -65,7 +65,6 @@ def matview_search_filter(filters, model, for_downloads=False):
             "award_ids",
             "program_numbers",
             "naics_codes",
-            "exclude_naics_codes",
             "psc_codes",
             "contract_pricing_type_codes",
             "set_aside_type_codes",
@@ -256,13 +255,21 @@ def matview_search_filter(filters, model, for_downloads=False):
                 queryset = queryset.filter(cfda_number__in=in_query)
 
         elif key == "naics_codes":
-            if value:
-                regex = f"^({'|'.join([str(elem) for elem in value])}).*"
+            if isinstance(value, list):
+                requires = value
+                exclude = []
+            elif isinstance(value, dict):
+                requires = value["require"]
+                exclude = value["exclude"]
+            else:
+                raise InvalidParameterException(f"naics_codes must be an array or object")
+
+            if requires:
+                regex = f"^({'|'.join([str(elem) for elem in requires])}).*"
                 queryset = queryset.filter(naics_code__regex=regex)
 
-        elif key == "exclude_naics_codes":
-            if value:
-                regex = f"^({'|'.join([str(elem) for elem in value])}).*"
+            if exclude:
+                regex = f"^({'|'.join([str(elem) for elem in exclude])}).*"
                 queryset = queryset.exclude(naics_code__regex=regex)
 
         elif key == "psc_codes":

@@ -9,7 +9,6 @@ from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -308,24 +307,21 @@ class _NaicsCodes(_Filter):
     underscore_name = "naics_codes"
 
     @classmethod
-    def _generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
-        naics_codes_query = []
+    def _generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
+        if isinstance(filter_values, list):
+            requires = filter_values
+            exclude = []
+        elif isinstance(filter_values, dict):
+            requires = filter_values["require"]
+            exclude = filter_values["exclude"]
+        else:
+            raise InvalidParameterException(f"naics_codes must be an array or object")
 
-        for v in filter_values:
+        naics_codes_query = []
+        for v in requires:
             naics_codes_query.append(ES_Q("wildcard", naics_code__keyword=f"{v}*"))
-
-        return ES_Q("bool", should=naics_codes_query, minimum_should_match=1)
-
-
-class _ExcludeNaicsCodes(_Filter):
-    underscore_name = "exclude_naics_codes"
-
-    @classmethod
-    def _generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
-        naics_codes_query = []
-
-        for v in filter_values:
-            naics_codes_query.append(~ES_Q("match_phrase_prefix", naics_code=v))
+        for v in exclude:
+            naics_codes_query.append(~ES_Q("wildcard", naics_code__keyword=f"{v}*"))
 
         return ES_Q("bool", should=naics_codes_query, minimum_should_match=1)
 
@@ -430,7 +426,6 @@ class QueryWithFilters:
         _AwardIds.underscore_name: _AwardIds,
         _ProgramNumbers.underscore_name: _ProgramNumbers,
         _NaicsCodes.underscore_name: _NaicsCodes,
-        _ExcludeNaicsCodes.underscore_name: _ExcludeNaicsCodes,
         _PscCodes.underscore_name: _PscCodes,
         _ContractPricingTypeCodes.underscore_name: _ContractPricingTypeCodes,
         _SetAsideTypeCodes.underscore_name: _SetAsideTypeCodes,
