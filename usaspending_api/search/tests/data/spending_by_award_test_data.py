@@ -165,7 +165,7 @@ def spending_by_award_test_data():
         legal_entity_country_code="USA",
         legal_entity_county_code="013",
         legal_entity_city_name="Arlington",
-        naics="NACIS_test",
+        naics="112233",
         product_or_service_code="PSC_test",
         type_of_contract_pricing="contract_pricing_test",
         type_set_aside="type_set_aside_test",
