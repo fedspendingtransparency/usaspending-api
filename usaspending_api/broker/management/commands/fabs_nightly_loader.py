@@ -152,8 +152,8 @@ class Command(BaseCommand):
         is_incremental_load = not any((reload_all, afa_ids, start_datetime, end_datetime))
 
         if is_incremental_load:
-            last_load_date = get_last_load_date()
-            logger.info("Processing data for FABS starting from %s" % last_load_date)
+            start_datetime = get_last_load_date()
+            logger.info("Processing data for FABS starting from %s" % start_datetime)
 
         with timer("obtaining delete records", logger.info):
             delete_records = retrieve_deleted_fabs_transactions(start_datetime, end_datetime)
