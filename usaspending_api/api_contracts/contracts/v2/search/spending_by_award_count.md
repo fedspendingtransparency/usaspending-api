@@ -61,7 +61,7 @@ This endpoint takes award filters, and returns the number of awards in each awar
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
-+ `naics_codes`: `3118` (optional, NAICSCodeObject)
++ `naics_codes` (optional, NAICSCodeObject)
 + `psc_codes`: `8940`, `8910` (optional, array[string])
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])

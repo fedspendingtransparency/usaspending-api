@@ -308,6 +308,7 @@ class _NaicsCodes(_Filter):
 
     @classmethod
     def _generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
+        # legacy functionality permits sending a single list of naics codes, which is treated as the required list
         if isinstance(filter_values, list):
             requires = filter_values
             exclude = []
