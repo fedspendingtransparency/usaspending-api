@@ -27,7 +27,9 @@ class CustomCacheResponse(CacheResponse):
                 if self.cache_errors:
                     logger.error(self.cache_errors)
                 try:
-                    self.cache.set(key, response, self.timeout)
+
+                    if request.headers.get("X-Experimental-Api") != "elasticsearch":
+                        self.cache.set(key, response, self.timeout)
                     response["Cache-Trace"] = "set-cache"
                 except Exception:
                     msg = "Problem while writing to cache: path:'{p}' data:'{d}'"
