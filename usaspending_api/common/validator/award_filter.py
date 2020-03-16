@@ -29,8 +29,8 @@ AWARD_FILTER = [
         "type": "object",
         "min": 0,
         "object_keys": {
-            "require": {"type": "array", "array_type": "text", "text_type": "search", "min": 0},
-            "exclude": {"type": "array", "array_type": "text", "text_type": "search", "min": 0},
+            "require": {"type": "array", "array_type": "integer", "text_type": "search", "min": 0},
+            "exclude": {"type": "array", "array_type": "integer", "text_type": "search", "min": 0},
         },
     },
     {"name": "place_of_performance_scope", "type": "enum", "enum_values": ["domestic", "foreign"]},
