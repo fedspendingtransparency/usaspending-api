@@ -90,7 +90,7 @@ SELECT
   UTM.cfda_number,
   CFDA.program_title AS cfda_title,
   CASE
-    WHEN UTM.cfda_number IS NOT NULL THEN CONCAT('{"number":"', UTM.cfda_number, '","title":"', CFDA.program_title, '","id":"', CFDA.id, '"}')
+    WHEN UTM.cfda_number IS NOT NULL THEN CONCAT('{"code":"', UTM.cfda_number, '","description":"', CFDA.program_title, '","id":"', CFDA.id, '"}')
     ELSE NULL
   END AS cfda_agg_field,
 

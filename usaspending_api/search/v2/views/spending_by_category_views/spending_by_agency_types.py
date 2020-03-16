@@ -7,7 +7,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by
 
 class AwardingAgencyViewSet(BaseAgencyViewSet):
     """
-    This route takes award filters, and returns spending by awarding agencies.
+    This route takes award filters and returns spending by awarding agencies.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/awarding_agency.md"
@@ -18,7 +18,7 @@ class AwardingAgencyViewSet(BaseAgencyViewSet):
 
 class AwardingSubagencyViewSet(BaseAgencyViewSet):
     """
-    This route takes award filters, and returns spending by awarding subagencies.
+    This route takes award filters and returns spending by awarding subagencies.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/awarding_subagency.md"
@@ -29,7 +29,7 @@ class AwardingSubagencyViewSet(BaseAgencyViewSet):
 
 class FundingAgencyViewSet(BaseAgencyViewSet):
     """
-    This route takes award filters, and returns spending by funding agencies.
+    This route takes award filters and returns spending by funding agencies.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/funding_agency.md"
@@ -40,7 +40,7 @@ class FundingAgencyViewSet(BaseAgencyViewSet):
 
 class FundingSubagencyViewSet(BaseAgencyViewSet):
     """
-    This route takes award filters, and returns spending by funding subagencies.
+    This route takes award filters and returns spending by funding subagencies.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/funding_subagency.md"

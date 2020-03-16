@@ -31,22 +31,19 @@ class BaseAgencyViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
         agency_info_buckets = response.get("group_by_agg_field", {}).get("buckets", [])
         for bucket in agency_info_buckets:
             agency_info = json.loads(bucket.get("key"))
-            agency_name = agency_info.get("name")
-            agency_abbreviation = agency_info.get("abbreviation")
-            agency_id = agency_info.get("id")
 
             results.append(
                 {
                     "amount": Decimal(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                    "name": agency_name,
-                    "code": agency_abbreviation or None,
-                    "id": int(agency_id),
+                    "name": agency_info.get("name"),
+                    "code": agency_info.get("abbreviation") or None,
+                    "id": int(agency_info.get("id")),
                 }
             )
 
         return results
 
-    def query_django(self, base_queryset: QuerySet):
+    def query_django(self, base_queryset: QuerySet) -> List[dict]:
         django_filters = {f"{self.agency_type.value}_agency_name__isnull": False}
         django_values = [f"{self.agency_type.value}_agency_name", f"{self.agency_type.value}_agency_abbreviation"]
         queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(
