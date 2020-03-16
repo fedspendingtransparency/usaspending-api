@@ -96,7 +96,7 @@ FILTER_OBJ = {
             {"lower_bound": 500000000.00},
         ],
         "program_numbers": ["10.553"],
-        "naics_codes": [336411],
+        "naics_codes": {"require": [336411]},
         "psc_codes": ["1510"],
         "contract_pricing_type_codes": ["SAMPLECODE123"],
         "set_aside_type_codes": ["SAMPLECODE123"],
