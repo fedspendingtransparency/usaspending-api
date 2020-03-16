@@ -259,8 +259,8 @@ def matview_search_filter(filters, model, for_downloads=False):
                 requires = value
                 exclude = []
             elif isinstance(value, dict):
-                requires = value["require"]
-                exclude = value["exclude"]
+                requires = value.get("require") or []
+                exclude = value.get("exclude") or []
             else:
                 raise InvalidParameterException(f"naics_codes must be an array or object")
 

@@ -312,8 +312,8 @@ class _NaicsCodes(_Filter):
             requires = filter_values
             exclude = []
         elif isinstance(filter_values, dict):
-            requires = filter_values["require"]
-            exclude = filter_values["exclude"]
+            requires = filter_values.get("require") or []
+            exclude = filter_values.get("exclude") or []
         else:
             raise InvalidParameterException(f"naics_codes must be an array or object")
 
