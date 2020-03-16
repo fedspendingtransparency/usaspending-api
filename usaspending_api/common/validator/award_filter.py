@@ -26,12 +26,19 @@ AWARD_FILTER = [
     {"name": "legal_entities", "type": "array", "array_type": "integer", "array_max": maxsize},
     {
         "name": "naics_codes",
-        "type": "object",
-        "min": 0,
-        "object_keys": {
-            "require": {"type": "array", "array_type": "integer", "text_type": "search", "min": 0},
-            "exclude": {"type": "array", "array_type": "integer", "text_type": "search", "min": 0},
-        },
+        "type": "any",
+        "models": [
+            {
+                "name": "naics_codes",
+                "type": "object",
+                "min": 0,
+                "object_keys": {
+                    "require": {"type": "array", "array_type": "integer", "text_type": "search", "min": 0},
+                    "exclude": {"type": "array", "array_type": "integer", "text_type": "search", "min": 0},
+                },
+            },
+            {"type": "array", "array_type": "integer", "text_type": "search"},
+        ],
     },
     {"name": "place_of_performance_scope", "type": "enum", "enum_values": ["domestic", "foreign"]},
     {"name": "program_numbers", "type": "array", "array_type": "text", "text_type": "search"},
