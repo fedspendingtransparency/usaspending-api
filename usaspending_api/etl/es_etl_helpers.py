@@ -406,6 +406,9 @@ def csv_chunk_gen(filename, chunksize, job_id, awards):
     dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
     for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
+        # Route all documents with the same recipient to the same shard
+        # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
+        file_df["routing"] = file_df["recipient_hash"]
         yield file_df.to_dict(orient="records")
 
 
