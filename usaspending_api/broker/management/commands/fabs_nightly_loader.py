@@ -124,18 +124,10 @@ class Command(BaseCommand):
             "quotes if date/time contains spaces.",
         )
 
-        parser.add_argument(
-            "--do-not-log-deletions",
-            action="store_true",
-            help="Disable the feature that creates a file of deleted FABS transactions for clients to download.",
-        )
-
     def handle(self, *args, **options):
         processing_start_datetime = datetime.now(timezone.utc)
 
         logger.info("Starting FABS data load script...")
-
-        do_not_log_deletions = options["do_not_log_deletions"]
 
         # "Reload all" supersedes all other processing options.
         reload_all = options["reload_all"]
@@ -157,12 +149,12 @@ class Command(BaseCommand):
 
         with timer("obtaining delete records", logger.info):
             delete_records = retrieve_deleted_fabs_transactions(start_datetime, end_datetime)
-            ids_to_delete = [item for sublist in delete_records.items() for item in sublist]
+            ids_to_delete = [item for sublist in delete_records.values() for item in sublist if item]
 
         with timer("retrieving/diff-ing FABS Data", logger.info):
             ids_to_upsert = get_fabs_transaction_ids(afa_ids, start_datetime, end_datetime)
 
-        update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
+        update_award_ids = delete_fabs_transactions(ids_to_delete)
         upsert_fabs_transactions(ids_to_upsert, update_award_ids)
 
         if is_incremental_load:
