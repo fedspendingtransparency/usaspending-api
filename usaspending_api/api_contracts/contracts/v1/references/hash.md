@@ -36,6 +36,7 @@ Restore Filters From URL Hash Data
                 + `selectedFundingAgencies` (required, object)
                 + `selectedLocations` (required, object)
                 + `selectedNAICS` (required, object)
+                + `naics_codes` (required, object)
                 + `selectedPSC` (required, object)
                 + `selectedRecipientLocations` (required, object)
                 + `selectedRecipients` (required, array[string])
@@ -67,7 +68,7 @@ Restore Filters From URL Hash Data
                         "selectedNAICS": {},
                         "selectedPSC": {},
                         "naics_codes": {
-                            "checked": ["11"],
+                            "included": ["11"],
                             "excluded": []
                         },
                         "selectedRecipientLocations": {},
