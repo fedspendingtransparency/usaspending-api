@@ -9,7 +9,7 @@ See [Tools for Testing and Mocking](tools-for-contracts.md)
 
 To spin up a mock server, see the following instructions below:
 
-1. run `npm install` at the root of `/API_CONTRACTS`
+1. run `npm install` at the root of `/api_contracts`
 1. run `npm run mock`
 1. This will spin up a mock implementation of the API at port 5000.
 
