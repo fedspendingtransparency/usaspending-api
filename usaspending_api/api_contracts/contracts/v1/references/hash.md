@@ -19,7 +19,7 @@ Restore Filters From URL Hash Data
         }
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes (object)
         + `filter` (optional, object)
             + `filters` (optional, object)
                 + `awardAmounts` (required, object)
@@ -67,9 +67,9 @@ Restore Filters From URL Hash Data
                         "selectedNAICS": {},
                         "selectedPSC": {},
                         "naics_codes": {
-                            checked: ["11"],
-                            excluded: []
-                        }
+                            "checked": ["11"],
+                            "excluded": []
+                        },
                         "selectedRecipientLocations": {},
                         "selectedRecipients": [],
                         "setAside": [],
