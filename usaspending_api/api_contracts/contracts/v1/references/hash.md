@@ -12,6 +12,11 @@ Restore Filters From URL Hash Data
 + Request (application/json)
     + Attributes (object)
         + `hash` : `0e7d2ce3bb0885ac877872bb44053a84` (required, string)
+    + Schema
+        {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "object"
+        }
 
 + Response 200 (application/json)
     + Attributes
@@ -61,6 +66,10 @@ Restore Filters From URL Hash Data
                         "selectedLocations": {},
                         "selectedNAICS": {},
                         "selectedPSC": {},
+                        "naics_codes": {
+                            checked: ["11"],
+                            excluded: []
+                        }
                         "selectedRecipientLocations": {},
                         "selectedRecipients": [],
                         "setAside": [],
