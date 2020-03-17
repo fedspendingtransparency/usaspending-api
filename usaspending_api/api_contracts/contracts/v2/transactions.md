@@ -64,7 +64,8 @@ This endpoint returns a list of transactions, their amount, type, action date, a
                         "description": "GRANT TO LOCAL GOVERNMENT FOR REPAIR OR REPLACEMENT OF DISASTER DAMAGED FACILITIES",
                         "federal_action_obligation": 11041.0,
                         "face_value_loan_guarantee": null,
-                        "original_loan_subsidy_cost": null
+                        "original_loan_subsidy_cost": null,
+                        "cfda_number": "12.345"
                     }
                 ]
             }
@@ -90,6 +91,7 @@ This endpoint returns a list of transactions, their amount, type, action date, a
 + `type` (required, string)
     Award type code
 + `type_description` (required, string, nullable)
++ `cfda_number` (optional, string, nullable)
 
 ## PageMetaDataObject (object)
 + `page` (required, number)
