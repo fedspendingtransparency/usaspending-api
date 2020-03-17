@@ -161,7 +161,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
     def query_elasticsearch(self, filters) -> list:
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
-        print(f"{filter_query.to_dict()}".replace("'", '"'))
         s = AwardSearch().filter(filter_query)
 
         s.aggs.bucket(

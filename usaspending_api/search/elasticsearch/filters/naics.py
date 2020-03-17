@@ -31,7 +31,6 @@ class _NaicsCodes(_Filter):
         postive_codes["sub"] = [code for code in requires if code not in postive_codes["top"] + negative_codes["top"]]
         negative_codes["sub"] = [code for code in exclude if code not in postive_codes["top"] + negative_codes["top"]]
 
-        print(f"{postive_codes},{negative_codes}")
         search_nodes = [_NaicsNode(code, True, postive_codes, all_codes) for code in postive_codes["top"]] + [
             _NaicsNode(code, False, postive_codes, all_codes) for code in negative_codes["top"]
         ]
