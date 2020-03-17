@@ -313,7 +313,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         sort_field = self.get_elastic_sort_by_fields()
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
-
+        # random page jumping was removed due to performance concerns
         if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
             self.last_record_sort_value is not None and self.last_record_unique_id is None
         ):
