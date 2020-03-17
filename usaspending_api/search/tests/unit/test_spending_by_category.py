@@ -10,6 +10,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
     FundingAgencyViewSet,
     FundingSubagencyViewSet,
 )
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
 
 
 @pytest.fixture
@@ -718,7 +719,7 @@ def test_category_recipient_duns_subawards(recipient_test_data):
 def test_category_cfda_awards(cfda_test_data):
     test_payload = {"category": "cfda", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = CfdaViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "cfda",
@@ -734,7 +735,7 @@ def test_category_cfda_awards(cfda_test_data):
 def test_category_cfda_subawards(cfda_test_data):
     test_payload = {"category": "cfda", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = CfdaViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "cfda",
