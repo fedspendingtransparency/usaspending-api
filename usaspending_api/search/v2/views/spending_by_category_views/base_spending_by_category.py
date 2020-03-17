@@ -155,7 +155,7 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def query_elasticsearch(self, filter_query: ES_Q) -> list:
         search = self.build_elasticsearch_search_with_aggregations(filter_query)
         if search is None:
-            return None
+            return []
         response = search.handle_execute()
         results = self.build_elasticsearch_result(response.aggs.to_dict())
         return results
