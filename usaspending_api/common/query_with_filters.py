@@ -6,8 +6,8 @@ from django.conf import settings
 from typing import List
 from elasticsearch_dsl import Q as ES_Q
 
-from usaspending_api.common.elasticsearch.filters.filter import _Filter, _QueryType
-from usaspending_api.common.elasticsearch.filters.naics import _NaicsCodes
+from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
+from usaspending_api.search.elasticsearch.filters.naics import _NaicsCodes
 from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)

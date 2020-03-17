@@ -1,5 +1,5 @@
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.elasticsearch.filters.filter import _Filter, _QueryType
+from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
 from elasticsearch_dsl import Q as ES_Q
 
 
