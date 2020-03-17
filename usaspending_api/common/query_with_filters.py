@@ -1,44 +1,16 @@
 import logging
-from enum import Enum
 
 from django.conf import settings
 
-from abc import abstractmethod, ABCMeta
-from typing import Union, List
+
+from typing import List
 from elasticsearch_dsl import Q as ES_Q
 
+from usaspending_api.common.elasticsearch.filters.filter import _Filter, _QueryType
+from usaspending_api.common.elasticsearch.filters.naics import _NaicsCodes
 from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)
-
-
-class _QueryType(Enum):
-    TRANSACTIONS = "transactions"
-    AWARDS = "awards"
-
-
-class _Filter(metaclass=ABCMeta):
-    """
-    Represents a filter object used to currently query only Elasticsearch.
-    """
-
-    underscore_name = None
-
-    @classmethod
-    def generate_query(cls, filter_values: Union[str, list], query_type: _QueryType) -> dict:
-
-        if filter_values is None:
-            raise InvalidParameterException(f"Invalid filter: {cls.underscore_name} has null as its value.")
-
-        return cls._generate_elasticsearch_query(filter_values, query_type)
-
-    @classmethod
-    @abstractmethod
-    def _generate_elasticsearch_query(
-        cls, filter_values: Union[str, list], query_type: _QueryType
-    ) -> Union[ES_Q, List[ES_Q]]:
-        """ Returns a Q object used to query Elasticsearch. """
-        pass
 
 
 class _Keywords(_Filter):
@@ -301,30 +273,6 @@ class _ProgramNumbers(_Filter):
             programs_numbers_query.append(ES_Q("match", cfda_number=v))
 
         return ES_Q("bool", should=programs_numbers_query, minimum_should_match=1)
-
-
-class _NaicsCodes(_Filter):
-    underscore_name = "naics_codes"
-
-    @classmethod
-    def _generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
-        # legacy functionality permits sending a single list of naics codes, which is treated as the required list
-        if isinstance(filter_values, list):
-            requires = filter_values
-            exclude = []
-        elif isinstance(filter_values, dict):
-            requires = filter_values.get("require") or []
-            exclude = filter_values.get("exclude") or []
-        else:
-            raise InvalidParameterException(f"naics_codes must be an array or object")
-
-        naics_codes_query = []
-        for v in requires:
-            naics_codes_query.append(ES_Q("wildcard", naics_code__keyword=f"{v}*"))
-        for v in exclude:
-            naics_codes_query.append(~ES_Q("wildcard", naics_code__keyword=f"{v}*"))
-
-        return ES_Q("bool", should=naics_codes_query, minimum_should_match=1)
 
 
 class _PscCodes(_Filter):
