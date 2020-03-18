@@ -3,11 +3,11 @@ from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryT
 from elasticsearch_dsl import Q as ES_Q
 
 
-class _NaicsCodes(_Filter):
+class NaicsCodes(_Filter):
     underscore_name = "naics_codes"
 
     @classmethod
-    def _generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
         # legacy functionality permits sending a single list of naics codes, which is treated as the required list
         if isinstance(filter_values, list):
             requires = filter_values
@@ -21,7 +21,25 @@ class _NaicsCodes(_Filter):
         requires = [str(code) for code in requires]
         exclude = [str(code) for code in exclude]
 
-        all_codes = requires + exclude
+        return ES_Q("query_string", query=cls._query_string(requires, exclude), default_field="naics_code")
+
+    @classmethod
+    def _query_string(cls, requires, exclude):
+        positive_codes, negative_codes = cls._order_naics_codes(requires, exclude, requires + exclude)
+
+        positive_nodes = [_NaicsNode(code, True, positive_codes, requires + exclude) for code in positive_codes["top"]]
+        negative_nodes = [_NaicsNode(code, False, positive_codes, requires + exclude) for code in negative_codes["top"]]
+
+        positive_query = " OR ".join([node.get_query() for node in positive_nodes])
+        negative_query = " AND ".join([node.get_query() for node in negative_nodes])
+
+        if positive_query and negative_query:
+            return f"{positive_query} AND {negative_query}"
+        else:
+            return positive_query + negative_query  # We know that exactly one is blank thanks to TinyShield
+
+    @staticmethod
+    def _order_naics_codes(requires, exclude, all_codes):
         postive_codes = {
             "top": [code for code in requires if len([root for root in all_codes if code.startswith(root)]) == 1]
         }
@@ -31,13 +49,7 @@ class _NaicsCodes(_Filter):
         postive_codes["sub"] = [code for code in requires if code not in postive_codes["top"] + negative_codes["top"]]
         negative_codes["sub"] = [code for code in exclude if code not in postive_codes["top"] + negative_codes["top"]]
 
-        search_nodes = [_NaicsNode(code, True, postive_codes, all_codes) for code in postive_codes["top"]] + [
-            _NaicsNode(code, False, postive_codes, all_codes) for code in negative_codes["top"]
-        ]
-
-        return ES_Q(
-            "query_string", query=" OR ".join([node.get_query() for node in search_nodes]), default_field="naics_code"
-        )
+        return postive_codes, negative_codes
 
 
 class _NaicsNode:

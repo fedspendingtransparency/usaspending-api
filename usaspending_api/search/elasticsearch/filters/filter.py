@@ -23,11 +23,11 @@ class _Filter(metaclass=ABCMeta):
         if filter_values is None:
             raise InvalidParameterException(f"Invalid filter: {cls.underscore_name} has null as its value.")
 
-        return cls._generate_elasticsearch_query(filter_values, query_type)
+        return cls.generate_elasticsearch_query(filter_values, query_type)
 
     @classmethod
     @abstractmethod
-    def _generate_elasticsearch_query(
+    def generate_elasticsearch_query(
         cls, filter_values: Union[str, list], query_type: _QueryType
     ) -> Union[ES_Q, List[ES_Q]]:
         """ Returns a Q object used to query Elasticsearch. """
