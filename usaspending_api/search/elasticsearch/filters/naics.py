@@ -27,8 +27,12 @@ class NaicsCodes(_Filter):
     def _query_string(cls, requires, exclude):
         positive_codes, negative_codes = cls._order_naics_codes(requires, exclude, requires + exclude)
 
-        positive_nodes = [_NaicsNode(code, True, positive_codes, requires + exclude) for code in positive_codes["top"]]
-        negative_nodes = [_NaicsNode(code, False, positive_codes, requires + exclude) for code in negative_codes["top"]]
+        positive_nodes = [
+            _NaicsNode(code, True, positive_codes["sub"], negative_codes["sub"]) for code in positive_codes["top"]
+        ]
+        negative_nodes = [
+            _NaicsNode(code, False, positive_codes["sub"], negative_codes["sub"]) for code in negative_codes["top"]
+        ]
 
         positive_query = " OR ".join([node.get_query() for node in positive_nodes])
         negative_query = " AND ".join([node.get_query() for node in negative_nodes])
@@ -80,8 +84,8 @@ class _NaicsNode:
             retval = f"NOT {retval}"
         retval = f"({retval})"
 
-        positive_child_query = " OR ".join([f"({child.get_query()})" for child in self.children if child.positive])
-        negative_child_query = " AND ".join([f"({child.get_query()})" for child in self.children if not child.positive])
+        positive_child_query = " OR ".join([child.get_query() for child in self.children if child.positive])
+        negative_child_query = " AND ".join([child.get_query() for child in self.children if not child.positive])
         joined_child_query = " AND ".join(query for query in [positive_child_query, negative_child_query] if query)
 
         if self.children:
