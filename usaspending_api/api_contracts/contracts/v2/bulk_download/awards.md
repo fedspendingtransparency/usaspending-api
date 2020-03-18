@@ -124,7 +124,15 @@ This route sends a request to the backend to begin generating a zipfile of award
         + `last_modified_date`
 + `keyword` (optional, string)
 + `place_of_performance_locations` (optional, array[Location], fixed-type)
++ `place_of_performance_scope` (optional, enum[string])
+    + Members
+        + `domestic`
+        + `foreign`
 + `recipient_locations` (optional, array[Location], fixed-type)
++ `recipient_scope` (optional, enum[string])
+    + Members
+        + `domestic`
+        + `foreign`
 + `sub_agency` (optional, string)
     Sub-agency name to include (based on the agency filter)
 + `sub_award_types` (optional, array[enum[string]])
