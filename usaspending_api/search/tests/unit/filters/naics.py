@@ -27,3 +27,11 @@ def test_positive_to_negative_cross_hierarchy():
 
 def test_negative_to_positive_cross_hierarchy():
     assert NaicsCodes._query_string(["1111"], ["11"]) == "(NOT 11*) OR ((1111*))"
+
+
+def test_positive_uncle_naics():
+    assert NaicsCodes._query_string(["11", "2211"], []) == "(11*) OR (2211*)"
+
+
+def test_negative_uncle_naics():
+    assert NaicsCodes._query_string([], ["11", "2211"]) == "(NOT 11*) AND (NOT 2211*)"
