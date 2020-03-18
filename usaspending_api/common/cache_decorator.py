@@ -11,7 +11,8 @@ class CustomCacheResponse(CacheResponse):
             view_instance=view_instance, view_method=view_method, request=request, args=args, kwargs=kwargs
         )
         response = None
-        if request.headers.get("X-Experimental-Api") != "elasticsearch":
+        elasticsearch = request.headers.get("X-Experimental-Api") == "elasticsearch"
+        if not elasticsearch:
             try:
                 response = self.cache.get(key)
             except Exception:
@@ -27,7 +28,7 @@ class CustomCacheResponse(CacheResponse):
             if not response.status_code >= 400 or self.cache_errors:
                 if self.cache_errors:
                     logger.error(self.cache_errors)
-                if request.headers.get("X-Experimental-Api") != "elasticsearch":
+                if not elasticsearch:
                     try:
                         self.cache.set(key, response, self.timeout)
                         response["Cache-Trace"] = "set-cache"
