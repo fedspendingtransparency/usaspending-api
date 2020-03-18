@@ -218,8 +218,8 @@ List of table columns
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`]
-+ `exclude`: [`3313`]
++ `require`: [`33`] (optional, list[string])
++ `exclude`: [`3313`] (optional, list[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)
