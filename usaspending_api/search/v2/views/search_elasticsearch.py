@@ -7,7 +7,11 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import ElasticsearchConnectionException, InvalidParameterException
+from usaspending_api.common.exceptions import (
+    ElasticsearchConnectionException,
+    InvalidParameterException,
+    UnprocessableEntityException,
+)
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -48,6 +52,16 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             if m["name"] in ("keywords", "award_type_codes", "sort"):
                 m["optional"] = False
         validated_payload = TinyShield(models).block(request.data)
+
+        record_num = (validated_payload["page"] - 1) * validated_payload["limit"]
+        if record_num >= settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW:
+            raise UnprocessableEntityException(
+                "Accessing page {page} with limit {limit} exceeds the Elasticsearch limit of {es_limit}. Please use downloads to access the full set of results.".format(
+                    page=validated_payload["page"],
+                    limit=validated_payload["limit"],
+                    es_limit=settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW,
+                )
+            )
 
         if validated_payload["sort"] not in validated_payload["fields"]:
             raise InvalidParameterException("Sort value not found in fields: {}".format(validated_payload["sort"]))

@@ -57,6 +57,7 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPI
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
+from usaspending_api.common.exceptions import UnprocessableEntityException
 
 logger = logging.getLogger("console")
 
@@ -321,6 +322,17 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raise Exception(
                 "Using search_after functionality in Elasticsearch requires both last_record_sort_value and last_record_unique_id."
             )
+        if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
+            self.last_record_unique_id is None and self.last_record_sort_value is None
+        ):
+            raise UnprocessableEntityException(
+                "Accessing page {page} with limit {limit} exceeds the Elasticsearch limit of {es_limit}. Please provide the 'last_record_sort_value' and 'last_record_unique_id' to paginate sequentially.".format(
+                    page=self.pagination["page"],
+                    limit=self.pagination["limit"],
+                    es_limit=settings.ES_AWARDS_MAX_RESULT_WINDOW,
+                )
+            )
+        # es_limit=settings.ES_AWARDS_MAX_RESULT_WINDOW,
         # Search_after values are provided in the API request - use search after
         if self.last_record_sort_value is not None and self.last_record_unique_id is not None:
             search = (
