@@ -69,11 +69,15 @@ class AgnosticDeletes:
             for date, ids in removed_records.items():
                 if len(ids) == 1:  # handle case with single-value Python tuples contain a trailing comma "(id,)"
                     ids += ids
-                sql = delete_template.format(
-                    table=self.destination_table_name, key=self.shared_pk, ids=tuple(ids), date=date
-                )
-                cursor.execute(sql)
-                logger.info(f"Removed {cursor.rowcount} rows previous to '{date}'")
+
+                if len(ids) == 0:
+                    logger.warning(f"No records to delete for '{date}'")
+                else:
+                    sql = delete_template.format(
+                        table=self.destination_table_name, key=self.shared_pk, ids=tuple(ids), date=date
+                    )
+                    cursor.execute(sql)
+                    logger.info(f"Removed {cursor.rowcount} rows previous to '{date}'")
 
     def fetch_deleted_transactions(self, date_time: datetime) -> Optional[dict]:
         raise NotImplementedError

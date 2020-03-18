@@ -1,14 +1,15 @@
 import csv
 import logging
 
+
 from collections import defaultdict
 from datetime import datetime
 from typing import Optional, List
 
 from usaspending_api import settings
-from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
+from usaspending_api.common.helpers.date_helper import datetime_is_ge, datetime_is_lt
 from usaspending_api.common.helpers.s3_helpers import access_s3_object, access_s3_object_list
-
+from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 
 logger = logging.getLogger("script")
 
@@ -59,9 +60,10 @@ def limit_objects_to_date_range(
     for obj in objects or []:
         file_date = datetime.strptime(obj.key[: obj.key.find("_")], date_format)
         # Only keep S3 objects which fall between the provided dates
-        if file_date < start_datetime:
+
+        if datetime_is_lt(file_date, start_datetime):
             continue
-        if end_datetime and file_date >= end_datetime:
+        if end_datetime and datetime_is_ge(file_date, end_datetime):
             continue
         results.append(obj)
 
