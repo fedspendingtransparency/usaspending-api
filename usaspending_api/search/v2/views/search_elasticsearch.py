@@ -56,7 +56,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         record_num = (validated_payload["page"] - 1) * validated_payload["limit"]
         if record_num >= settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW:
             raise UnprocessableEntityException(
-                "Accessing page {page} with limit {limit} exceeds the Elasticsearch limit of {es_limit}. Please use downloads to access the full set of results.".format(
+                "Page #{page} of size {limit} is over the maximum result limit ({es_limit}). Consider using custom data downloads to obtain large data sets.".format(
                     page=validated_payload["page"],
                     limit=validated_payload["limit"],
                     es_limit=settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW,
