@@ -98,6 +98,7 @@ def award_data(transactional_db):
         unique_award_key="TEST_AWARD_1",
         action_date="2017-01-01",
         type="A",
+        is_fpds=True,
     )
     mommy.make(
         TransactionNormalized,
@@ -108,6 +109,7 @@ def award_data(transactional_db):
         unique_award_key="TEST_AWARD_2",
         action_date="2017-04-01",
         type="IDV_B",
+        is_fpds=True,
     )
     mommy.make(
         TransactionNormalized,
@@ -118,6 +120,7 @@ def award_data(transactional_db):
         unique_award_key="TEST_AWARD_3",
         action_date="2017-06-01",
         type="02",
+        is_fpds=False,
     )
     mommy.make(
         TransactionNormalized,
@@ -128,6 +131,7 @@ def award_data(transactional_db):
         unique_award_key="TEST_AWARD_4",
         action_date="2018-01-15",
         type="A",
+        is_fpds=True,
     )
     mommy.make(
         TransactionNormalized,
@@ -138,6 +142,7 @@ def award_data(transactional_db):
         unique_award_key="TEST_AWARD_5",
         action_date="2018-03-15",
         type="07",
+        is_fpds=False,
     )
     mommy.make(
         TransactionNormalized,
@@ -148,68 +153,7 @@ def award_data(transactional_db):
         unique_award_key="TEST_AWARD_6",
         action_date="2018-06-15",
         type="02",
-    )
-
-    # Create Transactions
-    mommy.make(
-        TransactionNormalized,
-        id=1,
-        award_id=1,
-        modification_number=1,
-        awarding_agency=aa1,
-        unique_award_key="TEST_AWARD_1",
-        action_date="2017-01-01",
-        type="A",
-    )
-    mommy.make(
-        TransactionNormalized,
-        id=2,
-        award_id=2,
-        modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="TEST_AWARD_2",
-        action_date="2017-04-01",
-        type="IDV_B",
-    )
-    mommy.make(
-        TransactionNormalized,
-        id=3,
-        award_id=3,
-        modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="TEST_AWARD_3",
-        action_date="2017-06-01",
-        type="02",
-    )
-    mommy.make(
-        TransactionNormalized,
-        id=4,
-        award_id=4,
-        modification_number=1,
-        awarding_agency=aa1,
-        unique_award_key="TEST_AWARD_4",
-        action_date="2018-01-15",
-        type="A",
-    )
-    mommy.make(
-        TransactionNormalized,
-        id=5,
-        award_id=5,
-        modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="TEST_AWARD_5",
-        action_date="2018-03-15",
-        type="07",
-    )
-    mommy.make(
-        TransactionNormalized,
-        id=6,
-        award_id=6,
-        modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="TEST_AWARD_6",
-        action_date="2018-06-15",
-        type="02",
+        is_fpds=False,
     )
     mommy.make(
         TransactionNormalized,
@@ -220,6 +164,7 @@ def award_data(transactional_db):
         unique_award_key="TEST_AWARD_7",
         action_date="2017-01-15",
         type="A",
+        is_fpds=True,
     )
     mommy.make(
         TransactionNormalized,
@@ -230,6 +175,7 @@ def award_data(transactional_db):
         unique_award_key="TEST_AWARD_8",
         action_date="2017-03-15",
         type="07",
+        is_fpds=False,
     )
     mommy.make(
         TransactionNormalized,
@@ -240,36 +186,242 @@ def award_data(transactional_db):
         unique_award_key="TEST_AWARD_9",
         action_date="2017-06-15",
         type="02",
+        is_fpds=False,
     )
 
     # Create TransactionContract
-    mommy.make(TransactionFPDS, transaction_id=1, piid="tc1piid", unique_award_key="TEST_AWARD_1")
-    mommy.make(TransactionFPDS, transaction_id=2, piid="tc2piid", unique_award_key="TEST_AWARD_2")
-    mommy.make(TransactionFPDS, transaction_id=4, piid="tc4piid", unique_award_key="TEST_AWARD_4")
-    mommy.make(TransactionFPDS, transaction_id=7, piid="tc7piid", unique_award_key="TEST_AWARD_7")
+    mommy.make(
+        TransactionFPDS,
+        transaction_id=1,
+        piid="tc1piid",
+        unique_award_key="TEST_AWARD_1",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+    )
+    mommy.make(
+        TransactionFPDS,
+        transaction_id=2,
+        piid="tc2piid",
+        unique_award_key="TEST_AWARD_2",
+        legal_entity_country_code="CAN",
+        legal_entity_country_name="CANADA",
+        place_of_perform_country_c="CAN",
+        place_of_perform_country_n="CANADA",
+    )
+    mommy.make(
+        TransactionFPDS,
+        transaction_id=4,
+        piid="tc4piid",
+        unique_award_key="TEST_AWARD_4",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+    )
+    mommy.make(
+        TransactionFPDS,
+        transaction_id=7,
+        piid="tc7piid",
+        unique_award_key="TEST_AWARD_7",
+        legal_entity_country_code="CAN",
+        legal_entity_country_name="CANADA",
+        place_of_perform_country_c="CAN",
+        place_of_perform_country_n="CANADA",
+    )
 
     # Create TransactionAssistance
-    mommy.make(TransactionFABS, transaction_id=3, fain="ta1fain", unique_award_key="TEST_AWARD_3")
-    mommy.make(TransactionFABS, transaction_id=5, fain="ta5fain", unique_award_key="TEST_AWARD_5")
-    mommy.make(TransactionFABS, transaction_id=6, fain="ta6fain", unique_award_key="TEST_AWARD_6")
-    mommy.make(TransactionFABS, transaction_id=8, fain="ta8fain", unique_award_key="TEST_AWARD_8")
-    mommy.make(TransactionFABS, transaction_id=9, fain="ta9fain", unique_award_key="TEST_AWARD_9")
+    mommy.make(
+        TransactionFABS,
+        transaction_id=3,
+        fain="ta1fain",
+        unique_award_key="TEST_AWARD_3",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+    )
+    mommy.make(
+        TransactionFABS,
+        transaction_id=5,
+        fain="ta5fain",
+        unique_award_key="TEST_AWARD_5",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+    )
+    mommy.make(
+        TransactionFABS,
+        transaction_id=6,
+        fain="ta6fain",
+        unique_award_key="TEST_AWARD_6",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+    )
+    mommy.make(
+        TransactionFABS,
+        transaction_id=8,
+        fain="ta8fain",
+        unique_award_key="TEST_AWARD_8",
+        legal_entity_country_code="USA",
+        place_of_perform_country_c="USA",
+    )
+    mommy.make(
+        TransactionFABS,
+        transaction_id=9,
+        fain="ta9fain",
+        unique_award_key="TEST_AWARD_9",
+        legal_entity_country_code="CAN",
+        legal_entity_country_name="CANADA",
+        place_of_perform_country_c="CAN",
+        place_of_perform_country_n="CANADA",
+    )
 
     # Create Subaward
-    mommy.make(Subaward, id=1, award_id=4, latest_transaction_id=4, action_date="2018-01-15", award_type="procurement")
-    mommy.make(Subaward, id=2, award_id=5, latest_transaction_id=5, action_date="2018-03-15", award_type="grant")
-    mommy.make(Subaward, id=3, award_id=6, latest_transaction_id=6, action_date="2018-06-15", award_type="grant")
-    mommy.make(Subaward, id=4, award_id=7, latest_transaction_id=7, action_date="2017-01-15", award_type="procurement")
-    mommy.make(Subaward, id=5, award_id=8, latest_transaction_id=8, action_date="2017-03-15", award_type="grant")
-    mommy.make(Subaward, id=6, award_id=9, latest_transaction_id=9, action_date="2017-06-15", award_type="grant")
+    mommy.make(
+        Subaward,
+        id=1,
+        award_id=4,
+        latest_transaction_id=4,
+        action_date="2018-01-15",
+        award_type="procurement",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+    )
+    mommy.make(
+        Subaward,
+        id=2,
+        award_id=5,
+        latest_transaction_id=5,
+        action_date="2018-03-15",
+        award_type="grant",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+    )
+    mommy.make(
+        Subaward,
+        id=3,
+        award_id=6,
+        latest_transaction_id=6,
+        action_date="2018-06-15",
+        award_type="grant",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+    )
+    mommy.make(
+        Subaward,
+        id=4,
+        award_id=7,
+        latest_transaction_id=7,
+        action_date="2017-01-15",
+        award_type="procurement",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+    )
+    mommy.make(
+        Subaward,
+        id=5,
+        award_id=8,
+        latest_transaction_id=8,
+        action_date="2017-03-15",
+        award_type="grant",
+        recipient_location_country_code="CAN",
+        recipient_location_country_name="CANADA",
+        pop_country_code="CAN",
+        pop_country_name="CANADA",
+    )
+    mommy.make(
+        Subaward,
+        id=6,
+        award_id=9,
+        latest_transaction_id=9,
+        action_date="2017-06-15",
+        award_type="grant",
+        recipient_location_country_code="CAN",
+        recipient_location_country_name="CANADA",
+        pop_country_code="CAN",
+        pop_country_name="CANADA",
+    )
 
     # Create BrokerSubaward
-    mommy.make(BrokerSubaward, id=1, prime_id=4, action_date="2018-01-15", subaward_type="sub-contract")
-    mommy.make(BrokerSubaward, id=2, prime_id=5, action_date="2018-03-15", subaward_type="sub-grant")
-    mommy.make(BrokerSubaward, id=3, prime_id=6, action_date="2018-06-15", subaward_type="sub-grant")
-    mommy.make(BrokerSubaward, id=4, prime_id=7, action_date="2017-01-15", subaward_type="sub-contract")
-    mommy.make(BrokerSubaward, id=5, prime_id=8, action_date="2017-03-15", subaward_type="sub-grant")
-    mommy.make(BrokerSubaward, id=6, prime_id=9, action_date="2017-06-15", subaward_type="sub-grant")
+    mommy.make(
+        BrokerSubaward,
+        id=1,
+        prime_id=4,
+        action_date="2018-01-15",
+        subaward_type="sub-contract",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        place_of_perform_country_co="USA",
+        place_of_perform_country_na="UNITED STATES",
+    )
+    mommy.make(
+        BrokerSubaward,
+        id=2,
+        prime_id=5,
+        action_date="2018-03-15",
+        subaward_type="sub-grant",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        place_of_perform_country_co="USA",
+        place_of_perform_country_na="UNITED STATES",
+    )
+    mommy.make(
+        BrokerSubaward,
+        id=3,
+        prime_id=6,
+        action_date="2018-06-15",
+        subaward_type="sub-grant",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        place_of_perform_country_co="USA",
+        place_of_perform_country_na="UNITED STATES",
+    )
+    mommy.make(
+        BrokerSubaward,
+        id=4,
+        prime_id=7,
+        action_date="2017-01-15",
+        subaward_type="sub-contract",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        place_of_perform_country_co="USA",
+        place_of_perform_country_na="UNITED STATES",
+    )
+    mommy.make(
+        BrokerSubaward,
+        id=5,
+        prime_id=8,
+        action_date="2017-03-15",
+        subaward_type="sub-grant",
+        legal_entity_country_code="CAN",
+        legal_entity_country_name="CANADA",
+        place_of_perform_country_co="CAN",
+        place_of_perform_country_na="CANADA",
+    )
+    mommy.make(
+        BrokerSubaward,
+        id=6,
+        prime_id=9,
+        action_date="2017-06-15",
+        subaward_type="sub-grant",
+        legal_entity_country_code="CAN",
+        legal_entity_country_name="CANADA",
+        place_of_perform_country_co="CAN",
+        place_of_perform_country_na="CANADA",
+    )
 
     # Set latest_award for each award
     update_awards()
@@ -427,6 +579,102 @@ def test_download_awards_with_some_sub_awards(client, award_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 2
     assert resp.json()["total_columns"] == 89
+
+
+def test_download_awards_with_domestic_scope(client, award_data):
+    # Recipient Location Scope
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "prime_award_types": [*list(award_type_mapping.keys())],
+        "sub_award_types": [*all_subaward_types],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+        "recipient_scope": "domestic",
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 4
+    assert resp.json()["total_columns"] == 545
+
+    # Place of Performance Scope
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "prime_award_types": [*list(award_type_mapping.keys())],
+        "sub_award_types": [*all_subaward_types],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+        "place_of_performance_scope": "domestic",
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 4
+    assert resp.json()["total_columns"] == 545
+
+
+def test_download_awards_with_foreign_scope(client, award_data):
+    # Recipient Location Scope
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "prime_award_types": [*list(award_type_mapping.keys())],
+        "sub_award_types": [*all_subaward_types],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+        "recipient_scope": "foreign",
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 5
+    assert resp.json()["total_columns"] == 545
+
+    # Place of Performance Scope
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    filters = {
+        "agency": "all",
+        "prime_award_types": [*list(award_type_mapping.keys())],
+        "sub_award_types": [*all_subaward_types],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+        "place_of_performance_scope": "foreign",
+    }
+    dl_resp = client.post(
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters, "columns": []}),
+    )
+    assert dl_resp.status_code == status.HTTP_200_OK
+
+    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["total_rows"] == 5
+    assert resp.json()["total_columns"] == 545
 
 
 @pytest.mark.django_db
