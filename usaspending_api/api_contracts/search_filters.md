@@ -374,9 +374,10 @@ Request parameter description:
 }
 ```
 
-Request parameter description:
-* `naics_codes` (NAICSFilterObject) : Top level key name for filter. Contains 2 lists of Strings corresponding to NAICS Codes. Any results returned must include at least one element form the  `require` list, and may NOT include any elements form the `exclude` list. 
-
+`naics_codes` (NAICSFilterObject) : Two nullable lists of strings: `require` and `exclude`. 
+* When `require` is provided, search will only return results that have a NAICS code that starts with one element from the require list. 
+* When `exclude` is provided,  search will only return results that do NOT have a NAICS code that starts with any element from the exclude list. 
+* If an element matches both lists, the more specific rule (longer prefix) supercedes.
 
 ## PSC
 
