@@ -2,20 +2,17 @@ import logging
 
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.broker.helpers.delete_stale_fabs import delete_stale_fabs
-from usaspending_api.broker.helpers.store_deleted_fabs import store_deleted_fabs
 
 
 logger = logging.getLogger("console")
 
 
-def delete_fabs_transactions(ids_to_delete, do_not_log_deletions):
+def delete_fabs_transactions(ids_to_delete):
     """
     ids_to_delete are afa_generated_unique ids
     """
     if ids_to_delete:
-        if do_not_log_deletions is False:
-            store_deleted_fabs(ids_to_delete)
-        with timer("deleting stale FABS data", logger.info):
+        with timer(f"deleting {len(ids_to_delete)} stale FABS data", logger.info):
             update_award_ids = delete_stale_fabs(ids_to_delete)
 
     else:
