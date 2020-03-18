@@ -10,22 +10,22 @@ class NaicsCodes(_Filter):
     def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
         # legacy functionality permits sending a single list of naics codes, which is treated as the required list
         if isinstance(filter_values, list):
-            requires = filter_values
+            require = filter_values
             exclude = []
         elif isinstance(filter_values, dict):
-            requires = filter_values.get("require") or []
+            require = filter_values.get("require") or []
             exclude = filter_values.get("exclude") or []
         else:
             raise InvalidParameterException(f"naics_codes must be an array or object")
 
-        requires = [str(code) for code in requires]
+        requires = [str(code) for code in require]
         exclude = [str(code) for code in exclude]
 
         return ES_Q("query_string", query=cls._query_string(requires, exclude), default_field="naics_code")
 
     @classmethod
-    def _query_string(cls, requires, exclude):
-        positive_codes, negative_codes = cls._order_naics_codes(requires, exclude, requires + exclude)
+    def _query_string(cls, require, exclude):
+        positive_codes, negative_codes = cls._order_naics_codes(require, exclude, require + exclude)
 
         positive_nodes = [
             _NaicsNode(code, True, positive_codes["sub"], negative_codes["sub"]) for code in positive_codes["top"]
