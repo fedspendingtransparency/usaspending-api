@@ -25,6 +25,7 @@ Restore Filters From URL Hash Data
                 + `awardAmounts` (required, object)
                 + `awardType` (required, array[string])
                 + `extentCompeted` (required, array[string])
+                + `federalAccounts` (required, object)
                 + `keyword` (required, object)
                 + `locationDomesticForeign` (required, string)
                 + `pricingType` (required, array[string])
@@ -45,6 +46,7 @@ Restore Filters From URL Hash Data
                 + `timePeriodFY` (required, array[string])
                 + `timePeriodStart` (required, string, nullable)
                 + `timePeriodType` (required, string)
+                + `treasuryAccounts` (required, object)
             + `version` (optional, string)
 
     + Body
@@ -56,6 +58,7 @@ Restore Filters From URL Hash Data
                         "awardType": [],
                         "extentCompeted": [],
                         "keyword": {},
+                        "federalAccounts": {},
                         "locationDomesticForeign": "all",
                         "pricingType": [],
                         "recipientDomesticForeign": "all",
@@ -68,8 +71,8 @@ Restore Filters From URL Hash Data
                         "selectedNAICS": {},
                         "selectedPSC": {},
                         "naics_codes": {
-                            "included": ["11"],
-                            "excluded": []
+                            "included": ["21", "33", "1111"],
+                            "excluded": ["111110"]
                         },
                         "selectedRecipientLocations": {},
                         "selectedRecipients": [],
@@ -77,7 +80,8 @@ Restore Filters From URL Hash Data
                         "timePeriodEnd": null,
                         "timePeriodFY": ["2019"],
                         "timePeriodStart": null,
-                        "timePeriodType": "fy"
+                        "timePeriodType": "fy",
+                        "treasuryAccounts": {}
                     },
                     "version": "2017-11-21"
                 }
