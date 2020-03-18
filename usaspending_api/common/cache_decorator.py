@@ -11,11 +11,12 @@ class CustomCacheResponse(CacheResponse):
             view_instance=view_instance, view_method=view_method, request=request, args=args, kwargs=kwargs
         )
         response = None
-        try:
-            response = self.cache.get(key)
-        except Exception:
-            msg = "Problem while retrieving key [{k}] from cache for path:'{p}'"
-            logger.exception(msg.format(k=key, p=str(request.path)))
+        if request.headers.get("X-Experimental-Api") != "elasticsearch":
+            try:
+                response = self.cache.get(key)
+            except Exception:
+                msg = "Problem while retrieving key [{k}] from cache for path:'{p}'"
+                logger.exception(msg.format(k=key, p=str(request.path)))
 
         if not response:
             response = view_method(view_instance, request, *args, **kwargs)
