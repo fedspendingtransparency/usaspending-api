@@ -30,7 +30,6 @@ This route sends a request to the backend to retrieve awarding agencies matching
 + `id` (required, number)
 + `toptier_flag` (required, boolean)
 + `toptier_agency` (required, object)
-    + `id` (required, number)
     + `toptier_code` (required, string)
     + `abbreviation` (required, string, nullable)
     + `name` (required, string)
