@@ -1,8 +1,8 @@
-from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_agency import (
+from usaspending_api.search.v2.views.spending_by_category_views.abstract_spending_by_agency import (
     AgencyType,
     AbstractAgencyViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category import Category
+from usaspending_api.search.v2.views.spending_by_category_views.abstract_spending_by_category import Category
 
 
 class AwardingAgencyViewSet(AbstractAgencyViewSet):

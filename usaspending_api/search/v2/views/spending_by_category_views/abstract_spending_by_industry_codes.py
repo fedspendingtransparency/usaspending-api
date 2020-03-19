@@ -11,7 +11,7 @@ from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_psc_description_by_code,
     fetch_cfda_id_title_by_number,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category import (
+from usaspending_api.search.v2.views.spending_by_category_views.abstract_spending_by_category import (
     AbstractSpendingByCategoryViewSet,
 )
 
