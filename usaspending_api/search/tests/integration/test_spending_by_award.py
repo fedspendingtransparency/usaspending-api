@@ -514,7 +514,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index
 
 
 @pytest.mark.django_db
-def test_naics_code_query_string_logic(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
+def test_inclusive_naics_code(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
         Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
     """
@@ -554,6 +554,114 @@ def test_naics_code_query_string_logic(client, monkeypatch, spending_by_award_te
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
 
+    assert len(logging_statements) != 0, "Elasticsearch was not used for this test"
+
+
+@pytest.mark.django_db
+def test_exclusive_naics_code(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
+    """
+        Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
+    """
+
+    elasticsearch_award_index.update_index()
+
+    logging_statements = []
+    monkeypatch.setattr(
+        "usaspending_api.search.v2.views.spending_by_award.logger.info",
+        lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
+        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
+    )
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "naics_codes": {"require": ["999990"]},
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "desc",
+                "subawards": False,
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 0
+
+    assert len(logging_statements) != 0, "Elasticsearch was not used for this test"
+
+
+@pytest.mark.django_db
+def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
+    """
+        Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
+    """
+
+    mommy.make(
+        "awards.Award",
+        id=5,
+        type="A",
+        category="contract",
+        fain="abc444",
+        earliest_transaction_id=8,
+        latest_transaction_id=8,
+        generated_unique_award_id="ASST_NON_TESTING_4",
+        date_signed="2019-01-01",
+        total_obligation=12.00,
+    )
+
+    mommy.make("awards.TransactionNormalized", id=8, award_id=5, action_date="2019-10-1", is_fpds=True)
+    mommy.make("awards.TransactionFPDS", transaction_id=8, naics="222233", awardee_or_recipient_uniqu="duns_1001")
+
+    elasticsearch_award_index.update_index()
+
+    logging_statements = []
+    monkeypatch.setattr(
+        "usaspending_api.search.v2.views.spending_by_award.logger.info",
+        lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
+        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
+    )
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "naics_codes": {"require": ["112233", "222233"], "exclude": ["112233"]},
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "desc",
+                "subawards": False,
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_result = [
+        {"internal_id": 5, "Award ID": None, "generated_internal_id": "ASST_NON_TESTING_4"}
+        != {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
     assert len(logging_statements) != 0, "Elasticsearch was not used for this test"
 
 

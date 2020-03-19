@@ -28,8 +28,6 @@ class NaicsCodes(_Filter):
         """Generates string in proper syntax for Elasticsearch query_string attribute, given API parameters"""
         positive_codes, negative_codes = cls._order_naics_codes(require, exclude, require + exclude)
 
-        print(positive_codes)
-
         positive_nodes = [
             _NaicsNode(code, True, positive_codes["sub"], negative_codes["sub"]) for code in positive_codes["top"]
         ]
