@@ -262,7 +262,6 @@ UPDATE public.recipient_lookup rl SET
     OR rl.zip5                    IS DISTINCT FROM tem.zip5
   );
 
-
 INSERT INTO public.recipient_lookup (
     recipient_hash, legal_business_name, duns, address_line_1, address_line_2,
     city, state, zip5, zip4, country_code,
@@ -273,6 +272,17 @@ INSERT INTO public.recipient_lookup (
     congressional_district, business_types_codes, source, update_date
   FROM public.temporary_restock_recipient_lookup tem
   ON CONFLICT(recipient_hash) DO NOTHING;
+
+WITH alternate_names AS (
+      SELECT recipient_hash, array_agg(DISTINCT legal_business_name) as all_names
+      FROM temporary_restock_recipient_lookup
+      WHERE legal_business_name IS NOT NULL
+      GROUP BY recipient_hash
+)
+UPDATE public.recipient_lookup rl SET
+  alternate_names = all_names
+FROM alternate_names an
+WHERE rl.recipient_hash = an.recipient_hash AND alternate_names IS DISTINCT FROM all_names;
 
 -- DROP TABLE public.temporary_restock_recipient_lookup;
 -- DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
