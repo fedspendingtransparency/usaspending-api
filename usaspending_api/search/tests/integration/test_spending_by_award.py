@@ -514,6 +514,50 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index
 
 
 @pytest.mark.django_db
+def test_naics_code_query_string_logic(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
+    """
+        Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
+    """
+
+    elasticsearch_award_index.update_index()
+
+    logging_statements = []
+    monkeypatch.setattr(
+        "usaspending_api.search.v2.views.spending_by_award.logger.info",
+        lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
+        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
+    )
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "naics_codes": {"require": ["1122"]},
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "desc",
+                "subawards": False,
+            }
+        ),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 2
+
+    assert len(logging_statements) != 0, "Elasticsearch was not used for this test"
+
+
+@pytest.mark.django_db
 def test_correct_response_for_each_filter(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
     Verify the content of the response when using different filters. This function creates the ES Index

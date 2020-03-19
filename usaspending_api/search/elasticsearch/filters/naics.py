@@ -21,7 +21,7 @@ class NaicsCodes(_Filter):
         requires = [str(code) for code in require]
         exclude = [str(code) for code in exclude]
 
-        return ES_Q("query_string", query=cls._query_string(requires, exclude), default_field="naics_code")
+        return ES_Q("query_string", query=cls._query_string(requires, exclude), default_field="naics_code.keyword")
 
     @classmethod
     def _query_string(cls, require, exclude) -> str:
