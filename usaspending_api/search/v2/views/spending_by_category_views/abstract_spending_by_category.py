@@ -17,7 +17,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.exceptions import ElasticsearchConnectionException
+from usaspending_api.common.exceptions import ElasticsearchConnectionException, NotImplementedException
 from usaspending_api.common.experimental_api_flags import (
     is_experimental_elasticsearch_api,
     mirror_request_to_elasticsearch,
@@ -99,6 +99,12 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         }
 
         return response
+
+    def _raise_not_implemented(self):
+        msg = "Category '{}' is not implemented"
+        if self.subawards:
+            msg += " when `subawards` is True"
+        raise NotImplementedException(msg.format(self.category.name))
 
     @staticmethod
     def _get_messages(original_filters) -> List:
