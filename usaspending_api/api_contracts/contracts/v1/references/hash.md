@@ -71,8 +71,8 @@ Restore Filters From URL Hash Data
                         "selectedNAICS": {},
                         "selectedPSC": {},
                         "naics_codes": {
-                            "included": ["21", "33", "1111"],
-                            "excluded": ["111110"]
+                            "require": ["21", "33", "1111"],
+                            "exclude": ["111110"]
                         },
                         "selectedRecipientLocations": {},
                         "selectedRecipients": [],
