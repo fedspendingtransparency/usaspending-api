@@ -548,12 +548,12 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         if config["process_deletes"]:
             if config["load_type"] == "awards":
                 id_list = [{"key": c[UNIVERSAL_AWARD_ID_NAME], "col": UNIVERSAL_AWARD_ID_NAME} for c in chunk]
-                delete_awards_from_es(client, id_list, job.name, config, job.index)
+                delete_from_es(client, id_list, job.name, config, job.index)
             else:
                 id_list = [
                     {"key": c[UNIVERSAL_TRANSACTION_ID_NAME], "col": UNIVERSAL_TRANSACTION_ID_NAME} for c in chunk
                 ]
-                delete_transactions_from_es(client, id_list, job.name, config, job.index)
+                delete_from_es(client, id_list, job.name, config, job.index)
 
         current_rows = "({}-{})".format(count * chunksize + 1, count * chunksize + len(chunk))
         printf(
@@ -583,7 +583,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
 def deleted_transactions(client, config):
     deleted_ids = gather_deleted_ids(config)
     id_list = [{"key": deleted_id, "col": UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
-    delete_transactions_from_es(client, id_list, None, config, None)
+    delete_from_es(client, id_list, None, config, None)
 
 
 def deleted_awards(client, config):
@@ -603,7 +603,7 @@ def deleted_awards(client, config):
             {"key": deleted_award["generated_unique_award_id"], "col": UNIVERSAL_AWARD_ID_NAME}
             for deleted_award in deleted_award_ids
         ]
-        delete_awards_from_es(client, award_id_list, None, config, None)
+        delete_from_es(client, award_id_list, None, config, None)
     else:
         printf({"msg": "No related awards require deletion. ", "f": "ES Delete", "job": None})
     return
@@ -688,7 +688,7 @@ def filter_query(column, values, query_type="match_phrase"):
 
 
 def delete_query(response):
-    return {"query": {"ids": {"type": "transaction_mapping", "values": [i["_id"] for i in response["hits"]["hits"]]}}}
+    return {"query": {"ids": {"values": [i["_id"] for i in response["hits"]["hits"]]}}}
 
 
 def chunks(l, n):
@@ -697,10 +697,14 @@ def chunks(l, n):
         yield l[i : i + n]
 
 
-def delete_transactions_from_es(client, id_list, job_id, config, index=None):
+def delete_from_es(client, id_list, job_id, config, index=None):
     """
     id_list = [{key:'key1',col:'tranaction_id'},
                {key:'key2',col:'generated_unique_transaction_id'}],
+               ...]
+    or
+    id_list = [{key:'key1',col:'award_id'},
+               {key:'key2',col:'generated_unique_award_id'}],
                ...]
     """
     start = perf_counter()
@@ -709,7 +713,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
 
     if index is None:
         index = "{}-*".format(config["root_index"])
-    start_ = client.search(index=index)["hits"]["total"]["value"]
+    start_ = client.count(index=index)["count"]
     printf({"msg": "Starting amount of indices ----- {}".format(start_), "f": "ES Delete", "job": job_id})
     col_to_items_dict = defaultdict(list)
     for l in id_list:
@@ -731,7 +735,7 @@ def delete_transactions_from_es(client, id_list, job_id, config, index=None):
                 )
             except Exception as e:
                 printf({"msg": "[ERROR][ERROR][ERROR]\n{}".format(str(e)), "f": "ES Delete", "job": job_id})
-    end_ = client.search(index=index)["hits"]["total"]["value"]
+    end_ = client.count(index=index)["count"]
 
     t = perf_counter() - start
     total = str(start_ - end_)
@@ -772,47 +776,6 @@ def check_awards_for_deletes(id_list):
         WHERE a.generated_unique_award_id is null"""
     results = execute_sql_statement(sql.format(ids=formatted_value_ids[:-1]), results=True)
     return results
-
-
-def delete_awards_from_es(client, id_list, job_id, config, index=None):
-    """
-    id_list = [{key:'key1',col:'award_id'},
-               {key:'key2',col:'generated_unique_award_id'}],
-               ...]
-    """
-    start = perf_counter()
-
-    printf({"msg": "Deleting up to {} document(s)".format(len(id_list)), "f": "ES Delete", "job": job_id})
-
-    if index is None:
-        index = "{}-*".format(config["root_index"])
-    start_ = client.search(index=index)["hits"]["total"]["value"]
-    printf({"msg": "Starting amount of indices ----- {}".format(start_), "f": "ES Delete", "job": job_id})
-    col_to_items_dict = defaultdict(list)
-    for l in id_list:
-        col_to_items_dict[l["col"]].append(l["key"])
-
-    for column, values in col_to_items_dict.items():
-        printf({"msg": 'Deleting {} of "{}"'.format(len(values), column), "f": "ES Delete", "job": job_id})
-        values_generator = chunks(values, 1000)
-        for v in values_generator:
-            body = filter_query(column, v)
-            response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
-            delete_body = {
-                "query": {"ids": {"type": "award_mapping", "values": [i["_id"] for i in response["hits"]["hits"]]}}
-            }
-            try:
-                client.delete_by_query(
-                    index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
-                )
-            except Exception as e:
-                printf({"msg": "[ERROR][ERROR][ERROR]\n{}".format(str(e)), "f": "ES Delete", "job": job_id})
-    end_ = client.search(index=index)["hits"]["total"]["value"]
-
-    t = perf_counter() - start
-    total = str(start_ - end_)
-    printf({"msg": "ES Deletes took {}s. Deleted {} records".format(t, total), "f": "ES Delete", "job": job_id})
-    return
 
 
 def printf(items):
