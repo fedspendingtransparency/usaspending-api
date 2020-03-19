@@ -111,7 +111,7 @@ SELECT
     WHEN UTM.pop_county_code IS NOT NULL
       THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","county_code":"', UTM.pop_county_code, '","county_name":"', UTM.pop_county_name, '"}')
     ELSE NULL
-  END AS pop_county_agg_field,
+  END AS pop_county_agg_key,
 
   UTM.recipient_location_country_code,
   UTM.recipient_location_country_name,

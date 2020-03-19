@@ -10,8 +10,8 @@ from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_state_name_from_code,
     fetch_country_name_from_code,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category import (
-    BaseSpendingByCategoryViewSet,
+from usaspending_api.search.v2.views.spending_by_category_views.abstract_spending_by_category import (
+    AbstractSpendingByCategoryViewSet,
 )
 
 
@@ -22,7 +22,7 @@ class LocationType(Enum):
     CONGRESSIONAL_DISTRICT = "congressional"
 
 
-class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
+class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta):
     """
     Base class used by the different spending by Location endpoints
     """
@@ -31,7 +31,7 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
-        location_info_buckets = response.get("group_by_agg_field", {}).get("buckets", [])
+        location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in location_info_buckets:
             location_info = json.loads(bucket.get("key"))
 

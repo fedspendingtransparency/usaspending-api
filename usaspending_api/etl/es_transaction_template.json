@@ -387,7 +387,7 @@
             }
           }
         },
-        "pop_county_agg_field": {
+        "pop_county_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {
