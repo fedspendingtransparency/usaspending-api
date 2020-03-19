@@ -58,29 +58,15 @@ def test_three_layer_naics():
 def test_large_positive_list():
     large_list = _large_naics_list("")
     assert NaicsCodes._query_string(require=large_list, exclude=[]) == " OR ".join(
-        [NaicsCodes._query_string(require=[f"{i}"], exclude=[]) for i in range(10, 100)]
+        [NaicsCodes._query_string(require=[f"{i}"], exclude=[]) for i in range(10, 100, 5)]
     )
 
 
 def test_large_negative_list():
     large_list = _large_naics_list("")
     assert NaicsCodes._query_string(require=[], exclude=large_list) == " AND ".join(
-        [NaicsCodes._query_string(require=[], exclude=[f"{i}"]) for i in range(10, 100)]
+        [NaicsCodes._query_string(require=[], exclude=[f"{i}"]) for i in range(10, 100, 5)]
     )
-
-
-def test_large_positive_nested_list():
-    large_list = _large_nested_naics_list()
-    assert (
-        NaicsCodes._query_string(require=large_list, exclude=[]) == " OR "
-    )  # .join([NaicsCodes._query_string(require=[naics for naics in large_list if naics.startswith(str(i))], exclude=[]) for i in range(10,100)])
-
-
-def _large_nested_naics_list():
-    retval = _large_naics_list("")
-    for naics in retval:
-        retval += _large_naics_list(naics)
-    return retval
 
 
 def _large_naics_list(prefix):
