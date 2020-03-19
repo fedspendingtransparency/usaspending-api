@@ -11,7 +11,7 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category_view_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import InvalidParameterException, NotImplementedException
 from usaspending_api.common.experimental_api_flags import (
     is_experimental_elasticsearch_api,
     mirror_request_to_elasticsearch,
@@ -163,7 +163,7 @@ class BusinessLogic:
         msg = "Category '{}' is not implemented"
         if self.subawards:
             msg += " when `subawards` is True"
-        raise InvalidParameterException(msg.format(self.category))
+        raise NotImplementedException(msg.format(self.category))
 
     def common_db_query(self, filters, values):
         return (

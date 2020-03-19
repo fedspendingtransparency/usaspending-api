@@ -11,8 +11,8 @@ from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_psc_description_by_code,
     fetch_cfda_id_title_by_number,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category import (
-    BaseSpendingByCategoryViewSet,
+from usaspending_api.search.v2.views.spending_by_category_views.abstract_spending_by_category import (
+    AbstractSpendingByCategoryViewSet,
 )
 
 
@@ -22,7 +22,7 @@ class IndustryCodeType(Enum):
     NAICS = "naics_code"
 
 
-class BaseIndustryCodeViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
+class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta):
     """
     Base class used by the different spending by Industry Code endpoints
     """
@@ -31,7 +31,7 @@ class BaseIndustryCodeViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
-        industry_code_info_buckets = response.get("group_by_agg_field", {}).get("buckets", [])
+        industry_code_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in industry_code_info_buckets:
             industry_code_info = json.loads(bucket.get("key"))
 
@@ -49,7 +49,7 @@ class BaseIndustryCodeViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
     def query_django(self, base_queryset: QuerySet) -> List[dict]:
         if self.subawards:
             if self.industry_code_type == IndustryCodeType.PSC or self.industry_code_type == IndustryCodeType.NAICS:
-                self.raise_not_implemented()
+                self._raise_not_implemented()
 
         django_filters = {f"{self.industry_code_type.value}__isnull": False}
         django_values = [self.industry_code_type.value]

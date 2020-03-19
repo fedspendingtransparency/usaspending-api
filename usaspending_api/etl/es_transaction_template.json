@@ -274,7 +274,7 @@
             }
           }
         },
-        "awarding_toptier_agency_agg_field": {
+        "awarding_toptier_agency_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {
@@ -283,7 +283,7 @@
             }
           }
         },
-        "funding_toptier_agency_agg_field": {
+        "funding_toptier_agency_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {
@@ -292,7 +292,7 @@
             }
           }
         },
-        "awarding_subtier_agency_agg_field": {
+        "awarding_subtier_agency_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {
@@ -301,7 +301,7 @@
             }
           }
         },
-        "funding_subtier_agency_agg_field": {
+        "funding_subtier_agency_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {
@@ -321,7 +321,7 @@
             }
           }
         },
-        "cfda_agg_field": {
+        "cfda_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {

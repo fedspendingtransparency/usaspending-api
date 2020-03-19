@@ -1,11 +1,11 @@
-from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category import Category
-from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_industry_codes import (
+from usaspending_api.search.v2.views.spending_by_category_views.abstract_spending_by_category import Category
+from usaspending_api.search.v2.views.spending_by_category_views.abstract_spending_by_industry_codes import (
     IndustryCodeType,
-    BaseIndustryCodeViewSet,
+    AbstractIndustryCodeViewSet,
 )
 
 
-class CfdaViewSet(BaseIndustryCodeViewSet):
+class CfdaViewSet(AbstractIndustryCodeViewSet):
     """
     This route takes award filters and returns spending by CFDA.
     """
@@ -13,4 +13,4 @@ class CfdaViewSet(BaseIndustryCodeViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/cfda.md"
 
     industry_code_type = IndustryCodeType.CFDA
-    category = Category(name="cfda", agg_field="cfda_agg_field")
+    category = Category(name="cfda", agg_key="cfda_agg_key")
