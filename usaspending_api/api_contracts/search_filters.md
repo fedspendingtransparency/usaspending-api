@@ -368,8 +368,8 @@ Request parameter description:
 ```
 {
     "naics_codes": {
-        "require": "33",
-        "exclude": "336411"
+        "require": ["33"],
+        "exclude": ["336411"]
     }
 }
 ```
