@@ -24,7 +24,8 @@ class NaicsCodes(_Filter):
         return ES_Q("query_string", query=cls._query_string(requires, exclude), default_field="naics_code")
 
     @classmethod
-    def _query_string(cls, require, exclude):
+    def _query_string(cls, require, exclude) -> str:
+        """Generates string in proper syntax for Elasticsearch query_string attribute, given API parameters"""
         positive_codes, negative_codes = cls._order_naics_codes(require, exclude, require + exclude)
 
         positive_nodes = [
@@ -44,6 +45,7 @@ class NaicsCodes(_Filter):
 
     @staticmethod
     def _order_naics_codes(requires, exclude, all_codes):
+        """Seperates NAICS codes into 'top' codes (those with no higher node in either array), and 'sub' codes (those that do)."""
         postive_codes = {
             "top": [code for code in requires if len([root for root in all_codes if code.startswith(root)]) == 1]
         }
@@ -57,6 +59,8 @@ class NaicsCodes(_Filter):
 
 
 class _NaicsNode:
+    """Represents one part of the final query, either requiring or excluding one NAICS code, with any exceptions"""
+
     code: str
     positive: bool
     children: list
