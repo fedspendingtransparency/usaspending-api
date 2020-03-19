@@ -7,7 +7,7 @@ This endpoint supports the state profile page and allow for complex filtering fo
 
 ## POST
 
-This endpoint returns a list of the top results of Awarding Agencies sorted by the total amounts in descending order.
+This endpoint returns a list of the top results of Counties sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Attributes (object)
@@ -22,7 +22,7 @@ This endpoint returns a list of the top results of Awarding Agencies sorted by t
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `awarding_agency` (required, string)
+        + `category`: `county` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
