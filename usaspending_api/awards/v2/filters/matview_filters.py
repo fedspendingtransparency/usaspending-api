@@ -268,7 +268,7 @@ def matview_search_filter(filters, model, for_downloads=False):
                 raise InvalidParameterException("naics_codes must be an array or object")
 
             regex = f"^({'|'.join([str(elem) for elem in require])}).*"
-            queryset = queryset.exclude(naics_code__regex=regex)
+            queryset = queryset.filter(naics_code__regex=regex)
 
         elif key == "psc_codes":
             in_query = [v for v in value]
