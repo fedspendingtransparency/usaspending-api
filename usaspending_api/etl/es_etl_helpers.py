@@ -394,7 +394,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
     return count
 
 
-def csv_chunk_gen(filename, chunksize, job_id, awards):
+def csv_chunk_gen(filename, chunksize, job_id, load_type):
     printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
     converters = {
@@ -406,6 +406,13 @@ def csv_chunk_gen(filename, chunksize, job_id, awards):
     dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
     for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
+        if load_type == "transactions":
+            # Route all transaction documents with the same recipient to the same shard
+            # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
+            # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
+            # and this is needed for performance
+            # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
+            file_df["routing"] = file_df["recipient_hash"]
         yield file_df.to_dict(orient="records")
 
 
