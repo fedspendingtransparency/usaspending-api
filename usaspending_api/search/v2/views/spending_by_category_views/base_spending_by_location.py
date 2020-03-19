@@ -60,15 +60,17 @@ class BaseLocationViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
         django_filters = {f"pop_{self.location_type.value}_code__isnull": False}
 
         if self.location_type == LocationType.COUNTY:
-            django_values = ["pop_county_code", "pop_county_name"]
+            django_values = ["pop_country_code", "pop_state_code", "pop_county_code", "pop_county_name"]
             annotations = {"code": F("pop_county_code"), "name": F("pop_county_name")}
-
         elif self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
-            django_values = ["pop_congressional_code", "pop_state_code"]
+            django_values = ["pop_country_code", "pop_state_code", "pop_congressional_code"]
             annotations = {"code": F("pop_congressional_code")}
+        elif self.location_type == LocationType.STATE_TERRITORY:
+            django_values = ["pop_country_code", "pop_state_code"]
+            annotations = {"code": F("pop_state_code")}
         else:
-            django_values = [f"pop_{self.location_type.value}_code"]
-            annotations = {"code": F(f"pop_{self.location_type.value}_code")}
+            django_values = [f"pop_country_code"]
+            annotations = {"code": F(f"pop_country_code")}
 
         queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(**annotations)
         lower_limit = self.pagination.lower_limit
