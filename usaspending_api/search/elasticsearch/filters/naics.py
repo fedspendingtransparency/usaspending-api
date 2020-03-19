@@ -28,6 +28,8 @@ class NaicsCodes(_Filter):
         """Generates string in proper syntax for Elasticsearch query_string attribute, given API parameters"""
         positive_codes, negative_codes = cls._order_naics_codes(require, exclude, require + exclude)
 
+        print(positive_codes)
+
         positive_nodes = [
             _NaicsNode(code, True, positive_codes["sub"], negative_codes["sub"]) for code in positive_codes["top"]
         ]
@@ -47,10 +49,10 @@ class NaicsCodes(_Filter):
     def _order_naics_codes(requires, exclude, all_codes):
         """Seperates NAICS codes into 'top' codes (those with no higher node in either array), and 'sub' codes (those that do)."""
         postive_codes = {
-            "top": [code for code in requires if len([root for root in all_codes if code.startswith(root)]) == 1]
+            "top": [code for code in requires if len([root for root in all_codes if code[:-1].startswith(root)]) == 0]
         }
         negative_codes = {
-            "top": [code for code in exclude if len([root for root in all_codes if code.startswith(root)]) == 1]
+            "top": [code for code in exclude if len([root for root in all_codes if code[:-1].startswith(root)]) == 0]
         }
         postive_codes["sub"] = [code for code in requires if code not in postive_codes["top"] + negative_codes["top"]]
         negative_codes["sub"] = [code for code in exclude if code not in postive_codes["top"] + negative_codes["top"]]

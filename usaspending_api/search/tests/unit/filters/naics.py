@@ -49,6 +49,18 @@ def test_negative_uncle_naics():
     assert NaicsCodes._query_string(require=[], exclude=["11", "2211"]) == "(NOT 11*) AND (NOT 2211*)"
 
 
+def test_competing_naics():
+    assert NaicsCodes._query_string(require=["11"], exclude=["11"]) == "(11*) AND (NOT 11*)"
+
+
+def test_duplicate_positive_naics():
+    assert NaicsCodes._query_string(require=["11", "11"], exclude=[]) == "(11*) OR (11*)"
+
+
+def test_duplicate_negative_naics():
+    assert NaicsCodes._query_string(require=[], exclude=["11", "11"]) == "(NOT 11*) AND (NOT 11*)"
+
+
 def test_three_layer_naics():
     assert (
         NaicsCodes._query_string(require=["11", "112233"], exclude=["1122"]) == "(11*) AND ((NOT 1122*) OR ((112233)))"
