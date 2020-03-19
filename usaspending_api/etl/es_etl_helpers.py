@@ -406,7 +406,7 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
     dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
     for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
-        if load_type != "awards":
+        if load_type == "transactions":
             # Route all transaction documents with the same recipient to the same shard
             # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
             # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
