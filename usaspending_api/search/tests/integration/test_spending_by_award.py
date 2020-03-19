@@ -655,10 +655,7 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
-    expected_result = [
-        {"internal_id": 5, "Award ID": None, "generated_internal_id": "ASST_NON_TESTING_4"}
-        != {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}
-    ]
+    expected_result = [{"internal_id": 5, "Award ID": None, "generated_internal_id": "ASST_NON_TESTING_4"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
