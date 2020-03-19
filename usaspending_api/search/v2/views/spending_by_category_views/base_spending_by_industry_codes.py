@@ -12,7 +12,7 @@ from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_cfda_id_title_by_number,
 )
 from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category import (
-    BaseSpendingByCategoryViewSet,
+    AbstractSpendingByCategoryViewSet,
 )
 
 
@@ -22,7 +22,7 @@ class IndustryCodeType(Enum):
     NAICS = "naics_code"
 
 
-class BaseIndustryCodeViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
+class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta):
     """
     Base class used by the different spending by Industry Code endpoints
     """
@@ -31,7 +31,7 @@ class BaseIndustryCodeViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
-        industry_code_info_buckets = response.get("group_by_agg_field", {}).get("buckets", [])
+        industry_code_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in industry_code_info_buckets:
             industry_code_info = json.loads(bucket.get("key"))
 

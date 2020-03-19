@@ -8,7 +8,7 @@ from django.db.models import QuerySet, F
 
 from usaspending_api.search.helpers.spending_by_category_helpers import fetch_agency_tier_id_by_agency
 from usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category import (
-    BaseSpendingByCategoryViewSet,
+    AbstractSpendingByCategoryViewSet,
 )
 
 
@@ -19,7 +19,7 @@ class AgencyType(Enum):
     FUNDING_SUBTIER = "funding_subtier"
 
 
-class BaseAgencyViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
+class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta):
     """
     Base class used by the different Awarding / Funding Agencies and Subagencies
     """
@@ -28,7 +28,7 @@ class BaseAgencyViewSet(BaseSpendingByCategoryViewSet, metaclass=ABCMeta):
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
-        agency_info_buckets = response.get("group_by_agg_field", {}).get("buckets", [])
+        agency_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in agency_info_buckets:
             agency_info = json.loads(bucket.get("key"))
 

@@ -17,6 +17,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.exceptions import ElasticsearchConnectionException
 from usaspending_api.common.experimental_api_flags import (
     is_experimental_elasticsearch_api,
     mirror_request_to_elasticsearch,
@@ -26,7 +27,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms, get_sum_aggregations
+from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms, get_scaled_sum_aggregations
 
 logger = logging.getLogger(__name__)
 
@@ -34,11 +35,11 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Category:
     name: str
-    agg_field: str
+    agg_key: str
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
-class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
+class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     """
     Base class inherited by the different category endpoints.
     """
@@ -134,19 +135,24 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         search = TransactionSearch().filter(filter_query)
 
         # Get count of unique buckets; terminate early if there are no buckets matching criteria
-        bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_field}.hash")
+        bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}.hash")
         if bucket_count == 0:
             return None
+        elif bucket_count >= 9900:
+            logger.warning(f"Max number of buckets reached for aggregation key: {self.category.agg_key}.")
+            raise ElasticsearchConnectionException(
+                "Current filters return too many unique items. Narrow filters to return results."
+            )
 
         # Define all aggregations needed to build the response
-        group_by_agg_field = A("terms", field=self.category.agg_field, size=bucket_count)
+        group_by_agg_key = A("terms", field=self.category.agg_key, size=bucket_count, shard_size=bucket_count + 100)
 
-        sum_aggregations = get_sum_aggregations("generated_pragmatic_obligation", self.pagination)
+        sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
         sum_field = sum_aggregations["sum_field"]
         sum_bucket_sort = sum_aggregations["sum_bucket_sort"]
 
         # Apply the aggregations to the TransactionSearch object
-        search.aggs.bucket("group_by_agg_field", group_by_agg_field).metric("sum_field", sum_field).pipeline(
+        search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field).pipeline(
             "sum_bucket_sort", sum_bucket_sort
         )
 
