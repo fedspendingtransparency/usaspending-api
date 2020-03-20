@@ -41,7 +41,7 @@ class Category:
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     """
-    Base class inherited by the different category endpoints.
+    Abstract class inherited by the different spending by category endpoints.
     """
 
     category: Category
@@ -133,9 +133,6 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def build_elasticsearch_search_with_aggregations(self, filter_query: ES_Q) -> Optional[TransactionSearch]:
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
-        All aggregations are applied in a specific order to insure the correct nested aggregations.
-
-        The top-most aggregation is expected to use partitions to make sure that all buckets are retrieved.
         """
         # Create the filtered Search Object
         search = TransactionSearch().filter(filter_query)
