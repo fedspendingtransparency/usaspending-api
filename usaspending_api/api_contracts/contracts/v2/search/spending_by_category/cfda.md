@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending By Awarding Subagency [/api/v2/search/spending_by_category/awarding_subagency/]
+# Spending By CFDA [/api/v2/search/spending_by_category/cfda/]
 
 This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
 
 ## POST
 
-This endpoint returns a list of the top results of Awarding Subagencies sorted by the total amounts in descending order.
+This endpoint returns a list of the top results of CFDA sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Attributes (object)
@@ -22,7 +22,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `awarding_subagency` (required, string)
+        + `category`: `cfda` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -31,7 +31,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
     + Body
 
             {
-                "category": "awarding_subagency",
+                "category": "cfda",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
@@ -42,16 +42,16 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
                 },
                 "results": [
                     {
-                        "amount": 442057334610.11,
-                        "name": "Centers for Medicare and Medicaid Services",
-                        "code": "CMS",
-                        "id": 831
+                        "amount": 228568985616.0,
+                        "code": "93.778",
+                        "id": 2014,
+                        "name": "Medical Assistance Program"
                     },
                     {
-                        "amount": 284418429693.37,
-                        "name": "Social Security Administration",
-                        "code": "SSA",
-                        "id": 539
+                        "amount": 207629348701.0,
+                        "code": "96.002",
+                        "id": 2165,
+                        "name": "Social Security Retirement Insurance"
                     }
                 ],
                 "messages": [
@@ -133,10 +133,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
     + Members
         + `toptier`
         + `subtier`
-+ `name`: `Office of Inspector General` (required, string)
-+ `toptier_name`: `Department of the Treasury` (optional, string)
-    Only applicable when `tier` is `subtier`.  Ignored when `tier` is `toptier`.  Provides a means by which to scope subtiers with common names to a
-    specific toptier.  For example, several agencies have an "Office of Inspector General".  If not provided, subtiers may span more than one toptier.
++ `name`: `Department of Defense` (required, string)
 
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)

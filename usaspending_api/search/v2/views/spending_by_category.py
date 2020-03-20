@@ -11,7 +11,7 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category_view_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import InvalidParameterException, NotImplementedException
 from usaspending_api.common.experimental_api_flags import (
     is_experimental_elasticsearch_api,
     mirror_request_to_elasticsearch,
@@ -25,7 +25,6 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.helpers.spending_by_category_helpers import (
-    fetch_cfda_id_title_by_number,
     fetch_psc_description_by_code,
     fetch_naics_description_from_code,
     fetch_country_name_from_code,
@@ -37,6 +36,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
     FundingAgencyViewSet,
     FundingSubagencyViewSet,
 )
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
 
 logger = logging.getLogger(__name__)
 
@@ -48,12 +48,6 @@ ALIAS_DICT = {
         "recipient_name": "name",
         "recipient_unique_id": "code",
         "parent_recipient_unique_id": "code",
-    },
-    "cfda": {
-        "cfda_number": "code",
-        # Note: we could pull cfda title from the matviews but noticed the titles vary for the same cfda number
-        #       which leads to incorrect groupings
-        # 'cfda_title': 'name'
     },
     "psc": {"product_or_service_code": "code"},
     "naics": {"naics_code": "code", "naics_description": "name"},
@@ -115,6 +109,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             response = AwardingAgencyViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "awarding_subagency":
             response = AwardingSubagencyViewSet().perform_search(validated_payload, original_filters)
+        elif validated_payload["category"] == "cfda":
+            response = CfdaViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "funding_agency":
             response = FundingAgencyViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "funding_subagency":
@@ -165,7 +161,7 @@ class BusinessLogic:
         msg = "Category '{}' is not implemented"
         if self.subawards:
             msg += " when `subawards` is True"
-        raise InvalidParameterException(msg.format(self.category))
+        raise NotImplementedException(msg.format(self.category))
 
     def common_db_query(self, filters, values):
         return (
@@ -180,7 +176,7 @@ class BusinessLogic:
         # filter the transactions by category
         if self.category in ("recipient_duns", "recipient_parent_duns"):
             results = self.recipient()
-        elif self.category in ("cfda", "psc", "naics"):
+        elif self.category in ("psc", "naics"):
             results = self.industry_and_other_codes()
         elif self.category in ("county", "district", "state_territory", "country"):
             results = self.location()
@@ -283,10 +279,7 @@ class BusinessLogic:
         return results
 
     def industry_and_other_codes(self) -> list:
-        if self.category == "cfda":
-            filters = {"{}__isnull".format(self.obligation_column): False, "cfda_number__isnull": False}
-            values = ["cfda_number"]
-        elif self.category == "psc":
+        if self.category == "psc":
             if self.subawards:
                 # N/A for subawards
                 self.raise_not_implemented()
@@ -305,9 +298,7 @@ class BusinessLogic:
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
-            if self.category == "cfda":
-                row["id"], row["name"] = fetch_cfda_id_title_by_number(row["code"])
-            elif self.category == "psc":
+            if self.category == "psc":
                 row["id"] = None
                 row["name"] = fetch_psc_description_by_code(row["code"])
             elif self.category == "naics":
