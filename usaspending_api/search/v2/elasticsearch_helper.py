@@ -250,17 +250,14 @@ def get_number_of_unique_terms(filter_query: ES_Q, field: str) -> int:
 
 
 def get_sum_aggregations(field_to_sum: str, pagination: Pagination) -> Dict[str, A]:
-    sum_as_cents = A("sum", field=field_to_sum, script={"source": "_value * 100"})
-    sum_as_dollars = A(
-        "bucket_script", buckets_path={"sum_as_cents": "sum_as_cents"}, script="params.sum_as_cents / 100"
-    )
+    sum_field = A("sum", field=field_to_sum, script={"source": "_value * 100"})
 
     # Have to create a separate dictionary for the bucket_sort values since "from" is a reserved word
     bucket_sort_values = {
-        "sort": {"sum_as_dollars": {"order": "desc"}},
+        "sort": {"sum_field": {"order": "desc"}},
         "from": (pagination.page - 1) * pagination.limit,
         "size": pagination.limit + 1,
     }
     sum_bucket_sort = A("bucket_sort", **bucket_sort_values)
 
-    return {"sum_as_cents": sum_as_cents, "sum_as_dollars": sum_as_dollars, "sum_bucket_sort": sum_bucket_sort}
+    return {"sum_field": sum_field, "sum_bucket_sort": sum_bucket_sort}
