@@ -93,6 +93,7 @@ VIEW_COLUMNS = [
     "pop_zip5",
     "pop_congressional_code",
     "pop_city_name",
+    "pop_county_agg_key",
     "recipient_location_country_code",
     "recipient_location_country_name",
     "recipient_location_state_code",
