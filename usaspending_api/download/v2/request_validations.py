@@ -49,6 +49,7 @@ def validate_award_request(request_data: dict):
         json_request["filters"]["award_type_codes"] = _validate_award_type_codes(filters)
 
     _validate_and_update_locations(filters, json_request)
+    _validate_location_scope(filters, json_request)
     _validate_tas_codes(filters, json_request)
     _validate_file_format(json_request)
 
@@ -298,6 +299,18 @@ def _validate_and_update_locations(filters, json_request):
                     raise InvalidParameterException("Location is not a dictionary: {}".format(location_dict))
                 location_error_handling(location_dict.keys())
             json_request["filters"][location_filter] = filters[location_filter]
+
+
+def _validate_location_scope(filters: dict, json_request: dict) -> None:
+    if "filters" not in json_request:
+        json_request["filters"] = {}
+    for location_scope_filter in ["place_of_performance_scope", "recipient_scope"]:
+        if filters.get(location_scope_filter):
+            if filters[location_scope_filter] not in ["domestic", "foreign"]:
+                raise InvalidParameterException(
+                    f"Invalid value for {location_scope_filter}: {filters[location_scope_filter]}. Only allows 'domestic' and 'foreign'."
+                )
+            json_request["filters"][location_scope_filter] = filters[location_scope_filter]
 
 
 def _validate_tas_codes(filters, json_request):

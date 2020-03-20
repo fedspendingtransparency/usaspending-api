@@ -1,6 +1,9 @@
+import operator
+
 from argparse import ArgumentTypeError
-from datetime import timezone
+from datetime import timezone, datetime
 from dateutil import parser
+from typing import Callable
 
 
 def cast_datetime_to_naive(datetime):
@@ -89,3 +92,20 @@ def fy(raw_date):
         raise TypeError("{} needs year and month attributes".format(raw_date))
 
     return result
+
+
+def datetime_is_ge(first_datetime: datetime, second_datetime: datetime) -> bool:
+    """First Datetime is greater-than or equal-to Second Datetime"""
+    return _compare_datetimes(first_datetime, second_datetime, operator.ge)
+
+
+def datetime_is_lt(first_datetime: datetime, second_datetime: datetime) -> bool:
+    """First Datetime is less-than Second Datetime"""
+    return _compare_datetimes(first_datetime, second_datetime, operator.lt)
+
+
+def _compare_datetimes(first_datetime: datetime, second_datetime: datetime, op_func: Callable) -> bool:
+    """Comparision of datetimes using provided function. If TZ-unaware, assumes UTC"""
+    dt_1 = cast_datetime_to_utc(first_datetime)
+    dt_2 = cast_datetime_to_utc(second_datetime)
+    return bool(op_func(dt_1, dt_2))
