@@ -3,7 +3,7 @@ import logging
 
 from collections import OrderedDict
 from decimal import Decimal
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Subquery
 from typing import Optional
 
 from usaspending_api.awards.models import (
@@ -26,6 +26,8 @@ from usaspending_api.common.helpers.data_constants import state_code_from_name, 
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 from usaspending_api.references.models import Agency, Cfda, PSC, NAICS, SubtierAgency
+from usaspending_api.submissions.models import SubmissionAttributes
+
 
 logger = logging.getLogger("console")
 
@@ -193,7 +195,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                         ("country_name", db_row_dict["_rl_country_name"]),
                         ("state_code", db_row_dict["_rl_state_code"]),
                         ("state_name", db_row_dict["_rl_state_name"]),
-                        ("city_name", db_row_dict["_rl_city_name"]),
+                        ("city_name", db_row_dict["_rl_city_name"] or db_row_dict.get("_rl_foreign_city")),
                         ("county_code", db_row_dict["_rl_county_code"]),
                         ("county_name", db_row_dict["_rl_county_name"]),
                         ("address_line1", db_row_dict["_rl_address_line1"]),
@@ -312,16 +314,34 @@ def _fetch_parent_award_details(parent_award_ids: dict) -> Optional[OrderedDict]
         logging.debug("Unable to find award for award id %s" % parent_award_award_id)
         return None
 
-    parent_agency = (
+    parent_sub_agency = (
         SubtierAgency.objects.filter(subtier_code=parent_award["latest_transaction__contract_data__agency_id"])
-        .values("name")
+        .values("name", "subtier_agency_id")
         .first()
+    )
+    parent_agency = (
+        (
+            Agency.objects.filter(
+                toptier_flag=True,
+                toptier_agency_id=Subquery(
+                    Agency.objects.filter(
+                        subtier_agency_id__isnull=False, subtier_agency_id=parent_sub_agency["subtier_agency_id"]
+                    ).values("toptier_agency_id")
+                ),
+            )
+            .values("id", "toptier_agency__name")
+            .first()
+        )
+        if parent_sub_agency
+        else None
     )
 
     parent_object = OrderedDict(
         [
-            ("agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
-            ("agency_name", parent_agency["name"] if parent_agency else None),
+            ("agency_id", parent_agency["id"] if parent_agency else None),
+            ("agency_name", parent_agency["toptier_agency__name"] if parent_agency else None),
+            ("sub_agency_id", parent_award["latest_transaction__contract_data__agency_id"]),
+            ("sub_agency_name", parent_sub_agency["name"] if parent_sub_agency else None),
             ("award_id", parent_award_award_id),
             ("generated_unique_award_id", parent_award_guai),
             ("idv_type_description", parent_award["latest_transaction__contract_data__idv_type_description"]),
@@ -359,6 +379,12 @@ def fetch_latest_ec_details(award_id: int, mapper: OrderedDict, transaction_type
     return retval.first()
 
 
+def agency_has_file_c_submission(agency_id):
+    return SubmissionAttributes.objects.filter(
+        toptier_code=Subquery(Agency.objects.filter(id=agency_id).values("toptier_agency__toptier_code")[:1])
+    ).exists()
+
+
 def fetch_agency_details(agency_id: int) -> Optional[dict]:
     values = [
         "toptier_agency__toptier_code",
@@ -374,6 +400,7 @@ def fetch_agency_details(agency_id: int) -> Optional[dict]:
     if agency:
         agency_details = {
             "id": agency_id,
+            "has_agency_page": agency_has_file_c_submission(agency_id),
             "toptier_agency": {
                 "name": agency["toptier_agency__name"],
                 "code": agency["toptier_agency__toptier_code"],

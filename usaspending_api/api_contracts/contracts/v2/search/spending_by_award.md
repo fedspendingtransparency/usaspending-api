@@ -107,7 +107,7 @@ List of table columns
 + `Last Date to Order` (optional, string, nullable)
     Procurement IDVs only
 + `Last Modified Date` (optional, string)
-+ `Loan Value` (optional, number, nullable)
++ `Loan Value` (optional, number)
     Assistance awards only
 + `Period of Performance Current End Date` (optional, string, nullable)
 + `Period of Performance Start Date` (optional, string)
@@ -142,7 +142,7 @@ List of table columns
     Sub-Awards only
 + `Sub-Awardee Name` (optional, string)
     Sub-Awards only
-+ `Subsidy Cost` (optional, number, nullable)
++ `Subsidy Cost` (optional, number)
     Assistance awards only
 
 ## PageMetadataObject (object)

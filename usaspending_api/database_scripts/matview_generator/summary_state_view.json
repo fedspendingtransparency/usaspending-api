@@ -8,19 +8,18 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "  array_to_string(array_agg(DISTINCT transaction_normalized.award_id), ',') AS distinct_awards,",
     "",
     "  COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,",
     "  COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) AS pop_state_code,",
     "",
-    "  SUM(COALESCE(CASE",
+    "  COALESCE(SUM(CASE",
     "    WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost",
     "    ELSE transaction_normalized.federal_action_obligation",
-    "  END, 0)::NUMERIC(23, 2))::NUMERIC(23, 2) AS generated_pragmatic_obligation,",
-    "  SUM(COALESCE(transaction_normalized.federal_action_obligation, 0))::NUMERIC(23, 2) AS federal_action_obligation,",
-    "  SUM(COALESCE(transaction_normalized.original_loan_subsidy_cost, 0))::NUMERIC(23, 2) AS original_loan_subsidy_cost,",
-    "  SUM(COALESCE(transaction_normalized.face_value_loan_guarantee, 0))::NUMERIC(23, 2) AS face_value_loan_guarantee,",
+    "  END), 0)::NUMERIC(23, 2) AS generated_pragmatic_obligation,",
+    "  COALESCE(SUM(transaction_normalized.federal_action_obligation), 0)::NUMERIC(23, 2) AS federal_action_obligation,",
+    "  COALESCE(SUM(transaction_normalized.original_loan_subsidy_cost), 0)::NUMERIC(23, 2) AS original_loan_subsidy_cost,",
+    "  COALESCE(SUM(transaction_normalized.face_value_loan_guarantee), 0)::NUMERIC(23, 2) AS face_value_loan_guarantee,",
     "  count(*) AS counts",
     "FROM",
     "  transaction_normalized",
@@ -36,7 +35,6 @@
     "  transaction_normalized.action_date,",
     "  transaction_normalized.fiscal_year,",
     "  transaction_normalized.type,",
-    "  transaction_fpds.pulled_from,",
     "  pop_country_code,",
     "  pop_state_code"
   ],
@@ -52,10 +50,6 @@
         "name": "type",
         "where": "type IS NOT NULL",
         "columns": [{"name": "type"}]
-    }, {
-      "name": "pulled_from",
-      "where": "pulled_from IS NOT NULL",
-      "columns": [{"name": "pulled_from"}]
     }, {
         "name": "pop_country_code",
         "columns": [{"name": "pop_country_code"}]

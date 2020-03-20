@@ -2,7 +2,7 @@ import logging
 
 from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
-from django.db import connections
+from django.db import connection
 
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
@@ -12,9 +12,9 @@ from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_naive, datetime_command_line_argument_type
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
+from usaspending_api.transactions.transaction_delete_journal_helpers import retrieve_deleted_fabs_transactions
 
-
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 SUBMISSION_LOOKBACK_MINUTES = 15
@@ -51,27 +51,8 @@ def get_last_load_date():
     return last_load_date
 
 
-def get_new_submission_ids(last_load_date):
-    """
-    Grab all the submission ids updated since last_load_date.
-    """
-    sql = """
-        select  submission_id
-        from    submission
-        where   d2_submission is true and
-                publish_status_id in (2, 3) and
-                updated_at >= %s
-    """
-    with connections["data_broker"].cursor() as cursor:
-        cursor.execute(sql, [cast_datetime_to_naive(last_load_date)])
-        return tuple(row[0] for row in cursor.fetchall())
-
-
-def _get_ids(sql, submission_ids, afa_ids, start_datetime, end_datetime):
+def _get_ids(sql, afa_ids, start_datetime, end_datetime):
     params = []
-    if submission_ids is not None:
-        sql += " and submission_id in %s"
-        params.append(tuple(submission_ids))
     if afa_ids:
         sql += " and afa_generated_unique in %s"
         params.append(tuple(afa_ids))
@@ -81,35 +62,19 @@ def _get_ids(sql, submission_ids, afa_ids, start_datetime, end_datetime):
     if end_datetime:
         sql += " and updated_at < %s"
         params.append(cast_datetime_to_naive(end_datetime))
-    with connections["data_broker"].cursor() as cursor:
+    with connection.cursor() as cursor:
         cursor.execute(sql, params)
         return tuple(row[0] for row in cursor.fetchall())
 
 
-def get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime):
+def get_fabs_transaction_ids(afa_ids, start_datetime, end_datetime):
     sql = """
         select  published_award_financial_assistance_id
-        from    published_award_financial_assistance
+        from    source_assistance_transaction
         where   is_active is true
     """
-    ids = _get_ids(sql, submission_ids, afa_ids, start_datetime, end_datetime)
+    ids = _get_ids(sql, afa_ids, start_datetime, end_datetime)
     logger.info("Number of records to insert/update: {:,}".format(len(ids)))
-    return ids
-
-
-def get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime):
-    sql = """
-        select  distinct upper(afa_generated_unique)
-        from    published_award_financial_assistance p
-        where   correction_delete_indicatr = 'D' and
-                not exists (
-                    select  *
-                    from    published_award_financial_assistance
-                    where   afa_generated_unique = p.afa_generated_unique and is_active is true
-                )
-    """
-    ids = _get_ids(sql, submission_ids, afa_ids, start_datetime, end_datetime)
-    logger.info("Number of records to delete: {:,}".format(len(ids)))
     return ids
 
 
@@ -120,7 +85,7 @@ def read_afa_ids_from_file(afa_id_file_path):
 
 class Command(BaseCommand):
     help = (
-        "Update FABS data in USAspending from Broker. Command line parameters "
+        "Update FABS data in USAspending from source data. Command line parameters "
         "are ANDed together so, for example, providing a transaction id and a "
         "submission id that do not overlap will result no new FABs records."
     )
@@ -133,14 +98,6 @@ class Command(BaseCommand):
             "FABS transactions beforehand. If omitted, all submissions from "
             "the last successful run will be loaded. THIS SETTING SUPERSEDES "
             "ALL OTHER PROCESSING OPTIONS.",
-        )
-
-        parser.add_argument(
-            "--submission-ids",
-            metavar="ID",
-            nargs="+",
-            type=int,
-            help="Broker submission IDs to reload. Nonexistent IDs will be ignored.",
         )
 
         parser.add_argument(
@@ -167,52 +124,38 @@ class Command(BaseCommand):
             "quotes if date/time contains spaces.",
         )
 
-        parser.add_argument(
-            "--do-not-log-deletions",
-            action="store_true",
-            help="Disable the feature that creates a file of deleted FABS transactions for clients to download.",
-        )
-
     def handle(self, *args, **options):
         processing_start_datetime = datetime.now(timezone.utc)
 
         logger.info("Starting FABS data load script...")
 
-        do_not_log_deletions = options["do_not_log_deletions"]
-
         # "Reload all" supersedes all other processing options.
         reload_all = options["reload_all"]
         if reload_all:
-            submission_ids = None
             afa_ids = None
             start_datetime = None
             end_datetime = None
         else:
-            submission_ids = tuple(options["submission_ids"]) if options["submission_ids"] else None
             afa_ids = read_afa_ids_from_file(options["afa_id_file"]) if options["afa_id_file"] else None
             start_datetime = options["start_datetime"]
             end_datetime = options["end_datetime"]
 
         # If no other processing options were provided than this is an incremental load.
-        is_incremental_load = not any((reload_all, submission_ids, afa_ids, start_datetime, end_datetime))
+        is_incremental_load = not any((reload_all, afa_ids, start_datetime, end_datetime))
 
         if is_incremental_load:
-            last_load_date = get_last_load_date()
-            submission_ids = get_new_submission_ids(last_load_date)
-            logger.info("Processing data for FABS starting from %s" % last_load_date)
+            start_datetime = get_last_load_date()
+            logger.info("Processing data for FABS starting from %s" % start_datetime)
 
-        if is_incremental_load and not submission_ids:
-            logger.info("No new submissions. Exiting.")
+        with timer("obtaining delete records", logger.info):
+            delete_records = retrieve_deleted_fabs_transactions(start_datetime, end_datetime)
+            ids_to_delete = [item for sublist in delete_records.values() for item in sublist if item]
 
-        else:
-            with timer("obtaining delete records", logger.info):
-                ids_to_delete = get_fabs_records_to_delete(submission_ids, afa_ids, start_datetime, end_datetime)
+        with timer("retrieving/diff-ing FABS Data", logger.info):
+            ids_to_upsert = get_fabs_transaction_ids(afa_ids, start_datetime, end_datetime)
 
-            with timer("retrieving/diff-ing FABS Data", logger.info):
-                ids_to_upsert = get_fabs_transaction_ids(submission_ids, afa_ids, start_datetime, end_datetime)
-
-            update_award_ids = delete_fabs_transactions(ids_to_delete, do_not_log_deletions)
-            upsert_fabs_transactions(ids_to_upsert, update_award_ids)
+        update_award_ids = delete_fabs_transactions(ids_to_delete)
+        upsert_fabs_transactions(ids_to_upsert, update_award_ids)
 
         if is_incremental_load:
             update_last_load_date("fabs", processing_start_datetime)

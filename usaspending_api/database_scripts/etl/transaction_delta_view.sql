@@ -50,7 +50,7 @@ SELECT
   FPDS.ordering_period_end_date,
   UTM.fiscal_year AS transaction_fiscal_year,
   AWD.fiscal_year AS award_fiscal_year,
-  AWD.total_obligation AS award_amount,
+  UTM.award_amount,
   UTM.federal_action_obligation AS transaction_amount,
   UTM.face_value_loan_guarantee,
   UTM.original_loan_subsidy_cost,

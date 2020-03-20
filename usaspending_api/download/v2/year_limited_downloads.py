@@ -1,4 +1,3 @@
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
 from usaspending_api.references.models import ToptierAgency
@@ -33,24 +32,42 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             request_data["filters"] = {"elasticsearch_keyword": keyword_filter}
             return
 
-        # Validate other parameters previously required by the Bulk Download endpoint
-        for required_param in ["award_types", "agency", "date_type", "date_range"]:
-            if required_param not in filters:
-                raise InvalidParameterException(
-                    "Missing one or more required body parameters: {}".format(required_param)
-                )
+        # Validate award and subaward type separately since only one is required
+        prime_award_types = filters.get("prime_award_types")
+        sub_award_types = filters.get("sub_award_types")
 
-        # Replacing award_types with award_type_codes
-        filters["award_type_codes"] = []
-        try:
-            for award_type_code in filters["award_types"]:
-                if award_type_code in all_award_types_mappings:
-                    filters["award_type_codes"].extend(all_award_types_mappings[award_type_code])
-                else:
-                    raise InvalidParameterException("Invalid award_type: {}".format(award_type_code))
-            del filters["award_types"]
-        except TypeError:
-            raise InvalidParameterException("award_types parameter not provided as a list")
+        if prime_award_types is None and sub_award_types is None:
+            raise InvalidParameterException(
+                "Missing one or more required body parameters: prime_award_types or sub_award_types"
+            )
+
+        # Validate other parameters previously required by the Bulk Download endpoint
+        for required_param in ["agency", "date_type", "date_range"]:
+            if required_param not in filters:
+                raise InvalidParameterException(f"Missing one or more required body parameters: {required_param}")
+
+        # Creating new filter for custom award download to keep Prime and Sub Awards separate;
+        # Also adding award levels based on filters passed
+        request_data["award_levels"] = []
+        filters["prime_and_sub_award_types"] = {}
+
+        if prime_award_types is not None:
+            try:
+                if len(prime_award_types) > 0:
+                    filters["prime_and_sub_award_types"]["prime_awards"] = prime_award_types
+                    request_data["award_levels"].append("prime_awards")
+                del filters["prime_award_types"]
+            except TypeError:
+                raise InvalidParameterException("prime_award_types parameter not provided as a list")
+
+        if sub_award_types is not None:
+            try:
+                if len(sub_award_types) > 0:
+                    filters["prime_and_sub_award_types"]["sub_awards"] = sub_award_types
+                    request_data["award_levels"].append("sub_awards")
+                del filters["sub_award_types"]
+            except TypeError:
+                raise InvalidParameterException("sub_award_types parameter not provided as a list")
 
         # Replacing date_range with time_period
         date_range_copied = filters["date_range"].copy()

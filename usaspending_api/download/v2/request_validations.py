@@ -8,6 +8,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
     contract_type_mapping,
     idv_type_mapping,
     assistance_type_mapping,
+    all_subaward_types,
 )
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
@@ -25,10 +26,10 @@ from usaspending_api.download.lookups import (
 )
 
 
-def validate_award_request(request_data):
+def validate_award_request(request_data: dict):
     """Analyze request and raise any formatting errors as Exceptions"""
 
-    _validate_required_parameters(request_data, ["award_levels", "filters"])
+    _validate_required_parameters(request_data, ["filters"])
     filters = _validate_filters(request_data)
     award_levels = _validate_award_levels(request_data)
 
@@ -41,9 +42,14 @@ def validate_award_request(request_data):
 
     check_types_and_assign_defaults(filters, json_request["filters"], SHARED_AWARD_FILTER_DEFAULTS)
 
-    json_request["filters"]["award_type_codes"] = _validate_award_type_codes(filters)
+    # Award type validation depends on the
+    if filters.get("prime_and_sub_award_types") is not None:
+        json_request["filters"]["prime_and_sub_award_types"] = _validate_award_and_subaward_types(filters)
+    else:
+        json_request["filters"]["award_type_codes"] = _validate_award_type_codes(filters)
 
     _validate_and_update_locations(filters, json_request)
+    _validate_location_scope(filters, json_request)
     _validate_tas_codes(filters, json_request)
     _validate_file_format(json_request)
 
@@ -249,8 +255,29 @@ def _validate_award_type_codes(filters):
         award_type_codes = list(award_type_mapping)
     for award_type_code in award_type_codes:
         if award_type_code not in award_type_mapping:
-            raise InvalidParameterException("Invalid award_type: {}".format(award_type_code))
+            raise InvalidParameterException(f"Invalid award_type: {award_type_code}")
     return award_type_codes
+
+
+def _validate_award_and_subaward_types(filters):
+    prime_and_sub_award_types = filters.get("prime_and_sub_award_types", {})
+    prime_award_types = prime_and_sub_award_types.get("prime_awards", [])
+    sub_award_types = prime_and_sub_award_types.get("sub_awards", [])
+
+    if len(prime_award_types) == 0 and len(sub_award_types) == 0:
+        raise InvalidParameterException(
+            "Missing one or more required body parameters: prime_award_types or sub_award_types"
+        )
+
+    for award_type in prime_award_types:
+        if award_type not in award_type_mapping:
+            raise InvalidParameterException(f"Invalid award_type: {award_type}")
+
+    for award_type in sub_award_types:
+        if award_type not in all_subaward_types:
+            raise InvalidParameterException(f"Invalid subaward_type: {award_type}")
+
+    return {"prime_awards": prime_award_types, "sub_awards": sub_award_types}
 
 
 def _validate_filters(request_data):
@@ -272,6 +299,18 @@ def _validate_and_update_locations(filters, json_request):
                     raise InvalidParameterException("Location is not a dictionary: {}".format(location_dict))
                 location_error_handling(location_dict.keys())
             json_request["filters"][location_filter] = filters[location_filter]
+
+
+def _validate_location_scope(filters: dict, json_request: dict) -> None:
+    if "filters" not in json_request:
+        json_request["filters"] = {}
+    for location_scope_filter in ["place_of_performance_scope", "recipient_scope"]:
+        if filters.get(location_scope_filter):
+            if filters[location_scope_filter] not in ["domestic", "foreign"]:
+                raise InvalidParameterException(
+                    f"Invalid value for {location_scope_filter}: {filters[location_scope_filter]}. Only allows 'domestic' and 'foreign'."
+                )
+            json_request["filters"][location_scope_filter] = filters[location_scope_filter]
 
 
 def _validate_tas_codes(filters, json_request):

@@ -73,7 +73,7 @@ class BaseDownloadViewSet(APIView):
     def process_request(self, download_job: DownloadJob):
         if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
-            download_generation.generate_download(download_job=download_job)
+            download_generation.generate_download(download_job)
         else:
             # Send a SQS message that will be processed by another server which will eventually run
             # download_generation.generate_download(download_source) (see download_sqs_worker.py)

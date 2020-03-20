@@ -3,7 +3,7 @@ import time
 
 from copy import copy
 from datetime import datetime, timezone
-from django.db import connections, transaction
+from django.db import connection, transaction
 
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
@@ -24,9 +24,9 @@ BATCH_FETCH_SIZE = 25000
 
 
 def fetch_fabs_data_generator(dap_uid_list):
-    db_cursor = connections["data_broker"].cursor()
+    db_cursor = connection.cursor()
     db_query = """
-        SELECT * FROM published_award_financial_assistance
+        SELECT * FROM source_assistance_transaction
         WHERE published_award_financial_assistance_id IN %s;
     """
 
@@ -37,11 +37,10 @@ def fetch_fabs_data_generator(dap_uid_list):
         max_index = i + BATCH_FETCH_SIZE if i + BATCH_FETCH_SIZE < total_uid_count else total_uid_count
         fabs_ids_batch = dap_uid_list[i:max_index]
 
-        log_msg = "Fetching {}-{} out of {} records from broker"
-        logger.info(log_msg.format(i + 1, max_index, total_uid_count))
-
+        logger.info(f"Fetching {i + 1}-{max_index} out of {total_uid_count} records from source table")
         db_cursor.execute(db_query, [tuple(fabs_ids_batch)])
         logger.info("Fetching records took {:.2f}s".format(time.perf_counter() - start_time))
+
         yield dictfetchall(db_cursor)
 
 
