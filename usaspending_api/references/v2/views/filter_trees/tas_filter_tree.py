@@ -1,31 +1,33 @@
 from usaspending_api.common.helpers.agency_logic_helpers import cfo_presentation_order
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
-from usaspending_api.common.helpers.agency_logic_helpers import agency_from_identifiers
 from usaspending_api.references.v2.views.filter_trees.filter_tree import DEFAULT_CHILDREN, Node, FilterTree
 from usaspending_api.references.models import ToptierAgency
+from django.db.models import Exists, OuterRef
 
 
 class TASFilterTree(FilterTree):
     def toptier_search(self):
-        agency_id_sets = FinancialAccountsByAwards.objects.filter(award__isnull=False).prefetch_related(
-            "treasury_account"
+        agency_set = (
+            ToptierAgency.objects.annotate(
+                has_faba=Exists(
+                    FinancialAccountsByAwards.objects.filter(
+                        treasury_account__federal_account__parent_toptier_agency=OuterRef("pk")
+                    ).values("pk")
+                )
+            )
+            .filter(has_faba=True)
+            .values("toptier_code", "name")
         )
-        agency_set = ToptierAgency.objects.filter(
-            toptier_code__in=[
-                agency_from_identifiers(elem.treasury_account.agency_id, elem.treasury_account.fr_entity_code)
-                for elem in agency_id_sets
-            ]
-        ).distinct()
         agency_dictionaries = [self._dictionary_from_agency(agency) for agency in agency_set]
         cfo_sort_results = cfo_presentation_order(agency_dictionaries)
         return cfo_sort_results["cfo_agencies"] + cfo_sort_results["other_agencies"]
 
     def _dictionary_from_agency(self, agency):
-        return {"toptier_code": agency.toptier_code, "name": agency.name}
+        return {"toptier_code": agency["toptier_code"], "name": agency["name"]}
 
     def tier_one_search(self, agency):
-        return FederalAccount.objects.filter(agency_identifier=agency_from_identifiers(agency, None))
+        return FederalAccount.objects.filter(parent_toptier_agency__toptier_code=agency)
 
     def tier_two_search(self, fed_account):
         return TreasuryAppropriationAccount.objects.filter(federal_account__federal_account_code=fed_account)
