@@ -18,6 +18,15 @@ class FederalAccount(models.Model):
     main_account_code = models.TextField(db_index=True)
     account_title = models.TextField()
     federal_account_code = models.TextField(null=True)  # agency_identifier + '-' + main_account_code
+    parent_toptier_agency = models.ForeignKey(
+        "references.ToptierAgency",
+        models.DO_NOTHING,
+        null=True,
+        help_text=(
+            "The toptier agency under which this federal account should appear in lists and dropdowns.  Not "
+            "as simple as just mapping the AID to an agency, although AID does factor into the decision."
+        ),
+    )
 
     class Meta:
         managed = True
@@ -39,17 +48,17 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         related_name="tas_ata",
         help_text="The toptier agency object associated with the ATA",
     )
-    # todo: update the agency details to match FederalAccounts. Is there a way that we can retain the text-based agency
-    # TAS components (since those are attributes of TAS while still having a convenient FK that links to our agency
-    # tables using Django's default fk naming standard? Something like agency_identifier for the 3 digit TAS
-    # component and agency_id for the FK?)
     agency_id = models.TextField()
     funding_toptier_agency = models.ForeignKey(
         "references.ToptierAgency",
         models.DO_NOTHING,
         null=True,
-        related_name="tas_aid",
-        help_text="The toptier agency object associated with the AID",
+        help_text=(
+            "The toptier agency under which this treasury account should appear in lists and dropdowns.  Not "
+            "as simple as just mapping the AID to an agency, although AID does factor into the decision.  It was "
+            "recently recommended we rename this to parent toptier agency, however that is a much more involved "
+            "change so we're keeping current naming for now."
+        ),
     )
     beginning_period_of_availability = models.TextField(blank=True, null=True)
     ending_period_of_availability = models.TextField(blank=True, null=True)
