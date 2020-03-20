@@ -74,6 +74,7 @@ AWARD_FILTER = [
         "object_keys": {
             "type": {"type": "enum", "enum_values": ["funding", "awarding"], "optional": False},
             "tier": {"type": "enum", "enum_values": ["toptier", "subtier"], "optional": False},
+            "toptier_name": {"type": "text", "text_type": "search", "optional": True},
             "name": {"type": "text", "text_type": "search", "optional": False},
         },
     },
