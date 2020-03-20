@@ -187,7 +187,7 @@ SET
     legal_business_name         = UPPER(t.awardee_or_recipient_legal),
     parent_duns                 = t.ultimate_parent_unique_ide,
     parent_legal_business_name  = UPPER(t.ultimate_parent_legal_enti),
-    source                      = 'sam',
+    source                      = t.source,
     state                       = t.state,
     update_date                 = now(),
     zip4                        = t.zip4,
@@ -284,8 +284,8 @@ UPDATE public.recipient_lookup rl SET
 FROM alternate_names an
 WHERE rl.recipient_hash = an.recipient_hash AND alternate_names IS DISTINCT FROM all_names;
 
--- DROP TABLE public.temporary_restock_recipient_lookup;
--- DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
+DROP TABLE public.temporary_restock_recipient_lookup;
+DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
 COMMIT;
 
 VACUUM ANALYZE public.recipient_lookup;
