@@ -1,7 +1,7 @@
 from django.conf import settings
 
 
-def setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements):
+def setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements, **options):
     monkeypatch.setattr(
         "usaspending_api.search.v2.views.spending_by_category_views.base_spending_by_category.logger.info",
         lambda message: logging_statements.append(message),
@@ -11,4 +11,4 @@ def setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, loggi
         settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
     )
 
-    elasticsearch_transaction_index.update_index()
+    elasticsearch_transaction_index.update_index(**options)
