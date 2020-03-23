@@ -70,29 +70,29 @@ SELECT
     WHEN UTM.awarding_toptier_agency_name IS NOT NULL
       THEN CONCAT('{"name":"', UTM.awarding_toptier_agency_name, '","abbreviation":"', UTM.awarding_toptier_agency_abbreviation, '","id":"', TAA.id, '"}')
     ELSE NULL
-  END AS awarding_toptier_agency_agg_field,
+  END AS awarding_toptier_agency_agg_key,
   CASE
     WHEN UTM.funding_toptier_agency_name IS NOT NULL
       THEN CONCAT('{"name":"', UTM.funding_toptier_agency_name, '","abbreviation":"', UTM.funding_toptier_agency_abbreviation, '","id":"', TFA.id, '"}')
     ELSE NULL
-  END AS funding_toptier_agency_agg_field,
+  END AS funding_toptier_agency_agg_key,
   CASE
     WHEN UTM.awarding_subtier_agency_name IS NOT NULL
       THEN CONCAT('{"name":"', UTM.awarding_subtier_agency_name, '","abbreviation":"', UTM.awarding_subtier_agency_abbreviation, '","id":"', AA.id, '"}')
     ELSE NULL
-  END AS awarding_subtier_agency_agg_field,
+  END AS awarding_subtier_agency_agg_key,
   CASE
     WHEN UTM.funding_subtier_agency_name IS NOT NULL
       THEN CONCAT('{"name":"', UTM.funding_subtier_agency_name, '","abbreviation":"', UTM.funding_subtier_agency_abbreviation, '","id":"', FA.id, '"}')
     ELSE NULL
-  END AS funding_subtier_agency_agg_field,
+  END AS funding_subtier_agency_agg_key,
 
   UTM.cfda_number,
   CFDA.program_title AS cfda_title,
   CASE
     WHEN UTM.cfda_number IS NOT NULL THEN CONCAT('{"code":"', UTM.cfda_number, '","description":"', CFDA.program_title, '","id":"', CFDA.id, '"}')
     ELSE NULL
-  END AS cfda_agg_field,
+  END AS cfda_agg_key,
 
   UTM.type_of_contract_pricing,
   UTM.type_set_aside,
@@ -107,6 +107,11 @@ SELECT
   UTM.pop_zip5,
   UTM.pop_congressional_code,
   UTM.pop_city_name,
+  CASE
+    WHEN UTM.pop_county_code IS NOT NULL
+      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","county_code":"', UTM.pop_county_code, '","county_name":"', UTM.pop_county_name, '"}')
+    ELSE NULL
+  END AS pop_county_agg_key,
 
   UTM.recipient_location_country_code,
   UTM.recipient_location_country_name,

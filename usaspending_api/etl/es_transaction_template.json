@@ -274,7 +274,7 @@
             }
           }
         },
-        "awarding_toptier_agency_agg_field": {
+        "awarding_toptier_agency_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {
@@ -283,7 +283,7 @@
             }
           }
         },
-        "funding_toptier_agency_agg_field": {
+        "funding_toptier_agency_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {
@@ -292,7 +292,7 @@
             }
           }
         },
-        "awarding_subtier_agency_agg_field": {
+        "awarding_subtier_agency_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {
@@ -301,7 +301,7 @@
             }
           }
         },
-        "funding_subtier_agency_agg_field": {
+        "funding_subtier_agency_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {
@@ -321,7 +321,7 @@
             }
           }
         },
-        "cfda_agg_field": {
+        "cfda_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
           "fields": {
@@ -371,12 +371,7 @@
           "type": "keyword"
         },
         "pop_county_name": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "text"
         },
         "pop_zip5": {
           "type": "text"
@@ -389,6 +384,15 @@
           "fields": {
             "keyword": {
               "type": "keyword"
+            }
+          }
+        },
+        "pop_county_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "fields": {
+            "hash": {
+              "type": "murmur3"
             }
           }
         },
@@ -405,12 +409,7 @@
           "type": "keyword"
         },
         "recipient_location_county_name": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "text"
         },
         "recipient_location_zip5": {
           "type": "text"

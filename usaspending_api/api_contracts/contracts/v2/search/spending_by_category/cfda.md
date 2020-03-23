@@ -19,13 +19,6 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
             The page of results to return based on the limit
         + `subawards` (optional, boolean)
             Determines whether Prime Awards or Sub Awards are searched
-    + Body
-        
-            {
-                "filters": { 
-                    "keywords": ["Filter is required"] 
-                }
-            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -35,6 +28,36 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
+    + Body
+
+            {
+                "category": "cfda",
+                "limit": 10,
+                "page_metadata": {
+                    "page": 1,
+                    "next": 2,
+                    "previous": null,
+                    "hasNext": false,
+                    "hasPrevious": false
+                },
+                "results": [
+                    {
+                        "amount": 228568985616.0,
+                        "code": "93.778",
+                        "id": 2014,
+                        "name": "Medical Assistance Program"
+                    },
+                    {
+                        "amount": 207629348701.0,
+                        "code": "96.002",
+                        "id": 2165,
+                        "name": "Social Security Retirement Insurance"
+                    }
+                ],
+                "messages": [
+                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
+                ]
+            }
 
 # Data Structures
 

@@ -10,6 +10,9 @@ class FREC(Model):
     agency_name = TextField()
     agency_abbreviation = TextField(blank=True, null=True)
 
+    # Derived from FREC CGAC ASSOCIATION column in the agency_codes.csv agency reference data.
+    associated_cgac_code = TextField(blank=True, null=True)
+
     class Meta:
         db_table = "frec"
 

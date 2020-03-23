@@ -7,7 +7,7 @@ class AgencyAutocompleteMatview(models.Model):
     on whether or not they have been cited in an award as an awarding or funding agency.
     """
 
-    agency_id = models.IntegerField(primary_key=True)
+    agency_autocomplete_id = models.IntegerField(primary_key=True)
     toptier_flag = models.BooleanField()
     toptier_agency_id = models.IntegerField()
     toptier_code = models.TextField(null=True)
