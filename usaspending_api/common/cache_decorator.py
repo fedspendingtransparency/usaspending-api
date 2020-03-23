@@ -2,11 +2,19 @@
 import logging
 from rest_framework_extensions.cache.decorators import CacheResponse
 
+from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
+
 logger = logging.getLogger("console")
 
 
 class CustomCacheResponse(CacheResponse):
     def process_cache_response(self, view_instance, view_method, request, args, kwargs):
+        if is_experimental_elasticsearch_api(request):
+            # bypass cache altogether
+            response = view_method(view_instance, request, *args, **kwargs)
+            response = view_instance.finalize_response(request, response, *args, **kwargs)
+            response["Cache-Trace"] = "no-cache"
+            return response
         key = self.calculate_key(
             view_instance=view_instance, view_method=view_method, request=request, args=args, kwargs=kwargs
         )
