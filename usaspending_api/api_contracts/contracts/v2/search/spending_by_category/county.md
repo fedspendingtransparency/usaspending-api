@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending By Funding Agency [/api/v2/search/spending_by_category/funding_agency/]
+# Spending By County [/api/v2/search/spending_by_category/county/]
 
-This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
+This endpoint supports the state profile page and allow for complex filtering for specific subsets of spending data.
 
 ## POST
 
-This endpoint returns a list of the top results of Funding Agencies sorted by the total amounts in descending order.
+This endpoint returns a list of the top results of Counties sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Attributes (object)
@@ -22,7 +22,7 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `funding_agency` (required, string)
+        + `category`: `county` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -31,7 +31,7 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
     + Body
 
             {
-                "category": "funding_agency",
+                "category": "county",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
@@ -42,22 +42,23 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
                 },
                 "results": [
                     {
-                        "amount": 480068061532.03,
-                        "name": "Department of Health and Human Services",
-                        "code": "HHS",
-                        "id": 806
+                        "amount": 17557452350.05,
+                        "code": "439",
+                        "name": "TARRANT",
+                        "id": null
                     },
                     {
-                        "amount": 284429830939.4,
-                        "name": "Social Security Administration",
-                        "code": "SSA",
-                        "id": 539
+                        "amount": 5412138054.37,
+                        "code": "079",
+                        "name": "RICHLAND",
+                        "id": null
                     }
                 ],
                 "messages": [
                     "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
                 ]
             }
+            
 
 # Data Structures
 
@@ -97,7 +98,7 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
-+ `naics_codes` (optional, NAICSCodeObject)
++ `naics_codes`: `311812` (optional, array[string])
 + `psc_codes`: `8940`, `8910` (optional, array[string])
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
@@ -133,18 +134,11 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
     + Members
         + `toptier`
         + `subtier`
-+ `name`: `Office of Inspector General` (required, string)
-+ `toptier_name`: `Department of the Treasury` (optional, string)
-    Only applicable when `tier` is `subtier`.  Ignored when `tier` is `toptier`.  Provides a means by which to scope subtiers with common names to a
-    specific toptier.  For example, several agencies have an "Office of Inspector General".  If not provided, subtiers may span more than one toptier.
++ `name`: `Department of Defense` (required, string)
 
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
 + `upper_bound`: 1000000 (optional, number)
-
-### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, list[string])
-+ `exclude`: [`3313`] (optional, list[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

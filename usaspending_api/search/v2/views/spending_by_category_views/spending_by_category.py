@@ -1,13 +1,12 @@
 import copy
-import itertools
 import logging
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from django.conf import settings
 from django.db.models import QuerySet, Sum
-from elasticsearch_dsl import Q as ES_Q
+from elasticsearch_dsl import Q as ES_Q, A
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,6 +17,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.exceptions import ElasticsearchConnectionException, NotImplementedException
 from usaspending_api.common.experimental_api_flags import (
     is_experimental_elasticsearch_api,
     mirror_request_to_elasticsearch,
@@ -27,7 +27,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms
+from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms, get_scaled_sum_aggregations
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +35,13 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Category:
     name: str
-    primary_field: str
+    agg_key: str
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
-class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
+class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     """
-    Base class inherited by the different category endpoints.
+    Abstract class inherited by the different spending by category endpoints.
     """
 
     category: Category
@@ -84,7 +84,7 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
             results = self.query_elasticsearch(filter_query)
         else:
-            base_queryset = spending_by_category_view_queryset(self.category, self.filters)
+            base_queryset = spending_by_category_view_queryset(self.category.name, self.filters)
             self.obligation_column = "generated_pragmatic_obligation"
             results = self.query_django(base_queryset)
 
@@ -99,6 +99,12 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         }
 
         return response
+
+    def _raise_not_implemented(self):
+        msg = "Category '{}' is not implemented"
+        if self.subawards:
+            msg += " when `subawards` is True"
+        raise NotImplementedException(msg.format(self.category.name))
 
     @staticmethod
     def _get_messages(original_filters) -> List:
@@ -124,39 +130,44 @@ class BaseSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             .order_by("-amount")
         )
 
-    def elasticsearch_results_generator(self, filter_query: ES_Q, size: int = 1000) -> list:
-        """
-        The number of buckets required across the different categories varies. To solve this a generator is created
-        with the assumption that the "apply_elasticsearch_aggregations" implementation makes use of partitions.
-        This will allow for any number of results to be retrieved regardless of the number of buckets.
-        """
-        bucket_count = get_number_of_unique_terms(filter_query, self.category.primary_field)
-        num_partitions = (bucket_count // size) + 1
-
-        for partition in range(num_partitions):
-            search = self.build_elasticsearch_search_with_aggregations(filter_query, partition, num_partitions, size)
-            response = search.handle_execute()
-            if response is None:
-                raise Exception("Breaking generator, unable to reach cluster")
-            results = self.build_elasticsearch_result(response.aggs.to_dict())
-            yield results
-
-    def query_elasticsearch(self, filter_query: ES_Q) -> list:
-        results = self.elasticsearch_results_generator(filter_query)
-        flat_results = list(itertools.chain.from_iterable(results))
-        return flat_results
-
-    @abstractmethod
-    def build_elasticsearch_search_with_aggregations(
-        self, filter_query: ES_Q, curr_partition: int, num_partitions: int, size: int
-    ) -> TransactionSearch:
+    def build_elasticsearch_search_with_aggregations(self, filter_query: ES_Q) -> Optional[TransactionSearch]:
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
-        All aggregations are applied in a specific order to insure the correct nested aggregations.
-
-        The top-most aggregation is expected to use partitions to make sure that all buckets are retrieved.
         """
-        pass
+        # Create the filtered Search Object
+        search = TransactionSearch().filter(filter_query)
+
+        # Get count of unique buckets; terminate early if there are no buckets matching criteria
+        bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}.hash")
+        if bucket_count == 0:
+            return None
+        elif bucket_count >= 9900:
+            logger.warning(f"Max number of buckets reached for aggregation key: {self.category.agg_key}.")
+            raise ElasticsearchConnectionException(
+                "Current filters return too many unique items. Narrow filters to return results."
+            )
+
+        # Define all aggregations needed to build the response
+        group_by_agg_key = A("terms", field=self.category.agg_key, size=bucket_count, shard_size=bucket_count + 100)
+
+        sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
+        sum_field = sum_aggregations["sum_field"]
+        sum_bucket_sort = sum_aggregations["sum_bucket_sort"]
+
+        # Apply the aggregations to the TransactionSearch object
+        search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field).pipeline(
+            "sum_bucket_sort", sum_bucket_sort
+        )
+
+        return search
+
+    def query_elasticsearch(self, filter_query: ES_Q) -> list:
+        search = self.build_elasticsearch_search_with_aggregations(filter_query)
+        if search is None:
+            return []
+        response = search.handle_execute()
+        results = self.build_elasticsearch_result(response.aggs.to_dict())
+        return results
 
     @abstractmethod
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
