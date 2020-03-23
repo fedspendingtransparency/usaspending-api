@@ -52,6 +52,11 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
     Biz 2                       $ 4.00
     Biz 2     $13.00
 
+    **IF THIS TEST FAILS**
+        - Did our cluster structure change to not be 5 shards per the transaction index?
+        - Did the transaction<->award DB linkage change?
+        - Did we change ES version or config?
+            - Investigate if Elasticsearch has changed the way they do routing or hash routing key values
     """
 
     # Setup data for this test
@@ -137,6 +142,13 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     Biz 2              $ 4.00
     Biz 2              $13.00
 
+    **IF THIS TEST FAILS**
+        - Are we still using the TestElasticSearchIndex fixture to help with pushing test data to ES?
+        - Did TestElasticSearchIndex indexing / routing behavior change?
+        - Did our cluster structure change to not be 5 shards per the transaction index?
+        - Did the transaction<->recipient DB linkage change?
+        - Did we change ES version or config?
+            - Investigate if Elasticsearch has changed the way they do routing or hash routing key values
     """
 
     # Setup data for this test
