@@ -62,6 +62,7 @@ Returns a list of Treasury Account Symbols associated with the specified federal
 ### TASFilterTreeNode (object)
 
 + `id` (required, string)
++ `description` (required, string)
 + `ancestors` (required, array[string])
 + `count` (required, number)
 + `children` (required, array[TASFilterTreeNode], nullable)
