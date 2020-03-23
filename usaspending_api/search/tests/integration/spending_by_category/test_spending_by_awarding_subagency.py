@@ -61,3 +61,131 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert len(logging_statements) == 1, "Expected one logging statement"
     assert resp.json() == expected_response
+
+
+@pytest.mark.django_db
+def test_filtering_subtier_with_toptier_pg(client, basic_award, subagency_award):
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_subagency",
+        content_type="application/json",
+        data={
+            "filters": {
+                "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                "agencies": [
+                    {
+                        "type": "awarding",
+                        "tier": "subtier",
+                        "name": "Awarding Subtier Agency 5",
+                        "toptier_name": "Awarding Toptier Agency 3",
+                    }
+                ],
+            }
+        },
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005}],
+        "messages": [get_time_period_message()],
+    }
+
+
+@pytest.mark.django_db
+def test_filtering_subtier_with_bogus_toptier_pg(client, basic_award, subagency_award):
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_subagency",
+        content_type="application/json",
+        data={
+            "filters": {
+                "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                "agencies": [
+                    {
+                        "type": "awarding",
+                        "tier": "subtier",
+                        "name": "Awarding Subtier Agency 5",
+                        "toptier_name": "bogus toptier name",
+                    }
+                ],
+            }
+        },
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+
+
+@pytest.mark.django_db
+def test_filtering_subtier_with_toptier_es(
+    client, monkeypatch, elasticsearch_transaction_index, basic_award, subagency_award
+):
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_subagency",
+        content_type="application/json",
+        data={
+            "filters": {
+                "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                "agencies": [
+                    {
+                        "type": "awarding",
+                        "tier": "subtier",
+                        "name": "Awarding Subtier Agency 5",
+                        "toptier_name": "Awarding Toptier Agency 3",
+                    }
+                ],
+            }
+        },
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005}],
+        "messages": [get_time_period_message()],
+    }
+
+
+@pytest.mark.django_db
+def test_filtering_subtier_with_bogus_toptier_es(
+    client, monkeypatch, elasticsearch_transaction_index, basic_award, subagency_award
+):
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_subagency",
+        content_type="application/json",
+        data={
+            "filters": {
+                "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                "agencies": [
+                    {
+                        "type": "awarding",
+                        "tier": "subtier",
+                        "name": "Awarding Subtier Agency 5",
+                        "toptier_name": "bogus toptier name",
+                    }
+                ],
+            }
+        },
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [],
+        "messages": [get_time_period_message()],
+    }

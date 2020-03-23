@@ -87,7 +87,7 @@
     "-- of them has been cited as an awarding agency, we need to ensure the final outcome is flagged as ",
     "-- an awarding agency). ",
     "select ",
-    "    min(agency_id) as agency_id, ",
+    "    min(agency_id) as agency_autocomplete_id, ",
     "    bool_or(toptier_flag) as toptier_flag, ",
     "    toptier_agency_id, ",
     "    toptier_code, ",
@@ -111,9 +111,9 @@
   ],
   "indexes": [
     {
-      "name": "agency_id",
+      "name": "agency_autocomplete_id",
       "unique": true,
-      "columns": [{"name": "agency_id"}]
+      "columns": [{"name": "agency_autocomplete_id"}]
     }
   ]
 }

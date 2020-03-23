@@ -116,7 +116,10 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
     + Members
         + `toptier`
         + `subtier`
-+ `name`: `Department of Defense` (required, string)
++ `name`: `Office of Inspector General` (required, string)
++ `toptier_name`: `Department of the Treasury` (optional, string)
+    Only applicable when `tier` is `subtier`.  Ignored when `tier` is `toptier`.  Provides a means by which to scope subtiers with common names to a
+    specific toptier.  For example, several agencies have an "Office of Inspector General".  If not provided, subtiers may span more than one toptier.
 
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
