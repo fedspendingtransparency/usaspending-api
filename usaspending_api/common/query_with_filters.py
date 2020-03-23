@@ -119,7 +119,10 @@ class _Agencies(_Filter):
             agency_name = v["name"]
             agency_tier = v["tier"]
             agency_type = v["type"]
+            toptier_name = v.get("toptier_name")
             agency_query = ES_Q("match", **{f"{agency_type}_{agency_tier}_agency_name__keyword": agency_name})
+            if agency_tier == "subtier" and toptier_name is not None:
+                agency_query &= ES_Q("match", **{f"{agency_type}_toptier_agency_name__keyword": toptier_name})
             if agency_type == "awarding":
                 awarding_agency_query.append(agency_query)
             elif agency_type == "funding":
@@ -312,7 +315,7 @@ class _NaicsCodes(_Filter):
         naics_codes_query = []
 
         for v in filter_values:
-            naics_codes_query.append(ES_Q("match", naics_code__keyword=v))
+            naics_codes_query.append(ES_Q("wildcard", naics_code__keyword=f"{v}*"))
 
         return ES_Q("bool", should=naics_codes_query, minimum_should_match=1)
 

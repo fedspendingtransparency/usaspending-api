@@ -11,7 +11,7 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.filters.view_selector import spending_by_category_view_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import InvalidParameterException, NotImplementedException
 from usaspending_api.common.experimental_api_flags import (
     is_experimental_elasticsearch_api,
     mirror_request_to_elasticsearch,
@@ -25,7 +25,6 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.helpers.spending_by_category_helpers import (
-    fetch_cfda_id_title_by_number,
     fetch_psc_description_by_code,
     fetch_naics_description_from_code,
     fetch_country_name_from_code,
@@ -37,6 +36,8 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
     FundingAgencyViewSet,
     FundingSubagencyViewSet,
 )
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import CountyViewSet
 
 logger = logging.getLogger(__name__)
 
@@ -49,15 +50,8 @@ ALIAS_DICT = {
         "recipient_unique_id": "code",
         "parent_recipient_unique_id": "code",
     },
-    "cfda": {
-        "cfda_number": "code",
-        # Note: we could pull cfda title from the matviews but noticed the titles vary for the same cfda number
-        #       which leads to incorrect groupings
-        # 'cfda_title': 'name'
-    },
     "psc": {"product_or_service_code": "code"},
     "naics": {"naics_code": "code", "naics_description": "name"},
-    "county": {"pop_county_code": "code", "pop_county_name": "name"},
     "district": {"pop_congressional_code": "code"},
     "state_territory": {"pop_state_code": "code"},
     "country": {"pop_country_code": "code"},
@@ -115,6 +109,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             response = AwardingAgencyViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "awarding_subagency":
             response = AwardingSubagencyViewSet().perform_search(validated_payload, original_filters)
+        elif validated_payload["category"] == "cfda":
+            response = CfdaViewSet().perform_search(validated_payload, original_filters)
+        elif validated_payload["category"] == "county":
+            response = CountyViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "funding_agency":
             response = FundingAgencyViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "funding_subagency":
@@ -165,7 +163,7 @@ class BusinessLogic:
         msg = "Category '{}' is not implemented"
         if self.subawards:
             msg += " when `subawards` is True"
-        raise InvalidParameterException(msg.format(self.category))
+        raise NotImplementedException(msg.format(self.category))
 
     def common_db_query(self, filters, values):
         return (
@@ -180,9 +178,9 @@ class BusinessLogic:
         # filter the transactions by category
         if self.category in ("recipient_duns", "recipient_parent_duns"):
             results = self.recipient()
-        elif self.category in ("cfda", "psc", "naics"):
+        elif self.category in ("psc", "naics"):
             results = self.industry_and_other_codes()
-        elif self.category in ("county", "district", "state_territory", "country"):
+        elif self.category in ("district", "state_territory", "country"):
             results = self.location()
         elif self.category in ("federal_account"):
             results = self.federal_account()
@@ -283,10 +281,7 @@ class BusinessLogic:
         return results
 
     def industry_and_other_codes(self) -> list:
-        if self.category == "cfda":
-            filters = {"{}__isnull".format(self.obligation_column): False, "cfda_number__isnull": False}
-            values = ["cfda_number"]
-        elif self.category == "psc":
+        if self.category == "psc":
             if self.subawards:
                 # N/A for subawards
                 self.raise_not_implemented()
@@ -305,9 +300,7 @@ class BusinessLogic:
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
         for row in results:
-            if self.category == "cfda":
-                row["id"], row["name"] = fetch_cfda_id_title_by_number(row["code"])
-            elif self.category == "psc":
+            if self.category == "psc":
                 row["id"] = None
                 row["name"] = fetch_psc_description_by_code(row["code"])
             elif self.category == "naics":
@@ -318,18 +311,15 @@ class BusinessLogic:
     def location(self) -> list:
         filters = {}
         values = {}
-        if self.category == "county":
-            filters = {"pop_county_code__isnull": False}
-            values = ["pop_county_code", "pop_county_name"]
-        elif self.category == "district":
+        if self.category == "district":
             filters = {"pop_congressional_code__isnull": False}
-            values = ["pop_congressional_code", "pop_state_code"]
+            values = ["pop_country_code", "pop_state_code", "pop_congressional_code", "pop_state_code"]
         elif self.category == "country":
             filters = {"pop_country_code__isnull": False}
             values = ["pop_country_code"]
         elif self.category == "state_territory":
             filters = {"pop_state_code__isnull": False}
-            values = ["pop_state_code"]
+            values = ["pop_country_code", "pop_state_code"]
 
         self.queryset = self.common_db_query(filters, values)
 
@@ -346,10 +336,12 @@ class BusinessLogic:
 
                 row["name"] = "{}-{}".format(row["pop_state_code"], cd_code)
                 del row["pop_state_code"]
+                del row["pop_country_code"]
             if self.category == "country":
                 row["name"] = fetch_country_name_from_code(row["code"])
             if self.category == "state_territory":
                 row["name"] = fetch_state_name_from_code(row["code"])
+                del row["pop_country_code"]
         return results
 
     def federal_account(self) -> list:
