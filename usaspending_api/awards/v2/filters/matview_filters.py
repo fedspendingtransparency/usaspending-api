@@ -36,9 +36,6 @@ def matview_search_filter_determine_award_matview_model(filters):
 def matview_search_filter(filters, model, for_downloads=False):
     queryset = model.objects.all()
 
-    recipient_scope_q = Q(recipient_location_country_code="USA") | Q(recipient_location_country_name="UNITED STATES")
-    pop_scope_q = Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES")
-
     faba_flag = False
     faba_queryset = FinancialAccountsByAwards.objects.filter(award__isnull=False)
 
@@ -218,6 +215,10 @@ def matview_search_filter(filters, model, for_downloads=False):
             queryset = queryset.filter(filter_obj)
 
         elif key == "recipient_scope":
+            recipient_scope_q = (
+                Q(recipient_location_country_code__isnull=False) & Q(recipient_location_country_code="USA")
+            ) | (Q(recipient_location_country_name__isnull=False) & Q(recipient_location_country_name="UNITED STATES"))
+
             if value == "domestic":
                 queryset = queryset.filter(recipient_scope_q)
             elif value == "foreign":
@@ -233,6 +234,10 @@ def matview_search_filter(filters, model, for_downloads=False):
                 queryset = queryset.filter(business_categories__overlap=value)
 
         elif key == "place_of_performance_scope":
+            pop_scope_q = (Q(pop_country_code__isnull=False) & Q(pop_country_code="USA")) | (
+                Q(pop_country_name__isnull=False) & Q(pop_country_name="UNITED STATES")
+            )
+
             if value == "domestic":
                 queryset = queryset.filter(pop_scope_q)
             elif value == "foreign":

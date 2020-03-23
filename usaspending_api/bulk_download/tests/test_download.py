@@ -195,9 +195,7 @@ def award_data(transactional_db):
         transaction_id=1,
         piid="tc1piid",
         unique_award_key="TEST_AWARD_1",
-        legal_entity_country_code="USA",
         legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_c="USA",
         place_of_perform_country_n="UNITED STATES",
     )
     mommy.make(
@@ -226,9 +224,7 @@ def award_data(transactional_db):
         piid="tc7piid",
         unique_award_key="TEST_AWARD_7",
         legal_entity_country_code="CAN",
-        legal_entity_country_name="CANADA",
         place_of_perform_country_c="CAN",
-        place_of_perform_country_n="CANADA",
     )
 
     # Create TransactionAssistance
@@ -362,9 +358,7 @@ def award_data(transactional_db):
         prime_id=4,
         action_date="2018-01-15",
         subaward_type="sub-contract",
-        legal_entity_country_code="USA",
         legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_co="USA",
         place_of_perform_country_na="UNITED STATES",
     )
     mommy.make(
@@ -396,9 +390,7 @@ def award_data(transactional_db):
         action_date="2017-01-15",
         subaward_type="sub-contract",
         legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
         place_of_perform_country_co="USA",
-        place_of_perform_country_na="UNITED STATES",
     )
     mommy.make(
         BrokerSubaward,
@@ -418,9 +410,7 @@ def award_data(transactional_db):
         action_date="2017-06-15",
         subaward_type="sub-grant",
         legal_entity_country_code="CAN",
-        legal_entity_country_name="CANADA",
         place_of_perform_country_co="CAN",
-        place_of_perform_country_na="CANADA",
     )
 
     # Set latest_award for each award
