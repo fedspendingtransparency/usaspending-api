@@ -52,7 +52,6 @@ ANALYZE public.temporary_transaction_recipients_view;
 -- Step 2a, Create rows from SAM
 --------------------------------------------------------------------------------
 DO $$ BEGIN RAISE NOTICE 'Step 2a: Adding Recipient records from SAM'; END $$;
-
 INSERT INTO public.temporary_restock_recipient_lookup (recipient_hash, legal_business_name, duns, source)
 SELECT
   DISTINCT ON (awardee_or_recipient_uniqu, legal_business_name)
@@ -82,7 +81,8 @@ SELECT
     t.awardee_or_recipient_uniqu AS duns,
     t.source
 FROM temporary_transaction_recipients_view t
-  ORDER BY t.recipient_hash, action_date DESC, is_fpds, transaction_unique_id
+WHERE t.awardee_or_recipient_uniqu IS NOT NULL AND t.awardee_or_recipient_legal IS NOT NULL
+ORDER BY t.recipient_hash, action_date DESC, is_fpds, transaction_unique_id
 ON CONFLICT (recipient_hash) DO NOTHING;
 
 
@@ -106,7 +106,7 @@ SELECT
   ultimate_parent_legal_enti AS parent_legal_business_name,
   now() AS update_date
 FROM duns
-WHERE ultimate_parent_unique_ide IS NOT NULL OR ultimate_parent_legal_enti IS NOT NULL
+WHERE ultimate_parent_unique_ide IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
   ORDER BY ultimate_parent_unique_ide, ultimate_parent_legal_enti, update_date DESC
 ON CONFLICT (recipient_hash) DO NOTHING;
 
@@ -135,9 +135,120 @@ ON CONFLICT (recipient_hash) DO NOTHING;
 
 
 --------------------------------------------------------------------------------
--- Step 4a, Update rows with details from SAM
+-- Step 4a, Create rows with DUNS (no Recipient Names) from SAM
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 4a: Update Recipient records from SAM'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 4a: Adding Recipient records from SAM without a name'; END $$;
+INSERT INTO public.temporary_restock_recipient_lookup (recipient_hash, legal_business_name, duns, source)
+SELECT
+  DISTINCT ON (awardee_or_recipient_uniqu)
+  MD5(UPPER(
+    CASE
+      WHEN awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', awardee_or_recipient_uniqu)
+      ELSE CONCAT('name-', legal_business_name) END
+    ))::uuid AS recipient_hash,
+    UPPER(legal_business_name) AS legal_business_name,
+    awardee_or_recipient_uniqu AS duns,
+    'sam' as source
+FROM duns
+WHERE awardee_or_recipient_uniqu IS NOT NULL AND legal_business_name IS NULL
+  ORDER BY awardee_or_recipient_uniqu, update_date DESC
+ON CONFLICT (recipient_hash) DO NOTHING;
+
+
+--------------------------------------------------------------------------------
+-- Step 4b, Create rows with DUNS (no recipient name) from FPDS/FABS
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 4b: Adding Recipient records from FPDS and FABS without a name'; END $$;
+INSERT INTO public.temporary_restock_recipient_lookup (recipient_hash, legal_business_name, duns, source)
+SELECT
+  DISTINCT ON (recipient_hash)
+    recipient_hash,
+    UPPER(t.awardee_or_recipient_legal) AS legal_business_name,
+    t.awardee_or_recipient_uniqu AS duns,
+    t.source
+FROM temporary_transaction_recipients_view t
+WHERE t.awardee_or_recipient_uniqu IS NOT NULL AND t.awardee_or_recipient_legal IS NULL
+ORDER BY t.recipient_hash, action_date DESC, is_fpds, transaction_unique_id
+ON CONFLICT (recipient_hash) DO NOTHING;
+
+
+--------------------------------------------------------------------------------
+-- Step 4c, Create rows with Parent DUNS from SAM
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 4c: Adding Recipient records from SAM parent data with no name'; END $$;
+INSERT INTO public.temporary_restock_recipient_lookup (recipient_hash, legal_business_name, duns, source, parent_duns, parent_legal_business_name, update_date)
+SELECT
+  DISTINCT ON (ultimate_parent_unique_ide)
+  MD5(UPPER(
+  CASE
+    WHEN ultimate_parent_unique_ide IS NOT NULL THEN CONCAT('duns-', ultimate_parent_unique_ide)
+    ELSE CONCAT('name-', ultimate_parent_legal_enti) END
+  ))::uuid AS recipient_hash,
+  UPPER(ultimate_parent_legal_enti) AS ultimate_parent_legal_enti,
+  ultimate_parent_unique_ide AS duns,
+  'parent-sam' as source,
+  ultimate_parent_unique_ide AS parent_duns,
+  ultimate_parent_legal_enti AS parent_legal_business_name,
+  now() AS update_date
+FROM duns
+WHERE ultimate_parent_unique_ide IS NOT NULL
+  ORDER BY ultimate_parent_unique_ide, ultimate_parent_legal_enti, update_date DESC
+ON CONFLICT (recipient_hash) DO NOTHING;
+
+--------------------------------------------------------------------------------
+-- Step 4d, Create rows with Parent DUNS and no name from FPDS/FABS
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 4d: Adding Recipient records from FPDS and FABS parents with no name'; END $$;
+INSERT INTO public.temporary_restock_recipient_lookup (recipient_hash, legal_business_name, duns, source, parent_duns, parent_legal_business_name, update_date)
+  SELECT
+    DISTINCT ON (tf.ultimate_parent_unique_ide, tf.ultimate_parent_legal_enti)
+    MD5(UPPER(
+      CASE
+        WHEN tf.ultimate_parent_unique_ide IS NOT NULL THEN CONCAT('duns-', tf.ultimate_parent_unique_ide)
+        ELSE CONCAT('name-', tf.ultimate_parent_legal_enti) END
+    ))::uuid AS recipient_hash,
+    tf.ultimate_parent_legal_enti,
+    tf.ultimate_parent_unique_ide,
+    CONCAT('parent-', tf.source),
+    tf.ultimate_parent_unique_ide AS parent_duns,
+    tf.ultimate_parent_legal_enti AS parent_legal_business_name,
+    now() AS update_date
+  FROM public.temporary_transaction_recipients_view AS tf
+  WHERE tf.ultimate_parent_unique_ide IS NOT NULL AND tf.ultimate_parent_legal_enti IS NULL
+  ORDER BY tf.ultimate_parent_unique_ide, tf.ultimate_parent_legal_enti, tf.action_date DESC, tf.is_fpds, tf.transaction_unique_id
+ON CONFLICT (recipient_hash) DO NOTHING;
+
+
+--------------------------------------------------------------------------------
+-- Step 5, Adding duns-less records from FPDS and FABS
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 5: Adding Recipient records without DUNS from FPDS and FABS'; END $$;
+INSERT INTO public.temporary_restock_recipient_lookup (recipient_hash, legal_business_name, duns, source)
+SELECT
+  DISTINCT ON (recipient_hash)
+    recipient_hash,
+    UPPER(t.awardee_or_recipient_legal) AS legal_business_name,
+    t.awardee_or_recipient_uniqu AS duns,
+    t.source
+FROM temporary_transaction_recipients_view t
+WHERE t.awardee_or_recipient_uniqu IS NULL
+ORDER BY t.recipient_hash, action_date DESC, is_fpds, transaction_unique_id
+ON CONFLICT (recipient_hash) DO NOTHING;
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+-- Step 6a, Update rows with details from SAM
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 6a: Update Recipient records from SAM'; END $$;
 UPDATE public.temporary_restock_recipient_lookup rl
 SET
     address_line_1              = d.address_line_1,
@@ -173,9 +284,9 @@ WHERE
     );
 
 --------------------------------------------------------------------------------
--- Step 4b, Update rows with details from transactions
+-- Step 6b, Update rows with details from transactions
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 4b: Update Recipient records from transactions'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 6b: Update Recipient records from transactions'; END $$;
 UPDATE public.temporary_restock_recipient_lookup rl
 SET
     address_line_1              = t.address_line_1,
@@ -211,7 +322,7 @@ WHERE
     );
 
 --------------------------------------------------------------------------------
--- Step 5, Finalizing
+-- Step 7, Finalizing
 --------------------------------------------------------------------------------
 VACUUM ANALYZE public.temporary_restock_recipient_lookup;
 DO $$ BEGIN RAISE NOTICE 'Step 5: Updating recipient_lookup'; END $$;
@@ -225,7 +336,7 @@ WITH removed_recipients AS (
     WHERE tem.recipient_hash IS NULL
 )
 DELETE FROM public.recipient_lookup rl WHERE rl.recipient_hash IN (SELECT recipient_hash FROM removed_recipients)
--- RETURNING rl.recipient_hash
+RETURNING rl.recipient_hash
 ;
 
 UPDATE public.recipient_lookup rl SET
