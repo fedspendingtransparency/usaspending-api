@@ -1,11 +1,10 @@
-from django.db.models import Exists, F, OuterRef
+from django.db.models import Exists, F, OuterRef, Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import CFO_CGACS
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
-
 
 ACCOUNT_AGENCIES = "account_agencies"
 AWARD_AGENCIES = "award_agencies"
@@ -72,12 +71,16 @@ class DownloadListAgenciesViewSet(APIView):
             if not toptier_agency:
                 raise InvalidParameterException("Agency ID not found")
 
-            # Get the subtier agencies associated with the toptier agency but only if they're user selectable.
+            # Get the subtier agencies associated with the toptier agency but only if they're user selectable and
+            # the subtier name doesn't match the toptier name.
             response_data["sub_agencies"] = list(
                 SubtierAgency.objects.annotate(
                     include_agency=Exists(
                         Agency.objects.filter(
-                            user_selectable=True, subtier_agency_id=OuterRef("pk"), toptier_agency_id=toptier_agency_id
+                            ~Q(toptier_agency__name=OuterRef("name")),
+                            user_selectable=True,
+                            subtier_agency_id=OuterRef("pk"),
+                            toptier_agency_id=toptier_agency_id,
                         ).values("pk")
                     )
                 )
