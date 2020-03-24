@@ -66,10 +66,6 @@ VIEW_COLUMNS = [
     "funding_toptier_agency_id",
     "awarding_subtier_agency_id",
     "funding_subtier_agency_id",
-    "awarding_toptier_id",
-    "funding_toptier_id",
-    "awarding_subtier_id",
-    "funding_subtier_id",
     "awarding_toptier_agency_name",
     "funding_toptier_agency_name",
     "awarding_subtier_agency_name",
@@ -78,14 +74,13 @@ VIEW_COLUMNS = [
     "funding_toptier_agency_abbreviation",
     "awarding_subtier_agency_abbreviation",
     "funding_subtier_agency_abbreviation",
-    "awarding_toptier_agency_code",
-    "funding_toptier_agency_code",
-    "awarding_subtier_agency_code",
-    "funding_subtier_agency_code",
-    "cfda_id",
+    "awarding_toptier_agency_agg_key",
+    "funding_toptier_agency_agg_key",
+    "awarding_subtier_agency_agg_key",
+    "funding_subtier_agency_agg_key",
     "cfda_number",
     "cfda_title",
-    "cfda_popular_name",
+    "cfda_agg_key",
     "type_of_contract_pricing",
     "type_set_aside",
     "extent_competed",
@@ -98,6 +93,7 @@ VIEW_COLUMNS = [
     "pop_zip5",
     "pop_congressional_code",
     "pop_city_name",
+    "pop_county_agg_key",
     "recipient_location_country_code",
     "recipient_location_country_name",
     "recipient_location_state_code",
@@ -394,7 +390,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
     return count
 
 
-def csv_chunk_gen(filename, chunksize, job_id, awards):
+def csv_chunk_gen(filename, chunksize, job_id, load_type):
     printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
     converters = {
@@ -406,6 +402,13 @@ def csv_chunk_gen(filename, chunksize, job_id, awards):
     dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
     for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
+        if load_type == "transactions":
+            # Route all transaction documents with the same recipient to the same shard
+            # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
+            # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
+            # and this is needed for performance
+            # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
+            file_df["routing"] = file_df["recipient_hash"]
         yield file_df.to_dict(orient="records")
 
 

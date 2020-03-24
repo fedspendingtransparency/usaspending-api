@@ -24,7 +24,22 @@ AWARD_FILTER = [
     {"name": "extent_competed_type_codes", "type": "array", "array_type": "text", "text_type": "search"},
     {"name": "keywords", "type": "array", "array_type": "text", "text_type": "search", "text_min": 3},
     {"name": "legal_entities", "type": "array", "array_type": "integer", "array_max": maxsize},
-    {"name": "naics_codes", "type": "array", "array_type": "text", "text_type": "search"},
+    {
+        "name": "naics_codes",
+        "type": "any",
+        "models": [
+            {
+                "name": "naics_codes",
+                "type": "object",
+                "min": 0,
+                "object_keys": {
+                    "require": {"type": "array", "array_type": "integer", "text_type": "search", "min": 0},
+                    "exclude": {"type": "array", "array_type": "integer", "text_type": "search", "min": 0},
+                },
+            },
+            {"type": "array", "array_type": "integer", "text_type": "search"},
+        ],
+    },
     {"name": "place_of_performance_scope", "type": "enum", "enum_values": ["domestic", "foreign"]},
     {"name": "program_numbers", "type": "array", "array_type": "text", "text_type": "search"},
     {"name": "psc_codes", "type": "array", "array_type": "text", "text_type": "search"},
@@ -74,6 +89,7 @@ AWARD_FILTER = [
         "object_keys": {
             "type": {"type": "enum", "enum_values": ["funding", "awarding"], "optional": False},
             "tier": {"type": "enum", "enum_values": ["toptier", "subtier"], "optional": False},
+            "toptier_name": {"type": "text", "text_type": "search", "optional": True},
             "name": {"type": "text", "text_type": "search", "optional": False},
         },
     },

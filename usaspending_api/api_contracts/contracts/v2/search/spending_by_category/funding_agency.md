@@ -19,13 +19,6 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
             The page of results to return based on the limit
         + `subawards` (optional, boolean)
             Determines whether Prime Awards or Sub Awards are searched
-    + Body
-        
-            {
-                "filters": { 
-                    "keywords": ["Filter is required"] 
-                }
-            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -35,6 +28,36 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
+    + Body
+
+            {
+                "category": "funding_agency",
+                "limit": 10,
+                "page_metadata": {
+                    "page": 1,
+                    "next": 2,
+                    "previous": null,
+                    "hasNext": false,
+                    "hasPrevious": false
+                },
+                "results": [
+                    {
+                        "amount": 480068061532.03,
+                        "name": "Department of Health and Human Services",
+                        "code": "HHS",
+                        "id": 806
+                    },
+                    {
+                        "amount": 284429830939.4,
+                        "name": "Social Security Administration",
+                        "code": "SSA",
+                        "id": 539
+                    }
+                ],
+                "messages": [
+                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
+                ]
+            }
 
 # Data Structures
 
@@ -74,7 +97,7 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
-+ `naics_codes`: `311812` (optional, array[string])
++ `naics_codes` (optional, NAICSCodeObject)
 + `psc_codes`: `8940`, `8910` (optional, array[string])
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
@@ -110,11 +133,18 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
     + Members
         + `toptier`
         + `subtier`
-+ `name`: `Department of Defense` (required, string)
++ `name`: `Office of Inspector General` (required, string)
++ `toptier_name`: `Department of the Treasury` (optional, string)
+    Only applicable when `tier` is `subtier`.  Ignored when `tier` is `toptier`.  Provides a means by which to scope subtiers with common names to a
+    specific toptier.  For example, several agencies have an "Office of Inspector General".  If not provided, subtiers may span more than one toptier.
 
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
 + `upper_bound`: 1000000 (optional, number)
+
+### NAICSCodeObject (object)
++ `require`: [`33`] (optional, list[string])
++ `exclude`: [`3313`] (optional, list[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

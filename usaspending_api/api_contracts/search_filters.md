@@ -367,13 +367,17 @@ Request parameter description:
 **Example Request:**
 ```
 {
-    "naics_codes": ["336411"]
+    "naics_codes": {
+        "require": ["33"],
+        "exclude": ["336411"]
+    }
 }
 ```
 
-Request parameter description:
-* `naics_codes` (List) : Top level key name for filter. Contains list of Strings corresponding to NAICS Codes.
-
+`naics_codes` (NAICSFilterObject) : Two nullable lists of strings: `require` and `exclude`. 
+* When `require` is provided, search will only return results that have a NAICS code that starts with one element from the require list. 
+* When `exclude` is provided,  search will only return results that do NOT have a NAICS code that starts with any element from the exclude list. 
+* If an element matches both lists, the more specific rule (longer prefix) supercedes.
 
 ## PSC
 
