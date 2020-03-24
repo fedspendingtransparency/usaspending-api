@@ -1,43 +1,78 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending by Award Count [/api/v2/search/spending_by_award_count/]
+# Spending By County [/api/v2/search/spending_by_category/county/]
 
-These endpoints support the advanced search page and allow for complex filtering for specific subsets of spending data.
+This endpoint supports the state profile page and allow for complex filtering for specific subsets of spending data.
 
-## Number of awards for each type [POST /api/v2/search/spending_by_award_count/]
+## POST
 
-This endpoint takes award filters, and returns the number of awards in each award type (Contracts, Loans, Direct Payments, Grants, Other and IDVs).
+This endpoint returns a list of the top results of Counties sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Attributes (object)
         + `filters` (required, FilterObject)
-        + `subawards`: false (optional, boolean)
-            True when you want to group by Subawards instead of Awards. Defaulted to False.
-    + Body
-        
-            { 
-                "filters": { 
-                    "keywords": ["Filter is required"] 
-                } 
-            }
+            The filters to find with said category
+        + `limit`: 5 (optional, number)
+            The number of results to include per page
+        + `page`: 1 (optional, number)
+            The page of results to return based on the limit
+        + `subawards` (optional, boolean)
+            Determines whether Prime Awards or Sub Awards are searched
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (AwardTypeResult)
+        + `category`: `county` (required, string)
+        + `results` (required, array[CategoryResult], fixed-type)
+        + `limit`: 10 (required, number)
+        + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
+    + Body
+
+            {
+                "category": "county",
+                "limit": 10,
+                "page_metadata": {
+                    "page": 1,
+                    "next": 2,
+                    "previous": null,
+                    "hasNext": false,
+                    "hasPrevious": false
+                },
+                "results": [
+                    {
+                        "amount": 17557452350.05,
+                        "code": "439",
+                        "name": "TARRANT",
+                        "id": null
+                    },
+                    {
+                        "amount": 5412138054.37,
+                        "code": "079",
+                        "name": "RICHLAND",
+                        "id": null
+                    }
+                ],
+                "messages": [
+                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
+                ]
+            }
+            
 
 # Data Structures
 
-## AwardTypeResult (object)
-+ `grants` (required, number)
-+ `loans` (required, number)
-+ `contracts` (required, number)
-+ `direct_payments` (required, number)
-+ `other` (required, number)
-+ `idvs` (required, number)
+## CategoryResult (object)
++ `id` (required, number)
+    The id is the database key.
++ `name` (required, string, nullable)
++ `code` (required, string, nullable)
+    `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
++ `amount` (required, number)
 
+## PageMetadataObject (object)
++ `page` (required, number)
++ `hasNext` (required, boolean)
 
 ## Filter Objects
 ### FilterObject (object)
@@ -50,6 +85,8 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
++ `recipient_id` (optional, string)
+    A unique identifier for the recipient which includes the recipient hash and level.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`
@@ -61,14 +98,12 @@ This endpoint takes award filters, and returns the number of awards in each awar
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
-+ `naics_codes` (optional, NAICSCodeObject)
++ `naics_codes`: `311812` (optional, array[string])
 + `psc_codes`: `8940`, `8910` (optional, array[string])
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
-+ `object_class` (optional, array[string])
-+ `program_activity` (optional, array[number])
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -99,18 +134,11 @@ This endpoint takes award filters, and returns the number of awards in each awar
     + Members
         + `toptier`
         + `subtier`
-+ `name`: `Office of Inspector General` (required, string)
-+ `toptier_name`: `Department of the Treasury` (optional, string)
-    Only applicable when `tier` is `subtier`.  Ignored when `tier` is `toptier`.  Provides a means by which to scope subtiers with common names to a
-    specific toptier.  For example, several agencies have an "Office of Inspector General".  If not provided, subtiers may span more than one toptier.
++ `name`: `Department of Defense` (required, string)
 
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
 + `upper_bound`: 1000000 (optional, number)
-
-### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, list[string])
-+ `exclude`: [`3313`] (optional, list[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

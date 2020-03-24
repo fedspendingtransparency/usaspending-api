@@ -175,6 +175,6 @@ def test_for_bogus_agencies(client, agency_data):
     assert len(resp.data["results"]) == 0
 
     # Just double check that our bogus agencies are not in the materialized view.
-    assert AgencyAutocompleteMatview.objects.filter(agency_id=1).count() == 0
-    assert AgencyAutocompleteMatview.objects.filter(agency_id=2).count() == 0
+    assert AgencyAutocompleteMatview.objects.filter(pk=1).count() == 0
+    assert AgencyAutocompleteMatview.objects.filter(pk=2).count() == 0
     assert AgencyAutocompleteMatview.objects.count() == 4

@@ -38,7 +38,7 @@ class TestElasticSearchIndex:
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
 
-    def update_index(self):
+    def update_index(self, **options):
         """
         To ensure a fresh Elasticsearch index, delete the old one, update the
         materialized views, re-create the Elasticsearch index, create aliases
@@ -47,9 +47,9 @@ class TestElasticSearchIndex:
         self.delete_index()
         self.client.indices.create(index=self.index_name, body=self.template)
         create_aliases(self.client, self.index_name, self.index_type, True)
-        self._add_contents()
+        self._add_contents(**options)
 
-    def _add_contents(self):
+    def _add_contents(self, **options):
         """
         Get all of the transactions presented in the view and stuff them into the Elasticsearch index.
         The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
@@ -68,15 +68,22 @@ class TestElasticSearchIndex:
 
         for transaction in transactions:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
+            routing_key = None
+            routing_value = None
             if self.index_type == "transactions":
                 transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
                 transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
+                # transaction docs are routed to shards by hashing the recipient_hash field
+                routing_key = options.get("routing", "recipient_hash")
             else:
                 transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
+            if routing_key:
+                routing_value = transaction.get(routing_key)
             self.client.index(
                 index=self.index_name,
                 body=json.dumps(transaction, cls=DjangoJSONEncoder),
                 id=transaction["{}_id".format(self.index_type[:-1])],
+                routing=routing_value,
             )
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)

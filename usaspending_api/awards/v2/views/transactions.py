@@ -38,6 +38,7 @@ class TransactionViewSet(APIView):
         "face_value_loan_guarantee": "face_value_loan_guarantee",
         "original_loan_subsidy_cost": "original_loan_subsidy_cost",
         "is_fpds": "is_fpds",
+        "cfda_number": "assistance_data__cfda_number",
     }
 
     def __init__(self):
@@ -64,12 +65,17 @@ class TransactionViewSet(APIView):
         award_id = request_data["award_id"]
         award_id_column = "award_id" if type(award_id) is int else "award__generated_unique_award_id"
         filter = {award_id_column: award_id}
-
+        if request_data["sort"] == "cfda_number":
+            request_data["sort"] = "assistance_data__cfda_number"
         lower_limit = (request_data["page"] - 1) * request_data["limit"]
         upper_limit = request_data["page"] * request_data["limit"]
 
-        queryset = TransactionNormalized.objects.all().values(*list(self.transaction_lookup.values())).filter(**filter)
-
+        queryset = (
+            TransactionNormalized.objects.all()
+            .filter(**filter)
+            .select_related("assistance_data")
+            .values(*list(self.transaction_lookup.values()))
+        )
         if request_data["order"] == "desc":
             queryset = queryset.order_by(F(request_data["sort"]).desc(nulls_last=True))
         else:
@@ -82,9 +88,10 @@ class TransactionViewSet(APIView):
         results = []
         for row in rows:
             unique_prefix = "ASST_TX"
-            result = {k: row[v] for k, v in self.transaction_lookup.items() if k != "award_id"}
+            result = {k: row.get(v) for k, v in self.transaction_lookup.items() if k != "award_id"}
             if result["is_fpds"]:
                 unique_prefix = "CONT_TX"
+                del result["cfda_number"]
             result["id"] = f"{unique_prefix}_{result['id']}"
             del result["is_fpds"]
             results.append(result)
