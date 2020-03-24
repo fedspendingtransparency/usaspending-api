@@ -123,7 +123,7 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `federal_account_ids` (optional, array[string])
 + `keywords` (optional, array[string])
 + `legal_entities` (optional, array[string])
-+ `naics_codes` (optional, array[string])
++ `naics_codes` (optional, NAICSCodeObject)
 + `object_class_ids` (optional, array[string])
 + `place_of_performance_locations` (optional, array[Location], fixed-type)
 + `place_of_performance_scope` (optional, string)
@@ -164,3 +164,7 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `city` (optional, string)
 + `district` (optional, string)
 + `zip` (optional, string)
+
+### NAICSCodeObject (object)
++ `require`: [`33`] (optional, list[string])
++ `exclude`: [`3313`] (optional, list[string])
