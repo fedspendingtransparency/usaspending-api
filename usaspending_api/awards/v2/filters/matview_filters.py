@@ -8,7 +8,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.search.models import AwardSearchView, UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import InvalidParameterException, NotImplementedException
 from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
@@ -255,9 +255,20 @@ def matview_search_filter(filters, model, for_downloads=False):
                 queryset = queryset.filter(cfda_number__in=in_query)
 
         elif key == "naics_codes":
-            if value:
-                regex = f"^({'|'.join([str(elem) for elem in value])}).*"
-                queryset = queryset.filter(naics_code__regex=regex)
+            if isinstance(value, list):
+                require = value
+            elif isinstance(value, dict):
+                require = value.get("require") or []
+                if value.get("exclude"):
+                    raise NotImplementedException(
+                        "NOT IMPLEMENTED: postgres endpoint does not currently support excluded naics!"
+                    )
+
+            else:
+                raise InvalidParameterException("naics_codes must be an array or object")
+
+            regex = f"^({'|'.join([str(elem) for elem in require])}).*"
+            queryset = queryset.filter(naics_code__regex=regex)
 
         elif key == "psc_codes":
             in_query = [v for v in value]
