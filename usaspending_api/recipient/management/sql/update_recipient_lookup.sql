@@ -149,7 +149,7 @@ SELECT
     ))::uuid AS recipient_hash,
     UPPER(legal_business_name) AS legal_business_name,
     awardee_or_recipient_uniqu AS duns,
-    'sam' as source
+    'partial-sam' as source
 FROM duns
 WHERE awardee_or_recipient_uniqu IS NOT NULL AND legal_business_name IS NULL
   ORDER BY awardee_or_recipient_uniqu, update_date DESC
@@ -166,7 +166,7 @@ SELECT
     recipient_hash,
     UPPER(t.awardee_or_recipient_legal) AS legal_business_name,
     t.awardee_or_recipient_uniqu AS duns,
-    t.source
+    CONCAT('partial-', t.source)
 FROM temporary_transaction_recipients_view t
 WHERE t.awardee_or_recipient_uniqu IS NOT NULL AND t.awardee_or_recipient_legal IS NULL
 ORDER BY t.recipient_hash, action_date DESC, is_fpds, transaction_unique_id
@@ -261,6 +261,7 @@ SET
 FROM duns d
 WHERE
     rl.duns = d.awardee_or_recipient_uniqu
+    AND d.legal_business_name IS NOT NULL
     AND (
          rl.address_line_1              IS DISTINCT FROM d.address_line_1
       OR rl.address_line_2              IS DISTINCT FROM d.address_line_2
@@ -299,7 +300,9 @@ SET
     zip5                        = t.zip5
 FROM temporary_transaction_recipients_view t
 WHERE
-    rl.recipient_hash = t.recipient_hash AND rl.source != 'sam'
+    rl.recipient_hash = t.recipient_hash
+    AND rl.source != 'sam'
+    AND t.awardee_or_recipient_legal IS NOT NULL
     AND (
          rl.address_line_1              IS DISTINCT FROM t.address_line_1
       OR rl.address_line_2              IS DISTINCT FROM t.address_line_2
@@ -313,6 +316,45 @@ WHERE
       or rl.state                       IS DISTINCT FROM t.state
       OR rl.zip4                        IS DISTINCT FROM t.zip4
       OR rl.zip5                        IS DISTINCT FROM t.zip5
+    );
+
+
+--------------------------------------------------------------------------------
+-- Step 6c, Update rows with details from SAM without a name
+--------------------------------------------------------------------------------
+DO $$ BEGIN RAISE NOTICE 'Step 6c: Update Recipient records from SAM without a name'; END $$;
+UPDATE public.temporary_restock_recipient_lookup rl
+SET
+    address_line_1              = d.address_line_1,
+    address_line_2              = d.address_line_2,
+    business_types_codes        = d.business_types_codes,
+    city                        = d.city,
+    congressional_district      = d.congressional_district,
+    country_code                = d.country_code,
+    legal_business_name         = UPPER(d.legal_business_name),
+    parent_duns                 = d.ultimate_parent_unique_ide,
+    parent_legal_business_name  = UPPER(d.ultimate_parent_legal_enti),
+    state                       = d.state,
+    update_date                 = now(),
+    zip4                        = d.zip4,
+    zip5                        = d.zip
+FROM duns d
+WHERE
+    rl.duns = d.awardee_or_recipient_uniqu
+    AND rl.source NOT IN ('sam', 'fpds', 'fabs')
+    AND (
+         rl.address_line_1              IS DISTINCT FROM d.address_line_1
+      OR rl.address_line_2              IS DISTINCT FROM d.address_line_2
+      OR rl.business_types_codes        IS DISTINCT FROM d.business_types_codes
+      OR rl.city                        IS DISTINCT FROM d.city
+      OR rl.congressional_district      IS DISTINCT FROM d.congressional_district
+      OR rl.country_code                IS DISTINCT FROM d.country_code
+      OR rl.legal_business_name         IS DISTINCT FROM UPPER(d.legal_business_name)
+      OR rl.parent_duns                 IS DISTINCT FROM d.ultimate_parent_unique_ide
+      OR rl.parent_legal_business_name  IS DISTINCT FROM UPPER(d.ultimate_parent_legal_enti)
+      or rl.state                       IS DISTINCT FROM d.state
+      OR rl.zip4                        IS DISTINCT FROM d.zip4
+      OR rl.zip5                        IS DISTINCT FROM d.zip
     );
 
 
