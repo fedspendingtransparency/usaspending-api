@@ -173,7 +173,7 @@ List of table columns
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
-+ `naics_codes`: `311812` (optional, array[string])
++ `naics_codes` (optional, NAICSCodeObject)
 + `psc_codes`: `8940`, `8910` (optional, array[string])
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
@@ -219,6 +219,10 @@ List of table columns
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
 + `upper_bound`: 1000000 (optional, number)
+
+### NAICSCodeObject (object)
++ `require`: [`33`] (optional, list[string])
++ `exclude`: [`3313`] (optional, list[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

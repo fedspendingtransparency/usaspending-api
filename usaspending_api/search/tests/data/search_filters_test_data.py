@@ -15,7 +15,7 @@ def non_legacy_filters():
         "extent_competed_type_codes": ["SAMPLECODE_ECTC"],
         "keywords": ["test", "testing"],
         "legal_entities": [1, 2, 3],
-        "naics_codes": ["336411"],
+        "naics_codes": {"require": [336411]},
         "place_of_performance_locations": [{"country": "USA"}, {"country": "PQR"}],
         "place_of_performance_scope": "domestic",
         "program_numbers": ["10.553"],

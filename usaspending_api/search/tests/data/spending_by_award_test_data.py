@@ -180,6 +180,7 @@ def spending_by_award_test_data():
         legal_entity_state_code="VA",
         legal_entity_country_code="USA",
         legal_entity_county_code="012",
+        naics="112244",
     )
     mommy.make("awards.TransactionFPDS", transaction_id=4)
     mommy.make("awards.TransactionFPDS", transaction_id=5)
