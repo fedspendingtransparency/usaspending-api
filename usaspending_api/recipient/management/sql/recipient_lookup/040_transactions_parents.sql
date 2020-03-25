@@ -17,7 +17,7 @@ SELECT
   ))::uuid AS recipient_hash,
   tf.ultimate_parent_legal_enti,
   tf.ultimate_parent_unique_ide,
-  CONCAT(tf.source, 'parent-'),
+  CONCAT(tf.source, '-parent'),
   tf.ultimate_parent_unique_ide AS parent_duns,
   tf.ultimate_parent_legal_enti AS parent_legal_business_name
 FROM public.temporary_transaction_recipients_view AS tf
