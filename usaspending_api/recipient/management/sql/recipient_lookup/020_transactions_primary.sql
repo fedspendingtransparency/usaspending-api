@@ -1,4 +1,4 @@
-DO $$ BEGIN RAISE NOTICE 'Adding Recipient records from FPDS and FABS'; END $$;
+DO $$ BEGIN RAISE NOTICE '020 Adding Recipient records from FPDS and FABS'; END $$;
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
   legal_business_name,

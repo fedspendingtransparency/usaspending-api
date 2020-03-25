@@ -1,4 +1,4 @@
-DO $$ BEGIN RAISE NOTICE 'Adding Recipient records from SAM parent data'; END $$;
+DO $$ BEGIN RAISE NOTICE '030 Adding Recipient records from SAM parent data'; END $$;
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
   legal_business_name,

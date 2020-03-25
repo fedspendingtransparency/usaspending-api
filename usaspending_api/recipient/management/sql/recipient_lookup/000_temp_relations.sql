@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS temporary_restock_recipient_lookup;
 DROP MATERIALIZED VIEW IF EXISTS temporary_transaction_recipients_view;
 
-DO $$ BEGIN RAISE NOTICE 'Creating temporary table and materialized view'; END $$;
+DO $$ BEGIN RAISE NOTICE '000 Creating temporary table and materialized view'; END $$;
 
 CREATE TABLE public.temporary_restock_recipient_lookup AS SELECT * FROM recipient_lookup limit 0;
 CREATE UNIQUE INDEX recipient_lookup_new_recipient_hash ON public.temporary_restock_recipient_lookup(recipient_hash);

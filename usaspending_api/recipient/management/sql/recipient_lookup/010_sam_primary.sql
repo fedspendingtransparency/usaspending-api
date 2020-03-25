@@ -1,4 +1,4 @@
-DO $$ BEGIN RAISE NOTICE 'Adding Recipient records from SAM'; END $$;
+DO $$ BEGIN RAISE NOTICE '010 Adding Recipient records from SAM'; END $$;
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
   legal_business_name,
@@ -32,7 +32,7 @@ SELECT
   ultimate_parent_legal_enti,
   state,
   zip4,
-  zip5
+  zip AS zip5
 FROM duns
 WHERE awardee_or_recipient_uniqu IS NOT NULL AND legal_business_name IS NOT NULL
 ORDER BY awardee_or_recipient_uniqu, legal_business_name, update_date DESC
