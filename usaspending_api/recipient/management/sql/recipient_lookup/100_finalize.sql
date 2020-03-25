@@ -1,6 +1,9 @@
+DO $$ BEGIN RAISE NOTICE '100 Loading recipient_lookup and cleaning up'; END $$;
+
 VACUUM ANALYZE public.temporary_restock_recipient_lookup;
 
-DO $$ BEGIN RAISE NOTICE '100 Removing stale records from recipient_lookup'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Removing stale records from recipient_lookup'; END $$;
+
 BEGIN;
 WITH removed_recipients AS (
   SELECT
@@ -53,56 +56,59 @@ UPDATE public.recipient_lookup rl SET
 
 DO $$ BEGIN RAISE NOTICE 'Inserting new records into recipient_lookup'; END $$;
 INSERT INTO public.recipient_lookup (
-    recipient_hash,
-    legal_business_name,
-    duns,
-    address_line_1,
-    address_line_2,
-    city,
-    state,
-    zip5,
-    zip4,
-    country_code,
-    congressional_district,
-    business_types_codes,
-    source,
-    parent_duns,
-    parent_legal_business_name,
-    update_date
+  recipient_hash,
+  legal_business_name,
+  duns,
+  address_line_1,
+  address_line_2,
+  city,
+  state,
+  zip5,
+  zip4,
+  country_code,
+  congressional_district,
+  business_types_codes,
+  source,
+  parent_duns,
+  parent_legal_business_name,
+  update_date
 )
-  SELECT
-    recipient_hash,
-    legal_business_name,
-    duns,
-    address_line_1,
-    address_line_2,
-    city,
-    state,
-    zip5,
-    zip4,
-    country_code,
-    congressional_district,
-    business_types_codes,
-    source,
-    parent_duns,
-    parent_legal_business_name,
-    now()
-  FROM public.temporary_restock_recipient_lookup tem
-  ON CONFLICT(recipient_hash) DO NOTHING;
+SELECT
+  recipient_hash,
+  legal_business_name,
+  duns,
+  address_line_1,
+  address_line_2,
+  city,
+  state,
+  zip5,
+  zip4,
+  country_code,
+  congressional_district,
+  business_types_codes,
+  source,
+  parent_duns,
+  parent_legal_business_name,
+  now()
+FROM public.temporary_restock_recipient_lookup
+ON CONFLICT(recipient_hash) DO NOTHING;
 
 DO $$ BEGIN RAISE NOTICE 'Populating alternate_names in recipient_lookup'; END $$;
 WITH alternate_names AS (
   SELECT recipient_hash, array_agg(DISTINCT awardee_or_recipient_legal) as all_names
   FROM temporary_transaction_recipients_view
-  WHERE awardee_or_recipient_legal IS NOT NULL
+  WHERE COALESCE(awardee_or_recipient_legal, '') != ''
   GROUP BY recipient_hash
 )
 UPDATE public.recipient_lookup rl SET
-  alternate_names = all_names
+  alternate_names = array_remove(all_names, rl.legal_business_name)
 FROM alternate_names an
-WHERE rl.recipient_hash = an.recipient_hash AND alternate_names IS DISTINCT FROM all_names;
+WHERE
+      rl.recipient_hash = an.recipient_hash
+  AND alternate_names IS DISTINCT FROM array_remove(all_names, rl.legal_business_name);
 
 DO $$ BEGIN RAISE NOTICE 'Post ETL clean up'; END $$;
 DROP TABLE public.temporary_restock_recipient_lookup;
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
+
 COMMIT;

@@ -1,4 +1,5 @@
 DO $$ BEGIN RAISE NOTICE '020 Adding Recipient records from FPDS and FABS'; END $$;
+
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
   legal_business_name,
@@ -18,9 +19,9 @@ INSERT INTO public.temporary_restock_recipient_lookup (
 SELECT
   DISTINCT ON (recipient_hash)
   recipient_hash,
-  UPPER(t.awardee_or_recipient_legal) AS legal_business_name,
-  t.awardee_or_recipient_uniqu AS duns,
-  t.source,
+  awardee_or_recipient_legal,
+  awardee_or_recipient_uniqu,
+  source,
   address_line_1,
   address_line_2,
   city,
@@ -31,7 +32,7 @@ SELECT
   state,
   zip4,
   zip5
-FROM temporary_transaction_recipients_view t
-WHERE t.awardee_or_recipient_uniqu IS NOT NULL AND t.awardee_or_recipient_legal IS NOT NULL
-ORDER BY t.recipient_hash, action_date DESC, is_fpds, transaction_unique_id
+FROM temporary_transaction_recipients_view
+WHERE awardee_or_recipient_uniqu IS NOT NULL AND awardee_or_recipient_legal IS NOT NULL
+ORDER BY recipient_hash, action_date DESC, is_fpds, transaction_unique_id
 ON CONFLICT (recipient_hash) DO NOTHING;

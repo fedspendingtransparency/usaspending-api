@@ -1,4 +1,5 @@
 DO $$ BEGIN RAISE NOTICE '010 Adding Recipient records from SAM'; END $$;
+
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
   legal_business_name,
@@ -29,7 +30,7 @@ SELECT
   congressional_district,
   country_code,
   ultimate_parent_unique_ide,
-  ultimate_parent_legal_enti,
+  UPPER(ultimate_parent_legal_enti) AS parent_legal_business_name,
   state,
   zip4,
   zip AS zip5

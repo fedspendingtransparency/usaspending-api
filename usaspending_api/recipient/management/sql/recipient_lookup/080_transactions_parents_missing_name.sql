@@ -1,4 +1,5 @@
 DO $$ BEGIN RAISE NOTICE '080 Adding Recipient records from FPDS and FABS parents with no name'; END $$;
+
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
   legal_business_name,
@@ -16,7 +17,7 @@ INSERT INTO public.temporary_restock_recipient_lookup (
     ))::uuid AS recipient_hash,
     tf.ultimate_parent_legal_enti,
     tf.ultimate_parent_unique_ide,
-    CONCAT(tf.source, 'parent-'),
+    CONCAT(tf.source, '-parent'),
     tf.ultimate_parent_unique_ide AS parent_duns,
     UPPER(tf.ultimate_parent_legal_enti) AS parent_legal_business_name
   FROM public.temporary_transaction_recipients_view AS tf

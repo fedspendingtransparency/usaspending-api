@@ -1,10 +1,13 @@
-DROP TABLE IF EXISTS temporary_restock_recipient_lookup;
-DROP MATERIALIZED VIEW IF EXISTS temporary_transaction_recipients_view;
-
 DO $$ BEGIN RAISE NOTICE '000 Creating temporary table and materialized view'; END $$;
 
+DROP TABLE IF EXISTS public.temporary_restock_recipient_lookup;
+
+DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
+
 CREATE TABLE public.temporary_restock_recipient_lookup AS SELECT * FROM recipient_lookup limit 0;
+
 CREATE UNIQUE INDEX recipient_lookup_new_recipient_hash ON public.temporary_restock_recipient_lookup(recipient_hash);
+
 CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
   SELECT
     tn.transaction_unique_id,
@@ -41,5 +44,7 @@ CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
 );
 
 CREATE INDEX idx_temporary_restock_recipient_view ON public.temporary_transaction_recipients_view (awardee_or_recipient_uniqu, awardee_or_recipient_legal);
+
 CREATE INDEX idx_temporary_restock_parent_recipient_view ON public.temporary_transaction_recipients_view (ultimate_parent_unique_ide, ultimate_parent_legal_enti);
+
 ANALYZE public.temporary_transaction_recipients_view;

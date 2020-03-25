@@ -1,4 +1,5 @@
 DO $$ BEGIN RAISE NOTICE '050 Adding Recipient records from SAM without a name'; END $$;
+
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
   legal_business_name,

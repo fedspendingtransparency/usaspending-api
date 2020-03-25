@@ -1,11 +1,13 @@
 DO $$ BEGIN RAISE NOTICE '070 Adding Recipient records from SAM parent data with no name'; END $$;
+
 INSERT INTO public.temporary_restock_recipient_lookup (
-                                                       recipient_hash,
-                                                       legal_business_name,
-                                                       duns,
-                                                       source,
-                                                       parent_duns,
-                                                       parent_legal_business_name)
+  recipient_hash,
+  legal_business_name,
+  duns,
+  source,
+  parent_duns,
+  parent_legal_business_name
+)
 SELECT
   DISTINCT ON (ultimate_parent_unique_ide)
   MD5(UPPER(
