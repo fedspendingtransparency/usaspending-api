@@ -1,0 +1,77 @@
+VACUUM ANALYZE public.temporary_restock_recipient_lookup;
+
+DO $$ BEGIN RAISE NOTICE 'Step 7a: Removing stale records from recipient_lookup'; END $$;
+BEGIN;
+WITH removed_recipients AS (
+  SELECT
+    rl.recipient_hash
+    FROM public.recipient_lookup rl
+    LEFT JOIN public.temporary_restock_recipient_lookup tem ON rl.recipient_hash = tem.recipient_hash
+    WHERE tem.recipient_hash IS NULL
+)
+DELETE FROM public.recipient_lookup rl WHERE rl.recipient_hash IN (SELECT recipient_hash FROM removed_recipients)
+RETURNING rl.recipient_hash;
+
+DO $$ BEGIN RAISE NOTICE 'Step 7b: Updating records in recipient_lookup'; END $$;
+UPDATE public.recipient_lookup rl SET
+    address_line_1          = tem.address_line_1,
+    address_line_2          = tem.address_line_2,
+    business_types_codes    = tem.business_types_codes,
+    city                    = tem.city,
+    congressional_district  = tem.congressional_district,
+    country_code            = tem.country_code,
+    duns                    = tem.duns,
+    legal_business_name     = tem.legal_business_name,
+    recipient_hash          = tem.recipient_hash,
+    source                  = tem.source,
+    state                   = tem.state,
+    update_date             = tem.update_date,
+    zip4                    = tem.zip4,
+    zip5                    = tem.zip5
+  FROM public.temporary_restock_recipient_lookup tem
+  WHERE
+    rl.recipient_hash = tem.recipient_hash
+    AND (
+       rl.address_line_1          IS DISTINCT FROM tem.address_line_1
+    OR rl.address_line_2          IS DISTINCT FROM tem.address_line_2
+    OR rl.business_types_codes    IS DISTINCT FROM tem.business_types_codes
+    OR rl.city                    IS DISTINCT FROM tem.city
+    OR rl.congressional_district  IS DISTINCT FROM tem.congressional_district
+    OR rl.country_code            IS DISTINCT FROM tem.country_code
+    OR rl.duns                    IS DISTINCT FROM tem.duns
+    OR rl.legal_business_name     IS DISTINCT FROM tem.legal_business_name
+    OR rl.recipient_hash          IS DISTINCT FROM tem.recipient_hash
+    OR rl.source                  IS DISTINCT FROM tem.source
+    OR rl.state                   IS DISTINCT FROM tem.state
+    OR rl.zip4                    IS DISTINCT FROM tem.zip4
+    OR rl.zip5                    IS DISTINCT FROM tem.zip5
+  );
+
+DO $$ BEGIN RAISE NOTICE 'Step 7c: Inserting new records into recipient_lookup'; END $$;
+INSERT INTO public.recipient_lookup (
+    recipient_hash, legal_business_name, duns, address_line_1, address_line_2,
+    city, state, zip5, zip4, country_code,
+    congressional_district, business_types_codes, source, update_date)
+  SELECT
+    recipient_hash, legal_business_name, duns, address_line_1, address_line_2,
+    city, state, zip5, zip4, country_code,
+    congressional_district, business_types_codes, source, update_date
+  FROM public.temporary_restock_recipient_lookup tem
+  ON CONFLICT(recipient_hash) DO NOTHING;
+
+DO $$ BEGIN RAISE NOTICE 'Step 7d: Populating alternate_names in recipient_lookup'; END $$;
+WITH alternate_names AS (
+  SELECT recipient_hash, array_agg(DISTINCT awardee_or_recipient_legal) as all_names
+  FROM temporary_transaction_recipients_view
+  WHERE awardee_or_recipient_legal IS NOT NULL
+  GROUP BY recipient_hash
+)
+UPDATE public.recipient_lookup rl SET
+  alternate_names = all_names
+FROM alternate_names an
+WHERE rl.recipient_hash = an.recipient_hash AND alternate_names IS DISTINCT FROM all_names;
+
+DO $$ BEGIN RAISE NOTICE 'Step 7e: Post ETL clean up'; END $$;
+DROP TABLE public.temporary_restock_recipient_lookup;
+DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
+COMMIT;

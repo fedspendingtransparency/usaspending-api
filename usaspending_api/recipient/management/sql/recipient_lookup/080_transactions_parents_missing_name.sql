@@ -1,0 +1,19 @@
+DO $$ BEGIN RAISE NOTICE 'Adding Recipient records from FPDS and FABS parents with no name'; END $$;
+INSERT INTO public.temporary_restock_recipient_lookup (recipient_hash, legal_business_name, duns, source, parent_duns, parent_legal_business_name, update_date)
+  SELECT
+    DISTINCT ON (tf.ultimate_parent_unique_ide, tf.ultimate_parent_legal_enti)
+    MD5(UPPER(
+      CASE
+        WHEN tf.ultimate_parent_unique_ide IS NOT NULL THEN CONCAT('duns-', tf.ultimate_parent_unique_ide)
+        ELSE CONCAT('name-', tf.ultimate_parent_legal_enti) END
+    ))::uuid AS recipient_hash,
+    tf.ultimate_parent_legal_enti,
+    tf.ultimate_parent_unique_ide,
+    CONCAT('parent-', tf.source),
+    tf.ultimate_parent_unique_ide AS parent_duns,
+    tf.ultimate_parent_legal_enti AS parent_legal_business_name,
+    now() AS update_date
+  FROM public.temporary_transaction_recipients_view AS tf
+  WHERE tf.ultimate_parent_unique_ide IS NOT NULL AND tf.ultimate_parent_legal_enti IS NULL
+  ORDER BY tf.ultimate_parent_unique_ide, tf.ultimate_parent_legal_enti, tf.action_date DESC, tf.is_fpds, tf.transaction_unique_id
+ON CONFLICT (recipient_hash) DO NOTHING;
