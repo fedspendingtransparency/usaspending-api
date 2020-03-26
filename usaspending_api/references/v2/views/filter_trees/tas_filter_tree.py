@@ -27,13 +27,21 @@ class TASFilterTree(FilterTree):
         return {"toptier_code": agency["toptier_code"], "name": agency["name"]}
 
     def tier_one_search(self, agency):
-        return FederalAccount.objects.filter(parent_toptier_agency__toptier_code=agency)
+        return FederalAccount.objects.annotate(
+            has_faba=Exists(
+                FinancialAccountsByAwards.objects.filter(treasury_account__federal_account=OuterRef("pk")).values("pk")
+            )
+        ).filter(has_faba=True, parent_toptier_agency__toptier_code=agency)
 
     def tier_two_search(self, fed_account):
-        return TreasuryAppropriationAccount.objects.filter(federal_account__federal_account_code=fed_account)
+        return TreasuryAppropriationAccount.objects.annotate(
+            has_faba=Exists(FinancialAccountsByAwards.objects.filter(treasury_account=OuterRef("pk")).values("pk"))
+        ).filter(has_faba=True, federal_account__federal_account_code=fed_account)
 
     def tier_three_search(self, tas_code):
-        return TreasuryAppropriationAccount.objects.filter(tas_rendering_label=tas_code)
+        return TreasuryAppropriationAccount.objects.annotate(
+            has_faba=Exists(FinancialAccountsByAwards.objects.filter(treasury_account=OuterRef("pk")).values("pk"))
+        ).filter(has_faba=True, tas_rendering_label=tas_code)
 
     def construct_node_from_raw(self, tier: int, ancestors: list, data, populate_children) -> Node:
         if tier == 0:  # A tier zero search is returning an agency dictionary
