@@ -31,6 +31,11 @@ This endpoint takes award filters and fields, and returns the fields of the filt
             The unique id of the last record in the results set. Used in the experimental Elasticsearch API functionality.
         + `last_record_sort_value` (optional, string)
             The value of the last record that is being sorted on. Used in the experimental Elasticsearch API functionality.
+    + Schema
+        {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "object"
+        }
     + Body
 
             {

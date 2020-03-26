@@ -12,6 +12,11 @@ Returns the number of transactions that would be included in a download request 
 + Request (application/json)
     + Attributes (object)
         + `filters` (required, FilterObject)
+    + Schema
+        {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "object"
+        }
 
 + Response 200 (application/json)
     + Attributes (object)
