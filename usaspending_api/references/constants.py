@@ -28,8 +28,5 @@ DOD_FEDERAL_ACCOUNTS = [
     ("011", "8242"),
 ]  # Federal Account (AID, MAIN)s that are to be reported under DoD.
 
-DHS_CGAC = "070"
-DHS_SUBSUMED_CGAC = ["058"]
-
 # Agencies which should be excluded from dropdowns.
 EXCLUDE_CGAC = ["000", "067"]
