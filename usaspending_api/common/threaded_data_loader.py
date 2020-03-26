@@ -6,7 +6,8 @@ import logging
 import csv
 import codecs
 
-from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
+from usaspending_api.awards.models import TransactionFPDS
+from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS, LONG_TO_TERSE_LABELS_FOR_FPDS
 
 
 # This class is a threaded data loader
@@ -252,7 +253,10 @@ class DataLoaderThread(Process):
             # If our field is the 'long form' field, we need to get what it maps to
             # in the data so we can map the data properly
             elif model_field in LONG_TO_TERSE_LABELS:
-                source_field = LONG_TO_TERSE_LABELS[model_field]
+                if type(mod) == TransactionFPDS:
+                    source_field = LONG_TO_TERSE_LABELS_FOR_FPDS[model_field]
+                else:
+                    source_field = LONG_TO_TERSE_LABELS[model_field]
 
             # If we haven't loaded via value map, load in the data using the source field
             if not loaded:
