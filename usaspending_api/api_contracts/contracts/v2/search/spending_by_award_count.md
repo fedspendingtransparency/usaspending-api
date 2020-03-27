@@ -113,7 +113,7 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `lower_bound` (optional, number)
 + `upper_bound`: 1000000 (optional, number)
 
-### NAICSCodeObject (object)
+### NaicsCodesObject (object)
 + `require`: [`33`] (optional, list[string])
 + `exclude`: [`3313`] (optional, list[string])
 
