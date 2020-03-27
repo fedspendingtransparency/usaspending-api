@@ -168,7 +168,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     TAS_ID_TO_ACCOUNT[tas_lookup_id] = (
         FederalAccount.objects.filter(
             main_account_code=federal_account_main_code, agency_identifier=federal_account_agency
-        ),
+        ).first(),
         TreasuryAppropriationAccount.objects.filter(tas_rendering_label=tas_rendering_label).first(),
         tas_rendering_label,
     )
@@ -297,6 +297,7 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
         appropriation_balances = AppropriationAccountBalances()
 
         value_map = {
+            "federal_account": federal_account,
             "treasury_account_identifier": treasury_account,
             "submission": submission_attributes,
             "reporting_period_start": submission_attributes.reporting_period_start,
@@ -488,6 +489,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             "submission": submission_attributes,
             "reporting_period_start": submission_attributes.reporting_period_start,
             "reporting_period_end": submission_attributes.reporting_period_end,
+            "federal_account": federal_account,
             "treasury_account": treasury_account,
             "appropriation_account_balances": account_balances,
             "object_class": get_object_class(row["object_class"], row["by_direct_reimbursable_fun"]),
@@ -626,6 +628,7 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
             "submission": submission_attributes,
             "reporting_period_start": submission_attributes.reporting_period_start,
             "reporting_period_end": submission_attributes.reporting_period_end,
+            "federal_account": federal_account,
             "treasury_account": treasury_account,
             "object_class": row.get("object_class"),
             "program_activity": row.get("program_activity"),
