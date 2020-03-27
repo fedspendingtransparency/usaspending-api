@@ -108,8 +108,10 @@ Returns the number of transactions that would be included in a download request 
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, array[string])
-+ `exclude`: [`3313`] (optional, array[string])
++ `require`: (optional, array[string])
+    + `33`
++ `exclude`: (optional, array[string])
+    + `3313`
 
 ## TASCodeObject (object)
 + `ata` (optional, string, nullable)

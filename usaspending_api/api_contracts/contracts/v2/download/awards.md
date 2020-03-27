@@ -166,5 +166,7 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `zip` (optional, string)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, array[string])
-+ `exclude`: [`3313`] (optional, array[string])
++ `require`: (optional, array[string])
+    + `33`
++ `exclude`: (optional, array[string])
+    + `3313`

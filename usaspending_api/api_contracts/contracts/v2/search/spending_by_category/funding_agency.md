@@ -143,8 +143,10 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, array[string])
-+ `exclude`: [`3313`] (optional, array[string])
++ `require`: (optional, array[string])
+    + `33`
++ `exclude`: (optional, array[string])
+    + `3313`
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)
