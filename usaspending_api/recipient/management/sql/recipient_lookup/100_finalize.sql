@@ -71,6 +71,7 @@ INSERT INTO public.recipient_lookup (
   source,
   parent_duns,
   parent_legal_business_name,
+  alternate_names,
   update_date
 )
 SELECT
@@ -89,23 +90,40 @@ SELECT
   source,
   parent_duns,
   parent_legal_business_name,
+  '{}',
   now()
 FROM public.temporary_restock_recipient_lookup
 ON CONFLICT(recipient_hash) DO NOTHING;
 
 DO $$ BEGIN RAISE NOTICE 'Populating alternate_names in recipient_lookup'; END $$;
 WITH alternate_names AS (
-  SELECT recipient_hash, array_agg(DISTINCT awardee_or_recipient_legal) as all_names
-  FROM temporary_transaction_recipients_view
-  WHERE COALESCE(awardee_or_recipient_legal, '') != ''
-  GROUP BY recipient_hash
+  WITH alt_names AS (
+    SELECT
+      recipient_hash,
+      array_agg(DISTINCT awardee_or_recipient_legal) as all_names
+    FROM temporary_transaction_recipients_view
+    WHERE COALESCE(awardee_or_recipient_legal, '') != ''
+    GROUP BY recipient_hash
+  ), alt_parent_names AS (
+    SELECT
+      parent_recipient_hash AS recipient_hash,
+      array_agg(DISTINCT ultimate_parent_legal_enti) as all_names
+    FROM temporary_transaction_recipients_view
+    WHERE COALESCE(ultimate_parent_legal_enti, '') != ''
+    GROUP BY parent_recipient_hash
+  )
+  SELECT
+    COALESCE(an.recipient_hash, apn.recipient_hash) as recipient_hash,
+    an.all_names || apn.all_names as all_names
+  FROM alt_names an
+  FULL OUTER JOIN alt_parent_names apn ON an.recipient_hash = apn.recipient_hash
 )
 UPDATE public.recipient_lookup rl SET
-  alternate_names = array_remove(all_names, rl.legal_business_name)
+  alternate_names = array_remove(an.all_names, rl.legal_business_name)
 FROM alternate_names an
 WHERE
       rl.recipient_hash = an.recipient_hash
-  AND alternate_names IS DISTINCT FROM array_remove(all_names, rl.legal_business_name);
+  AND rl.alternate_names IS DISTINCT FROM array_remove(an.all_names, rl.legal_business_name);
 
 DO $$ BEGIN RAISE NOTICE 'Post ETL clean up'; END $$;
 DROP TABLE public.temporary_restock_recipient_lookup;
