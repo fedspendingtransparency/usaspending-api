@@ -37,7 +37,7 @@ env:
   - BROKER_DOCKER_IMAGE=dataact-broker-backend
 
 before_install:
-  - npm install dredd@5.4.1 --global
+  - npm install --global dredd@11.2.19
 
 install:
   - travis_retry pip install -r requirements/requirements.txt
@@ -71,7 +71,7 @@ script:
   - flake8
   - black --check --diff .
   - python manage.py check_for_endpoint_documentation
-  - dredd
+  - dredd > dredd-results.txt
   - usaspending_api/api_contracts/scripts/parse_output_and_raise.sh dredd-results.txt
   - pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
   - pytest --durations 50 --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
