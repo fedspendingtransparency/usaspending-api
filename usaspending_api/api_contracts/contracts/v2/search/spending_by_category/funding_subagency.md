@@ -142,9 +142,9 @@ This endpoint returns a list of the top results of Funding Subagencies sorted by
 + `lower_bound` (optional, number)
 + `upper_bound`: 1000000 (optional, number)
 
-### NaicsCodesObject (object)
-+ `require`: [`33`] (optional, list[string])
-+ `exclude`: [`3313`] (optional, list[string])
+### NAICSCodeObject (object)
++ `require`: [`33`] (optional, array[string])
++ `exclude`: [`3313`] (optional, array[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)
