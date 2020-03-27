@@ -11,6 +11,7 @@ from usaspending_api.accounts.models import (
     AppropriationAccountBalances,
     AppropriationAccountBalancesQuarterly,
     TreasuryAppropriationAccount,
+    FederalAccount,
 )
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
@@ -31,9 +32,9 @@ from usaspending_api.references.helpers import retrive_agency_name_from_code
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-# This dictionary will hold a map of tas_id -> treasury_account to ensure we don't keep hitting the databroker DB for
-# account data
+# This dictionary prevent redundant calls when associating accounts to TAS and Federal Accounts
 TAS_ID_TO_ACCOUNT = {}
+
 
 # Lists to store for update_awards and update_procurement_awards
 AWARD_UPDATE_ID_LIST = []
@@ -149,7 +150,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     tas_data = dictfetchall(db_cursor)
 
     if tas_data is None or len(tas_data) == 0:
-        return None, "Account number {} not found in Broker".format(tas_lookup_id)
+        return None, None, "Account number {} not found in Broker".format(tas_lookup_id)
 
     tas_rendering_label = TreasuryAppropriationAccount.generate_tas_rendering_label(
         ata=tas_data[0]["allocation_transfer_agency"],
@@ -161,10 +162,17 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
         sub=tas_data[0]["sub_account_code"],
     )
 
+    federal_account_main_code = tas_data[0]["main_account_code"]
+    federal_account_agency = tas_data[0]["agency_identifier"]
+
     TAS_ID_TO_ACCOUNT[tas_lookup_id] = (
+        FederalAccount.objects.filter(
+            main_account_code=federal_account_main_code, agency_identifier=federal_account_agency
+        ),
         TreasuryAppropriationAccount.objects.filter(tas_rendering_label=tas_rendering_label).first(),
         tas_rendering_label,
     )
+
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
@@ -275,7 +283,7 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
     for row in appropriation_data:
 
         # Check and see if there is an entry for this TAS
-        treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(
+        federal_account, treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(
             row.get("tas_id"), db_cursor
         )
         if treasury_account is None:
@@ -460,7 +468,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
         account_balances = None
         try:
             # Check and see if there is an entry for this TAS
-            treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(
+            federal_account, treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(
                 row.get("tas_id"), db_cursor
             )
             if treasury_account is None:
@@ -582,7 +590,7 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
         upper_case_dict_values(row)
 
         # Check and see if there is an entry for this TAS
-        treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(
+        federal_account, treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(
             row.get("tas_id"), db_cursor
         )
         if treasury_account is None:
