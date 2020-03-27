@@ -13,6 +13,7 @@ class ETLMixin:
     etl_logger_function = None
     etl_dml_sql_directory = None
     etl_rows_affected_template = "{:,} rows affected"
+    etl_timer = Timer
 
     def _delete_update_insert_rows(self, what: str, source: ETLObjectBase, destination: ETLObjectBase):
         """ Convenience function to run delete, update, and create ETL operations. """
@@ -57,14 +58,15 @@ class ETLMixin:
         file_path = (Path(self.etl_dml_sql_directory) / file_name_no_extension).with_suffix(".sql")
         return self._execute_dml_sql_file(Path(file_path), timer_message)
 
-    @staticmethod
-    def _execute_function(function: Callable, timer_message: Optional[str] = None, *args: Any, **kwargs: Any) -> Any:
+    def _execute_function(
+        self, function: Callable, timer_message: Optional[str] = None, *args: Any, **kwargs: Any
+    ) -> Any:
         """
         Execute a function and returns its results.  Times the execution if there's a
         timer_message.  Logs the result if there's a log_message.
         """
 
-        with Timer(timer_message):
+        with self.etl_timer(timer_message):
             return function(*args, **kwargs)
 
     def _execute_function_and_log(

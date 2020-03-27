@@ -3,7 +3,7 @@ select
     max(subtier_abbreviation) as abbreviation,
     max(subtier_name) as name
 from
-    temp_load_agencies_raw_agency
+    {temp_table}
 where
     subtier_code is not null and
     subtier_name is not null

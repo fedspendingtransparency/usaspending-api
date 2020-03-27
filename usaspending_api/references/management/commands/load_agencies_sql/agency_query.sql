@@ -14,7 +14,7 @@ from (
         tlara.user_selectable
     from
         toptier_agency as ta
-        inner join temp_load_agencies_raw_agency as tlara on
+        inner join {temp_table} as tlara on
             case
                 when tlara.is_frec is true then tlara.frec
                 else tlara.cgac_agency_code
@@ -31,7 +31,7 @@ from (
         false -- user_selectable
     from
         toptier_agency as ta
-        inner join temp_load_agencies_raw_agency as tlara on
+        inner join {temp_table} as tlara on
             case
                 when tlara.is_frec is true then tlara.frec
                 else tlara.cgac_agency_code
