@@ -10,6 +10,13 @@ This endpoint supports the advanced search page and allow for complex filtering 
 This endpoint returns a list of the top results of Funding Agencies sorted by the total amounts in descending order.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `filters` (required, FilterObject)
             The filters to find with said category
@@ -143,10 +150,8 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: (optional, array[string])
-    + `33`
-+ `exclude`: (optional, array[string])
-    + `3313`
++ `require`: `33` (optional, array[string])
++ `exclude`: `3333` (optional, array[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

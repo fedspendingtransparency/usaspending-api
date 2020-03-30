@@ -1,0 +1,196 @@
+[33mwarn[39m: DEPRECATED: The --level configuration option is deprecated. Please use --loglevel instead.
+Watching for file changes with StatReloader
+18:15:42 - Watching for file changes with StatReloader
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/federal_accounts/account_number.md:35 (from line 35 column 3 to column 53): invalid value format for 'number' type. please check mson specification for valid format
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/recipient/duns.md:61 (from line 61 column 3 to line 66 column 14): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/recipient/duns.md:17 (from line 17 column 11 to line 23 column 27): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/recipient/duns.md:32 (from line 32 column 11 to line 41 column 47): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/search/new_awards_over_time.md:22 (from line 22 column 11 to line 26 column 26): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/search/new_awards_over_time.md:31 (from line 31 column 11 to line 35 column 26): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/recipient/duns/recipient_id.md:52 (from line 52 column 3 to line 57 column 14): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/spending.md:98 (from line 98 column 3 to line 103 column 14): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/spending.md:89 (from line 89 column 3 to line 94 column 14): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/spending.md:39 (from line 39 column 11 to line 48 column 37): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/spending.md:68 (from line 68 column 11 to line 72 column 33): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/search/spending_by_category.md:21 (from line 21 column 11 to line 36 column 36): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/search/spending_by_geography.md:24 (from line 24 column 11 to line 28 column 39): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/search/spending_over_time.md:21 (from line 21 column 11 to line 25 column 26): duplicit value in enumeration
+[33mwarn[39m: API description parser warning in /Users/tonysappe/dev/fedspendingtransparency/usaspending-api/usaspending_api/api_contracts/contracts/v2/recipient/state.md:29 (from line 29 column 3 to line 33 column 21): duplicit value in enumeration
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/accounts/a/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/federal_accounts/011-1022/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/awards/accounts/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/idvs/accounts/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/download/accounts/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/idvs/activity/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/financial_balances/agencies/?fiscal_year=2017&funding_agency_id=456
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/accounts/aid/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/download/assistance/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/accounts/ata/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/idvs/count/federal_account/CONT_IDV_NNK14MA74C_8000/?piid=NNK17MA01T
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/awards/count/transaction/ASST_NON_NNX17AJ96A_8000/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/awards/count/subaward/ASST_NON_NNX17AJ96A_8000/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/awards/count/federal_account/ASST_NON_NNX17AJ96A_8000/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/awards/CONT_AWD_H907_9700_SPE2DX16D1500_9700/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/awards/ASST_NON_12FA00PY54661041_12D2/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/awards/CONT_IDV_FA304715A0037_9700/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/idvs/amounts/CONT_IDV_FA304715A0037_9700/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/awarding_agency/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_category/awarding_agency/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_category/awarding_subagency/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/idvs/awards/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/download/awards/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/bulk_download/awards/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/accounts/bpoa/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/cfda/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_category/cfda/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/city/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/download/contract/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/download/count/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_category/county/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/references/data_dictionary/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/recipient/children/001006360/?year=2017
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/recipient/duns/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/accounts/epoa/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/federal_accounts/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/federal_obligations/?fiscal_year=2017&funding_agency_id=456&limit=10&page=1
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v1/references/filter/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/recipient/state/51/?year=2017
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/recipient/state/awards/51/?year=2017
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/federal_accounts/6000/fiscal_year_snapshot/2018/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/federal_accounts/6000/fiscal_year_snapshot/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/awards/funding/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/idvs/funding/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_category/funding_agency/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/funding_agency/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/awards/funding_rollup/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/idvs/funding_rollup/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_category/funding_subagency/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/references/glossary/?limit=1&page=2
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/glossary/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v1/references/hash/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/references/agency/456/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/download/idv/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/awards/last_updated/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/bulk_download/list_agencies/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/budget_functions/list_budget_functions/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/budget_functions/list_budget_subfunctions/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/bulk_download/list_monthly_files/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/accounts/main/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/financial_spending/major_object_class/?fiscal_year=2017&funding_agency_id=456
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/naics/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/references/naics/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/references/naics/11/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/references/naics/?filter=filter%3Dforest
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/new_awards_over_time/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/financial_spending/object_class/?fiscal_year=2017&funding_agency_id=456&major_object_class_code=30
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/psc/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/award_spending/recipient/?awarding_agency_id=183&fiscal_year=2017&limit=10&page=1
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/recipient/duns/0036a0cb-0d88-2db3-59e0-0f9af8ffef57-C/?year=2017
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/spending/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/spending/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_award/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_award_count/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_category/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_geography/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_transaction/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_by_transaction_count/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/spending_over_time/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/recipient/state/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/bulk_download/status?file_name=012_PrimeTransactions_2020-01-13_H20M58S34486877.zip
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/download/status?file_name=012_PrimeTransactions_2020-01-13_H20M58S34486877.zip
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/autocomplete/accounts/sub/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/subawards/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: GET (200) /api/v2/references/toptier_agencies/?sort=percentage_of_total_budget_authority&order=desc
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/search/transaction_spending_summary/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/download/transactions/
+[34minfo[39m: Dry run. Not performing HTTP request
+[33mskip[39m: POST (200) /api/v2/transactions/
+[32mcomplete[39m: 0 passing, 0 failing, 0 errors, 88 skipped, 88 total
+[32mcomplete[39m: Tests took 16694ms
