@@ -10,6 +10,13 @@ This endpoint supports the advanced search page and allow for complex filtering 
 This endpoint takes award filters, and returns aggregated obligation amounts in different geographic areas.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
         + `subawards` (optional, boolean)

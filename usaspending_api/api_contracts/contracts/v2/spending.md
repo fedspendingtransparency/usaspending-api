@@ -28,6 +28,13 @@ Note that data for the latest complete quarter is not available until 45 days af
 Using the response from the general Spending Explorer, you can drill down to more detailed grouping fields. However, you must limit the scope of your request to one of the top-level groups and, optionally, additional lower-level groups. Each of your groups will combine to become the scope of your request. For example, if you filter by "Department of Justice" and "Salaries and Expenses," you will only see spending breakdowns for "Salaries and Expenses" within "Department of Justice."
 
 + Request Specific Spending Explorer (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `type` (required, enum[string])
             + Members
@@ -50,6 +57,13 @@ Using the response from the general Spending Explorer, you can drill down to mor
         + `results` (required, array[SpendingExplorerDetailedResponse], fixed-type)
 
 + Request General Spending Explorer (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `type` (required, enum[string])
             + Members

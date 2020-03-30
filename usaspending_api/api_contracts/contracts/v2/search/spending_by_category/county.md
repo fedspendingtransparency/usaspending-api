@@ -10,6 +10,13 @@ This endpoint supports the state profile page and allow for complex filtering fo
 This endpoint returns a list of the top results of Counties sorted by the total amounts in descending order.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
             The filters to find with said category

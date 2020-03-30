@@ -10,6 +10,13 @@ This endpoint supports the advanced search page and allow for complex filtering 
 This endpoint returns a list of the top results of specific categories sorted by the total amounts in descending order.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `category` (required, enum[string])
             + Members

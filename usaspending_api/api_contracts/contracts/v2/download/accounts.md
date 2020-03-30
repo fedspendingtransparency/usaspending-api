@@ -10,6 +10,13 @@ These endpoints are used to power USAspending.gov's download center.
 Generate files and return metadata using filters on custom account
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `account_level` (required, enum[string])
             The account level is used to filter for a specific type of file.

@@ -8,6 +8,13 @@ HOST: https://api.usaspending.gov
 Returns the counts of transaction records which match the keyword grouped by award categories.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
             Need to provide `keywords`

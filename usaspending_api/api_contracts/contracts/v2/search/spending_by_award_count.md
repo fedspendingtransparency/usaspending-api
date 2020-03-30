@@ -10,6 +10,13 @@ These endpoints support the advanced search page and allow for complex filtering
 This endpoint takes award filters, and returns the number of awards in each award type (Contracts, Loans, Direct Payments, Grants, Other and IDVs).
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
         + `subawards`: false (optional, boolean)
@@ -109,8 +116,8 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, array[string])
-+ `exclude`: [`3313`] (optional, array[string])
++ `require`: `33` (optional, array[string])
++ `exclude`: `3333` (optional, array[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

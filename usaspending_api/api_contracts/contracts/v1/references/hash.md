@@ -7,9 +7,16 @@ Restores selected filter criteria, based on URL hash. Supports the advanced sear
 
 ## POST
 
-Restore Filters From URL Hash Data 
+Restore Filters From URL Hash Data
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `hash` : `0e7d2ce3bb0885ac877872bb44053a84` (required, string)
 
@@ -61,6 +68,9 @@ Restore Filters From URL Hash Data
                         "selectedLocations": {},
                         "selectedNAICS": {},
                         "selectedPSC": {},
+                        "naics_codes": {
+                            require: ["11"]
+                        }
                         "selectedRecipientLocations": {},
                         "selectedRecipients": [],
                         "setAside": [],

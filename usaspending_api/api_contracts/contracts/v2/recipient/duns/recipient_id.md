@@ -8,6 +8,12 @@ These endpoints are used to power USAspending.gov's recipient profile pages. Thi
 ## GET
 
 This endpoint returns a high-level overview of a specific recipient, given its id.
++ Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
 
 + Parameters
 
