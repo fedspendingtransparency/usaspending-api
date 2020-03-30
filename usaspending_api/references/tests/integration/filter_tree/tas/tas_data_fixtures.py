@@ -8,7 +8,7 @@ aribitrary_cfo_cgac_sample = [2, 1, 3, 13, 7]
 
 
 @pytest.fixture
-def basic_agencies(db):
+def basic_agency(db):
     _complete_agency(1)
 
 

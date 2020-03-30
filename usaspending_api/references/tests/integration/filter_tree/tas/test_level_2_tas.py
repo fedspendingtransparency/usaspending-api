@@ -4,7 +4,7 @@ common_query = "/api/v2/references/filter_tree/tas/001/001/?depth=0"
 
 
 # Can the endpoint successfully create a search tree node?
-def test_one_agency(client, basic_agencies):
+def test_one_tas(client, basic_agency):
     resp = _call_and_expect_200(client, common_query)
     print(resp)
     assert resp.json() == {
