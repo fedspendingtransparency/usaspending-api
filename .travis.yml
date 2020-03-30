@@ -41,14 +41,14 @@ before_install:
 
 install:
   - travis_retry pip install -r requirements/requirements.txt
-  - pip install coveralls
+  - travis_retry pip install coveralls
   # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
   - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
   - git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
 
 before_script:
   # Get dependencies to report code coverage to code climate
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - travis_retry curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
   # Run elasticsearch
@@ -71,8 +71,7 @@ script:
   - flake8
   - black --check --diff .
   - python manage.py check_for_endpoint_documentation
-  - dredd > dredd-results.txt
-  - echo '! grep -E "warn|err" dredd-results.txt' | bash
+  - dredd > dredd-results.txt && echo '! grep -E "warn|error" dredd-results.txt' | bash
   - pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
   - pytest --durations 50 --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
 

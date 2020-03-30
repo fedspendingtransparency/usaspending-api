@@ -9,7 +9,7 @@ Returns transaction records which match the keyword and award type code filters.
 
 + Request (application/json)
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             Need to provide `keywords` and `award_type_codes`
         + `fields` (required, FieldNameObject)
             The field names to include in the response
@@ -283,6 +283,6 @@ List of column names to request
 - `Transaction Amount`
 
 
-## FilterObject (object)
+## AdvancedFilterObject (object)
 + `keywords`: `lockheed` (required, array[string], fixed-type)
 + `award_type_codes` (required, FilterObjectAwardTypes, fixed-type)

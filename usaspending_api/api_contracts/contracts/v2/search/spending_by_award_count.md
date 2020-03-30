@@ -11,15 +11,15 @@ This endpoint takes award filters, and returns the number of awards in each awar
 
 + Request (application/json)
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
         + `subawards`: false (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
     + Body
-        
-            { 
-                "filters": { 
-                    "keywords": ["Filter is required"] 
-                } 
+
+            {
+                "filters": {
+                    "keywords": ["Filter is required"]
+                }
             }
 
 + Response 200 (application/json)
@@ -40,7 +40,7 @@ This endpoint takes award filters, and returns the number of awards in each awar
 
 
 ## Filter Objects
-### FilterObject (object)
+### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])

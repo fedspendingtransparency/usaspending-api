@@ -12,7 +12,7 @@ This endpoint returns the agency identifier, account code, title, and database i
 + Parameters
     + `account_number`: `011-1022` (required, string)
         The Federal Account symbol comprised of Agency Code and Main Account Code. A unique identifier for federal accounts.
-        
+
 + Response 200 (application/json)
     + Attributes
         + `agency_identifier`: `011` (required, string)
@@ -32,7 +32,7 @@ This endpoint returns the agency identifier, account code, title, and database i
     A unique identifier for the federal account
 + `managing_agency_acronym`: `BEM` (required, string)
 + `agency_identifier`: `032` (required, string)
-+ `budgetary_resources`: 03423.23 (required, number)
++ `budgetary_resources`: 3423.23 (required, number)
 + `managing_agency`: `Central Intelligence Agency` (required, string)
 
 ## TimeFilterObject (object)

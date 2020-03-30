@@ -11,7 +11,7 @@ This endpoint returns a list of the top results of Counties sorted by the total 
 
 + Request (application/json)
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             The filters to find with said category
         + `limit`: 5 (optional, number)
             The number of results to include per page
@@ -58,7 +58,7 @@ This endpoint returns a list of the top results of Counties sorted by the total 
                     "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
                 ]
             }
-            
+
 
 # Data Structures
 
@@ -75,7 +75,7 @@ This endpoint returns a list of the top results of Counties sorted by the total 
 + `hasNext` (required, boolean)
 
 ## Filter Objects
-### FilterObject (object)
+### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])

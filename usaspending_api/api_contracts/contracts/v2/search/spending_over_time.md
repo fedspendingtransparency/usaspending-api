@@ -11,21 +11,23 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 
 + Request (application/json)
     + Attributes (object)
-        + `group`: `quarter` (required, enum[string])
+        + `group` (required, enum[string])
             + Members
                 + `fiscal_year`
                 + `quarter`
                 + `month`
-        + `filters` (required, FilterObject)
+            + Default
+                + `fiscal_year`
+        + `filters` (required, AdvancedFilterObject)
         + `subawards` (optional, boolean)
             True to group by sub-awards instead of prime awards. Defaults to false.
             + Default: false
     + Body
-        
-            { 
-                "group": "fiscal_year", 
-                "filters": { 
-                    "keywords": ["Filter is required"] 
+
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "keywords": ["Filter is required"]
                 }
             }
 
@@ -48,16 +50,16 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
     The aggregate award amount for this time period and the given filters.
 
 ## TimePeriodGroup (object)
-+ `fiscal_year`: `2018` (required, string)
-+ `quarter`: `1` (optional, string)
++ `fiscal_year` (required, string)
++ `quarter` (optional, string)
     Excluded when grouping by `fiscal_year` or `month`.
-+ `month`: `1` (optional, string)
++ `month` (optional, string)
     Excluded when grouping by `fiscal_year` or `quarter`.
 
 
 ## Filter Objects
-### FilterObject (object)
-+ `keywords` : `transport` (optional, array[string])
+### AdvancedFilterObject (object)
++ `keywords`  (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members

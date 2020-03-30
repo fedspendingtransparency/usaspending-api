@@ -11,7 +11,7 @@ This endpoint returns a list of federal accounts, their number, name, managing a
 
 + Request (application/json)
     + Attributes (object)
-        + `filters` (optional, FilterObject)
+        + `filters` (optional, AdvancedFilterObject)
             The filter takes a fiscal year, but if one is not provided, it defaults to the last certified fiscal year.
         + `sort` (optional, SortObject)
         + `limit` (optional, number)
@@ -61,7 +61,7 @@ This endpoint returns a list of federal accounts, their number, name, managing a
 + `budgetary_resources` (required, number)
 + `managing_agency` (required, string)
 
-## FilterObject (object)
+## AdvancedFilterObject (object)
 + `fy` (optional, string)
     + Default: `previous fiscal year`
 + `agency_identifier` (optional, string)

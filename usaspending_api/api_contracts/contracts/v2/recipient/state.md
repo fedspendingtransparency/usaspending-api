@@ -15,11 +15,11 @@ This endpoint returns a list of states and their amounts.
 # Data Structures
 
 ## StateListing (object)
-+ `name`: `Virginia` (required, string)
-+ `code`: `VA` (required, string)
-+ `fips`: `51` (required, string)
-+ `amount`: 494274.3 (required, number)
-+ `type`: `state` (required, enum[string])
++ `name` (required, string)
++ `code` (required, string)
++ `fips` (required, string)
++ `amount` (required, number)
++ `type` (required, enum[string])
     + Members
         + `state`
         + `territory`

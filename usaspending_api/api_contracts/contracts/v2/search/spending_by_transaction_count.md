@@ -9,7 +9,7 @@ Returns the counts of transaction records which match the keyword grouped by awa
 
 + Request (application/json)
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             Need to provide `keywords`
 
 + Response 200 (application/json)
@@ -37,5 +37,5 @@ Returns the counts of transaction records which match the keyword grouped by awa
 
 # Data Structures
 
-## FilterObject (object)
+## AdvancedFilterObject (object)
 + `keywords`: `lockheed` (required, array[string], fixed-type)

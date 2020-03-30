@@ -29,7 +29,7 @@ Using the response from the general Spending Explorer, you can drill down to mor
 
 + Request Specific Spending Explorer (application/json)
     + Attributes (object)
-        + `type`: `program_activity` (required, enum[string])
+        + `type` (required, enum[string])
             + Members
                 + `federal_account`
                 + `object_class`
@@ -43,15 +43,15 @@ Using the response from the general Spending Explorer, you can drill down to mor
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `total`: 1410774412.52 (required, number, nullable)
+        + `total` (required, number, nullable)
             Total should only be null when there are no results.
-        + `end_date`: `2017-09-30` (required, string)
+        + `end_date` (required, string)
             This is the "as-of" date for the data being returned.
         + `results` (required, array[SpendingExplorerDetailedResponse], fixed-type)
 
 + Request General Spending Explorer (application/json)
     + Attributes (object)
-        + `type`: `agency` (required, enum[string])
+        + `type` (required, enum[string])
             + Members
                 + `budget_function`
                 + `agency`
@@ -60,19 +60,19 @@ Using the response from the general Spending Explorer, you can drill down to mor
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `total`: 126073789264.49 (required, number, nullable)
+        + `total` (required, number, nullable)
             Total should only be null when there are no results.
-        + `end_date`: `2017-09-30` (required, string)
+        + `end_date` (required, string)
             This is the "as-of" date for the data being returned.
         + `results` (required, array[SpendingExplorerGeneralResponse, SpendingExplorerGeneralUnreportedResponse], fixed-type)
- 
+
 
 
 # Data Structures
 
 ## GeneralFilter (object)
-+ `fy`: `2017` (required, string)
-+ `quarter`: `4` (required, enum[string])
++ `fy` (required, string)
++ `quarter` (required, enum[string])
     + Members
         + `1`
         + `2`
@@ -80,43 +80,43 @@ Using the response from the general Spending Explorer, you can drill down to mor
         + `4`
 
 ## DetailedFilter (object)
-+ `fy`: `2017` (required, string)
-+ `quarter`: `4` (required, enum[string])
++ `fy` (required, string)
++ `quarter` (required, enum[string])
     + Members
         + `1`
         + `2`
         + `3`
         + `4`
-+ `agency`: 252 (optional, number)
++ `agency` (optional, number)
     This value is the `id` returned in the general Spending Explorer response.
-+ `federal_account`: 830 (optional, number)
++ `federal_account` (optional, number)
     This value is the `id` returned in the previous specific Spending Explorer response.
-+ `object_class`: 123 (optional, number)
-+ `budget_function`: 123 (optional, number)
-+ `budget_subfunction`: 123 (optional, number)
-+ `recipient`: 123 (optional, number)
-+ `program_activity`: 123 (optional, number)
++ `object_class` (optional, number)
++ `budget_function` (optional, number)
++ `budget_subfunction` (optional, number)
++ `recipient` (optional, number)
++ `program_activity` (optional, number)
 
 ## SpendingExplorerGeneralResponse (object)
-+ `code`: `019` (required, string)
-+ `id`: `315` (required, string)
++ `code` (required, string)
++ `id` (required, string)
 + `generated_unique_award_id` (optional, string)
     Durable identifier for an award.  This value only returned for award type.
-+ `type`: `agency` (required, string)
++ `type` (required, string)
     The `type` will always be equal to the `type` parameter you provided in the request.
-+ `name`: `Department of State` (required, string)
-+ `amount`: 63036894632.2 (required, number)
++ `name` (required, string)
++ `amount` (required, number)
 
 ### SpendingExplorerDetailedResponse (object)
-+ `code`: `0006` (required, string)
-+ `id`: `11367` (required, string)
++ `code` (required, string)
++ `id` (required, string)
 + `generated_unique_award_id` (optional, string)
     Durable identifier for an award.  This value only returned for award type requests.
-+ `type`: `program_activity` (required, string)
++ `type` (required, string)
     The `type` will always be equal to the `type` parameter you provided in the request.
-+ `name`: `Law Enforcement Operations` (required, string)
-+ `amount`: 1116815570.99 (required, number)
-+ `account_number`: `123-4567` (optional, string)
++ `name` (required, string)
++ `amount` (required, number)
++ `account_number` (optional, string)
     The response includes `account_number` when the requested `type` was `federal_account`.
 
 ## SpendingExplorerGeneralUnreportedResponse (object)
@@ -124,7 +124,7 @@ Using the response from the general Spending Explorer, you can drill down to mor
 + `id` (optional, nullable)
 + `generated_unique_award_id` (optional, string)
     Durable identifier for an award.  This value only returned for award type.
-+ `type`: `agency` (required, string)
++ `type` (required, string)
     The `type` will always be equal to the `type` parameter you provided in the request.
-+ `name`: `Unreported Data` (required, string)
-+ `amount`: 63036894632.2 (required, number)
++ `name` (required, string)
++ `amount` (required, number)

@@ -23,7 +23,7 @@ Generate files and return metadata using filters on custom account
                 + `csv`
                 + `tsv`
                 + `pstxt`
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             The filters used to filter the data
     + Body
 
@@ -74,7 +74,7 @@ Generate files and return metadata using filters on custom account
 
 # Data Structures
 
-## FilterObject (object)
+## AdvancedFilterObject (object)
 + `agency` (optional, string)
     The agency to filter by. This field is an internal id.
     + Default: `all`

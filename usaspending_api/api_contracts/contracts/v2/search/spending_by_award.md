@@ -11,7 +11,7 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 
 + Request (application/json)
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
         + `fields` (required, SpendingByAwardFields)
         + `limit` (optional, number)
             How many results are returned. If no limit is specified, the limit is set to 10.
@@ -152,7 +152,7 @@ List of table columns
 + `last_record_sort_value` (optional, string)
 
 ## Filter Objects
-### FilterObject (object)
+### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
