@@ -2,7 +2,7 @@ import copy
 import logging
 
 from django.conf import settings
-from django.db.models import Case, IntegerField, Sum, Value, When
+from django.db.models import Sum
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,12 +18,9 @@ from usaspending_api.common.experimental_api_flags import (
 )
 from usaspending_api.common.helpers.api_helper import alias_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
-from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
-from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_psc_description_by_code,
     fetch_naics_description_from_code,
@@ -38,6 +35,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import CountyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient_duns import RecipientDunsViewSet
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +115,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             response = FundingAgencyViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "funding_subagency":
             response = FundingSubagencyViewSet().perform_search(validated_payload, original_filters)
+        elif validated_payload["category"] == "recipient_duns":
+            response = RecipientDunsViewSet().perform_search(validated_payload, original_filters)
         else:
             response = BusinessLogic(validated_payload, original_filters).results()
 
@@ -176,8 +176,8 @@ class BusinessLogic:
     def results(self) -> dict:
         results = []
         # filter the transactions by category
-        if self.category in ("recipient_duns", "recipient_parent_duns"):
-            results = self.recipient()
+        if self.category in ("recipient_parent_duns",):
+            results = self.parent_recipient()
         elif self.category in ("psc", "naics"):
             results = self.industry_and_other_codes()
         elif self.category in ("district", "state_territory", "country"):
@@ -199,86 +199,13 @@ class BusinessLogic:
         }
         return response
 
-    @staticmethod
-    def _get_recipient_id(row):
-        """
-        In the recipient_profile table there is a 1 to 1 relationship between hashes and DUNS
-        (recipient_unique_id) and the hashes+duns match exactly between recipient_profile and
-        recipient_lookup where there are matches.  Grab the level from recipient_profile by
-        hash if we have one or by DUNS if we have one of those.
-        """
-        if "recipient_hash" in row:
-            profile_filter = {"recipient_hash": row["recipient_hash"]}
-        elif "recipient_unique_id" in row:
-            profile_filter = {"recipient_unique_id": row["recipient_unique_id"]}
-        else:
-            raise RuntimeError(
-                "Attempted to lookup recipient profile using a queryset that contains neither "
-                "'recipient_hash' nor 'recipient_unique_id'"
-            )
-
-        profile = (
-            RecipientProfile.objects.filter(**profile_filter)
-            .exclude(recipient_name__in=SPECIAL_CASES)
-            .annotate(
-                sort_order=Case(
-                    When(recipient_level="C", then=Value(0)),
-                    When(recipient_level="R", then=Value(1)),
-                    default=Value(2),
-                    output_field=IntegerField(),
-                )
-            )
-            .values("recipient_hash", "recipient_level")
-            .order_by("sort_order")
-            .first()
-        )
-
-        return (
-            combine_recipient_hash_and_level(profile["recipient_hash"], profile["recipient_level"]) if profile else None
-        )
-
-    def recipient(self) -> list:
-        if self.category == "recipient_duns":
-            filters = {}
-            if self.subawards:
-                values = ["recipient_name", "recipient_unique_id"]
-            else:
-                values = ["recipient_hash"]
-
-        elif self.category == "recipient_parent_duns":
-            # TODO: check if we can aggregate on recipient name and parent duns,
-            #    since parent recipient name isn't available
-            # Not implemented until "Parent Recipient Name" is in matviews
-            self.raise_not_implemented()
-            # filters = {'parent_recipient_unique_id__isnull': False}
-            # values = ['recipient_name', 'parent_recipient_unique_id']
-
-        self.queryset = self.common_db_query(filters, values)
-        # DB hit here
-        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
-        for row in query_results:
-
-            row["recipient_id"] = self._get_recipient_id(row)
-
-            if not self.subawards:
-
-                lookup = (
-                    RecipientLookup.objects.filter(recipient_hash=row["recipient_hash"])
-                    .values("legal_business_name", "duns")
-                    .first()
-                )
-
-                # The Recipient Name + DUNS should always be retrievable in RecipientLookup
-                # For odd edge cases or data sync issues, handle gracefully:
-                if lookup is None:
-                    lookup = {}
-
-                row["recipient_name"] = lookup.get("legal_business_name", None)
-                row["recipient_unique_id"] = lookup.get("duns", "DUNS Number not provided")
-                del row["recipient_hash"]
-
-        results = alias_response(ALIAS_DICT[self.category], query_results)
-        return results
+    def parent_recipient(self) -> list:
+        # TODO: check if we can aggregate on recipient name and parent duns,
+        #    since parent recipient name isn't available
+        # Not implemented until "Parent Recipient Name" is in matviews
+        self.raise_not_implemented()
+        # filters = {'parent_recipient_unique_id__isnull': False}
+        # values = ['recipient_name', 'parent_recipient_unique_id']
 
     def industry_and_other_codes(self) -> list:
         if self.category == "psc":

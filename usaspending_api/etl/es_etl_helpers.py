@@ -45,6 +45,7 @@ VIEW_COLUMNS = [
     "recipient_unique_id",
     "recipient_name",
     "recipient_hash",
+    "recipient_agg_key",
     "parent_recipient_unique_id",
     "parent_recipient_name",
     "parent_recipient_hash",
@@ -408,7 +409,7 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
             # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
             # and this is needed for performance
             # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
-            file_df["routing"] = file_df["recipient_hash"]
+            file_df["routing"] = file_df["recipient_agg_key"]
         yield file_df.to_dict(orient="records")
 
 

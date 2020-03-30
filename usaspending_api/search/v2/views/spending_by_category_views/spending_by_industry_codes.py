@@ -38,7 +38,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
 
             results.append(
                 {
-                    "amount": Decimal(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                    "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "code": industry_code_info.get("code"),
                     "id": int(industry_code_info.get("id")) if len(industry_code_info.get("id")) > 0 else None,
                     "name": industry_code_info.get("description") or None,

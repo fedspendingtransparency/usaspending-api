@@ -1,10 +1,15 @@
+import json
 import logging
 import uuid
 
 from model_mommy import mommy
 from elasticsearch_dsl import A
+from rest_framework import status
 
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.experimental_api_flags import ELASTICSEARCH_HEADER_VALUE, EXPERIMENTAL_API_HEADER
+from usaspending_api.common.helpers.generic_helper import get_time_period_message
+from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
 
 
@@ -122,7 +127,7 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     to ensure accuracy and completeness of aggregations and sorting even when taking less buckets than the term
     cardinality.
 
-    Without the code to route indexing of transaction documents in elasticsearch to shards by the `recipient_hash`,
+    Without the code to route indexing of transaction documents in elasticsearch to shards by the `recipient_agg_key`,
     which was added to :meth:`usaspending_api.etl.es_etl_helpers.csv_chunk_gen`, the below agg queries should lead to
     inaccurate results, as shown in the DEV-4538.
 
@@ -201,3 +206,83 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
         recipient2
     ), "The 'Top 1' sum agg incorrectly chose the recipient with a lesser total sum"
     assert results[0]["sum"] == 31.0, "The 'Top 1' sum agg incorrectly summed up recipient totals"
+
+
+def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
+    """
+    General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
+    """
+
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/recipient_duns",
+        content_type="application/json",
+        data=json.dumps({"filters": non_legacy_filters()}),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert len(logging_statements) == 1, "Expected one logging statement"
+
+
+def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
+
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/recipient_duns",
+        content_type="application/json",
+        data=json.dumps({"filters": {"time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}]}}),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_response = {
+        "category": "recipient_duns",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {"amount": 550000.0, "code": "123456789", "name": None, "recipient_id": None},
+            {"amount": 5000.0, "code": None, "name": "MULTIPLE RECIPIENTS", "recipient_id": None},
+            {
+                "amount": 500.0,
+                "code": "987654321",
+                "name": "RECIPIENT 3",
+                "recipient_id": "d2894d22-67fc-f9cb-4005-33fa6a29ef86-C",
+            },
+            {"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None},
+            {
+                "amount": 5.0,
+                "code": "DUNS Number not provided",
+                "name": "RECIPIENT 1",
+                "recipient_id": "2d67171a-1447-ea0a-df99-db8b663f9b07-R",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert len(logging_statements) == 1, "Expected one logging statement"
+    assert resp.json() == expected_response
+
+
+def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
+
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/recipient_duns",
+        content_type="application/json",
+        data=json.dumps({"filters": {"time_period": [{"start_date": "2007-10-01", "end_date": "2008-09-30"}]}}),
+        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
+    )
+    expected_response = {
+        "category": "recipient_duns",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert len(logging_statements) == 1, "Expected one logging statement"
+    assert resp.json() == expected_response
