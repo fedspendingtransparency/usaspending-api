@@ -60,7 +60,7 @@ class FederalAccountViewSet(AbstractAccountViewSet):
     This route takes award filters and returns spending by CFDA.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/cfda.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/federal_account.md"
 
     industry_code_type = AccountType.FEDERAL_ACCOUNT
     category = Category(name="federal_account", agg_key="federal_accounts_agg_key")
