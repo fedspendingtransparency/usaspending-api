@@ -10,6 +10,13 @@ This endpoint supports the state profile page and allow for complex filtering fo
 This endpoint returns a list of the top results of Counties sorted by the total amounts in descending order.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `filters` (required, FilterObject)
             The filters to find with said category
@@ -58,7 +65,7 @@ This endpoint returns a list of the top results of Counties sorted by the total 
                     "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
                 ]
             }
-            
+
 
 # Data Structures
 

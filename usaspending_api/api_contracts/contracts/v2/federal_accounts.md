@@ -10,6 +10,13 @@ This endpoint supports the federal account landing page, which provides a list o
 This endpoint returns a list of federal accounts, their number, name, managing agency, and budgetary resources.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `filters` (optional, FilterObject)
             The filter takes a fiscal year, but if one is not provided, it defaults to the last certified fiscal year.

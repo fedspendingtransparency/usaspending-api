@@ -8,6 +8,12 @@ These endpoints are used to power USAspending.gov's recipient profile pages. Thi
 ## GET
 
 This endpoint returns a high-level overview of a specific recipient, given its id.
++ Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
 
 + Parameters
 
@@ -84,4 +90,3 @@ This endpoint returns a high-level overview of a specific recipient, given its i
     DUNS number
 + `parent_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-P` (required, string, nullable)
     A unique identifier for the parent recipient.
- 

@@ -65,7 +65,7 @@
     "  transaction_fpds.legal_entity_zip5 AS recipient_location_zip5,",
     "  TRIM(TRAILING FROM transaction_fpds.legal_entity_city_name) AS recipient_location_city_name,",
     "",
-    "  transaction_fpds.place_of_perform_country_n AS pop_country_name,",
+    "  transaction_fpds.place_of_perf_country_desc AS pop_country_name,",
     "  COALESCE(transaction_fpds.place_of_perform_country_c, 'USA') AS pop_country_code,",
     "  transaction_fpds.place_of_performance_state AS pop_state_code,",
     "  LPAD(CAST(CAST((REGEXP_MATCH(transaction_fpds.place_of_perform_county_co, '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS smallint) AS text), 3, '0') AS pop_county_code,",
