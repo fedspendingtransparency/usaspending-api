@@ -19,7 +19,7 @@ def test_data():
         legal_entity_country_name="UNITED STATES",
         legal_entity_zip5="00501",
         place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_zip5="00001",
     )
 
@@ -32,7 +32,7 @@ def test_data():
         legal_entity_country_name="UNITED STATES",
         legal_entity_zip5="00502",
         place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_zip5="00002",
     )
 
@@ -45,7 +45,7 @@ def test_data():
         legal_entity_country_name="UNITED STATES",
         legal_entity_zip5="00503",
         place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_zip5="00003",
     )
 
@@ -58,7 +58,7 @@ def test_data():
         legal_entity_country_name="GIBRALTAR",
         legal_entity_zip5="00504",
         place_of_perform_country_c="GIB",
-        place_of_perform_country_n="GIBRALTAR",
+        place_of_perf_country_desc="GIBRALTAR",
         place_of_performance_zip5="00004",
     )
 
