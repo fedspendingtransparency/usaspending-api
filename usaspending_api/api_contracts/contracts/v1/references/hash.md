@@ -21,6 +21,12 @@ Restore Filters From URL Hash Data
         + `hash` (required, string)
             + Default: `5703c297b902ac3b76088c5c275b53f9`
 
+    + Body
+
+            {
+                "hash": "5703c297b902ac3b76088c5c275b53f9"
+            }
+
 + Response 200 (application/json)
     + Attributes
         + `filter` (optional, object)
@@ -54,31 +60,30 @@ Restore Filters From URL Hash Data
             {
                 "filter": {
                     "filters": {
-                        "awardAmounts": {},
-                        "awardType": [],
-                        "extentCompeted": [],
                         "keyword": {},
-                        "locationDomesticForeign": "all",
-                        "pricingType": [],
-                        "recipientDomesticForeign": "all",
-                        "recipientType": [],
-                        "selectedAwardIDs": {},
-                        "selectedAwardingAgencies": {},
-                        "selectedCFDA": {},
-                        "selectedFundingAgencies": {},
-                        "selectedLocations": {},
-                        "selectedNAICS": {},
-                        "selectedPSC": {},
-                        "naics_codes": {
-                            require: ["11"]
-                        }
-                        "selectedRecipientLocations": {},
-                        "selectedRecipients": [],
                         "setAside": [],
+                        "awardType": [],
+                        "pricingType": [],
+                        "selectedPSC": {},
+                        "awardAmounts": {},
+                        "selectedCFDA": {},
+                        "timePeriodFY": [
+                            "2019"
+                        ],
+                        "recipientType": [],
+                        "selectedNAICS": {},
                         "timePeriodEnd": null,
-                        "timePeriodFY": ["2019"],
+                        "extentCompeted": [],
+                        "timePeriodType": "fy",
                         "timePeriodStart": null,
-                        "timePeriodType": "fy"
+                        "selectedAwardIDs": {},
+                        "selectedLocations": {},
+                        "selectedRecipients": [],
+                        "locationDomesticForeign": "all",
+                        "selectedFundingAgencies": {},
+                        "recipientDomesticForeign": "all",
+                        "selectedAwardingAgencies": {},
+                        "selectedRecipientLocations": {}
                     },
                     "version": "2017-11-21"
                 }

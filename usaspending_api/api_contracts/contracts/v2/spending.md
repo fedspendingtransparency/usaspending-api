@@ -47,6 +47,18 @@ Using the response from the general Spending Explorer, you can drill down to mor
                 + `agency`
                 + `program_activity`
         + `filters` (required, DetailedFilter, fixed-type)
+    + Body
+
+            {
+                "type":"recipient",
+                "filters": {
+                    "fy":"2020",
+                    "quarter":"1",
+                    "budget_function":"500",
+                    "budget_subfunction":"501",
+                    "federal_account":"5901"
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -55,6 +67,78 @@ Using the response from the general Spending Explorer, you can drill down to mor
         + `end_date` (required, string)
             This is the "as-of" date for the data being returned.
         + `results` (required, array[SpendingExplorerDetailedResponse], fixed-type)
+    + Body
+
+            {
+                "total": 10758018561.52,
+                "end_date": "2019-12-31",
+                "results": [
+                    {
+                        "amount": 1338785075,
+                        "id": "EDUCATION, CALIFORNIA DEPARTMENT OF",
+                        "type": "recipient",
+                        "name": "EDUCATION, CALIFORNIA DEPARTMENT OF",
+                        "code": "EDUCATION, CALIFORNIA DEPARTMENT OF",
+                        "total": 1338785075
+                    },
+                    {
+                        "amount": 1049216400,
+                        "id": "TEXAS EDUCATION AGENCY",
+                        "type": "recipient",
+                        "name": "TEXAS EDUCATION AGENCY",
+                        "code": "TEXAS EDUCATION AGENCY",
+                        "total": 1049216400
+                    },
+                    {
+                        "amount": 849061298,
+                        "id": "EDUCATION DEPARTMENT, NEW YORK STATE",
+                        "type": "recipient",
+                        "name": "EDUCATION DEPARTMENT, NEW YORK STATE",
+                        "code": "EDUCATION DEPARTMENT, NEW YORK STATE",
+                        "total": 849061298
+                    },
+                    {
+                        "amount": 638939299,
+                        "id": "EDUCATION, FLORIDA DEPARTMENT OF",
+                        "type": "recipient",
+                        "name": "EDUCATION, FLORIDA DEPARTMENT OF",
+                        "code": "EDUCATION, FLORIDA DEPARTMENT OF",
+                        "total": 638939299
+                    },
+                    {
+                        "amount": 449552712,
+                        "id": "EDUCATION, ILLINOIS STATE BOARD OF",
+                        "type": "recipient",
+                        "name": "EDUCATION, ILLINOIS STATE BOARD OF",
+                        "code": "EDUCATION, ILLINOIS STATE BOARD OF",
+                        "total": 449552712
+                    },
+                    {
+                        "amount": 421294862,
+                        "id": "EDUCATION, PENNSYLVANIA DEPT OF",
+                        "type": "recipient",
+                        "name": "EDUCATION, PENNSYLVANIA DEPT OF",
+                        "code": "EDUCATION, PENNSYLVANIA DEPT OF",
+                        "total": 421294862
+                    },
+                    {
+                        "amount": 392298566,
+                        "id": "DEPARTMENT OF EDUCATION OHIO",
+                        "type": "recipient",
+                        "name": "DEPARTMENT OF EDUCATION OHIO",
+                        "code": "DEPARTMENT OF EDUCATION OHIO",
+                        "total": 392298566
+                    },
+                    {
+                        "amount": 372229194,
+                        "id": "EDUCATION, GEORGIA DEPARTMENT OF",
+                        "type": "recipient",
+                        "name": "EDUCATION, GEORGIA DEPARTMENT OF",
+                        "code": "EDUCATION, GEORGIA DEPARTMENT OF",
+                        "total": 372229194
+                    }
+                ]
+            }
 
 + Request General Spending Explorer (application/json)
     + Schema
@@ -72,6 +156,16 @@ Using the response from the general Spending Explorer, you can drill down to mor
                 + `object_class`
         + `filters` (required, GeneralFilter, fixed-type)
 
+    + Body
+
+            {
+                "type": "federal_account",
+                "filters": {
+                    "fy": 2019,
+                    "quarter": "1"
+                }
+            }
+
 + Response 200 (application/json)
     + Attributes (object)
         + `total` (required, number, nullable)
@@ -79,13 +173,41 @@ Using the response from the general Spending Explorer, you can drill down to mor
         + `end_date` (required, string)
             This is the "as-of" date for the data being returned.
         + `results` (required, array[SpendingExplorerGeneralResponse, SpendingExplorerGeneralUnreportedResponse], fixed-type)
+    + Body
 
+            {
+                "total": 1716262905344.08,
+                "end_date": "2018-12-31",
+                "results": [
+                    {
+                        "id": "050",
+                        "code": "050",
+                        "type": "budget_function",
+                        "name": "National Defense",
+                        "amount": 371478539473.82
+                    },
+                    {
+                        "id": "570",
+                        "code": "570",
+                        "type": "budget_function",
+                        "name": "Medicare",
+                        "amount": 273180031194.15
+                    },
+                    {
+                        "id": "650",
+                        "code": "650",
+                        "type": "budget_function",
+                        "name": "Social Security",
+                        "amount": 270988863288.42
+                    }
+                ]
+            }
 
 
 # Data Structures
 
 ## GeneralFilter (object)
-+ `fy` (required, string)
++ `fy`: `2019` (required, string)
 + `quarter` (required, enum[string])
     + Members
         + `1`
@@ -94,7 +216,7 @@ Using the response from the general Spending Explorer, you can drill down to mor
         + `4`
 
 ## DetailedFilter (object)
-+ `fy` (required, string)
++ `fy`: `2019` (required, string)
 + `quarter` (required, enum[string])
     + Members
         + `1`
