@@ -71,7 +71,7 @@ script:
   - flake8
   - black --check --diff .
   - python manage.py check_for_endpoint_documentation
-  - dredd > dredd-results.txt && echo '! grep -E "warn|error" dredd-results.txt' | bash
+  - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   - pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
   - pytest --durations 50 --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
 

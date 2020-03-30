@@ -39,4 +39,4 @@ Generates a hash for URL, based on selected filter criteria.
 
 + Response 200 (application/json)
     + Attributes
-        + `hash` : `5703c297b902ac3b76088c5c275b53f9` (required, string)
+        + `hash` (required, string)

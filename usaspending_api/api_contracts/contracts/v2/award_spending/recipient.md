@@ -8,16 +8,23 @@ This endpoint lists all all award spending for a given fiscal year and agency id
 ## GET
 
 This endpoint returns a list of recipients and their amounts.
++ Request (application/json)
+    + Schema
 
-+ Parameters
-    + `awarding_agency_id`: 183 (required, number)
-        Internal award id of the recipient you are looking for
-    + `fiscal_year`: 2017 (required, number)
-        Fiscal Year
-    + `limit`: 10 (optional, number)
-        The maximum number of results to return in the response.
-    + `page`: 1 (optional, number)
-        The response page to return (the record offset is (`page` - 1) * `limit`).
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
+    + Parameters
+        + `awarding_agency_id`: 183 (required, number)
+            Internal award id of the recipient you are looking for
+        + `fiscal_year`: 2017 (required, number)
+            Fiscal Year
+        + `limit` (optional, number)
+            The maximum number of results to return in the response.
+        + `page` (optional, number)
+            The response page to return (the record offset is (`page` - 1) * `limit`).
 
 + Response 200 (application/json)
     + Attributes
@@ -40,6 +47,6 @@ This endpoint returns a list of recipients and their amounts.
 + `obligated_amount`: 1000000.01 (required, string)
 + `recipient` (RecipientObject)
 
-        
+
 ## RecipientObject (object)
 + `recipient_name`: `Company Inc.` (required, string)

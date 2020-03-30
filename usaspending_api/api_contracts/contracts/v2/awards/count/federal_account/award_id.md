@@ -10,15 +10,22 @@ This endpoint is used for the federal accounts tab on the awards page.
 This endpoint returns the number of federal accounts associated with the given award.
 
 + Request (application/json)
-    A request with a award (contract or assistance) id 
+    A request with a award (contract or assistance) id
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Parameters
-        + `award_id`: `ASST_NON_NNX17AJ96A_8000`
+        + `award_id`: `ASST_NON_NNX17AJ96A_8000` (required, string)
 
 + Response 200 (application/json)
-    + Attributes 
+    + Attributes
         + `federal_accounts` (required, number)
      + Body
-    
+
             {
                 "federal_accounts": 32
             }

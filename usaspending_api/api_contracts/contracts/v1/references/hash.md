@@ -18,7 +18,8 @@ Restore Filters From URL Hash Data
             }
 
     + Attributes (object)
-        + `hash` : `0e7d2ce3bb0885ac877872bb44053a84` (required, string)
+        + `hash` (required, string)
+            + Default: `5703c297b902ac3b76088c5c275b53f9`
 
 + Response 200 (application/json)
     + Attributes

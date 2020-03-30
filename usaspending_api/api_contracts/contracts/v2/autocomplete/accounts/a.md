@@ -7,9 +7,16 @@ This endpoint powers the USAspending.gov Availability Type Code (A) autocomplete
 
 ## POST
 
-List of potential Availability Type Codes 
+List of potential Availability Type Codes
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `filters` (required, ComponentFilters)
         + `limit` (optional, number)
