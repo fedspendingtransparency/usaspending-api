@@ -198,7 +198,7 @@ def award_data(transactional_db):
         legal_entity_country_code="USA",
         legal_entity_country_name="UNITED STATES",
         place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
+        place_of_perf_country_desc="UNITED STATES",
     )
     mommy.make(
         TransactionFPDS,
@@ -208,7 +208,7 @@ def award_data(transactional_db):
         legal_entity_country_code="CAN",
         legal_entity_country_name="CANADA",
         place_of_perform_country_c="CAN",
-        place_of_perform_country_n="CANADA",
+        place_of_perf_country_desc="CANADA",
     )
     mommy.make(
         TransactionFPDS,
@@ -218,7 +218,7 @@ def award_data(transactional_db):
         legal_entity_country_code="USA",
         legal_entity_country_name="UNITED STATES",
         place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
+        place_of_perf_country_desc="UNITED STATES",
     )
     mommy.make(
         TransactionFPDS,
@@ -228,7 +228,7 @@ def award_data(transactional_db):
         legal_entity_country_code="CAN",
         legal_entity_country_name="CANADA",
         place_of_perform_country_c="CAN",
-        place_of_perform_country_n="CANADA",
+        place_of_perf_country_desc="CANADA",
     )
 
     # Create TransactionAssistance
