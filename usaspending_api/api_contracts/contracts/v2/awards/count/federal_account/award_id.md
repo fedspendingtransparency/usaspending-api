@@ -15,7 +15,7 @@ This endpoint returns the number of federal accounts associated with the given a
 
             {
                 "$schema": "http://json-schema.org/draft-04/schema#",
-                "type": "object"
+                "type": "string"
             }
 
     + Parameters

@@ -13,7 +13,8 @@ This endpoint returns a list of recipients and their amounts.
 
             {
                 "$schema": "http://json-schema.org/draft-04/schema#",
-                "type": "object"
+                "type": "string"
+
             }
 
     + Parameters

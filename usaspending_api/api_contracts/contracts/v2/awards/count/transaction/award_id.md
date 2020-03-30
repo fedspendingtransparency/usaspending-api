@@ -15,7 +15,8 @@ This endpoint returns the number of transactions associated with the given award
 
             {
                 "$schema": "http://json-schema.org/draft-04/schema#",
-                "type": "object"
+                "type": "string"
+
             }
 
     + Parameters
