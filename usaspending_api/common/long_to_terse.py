@@ -314,9 +314,3 @@ LONG_TO_TERSE_LABELS = {
     "business_funds_indicator": "business_funds_indicator",
     "business_funds_ind_desc": "business_funds_ind_desc",
 }
-
-# Contains the same keys as LONG_TO_TERSE_LABELS, but uses a different value for some columns
-LONG_TO_TERSE_LABELS_FOR_FPDS = {
-    **LONG_TO_TERSE_LABELS,
-    "primary_place_of_performance_country_name": "place_of_perf_country_desc",
-}

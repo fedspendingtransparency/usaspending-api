@@ -10,8 +10,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import connections
 
-from usaspending_api.awards.models import TransactionFPDS
-from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS, LONG_TO_TERSE_LABELS_FOR_FPDS
+from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
 
@@ -104,10 +103,7 @@ def load_data_into_model(model_instance, data, **kwargs):
         # If our field is the 'long form' field, we need to get what it maps to
         # in the broker so we can map the data properly
         if broker_field in LONG_TO_TERSE_LABELS:
-            if type(mod) == TransactionFPDS:
-                broker_field = LONG_TO_TERSE_LABELS_FOR_FPDS[broker_field]
-            else:
-                broker_field = LONG_TO_TERSE_LABELS[broker_field]
+            broker_field = LONG_TO_TERSE_LABELS[broker_field]
         sts = False
         if value_map:
             if broker_field in value_map:
