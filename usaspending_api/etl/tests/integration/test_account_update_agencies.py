@@ -72,11 +72,11 @@ def data_fixture(db):
     mommy.make("accounts.FederalAccount", pk=3, agency_identifier="345", main_account_code="0333")
     mommy.make("accounts.FederalAccount", pk=4, agency_identifier="345", main_account_code="0444")
 
-    mommy.make("references.FREC", frec_code="2345", associated_cgac="123")
-    mommy.make("references.FREC", frec_code="3456", associated_cgac="234")
-    mommy.make("references.FREC", frec_code="4567", associated_cgac="234")
-    mommy.make("references.FREC", frec_code="5678", associated_cgac="123")
-    mommy.make("references.FREC", frec_code="6789", associated_cgac="234")
+    mommy.make("references.FREC", frec_code="2345", associated_cgac_code="123")
+    mommy.make("references.FREC", frec_code="3456", associated_cgac_code="234")
+    mommy.make("references.FREC", frec_code="4567", associated_cgac_code="234")
+    mommy.make("references.FREC", frec_code="5678", associated_cgac_code="123")
+    mommy.make("references.FREC", frec_code="6789", associated_cgac_code="234")
 
     mommy.make("references.ToptierAgency", pk=1, toptier_code="123")  # CGAC agency
     mommy.make("references.ToptierAgency", pk=2, toptier_code="234")  # Another CGAC agency

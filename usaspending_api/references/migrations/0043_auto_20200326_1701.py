@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.RenameField(
             model_name='frec',
             old_name='associated_cgac_code',
-            new_name='associated_cgac',
+            new_name='associated_cgac_code',
         ),
     ]

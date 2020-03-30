@@ -6,7 +6,7 @@ from usaspending_api.references.constants import DOD_CGAC, DOD_SUBSUMED_CGAC
 # - If agency_id is a valid CGAC toptier agency, map it to toptier agency using the agency_id.
 # - If fr_entity_code is a valid FREC toptier agency, map it to toptier agency using the fr_entity_code.
 # - If agency_id is a shared toptier agency (011, 033, etc), choose the most common funding agency amongst
-#   treasury accounts belonging to the federal account using the associated_cgac.
+#   treasury accounts belonging to the federal account using the associated_cgac_code.
 FEDERAL_ACCOUNT_PARENT_AGENCY_MAPPING = f"""
             select distinct on (taa.agency_id, taa.main_account_code)
                 taa.agency_id as agency_identifier,
@@ -28,7 +28,7 @@ FEDERAL_ACCOUNT_PARENT_AGENCY_MAPPING = f"""
                 left outer join frec on
                     frec.frec_code = taa.fr_entity_code
                 left outer join toptier_agency as aid_association on
-                    aid_association.toptier_code = frec.associated_cgac
+                    aid_association.toptier_code = frec.associated_cgac_code
             group by
                 taa.agency_id,
                 taa.main_account_code,

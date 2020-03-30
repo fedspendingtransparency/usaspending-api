@@ -14,7 +14,7 @@ class FREC(Model):
     # exclusively for mapping treasury and federal accounts to our toptier agencies when the AID of the account
     # is a shared AID (a.k.a. a FREC agency).  I would not recommend using this to convert FREC to CGAC in any
     # other context, but you know your problem/solution better than I do...
-    associated_cgac = TextField(blank=True, null=True)
+    associated_cgac_code = TextField(blank=True, null=True)
 
     class Meta:
         db_table = "frec"
