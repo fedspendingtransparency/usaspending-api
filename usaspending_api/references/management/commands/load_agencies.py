@@ -141,31 +141,31 @@ class Command(mixins.ETLMixin, BaseCommand):
     def _validate_raw_agency(agency):
         messages = []
 
-        row = agency.row_number
-
         if agency.cgac_agency_code is not None and agency.agency_name is None:
-            messages.append(f"Row number {row:,} has a CGAC AGENCY CODE but no AGENCY NAME")
+            messages.append(f"Row number {agency.row_number:,} has a CGAC AGENCY CODE but no AGENCY NAME")
         if agency.frec is not None and agency.frec_entity_description is None:
-            messages.append(f"Row number {row:,} has a FREC but no FREC Entity Description")
+            messages.append(f"Row number {agency.row_number:,} has a FREC but no FREC Entity Description")
         if agency.subtier_code is not None and agency.subtier_name is None:
-            messages.append(f"Row number {row:,} has a SUBTIER CODE but no SUBTIER NAME")
+            messages.append(f"Row number {agency.row_number:,} has a SUBTIER CODE but no SUBTIER NAME")
         if agency.is_frec is True and agency.frec is None:
-            messages.append(f"Row number {row:,} is marked as IS_FREC but has no FREC")
+            messages.append(f"Row number {agency.row_number:,} is marked as IS_FREC but has no FREC")
         if agency.is_frec is not True and agency.cgac_agency_code is None:
-            messages.append(f"Row number {row:,} is not marked as IS_FREC but has no CGAC AGENCY CODE")
+            messages.append(f"Row number {agency.row_number:,} is not marked as IS_FREC but has no CGAC AGENCY CODE")
         if agency.frec_cgac_association is True and agency.frec is None:
-            messages.append(f"Row number {row:,} is marked as FREC CGAC ASSOCIATION but has no FREC")
+            messages.append(f"Row number {agency.row_number:,} is marked as FREC CGAC ASSOCIATION but has no FREC")
         if agency.frec_cgac_association is not True and agency.cgac_agency_code is None:
-            messages.append(f"Row number {row:,} is not marked as FREC CGAC ASSOCIATION but has no CGAC AGENCY CODE")
+            messages.append(
+                f"Row number {agency.row_number:,} is not marked as FREC CGAC ASSOCIATION but has no CGAC AGENCY CODE"
+            )
         if agency.cgac_agency_code and len(agency.cgac_agency_code) != 3:
             messages.append(
-                f"Row number {row:,} has CGAC AGENCY CODE that is not 3 characters long ({agency.cgac_agency_code})"
+                f"Row number {agency.row_number:,} has CGAC AGENCY CODE that is not 3 characters long ({agency.cgac_agency_code})"
             )
         if agency.frec and len(agency.frec) != 4:
-            messages.append(f"Row number {row:,} has FREC that is not 4 characters long ({agency.frec})")
+            messages.append(f"Row number {agency.row_number:,} has FREC that is not 4 characters long ({agency.frec})")
         if agency.subtier_code and len(agency.subtier_code) != 4:
             messages.append(
-                f"Row number {row:,} has SUBTIER CODE that is not 4 characters long ({agency.subtier_code})"
+                f"Row number {agency.row_number:,} has SUBTIER CODE that is not 4 characters long ({agency.subtier_code})"
             )
 
         return messages
@@ -231,62 +231,10 @@ class Command(mixins.ETLMixin, BaseCommand):
             m = "\n".join(messages)
             raise RuntimeError(f"The following {len(messages):,} problem(s) have been found with the agency file:\n{m}")
 
-    @staticmethod
-    def _get_create_temp_table_sql():
-        return f"""
-            drop table if exists {TEMP_TABLE_NAME};
-
-            create temporary table {TEMP_TABLE_NAME} (
-                row_number int,
-                cgac_agency_code text,
-                agency_name text,
-                agency_abbreviation text,
-                frec text,
-                frec_entity_description text,
-                frec_abbreviation text,
-                subtier_code text,
-                subtier_name text,
-                subtier_abbreviation text,
-                toptier_flag boolean,
-                is_frec boolean,
-                frec_cgac_association boolean,
-                user_selectable boolean,
-                mission text,
-                website text,
-                congressional_justification text,
-                icon_filename text
-            );
-        """
-
     def _import_raw_agencies(self):
+        sql = (Path(self.etl_dml_sql_directory) / "insert_into.sql").read_text().format(temp_table=TEMP_TABLE_NAME)
         with get_connection(read_only=False).cursor() as cursor:
-            execute_values(
-                cursor.cursor,
-                f"""
-                    insert into "{TEMP_TABLE_NAME}" (
-                        row_number,
-                        cgac_agency_code,
-                        agency_name,
-                        agency_abbreviation,
-                        frec,
-                        frec_entity_description,
-                        frec_abbreviation,
-                        subtier_code,
-                        subtier_name,
-                        subtier_abbreviation,
-                        toptier_flag,
-                        is_frec,
-                        frec_cgac_association,
-                        user_selectable,
-                        mission,
-                        website,
-                        congressional_justification,
-                        icon_filename
-                    ) values %s
-                """,
-                self.agencies,
-                page_size=len(self.agencies),
-            )
+            execute_values(cursor.cursor, sql, self.agencies, page_size=len(self.agencies))
             return cursor.rowcount
 
     def _perform_load(self):
@@ -312,7 +260,9 @@ class Command(mixins.ETLMixin, BaseCommand):
             self.etl_dml_sql_directory / "toptier_agency_query.sql", temp_table=TEMP_TABLE_NAME
         )
 
-        self._execute_dml_sql(self._get_create_temp_table_sql(), "Create raw agency temp table")
+        self._execute_etl_dml_sql_directory_file(
+            "raw_agency_create_temp_table", "Create raw agency temp table", temp_table=TEMP_TABLE_NAME
+        )
         self._execute_function_and_log(self._read_raw_agencies_csv, "Read raw agencies csv")
         self._execute_function(self._validate_raw_agencies, "Validate raw agencies")
         self._execute_function_and_log(self._import_raw_agencies, "Import raw agencies")

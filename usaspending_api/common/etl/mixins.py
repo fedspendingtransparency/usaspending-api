@@ -29,22 +29,26 @@ class ETLMixin:
         )
         return rows_affected
 
-    def _execute_dml_sql(self, sql: Union[str, Composed], timer_message: Optional[str] = None) -> int:
+    def _execute_dml_sql(
+        self, sql: Union[str, Composed], timer_message: Optional[str] = None, **sql_kwargs: Any
+    ) -> int:
         """ Execute some data manipulation SQL (INSERT, UPDATE, DELETE, etc). """
 
-        return self._log_rows_affected(self._execute_function(execute_dml_sql, timer_message, sql=sql))
+        return self._log_rows_affected(
+            self._execute_function(execute_dml_sql, timer_message, sql=sql.format(**sql_kwargs))
+        )
 
-    def _execute_dml_sql_file(self, file_path: str, timer_message: Optional[str] = None) -> int:
+    def _execute_dml_sql_file(self, file_path: str, timer_message: Optional[str] = None, **sql_kwargs: Any) -> int:
         """
         Read in a SQL file and execute it.  Assumes the file's path has already been
         determined.  If no message is provided, the file named will be logged (if logging
         is enabled). """
 
         file_path = Path(file_path)
-        return self._execute_dml_sql(file_path.read_text(), timer_message or file_path.stem)
+        return self._execute_dml_sql(file_path.read_text(), timer_message or file_path.stem, **sql_kwargs)
 
     def _execute_etl_dml_sql_directory_file(
-        self, file_name_no_extension: str, timer_message: Optional[str] = None
+        self, file_name_no_extension: str, timer_message: Optional[str] = None, **sql_kwargs: Any
     ) -> int:
         """
         Read in a SQL file from the directory pointed to by etl_dml_sql_directory and
@@ -56,7 +60,7 @@ class ETLMixin:
             raise RuntimeError("etl_dml_sql_directory must be defined in subclass.")
 
         file_path = (Path(self.etl_dml_sql_directory) / file_name_no_extension).with_suffix(".sql")
-        return self._execute_dml_sql_file(Path(file_path), timer_message)
+        return self._execute_dml_sql_file(Path(file_path), timer_message, **sql_kwargs)
 
     def _execute_function(
         self, function: Callable, timer_message: Optional[str] = None, *args: Any, **kwargs: Any

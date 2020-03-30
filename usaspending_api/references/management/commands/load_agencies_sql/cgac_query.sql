@@ -4,7 +4,7 @@ select
     max(agency_abbreviation) as agency_abbreviation,
     bool_or(is_frec) as is_frec_agency
 from
-    {temp_table}
+    "{temp_table}"
 where
     agency_name is not null and
     cgac_agency_code is not null

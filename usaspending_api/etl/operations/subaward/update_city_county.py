@@ -1,5 +1,5 @@
-from django.db import connections, DEFAULT_DB_ALIAS
 from usaspending_api.awards.models import Subaward
+from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
 
 
 def update_subaward_city_county(table_name=Subaward._meta.db_table):
@@ -64,7 +64,4 @@ def update_subaward_city_county(table_name=Subaward._meta.db_table):
             )
     """
 
-    connection = connections[DEFAULT_DB_ALIAS]
-    with connection.cursor() as cursor:
-        cursor.execute(sql)
-        return cursor.rowcount
+    return execute_dml_sql(sql)
