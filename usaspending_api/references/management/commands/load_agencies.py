@@ -137,95 +137,10 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         return len(self.agencies)
 
-    @staticmethod
-    def _validate_raw_agency(agency):
-        messages = []
+    def _perform_validations(self):
 
-        if agency.cgac_agency_code is not None and agency.agency_name is None:
-            messages.append(f"Row number {agency.row_number:,} has a CGAC AGENCY CODE but no AGENCY NAME")
-        if agency.frec is not None and agency.frec_entity_description is None:
-            messages.append(f"Row number {agency.row_number:,} has a FREC but no FREC Entity Description")
-        if agency.subtier_code is not None and agency.subtier_name is None:
-            messages.append(f"Row number {agency.row_number:,} has a SUBTIER CODE but no SUBTIER NAME")
-        if agency.is_frec is True and agency.frec is None:
-            messages.append(f"Row number {agency.row_number:,} is marked as IS_FREC but has no FREC")
-        if agency.is_frec is not True and agency.cgac_agency_code is None:
-            messages.append(f"Row number {agency.row_number:,} is not marked as IS_FREC but has no CGAC AGENCY CODE")
-        if agency.frec_cgac_association is True and agency.frec is None:
-            messages.append(f"Row number {agency.row_number:,} is marked as FREC CGAC ASSOCIATION but has no FREC")
-        if agency.frec_cgac_association is not True and agency.cgac_agency_code is None:
-            messages.append(
-                f"Row number {agency.row_number:,} is not marked as FREC CGAC ASSOCIATION but has no CGAC AGENCY CODE"
-            )
-        if agency.cgac_agency_code and len(agency.cgac_agency_code) != 3:
-            messages.append(
-                f"Row number {agency.row_number:,} has CGAC AGENCY CODE that is not 3 characters long ({agency.cgac_agency_code})"
-            )
-        if agency.frec and len(agency.frec) != 4:
-            messages.append(f"Row number {agency.row_number:,} has FREC that is not 4 characters long ({agency.frec})")
-        if agency.subtier_code and len(agency.subtier_code) != 4:
-            messages.append(
-                f"Row number {agency.row_number:,} has SUBTIER CODE that is not 4 characters long ({agency.subtier_code})"
-            )
-
-        return messages
-
-    def _validate_raw_agencies(self):
-
-        messages = []
-        for agency in self.agencies:
-            messages += self._validate_raw_agency(agency)
-
-        if messages:
-            m = "\n".join(messages)
-            raise RuntimeError(f"The following {len(messages):,} problem(s) have been found with the agency file:\n{m}")
-
-    @staticmethod
-    def _perform_post_import_validations():
-        messages = []
-
-        # Ensure CGACs are either all IS_FREC or not.  There may be no CGACs that are only partially IS_FREC.
-        sql = f"""
-            select      cgac_agency_code
-            from        "{TEMP_TABLE_NAME}"
-            group by    cgac_agency_code
-            having      count(distinct is_frec) > 1
-        """
-        results = [row[0] for row in execute_sql(sql, read_only=False)]
-        if results:
-            messages.append(
-                f"The following CGACs have more than one IS_FREC value.  CGACs are either all IS_FREC or "
-                f"all not: {results}"
-            )
-
-        # There may be only one subtier flagged with TOPTIER_FLAG per toptier agency.  TOPTIER_FLAG is
-        # not required, however.
-        sql = f"""
-            select      case when is_frec is true then frec else cgac_agency_code end as toptier_code
-            from        "{TEMP_TABLE_NAME}"
-            where       toptier_flag is true
-            group by    toptier_code
-            having      count(distinct subtier_code) > 1
-        """
-        results = [row[0] for row in execute_sql(sql, read_only=False)]
-        if results:
-            messages.append(
-                f"The following toptiers have more than one subtier marked with the TOPTIER_FLAG: {results}"
-            )
-
-        # FRECs may have only one CGAC association.
-        sql = f"""
-            select      frec
-            from        "{TEMP_TABLE_NAME}"
-            where       frec_cgac_association is true
-            group by    frec
-            having      count(distinct cgac_agency_code) > 1
-        """
-        results = [row[0] for row in execute_sql(sql, read_only=False)]
-        if results:
-            messages.append(
-                f"The following FRECs are associated with more than one CGAC via FREC CGAC ASSOCIATION: {results}"
-            )
+        sql = (Path(self.etl_dml_sql_directory) / "validations.sql").read_text().format(temp_table=TEMP_TABLE_NAME)
+        messages = [result[0] for result in execute_sql(sql, read_only=False)]
 
         if messages:
             m = "\n".join(messages)
@@ -260,13 +175,12 @@ class Command(mixins.ETLMixin, BaseCommand):
             self.etl_dml_sql_directory / "toptier_agency_query.sql", temp_table=TEMP_TABLE_NAME
         )
 
-        self._execute_etl_dml_sql_directory_file(
-            "raw_agency_create_temp_table", "Create raw agency temp table", temp_table=TEMP_TABLE_NAME
-        )
+        path = self._get_sql_directory_file_path("raw_agency_create_temp_table")
+        sql = path.read_text().format(temp_table=TEMP_TABLE_NAME)
+        self._execute_dml_sql(sql, "Create raw agency temp table")
         self._execute_function_and_log(self._read_raw_agencies_csv, "Read raw agencies csv")
-        self._execute_function(self._validate_raw_agencies, "Validate raw agencies")
         self._execute_function_and_log(self._import_raw_agencies, "Import raw agencies")
-        self._execute_function(self._perform_post_import_validations, "Perform post import validations")
+        self._execute_function(self._perform_validations, "Perform validations")
 
         rows_affected = 0
 

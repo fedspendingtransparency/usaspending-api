@@ -29,26 +29,22 @@ class ETLMixin:
         )
         return rows_affected
 
-    def _execute_dml_sql(
-        self, sql: Union[str, Composed], timer_message: Optional[str] = None, **sql_kwargs: Any
-    ) -> int:
+    def _execute_dml_sql(self, sql: Union[str, Composed], timer_message: Optional[str] = None) -> int:
         """ Execute some data manipulation SQL (INSERT, UPDATE, DELETE, etc). """
 
-        return self._log_rows_affected(
-            self._execute_function(execute_dml_sql, timer_message, sql=sql.format(**sql_kwargs))
-        )
+        return self._log_rows_affected(self._execute_function(execute_dml_sql, timer_message, sql=sql))
 
-    def _execute_dml_sql_file(self, file_path: str, timer_message: Optional[str] = None, **sql_kwargs: Any) -> int:
+    def _execute_dml_sql_file(self, file_path: [str, Path], timer_message: Optional[str] = None) -> int:
         """
         Read in a SQL file and execute it.  Assumes the file's path has already been
         determined.  If no message is provided, the file named will be logged (if logging
         is enabled). """
 
         file_path = Path(file_path)
-        return self._execute_dml_sql(file_path.read_text(), timer_message or file_path.stem, **sql_kwargs)
+        return self._execute_dml_sql(file_path.read_text(), timer_message or file_path.stem)
 
     def _execute_etl_dml_sql_directory_file(
-        self, file_name_no_extension: str, timer_message: Optional[str] = None, **sql_kwargs: Any
+        self, file_name_no_extension: str, timer_message: Optional[str] = None
     ) -> int:
         """
         Read in a SQL file from the directory pointed to by etl_dml_sql_directory and
@@ -59,8 +55,8 @@ class ETLMixin:
         if self.etl_dml_sql_directory is None:
             raise RuntimeError("etl_dml_sql_directory must be defined in subclass.")
 
-        file_path = (Path(self.etl_dml_sql_directory) / file_name_no_extension).with_suffix(".sql")
-        return self._execute_dml_sql_file(Path(file_path), timer_message, **sql_kwargs)
+        file_path = self._get_sql_directory_file_path(file_name_no_extension)
+        return self._execute_dml_sql_file(file_path, timer_message)
 
     def _execute_function(
         self, function: Callable, timer_message: Optional[str] = None, *args: Any, **kwargs: Any
@@ -79,6 +75,9 @@ class ETLMixin:
         """ Same as _execute_function but logs rows affected much like a DML SQL statement. """
 
         return self._log_rows_affected(self._execute_function(function, timer_message, *args, **kwargs))
+
+    def _get_sql_directory_file_path(self, file_name_no_extension: str) -> Path:
+        return (Path(self.etl_dml_sql_directory) / file_name_no_extension).with_suffix(".sql")
 
     def _log_rows_affected(self, row_count: int) -> int:
         """ If we have something we can log and a way to log it, log it. """
