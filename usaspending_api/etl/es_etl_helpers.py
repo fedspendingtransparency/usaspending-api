@@ -40,6 +40,7 @@ VIEW_COLUMNS = [
     "product_or_service_description",
     "naics_code",
     "naics_description",
+    "naics_agg_key",
     "type_description",
     "award_category",
     "recipient_unique_id",

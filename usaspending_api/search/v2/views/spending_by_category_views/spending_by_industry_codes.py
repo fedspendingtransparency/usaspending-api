@@ -70,7 +70,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                 row["name"] = fetch_psc_description_by_code(row["code"])
             elif self.industry_code_type == IndustryCodeType.NAICS:
                 row["id"] = None
-                row["name"] = fetch_naics_description_from_code(row["code"], row["name"])
+                row["name"] = fetch_naics_description_from_code(row["code"])
             row.pop(self.industry_code_type.value)
 
         return query_results
@@ -85,3 +85,14 @@ class CfdaViewSet(AbstractIndustryCodeViewSet):
 
     industry_code_type = IndustryCodeType.CFDA
     category = Category(name="cfda", agg_key="cfda_agg_key")
+
+
+class NAICSViewSet(AbstractIndustryCodeViewSet):
+    """
+    This route takes award filters and returns spending by NAICS.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/naics.md"
+
+    industry_code_type = IndustryCodeType.NAICS
+    category = Category(name="naics", agg_key="naics_agg_key")
