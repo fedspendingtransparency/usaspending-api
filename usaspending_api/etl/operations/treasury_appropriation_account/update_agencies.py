@@ -15,8 +15,8 @@ def update_treasury_appropriation_account_agencies():
     For AID:
         - At the request of the PO, in order to reduce the amount of one-off logic caused by several edge cases
           we bucket all treasury accounts in the same bucket as their "parent" federal account.  This will also
-          makes the filter tree control experience better as we should no longer end up with some outlying
-          treasury accounts not falling under their parent federal account in the tree control.
+          make the filter tree control experience better as we should no longer end up with some outlying
+          treasury accounts not falling under their apparent parent federal account in the tree control.
         - Please look at the FEDERAL_ACCOUNT_PARENT_AGENCY_MAPPING documentation for more details.
     """
     sql = f"""
