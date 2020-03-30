@@ -10,6 +10,13 @@ This endpoint supports the advanced search page and allow for complex filtering 
 This endpoint takes award filters, and returns aggregated obligation amounts in different geographic areas.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `filters` (required, FilterObject)
         + `subawards`: false (optional, boolean)
@@ -30,13 +37,13 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
             - `MD`
             - `VA`
     + Body
-        
-            { 
-                "filters": { 
-                    "keywords": ["Filter is required"] 
+
+            {
+                "filters": {
+                    "keywords": ["Filter is required"]
                 },
                 "scope": "place_of_performance",
-                "geo_layer": "state" 
+                "geo_layer": "state"
             }
 
 
@@ -126,8 +133,8 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, array[string])
-+ `exclude`: [`3313`] (optional, array[string])
++ `require`: `33` (optional, array[string])
++ `exclude`: `3333` (optional, array[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)
