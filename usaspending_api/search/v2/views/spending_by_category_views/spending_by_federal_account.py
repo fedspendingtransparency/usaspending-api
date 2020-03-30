@@ -4,16 +4,18 @@ from decimal import Decimal
 from enum import Enum
 from typing import List
 
-from django.db.models import QuerySet, F
+from django.db.models import QuerySet
 
-from usaspending_api.search.helpers.spending_by_category_helpers import fetch_agency_tier_id_by_agency
+
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
     AbstractSpendingByCategoryViewSet,
 )
 
+
 class AccountType(Enum):
     FEDERAL_ACCOUNT = "federal_account"
+
 
 class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta):
     """
@@ -35,7 +37,7 @@ class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMet
                         "code": info.get("federal_account_code") or None,
                         "name": info.get("account_title"),
                     }
-            )
+                )
 
         return results
 
