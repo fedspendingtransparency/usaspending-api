@@ -36,7 +36,8 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
     FundingAgencyViewSet,
     FundingSubagencyViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet, \
+    PSCViewSet
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import CountyViewSet
 
 logger = logging.getLogger(__name__)
@@ -117,6 +118,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             response = FundingAgencyViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "funding_subagency":
             response = FundingSubagencyViewSet().perform_search(validated_payload, original_filters)
+        elif validated_payload["category"] == "psc":
+            response = PSCViewSet().perform_search(validated_payload, original_filters)
         else:
             response = BusinessLogic(validated_payload, original_filters).results()
 
