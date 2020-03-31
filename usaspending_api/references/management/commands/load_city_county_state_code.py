@@ -3,7 +3,7 @@ import zipfile
 
 from contextlib import contextmanager
 from django.core.management.base import BaseCommand
-from django.db import transaction, connections, DEFAULT_DB_ALIAS
+from django.db import connection, transaction
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from usaspending_api.common.etl import ETLTable, ETLTemporaryTable, operations
@@ -198,7 +198,6 @@ class Command(BaseCommand):
             f"(format csv, header, delimiter '|')"
         )
         with Timer("Importing file to staging table"):
-            connection = connections[DEFAULT_DB_ALIAS]
             with connection.cursor() as cursor:
                 with open(self.working_file, encoding="utf-8-sig") as csv_file:
                     cursor.cursor.copy_expert(import_command, csv_file, size=10485760)  # 10MB
