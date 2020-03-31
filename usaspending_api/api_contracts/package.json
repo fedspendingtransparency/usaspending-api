@@ -8,7 +8,7 @@
     "docs": "node ./scripts/docs/generator.js",
     "schema": "node ./scripts/schema/schema.js",
     "provider": "./node_modules/.bin/dredd ./contracts/**/*.md https://dev-api.usaspending.gov",
-    "mock": "node ./scripts/mock/drakov.js"
+    "mock": "node_modules/.bin/drakov -f './contracts/**/*.md' --autoOptions -p 5000 --delay 250 --watch"
   },
   "author": "",
   "license": "ISC",
