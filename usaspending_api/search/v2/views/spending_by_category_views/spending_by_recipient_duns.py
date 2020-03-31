@@ -14,6 +14,12 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_cate
 
 
 class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
+    """
+    This route takes award filters and returns spending by Recipient DUNS.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/recipient_duns.md"
+
     category = Category(name="recipient_duns", agg_key="recipient_agg_key")
 
     @staticmethod
