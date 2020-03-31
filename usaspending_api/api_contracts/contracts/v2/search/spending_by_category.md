@@ -10,6 +10,13 @@ This endpoint supports the advanced search page and allow for complex filtering 
 This endpoint returns a list of the top results of specific categories sorted by the total amounts in descending order.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `category`: `awarding_agency` (required, enum[string])
             + Members
@@ -34,11 +41,11 @@ This endpoint returns a list of the top results of specific categories sorted by
         + `page`: 1 (optional, number)
             The page of results to return based on the limit
     + Body
-        
+
             {
                 "category": "awarding_agency",
-                "filters": { 
-                    "keywords": ["Filter is required"] 
+                "filters": {
+                    "keywords": ["Filter is required"]
                 }
             }
 
@@ -137,8 +144,8 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, list[string])
-+ `exclude`: [`3313`] (optional, list[string])
++ `require`: `33` (optional, array[string])
++ `exclude`: `3333` (optional, array[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

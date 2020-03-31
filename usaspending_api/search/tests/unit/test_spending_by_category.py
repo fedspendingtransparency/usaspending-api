@@ -421,7 +421,7 @@ def geo_test_data(db):
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=1,
-        place_of_perform_country_n=None,
+        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
         place_of_performance_state="XY",
         place_of_perform_county_co="04",
@@ -432,7 +432,7 @@ def geo_test_data(db):
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=2,
-        place_of_perform_country_n=None,
+        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
         place_of_performance_state="XY",
         place_of_perform_county_co="04",
@@ -443,7 +443,7 @@ def geo_test_data(db):
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=3,
-        place_of_perform_country_n=None,
+        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
         place_of_performance_state="XY",
         place_of_perform_county_co="01",
@@ -454,7 +454,7 @@ def geo_test_data(db):
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=4,
-        place_of_perform_country_n=None,
+        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
         place_of_performance_state="XY",
         place_of_perform_county_co="01",

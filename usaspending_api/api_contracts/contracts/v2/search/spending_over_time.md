@@ -10,6 +10,13 @@ This endpoint supports the advanced search page and allow for complex filtering 
 This endpoint returns a list of aggregated award amounts grouped by time period in ascending order (earliest to most recent).
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `group`: `quarter` (required, enum[string])
             + Members
@@ -21,11 +28,11 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
             True to group by sub-awards instead of prime awards. Defaults to false.
             + Default: false
     + Body
-        
-            { 
-                "group": "fiscal_year", 
-                "filters": { 
-                    "keywords": ["Filter is required"] 
+
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "keywords": ["Filter is required"]
                 }
             }
 
@@ -125,8 +132,8 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, list[string])
-+ `exclude`: [`3313`] (optional, list[string])
++ `require`: `33` (optional, array[string])
++ `exclude`: `3333` (optional, array[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)
