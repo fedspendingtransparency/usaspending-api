@@ -1,9 +1,10 @@
 select
     cgac_agency_code as cgac_code,
     max(agency_name) as agency_name,
-    max(agency_abbreviation) as agency_abbreviation
+    max(agency_abbreviation) as agency_abbreviation,
+    bool_or(is_frec) as is_frec_agency
 from
-    temp_load_agencies_raw_agency
+    "{temp_table}"
 where
     agency_name is not null and
     cgac_agency_code is not null
