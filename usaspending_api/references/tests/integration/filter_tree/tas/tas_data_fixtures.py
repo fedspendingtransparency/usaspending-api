@@ -40,9 +40,21 @@ def multiple_federal_accounts(db, basic_agency):
 
 
 @pytest.fixture
+def multiple_tas(db, basic_agency):
+    _matching_tas(2, 1)
+    _matching_tas(3, 1)
+    _matching_tas(4, 1)
+
+
+@pytest.fixture
 def agency_with_unsupported_fa(db):
     _setup_agency(1)
     _setup_fa(1, 1)
+
+
+@pytest.fixture
+def fa_with_unsupported_tas(db, agency_with_unsupported_fa):
+    _setup_tas(1, 1)
 
 
 def _complete_agency(id):

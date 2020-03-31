@@ -5,6 +5,8 @@ from usaspending_api.references.tests.integration.filter_tree.tas.tas_data_fixtu
     unsupported_agencies,
     multiple_federal_accounts,
     agency_with_unsupported_fa,
+    multiple_tas,
+    fa_with_unsupported_tas,
 )
 
 
@@ -15,4 +17,6 @@ __all__ = [
     "unsupported_agencies",
     "multiple_federal_accounts",
     "agency_with_unsupported_fa",
+    "multiple_tas",
+    "fa_with_unsupported_tas",
 ]
