@@ -176,6 +176,8 @@ def awards_and_transactions(db):
         place_of_performance_state="WA",
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
+        product_or_service_code="1005",
+        product_or_service_co_desc="PSC 1",
     )
     mommy.make(
         "awards.TransactionFPDS",
@@ -184,6 +186,8 @@ def awards_and_transactions(db):
         place_of_performance_state="SC",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
+        product_or_service_code="M123",
+        product_or_service_co_desc="PSC 2",
     )
     mommy.make(
         "awards.TransactionFPDS",
@@ -197,3 +201,7 @@ def awards_and_transactions(db):
     # References CFDA
     mommy.make("references.Cfda", id=100, program_number="10.100", program_title="CFDA 1")
     mommy.make("references.Cfda", id=200, program_number="20.200", program_title="CFDA 2")
+
+    # PSC
+    mommy.make("references.PSC", code="1005", description="PSC 1")
+    mommy.make("references.PSC", code="M123", description="PSC 2")
