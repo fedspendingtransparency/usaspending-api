@@ -264,13 +264,13 @@ def matview_search_filter(filters, model, for_downloads=False):
                         "NOT IMPLEMENTED: postgres endpoint does not currently support excluded naics!"
                     )
 
+            else:
+                raise InvalidParameterException("naics_codes must be an array or object")
+
             if [value for value in require if len(str(value)) not in [2, 4, 6]]:
                 raise InvalidParameterException(
                     "naics code filtering only supported for codes with lengths of 2, 4, and 6"
                 )
-
-            else:
-                raise InvalidParameterException("naics_codes must be an array or object")
 
             regex = f"^({'|'.join([str(elem) for elem in require])}).*"
             queryset = queryset.filter(naics_code__regex=regex)
