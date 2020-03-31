@@ -1,7 +1,6 @@
-drop table if exists temp_load_agencies_raw_agency;
+drop table if exists "{temp_table}";
 
-
-create temporary table temp_load_agencies_raw_agency (
+create temporary table "{temp_table}" (
     row_number int,
     cgac_agency_code text,
     agency_name text,
@@ -14,6 +13,7 @@ create temporary table temp_load_agencies_raw_agency (
     subtier_abbreviation text,
     toptier_flag boolean,
     is_frec boolean,
+    frec_cgac_association boolean,
     user_selectable boolean,
     mission text,
     website text,

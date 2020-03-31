@@ -1,0 +1,20 @@
+insert into "{temp_table}" (
+    row_number,
+    cgac_agency_code,
+    agency_name,
+    agency_abbreviation,
+    frec,
+    frec_entity_description,
+    frec_abbreviation,
+    subtier_code,
+    subtier_name,
+    subtier_abbreviation,
+    toptier_flag,
+    is_frec,
+    frec_cgac_association,
+    user_selectable,
+    mission,
+    website,
+    congressional_justification,
+    icon_filename
+) values %s
