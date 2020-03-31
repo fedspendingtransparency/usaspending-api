@@ -36,8 +36,10 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
     FundingAgencyViewSet,
     FundingSubagencyViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet, \
-    PSCViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import (
+    CfdaViewSet,
+    PSCViewSet,
+)
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import CountyViewSet
 
 logger = logging.getLogger(__name__)
