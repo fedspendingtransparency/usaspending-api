@@ -1,9 +1,6 @@
 DO $$ BEGIN RAISE NOTICE '100 Loading recipient_lookup and cleaning up'; END $$;
 
-VACUUM ANALYZE public.temporary_restock_recipient_lookup;
-
 DO $$ BEGIN RAISE NOTICE 'Removing stale records from recipient_lookup'; END $$;
-
 BEGIN;
 WITH removed_recipients AS (
   SELECT
