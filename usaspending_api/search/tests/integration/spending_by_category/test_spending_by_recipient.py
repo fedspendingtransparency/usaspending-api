@@ -242,6 +242,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
+            {"amount": 5000000.0, "code": None, "name": "MULTIPLE RECIPIENTS", "recipient_id": None},
             {"amount": 550000.0, "code": "123456789", "name": None, "recipient_id": None},
             {"amount": 5000.0, "code": "096354360", "name": "MULTIPLE RECIPIENTS", "recipient_id": None},
             {
