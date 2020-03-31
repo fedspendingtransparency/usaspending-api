@@ -85,3 +85,14 @@ class CfdaViewSet(AbstractIndustryCodeViewSet):
 
     industry_code_type = IndustryCodeType.CFDA
     category = Category(name="cfda", agg_key="cfda_agg_key")
+
+
+class PSCViewSet(AbstractIndustryCodeViewSet):
+    """
+    This route takes award filters and returns spending by PSC.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/psc.md"
+
+    industry_code_type = IndustryCodeType.PSC
+    category = Category(name="psc", agg_key="psc_agg_key")

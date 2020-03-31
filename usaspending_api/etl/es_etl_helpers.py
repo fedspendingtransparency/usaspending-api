@@ -38,6 +38,7 @@ VIEW_COLUMNS = [
     "award_description",
     "product_or_service_code",
     "product_or_service_description",
+    "psc_agg_key",
     "naics_code",
     "naics_description",
     "type_description",
