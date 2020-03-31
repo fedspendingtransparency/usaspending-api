@@ -184,6 +184,8 @@ def awards_and_transactions(db):
         place_of_performance_state="SC",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
+        naics="111110",
+        naics_description="NAICS 1",
     )
     mommy.make(
         "awards.TransactionFPDS",
@@ -192,6 +194,8 @@ def awards_and_transactions(db):
         place_of_performance_state="SC",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
+        naics="222220",
+        naics_description="NAICS 2",
     )
 
     # References CFDA
