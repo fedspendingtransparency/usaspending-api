@@ -9,20 +9,37 @@ DROP INDEX IF EXISTS public.idx_recipient_profile_uniq_new;
 DO $$ BEGIN RAISE NOTICE 'Step 1: Creating temp materialized view'; END $$;
 CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
   SELECT
-    recipient_hash,
-    recipient_unique_id,
-    parent_recipient_unique_id,
-    COALESCE(award_category, 'contract') AS award_category,
+    MD5(UPPER(
+      CASE
+        WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
+        ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal, '')) END
+    ))::uuid AS recipient_hash,
+    COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
+    COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
     CASE
-      WHEN parent_recipient_unique_id IS NOT NULL THEN 'C'
+      WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
+      WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
+      WHEN tn.type IN ('06', '10')              THEN 'direct payment'
+      WHEN tn.type IN ('07', '08')              THEN 'loans'
+      WHEN tn.type IN ('09', '11')              THEN 'other'     -- collapsing insurance into other
+      WHEN tn.type LIKE 'IDV%'                  THEN 'contract'  -- collapsing idv into contract
+      ELSE NULL
+    END AS award_category,
+    CASE
+      WHEN COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) IS NOT NULL THEN 'C'
     ELSE 'R' END AS recipient_level,
-    action_date,
-    generated_pragmatic_obligation
+    tn.action_date,
+    COALESCE(CASE
+        WHEN tn.type IN('07','08') THEN tn.original_loan_subsidy_cost
+        ELSE tn.federal_action_obligation
+      END, 0)::NUMERIC(23, 2) AS generated_pragmatic_obligation
   FROM
-    universal_transaction_matview
+    transaction_normalized tn
+  LEFT OUTER JOIN transaction_fpds as fpds ON tn.id = fpds.transaction_id
+  LEFT OUTER JOIN transaction_fabs as fabs ON tn.id = fabs.transaction_id
   WHERE
-    action_date >= '2007-10-01'
-    AND award_category IS NOT NULL
+    tn.action_date >= '2007-10-01'
+    AND tn.type IS NOT NULL
 );
 
 CREATE INDEX idx_recipients_in_transactions_view ON public.temporary_recipients_from_transactions_view USING BTREE(recipient_hash, recipient_level);

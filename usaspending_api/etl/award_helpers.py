@@ -29,8 +29,8 @@ txn_latest AS (
     CASE
       WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
       WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
-      WHEN tn.type in ('06', '10')              THEN 'direct payment'
-      WHEN tn.type in ('07', '08')              THEN 'loans'
+      WHEN tn.type IN ('06', '10')              THEN 'direct payment'
+      WHEN tn.type IN ('07', '08')              THEN 'loans'
       WHEN tn.type = '09'                       THEN 'insurance'
       WHEN tn.type = '11'                       THEN 'other'
       WHEN tn.type LIKE 'IDV%%'                 THEN 'idv'
