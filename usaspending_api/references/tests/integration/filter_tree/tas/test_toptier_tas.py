@@ -50,9 +50,8 @@ def test_default_depth(client, cfo_agencies):
 def test_positive_depth(client, cfo_agencies):
     resp = _call_and_expect_200(client, base_query + "?depth=1")
     assert len(resp.json()["results"]) == 5  # length of aribitrary_cfo_cgac_sample from fixture class
-    assert (
-        len([elem["children"][0] for elem in resp.json()["results"]]) == 5
-    )  # all of these should have one FA under them
+    # all of these should have one FA under them
+    assert len([elem["children"][0] for elem in resp.json()["results"]]) == 5
 
 
 def _call_and_expect_200(client, url):

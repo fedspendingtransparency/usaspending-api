@@ -29,25 +29,34 @@ def non_cfo_agencies(db):
 def unsupported_agencies(db):
     for i in range(101, 200):
         if str(i).zfill(3) not in CFO_CGACS:
-            _unsupported_agency(i)
+            _setup_agency(i)
+
+
+@pytest.fixture
+def multiple_federal_accounts(db, basic_agency):
+    _complete_fa(2, 1)
+    _complete_fa(3, 1)
+    _complete_fa(4, 1)
+
+
+@pytest.fixture
+def agency_with_unsupported_fa(db):
+    _setup_agency(1)
+    _setup_fa(1, 1)
 
 
 def _complete_agency(id):
     _setup_agency(id)
-    _complete_fa(id)
+    _complete_fa(id, id)
 
 
-def _unsupported_agency(id):
-    _setup_agency(id)
+def _complete_fa(id, agency):
+    _setup_fa(id, agency)
+    _matching_tas(id, id)
 
 
-def _complete_fa(id):
-    _setup_fa(id, id)
-    _matching_tas(id)
-
-
-def _matching_tas(id):
-    _setup_tas(id, id)
+def _matching_tas(id, fa):
+    _setup_tas(id, fa)
     _setup_faba(id)
 
 
