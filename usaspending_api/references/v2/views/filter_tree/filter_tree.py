@@ -23,24 +23,23 @@ class Node:
 
 
 class FilterTree(metaclass=ABCMeta):
-    def search(self, tier1, tier2, tier3, populate_children) -> list:
+    def search(self, tier1, tier2, tier3, child_layers) -> list:
         if tier3:
             return [
-                self.construct_node_from_raw(3, [tier1, tier2, tier3], data, populate_children)
+                self.construct_node_from_raw(3, [tier1, tier2, tier3], data, child_layers)
                 for data in self.tier_three_search(tier3)
             ]
         elif tier2:
             return [
-                self.construct_node_from_raw(2, [tier1, tier2], data, populate_children)
+                self.construct_node_from_raw(2, [tier1, tier2], data, child_layers)
                 for data in self.tier_two_search(tier2)
             ]
         elif tier1:
             return [
-                self.construct_node_from_raw(1, [tier1], data, populate_children)
-                for data in self.tier_one_search(tier1)
+                self.construct_node_from_raw(1, [tier1], data, child_layers) for data in self.tier_one_search(tier1)
             ]
         else:
-            return [self.construct_node_from_raw(0, [], data, populate_children) for data in self.toptier_search()]
+            return [self.construct_node_from_raw(0, [], data, child_layers) for data in self.toptier_search()]
 
     @abstractmethod
     def toptier_search(self):

@@ -43,11 +43,11 @@ class TASFilterTree(FilterTree):
             has_faba=Exists(FinancialAccountsByAwards.objects.filter(treasury_account=OuterRef("pk")).values("pk"))
         ).filter(has_faba=True, tas_rendering_label=tas_code)
 
-    def construct_node_from_raw(self, tier: int, ancestors: list, data, populate_children) -> Node:
+    def construct_node_from_raw(self, tier: int, ancestors: list, data, child_layers) -> Node:
         if tier == 0:  # A tier zero search is returning an agency dictionary
-            return self._generate_agency_node(ancestors, data, populate_children)
+            return self._generate_agency_node(ancestors, data, child_layers)
         if tier == 1:  # A tier one search is returning a FederalAccount object
-            return self._generate_federal_account_node(ancestors, data, populate_children)
+            return self._generate_federal_account_node(ancestors, data, child_layers)
         if tier == 2 or tier == 3:  # A tier two or three search will be returning a TreasuryAppropriationAccount object
             return Node(
                 id=data.tas_rendering_label,
@@ -57,13 +57,11 @@ class TASFilterTree(FilterTree):
                 children=None,
             )
 
-    def _generate_agency_node(self, ancestors, data, populate_children):
-        if populate_children:
+    def _generate_agency_node(self, ancestors, data, child_layers):
+        if child_layers:
             raw_children = self.tier_one_search(data["toptier_code"])
             generated_children = [
-                self.construct_node_from_raw(
-                    1, ancestors + [data["toptier_code"]], elem, populate_children - 1
-                ).to_JSON()
+                self.construct_node_from_raw(1, ancestors + [data["toptier_code"]], elem, child_layers - 1).to_JSON()
                 for elem in raw_children
             ]
             count = len(generated_children)
@@ -79,12 +77,12 @@ class TASFilterTree(FilterTree):
             children=generated_children,
         )
 
-    def _generate_federal_account_node(self, ancestors, data, populate_children):
-        if populate_children:
+    def _generate_federal_account_node(self, ancestors, data, child_layers):
+        if child_layers:
             raw_children = self.tier_two_search(data.federal_account_code)
             generated_children = [
                 self.construct_node_from_raw(
-                    2, ancestors + [data.federal_account_code], elem, populate_children - 1
+                    2, ancestors + [data.federal_account_code], elem, child_layers - 1
                 ).to_JSON()
                 for elem in raw_children
             ]
