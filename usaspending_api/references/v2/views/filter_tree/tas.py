@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.references.v2.views.filter_trees.tas_filter_tree import TASFilterTree
+from usaspending_api.references.v2.views.filter_tree.tas_filter_tree import TASFilterTree
 
 
 class TASViewSet(APIView):

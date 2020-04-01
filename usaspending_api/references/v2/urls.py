@@ -1,7 +1,7 @@
 from django.conf.urls import url
 
 from usaspending_api.references.v2.views import agency, toptier_agencies, data_dictionary, glossary
-from usaspending_api.references.v2.views.filter_trees import naics, tas
+from usaspending_api.references.v2.views.filter_tree import naics, tas
 
 urlpatterns = [
     url(r"^agency/(?P<pk>[0-9]+)/$", agency.AgencyViewSet.as_view()),

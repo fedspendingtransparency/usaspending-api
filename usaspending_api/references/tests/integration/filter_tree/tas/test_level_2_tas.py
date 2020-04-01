@@ -12,6 +12,18 @@ def test_one_tas(client, basic_agency):
     }
 
 
+# Can the endpoint correctly populate an array?
+def test_multiple_tas(client, multiple_tas):
+    resp = _call_and_expect_200(client, common_query)
+    assert len(resp.json()["results"]) == 4
+
+
+# Does the endpoint only return TAS will file D data?
+def test_unsupported_tas(client, fa_with_unsupported_tas):
+    resp = _call_and_expect_200(client, common_query)
+    assert len(resp.json()["results"]) == 0
+
+
 def _call_and_expect_200(client, url):
     resp = client.get(url)
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"

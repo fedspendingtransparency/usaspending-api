@@ -1,6 +1,7 @@
 from rest_framework import status
 
-common_query = "/api/v2/references/filter_tree/tas/001/?depth=0"
+base_query = "/api/v2/references/filter_tree/tas/001/"
+common_query = base_query + "?depth=0"
 
 
 # Can the endpoint successfully create a search tree node?
@@ -9,6 +10,26 @@ def test_one_fa(client, basic_agency):
     assert resp.json() == {
         "results": [{"id": "001", "ancestors": ["001"], "description": "Fed Account 001", "count": 0, "children": None}]
     }
+
+
+# Can the endpoint correctly populate an array?
+def test_multiple_fa(client, multiple_federal_accounts):
+    resp = _call_and_expect_200(client, common_query)
+    assert len(resp.json()["results"]) == 4
+
+
+# Does the endpoint only return federal accounts with file D data?
+def test_unsupported_fa(client, agency_with_unsupported_fa):
+    resp = _call_and_expect_200(client, common_query)
+    assert len(resp.json()["results"]) == 0
+
+
+# Does the endpoint handle depth greater than zero?
+def test_positive_depth(client, multiple_federal_accounts):
+    resp = _call_and_expect_200(client, base_query + "?depth=1")
+    assert len(resp.json()["results"]) == 4
+    # all of these should have one TAS under them
+    assert len([elem["children"][0] for elem in resp.json()["results"]]) == 4
 
 
 def _call_and_expect_200(client, url):
