@@ -1,4 +1,4 @@
-from usaspending_api.references.v2.views.filter_trees.filter_tree import FilterTree, Node
+from usaspending_api.references.v2.views.filter_tree.filter_tree import FilterTree, Node
 
 
 class TestFilterTree(FilterTree):
