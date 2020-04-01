@@ -7,11 +7,25 @@ Restores selected filter criteria, based on URL hash. Supports the advanced sear
 
 ## POST
 
-Restore Filters From URL Hash Data 
+Restore Filters From URL Hash Data
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
-        + `hash` : `0e7d2ce3bb0885ac877872bb44053a84` (required, string)
+        + `hash` (required, string)
+            + Default: `5703c297b902ac3b76088c5c275b53f9`
+
+    + Body
+
+            {
+                "hash": "5703c297b902ac3b76088c5c275b53f9"
+            }
 
 + Response 200 (application/json)
     + Attributes
@@ -46,28 +60,30 @@ Restore Filters From URL Hash Data
             {
                 "filter": {
                     "filters": {
-                        "awardAmounts": {},
-                        "awardType": [],
-                        "extentCompeted": [],
                         "keyword": {},
-                        "locationDomesticForeign": "all",
-                        "pricingType": [],
-                        "recipientDomesticForeign": "all",
-                        "recipientType": [],
-                        "selectedAwardIDs": {},
-                        "selectedAwardingAgencies": {},
-                        "selectedCFDA": {},
-                        "selectedFundingAgencies": {},
-                        "selectedLocations": {},
-                        "selectedNAICS": {},
-                        "selectedPSC": {},
-                        "selectedRecipientLocations": {},
-                        "selectedRecipients": [],
                         "setAside": [],
+                        "awardType": [],
+                        "pricingType": [],
+                        "selectedPSC": {},
+                        "awardAmounts": {},
+                        "selectedCFDA": {},
+                        "timePeriodFY": [
+                            "2019"
+                        ],
+                        "recipientType": [],
+                        "selectedNAICS": {},
                         "timePeriodEnd": null,
-                        "timePeriodFY": ["2019"],
+                        "extentCompeted": [],
+                        "timePeriodType": "fy",
                         "timePeriodStart": null,
-                        "timePeriodType": "fy"
+                        "selectedAwardIDs": {},
+                        "selectedLocations": {},
+                        "selectedRecipients": [],
+                        "locationDomesticForeign": "all",
+                        "selectedFundingAgencies": {},
+                        "recipientDomesticForeign": "all",
+                        "selectedAwardingAgencies": {},
+                        "selectedRecipientLocations": {}
                     },
                     "version": "2017-11-21"
                 }

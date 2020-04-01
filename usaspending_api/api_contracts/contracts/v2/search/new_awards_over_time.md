@@ -11,17 +11,26 @@ This endpoint is used to power USAspending.gov's recipient profile pages. This d
 This endpoint returns the count of new awards grouped by time period in ascending order (earliest to most recent).
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
-        + group: `quarter` (required, enum[string])
+        + group (required, enum[string])
             + Members
                 + `fiscal_year`
                 + `quarter`
                 + `month`
+            + Default
+                + `quarter`
         + `filters` (required, TimeFilterObject)
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `group`: `quarter` (required, enum[string])
+        + `group` (required, enum[string])
            + Members
                 + `fiscal_year`
                 + `quarter`

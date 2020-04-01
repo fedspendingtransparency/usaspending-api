@@ -10,8 +10,15 @@ This endpoint supports the advanced search page and allow for complex filtering 
 This endpoint returns a list of the top results of CFDA sorted by the total amounts in descending order.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             The filters to find with said category
         + `limit`: 5 (optional, number)
             The number of results to include per page
@@ -74,7 +81,7 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
 + `hasNext` (required, boolean)
 
 ## Filter Objects
-### FilterObject (object)
+### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])

@@ -7,9 +7,15 @@ This endpoint powers the USAspending.gov Allocation Transfer Agency Identifier (
 
 ## POST
 
-List of potential Allocation Transfer Agency Identifiers 
+List of potential Allocation Transfer Agency Identifiers
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
 
     + Attributes (object)
         + `filters` (required, ComponentFilters)

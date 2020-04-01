@@ -10,8 +10,15 @@ This endpoint supports the advanced search page and allow for complex filtering 
 This endpoint returns a list of the top results of specific categories sorted by the total amounts in descending order.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
-        + `category`: `awarding_agency` (required, enum[string])
+        + `category` (required, enum[string])
             + Members
                 + `awarding_agency`
                 + `awarding_subagency`
@@ -27,26 +34,26 @@ This endpoint returns a list of the top results of specific categories sorted by
                 + `federal_account`
                 + `country`
                 + `state_territory`
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             The filters to find with said category
-        + `limit`: 5 (optional, number)
+        + `limit` (optional, number)
             The number of results to include per page
-        + `page`: 1 (optional, number)
+        + `page` (optional, number)
             The page of results to return based on the limit
     + Body
-        
+
             {
                 "category": "awarding_agency",
-                "filters": { 
-                    "keywords": ["Filter is required"] 
+                "filters": {
+                    "keywords": ["Filter is required"]
                 }
             }
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `awarding_agency` (required, string)
+        + `category` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
-        + `limit`: 10 (required, number)
+        + `limit` (required, number)
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -68,8 +75,8 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `hasNext` (required, boolean)
 
 ## Filter Objects
-### FilterObject (object)
-+ `keywords` : `transport` (optional, array[string])
+### AdvancedFilterObject (object)
++ `keywords` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members
@@ -77,7 +84,7 @@ This endpoint returns a list of the top results of specific categories sorted by
         + `foreign`
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
-+ `recipient_search_text`: `Hampton` (optional, array[string])
++ `recipient_search_text` (optional, array[string])
 + `recipient_id` (optional, string)
     A unique identifier for the recipient which includes the recipient hash and level.
 + `recipient_scope` (optional, enum[string])
@@ -85,24 +92,24 @@ This endpoint returns a list of the top results of specific categories sorted by
         + `domestic`
         + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
-+ `recipient_type_names`: `category_business` (optional, array[string])
++ `recipient_type_names` (optional, array[string])
 + `award_type_codes` (optional, FilterObjectAwardTypes)
-+ `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
++ `award_ids` (optional, array[string])
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
-+ `program_numbers`: `10.331` (optional, array[string])
++ `program_numbers` (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
-+ `psc_codes`: `8940`, `8910` (optional, array[string])
-+ `contract_pricing_type_codes`: `J` (optional, array[string])
-+ `set_aside_type_codes`: `NONE` (optional, array[string])
-+ `extent_competed_type_codes`: `A` (optional, array[string])
++ `psc_codes` (optional, array[string])
++ `contract_pricing_type_codes` (optional, array[string])
++ `set_aside_type_codes` (optional, array[string])
++ `extent_competed_type_codes` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
 
 ### TimePeriodObject (object)
-+ `start_date`: `2017-10-01` (required, string)
++ `start_date` (required, string)
     Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
     feature on the website or one of our `download` or `bulk_download` API endpoints.
-+ `end_date`: `2018-09-30` (required, string)
++ `end_date` (required, string)
     Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
     feature on the website or one of our `download` or `bulk_download` API endpoints.
 + `date_type` (optional, enum[string])
@@ -111,8 +118,8 @@ This endpoint returns a list of the top results of specific categories sorted by
         + `last_modified_date`
 
 ### LocationObject (object)
-+ `country`: `USA` (required, string)
-+ `state`: `VA` (optional, string)
++ `country` (required, string)
++ `state` (optional, string)
 + `county` (optional, string)
 + `city` (optional, string)
 + `district` (optional, string)
@@ -127,18 +134,18 @@ This endpoint returns a list of the top results of specific categories sorted by
     + Members
         + `toptier`
         + `subtier`
-+ `name`: `Office of Inspector General` (required, string)
-+ `toptier_name`: `Department of the Treasury` (optional, string)
++ `name` (required, string)
++ `toptier_name` (optional, string)
     Only applicable when `tier` is `subtier`.  Ignored when `tier` is `toptier`.  Provides a means by which to scope subtiers with common names to a
     specific toptier.  For example, several agencies have an "Office of Inspector General".  If not provided, subtiers may span more than one toptier.
 
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
-+ `upper_bound`: 1000000 (optional, number)
++ `upper_bound` (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, array[string])
-+ `exclude`: [`3313`] (optional, array[string])
++ `require` (optional, array[string])
++ `exclude` (optional, array[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

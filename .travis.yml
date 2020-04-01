@@ -37,25 +37,25 @@ env:
   - BROKER_DOCKER_IMAGE=dataact-broker-backend
 
 before_install:
-  - npm install dredd@5.4.1 --global
+  - npm install --global dredd@11.2.19
 
 install:
   - travis_retry pip install -r requirements/requirements.txt
-  - pip install coveralls
+  - travis_retry pip install coveralls
   # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
   - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
   - git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
 
 before_script:
   # Get dependencies to report code coverage to code climate
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - travis_retry curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
   # Run elasticsearch
   - travis_retry curl -s -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.1.1-amd64.deb
   - sudo dpkg -i --force-confnew elasticsearch-7.1.1-amd64.deb
-  - sudo sed -i.old 's/-Xms1g/-Xms128m/' /etc/elasticsearch/jvm.options
-  - sudo sed -i.old 's/-Xmx1g/-Xmx128m/' /etc/elasticsearch/jvm.options
+  - sudo sed -i.old 's/-Xms1g/-Xms512m/' /etc/elasticsearch/jvm.options
+  - sudo sed -i.old 's/-Xmx1g/-Xmx512m/' /etc/elasticsearch/jvm.options
   - echo -e '-XX:+DisableExplicitGC\n-Djdk.io.permissionsUseCanonicalPath=true\n-Dlog4j.skipJansi=true\n-server\n' | sudo tee -a /etc/elasticsearch/jvm.options
   - sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install mapper-murmur3
   - sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
@@ -71,9 +71,9 @@ script:
   - flake8
   - black --check --diff .
   - python manage.py check_for_endpoint_documentation
+  - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   - pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
   - pytest --durations 50 --override-ini=python_files='**/tests/integration/test_*.py **/tests/integration/*_test.py' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
-  # - dredd  (Disable dredd until test data is loaded into DB for API responses)
 
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT

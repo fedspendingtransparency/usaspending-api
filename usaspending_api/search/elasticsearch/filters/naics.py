@@ -86,7 +86,6 @@ class _NaicsNode:
             retval += "*"
         if not self.positive:
             retval = f"NOT {retval}"
-        retval = f"({retval})"
 
         positive_child_query = " OR ".join([child.get_query() for child in self.children if child.positive])
         negative_child_query = " AND ".join([child.get_query() for child in self.children if not child.positive])
@@ -98,4 +97,4 @@ class _NaicsNode:
             else:
                 retval += f" OR ({joined_child_query})"
 
-        return retval
+        return f"({retval})"

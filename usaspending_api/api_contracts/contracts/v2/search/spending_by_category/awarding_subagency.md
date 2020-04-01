@@ -10,12 +10,19 @@ This endpoint supports the advanced search page and allow for complex filtering 
 This endpoint returns a list of the top results of Awarding Subagencies sorted by the total amounts in descending order.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             The filters to find with said category
-        + `limit`: 5 (optional, number)
+        + `limit` (optional, number)
             The number of results to include per page
-        + `page`: 1 (optional, number)
+        + `page` (optional, number)
             The page of results to return based on the limit
         + `subawards` (optional, boolean)
             Determines whether Prime Awards or Sub Awards are searched
@@ -24,7 +31,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
     + Attributes (object)
         + `category`: `awarding_subagency` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
-        + `limit`: 10 (required, number)
+        + `limit` (required, number)
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -74,7 +81,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
 + `hasNext` (required, boolean)
 
 ## Filter Objects
-### FilterObject (object)
+### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
@@ -143,8 +150,8 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, array[string])
-+ `exclude`: [`3313`] (optional, array[string])
++ `require`: `33` (optional, array[string])
++ `exclude`: `3333` (optional, array[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

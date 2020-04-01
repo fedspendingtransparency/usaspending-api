@@ -7,9 +7,15 @@ This endpoint powers the USAspending.gov Agency Identifier (AID) autocomplete in
 
 ## POST
 
-List of potential Agency Identifiers 
+List of potential Agency Identifiers
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
 
     + Attributes (object)
         + `filters` (required, ComponentFilters)
