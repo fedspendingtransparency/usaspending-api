@@ -18,7 +18,7 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
             }
 
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             The filters to find with said category
         + `limit`: 5 (optional, number)
             The number of results to include per page
@@ -81,7 +81,7 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
 + `hasNext` (required, boolean)
 
 ## Filter Objects
-### FilterObject (object)
+### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])

@@ -18,10 +18,10 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
             }
 
     + Attributes (object)
-        + `filters` (required, FilterObject)
-        + `subawards`: false (optional, boolean)
+        + `filters` (required, AdvancedFilterObject)
+        + `subawards` (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
-        + `scope`: `place_of_performance` (required, enum[string])
+        + `scope` (required, enum[string])
             When fetching transactions, use the primary place of performance or recipient location
             + Members
                 + `place_of_performance`
@@ -33,9 +33,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
                 + `county`
                 + `district`
         + `geo_layer_filters` (required, array[string])
-            - `DC`
-            - `MD`
-            - `VA`
+
     + Body
 
             {
@@ -64,7 +62,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 
 
 ## Filter Objects
-### FilterObject (object)
+### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
@@ -123,18 +121,18 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
     + Members
         + `toptier`
         + `subtier`
-+ `name`: `Office of Inspector General` (required, string)
-+ `toptier_name`: `Department of the Treasury` (optional, string)
++ `name` (required, string)
++ `toptier_name` (optional, string)
     Only applicable when `tier` is `subtier`.  Ignored when `tier` is `toptier`.  Provides a means by which to scope subtiers with common names to a
     specific toptier.  For example, several agencies have an "Office of Inspector General".  If not provided, subtiers may span more than one toptier.
 
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
-+ `upper_bound`: 1000000 (optional, number)
++ `upper_bound` (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: `33` (optional, array[string])
-+ `exclude`: `3333` (optional, array[string])
++ `require` (optional, array[string])
++ `exclude` (optional, array[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

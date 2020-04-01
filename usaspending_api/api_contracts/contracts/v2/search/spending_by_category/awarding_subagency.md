@@ -18,11 +18,11 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
             }
 
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             The filters to find with said category
-        + `limit`: 5 (optional, number)
+        + `limit` (optional, number)
             The number of results to include per page
-        + `page`: 1 (optional, number)
+        + `page` (optional, number)
             The page of results to return based on the limit
         + `subawards` (optional, boolean)
             Determines whether Prime Awards or Sub Awards are searched
@@ -31,7 +31,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
     + Attributes (object)
         + `category`: `awarding_subagency` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
-        + `limit`: 10 (required, number)
+        + `limit` (required, number)
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -81,7 +81,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
 + `hasNext` (required, boolean)
 
 ## Filter Objects
-### FilterObject (object)
+### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])

@@ -14,6 +14,12 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_cate
 
 
 class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
+    """
+    This route takes award filters and returns spending by Recipient DUNS.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/recipient_duns.md"
+
     category = Category(name="recipient_duns", agg_key="recipient_agg_key")
 
     @staticmethod
@@ -59,21 +65,13 @@ class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
         location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in location_info_buckets:
             recipient_info = json.loads(bucket.get("key"))
-            name = recipient_info["name"] or None
-            unique_id = recipient_info["unique_id"]
-            if unique_id:
-                code = unique_id
-            elif name in SPECIAL_CASES:
-                code = None
-            else:
-                code = "DUNS Number not provided"
 
             results.append(
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "recipient_id": recipient_info["hash_with_level"] or None,
-                    "name": name,
-                    "code": code,
+                    "name": recipient_info["name"] or None,
+                    "code": recipient_info["unique_id"] or "DUNS Number not provided",
                 }
             )
 
@@ -111,8 +109,8 @@ class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
                 if lookup is None:
                     lookup = {}
 
-                row["name"] = lookup.get("legal_business_name", None)
-                row["code"] = lookup.get("duns", "DUNS Number not provided")
+                row["name"] = lookup.get("legal_business_name")
+                row["code"] = lookup.get("duns") or "DUNS Number not provided"
                 del row["recipient_hash"]
 
         return query_results
