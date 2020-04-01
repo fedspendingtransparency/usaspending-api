@@ -27,34 +27,20 @@ class FilterTree(metaclass=ABCMeta):
         if tier3:
             return [
                 self.construct_node_from_raw(3, [tier1, tier2, tier3], data, child_layers)
-                for data in self.tier_three_search(tier3)
+                for data in self.raw_search([tier1, tier2, tier3])
             ]
         elif tier2:
             return [
                 self.construct_node_from_raw(2, [tier1, tier2], data, child_layers)
-                for data in self.tier_two_search(tier2)
+                for data in self.raw_search([tier1, tier2])
             ]
         elif tier1:
-            return [
-                self.construct_node_from_raw(1, [tier1], data, child_layers) for data in self.tier_one_search(tier1)
-            ]
+            return [self.construct_node_from_raw(1, [tier1], data, child_layers) for data in self.raw_search([tier1])]
         else:
-            return [self.construct_node_from_raw(0, [], data, child_layers) for data in self.toptier_search()]
+            return [self.construct_node_from_raw(0, [], data, child_layers) for data in self.raw_search([])]
 
     @abstractmethod
-    def toptier_search(self):
-        pass
-
-    @abstractmethod
-    def tier_one_search(self, key):
-        pass
-
-    @abstractmethod
-    def tier_two_search(self, key):
-        pass
-
-    @abstractmethod
-    def tier_three_search(self, key):
+    def raw_search(self, tiered_keys):
         pass
 
     @abstractmethod

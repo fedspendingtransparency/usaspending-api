@@ -7,7 +7,15 @@ from django.db.models import Exists, OuterRef
 
 
 class TASFilterTree(FilterTree):
-    def toptier_search(self):
+    def raw_search(self, tiered_keys):
+        if len(tiered_keys) == 0:
+            return self._toptier_search()
+        if len(tiered_keys) == 1:
+            return self._fa_given_agency(tiered_keys[0])
+        if len(tiered_keys) == 2:
+            return self._tas_given_fa(tiered_keys[0], tiered_keys[1])
+
+    def _toptier_search(self):
         agency_set = (
             ToptierAgency.objects.annotate(
                 has_faba=Exists(
@@ -26,29 +34,24 @@ class TASFilterTree(FilterTree):
     def _dictionary_from_agency(self, agency):
         return {"toptier_code": agency["toptier_code"], "name": agency["name"]}
 
-    def tier_one_search(self, agency):
+    def _fa_given_agency(self, agency):
         return FederalAccount.objects.annotate(
             has_faba=Exists(
                 FinancialAccountsByAwards.objects.filter(treasury_account__federal_account=OuterRef("pk")).values("pk")
             )
         ).filter(has_faba=True, parent_toptier_agency__toptier_code=agency)
 
-    def tier_two_search(self, fed_account):
+    def _tas_given_fa(self, agency, fed_account):
         return TreasuryAppropriationAccount.objects.annotate(
             has_faba=Exists(FinancialAccountsByAwards.objects.filter(treasury_account=OuterRef("pk")).values("pk"))
         ).filter(has_faba=True, federal_account__federal_account_code=fed_account)
-
-    def tier_three_search(self, tas_code):
-        return TreasuryAppropriationAccount.objects.annotate(
-            has_faba=Exists(FinancialAccountsByAwards.objects.filter(treasury_account=OuterRef("pk")).values("pk"))
-        ).filter(has_faba=True, tas_rendering_label=tas_code)
 
     def construct_node_from_raw(self, tier: int, ancestors: list, data, child_layers) -> Node:
         if tier == 0:  # A tier zero search is returning an agency dictionary
             return self._generate_agency_node(ancestors, data, child_layers)
         if tier == 1:  # A tier one search is returning a FederalAccount object
             return self._generate_federal_account_node(ancestors, data, child_layers)
-        if tier == 2 or tier == 3:  # A tier two or three search will be returning a TreasuryAppropriationAccount object
+        if tier == 2:  # A tier two search will be returning a TreasuryAppropriationAccount object
             return Node(
                 id=data.tas_rendering_label,
                 ancestors=ancestors,
@@ -59,7 +62,7 @@ class TASFilterTree(FilterTree):
 
     def _generate_agency_node(self, ancestors, data, child_layers):
         if child_layers:
-            raw_children = self.tier_one_search(data["toptier_code"])
+            raw_children = self._fa_given_agency(data["toptier_code"])
             generated_children = [
                 self.construct_node_from_raw(1, ancestors + [data["toptier_code"]], elem, child_layers - 1).to_JSON()
                 for elem in raw_children
@@ -79,7 +82,7 @@ class TASFilterTree(FilterTree):
 
     def _generate_federal_account_node(self, ancestors, data, child_layers):
         if child_layers:
-            raw_children = self.tier_two_search(data.federal_account_code)
+            raw_children = self._tas_given_fa(ancestors[0], data.federal_account_code)
             generated_children = [
                 self.construct_node_from_raw(
                     2, ancestors + [data.federal_account_code], elem, child_layers - 1
