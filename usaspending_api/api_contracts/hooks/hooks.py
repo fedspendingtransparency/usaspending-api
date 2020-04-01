@@ -17,7 +17,7 @@ def _post_request_response(protocol, host, port, path, body):
 
 @hooks.before("./contracts/v2/bulk_download/status.md > Bulk Download Status > GET")
 def before_bulk_download_status_test(transaction):
-    # Run /api/v2/bulk_download/awards/ to get file_name
+    # Run /api/v2/bulk_download/awards/ to get a file_name
     body = {
         "filters": {
             "agency": 50,
@@ -38,13 +38,13 @@ def before_bulk_download_status_test(transaction):
 
     # Set the transactions path to use the file_name
     transaction["fullPath"] = transaction["fullPath"].replace(
-        "all_prime_transactions_subawards_20191017223212534453.zip", file_name
+        "012_PrimeTransactions_2020-01-13_H20M58S34486877.zip", file_name
     )
 
 
 @hooks.before("./contracts/v2/download/status.md > Download Status > GET")
 def before_download_status_test(transaction):
-    # Run /api/v2/download/awards/ to get file_name
+    # Run /api/v2/download/awards/ to get a file_name
     body = {"filters": {"keywords": ["Defense"]}}
     response = _post_request_response(
         protocol=transaction.get("protocol"),
@@ -57,7 +57,7 @@ def before_download_status_test(transaction):
 
     # Set the transactions path to use the file_name
     transaction["fullPath"] = transaction["fullPath"].replace(
-        "all_prime_awards_subawards_20191016202911453381.zip", file_name
+        "012_PrimeTransactions_2020-01-13_H20M58S34486877.zip", file_name
     )
 
 
