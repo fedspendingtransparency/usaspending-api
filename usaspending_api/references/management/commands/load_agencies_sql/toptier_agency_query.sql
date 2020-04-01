@@ -19,7 +19,7 @@ from (
         max(congressional_justification) as justification,
         max(icon_filename) as icon_filename
     from
-        temp_load_agencies_raw_agency
+        "{temp_table}"
     where
         cgac_agency_code is not null and
         agency_name is not null and
@@ -39,7 +39,7 @@ from (
         max(congressional_justification) as justification,
         max(icon_filename) as icon_filename
     from
-        temp_load_agencies_raw_agency
+        "{temp_table}"
     where
         frec is not null and
         frec_entity_description is not null and
