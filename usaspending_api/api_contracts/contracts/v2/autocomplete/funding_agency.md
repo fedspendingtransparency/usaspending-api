@@ -10,6 +10,13 @@ This endpoint is used by the Funding Agency autocomplete filter on the Advanced 
 This route sends a request to the backend to retrieve funding agencies matching the specified search text.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `limit` (optional, number)
             + Default: 10
