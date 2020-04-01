@@ -215,7 +215,8 @@ def awards_and_transactions(db):
         "recipient.RecipientProfile",
         recipient_name="RECIPIENT 1",
         recipient_level="R",
-        recipient_hash="2d67171a-1447-ea0a-df99-db8b663f9b07",
+        recipient_hash="5f572ec9-8b49-e5eb-22c7-f6ef316f7689",
+        recipient_unique_id=None,
     )
     mommy.make(
         "recipient.RecipientProfile", recipient_name="RECIPIENT 2", recipient_level="R", recipient_unique_id="456789123"
