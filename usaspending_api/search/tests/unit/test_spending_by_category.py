@@ -286,40 +286,40 @@ def recipient_test_data(db):
         "recipient.RecipientLookup",
         duns="00UOP00",
         legal_business_name="University of Pawnee",
-        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948",
+        recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
     )
     mommy.make(
         "recipient.RecipientLookup",
         duns="1234JD4321",
         legal_business_name="John Doe",
-        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a949",
+        recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
     )
     mommy.make(
         "recipient.RecipientLookup",
         duns=None,
         legal_business_name="MULTIPLE RECIPIENTS",
-        recipient_hash="6dffe44a-554c-26b4-b7ef-44db50083732",
+        recipient_hash="64af1cb7-993c-b64b-1c58-f5289af014c0",
     )
 
     mommy.make(
         "recipient.RecipientProfile",
         recipient_unique_id="00UOP00",
         recipient_level="P",
-        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948",
+        recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
         recipient_name="University of Pawnee",
     )
     mommy.make(
         "recipient.RecipientProfile",
         recipient_unique_id="1234JD4321",
         recipient_level="C",
-        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a949",
+        recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
         recipient_name="John Doe",
     )
     mommy.make(
         "recipient.RecipientProfile",
         recipient_unique_id=None,
         recipient_level="R",
-        recipient_hash="6dffe44a-554c-26b4-b7ef-44db50083732",
+        recipient_hash="64af1cb7-993c-b64b-1c58-f5289af014c0",
         recipient_name="MULTIPLE RECIPIENTS",
     )
 
@@ -676,13 +676,13 @@ def test_category_recipient_duns_awards(recipient_test_data):
                 "amount": 11,
                 "name": "John Doe",
                 "code": "1234JD4321",
-                "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a949-C",
+                "recipient_id": "0b54895d-2393-ea12-48e3-deae990614d9-C",
             },
             {
                 "amount": 2,
                 "name": "University of Pawnee",
                 "code": "00UOP00",
-                "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a948-P",
+                "recipient_id": "2af2a5a5-3126-2c76-3681-dec2cf148f1a-P",
             },
         ],
         "messages": [get_time_period_message()],
@@ -706,14 +706,14 @@ def test_category_recipient_duns_subawards(recipient_test_data):
             {
                 "amount": 1100,
                 "code": "1234JD4321",
+                "recipient_id": "0b54895d-2393-ea12-48e3-deae990614d9-C",
                 "name": "JOHN DOE",
-                "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a949-C",
             },
             {
                 "amount": 11,
                 "code": "00UOP00",
+                "recipient_id": "2af2a5a5-3126-2c76-3681-dec2cf148f1a-P",
                 "name": "UNIVERSITY OF PAWNEE",
-                "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a948-P",
             },
         ],
         "messages": [get_time_period_message()],
