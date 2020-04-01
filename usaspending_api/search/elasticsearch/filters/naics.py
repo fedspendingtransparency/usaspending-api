@@ -18,6 +18,11 @@ class NaicsCodes(_Filter):
         else:
             raise InvalidParameterException(f"naics_codes must be an array or object")
 
+        if [value for value in require if len(str(value)) not in [2, 4, 6]] or [
+            value for value in exclude if len(str(value)) not in [2, 4, 6]
+        ]:
+            raise InvalidParameterException("naics code filtering only supported for codes with lengths of 2, 4, and 6")
+
         requires = [str(code) for code in require]
         exclude = [str(code) for code in exclude]
 
@@ -86,6 +91,7 @@ class _NaicsNode:
             retval += "*"
         if not self.positive:
             retval = f"NOT {retval}"
+        retval = f"({retval})"
 
         positive_child_query = " OR ".join([child.get_query() for child in self.children if child.positive])
         negative_child_query = " AND ".join([child.get_query() for child in self.children if not child.positive])
