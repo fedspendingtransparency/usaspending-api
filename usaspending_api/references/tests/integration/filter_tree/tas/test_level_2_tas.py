@@ -13,7 +13,7 @@ def test_one_tas(client, basic_agency):
 
 
 # Can the endpoint correctly populate an array?
-def test_multiple_tas(client, multiple_federal_tas):
+def test_multiple_tas(client, multiple_tas):
     resp = _call_and_expect_200(client, common_query)
     assert len(resp.json()["results"]) == 4
 
