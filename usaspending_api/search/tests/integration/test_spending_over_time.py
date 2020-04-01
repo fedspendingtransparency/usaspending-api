@@ -810,7 +810,7 @@ def _test_correct_response_for_naics_codes(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "naics_codes": {"require": ["8", "16", "26"]},
+                    "naics_codes": {"require": ["81", "16", "26"]},
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
