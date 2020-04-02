@@ -104,7 +104,6 @@ VIEW_COLUMNS = [
     "recipient_location_city_name",
     "treasury_accounts",
     "federal_accounts",
-    "federal_accounts_agg_key",
     "business_categories",
 ]
 AWARD_VIEW_COLUMNS = [

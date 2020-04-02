@@ -29,15 +29,14 @@ class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMet
         account_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in account_info_buckets:
             account_info = json.loads(bucket.get("key"))
-            for info in account_info:
-                results.append(
-                    {
-                        "amount": Decimal(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                        "id": int(info.get("id")) if info.get("id") else None,
-                        "code": info.get("federal_account_code") or None,
-                        "name": info.get("account_title"),
-                    }
-                )
+            results.append(
+                {
+                    "amount": Decimal(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                    "id": int(account_info.get("id")) if account_info.get("id") else None,
+                    "code": account_info.get("federal_account_code") or None,
+                    "name": account_info.get("account_title"),
+                }
+            )
 
         return results
 
@@ -63,4 +62,4 @@ class FederalAccountViewSet(AbstractAccountViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/federal_account.md"
 
     industry_code_type = AccountType.FEDERAL_ACCOUNT
-    category = Category(name="federal_account", agg_key="federal_accounts_agg_key")
+    category = Category(name="federal_account", agg_key="federal_accounts")

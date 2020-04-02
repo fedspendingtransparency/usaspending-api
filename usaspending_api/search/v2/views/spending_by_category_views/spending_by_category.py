@@ -138,7 +138,10 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         search = TransactionSearch().filter(filter_query)
 
         # Get count of unique buckets; terminate early if there are no buckets matching criteria
-        bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}.hash")
+        if self.category.agg_key != "federal_accounts":
+            bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}.hash")
+        else:
+            bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}")
         if bucket_count == 0:
             return None
         elif bucket_count >= 9900:

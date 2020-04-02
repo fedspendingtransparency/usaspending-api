@@ -124,7 +124,6 @@ SELECT
 
   TREASURY_ACCT.treasury_accounts,
   FEDERAL_ACCT.federal_accounts,
-  FEDERAL_ACCT.federal_accounts as federal_accounts_agg_key,
   UTM.business_categories,
 
   -- ALL COLUMNS BELOW THIS CAN BE REMOVED AS A WARMFIX INTO STAGING;
