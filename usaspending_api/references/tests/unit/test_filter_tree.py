@@ -2,6 +2,16 @@ from usaspending_api.references.v2.views.filter_tree.filter_tree import FilterTr
 
 
 class TestFilterTree(FilterTree):
+    def raw_search(self, tiered_keys):
+        if len(tiered_keys) == 0:
+            return self.toptier_search()
+        if len(tiered_keys) == 1:
+            return self.tier_one_search(tiered_keys[0])
+        if len(tiered_keys) == 2:
+            return self.tier_two_search(tiered_keys[1])
+        if len(tiered_keys) == 3:
+            return self.tier_three_search(tiered_keys[2])
+
     def toptier_search(self):
         return [{"value": 1}, {"value": 2}]
 
