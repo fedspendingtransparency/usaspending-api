@@ -15,10 +15,7 @@ def test_program_activity_fresh_load(monkeypatch):
 
     data_broker_mock = MagicMock()
     data_broker_mock.cursor.return_value = PhonyCursor("usaspending_api/references/tests/data/broker_gtas.json")
-    mock_connections = {
-        DEFAULT_DB_ALIAS: MagicMock(),
-        "data_broker": data_broker_mock,
-    }
+    mock_connections = {DEFAULT_DB_ALIAS: MagicMock(), "data_broker": data_broker_mock}
 
     monkeypatch.setattr("usaspending_api.references.management.commands.load_gtas.connections", mock_connections)
 

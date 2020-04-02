@@ -86,6 +86,7 @@ class CfdaViewSet(AbstractIndustryCodeViewSet):
     industry_code_type = IndustryCodeType.CFDA
     category = Category(name="cfda", agg_key="cfda_agg_key")
 
+
 class NAICSViewSet(AbstractIndustryCodeViewSet):
     """
     This route takes award filters and returns spending by NAICS.
@@ -95,6 +96,7 @@ class NAICSViewSet(AbstractIndustryCodeViewSet):
 
     industry_code_type = IndustryCodeType.NAICS
     category = Category(name="naics", agg_key="naics_agg_key")
+
 
 class PSCViewSet(AbstractIndustryCodeViewSet):
     """

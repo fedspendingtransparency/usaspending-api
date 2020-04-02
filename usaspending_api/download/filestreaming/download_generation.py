@@ -38,7 +38,7 @@ from usaspending_api.download.models import DownloadJob
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
-EXCEL_ROW_LIMIT = 1000000
+EXCEL_ROW_LIMIT = 1_000_000
 WAIT_FOR_PROCESS_SLEEP = 5
 
 logger = logging.getLogger(__name__)

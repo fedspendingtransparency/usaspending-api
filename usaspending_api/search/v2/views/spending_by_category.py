@@ -288,34 +288,6 @@ class BusinessLogic:
         results = alias_response(ALIAS_DICT[self.category], query_results)
         return results
 
-    def industry_and_other_codes(self) -> list:
-        if self.category == "psc":
-            if self.subawards:
-                # N/A for subawards
-                self.raise_not_implemented()
-            filters = {"product_or_service_code__isnull": False}
-            values = ["product_or_service_code"]
-        elif self.category == "naics":
-            if self.subawards:
-                # TODO: get subaward NAICS from Broker
-                self.raise_not_implemented()
-            filters = {"naics_code__isnull": False}
-            values = ["naics_code", "naics_description"]
-
-        self.queryset = self.common_db_query(filters, values)
-        # DB hit here
-        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
-
-        results = alias_response(ALIAS_DICT[self.category], query_results)
-        for row in results:
-            if self.category == "psc":
-                row["id"] = None
-                row["name"] = fetch_psc_description_by_code(row["code"])
-            elif self.category == "naics":
-                row["id"] = None
-                row["name"] = fetch_naics_description_from_code(row["code"], row["name"])
-        return results
-
     def location(self) -> list:
         filters = {}
         values = {}

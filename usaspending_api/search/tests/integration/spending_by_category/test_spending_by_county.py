@@ -50,7 +50,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 550005.0, "code": "001", "id": None, "name": "CHARLESTON"},
+            {"amount": 550_005.0, "code": "001", "id": None, "name": "CHARLESTON"},
             {"amount": 5500.0, "code": "005", "id": None, "name": "TEST NAME"},
             {"amount": 50.0, "code": "005", "id": None, "name": "TEST NAME"},
         ],

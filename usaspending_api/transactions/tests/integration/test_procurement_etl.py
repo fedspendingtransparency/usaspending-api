@@ -143,14 +143,14 @@ def test_data_transfer_from_broker(load_broker_data):
         id_field = "detached_award_procurement_id"
         cursor.execute(f"SELECT MIN({id_field}), MAX({id_field}) FROM {table}")
         min_id, max_id = cursor.fetchall()[0]
-        assert min_id == 17731286
-        assert max_id == 121983859
+        assert min_id == 17_731_286
+        assert max_id == 121_983_859
 
         cursor.execute(
             f"SELECT * FROM {table} WHERE detached_award_proc_unique = '12K3_-none-_43639534215_0_-none-_-none-'"
         )
         assert cursor.fetchall()[0] == (
-            20186158,
+            20_186_158,
             "12K3_-none-_43639534215_0_-none-_-none-",
             "No",
             None,
@@ -219,7 +219,7 @@ def test_data_transfer_from_broker(load_broker_data):
             None,
             "nan",
             "N",
-            datetime.datetime(2017, 8, 28, 5, 55, 23, 827371),
+            datetime.datetime(2017, 8, 28, 5, 55, 23, 827_371),
             None,
             None,
             None,

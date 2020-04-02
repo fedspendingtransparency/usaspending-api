@@ -34,10 +34,7 @@ def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
     """
     url = request.build_absolute_uri()
     data = json.dumps(request.data)
-    headers = {
-        **request.headers,
-        HttpHeaders.parse_header_name(EXPERIMENTAL_API_HEADER): ELASTICSEARCH_HEADER_VALUE,
-    }
+    headers = {**request.headers, HttpHeaders.parse_header_name(EXPERIMENTAL_API_HEADER): ELASTICSEARCH_HEADER_VALUE}
 
     logger.warning(f"Mirroring inbound request with elasticsearch experimental header.")
 

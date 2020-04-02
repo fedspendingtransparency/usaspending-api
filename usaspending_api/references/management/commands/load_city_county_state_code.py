@@ -200,7 +200,7 @@ class Command(BaseCommand):
         with Timer("Importing file to staging table"):
             with connection.cursor() as cursor:
                 with open(self.working_file, encoding="utf-8-sig") as csv_file:
-                    cursor.cursor.copy_expert(import_command, csv_file, size=10485760)  # 10MB
+                    cursor.cursor.copy_expert(import_command, csv_file, size=10_485_760)  # 10MB
                     logger.info(f"{cursor.cursor.rowcount:,} rows imported")
 
     def _vacuum_tables(self):

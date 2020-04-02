@@ -46,9 +46,7 @@ class Rapidloader:
 
         process_list = [
             Process(
-                name="Download Process",
-                target=download_db_records,
-                args=(download_queue, es_ingest_queue, self.config),
+                name="Download Process", target=download_db_records, args=(download_queue, es_ingest_queue, self.config)
             ),
             Process(
                 name="ES Index Process",

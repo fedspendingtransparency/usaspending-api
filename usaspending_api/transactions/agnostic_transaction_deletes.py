@@ -20,7 +20,7 @@ class AgnosticDeletes:
             help="Load/Reload records from the provided datetime to the script execution start time.",
         )
         parser.add_argument(
-            "--dry-run", action="store_true", help="Obtain the list of removed transactions, but skip the delete step.",
+            "--dry-run", action="store_true", help="Obtain the list of removed transactions, but skip the delete step."
         )
         parser.add_argument(
             "--skip-upload",

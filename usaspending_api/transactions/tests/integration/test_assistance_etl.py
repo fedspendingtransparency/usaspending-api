@@ -144,12 +144,12 @@ def test_data_transfer_from_broker(load_broker_data):
         id_field = "published_award_financial_assistance_id"
         cursor.execute(f"SELECT MIN({id_field}), MAX({id_field}) FROM {table}")
         min_id, max_id = cursor.fetchall()[0]
-        assert min_id == 39706515
-        assert max_id == 89126476
+        assert min_id == 39_706_515
+        assert max_id == 89_126_476
 
         cursor.execute(f"SELECT * FROM {table} WHERE afa_generated_unique = '9100_P033A173267_-none-_84.033_3'")
         assert cursor.fetchall()[0] == (
-            40961579,
+            40_961_579,
             "9100_P033A173267_-none-_84.033_3",
             "07/12/2017",
             "C",
@@ -175,7 +175,7 @@ def test_data_transfer_from_broker(load_broker_data):
             "Federal Work-Study Program",
             None,
             None,
-            datetime.datetime(2017, 9, 16, 22, 22, 42, 760993),
+            datetime.datetime(2017, 9, 16, 22, 22, 42, 760_993),
             Decimal("0"),
             "P033A173267",
             Decimal("520000"),
@@ -243,6 +243,6 @@ def test_data_transfer_from_broker(load_broker_data):
             None,
             None,
             "ASST_NON_P033A173267_9100",
-            datetime.datetime(2017, 9, 16, 22, 22, 42, 760993),
+            datetime.datetime(2017, 9, 16, 22, 22, 42, 760_993),
             None,
         )

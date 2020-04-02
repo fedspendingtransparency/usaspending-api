@@ -108,30 +108,14 @@ def test_tas(award_data_fixture, elasticsearch_award_index):
         ' \\"sub\\": \\"{sub}\\"'
     )
 
-    tas_code_regexes1 = {
-        "aid": "097",
-        "ata": ".*",
-        "main": "4930",
-        "sub": ".*",
-        "bpoa": ".*",
-        "epoa": ".*",
-        "a": ".*",
-    }
+    tas_code_regexes1 = {"aid": "097", "ata": ".*", "main": "4930", "sub": ".*", "bpoa": ".*", "epoa": ".*", "a": ".*"}
     value_regex1 = "{" + search_regex.format(**tas_code_regexes1) + "}"
     should = {"regexp": {"treasury_accounts": {"value": value_regex1}}}
     query = create_query(should)
     client = elasticsearch_award_index.client
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
     assert response["hits"]["total"]["value"] == 1
-    tas_code_regexes2 = {
-        "aid": "028",
-        "ata": ".*",
-        "main": "8006",
-        "sub": ".*",
-        "bpoa": ".*",
-        "epoa": ".*",
-        "a": ".*",
-    }
+    tas_code_regexes2 = {"aid": "028", "ata": ".*", "main": "8006", "sub": ".*", "bpoa": ".*", "epoa": ".*", "a": ".*"}
     value_regex2 = "{" + search_regex.format(**tas_code_regexes2) + "}"
     should = {"regexp": {"treasury_accounts": {"value": value_regex2}}}
     query = create_query(should)

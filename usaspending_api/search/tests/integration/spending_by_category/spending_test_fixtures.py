@@ -134,7 +134,7 @@ def awards_and_transactions(db):
         "awards.TransactionNormalized",
         id=60,
         award_id=6,
-        federal_action_obligation=500000,
+        federal_action_obligation=500_000,
         action_date="2020-01-06",
         is_fpds=True,
     )
