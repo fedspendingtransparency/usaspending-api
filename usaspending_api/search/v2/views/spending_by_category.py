@@ -39,6 +39,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import (
     CfdaViewSet,
     PSCViewSet,
+    NAICSViewSet,
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import CountyViewSet
 
@@ -120,6 +121,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             response = FundingAgencyViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "funding_subagency":
             response = FundingSubagencyViewSet().perform_search(validated_payload, original_filters)
+        elif validated_payload["category"] == "naics":
+            response = NAICSViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "psc":
             response = PSCViewSet().perform_search(validated_payload, original_filters)
         else:

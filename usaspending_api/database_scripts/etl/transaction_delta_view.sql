@@ -36,6 +36,11 @@ SELECT
   END AS psc_agg_key,
   UTM.naics_code,
   UTM.naics_description,
+  CASE
+    WHEN UTM.naics_code IS NOT NULL
+      THEN CONCAT('{"code":"', UTM.naics_code, '","description":"', UTM.naics_description, '","id":"', NULL, '"}')
+    ELSE NULL
+  END AS naics_agg_key,
   AWD.type_description,
   UTM.award_category,
 

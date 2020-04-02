@@ -41,6 +41,7 @@ VIEW_COLUMNS = [
     "psc_agg_key",
     "naics_code",
     "naics_description",
+    "naics_agg_key",
     "type_description",
     "award_category",
     "recipient_unique_id",
