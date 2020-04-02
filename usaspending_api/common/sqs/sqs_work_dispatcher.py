@@ -482,7 +482,7 @@ class SQSWorkDispatcher:
             )
             log_dispatcher_message(self, message=message, is_exception=True)
             raise QueueWorkDispatcherError(
-                message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message,
+                message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
             ) from exc
 
     def surrender_message_to_other_consumers(self, delay=0):
@@ -655,7 +655,7 @@ class SQSWorkDispatcher:
                 )
                 log_dispatcher_message(self, message=message, is_error=True)
                 raise QueueWorkerProcessError(
-                    message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+                    message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message,
                 )
             elif self._worker_process.exitcode < 0:
                 # If process exits with a negative code, process was terminated by a signal since
