@@ -103,4 +103,5 @@ def _setup_tas(id, fa):
 
 
 def _setup_faba(id):
-    mommy.make("awards.FinancialAccountsByAwards", treasury_account_id=id)
+    mommy.make("awards.Award", id=id)
+    mommy.make("awards.FinancialAccountsByAwards", treasury_account_id=id, award_id=id)

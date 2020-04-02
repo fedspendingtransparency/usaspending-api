@@ -1,6 +1,5 @@
-from usaspending_api.common.helpers.agency_logic_helpers import cfo_presentation_order
+from usaspending_api.common.helpers.business_logic_helpers import cfo_presentation_order, faba_with_file_D_data
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
-from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.references.v2.views.filter_tree.filter_tree import DEFAULT_CHILDREN, Node, FilterTree
 from usaspending_api.references.models import ToptierAgency
 from django.db.models import Exists, OuterRef
@@ -14,14 +13,15 @@ class TASFilterTree(FilterTree):
             return self._fa_given_agency(tiered_keys[0])
         if len(tiered_keys) == 2:
             return self._tas_given_fa(tiered_keys[0], tiered_keys[1])
+        return []
 
     def _toptier_search(self):
         agency_set = (
             ToptierAgency.objects.annotate(
                 has_faba=Exists(
-                    FinancialAccountsByAwards.objects.filter(
+                    faba_with_file_D_data().filter(
                         treasury_account__federal_account__parent_toptier_agency=OuterRef("pk")
-                    ).values("pk")
+                    )
                 )
             )
             .filter(has_faba=True)
@@ -36,14 +36,12 @@ class TASFilterTree(FilterTree):
 
     def _fa_given_agency(self, agency):
         return FederalAccount.objects.annotate(
-            has_faba=Exists(
-                FinancialAccountsByAwards.objects.filter(treasury_account__federal_account=OuterRef("pk")).values("pk")
-            )
+            has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk")))
         ).filter(has_faba=True, parent_toptier_agency__toptier_code=agency)
 
     def _tas_given_fa(self, agency, fed_account):
         return TreasuryAppropriationAccount.objects.annotate(
-            has_faba=Exists(FinancialAccountsByAwards.objects.filter(treasury_account=OuterRef("pk")).values("pk"))
+            has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
         ).filter(
             has_faba=True,
             federal_account__federal_account_code=fed_account,

@@ -2,7 +2,7 @@ from django.db.models import Exists, F, OuterRef, Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.agency_logic_helpers import cfo_presentation_order
+from usaspending_api.common.helpers.business_logic_helpers import cfo_presentation_order
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 
