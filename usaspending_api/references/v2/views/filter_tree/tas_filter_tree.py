@@ -44,7 +44,11 @@ class TASFilterTree(FilterTree):
     def _tas_given_fa(self, agency, fed_account):
         return TreasuryAppropriationAccount.objects.annotate(
             has_faba=Exists(FinancialAccountsByAwards.objects.filter(treasury_account=OuterRef("pk")).values("pk"))
-        ).filter(has_faba=True, federal_account__federal_account_code=fed_account)
+        ).filter(
+            has_faba=True,
+            federal_account__federal_account_code=fed_account,
+            federal_account__parent_toptier_agency__toptier_code=agency,
+        )
 
     def construct_node_from_raw(self, tier: int, ancestors: list, data, child_layers) -> Node:
         if tier == 0:  # A tier zero search is returning an agency dictionary
