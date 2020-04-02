@@ -25,8 +25,6 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.helpers.spending_by_category_helpers import (
-    fetch_psc_description_by_code,
-    fetch_naics_description_from_code,
     fetch_country_name_from_code,
     fetch_state_name_from_code,
 )
