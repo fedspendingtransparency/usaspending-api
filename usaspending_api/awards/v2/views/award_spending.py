@@ -9,7 +9,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import check_valid_toptier_agency
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.references.models import Agency
-from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
 
 
 class AwardTypeAwardSpendingViewSet(CachedDetailViewSet):
@@ -80,25 +79,9 @@ class RecipientAwardSpendingViewSet(CachedDetailViewSet):
         if not check_valid_toptier_agency(awarding_agency_id):
             raise InvalidParameterException("Awarding Agency ID provided must correspond to a toptier agency")
 
-        toptier_agency = Agency.objects.filter(id=awarding_agency_id).first().toptier_agency
-        queryset = TransactionNormalized.objects.filter(federal_action_obligation__isnull=False)
-
-        # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency.toptier_code == DOD_CGAC:
-            tta_list = DOD_ARMED_FORCES_CGAC
-            queryset = queryset.filter(
-                # Filter based on fiscal_year and awarding_category_id
-                fiscal_year=fiscal_year,
-                awarding_agency__toptier_agency__toptier_code__in=tta_list,
-            )
-        else:
-            queryset = queryset.filter(
-                # Filter based on fiscal_year and awarding_category_id
-                fiscal_year=fiscal_year,
-                awarding_agency__toptier_agency__toptier_code=toptier_agency.toptier_code,
-            )
-
-        queryset = queryset.annotate(
+        queryset = TransactionNormalized.objects.filter(
+            federal_action_obligation__isnull=False, fiscal_year=fiscal_year, awarding_agency_id=awarding_agency_id,
+        ).annotate(
             award_category=F("award__category"),
             recipient_name=Coalesce(
                 F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),

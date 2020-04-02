@@ -6,8 +6,6 @@ from usaspending_api.accounts.serializers import (
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.constants import DOD_CGAC
-from usaspending_api.references.helpers import dod_tas_agency_filter
 from usaspending_api.references.models import Agency
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -53,42 +51,28 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
         active_fiscal_year = submission.reporting_fiscal_year
         active_fiscal_quarter = submission.fiscal_quarter
 
-        # using final_objects below ensures that we're only pulling the latest
+        # using final_objects ensures that we're only pulling the latest
         # set of financial information for each fiscal year
-        queryset = FinancialAccountsByProgramActivityObjectClass.final_objects.all()
-        # get the incoming agency's toptier agency, because that's what we'll
-        # need to filter on
-        # (used filter() instead of get() b/c we likely don't want to raise an
-        # error on a bad agency id)
-        # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency.toptier_code == DOD_CGAC:
-            queryset = queryset.filter(
-                dod_tas_agency_filter("treasury_account"),
-                submission__reporting_fiscal_year=active_fiscal_year,
-                submission__reporting_fiscal_quarter=active_fiscal_quarter,
-            )
-        else:
-            queryset = queryset.filter(
+        # Special case: major object class name for class 00 should be reported
+        # as Unknown Object Type, overriding actual value in database
+        queryset = (
+            FinancialAccountsByProgramActivityObjectClass.final_objects.all()
+            .filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
                 treasury_account__funding_toptier_agency=toptier_agency,
             )
-        # Special case: major object class name for class 00 should be reported
-        # as Unknown Object Type, overriding actual value in database
-        queryset = queryset.annotate(
-            major_object_class_name=Case(
-                When(object_class__major_object_class="00", then=Value("Unknown Object Type")),
-                default="object_class__major_object_class_name",
-            ),
-            major_object_class_code=F("object_class__major_object_class"),
-        )
-        # sum obligated_mount by object class
-        queryset = (
-            queryset.values("major_object_class_name", "major_object_class_code")
+            .annotate(
+                major_object_class_name=Case(
+                    When(object_class__major_object_class="00", then=Value("Unknown Object Type")),
+                    default="object_class__major_object_class_name",
+                ),
+                major_object_class_code=F("object_class__major_object_class"),
+            )
+            .values("major_object_class_name", "major_object_class_code")
             .annotate(obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"))
             .order_by("major_object_class_code")
         )
-        # get minor object class vars
 
         return queryset
 

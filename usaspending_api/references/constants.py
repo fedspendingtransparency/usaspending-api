@@ -14,16 +14,3 @@ WEBSITE_AWARD_BINS = {
 
 DOD_CGAC = "097"  # DoD's toptier identifier.
 DOD_SUBSUMED_CGAC = ["017", "021", "057"]  # Air Force, Army, and Navy are to be reported under DoD.
-DOD_ARMED_FORCES_CGAC = [DOD_CGAC] + DOD_SUBSUMED_CGAC  # The list of ALL agencies reported under DoD.
-DOD_ARMED_FORCES_TAS_CGAC_FREC = [("011", "1137"), ("011", "DE00")]  # TAS (CGAC, FREC)s for additional DoD agencies.
-DOD_FEDERAL_ACCOUNTS = [
-    ("011", "1081"),
-    ("011", "1082"),
-    ("011", "1085"),
-    ("011", "4116"),
-    ("011", "4121"),
-    ("011", "4122"),
-    ("011", "4174"),
-    ("011", "8238"),
-    ("011", "8242"),
-]  # Federal Account (AID, MAIN)s that are to be reported under DoD.

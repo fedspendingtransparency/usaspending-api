@@ -1,16 +1,14 @@
 import logging
 
 from django.db.models import Q
-
-from usaspending_api.references.models import Agency
+from usaspending_api.references.models import ToptierAgency
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.constants import DOD_ARMED_FORCES_CGAC, DOD_CGAC
+
 
 logger = logging.getLogger(__name__)
 
 
 def spending_filter(alt_set, queryset, filters, _type):
-    dod_agency = str(Agency.objects.filter(toptier_agency__toptier_code=DOD_CGAC).values_list("id", flat=True).first())
     for key, value in filters.items():
         # check for valid key
         if value is None:
@@ -76,22 +74,10 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # agency
             elif key == "agency":
-                # TODO: Will need to incorporate "agency_type" here to filter based on toptier or subtier.
-                # Currently default to filtering on toptier
-                if value == dod_agency:
-                    dod_agencies = Agency.objects.filter(
-                        toptier_flag=True, toptier_agency__toptier_code__in=DOD_ARMED_FORCES_CGAC
-                    ).values_list("toptier_agency", flat=True)
-
-                    and_alt_set = Q(treasury_account__funding_toptier_agency__in=dod_agencies)
-                else:
-                    agency = Agency.objects.filter(toptier_flag=True, id=value).first()
-                    if agency is None:
-                        raise InvalidParameterException("Agency ID provided does not correspond to a toptier agency")
-
-                    and_alt_set = Q(treasury_account__funding_toptier_agency=agency.toptier_agency)
-
-                alt_set = alt_set.filter(and_alt_set)
+                toptier_agency = ToptierAgency.objects.filter(agency__id=value).first()
+                if toptier_agency is None:
+                    raise InvalidParameterException("Agency ID provided does not correspond to a toptier agency")
+                alt_set = alt_set.filter(Q(treasury_account__funding_toptier_agency=toptier_agency))
 
         # All other _type
         else:
@@ -132,22 +118,9 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # agency
             elif key == "agency":
-                # TODO: Will need to incorporate "agency_type" here to filter based on toptier or subtier.
-
-                # Currently default to filtering on toptier
-
-                if value == dod_agency:
-                    dod_agencies = Agency.objects.filter(
-                        toptier_flag=True, toptier_agency__toptier_code__in=DOD_ARMED_FORCES_CGAC
-                    ).values_list("toptier_agency", flat=True)
-
-                    and_queryset = Q(treasury_account__funding_toptier_agency__in=dod_agencies)
-                else:
-                    agency = Agency.objects.filter(toptier_flag=True, id=value).first()
-                    if agency is None:
-                        raise InvalidParameterException("Agency ID provided does not correspond to a toptier agency")
-
-                    and_queryset = Q(treasury_account__funding_toptier_agency=agency.toptier_agency)
-                queryset = queryset.filter(and_queryset)
+                toptier_agency = ToptierAgency.objects.filter(agency__id=value).first()
+                if toptier_agency is None:
+                    raise InvalidParameterException("Agency ID provided does not correspond to a toptier agency")
+                queryset = queryset.filter(Q(treasury_account__funding_toptier_agency=toptier_agency))
 
     return alt_set, queryset

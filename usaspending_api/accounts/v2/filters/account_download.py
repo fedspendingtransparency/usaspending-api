@@ -1,6 +1,7 @@
 import datetime
 
-from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, When, Func, F, Value, Q
+from django.contrib.postgres.aggregates import StringAgg
+from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, When, Func, F, Value
 from django.db.models.functions import Concat, Coalesce
 
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
@@ -10,8 +11,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
-from usaspending_api.references.constants import DOD_CGAC
-from usaspending_api.references.helpers import dod_tas_agency_filter
 from usaspending_api.references.models import CGAC, ToptierAgency
 from usaspending_api.settings import HOST
 
@@ -47,21 +46,14 @@ Account Breakdown by Award (C file):
 
 def account_download_filter(account_type, download_table, filters, account_level="treasury_account"):
     query_filters = {}
-    dod_filter = Q()
     tas_id = "treasury_account_identifier" if account_type == "account_balances" else "treasury_account"
 
     # Filter by Agency, if provided
     if filters.get("agency", False) and filters["agency"] != "all":
         agency = ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).first()
-        if agency:
-            if agency.toptier_code == DOD_CGAC:
-                dod_filter = dod_tas_agency_filter(tas_id)
-            else:
-                # Agency is FREC if the toptier_code is 4 digits, CGAC otherwise
-                agency_filter_type = "fr_entity_code" if len(agency.toptier_code) == 4 else "agency_id"
-                query_filters["{}__{}".format(tas_id, agency_filter_type)] = agency.toptier_code
-        else:
+        if not agency:
             raise InvalidParameterException("Agency with that ID does not exist")
+        query_filters[f"{tas_id}__funding_toptier_agency_id"] = agency.toptier_agency_id
 
     # Filter by Federal Account, if provided
     if filters.get("federal_account", False) and filters["federal_account"] != "all":
@@ -106,10 +98,14 @@ def account_download_filter(account_type, download_table, filters, account_level
         }
         distinct_cols = unique_columns_mapping[account_type]
         order_by_cols = distinct_cols + ["-reporting_period_start", "-pk"]
-        latest_ids_q = download_table.objects.filter(**query_filters).distinct(*distinct_cols).order_by(*order_by_cols)
-        latest_ids = list(latest_ids_q.values_list(unique_id_mapping[account_type], flat=True))
-        if latest_ids:
-            query_filters["{}__in".format(unique_id_mapping[account_type])] = latest_ids
+        latest_ids_q = (
+            download_table.objects.filter(**query_filters)
+            .distinct(*distinct_cols)
+            .order_by(*order_by_cols)
+            .values(unique_id_mapping[account_type])
+        )
+        if latest_ids_q.exists():
+            query_filters[f"{unique_id_mapping[account_type]}__in"] = latest_ids_q
 
     # Make derivations based on the account level
     if account_level == "treasury_account":
@@ -122,7 +118,7 @@ def account_download_filter(account_type, download_table, filters, account_level
         )
 
     # Apply filter and return
-    return queryset.filter(dod_filter, **query_filters)
+    return queryset.filter(**query_filters)
 
 
 def get_agency_name_annotation(relation_name: str, cgac_column_name: str) -> Subquery:
@@ -191,6 +187,7 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
 def generate_federal_account_query(queryset, account_type, tas_id):
     """ Group by federal account (and budget function/subfunction) and SUM all other fields """
     derived_fields = {
+        "reporting_agency_name": StringAgg("submission__reporting_agency_name", "; ", distinct=True),
         "last_reported_submission_period": Max(FiscalYearAndQuarter("reporting_period_end")),
         # federal_account_symbol: fed_acct_AID-fed_acct_MAC
         "federal_account_symbol": Concat(
