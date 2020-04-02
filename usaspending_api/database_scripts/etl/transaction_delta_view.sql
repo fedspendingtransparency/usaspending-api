@@ -31,7 +31,7 @@ SELECT
   UTM.product_or_service_code,
   UTM.product_or_service_description,
   CASE
-    WHEN UTM.product_or_service_code IS NOT NULL THEN CONCAT('{"code":"', UTM.product_or_service_code, '","description":"', NULL, '"}')
+    WHEN UTM.product_or_service_code IS NOT NULL THEN CONCAT('{"code":"', UTM.product_or_service_code, '","description":"', UTM.product_or_service_description, '"}')
     ELSE NULL
   END AS psc_agg_key,
   UTM.naics_code,
