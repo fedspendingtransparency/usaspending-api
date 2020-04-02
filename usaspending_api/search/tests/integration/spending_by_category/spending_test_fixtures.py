@@ -209,3 +209,7 @@ def awards_and_transactions(db):
     # PSC
     mommy.make("references.PSC", code="1005", description="PSC 1")
     mommy.make("references.PSC", code="M123", description="PSC 2")
+
+    # NAICS
+    mommy.make("references.NAICS", code="111110", description="NAICS 1")
+    mommy.make("references.NAICS", code="222220", description="NAICS 2")
