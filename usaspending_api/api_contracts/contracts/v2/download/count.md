@@ -18,7 +18,7 @@ Returns the number of transactions that would be included in a download request 
             }
 
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -41,7 +41,7 @@ Returns the number of transactions that would be included in a download request 
 
 # Data Structures
 
-## FilterObject (object)
+## AdvancedFilterObject (object)
 + `keywords`: `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
