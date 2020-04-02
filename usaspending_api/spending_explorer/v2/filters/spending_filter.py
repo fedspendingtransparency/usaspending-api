@@ -74,10 +74,10 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # agency
             elif key == "agency":
-                toptier_agency = ToptierAgency.objects.filter(agency__id=value).first()
+                toptier_agency = ToptierAgency.objects.filter(agency__id=value, agency__toptier_flag=True).first()
                 if toptier_agency is None:
                     raise InvalidParameterException("Agency ID provided does not correspond to a toptier agency")
-                alt_set = alt_set.filter(Q(treasury_account__funding_toptier_agency=toptier_agency))
+                alt_set = alt_set.filter(treasury_account__funding_toptier_agency=toptier_agency)
 
         # All other _type
         else:
@@ -118,9 +118,9 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # agency
             elif key == "agency":
-                toptier_agency = ToptierAgency.objects.filter(agency__id=value).first()
+                toptier_agency = ToptierAgency.objects.filter(agency__id=value, agency__toptier_flag=True).first()
                 if toptier_agency is None:
                     raise InvalidParameterException("Agency ID provided does not correspond to a toptier agency")
-                queryset = queryset.filter(Q(treasury_account__funding_toptier_agency=toptier_agency))
+                queryset = queryset.filter(treasury_account__funding_toptier_agency=toptier_agency)
 
     return alt_set, queryset
