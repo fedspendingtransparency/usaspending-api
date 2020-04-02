@@ -967,7 +967,7 @@ def _test_correct_response_for_award_amounts(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "award_amounts": [{"upper_bound": 1_000_000}, {"lower_bound": 9013, "upper_bound": 9017}],
+                    "award_amounts": [{"upper_bound": 1000000}, {"lower_bound": 9013, "upper_bound": 9017}],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],

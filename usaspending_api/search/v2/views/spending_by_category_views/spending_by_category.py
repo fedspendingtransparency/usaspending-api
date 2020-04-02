@@ -53,7 +53,9 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-        models = [{"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True}]
+        models = [
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
+        ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
 

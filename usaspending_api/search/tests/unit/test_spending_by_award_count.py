@@ -11,14 +11,14 @@ from usaspending_api.common.helpers.generic_helper import get_time_period_messag
 
 @pytest.fixture
 def award_data_fixture(db):
-    mommy.make("awards.TransactionNormalized", id=210_210_210, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=321_032_103, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=432_104_321, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=543_210_543, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=654_321_065, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=765_432_107, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=876_543_210, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=987_654_321, action_date="2013-09-17")
+    mommy.make("awards.TransactionNormalized", id=210210210, action_date="2013-09-17")
+    mommy.make("awards.TransactionNormalized", id=321032103, action_date="2013-09-17")
+    mommy.make("awards.TransactionNormalized", id=432104321, action_date="2013-09-17")
+    mommy.make("awards.TransactionNormalized", id=543210543, action_date="2013-09-17")
+    mommy.make("awards.TransactionNormalized", id=654321065, action_date="2013-09-17")
+    mommy.make("awards.TransactionNormalized", id=765432107, action_date="2013-09-17")
+    mommy.make("awards.TransactionNormalized", id=876543210, action_date="2013-09-17")
+    mommy.make("awards.TransactionNormalized", id=987654321, action_date="2013-09-17")
     mommy.make(
         "awards.Award",
         category="loans",
@@ -26,7 +26,7 @@ def award_data_fixture(db):
         fain="DECF0000058",
         generated_unique_award_id="ASST_NON_DECF0000058_8900",
         id=200,
-        latest_transaction_id=210_210_210,
+        latest_transaction_id=210210210,
         period_of_performance_current_end_date="2019-09-09",
         period_of_performance_start_date="2012-09-10",
         piid=None,
@@ -40,7 +40,7 @@ def award_data_fixture(db):
         fain=None,
         generated_unique_award_id="CONT_IDV_YUGGY2_8900",
         id=300,
-        latest_transaction_id=321_032_103,
+        latest_transaction_id=321032103,
         period_of_performance_current_end_date="2019-09-09",
         period_of_performance_start_date="2014-09-10",
         piid="YUGGY2",
@@ -54,7 +54,7 @@ def award_data_fixture(db):
         fain=None,
         generated_unique_award_id="CONT_IDV_YUGGY3_8900",
         id=400,
-        latest_transaction_id=432_104_321,
+        latest_transaction_id=432104321,
         period_of_performance_current_end_date="2018-09-09",
         period_of_performance_start_date="2018-09-01",
         piid="YUGGY3",
@@ -68,7 +68,7 @@ def award_data_fixture(db):
         fain=None,
         generated_unique_award_id="CONT_IDV_YUGGY_8900",
         id=500,
-        latest_transaction_id=543_210_543,
+        latest_transaction_id=543210543,
         period_of_performance_current_end_date="2019-09-09",
         period_of_performance_start_date="2018-09-10",
         piid="YUGGY",
@@ -82,7 +82,7 @@ def award_data_fixture(db):
         fain=None,
         generated_unique_award_id="CONT_IDV_YUGGY55_8900",
         id=600,
-        latest_transaction_id=654_321_065,
+        latest_transaction_id=654321065,
         period_of_performance_current_end_date="2039-09-09",
         period_of_performance_start_date="2009-09-10",
         piid="YUGGY55",
@@ -96,7 +96,7 @@ def award_data_fixture(db):
         fain=None,
         generated_unique_award_id="CONT_AW_BEANS_8900",
         id=700,
-        latest_transaction_id=765_432_107,
+        latest_transaction_id=765432107,
         period_of_performance_current_end_date="2019-09-09",
         period_of_performance_start_date="2009-12-20",
         piid="BEANS",
@@ -110,7 +110,7 @@ def award_data_fixture(db):
         fain=None,
         generated_unique_award_id="CONT_AW_BEANS55_8900",
         id=800,
-        latest_transaction_id=876_543_210,
+        latest_transaction_id=876543210,
         period_of_performance_current_end_date="2020-12-09",
         period_of_performance_start_date="2011-09-10",
         piid="BEANS55",
@@ -124,7 +124,7 @@ def award_data_fixture(db):
         fain=None,
         generated_unique_award_id="ASST_AGG_JHISUONSD_8900",
         id=900,
-        latest_transaction_id=987_654_321,
+        latest_transaction_id=987654321,
         period_of_performance_current_end_date="2018-09-09",
         period_of_performance_start_date="2013-09-10",
         piid=None,

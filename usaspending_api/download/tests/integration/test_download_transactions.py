@@ -192,7 +192,7 @@ def test_es_download_transactions_without_columns(
 ):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
@@ -222,7 +222,7 @@ def test_es_download_transactions_with_columns(
 ):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
@@ -262,7 +262,7 @@ def test_es_download_transactions_with_columns(
 def test_es_download_transactions_bad_limit(client, monkeypatch, elasticsearch_transaction_index):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
@@ -290,7 +290,7 @@ def test_es_download_transactions_excessive_limit(
 ):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
@@ -318,7 +318,7 @@ def test_es_download_transactions_bad_column_list_raises(
 ):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
@@ -350,7 +350,7 @@ def test_es_download_transactions_bad_filter_type_raises(
 ):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",

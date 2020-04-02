@@ -50,7 +50,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 500_000.0, "code": "222220", "id": None, "name": "NAICS 2"},
+            {"amount": 500000.0, "code": "222220", "id": None, "name": "NAICS 2"},
             {"amount": 50000.0, "code": "111110", "id": None, "name": "NAICS 1"},
         ],
         "messages": [get_time_period_message()],

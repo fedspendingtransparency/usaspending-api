@@ -98,7 +98,7 @@ def get_object_class(row_object_class, row_direct_reimbursable):
 
 
 class CertifiedAwardFinancialIterator:
-    chunk_size = 100_000
+    chunk_size = 100000
 
     def __init__(self, submission_attributes):
         self.submission_attributes = submission_attributes

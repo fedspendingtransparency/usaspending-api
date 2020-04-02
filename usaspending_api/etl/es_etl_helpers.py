@@ -476,7 +476,9 @@ def create_aliases(client, index, load_type, silent=False):
     # If the alias is on multiple indexes, the loads will fail!
     write_alias = settings.ES_AWARDS_WRITE_ALIAS if load_type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS
     printf({"msg": "Putting alias '{}' on {}".format(write_alias, index), "job": None, "f": "ES Alias Put"})
-    put_alias(client, index, write_alias, {})
+    put_alias(
+        client, index, write_alias, {},
+    )
 
 
 def set_final_index_config(client, index):
@@ -522,7 +524,7 @@ def swap_aliases(client, index, load_type):
         printf({"msg": "ERROR: Unable to delete indexes: {}".format(old_indexes), "f": "ES Alias Drop"})
 
 
-def post_to_elasticsearch(client, job, config, chunksize=250_000):
+def post_to_elasticsearch(client, job, config, chunksize=250000):
     printf({"msg": 'Populating ES Index "{}"'.format(job.index), "job": job.name, "f": "ES Ingest"})
     start = perf_counter()
     try:

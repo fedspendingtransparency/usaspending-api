@@ -201,7 +201,7 @@ the endpoint these tests should be updated to reflect the change.
 def test_es_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
@@ -229,7 +229,7 @@ def test_es_download_awards_without_columns(client, monkeypatch, download_test_d
 def test_es_tsv_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
@@ -257,7 +257,7 @@ def test_es_tsv_download_awards_without_columns(client, monkeypatch, download_te
 def test_es_pstxt_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
@@ -285,7 +285,7 @@ def test_es_pstxt_download_awards_without_columns(client, monkeypatch, download_
 def test_es_download_awards_with_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
@@ -324,7 +324,7 @@ def test_es_download_awards_with_columns(client, monkeypatch, download_test_data
 def test_es_download_awards_bad_filter_type_raises(client, monkeypatch, download_test_data, elasticsearch_award_index):
     logging_statements = []
     monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message)
+        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
     )
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",

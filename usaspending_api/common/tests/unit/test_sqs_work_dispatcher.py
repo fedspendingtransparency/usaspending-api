@@ -12,7 +12,11 @@ from random import randint
 import pytest
 from botocore.config import Config
 from botocore.exceptions import EndpointConnectionError, ClientError, NoCredentialsError, NoRegionError
-from usaspending_api.common.sqs.sqs_handler import get_sqs_queue, FakeSQSMessage, UNITTEST_FAKE_QUEUE_NAME
+from usaspending_api.common.sqs.sqs_handler import (
+    get_sqs_queue,
+    FakeSQSMessage,
+    UNITTEST_FAKE_QUEUE_NAME,
+)
 from usaspending_api.common.sqs.sqs_work_dispatcher import (
     SQSWorkDispatcher,
     QueueWorkerProcessError,
@@ -1454,7 +1458,7 @@ class SQSWorkDispatcherTests(TestCase):
         def raise_exc_with_qmsg_and_worker_process_name_and_message():
             fake_queue_message.body = 1166
             raise QueueWorkerProcessError(
-                "Custom Message about THIS", worker_process_name="MyJob", queue_message=fake_queue_message
+                "Custom Message about THIS", worker_process_name="MyJob", queue_message=fake_queue_message,
             )
 
         with self.assertRaises(QueueWorkerProcessError) as err_ctx6:
