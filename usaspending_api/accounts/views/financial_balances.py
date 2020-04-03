@@ -2,9 +2,7 @@ from django.db.models import F, Sum
 
 from usaspending_api.accounts.serializers import AgenciesFinancialBalancesSerializer
 from usaspending_api.accounts.models import AppropriationAccountBalances
-from usaspending_api.references.helpers import dod_tas_agency_filter
-from usaspending_api.references.models import Agency
-from usaspending_api.references.constants import DOD_CGAC
+from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -32,10 +30,9 @@ class AgenciesFinancialBalancesViewSet(CachedDetailViewSet):
                 "Missing one or more required query parameters: fiscal_year, funding_agency_id"
             )
 
-        toptier_agency = Agency.objects.filter(id=funding_agency_id).first()
+        toptier_agency = ToptierAgency.objects.filter(agency__id=funding_agency_id).first()
         if toptier_agency is None:
             return AppropriationAccountBalances.objects.none()
-        toptier_agency = toptier_agency.toptier_agency
 
         submission_queryset = SubmissionAttributes.objects.all()
         submission_queryset = (
@@ -50,34 +47,22 @@ class AgenciesFinancialBalancesViewSet(CachedDetailViewSet):
         active_fiscal_year = submission.reporting_fiscal_year
         active_fiscal_quarter = submission.fiscal_quarter
 
-        # using final_objects below ensures that we're only pulling the latest
+        # using final_objects ensures that we're only pulling the latest
         # set of financial information for each fiscal year
-        queryset = AppropriationAccountBalances.final_objects.all()
-        # get the incoming agency's toptier agency, because that's what we'll
-        # need to filter on
-        # (used filter() instead of get() b/c we likely don't want to raise an
-        # error on a bad agency id)
-        # DS-1655: if the AID is "097" (DOD), Include the branches of the military in the queryset
-        if toptier_agency.toptier_code == DOD_CGAC:
-            queryset = queryset.filter(
-                dod_tas_agency_filter("treasury_account_identifier"),
-                submission__reporting_fiscal_year=active_fiscal_year,
-                submission__reporting_fiscal_quarter=active_fiscal_quarter,
-            )
-        else:
-            queryset = queryset.filter(
+        queryset = (
+            AppropriationAccountBalances.final_objects.all()
+            .filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
                 treasury_account_identifier__funding_toptier_agency=toptier_agency,
             )
-
-        queryset = queryset.annotate(fiscal_year=F("submission__reporting_fiscal_year"))
-
-        # sum balances by treasury appropriation account (TAS)
-        queryset = queryset.values("fiscal_year").annotate(
-            budget_authority_amount=Sum("total_budgetary_resources_amount_cpe"),
-            obligated_amount=Sum("obligations_incurred_total_by_tas_cpe"),
-            outlay_amount=Sum("gross_outlay_amount_by_tas_cpe"),
+            .annotate(fiscal_year=F("submission__reporting_fiscal_year"))
+            .values("fiscal_year")
+            .annotate(
+                budget_authority_amount=Sum("total_budgetary_resources_amount_cpe"),
+                obligated_amount=Sum("obligations_incurred_total_by_tas_cpe"),
+                outlay_amount=Sum("gross_outlay_amount_by_tas_cpe"),
+            )
         )
 
         return queryset
