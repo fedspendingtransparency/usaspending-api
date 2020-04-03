@@ -58,7 +58,7 @@ class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMet
 
 class FederalAccountViewSet(AbstractAccountViewSet):
     """
-    This route takes award filters and returns spending by CFDA.
+    This route takes award filters and returns spending by Federal Account.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/federal_account.md"
