@@ -1,6 +1,7 @@
 import copy
 import logging
 
+from decimal import Decimal
 from django.conf import settings
 from django.db.models import Sum, FloatField
 from django.db.models.functions import Cast
@@ -17,7 +18,7 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
-from usaspending_api.references.models import PopCounty
+from usaspending_api.references.models import PopCounty, PopCongressionalDistrict
 from usaspending_api.search.models import SubawardView
 
 
@@ -184,17 +185,19 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         # State names are inconsistent in database (upper, lower, null)
         # Used lookup instead to be consistent
-        results = [
-            {
-                "shape_code": x[loc_lookup],
-                "aggregated_amount": x["transaction_amount"],
-                "display_name": code_to_state.get(x[loc_lookup], {"name": "None"}).get("name").title(),
-                "population": populations.get(code_to_state.get(x[loc_lookup], {"name": "None"}).get("name").lower()),
-                "per_capita": x["transaction_amount"]
-                / populations.get(code_to_state.get(x[loc_lookup], {"name": "None"}).get("name").lower()),
-            }
-            for x in self.geo_queryset
-        ]
+        results = []
+        for x in self.geo_queryset:
+            shape_code = x[loc_lookup]
+            population = populations.get(code_to_state.get(shape_code, {"name": "None"}).get("name").lower())
+            results.append(
+                {
+                    "shape_code": shape_code,
+                    "aggregated_amount": x["transaction_amount"],
+                    "display_name": code_to_state.get(shape_code, {"name": "None"}).get("name").title(),
+                    "population": population,
+                    "per_capita": (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01")),
+                }
+            )
 
         return results
 
@@ -234,33 +237,44 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     def county_results(self, state_lookup, county_name):
         # Returns county results formatted for map
         state_pop_rows = PopCounty.objects.exclude(county_number="000").values()
-        populations = {row["state_name"].lower(): row["latest_population"] for row in state_pop_rows}
+        populations = {f"{row['state_code']}{row['county_number']}": row["latest_population"] for row in state_pop_rows}
 
-        results = [
-            {
-                "shape_code": code_to_state.get(x[state_lookup])["fips"]
-                + pad_codes(self.geo_layer, x["code_as_float"]),
-                "aggregated_amount": x["transaction_amount"],
-                "display_name": x[county_name].title() if x[county_name] is not None else x[county_name],
-                # "population": populations.get(code_to_state.get(x[loc_lookup], {"name": "None"}).get("name").lower()),
-                # "per_capita": x["transaction_amount"]
-                # / populations.get(code_to_state.get(x[loc_lookup], {"name": "None"}).get("name").lower()),
-            }
-            for x in self.geo_queryset
-        ]
+        results = []
+        for x in self.geo_queryset:
+            shape_code = code_to_state.get(x[state_lookup])["fips"] + pad_codes(self.geo_layer, x["code_as_float"])
+            population = populations.get(shape_code)
+            results.append(
+                {
+                    "shape_code": shape_code,
+                    "aggregated_amount": x["transaction_amount"],
+                    "display_name": x[county_name].title() if x[county_name] is not None else x[county_name],
+                    "population": population,
+                    "per_capita": (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01")),
+                }
+            )
 
         return results
 
     def district_results(self, state_lookup):
         # Returns congressional district results formatted for map
-        results = [
-            {
-                "shape_code": code_to_state.get(x[state_lookup])["fips"]
-                + pad_codes(self.geo_layer, x["code_as_float"]),
-                "aggregated_amount": x["transaction_amount"],
-                "display_name": x[state_lookup] + "-" + pad_codes(self.geo_layer, x["code_as_float"]),
-            }
-            for x in self.geo_queryset
-        ]
+
+        state_pop_rows = PopCongressionalDistrict.objects.all().values()
+        populations = {
+            f"{row['state_code']}{row['congressional_district']}": row["latest_population"] for row in state_pop_rows
+        }
+
+        results = []
+        for x in self.geo_queryset:
+            shape_code = code_to_state.get(x[state_lookup])["fips"] + pad_codes(self.geo_layer, x["code_as_float"])
+            population = populations.get(shape_code)
+            results.append(
+                {
+                    "shape_code": shape_code,
+                    "aggregated_amount": x["transaction_amount"],
+                    "display_name": x[state_lookup] + "-" + pad_codes(self.geo_layer, x["code_as_float"]),
+                    "population": population,
+                    "per_capita": (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01")),
+                }
+            )
 
         return results

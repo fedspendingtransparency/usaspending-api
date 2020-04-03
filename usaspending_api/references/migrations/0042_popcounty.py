@@ -11,6 +11,21 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='PopCongressionalDistrict',
+            fields=[
+                ('id', models.AutoField(primary_key=True, serialize=False)),
+                ('state_code', models.CharField(max_length=2)),
+                ('state_name', models.TextField()),
+                ('state_abbreviation', models.CharField(max_length=2)),
+                ('congressional_district', models.TextField()),
+                ('latest_population', models.IntegerField()),
+            ],
+            options={
+                'db_table': 'ref_population_cong_district',
+                'managed': True,
+            },
+        ),
+        migrations.CreateModel(
             name='PopCounty',
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
