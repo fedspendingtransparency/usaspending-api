@@ -116,7 +116,7 @@ Step 2: Insert CSV data into temporary table
 
     psql $DATABASE_URL -v ON_ERROR_STOP=1 -c "COPY co_est2019_alldata FROM STDIN WITH CSV HEADER" < /Users/tonysappe/Downloads/census_2019_county_clean.csv
 
-Step 3:
+Step 3: Restock the reference data table
 
     BEGIN;
     TRUNCATE TABLE ref_population_county RESTART IDENTITY;
@@ -128,14 +128,24 @@ Step 3:
     DROP TABLE co_est2019_alldata;
     COMMIT;
 
+## Congressional District Population Data
 
-----------------------------------
-CREATE TABLE cong_est2019_alldata(population TEXT, state_code TEXT,usps_code TEXT,state_name TEXT,congressional_district TEXT);
+Step 1: Create temporary table
 
-psql $DATABASE_URL -v ON_ERROR_STOP=1 -c "COPY cong_est2019_alldata FROM STDIN WITH CSV HEADER" < /Users/tonysappe/Downloads/2018_PopulationCongressionalDistrict.csv
+    CREATE TABLE cong_est2019_alldata(population TEXT, state_code TEXT,usps_code TEXT,state_name TEXT,congressional_district TEXT);
 
-INSERT INTO ref_population_cong_district (state_code, state_name, state_abbreviation, congressional_district, latest_population)
-SELECT lpad(state_code, 2, '0'), state_name, usps_code, lpad(congressional_district, 2, '0'), population::bigint
-FROM  cong_est2019_alldata;
+Step 2: Insert CSV data into temporary table
 
-"""
+    psql $DATABASE_URL -v ON_ERROR_STOP=1 -c "COPY cong_est2019_alldata FROM STDIN WITH CSV HEADER" < /Users/tonysappe/Downloads/2018_PopulationCongressionalDistrict.csv
+
+Step 3: Restock the reference data table
+
+    BEGIN;
+    TRUNCATE TABLE ref_population_cong_district RESTART IDENTITY;
+
+    INSERT INTO ref_population_cong_district (state_code, state_name, state_abbreviation, congressional_district, latest_population)
+    SELECT lpad(state_code, 2, '0'), state_name, usps_code, lpad(congressional_district, 2, '0'), population::bigint
+    FROM  cong_est2019_alldata;
+
+    DROP TABLE cong_est2019_alldata;
+    COMMIT;
