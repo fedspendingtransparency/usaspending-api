@@ -64,7 +64,7 @@
     "  FROM recipient_lookup AS rlv",
     "  ) recipient_lookup ON recipient_lookup.duns = COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AND COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL",
     "INNER JOIN",
-    "  financial_accounts_by_awards AS FABA ON (awards.id = FABA.award_id)",
+    "  (SELECT award_id, treasury_account_id FROM financial_accounts_by_awards GROUP BY award_id, treasury_account_id) AS FABA ON (awards.id = FABA.award_id)",
     "INNER JOIN",
     "  treasury_appropriation_account AS TR_ACCT ON (FABA.treasury_account_id = TR_ACCT.treasury_account_identifier)",
     "INNER JOIN",
