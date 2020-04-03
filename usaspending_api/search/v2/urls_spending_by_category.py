@@ -6,7 +6,11 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
     FundingAgencyViewSet,
     FundingSubagencyViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import (
+    CfdaViewSet,
+    PSCViewSet,
+    NAICSViewSet,
+)
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
     CountryViewSet,
     CountyViewSet,
@@ -24,6 +28,8 @@ urlpatterns = [
     url(r"^district", DistrictViewSet.as_view()),
     url(r"^funding_agency", FundingAgencyViewSet.as_view()),
     url(r"^funding_subagency", FundingSubagencyViewSet.as_view()),
+    url(r"^naics", NAICSViewSet.as_view()),
+    url(r"^psc", PSCViewSet.as_view()),
     url(r"^recipient_duns", RecipientDunsViewSet.as_view()),
     url(r"^state_territory", StateTerritoryViewSet.as_view()),
 ]

@@ -21,17 +21,17 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.helpers.spending_by_category_helpers import (
-    fetch_psc_description_by_code,
-    fetch_naics_description_from_code,
-)
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import (
     AwardingAgencyViewSet,
     AwardingSubagencyViewSet,
     FundingAgencyViewSet,
     FundingSubagencyViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import (
+    CfdaViewSet,
+    PSCViewSet,
+    NAICSViewSet,
+)
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
     CountyViewSet,
     CountryViewSet,
@@ -45,21 +45,14 @@ logger = logging.getLogger(__name__)
 API_VERSION = settings.API_VERSION
 
 ALIAS_DICT = {
-    "recipient_duns": {
+    "recipient_parent_duns": {
         "recipient_id": "recipient_id",
         "recipient_name": "name",
         "recipient_unique_id": "code",
         "parent_recipient_unique_id": "code",
     },
-    "psc": {"product_or_service_code": "code"},
-    "naics": {"naics_code": "code", "naics_description": "name"},
-    "district": {"pop_congressional_code": "code"},
-    "state_territory": {"pop_state_code": "code"},
-    "country": {"pop_country_code": "code"},
     "federal_account": {"federal_account_id": "id", "federal_account_display": "code", "account_title": "name"},
 }
-
-ALIAS_DICT["recipient_parent_duns"] = ALIAS_DICT["recipient_duns"]
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -115,8 +108,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             "district": DistrictViewSet().perform_search,
             "funding_agency": FundingAgencyViewSet().perform_search,
             "funding_subagency": FundingSubagencyViewSet().perform_search,
-            "state_territory": StateTerritoryViewSet().perform_search,
+            "naics": NAICSViewSet().perform_search,
+            "psc": PSCViewSet().perform_search,
             "recipient_duns": RecipientDunsViewSet().perform_search,
+            "state_territory": StateTerritoryViewSet().perform_search,
         }
         business_logic_func = business_logic_lookup.get(validated_payload["category"])
         if business_logic_func:
@@ -182,8 +177,6 @@ class BusinessLogic:
         # filter the transactions by category
         if self.category in ("recipient_parent_duns",):
             results = self.parent_recipient()
-        elif self.category in ("psc", "naics"):
-            results = self.industry_and_other_codes()
         elif self.category in ("federal_account"):
             results = self.federal_account()
 
@@ -208,34 +201,6 @@ class BusinessLogic:
         self.raise_not_implemented()
         # filters = {'parent_recipient_unique_id__isnull': False}
         # values = ['recipient_name', 'parent_recipient_unique_id']
-
-    def industry_and_other_codes(self) -> list:
-        if self.category == "psc":
-            if self.subawards:
-                # N/A for subawards
-                self.raise_not_implemented()
-            filters = {"product_or_service_code__isnull": False}
-            values = ["product_or_service_code"]
-        elif self.category == "naics":
-            if self.subawards:
-                # TODO: get subaward NAICS from Broker
-                self.raise_not_implemented()
-            filters = {"naics_code__isnull": False}
-            values = ["naics_code", "naics_description"]
-
-        self.queryset = self.common_db_query(filters, values)
-        # DB hit here
-        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
-
-        results = alias_response(ALIAS_DICT[self.category], query_results)
-        for row in results:
-            if self.category == "psc":
-                row["id"] = None
-                row["name"] = fetch_psc_description_by_code(row["code"])
-            elif self.category == "naics":
-                row["id"] = None
-                row["name"] = fetch_naics_description_from_code(row["code"], row["name"])
-        return results
 
     def federal_account(self) -> list:
         # Awards -> FinancialAccountsByAwards -> TreasuryAppropriationAccount -> FederalAccount
