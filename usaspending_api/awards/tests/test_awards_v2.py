@@ -1047,7 +1047,7 @@ def test_special_characters(client, awards_and_transactions):
 
 
 def test_zip4_switch(client, awards_and_transactions):
-    resp = client.get("/api/v2/awards/11/")
+    resp = client.get("/api/v2/awards/10/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["recipient"]["location"]["zip4"] == "0000"
 
