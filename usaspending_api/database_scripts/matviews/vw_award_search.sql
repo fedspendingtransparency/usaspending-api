@@ -15,3 +15,5 @@ CREATE VIEW vw_award_search AS (
   UNION ALL
   SELECT * FROM mv_pre2008_award_search
 );
+
+GRANT SELECT ON vw_award_search TO readonly;
