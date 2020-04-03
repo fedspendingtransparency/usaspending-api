@@ -25,8 +25,6 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.helpers.spending_by_category_helpers import (
-    fetch_psc_description_by_code,
-    fetch_naics_description_from_code,
     fetch_country_name_from_code,
     fetch_state_name_from_code,
 )
@@ -36,7 +34,11 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
     FundingAgencyViewSet,
     FundingSubagencyViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import (
+    CfdaViewSet,
+    PSCViewSet,
+    NAICSViewSet,
+)
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import CountyViewSet
 
 logger = logging.getLogger(__name__)
@@ -117,6 +119,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             response = FundingAgencyViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "funding_subagency":
             response = FundingSubagencyViewSet().perform_search(validated_payload, original_filters)
+        elif validated_payload["category"] == "naics":
+            response = NAICSViewSet().perform_search(validated_payload, original_filters)
+        elif validated_payload["category"] == "psc":
+            response = PSCViewSet().perform_search(validated_payload, original_filters)
         else:
             response = BusinessLogic(validated_payload, original_filters).results()
 
@@ -278,34 +284,6 @@ class BusinessLogic:
                 del row["recipient_hash"]
 
         results = alias_response(ALIAS_DICT[self.category], query_results)
-        return results
-
-    def industry_and_other_codes(self) -> list:
-        if self.category == "psc":
-            if self.subawards:
-                # N/A for subawards
-                self.raise_not_implemented()
-            filters = {"product_or_service_code__isnull": False}
-            values = ["product_or_service_code"]
-        elif self.category == "naics":
-            if self.subawards:
-                # TODO: get subaward NAICS from Broker
-                self.raise_not_implemented()
-            filters = {"naics_code__isnull": False}
-            values = ["naics_code", "naics_description"]
-
-        self.queryset = self.common_db_query(filters, values)
-        # DB hit here
-        query_results = list(self.queryset[self.lower_limit : self.upper_limit])
-
-        results = alias_response(ALIAS_DICT[self.category], query_results)
-        for row in results:
-            if self.category == "psc":
-                row["id"] = None
-                row["name"] = fetch_psc_description_by_code(row["code"])
-            elif self.category == "naics":
-                row["id"] = None
-                row["name"] = fetch_naics_description_from_code(row["code"], row["name"])
         return results
 
     def location(self) -> list:
