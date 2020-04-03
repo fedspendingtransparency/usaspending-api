@@ -483,7 +483,13 @@
         "type": "keyword"
       },
       "federal_accounts": {
-        "type": "keyword"
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
       },
       "business_categories": {
         "type": "keyword"

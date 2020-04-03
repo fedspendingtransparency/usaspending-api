@@ -90,6 +90,39 @@ def awards_and_transactions(db):
     mommy.make("awards.Award", id=6, latest_transaction_id=60)
     mommy.make("awards.Award", id=7, latest_transaction_id=70)
 
+    mommy.make("awards.FinancialAccountsByAwards", pk=1, award_id=1, treasury_account_id=1)
+    mommy.make("accounts.TreasuryAppropriationAccount", pk=1, federal_account_id=1)
+    mommy.make(
+        "accounts.FederalAccount",
+        pk=1,
+        agency_identifier="012",
+        main_account_code="1106",
+        account_title="FA 1",
+        federal_account_code="012-1106",
+    )
+
+    mommy.make("awards.FinancialAccountsByAwards", pk=2, award_id=2, treasury_account_id=2)
+    mommy.make("accounts.TreasuryAppropriationAccount", pk=2, federal_account_id=2)
+    mommy.make(
+        "accounts.FederalAccount",
+        pk=2,
+        agency_identifier="014",
+        main_account_code="5110",
+        account_title="FA 2",
+        federal_account_code="014-5110",
+    )
+
+    mommy.make("awards.FinancialAccountsByAwards", pk=3, award_id=2, treasury_account_id=3)
+    mommy.make("accounts.TreasuryAppropriationAccount", pk=3, federal_account_id=3)
+    mommy.make(
+        "accounts.FederalAccount",
+        pk=3,
+        agency_identifier="014",
+        main_account_code="1036",
+        account_title="FA 3",
+        federal_account_code="014-1036",
+    )
+
     # Transaction Normalized
     mommy.make(
         "awards.TransactionNormalized",

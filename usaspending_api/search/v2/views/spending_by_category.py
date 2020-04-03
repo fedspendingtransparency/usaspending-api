@@ -32,6 +32,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_indu
     PSCViewSet,
     NAICSViewSet,
 )
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_federal_account import FederalAccountViewSet
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
     CountyViewSet,
     CountryViewSet,
@@ -106,6 +107,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             "country": CountryViewSet().perform_search,
             "county": CountyViewSet().perform_search,
             "district": DistrictViewSet().perform_search,
+            "federal_account": FederalAccountViewSet().perform_search,
             "funding_agency": FundingAgencyViewSet().perform_search,
             "funding_subagency": FundingSubagencyViewSet().perform_search,
             "naics": NAICSViewSet().perform_search,
