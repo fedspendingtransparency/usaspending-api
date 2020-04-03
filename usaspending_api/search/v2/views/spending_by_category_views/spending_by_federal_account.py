@@ -31,7 +31,7 @@ class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMet
             account_info = json.loads(bucket.get("key"))
             results.append(
                 {
-                    "amount": Decimal(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                    "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "id": int(account_info.get("id")) if account_info.get("id") else None,
                     "code": account_info.get("federal_account_code") or None,
                     "name": account_info.get("account_title"),

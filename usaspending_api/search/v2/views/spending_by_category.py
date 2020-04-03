@@ -38,6 +38,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import CountyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_federal_account import FederalAccountViewSet
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             response = CfdaViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "county":
             response = CountyViewSet().perform_search(validated_payload, original_filters)
+        elif validated_payload["category"] == "federal_account":
+            response = FederalAccountViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "funding_agency":
             response = FundingAgencyViewSet().perform_search(validated_payload, original_filters)
         elif validated_payload["category"] == "funding_subagency":
