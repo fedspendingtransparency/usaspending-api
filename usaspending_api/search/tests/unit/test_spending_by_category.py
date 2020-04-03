@@ -10,7 +10,11 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
     FundingAgencyViewSet,
     FundingSubagencyViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import (
+    CfdaViewSet,
+    PSCViewSet,
+    NAICSViewSet,
+)
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import CountyViewSet
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient_duns import RecipientDunsViewSet
 
@@ -758,7 +762,7 @@ def test_category_cfda_subawards(cfda_test_data):
 def test_category_psc_awards(psc_test_data):
     test_payload = {"category": "psc", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = PSCViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "psc",
@@ -777,7 +781,7 @@ def test_category_psc_awards(psc_test_data):
 def test_category_naics_awards(naics_test_data):
     test_payload = {"category": "naics", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = NAICSViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "naics",

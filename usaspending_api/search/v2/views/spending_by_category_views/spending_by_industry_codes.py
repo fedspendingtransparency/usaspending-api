@@ -40,7 +40,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "code": industry_code_info.get("code"),
-                    "id": int(industry_code_info.get("id")) if len(industry_code_info.get("id")) > 0 else None,
+                    "id": int(industry_code_info.get("id")) if industry_code_info.get("id") else None,
                     "name": industry_code_info.get("description") or None,
                 }
             )
@@ -70,7 +70,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                 row["name"] = fetch_psc_description_by_code(row["code"])
             elif self.industry_code_type == IndustryCodeType.NAICS:
                 row["id"] = None
-                row["name"] = fetch_naics_description_from_code(row["code"], row["name"])
+                row["name"] = fetch_naics_description_from_code(row["code"], row.get("name"))
             row.pop(self.industry_code_type.value)
 
         return query_results
@@ -85,3 +85,25 @@ class CfdaViewSet(AbstractIndustryCodeViewSet):
 
     industry_code_type = IndustryCodeType.CFDA
     category = Category(name="cfda", agg_key="cfda_agg_key")
+
+
+class NAICSViewSet(AbstractIndustryCodeViewSet):
+    """
+    This route takes award filters and returns spending by NAICS.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/naics.md"
+
+    industry_code_type = IndustryCodeType.NAICS
+    category = Category(name="naics", agg_key="naics_agg_key")
+
+
+class PSCViewSet(AbstractIndustryCodeViewSet):
+    """
+    This route takes award filters and returns spending by PSC.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/psc.md"
+
+    industry_code_type = IndustryCodeType.PSC
+    category = Category(name="psc", agg_key="psc_agg_key")

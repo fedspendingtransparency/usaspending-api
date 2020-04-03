@@ -184,6 +184,8 @@ def awards_and_transactions(db):
         place_of_perform_county_na="TEST NAME",
         awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         awardee_or_recipient_uniqu="096354360",
+        product_or_service_code="1005",
+        product_or_service_co_desc="PSC 1",
     )
     mommy.make(
         "awards.TransactionFPDS",
@@ -194,6 +196,10 @@ def awards_and_transactions(db):
         place_of_perform_county_na="CHARLESTON",
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="123456789",
+        product_or_service_code="M123",
+        product_or_service_co_desc="PSC 2",
+        naics="111110",
+        naics_description="NAICS 1",
     )
     mommy.make(
         "awards.TransactionFPDS",
@@ -204,6 +210,8 @@ def awards_and_transactions(db):
         place_of_perform_county_na="CHARLESTON",
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="123456789",
+        naics="222220",
+        naics_description="NAICS 2",
     )
 
     # References CFDA
@@ -257,3 +265,11 @@ def awards_and_transactions(db):
         recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
         duns="987654321",
     )
+
+    # PSC
+    mommy.make("references.PSC", code="1005", description="PSC 1")
+    mommy.make("references.PSC", code="M123", description="PSC 2")
+
+    # NAICS
+    mommy.make("references.NAICS", code="111110", description="NAICS 1")
+    mommy.make("references.NAICS", code="222220", description="NAICS 2")
