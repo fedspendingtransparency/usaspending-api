@@ -215,7 +215,8 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("legal_entity_address_line2", "_rl_address_line2"),
         ("legal_entity_address_line3", "_rl_address_line3"),
         ("legal_entity_congressional", "_rl_congressional_code"),
-        ("legal_entity_zip_last4", "_rl_zip4"),
+        ("legal_entity_zip_last4", "_rl_zip_last_4"),
+        ("legal_entity_zip4", "_rl_zip4"),
         ("legal_entity_zip5", "_rl_zip5"),
         # "Place of Performance Location"
         ("place_of_perform_country_c", "_pop_location_country_code"),
