@@ -91,6 +91,4 @@ The proper usage of the `user_selectable` flag has been a little hazy since its 
 Currently, it is being used to control which agencies are displayed in dropdowns on Download pages
 and is used to restrict the agencies for which Delta files are generated.
 
-It is **NOT** currently being used to limit agency typeaheads in advanced search.  In the advanced
-search typeahead, any agency with a subtier is being listed unless it is contained in the
-EXCLUDE_CGAC global.
+It is **NOT** currently being used to limit agency typeaheads in advanced search. 
