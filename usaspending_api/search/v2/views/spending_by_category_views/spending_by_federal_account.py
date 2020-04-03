@@ -63,5 +63,4 @@ class FederalAccountViewSet(AbstractAccountViewSet):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/federal_account.md"
 
-    industry_code_type = AccountType.FEDERAL_ACCOUNT
     category = Category(name="federal_account", agg_key="federal_accounts")
