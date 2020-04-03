@@ -633,6 +633,7 @@ def awards_and_transactions(db):
         "transaction": TransactionNormalized.objects.get(pk=11),
         "agency_id": "2000",
         "piid": "AWARD10",
+        "legal_entity_zip4": "0000",
     }
 
     mommy.make("awards.TransactionFPDS", **cont_trans_1)
@@ -1043,6 +1044,12 @@ def test_special_characters(client, awards_and_transactions):
     assert resp.status_code == status.HTTP_200_OK
     resp = client.get("/api/v2/awards/count/federal_account/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
     assert resp.status_code == status.HTTP_200_OK
+
+
+def test_zip4_switch(client, awards_and_transactions):
+    resp = client.get("/api/v2/awards/11/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["recipient"]["location"]["zip4"] == "0000"
 
 
 expected_response_asst = {
