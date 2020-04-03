@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0041_frec_associated_cgac_code'),
+        ('references', '0042_cgac_is_shared'),
     ]
 
     operations = [
