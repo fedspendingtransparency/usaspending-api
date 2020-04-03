@@ -31,6 +31,7 @@ def award_data_fixture(db):
         recipient_location_country_code="USA",
         recipient_location_state_code="CA",
     )
+    mommy.make("references.PopCounty", state_name="California", county_number="000", latest_population=2403)
 
 
 def test_geocode_filter_by_city(client, award_data_fixture):
