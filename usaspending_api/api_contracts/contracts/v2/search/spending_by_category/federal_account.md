@@ -15,8 +15,10 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
             The filters to find with said category
         + `limit`: 5 (optional, number)
             The number of results to include per page
+            + Default: 10
         + `page`: 1 (optional, number)
             The page of results to return based on the limit
+            + Default: 1
         + `subawards` (optional, boolean)
             Determines whether Prime Awards or Sub Awards are searched
 
