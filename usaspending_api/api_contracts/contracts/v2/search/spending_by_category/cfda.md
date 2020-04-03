@@ -10,8 +10,15 @@ This endpoint supports the advanced search page and allow for complex filtering 
 This endpoint returns a list of the top results of CFDA sorted by the total amounts in descending order.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             The filters to find with said category
         + `limit`: 5 (optional, number)
             The number of results to include per page
@@ -74,7 +81,7 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
 + `hasNext` (required, boolean)
 
 ## Filter Objects
-### FilterObject (object)
+### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
@@ -97,7 +104,7 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
-+ `naics_codes`: `311812` (optional, array[string])
++ `naics_codes` (optional, NAICSCodeObject)
 + `psc_codes`: `8940`, `8910` (optional, array[string])
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
@@ -138,6 +145,10 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
 + `upper_bound`: 1000000 (optional, number)
+
+### NAICSCodeObject (object)
++ `require`: `33` (optional, array[string])
++ `exclude`: `3333` (optional, array[string])
 
 ### TASCodeObject (object)
 + `ata` (optional, string, nullable)

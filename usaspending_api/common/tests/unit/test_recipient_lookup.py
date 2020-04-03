@@ -7,17 +7,17 @@ from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 
 @pytest.fixture
 def recipient_lookup(db):
-    parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
-    recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
-    parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
-    recipient_profile = {"recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367", "recipient_level": "C"}
+    parent_recipient_lookup = {"duns": "123", "recipient_hash": "01c03484-d1bd-41cc-2aca-4b427a2d0611"}
+    recipient_lookup = {"duns": "456", "recipient_hash": "1c4e7c2a-efe3-1b7e-2190-6f4487f808ac"}
+    parent_recipient_profile = {"recipient_hash": "01c03484-d1bd-41cc-2aca-4b427a2d0611", "recipient_level": "P"}
+    recipient_profile = {"recipient_hash": "1c4e7c2a-efe3-1b7e-2190-6f4487f808ac", "recipient_level": "C"}
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
 
     # This is required for test_child_recipient_with_name_and_no_id.
-    recipient_profile = {"recipient_hash": "75c74068-3dd4-8770-52d0-999353d20f67", "recipient_level": "C"}
+    recipient_profile = {"recipient_hash": "b2c8fe8e-b520-c47f-31e3-3620a358ce48", "recipient_level": "C"}
     mommy.make("recipient.RecipientProfile", **recipient_profile)
 
 
@@ -40,7 +40,7 @@ def test_child_recipient_with_name_and_no_id(recipient_lookup):
         "recipient_unique_id": None,
         "parent_recipient_unique_id": "123",
     }
-    expected_result = "75c74068-3dd4-8770-52d0-999353d20f67-C"
+    expected_result = "b2c8fe8e-b520-c47f-31e3-3620a358ce48-C"
     assert obtain_recipient_uri(**child_recipient_parameters) == expected_result
 
 
@@ -51,7 +51,7 @@ def test_child_recipient_with_id_and_no_name(recipient_lookup):
         "recipient_unique_id": "456",
         "parent_recipient_unique_id": "123",
     }
-    expected_result = "f989e299-1f50-2600-f2f7-b6a45d11f367-C"
+    expected_result = "1c4e7c2a-efe3-1b7e-2190-6f4487f808ac-C"
     assert obtain_recipient_uri(**child_recipient_parameters) == expected_result
 
 
@@ -62,7 +62,7 @@ def test_child_recipient_with_name_and_id(recipient_lookup):
         "recipient_unique_id": "456",
         "parent_recipient_unique_id": "123",
     }
-    expected_result = "f989e299-1f50-2600-f2f7-b6a45d11f367-C"
+    expected_result = "1c4e7c2a-efe3-1b7e-2190-6f4487f808ac-C"
     assert obtain_recipient_uri(**child_recipient_parameters) == expected_result
 
 
@@ -87,7 +87,7 @@ def test_parent_recipient_with_id_and_no_name(recipient_lookup):
         "parent_recipient_unique_id": None,
         "is_parent_recipient": True,
     }
-    expected_result = "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P"
+    expected_result = "01c03484-d1bd-41cc-2aca-4b427a2d0611-P"
     assert obtain_recipient_uri(**child_recipient_parameters) == expected_result
 
 
@@ -99,5 +99,5 @@ def test_parent_recipient_with_id_and_name(recipient_lookup):
         "parent_recipient_unique_id": None,
         "is_parent_recipient": True,
     }
-    expected_result = "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P"
+    expected_result = "01c03484-d1bd-41cc-2aca-4b427a2d0611-P"
     assert obtain_recipient_uri(**child_recipient_parameters) == expected_result

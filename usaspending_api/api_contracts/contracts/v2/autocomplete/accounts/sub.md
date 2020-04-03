@@ -7,9 +7,15 @@ This endpoint powers the USAspending.gov Sub Account Code (SUB) autocomplete in 
 
 ## POST
 
-List of potential Sub Account Codes 
+List of potential Sub Account Codes
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
 
     + Attributes (object)
         + `filters` (required, ComponentFilters)
@@ -29,8 +35,7 @@ List of potential Sub Account Codes
 + Response 200 (application/json)
 
     + Attributes (object)
-        + `results` (required, array, fixed-type)
-            + (string)
+        + `results` (required, array[string], fixed-type)
 
     + Body
 

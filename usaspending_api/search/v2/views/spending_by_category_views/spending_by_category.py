@@ -50,6 +50,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     obligation_column: int
     pagination: Pagination
     subawards: bool
+    high_cardinality_categories: List[str] = ["recipient_duns"]
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -138,29 +139,57 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         search = TransactionSearch().filter(filter_query)
 
         # Get count of unique buckets; terminate early if there are no buckets matching criteria
-        if self.category.agg_key != "federal_accounts":
-            bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}.hash")
-        else:
-            bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}")
+        
         if bucket_count == 0:
             return None
         elif bucket_count >= 9900:
+        sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
+
+        # Need to handle high cardinality categories differently; this assumes that the Search object references
+        # an Elasticsearch cluster that has a "routing" equal to "self.category.agg_key"
+        if self.category.name in self.high_cardinality_categories:
+            # 10k is the maximum number of allowed buckets
+            size = self.pagination.upper_limit
+            shard_size = size
+            sum_bucket_sort = sum_aggregations["sum_bucket_truncate"]
+            group_by_agg_key_values = {"order": {"sum_field": "desc"}}
+        else:
+            # Get count of unique buckets; terminate early if there are no buckets matching criteria
+            
+            #check if category is federal accounts, if so, do not use hash
+            if self.category.agg_key != "federal_accounts":
+                bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}.hash")
+            else:
+                bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}")
+            if bucket_count == 0:
+                return None
+            else:
+                # Add 100 to make sure that we consider enough records in each shard for accurate results;
+                # Only needed for non high-cardinality fields since those are being routed
+                size = bucket_count
+                shard_size = bucket_count + 100
+                sum_bucket_sort = sum_aggregations["sum_bucket_sort"]
+                group_by_agg_key_values = {}
+
+        if shard_size > 10000:
             logger.warning(f"Max number of buckets reached for aggregation key: {self.category.agg_key}.")
             raise ElasticsearchConnectionException(
                 "Current filters return too many unique items. Narrow filters to return results."
             )
 
         # Define all aggregations needed to build the response
-        group_by_agg_key = A("terms", field=self.category.agg_key, size=bucket_count, shard_size=bucket_count + 100)
+        group_by_agg_key_values.update({"field": self.category.agg_key, "size": size, "shard_size": shard_size})
+        group_by_agg_key = A("terms", **group_by_agg_key_values)
 
-        sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
         sum_field = sum_aggregations["sum_field"]
-        sum_bucket_sort = sum_aggregations["sum_bucket_sort"]
 
         # Apply the aggregations to the TransactionSearch object
         search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field).pipeline(
             "sum_bucket_sort", sum_bucket_sort
         )
+
+        # Set size to 0 since we don't care about documents returned
+        search.update_from_dict({"size": 0})
 
         return search
 

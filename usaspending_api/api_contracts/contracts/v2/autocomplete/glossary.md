@@ -7,9 +7,16 @@ This endpoint returns glossary autocomplete data for submitted text snippet.
 
 ## POST
 
-List Autocomplete Glossary 
+List Autocomplete Glossary
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `search_text` (required, string)
             The text snippet that you are trying to autocomplete using a glossary term.
