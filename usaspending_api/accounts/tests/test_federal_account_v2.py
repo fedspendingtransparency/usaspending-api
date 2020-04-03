@@ -158,13 +158,23 @@ def test_federal_accounts_endpoint_correct_data(client, fixture_data):
         data=json.dumps({"sort": {"field": "managing_agency", "direction": "asc"}, "filters": {"fy": "2017"}}),
     )
     response_data = resp.json()
-    assert response_data["results"][0]["budgetary_resources"] == 3000
-    assert response_data["results"][0]["managing_agency"] == "Dept. of Depts"
-    assert response_data["results"][0]["managing_agency_acronym"] == "ABCD"
 
-    assert response_data["results"][1]["managing_agency_acronym"] == "EFGH"
-    assert response_data["results"][1]["budgetary_resources"] == 9000
     assert response_data["fy"] == "2017"
+
+    assert response_data["results"][0]["managing_agency_acronym"] == "DOD"
+    assert response_data["results"][0]["budgetary_resources"] is None
+
+    assert response_data["results"][1]["managing_agency_acronym"] == "DOL"
+    assert response_data["results"][1]["budgetary_resources"] is None
+
+    assert response_data["results"][2]["managing_agency_acronym"] == "DOD"
+    assert response_data["results"][2]["budgetary_resources"] is None
+
+    assert response_data["results"][3]["managing_agency_acronym"] == "ABCD"
+    assert response_data["results"][3]["budgetary_resources"] == 3000
+
+    assert response_data["results"][4]["managing_agency_acronym"] == "EFGH"
+    assert response_data["results"][4]["budgetary_resources"] == 9000
 
 
 @pytest.mark.django_db
@@ -305,7 +315,7 @@ def test_federal_accounts_uses_corrected_cgac(client, fixture_data):
         data=json.dumps({"sort": {"field": "managing_agency", "direction": "asc"}, "filters": {"fy": "2015"}}),
     )
     response_data = resp.json()
-    response_data["results"][0]["managing_agency_acronym"] == "DOL"
+    assert response_data["results"][0]["managing_agency_acronym"] == "DOD"
 
 
 @pytest.mark.django_db
@@ -337,6 +347,10 @@ def test_federal_account_dod_cgac(client, fixture_data):
         data=json.dumps({"agency_identifier": "097", "filters": {"fy": "2018"}}),
     )
     response_data = resp.json()
-    assert len(response_data["results"]) == 2
+
+    assert len(response_data["results"]) == 5
     assert "CGAC_DOD" in response_data["results"][0]["account_name"]
     assert "CGAC_DOD" in response_data["results"][1]["account_name"]
+    assert "Something" in response_data["results"][2]["account_name"]
+    assert "Nothing1" in response_data["results"][3]["account_name"]
+    assert "Nothing2" in response_data["results"][4]["account_name"]

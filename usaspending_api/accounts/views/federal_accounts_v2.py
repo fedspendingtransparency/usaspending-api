@@ -1,7 +1,7 @@
 import ast
 
 from collections import OrderedDict
-from django.db.models import F, Q, Sum
+from django.db.models import F, Q, Sum, OuterRef, Subquery, Func, DecimalField, Exists
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime
 from rest_framework.response import Response
@@ -514,22 +514,39 @@ class FederalAccountsViewSet(APIView):
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
-        account_filter = {
-            "treasuryappropriationaccount__account_balances__final_of_fy": True,
-            "treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy": fy,
-        }
+        account_filter = {}
         if agency_id:
             account_filter["parent_toptier_agency__toptier_code"] = agency_id
 
-        queryset = FederalAccount.objects.filter(**account_filter).annotate(
-            account_id=F("id"),
-            account_name=F("account_title"),
-            account_number=F("federal_account_code"),
-            budgetary_resources=Sum(
-                "treasuryappropriationaccount__account_balances__total_budgetary_resources_amount_cpe"
-            ),
-            managing_agency=F("parent_toptier_agency__name"),
-            managing_agency_acronym=F("parent_toptier_agency__abbreviation"),
+        # Only return federal accounts that have ever had a submission.  Only return budgetary_resources for
+        # the fiscal year requested.  Note that we use Func instead of Sum below because Sum wants to perform a
+        # grouping when we don't want one.
+        queryset = (
+            FederalAccount.objects.annotate(
+                has_submission=Exists(
+                    SubmissionAttributes.objects.filter(
+                        appropriationaccountbalances__treasury_account_identifier__federal_account_id=OuterRef("id")
+                    ).values("pk")
+                )
+            )
+            .filter(**account_filter, has_submission=True)
+            .annotate(
+                account_id=F("id"),
+                account_name=F("account_title"),
+                account_number=F("federal_account_code"),
+                budgetary_resources=Subquery(
+                    AppropriationAccountBalances.objects.filter(
+                        final_of_fy=True,
+                        submission__reporting_period_start__fy=fy,
+                        treasury_account_identifier__federal_account_id=OuterRef("id"),
+                    )
+                    .annotate(the_sum=Func(F("total_budgetary_resources_amount_cpe"), function="SUM"))
+                    .values("the_sum"),
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
+                ),
+                managing_agency=F("parent_toptier_agency__name"),
+                managing_agency_acronym=F("parent_toptier_agency__abbreviation"),
+            )
         )
 
         # add keyword filter, if it exists
@@ -542,9 +559,9 @@ class FederalAccountsViewSet(APIView):
             )
 
         if sort_direction == "desc":
-            queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))
+            queryset = queryset.order_by(F(sort_field).desc(nulls_last=True), "-federal_account_code")
         else:
-            queryset = queryset.order_by(F(sort_field).asc())
+            queryset = queryset.order_by(F(sort_field).asc(), "federal_account_code")
 
         result = {"count": queryset.count(), "limit": limit, "page": page, "fy": fy, "keyword": keyword}
         resultset = queryset.values(

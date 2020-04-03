@@ -65,11 +65,13 @@ This endpoint returns a list of federal accounts, their number, name, managing a
     A unique identifier for the federal account
 + `managing_agency_acronym` (required, string)
 + `agency_identifier` (required, string)
-+ `budgetary_resources` (required, number)
++ `budgetary_resources` (required, number, nullable)
 + `managing_agency` (required, string)
 
 ## AdvancedFilterObject (object)
 + `fy` (optional, string)
+    Providing `fy` does not change the rows that are returned, instead, it limits the `budgetary_resources` value to the fiscal year indicated.  Federal
+    accounts with no submissions for that fiscal year will return null.
     + Default: `previous fiscal year`
 + `agency_identifier` (optional, string)
 
