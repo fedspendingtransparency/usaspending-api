@@ -188,14 +188,18 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         results = []
         for x in self.geo_queryset:
             shape_code = x[loc_lookup]
+            per_capita = None
             population = populations.get(code_to_state.get(shape_code, {"name": "None"}).get("name").lower())
+            if population:
+                per_capita = (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
+
             results.append(
                 {
                     "shape_code": shape_code,
                     "aggregated_amount": x["transaction_amount"],
                     "display_name": code_to_state.get(shape_code, {"name": "None"}).get("name").title(),
                     "population": population,
-                    "per_capita": (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01")),
+                    "per_capita": per_capita,
                 }
             )
 
@@ -242,14 +246,18 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         results = []
         for x in self.geo_queryset:
             shape_code = code_to_state.get(x[state_lookup])["fips"] + pad_codes(self.geo_layer, x["code_as_float"])
+            per_capita = None
             population = populations.get(shape_code)
+            if population:
+                per_capita = (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
+
             results.append(
                 {
                     "shape_code": shape_code,
                     "aggregated_amount": x["transaction_amount"],
                     "display_name": x[county_name].title() if x[county_name] is not None else x[county_name],
                     "population": population,
-                    "per_capita": (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01")),
+                    "per_capita": per_capita,
                 }
             )
 
@@ -266,14 +274,18 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         results = []
         for x in self.geo_queryset:
             shape_code = code_to_state.get(x[state_lookup])["fips"] + pad_codes(self.geo_layer, x["code_as_float"])
+            per_capita = None
             population = populations.get(shape_code)
+            if population:
+                (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
+
             results.append(
                 {
                     "shape_code": shape_code,
                     "aggregated_amount": x["transaction_amount"],
                     "display_name": x[state_lookup] + "-" + pad_codes(self.geo_layer, x["code_as_float"]),
                     "population": population,
-                    "per_capita": (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01")),
+                    "per_capita": per_capita,
                 }
             )
 
