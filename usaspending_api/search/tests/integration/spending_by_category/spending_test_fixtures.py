@@ -148,6 +148,8 @@ def awards_and_transactions(db):
         place_of_perfor_state_code="SC",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
+        awardee_or_recipient_legal="RECIPIENT 1",
+        awardee_or_recipient_uniqu=None,
     )
     mommy.make(
         "awards.TransactionFABS",
@@ -157,6 +159,8 @@ def awards_and_transactions(db):
         place_of_perfor_state_code="SC",
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
+        awardee_or_recipient_legal="RECIPIENT 2",
+        awardee_or_recipient_uniqu="456789123",
     )
     mommy.make(
         "awards.TransactionFABS",
@@ -166,6 +170,8 @@ def awards_and_transactions(db):
         place_of_perfor_state_code="WA",
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
+        awardee_or_recipient_legal="RECIPIENT 3",
+        awardee_or_recipient_uniqu="987654321",
     )
 
     # Transaction FPDS
@@ -176,6 +182,8 @@ def awards_and_transactions(db):
         place_of_performance_state="WA",
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
+        awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
+        awardee_or_recipient_uniqu="096354360",
         product_or_service_code="1005",
         product_or_service_co_desc="PSC 1",
     )
@@ -186,6 +194,8 @@ def awards_and_transactions(db):
         place_of_performance_state="SC",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
+        awardee_or_recipient_legal=None,
+        awardee_or_recipient_uniqu="123456789",
         product_or_service_code="M123",
         product_or_service_co_desc="PSC 2",
         naics="111110",
@@ -198,6 +208,8 @@ def awards_and_transactions(db):
         place_of_performance_state="SC",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
+        awardee_or_recipient_legal=None,
+        awardee_or_recipient_uniqu="123456789",
         naics="222220",
         naics_description="NAICS 2",
     )
@@ -205,6 +217,54 @@ def awards_and_transactions(db):
     # References CFDA
     mommy.make("references.Cfda", id=100, program_number="10.100", program_title="CFDA 1")
     mommy.make("references.Cfda", id=200, program_number="20.200", program_title="CFDA 2")
+
+    # Recipient Profile
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_name="RECIPIENT 1",
+        recipient_level="R",
+        recipient_hash="5f572ec9-8b49-e5eb-22c7-f6ef316f7689",
+        recipient_unique_id=None,
+    )
+    mommy.make(
+        "recipient.RecipientProfile", recipient_name="RECIPIENT 2", recipient_level="R", recipient_unique_id="456789123"
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_name="RECIPIENT 3",
+        recipient_level="P",
+        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        recipient_unique_id="987654321",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_name="RECIPIENT 3",
+        recipient_level="C",
+        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        recipient_unique_id="987654321",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_name="MULTIPLE RECIPIENTS",
+        recipient_level="R",
+        recipient_hash="5bf6217b-4a70-da67-1351-af6ab2e0a4b3",
+        recipient_unique_id="096354360",
+    )
+    mommy.make(
+        "recipient.RecipientProfile",
+        recipient_name=None,
+        recipient_level="R",
+        recipient_hash="25f9e794-323b-4538-85f5-181f1b624d0b",
+        recipient_unique_id="123456789",
+    )
+
+    # Recipient Lookup
+    mommy.make(
+        "recipient.RecipientLookup",
+        legal_business_name="RECIPIENT 3",
+        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        duns="987654321",
+    )
 
     # PSC
     mommy.make("references.PSC", code="1005", description="PSC 1")

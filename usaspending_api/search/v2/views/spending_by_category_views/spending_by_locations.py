@@ -48,7 +48,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
 
             results.append(
                 {
-                    "amount": Decimal(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                    "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "code": location_info.get(f"{self.location_type.value}_code"),
                     "name": name,
                     "id": None,

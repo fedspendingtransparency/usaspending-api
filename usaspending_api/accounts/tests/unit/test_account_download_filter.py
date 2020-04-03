@@ -301,29 +301,27 @@ def test_budget_subfunction_filter():
 @pytest.mark.django_db
 def test_cgac_agency_filter():
     """ Ensure the CGAC agency filter is working """
-    # Create TAS models
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", agency_id="NOT")
-    tas2 = mommy.make("accounts.TreasuryAppropriationAccount", agency_id="CGC")
+    ta1 = mommy.make("references.ToptierAgency", toptier_agency_id=-9999, toptier_code="CGC")
+    ta2 = mommy.make("references.ToptierAgency", toptier_agency_id=-9998, toptier_code="NOT")
+
+    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", agency_id="NOT", funding_toptier_agency=ta1)
+    tas2 = mommy.make("accounts.TreasuryAppropriationAccount", agency_id="CGC", funding_toptier_agency=ta2)
 
     # Create file B models
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
-        treasury_account_id=tas1.treasury_account_identifier,
+        treasury_account=tas1,
         reporting_period_start="1699-10-01",
         reporting_period_end="1699-12-31",
         final_of_fy=True,
     )
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
-        treasury_account_id=tas2.treasury_account_identifier,
+        treasury_account=tas2,
         reporting_period_start="1699-10-01",
         reporting_period_end="1699-12-31",
         final_of_fy=True,
     )
-
-    # Create ToptierAgency models
-    mommy.make("references.ToptierAgency", toptier_agency_id=-9999, toptier_code="CGC")
-    mommy.make("references.ToptierAgency", toptier_agency_id=-9998, toptier_code="NOT")
 
     # Filter by ToptierAgency (CGAC)
     queryset = account_download_filter(
@@ -337,9 +335,15 @@ def test_cgac_agency_filter():
 @pytest.mark.django_db
 def test_frec_agency_filter():
     """ Ensure the FREC agency filter is working """
-    # Create TAS models
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", agency_id="CGC", fr_entity_code="FAKE")
-    tas2 = mommy.make("accounts.TreasuryAppropriationAccount", agency_id="CGC", fr_entity_code="FREC")
+    ta1 = mommy.make("references.ToptierAgency", toptier_agency_id=-9998, toptier_code="FAKE")
+    ta2 = mommy.make("references.ToptierAgency", toptier_agency_id=-9999, toptier_code="FREC")
+
+    tas1 = mommy.make(
+        "accounts.TreasuryAppropriationAccount", agency_id="CGC", fr_entity_code="FAKE", funding_toptier_agency=ta1
+    )
+    tas2 = mommy.make(
+        "accounts.TreasuryAppropriationAccount", agency_id="CGC", fr_entity_code="FREC", funding_toptier_agency=ta2
+    )
 
     # Create file C models
     mommy.make(
@@ -354,11 +358,6 @@ def test_frec_agency_filter():
         reporting_period_start="1699-10-01",
         reporting_period_end="1699-12-31",
     )
-
-    # Create ToptierAgency models
-    mommy.make("references.ToptierAgency", toptier_agency_id=-9999, toptier_code="FREC")
-    mommy.make("references.ToptierAgency", toptier_agency_id=-9998, toptier_code="FAKE")
-    mommy.make("references.ToptierAgency", toptier_agency_id=-9997, toptier_code="CGC")
 
     # Filter by ToptierAgency (FREC)
     queryset = account_download_filter(
