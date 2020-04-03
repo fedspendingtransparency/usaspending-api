@@ -98,6 +98,7 @@ EXCLUDE_CGAC global.
 # Population Data
 
 Since census population data doesn't change very often (at most annually) there isn't much need to make the process streamlined.
+See this [comment on DEV-453](https://federal-spending-transparency.atlassian.net/browse/DEV-453?focusedCommentId=44378&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-44378)
 
 1. Create temp tables which match the source CSV
 1. Load CSV data into new temp table

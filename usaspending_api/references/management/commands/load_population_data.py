@@ -5,33 +5,29 @@ from django.core.management.base import BaseCommand
 
 from django.db import connection
 
-# from psycopg2.extras import execute_values
-# from psycopg2.sql import SQL
-# from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-# from usaspending_api.common.etl import ETLTable, mixins, ETLTemporaryTable
-# from usaspending_api.common.etl.operations import insert_missing_rows, update_changed_rows
-# from usaspending_api.common.helpers.sql_helpers import get_connection
-# from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
-# from usaspending_api.references.models import ObjectClass
+from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
 
 
 TEMP_TABLE_NAME = "temp_population_load"
 TEMP_TABLE_SQL = "CREATE TABLE {table} ({columns});"
-
-COPY_COUNTY_DATA = """
-
-"""
-
 COUNTY_COLUMNS_MAPPER = {
-    "STATE": "state_code",
-    "COUNTY": "county_number",
-    "STNAME": "state_name",
-    "CTYNAME": "county_name",
-    "POPESTIMATE2018": "latest_population",
+    "state": "state_code",
+    "county": "county_number",
+    "stname": "state_name",
+    "ctyname": "county_name",
+    "popestimate2019": "latest_population",
+}
+DISTRICT_COLUMNS_MAPPER = {
+    "state_code": "state_code",
+    "state_name": "state_name",
+    "usps_code": "state_abbreviation",
+    "congressional_district": "congressional_district",
+    "popestimate2019": "latest_population",
 }
 
-logger = logging.info
+
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
@@ -49,16 +45,42 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        csv_dict_list = read_csv_file_as_list_of_dictionaries(options["file"], text=True)
+        self.type = options["type"]
+        logger.info(f"Loading {self.type} Population data from {options['file']}")
+        csv_dict_list = read_csv_file_as_list_of_dictionaries(options["file"])
         if csv_dict_list:
             cols = csv_dict_list[0].keys()
         else:
             raise RuntimeError(f"No data in CSV {options['file']}")
 
+        self.drop_temp_table()
         self.create_table(columns=cols)
+        self.load_data(csv_dict_list)
+        self.drop_temp_table()
+
+    def drop_temp_table(self):
+        logger.info(f"Dropping temp table {TEMP_TABLE_NAME}")
+        with connection.cursor() as cursor:
+            cursor.execute(f"DROP TABLE IF EXISTS {TEMP_TABLE_NAME}")
 
     def create_table(self, columns: List[str]) -> None:
+        logger.info(f"Creating temp table {TEMP_TABLE_NAME}")
         with connection.cursor() as cursor:
+            cursor.execute(f"DROP TABLE IF EXISTS {TEMP_TABLE_NAME}")
             cursor.execute(
                 TEMP_TABLE_SQL.format(table=TEMP_TABLE_NAME, columns=",".join([f"{c} TEXT" for c in columns]))
             )
+
+    def load_data(self, data: List[dict]) -> None:
+        model = PopCongressionalDistrict
+        mapper = DISTRICT_COLUMNS_MAPPER
+        if self.type == "county":
+            model = PopCounty
+            mapper = COUNTY_COLUMNS_MAPPER
+
+        logger.info(f"Attempting to load {len(data)} records into {model.__name__}")
+
+        model.objects.all().delete()
+
+        model.objects.bulk_create([model(**{col: row[csv] for csv, col in mapper.items()}) for row in data])
+        logger.info("Success? Please Verify")
