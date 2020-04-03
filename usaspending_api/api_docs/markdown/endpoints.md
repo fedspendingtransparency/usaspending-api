@@ -90,12 +90,15 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/recipient/state/](/api/v2/recipient/state/)|GET| Returns basic information about the specified state|
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency|
 |[/api/v2/references/data_dictionary/](/api/v2/references/data_dictionary/)|GET| Returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary|
+|[/api/v2/references/filter_tree/tas/](/api/v2/references/filter_tree/tas/)|GET| Returns a list of toptier agencies that have at least one TAS affiliated with them|
+|[/api/v2/references/filter_tree/tas/<AGENCY\>/](/api/v2/references/filter_tree/tas/020/)|GET| Returns a list of federal accounts associated with the specified agency|
+|[/api/v2/references/filter_tree/tas/<AGENCY\>/<FEDERAL_ACCOUNT\>](/api/v2/references/filter_tree/tas/020/020-0550/)|GET| Returns a list of Treasury Account Symbols associated with the specified federal account|
 |[/api/v2/references/glossary/](/api/v2/references/glossary/)|GET| Returns a list of glossary terms and definitions|
 |[/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/)|GET|  Returns all toptier agencies and related, relevant data.|
 |[/api/v2/references/naics/](/api/v2/references/naics/)|GET|  Returns all Tier 1 (2-digit) NAICS and related, relevant data.|
 |[/api/v2/references/naics/](/api/v2/references/naics/?filter=forest)|GET| Filter returns NAICS at any level and their parents/grandparents.|
-|[/api/v2/references/naics/<NAICS_CODE>/](/api/v2/references/naics/11/)|GET|  Returns the requested NAICS and immediate children, as well as related, relevant data.|
-|[/api/v2/references/naics/<NAICS_CODE>/](/api/v2/references/naics/11/?filter=fruit)|GET|  Filter returns NAICS that match the filter and required id at any level and their parents/grandparents.|
+|[/api/v2/references/naics/<NAICS_CODE\>/](/api/v2/references/naics/11/)|GET|  Returns the requested NAICS and immediate children, as well as related, relevant data.|
+|[/api/v2/references/naics/<NAICS_CODE\>/](/api/v2/references/naics/11/?filter=fruit)|GET|  Filter returns NAICS that match the filter and required id at any level and their parents/grandparents.|
 |[/api/v2/search/new_awards_over_time/](/api/v2/search/new_awards_over_time/)|POST| Returns a list of time periods with the new awards in the appropriate period within the provided time range|
 |[/api/v2/search/spending_by_award/](/api/v2/search/spending_by_award/)|POST| Returns the fields of the filtered awards|
 |[/api/v2/search/spending_by_award_count/](/api/v2/search/spending_by_award_count/)|POST| Returns the number of awards in each award type (Contracts, IDV, Loans, Direct Payments, Grants, and Other)|
@@ -103,11 +106,15 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/search/spending_by_category/awarding_agency/](/api/v2/search/spending_by_category/awarding_agency/)|POST| Returns data that is grouped in preset units to support the Spending by Awarding Agency data visualizations on USAspending.gov's Advanced Search page|
 |[/api/v2/search/spending_by_category/awarding_subagency/](/api/v2/search/spending_by_category/awarding_subagency/)|POST| Returns data that is grouped in preset units to support the Spending by Awarding Subgency data visualizations on USAspending.gov's Advanced Search page|
 |[/api/v2/search/spending_by_category/cfda/](/api/v2/search/spending_by_category/cfda/)|POST| Returns data that is grouped in preset units to support the Spending by CFDA data visualizations on USAspending.gov's Advanced Search page|
+|[/api/v2/search/spending_by_category/country/](/api/v2/search/spending_by_category/country/)|POST| Returns data that is grouped in preset units to support the Spending by Country data visualizations on USAspending.gov's Recipient Profile page|
 |[/api/v2/search/spending_by_category/county/](/api/v2/search/spending_by_category/county/)|POST| Returns data that is grouped in preset units to support the Spending by County data visualizations on USAspending.gov's State Profile page|
+|[/api/v2/search/spending_by_category/district/](/api/v2/search/spending_by_category/district/)|POST| Returns data that is grouped in preset units to support the Spending by Congressional District data visualizations on USAspending.gov's State Profile page|
 |[/api/v2/search/spending_by_category/funding_agency/](/api/v2/search/spending_by_category/funding_agency/)|POST| Returns data that is grouped in preset units to support the Spending by Funding Agency data visualizations on USAspending.gov's Advanced Search page|
 |[/api/v2/search/spending_by_category/funding_subagency/](/api/v2/search/spending_by_category/funding_subagency/)|POST| Returns data that is grouped in preset units to support the Spending by Funding Subgency data visualizations on USAspending.gov's Advanced Search page|
 |[/api/v2/search/spending_by_category/naics/](/api/v2/search/spending_by_category/naics/)|POST| Returns data that is grouped in preset units to support the Spending by NAICS data visualizations on USAspending.gov's Advanced Search page|
 |[/api/v2/search/spending_by_category/psc/](/api/v2/search/spending_by_category/psc/)|POST| Returns data that is grouped in preset units to support the Spending by PSC data visualizations on USAspending.gov's Advanced Search page|
+|[/api/v2/search/spending_by_category/recipient_duns/](/api/v2/search/spending_by_category/recipient_duns/)|POST| Returns data that is grouped in preset units to support the Spending by Recipient DUNS data visualizations on USAspending.gov's Advanced Search page|
+|[/api/v2/search/spending_by_category/state_territory/](/api/v2/search/spending_by_category/state_territory/)|POST| Returns data that is grouped in preset units to support the Spending by State Territory data visualizations on USAspending.gov's Recipient Profile page|
 |[/api/v2/search/spending_by_geography/](/api/v2/search/spending_by_geography/)|POST| Returns spending by state code, county code, or congressional district code|
 |[/api/v2/search/spending_by_transaction/](/api/v2/search/spending_by_transaction/)|POST| Returns awards where a certain subset of fields match against search term|
 |[/api/v2/search/spending_by_transaction_count/](/api/v2/search/spending_by_transaction_count/)|POST| Returns awards where a certain subset of fields match against search term|
