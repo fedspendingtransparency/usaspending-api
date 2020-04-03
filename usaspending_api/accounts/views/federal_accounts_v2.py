@@ -1,7 +1,7 @@
 import ast
 
 from collections import OrderedDict
-from django.db.models import F, Func, OuterRef, Q, Subquery, Sum, When, Value, CharField, Case
+from django.db.models import F, Q, Sum
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime
 from rest_framework.response import Response
@@ -13,10 +13,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.helpers import dod_tas_agency_filter
-from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.constants import DOD_CGAC, DOD_FEDERAL_ACCOUNTS
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
@@ -512,46 +509,27 @@ class FederalAccountsViewSet(APIView):
         sort_direction = request_data["sort"]["direction"]
         keyword = request_data.get("keyword", None)
         fy = request_data["filters"]["fy"]
-        agency_id = request_data["filters"].get("agency_identifier", None)
+        agency_id = request_data["filters"].get("agency_identifier")
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
-        taa_filter = Q()
-        if agency_id == DOD_CGAC:
-            taa_filter = dod_tas_agency_filter("treasuryappropriationaccount")
-        elif agency_id is not None:
-            taa_filter = Q(treasuryappropriationaccount__agency_id=agency_id)
+        account_filter = {
+            "treasuryappropriationaccount__account_balances__final_of_fy": True,
+            "treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy": fy,
+        }
+        if agency_id:
+            account_filter["parent_toptier_agency__toptier_code"] = agency_id
 
-        dod_whens = [
-            When(agency_identifier=aid, main_account_code=main, then=Value(DOD_CGAC))
-            for aid, main in DOD_FEDERAL_ACCOUNTS
-        ]
-
-        agency_subquery = ToptierAgency.objects.filter(toptier_code=OuterRef("corrected_agency_identifier"))
-        queryset = (
-            FederalAccount.objects.filter(
-                taa_filter,
-                treasuryappropriationaccount__account_balances__final_of_fy=True,
-                treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy,
-            )
-            .annotate(
-                corrected_agency_identifier=Case(
-                    *dod_whens,
-                    default=Func(F("agency_identifier"), function="CORRECTED_CGAC"),
-                    output_field=CharField(),
-                )
-            )
-            .annotate(
-                account_id=F("id"),
-                account_name=F("account_title"),
-                account_number=F("federal_account_code"),
-                budgetary_resources=Sum(
-                    "treasuryappropriationaccount__account_balances__total_budgetary_resources_amount_cpe"
-                ),
-                managing_agency=Subquery(agency_subquery.values("name")[:1]),
-                managing_agency_acronym=Subquery(agency_subquery.values("abbreviation")[:1]),
-            )
+        queryset = FederalAccount.objects.filter(**account_filter).annotate(
+            account_id=F("id"),
+            account_name=F("account_title"),
+            account_number=F("federal_account_code"),
+            budgetary_resources=Sum(
+                "treasuryappropriationaccount__account_balances__total_budgetary_resources_amount_cpe"
+            ),
+            managing_agency=F("parent_toptier_agency__name"),
+            managing_agency_acronym=F("parent_toptier_agency__abbreviation"),
         )
 
         # add keyword filter, if it exists

@@ -9,17 +9,18 @@ from usaspending_api.accounts.models import FederalAccount
 
 @pytest.fixture
 def fixture_data(db):
-    mommy.make("references.ToptierAgency", toptier_code="001", abbreviation="ABCD", name="Dept. of Depts")
-    mommy.make("references.ToptierAgency", toptier_code="002", abbreviation="EFGH", name="The Bureau")
-    mommy.make("references.ToptierAgency", toptier_code="1601", abbreviation="DOL", name="Department of Labor")
-    mommy.make("references.ToptierAgency", toptier_code="097", abbreviation="DOD", name="Department of Defense")
-    mommy.make("references.ToptierAgency", toptier_code="021", abbreviation="DOD", name="Department of Navy")
+    ta0 = mommy.make("references.ToptierAgency", toptier_code="001", abbreviation="ABCD", name="Dept. of Depts")
+    ta1 = mommy.make("references.ToptierAgency", toptier_code="002", abbreviation="EFGH", name="The Bureau")
+    ta2 = mommy.make("references.ToptierAgency", toptier_code="1601", abbreviation="DOL", name="Department of Labor")
+    ta3 = mommy.make("references.ToptierAgency", toptier_code="097", abbreviation="DOD", name="Department of Defense")
+    ta4 = mommy.make("references.ToptierAgency", toptier_code="021", abbreviation="DOD", name="Department of Navy")
     fa0 = mommy.make(
         FederalAccount,
         agency_identifier="001",
         main_account_code="0005",
         account_title="Something",
         federal_account_code="001-0005",
+        parent_toptier_agency=ta0,
     )
     fa1 = mommy.make(
         FederalAccount,
@@ -27,6 +28,7 @@ def fixture_data(db):
         main_account_code="0005",
         account_title="Nothing1",
         federal_account_code="002-0005",
+        parent_toptier_agency=ta1,
     )
     fa2 = mommy.make(
         FederalAccount,
@@ -34,6 +36,7 @@ def fixture_data(db):
         main_account_code="0005",
         account_title="Nothing2",
         federal_account_code="1600-0005",
+        parent_toptier_agency=ta2,
     )
     fa3 = mommy.make(
         FederalAccount,
@@ -41,6 +44,7 @@ def fixture_data(db):
         main_account_code="0005",
         account_title="CGAC_DOD",
         federal_account_code="097-0005",
+        parent_toptier_agency=ta3,
     )
     fa4 = mommy.make(
         FederalAccount,
@@ -48,6 +52,7 @@ def fixture_data(db):
         main_account_code="0005",
         account_title="CGAC_DOD(NAVY)",
         federal_account_code="021-0005",
+        parent_toptier_agency=ta4,
     )
     ta0 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa0)
     ta1 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
