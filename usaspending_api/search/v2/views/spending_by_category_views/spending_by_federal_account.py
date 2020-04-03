@@ -43,8 +43,8 @@ class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMet
     def query_django(self, base_queryset: QuerySet) -> List[dict]:
         if "recipient_id" not in self.filters:
             raise InvalidParameterException("Federal Account category requires recipient_id in search filter")
-        django_filters = {f"federal_account_id__isnull": False}
-        django_values = [f"federal_account_id", f"federal_account_display", f"account_title"]
+        django_filters = {"federal_account_id__isnull": False}
+        django_values = ["federal_account_id", "federal_account_display", "account_title"]
         queryset = self.common_db_query(base_queryset, django_filters, django_values)
         lower_limit = self.pagination.lower_limit
         upper_limit = self.pagination.upper_limit

@@ -150,11 +150,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             group_by_agg_key_values = {"order": {"sum_field": "desc"}}
         else:
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
-            # check if category is federal accounts, if so, do not use hash
-            if self.category.agg_key != "federal_accounts":
-                bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}.hash")
-            else:
-                bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}")
+            bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}")
             if bucket_count == 0:
                 return None
             else:
