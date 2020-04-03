@@ -19,7 +19,7 @@ class AccountType(Enum):
 
 class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta):
     """
-    Abstract class used by the different Awarding / Funding Agencies and Subagencies
+    Abstract class used by Federal Accounts spending_by_category endpoint
     """
 
     account_type: AccountType

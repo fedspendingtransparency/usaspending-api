@@ -97,7 +97,7 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
-+ `naics_codes`: `311812` (optional, array[string])
++ `naics_codes`: `311812` (optional, NAICSCodeObject)
 + `psc_codes`: `8940`, `8910` (optional, array[string])
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
@@ -134,6 +134,10 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
         + `toptier`
         + `subtier`
 + `name`: `Department of Defense` (required, string)
+
+### NAICSCodeObject (object)
++ `require`: `33` (optional, array[string])
++ `exclude`: `3333` (optional, array[string])
 
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)

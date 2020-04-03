@@ -25,7 +25,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
     resp = client.post(
-        "/api/v2/search/spending_by_category/cfda",
+        "/api/v2/search/spending_by_category/federal_account",
         content_type="application/json",
         data=json.dumps({"filters": non_legacy_filters()}),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},

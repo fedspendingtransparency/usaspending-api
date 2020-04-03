@@ -20,7 +20,7 @@ urlpatterns = [
     url(r"^awarding_subagency", AwardingSubagencyViewSet.as_view()),
     url(r"^cfda", CfdaViewSet.as_view()),
     url(r"^county", CountyViewSet.as_view()),
-    url(r"federal_account", FederalAccountViewSet.as_view()),
+    url(r"^federal_account", FederalAccountViewSet.as_view()),
     url(r"^funding_agency", FundingAgencyViewSet.as_view()),
     url(r"^funding_subagency", FundingSubagencyViewSet.as_view()),
     url(r"^naics", NAICSViewSet.as_view()),
