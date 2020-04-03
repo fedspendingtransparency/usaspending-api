@@ -74,7 +74,7 @@ class TestElasticSearchIndex:
                 transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
                 transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
                 # transaction docs are routed to shards by hashing the recipient_hash field
-                routing_key = options.get("routing", "recipient_hash")
+                routing_key = options.get("routing", "recipient_agg_key")
             else:
                 transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
             if routing_key:
