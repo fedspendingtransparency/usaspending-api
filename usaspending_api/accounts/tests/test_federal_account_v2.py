@@ -347,7 +347,7 @@ def test_federal_account_dod_cgac(client, fixture_data):
         data=json.dumps({"agency_identifier": "097", "filters": {"fy": "2018"}}),
     )
     response_data = resp.json()
-    print(response_data)
+
     assert len(response_data["results"]) == 5
     assert "CGAC_DOD" in response_data["results"][0]["account_name"]
     assert "CGAC_DOD" in response_data["results"][1]["account_name"]
