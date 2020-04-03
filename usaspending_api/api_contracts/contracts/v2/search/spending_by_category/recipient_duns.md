@@ -1,22 +1,15 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending By PSC [/api/v2/search/spending_by_category/psc/]
+# Spending By Recipient DUNS [/api/v2/search/spending_by_category/recipient_duns/]
 
-This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
+This endpoint supports the Advanced Search page and allow for complex filtering for specific subsets of spending data.
 
 ## POST
 
-This endpoint returns a list of the top results of PSC sorted by the total amounts in descending order.
+This endpoint returns a list of the top results of Recipient DUNS sorted by the total amounts in descending order.
 
 + Request (application/json)
-    + Schema
-
-            {
-                "$schema": "http://json-schema.org/draft-04/schema#",
-                "type": "object"
-            }
-
     + Attributes (object)
         + `filters` (required, FilterObject)
             The filters to find with said category
@@ -29,7 +22,7 @@ This endpoint returns a list of the top results of PSC sorted by the total amoun
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `psc` (required, string)
+        + `category`: `recipient_duns` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -38,7 +31,7 @@ This endpoint returns a list of the top results of PSC sorted by the total amoun
     + Body
 
             {
-                "category": "psc",
+                "category": "recipient_duns",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
@@ -49,22 +42,23 @@ This endpoint returns a list of the top results of PSC sorted by the total amoun
                 },
                 "results": [
                     {
-                        "amount": 17334384477.7,
-                        "code": "AC15",
-                        "id": null,
-                        "name": "R&D- DEFENSE SYSTEM: AIRCRAFT (OPERATIONAL SYSTEMS DEVELOPMENT)"
+                        "amount": 46069068318.25,
+                        "recipient_id": null,
+                        "name": "MULTIPLE RECIPIENTS",
+                        "code": null
                     },
                     {
-                        "amount": 983942189.45,
-                        "code": "Y142",
-                        "id": null,
-                        "name": "CONSTRUCT/LABORATORIES & CLINICS"
+                        "amount": 17388378311.33,
+                        "recipient_id": "005a8812-bab5-2780-533b-b62c33271882-C",
+                        "name": "LOCKHEED MARTIN CORPORATION",
+                        "code": "008016958"
                     }
                 ],
                 "messages": [
                     "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
                 ]
             }
+            
 
 # Data Structures
 

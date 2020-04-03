@@ -264,10 +264,14 @@ def get_scaled_sum_aggregations(field_to_sum: str, pagination: Pagination) -> Di
 
     # Have to create a separate dictionary for the bucket_sort values since "from" is a reserved word
     bucket_sort_values = {
-        "sort": {"sum_field": {"order": "desc"}},
         "from": (pagination.page - 1) * pagination.limit,
         "size": pagination.limit + 1,
     }
-    sum_bucket_sort = A("bucket_sort", **bucket_sort_values)
 
-    return {"sum_field": sum_field, "sum_bucket_sort": sum_bucket_sort}
+    # Two different bucket sort aggregations to choose from:
+    # sum_bucket_sort -> used when parent aggregation is not sorting
+    # sum_bucket_truncate -> used when parent aggregation is sorting and only a specific page is needed
+    sum_bucket_sort = A("bucket_sort", sort={"sum_field": {"order": "desc"}}, **bucket_sort_values)
+    sum_bucket_truncate = A("bucket_sort", **bucket_sort_values)
+
+    return {"sum_field": sum_field, "sum_bucket_sort": sum_bucket_sort, "sum_bucket_truncate": sum_bucket_truncate}
