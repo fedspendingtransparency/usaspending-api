@@ -45,6 +45,18 @@ class Command(BaseCommand):
         self.logger.info("Loading CFDA data")
         call_command("loadcfda", "https://files.usaspending.gov/reference_data/cfda.csv")
 
+        self.logger.info("Loading Census Population Data")
+        call_command(
+            "load_population_data",
+            file="https://files.usaspending.gov/reference_data/census_2019_population_county.csv",
+            type="county",
+        )
+        call_command(
+            "load_population_data",
+            file="https://files.usaspending.gov/reference_data/census_2019_population_congressional_district.csv",
+            type="district",
+        )
+
         self.logger.info("Loading descriptions of commonly used terms")
         call_command("load_glossary")
 

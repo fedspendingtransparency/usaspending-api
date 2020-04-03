@@ -52,6 +52,38 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
         + `results` (array[GeographyTypeResult], fixed-type)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
+    + Body
+
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "state",
+                "results": [
+                    {
+                        "shape_code": "ND",
+                        "aggregated_amount": 4771026.93,
+                        "display_name": "North Dakota",
+                        "population": 762062,
+                        "per_capita": 6.26
+                    },
+                    {
+                        "shape_code": "NV",
+                        "aggregated_amount": 26928552.59,
+                        "display_name": "Nevada",
+                        "population": 3080156,
+                        "per_capita": 8.74
+                    },
+                    {
+                        "shape_code": "OH",
+                        "aggregated_amount": 187505278.16,
+                        "display_name": "Ohio",
+                        "population": 11689100,
+                        "per_capita": 16.04
+                    }
+                ],
+                "messages": [
+                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
+                ]
+            }
 
 # Data Structures
 
@@ -59,6 +91,8 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `aggregated_amount` (required, number)
 + `display_name` (required, string)
 + `shape_code` (required, string)
++ `population` (required, number, nullable)
++ `per_capita` (required, number, nullable)
 
 
 ## Filter Objects
