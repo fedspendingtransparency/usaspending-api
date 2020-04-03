@@ -138,11 +138,6 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         # Create the filtered Search Object
         search = TransactionSearch().filter(filter_query)
 
-        # Get count of unique buckets; terminate early if there are no buckets matching criteria
-        
-        if bucket_count == 0:
-            return None
-        elif bucket_count >= 9900:
         sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
 
         # Need to handle high cardinality categories differently; this assumes that the Search object references
@@ -155,8 +150,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             group_by_agg_key_values = {"order": {"sum_field": "desc"}}
         else:
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
-            
-            #check if category is federal accounts, if so, do not use hash
+            # check if category is federal accounts, if so, do not use hash
             if self.category.agg_key != "federal_accounts":
                 bucket_count = get_number_of_unique_terms(filter_query, f"{self.category.agg_key}.hash")
             else:
