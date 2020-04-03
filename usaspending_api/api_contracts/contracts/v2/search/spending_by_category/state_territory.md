@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending By PSC [/api/v2/search/spending_by_category/psc/]
+# Spending By State Territory [/api/v2/search/spending_by_category/state_territory/]
 
-This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
+This endpoint supports the state profile page and allow for complex filtering for specific subsets of spending data.
 
 ## POST
 
-This endpoint returns a list of the top results of PSC sorted by the total amounts in descending order.
+This endpoint returns a list of the top results of State Territories sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Schema
@@ -29,7 +29,7 @@ This endpoint returns a list of the top results of PSC sorted by the total amoun
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `psc` (required, string)
+        + `category`: `state_territory` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -38,7 +38,7 @@ This endpoint returns a list of the top results of PSC sorted by the total amoun
     + Body
 
             {
-                "category": "psc",
+                "category": "state_territory",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
@@ -49,22 +49,23 @@ This endpoint returns a list of the top results of PSC sorted by the total amoun
                 },
                 "results": [
                     {
-                        "amount": 17334384477.7,
-                        "code": "AC15",
+                        "amount": 31470304471.74,
+                        "code": "USA",
                         "id": null,
-                        "name": "R&D- DEFENSE SYSTEM: AIRCRAFT (OPERATIONAL SYSTEMS DEVELOPMENT)"
+                        "name": "UNITED STATES"
                     },
                     {
-                        "amount": 983942189.45,
-                        "code": "Y142",
+                        "amount": 20912107.43,
+                        "code": "ZAF",
                         "id": null,
-                        "name": "CONSTRUCT/LABORATORIES & CLINICS"
+                        "name": "SOUTH AFRICA"
                     }
                 ],
                 "messages": [
                     "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
                 ]
             }
+
 
 # Data Structures
 

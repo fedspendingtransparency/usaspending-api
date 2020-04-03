@@ -15,7 +15,13 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_indu
     PSCViewSet,
     NAICSViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import CountyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
+    CountyViewSet,
+    DistrictViewSet,
+    StateTerritoryViewSet,
+    CountryViewSet,
+)
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient_duns import RecipientDunsViewSet
 
 
 @pytest.fixture
@@ -668,14 +674,14 @@ def test_category_funding_subagency_subawards(agency_test_data):
 def test_category_recipient_duns_awards(recipient_test_data):
     test_payload = {"category": "recipient_duns", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "recipient_duns",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": None, "recipient_id": None},
+            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": "DUNS Number not provided", "recipient_id": None},
             {
                 "amount": 11,
                 "name": "John Doe",
@@ -699,7 +705,7 @@ def test_category_recipient_duns_awards(recipient_test_data):
 def test_category_recipient_duns_subawards(recipient_test_data):
     test_payload = {"category": "recipient_duns", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "recipient_duns",
@@ -837,7 +843,7 @@ def test_category_county_subawards(geo_test_data):
 def test_category_district_awards(geo_test_data):
     test_payload = {"category": "district", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = DistrictViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "district",
@@ -856,7 +862,7 @@ def test_category_district_awards(geo_test_data):
 def test_category_district_subawards(geo_test_data):
     test_payload = {"category": "district", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = DistrictViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "district",
@@ -876,7 +882,7 @@ def test_category_district_subawards(geo_test_data):
 def test_category_state_territory(geo_test_data):
     test_payload = {"category": "state_territory", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = StateTerritoryViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "state_territory",
@@ -893,7 +899,7 @@ def test_category_state_territory(geo_test_data):
 def test_category_state_territory_subawards(geo_test_data):
     test_payload = {"category": "state_territory", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = StateTerritoryViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "state_territory",
@@ -910,7 +916,7 @@ def test_category_state_territory_subawards(geo_test_data):
 def test_category_country(geo_test_data):
     test_payload = {"category": "country", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = CountryViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "country",
@@ -927,7 +933,7 @@ def test_category_country(geo_test_data):
 def test_category_country_subawards(geo_test_data):
     test_payload = {"category": "country", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = CountryViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "country",

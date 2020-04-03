@@ -2,7 +2,7 @@ from django.db.models import Exists, F, OuterRef, Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.download.lookups import CFO_CGACS
+from usaspending_api.common.helpers.business_logic_helpers import cfo_presentation_order
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -55,14 +55,7 @@ class DownloadListAgenciesViewSet(APIView):
             # Convert to list since we'll be iterating over the results twice which would otherwise run the query twice.
             toptier_agencies = list(toptier_agencies)
 
-            cfo_agencies = sorted(
-                [a for a in toptier_agencies if a["toptier_code"] in CFO_CGACS],
-                key=lambda a: CFO_CGACS.index(a["toptier_code"]),
-            )
-            other_agencies = sorted(
-                [a for a in toptier_agencies if a["toptier_code"] not in CFO_CGACS], key=lambda a: a["name"]
-            )
-            response_data["agencies"] = {"cfo_agencies": cfo_agencies, "other_agencies": other_agencies}
+            response_data["agencies"] = cfo_presentation_order(toptier_agencies)
 
         else:
             # Get the top tier agency object based on the agency id provided.  It must still meet all of the
