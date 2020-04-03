@@ -88,6 +88,7 @@ def awards_and_transactions(db):
     mommy.make("awards.Award", id=4, latest_transaction_id=40)
     mommy.make("awards.Award", id=5, latest_transaction_id=50)
     mommy.make("awards.Award", id=6, latest_transaction_id=60)
+    mommy.make("awards.Award", id=7, latest_transaction_id=70)
 
     mommy.make("awards.FinancialAccountsByAwards", pk=1, award_id=1, treasury_account_id=1)
     mommy.make("accounts.TreasuryAppropriationAccount", pk=1, federal_account_id=1)
@@ -171,6 +172,14 @@ def awards_and_transactions(db):
         action_date="2020-01-06",
         is_fpds=True,
     )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=70,
+        award_id=7,
+        federal_action_obligation=5000000,
+        action_date="2020-01-07",
+        is_fpds=True,
+    )
 
     # Transaction FABS
     mommy.make(
@@ -181,6 +190,7 @@ def awards_and_transactions(db):
         place_of_perfor_state_code="SC",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
+        place_of_performance_congr="10",
         awardee_or_recipient_legal="RECIPIENT 1",
         awardee_or_recipient_uniqu=None,
     )
@@ -192,6 +202,7 @@ def awards_and_transactions(db):
         place_of_perfor_state_code="SC",
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
+        place_of_performance_congr="50",
         awardee_or_recipient_legal="RECIPIENT 2",
         awardee_or_recipient_uniqu="456789123",
     )
@@ -203,6 +214,7 @@ def awards_and_transactions(db):
         place_of_perfor_state_code="WA",
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
+        place_of_performance_congr="50",
         awardee_or_recipient_legal="RECIPIENT 3",
         awardee_or_recipient_uniqu="987654321",
     )
@@ -215,6 +227,7 @@ def awards_and_transactions(db):
         place_of_performance_state="WA",
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
+        place_of_performance_congr="50",
         awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         awardee_or_recipient_uniqu="096354360",
         product_or_service_code="1005",
@@ -227,6 +240,7 @@ def awards_and_transactions(db):
         place_of_performance_state="SC",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
+        place_of_performance_congr="10",
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="123456789",
         product_or_service_code="M123",
@@ -241,11 +255,31 @@ def awards_and_transactions(db):
         place_of_performance_state="SC",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
+        place_of_performance_congr="90",
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="123456789",
         naics="222220",
         naics_description="NAICS 2",
     )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=70,
+        place_of_perform_country_c="CAN",
+        place_of_performance_state=None,
+        place_of_perform_county_co=None,
+        place_of_perform_county_na=None,
+        place_of_performance_congr=None,
+        awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
+        awardee_or_recipient_uniqu=None,
+    )
+
+    # References State Data
+    mommy.make("recipient.StateData", id="45-2020", fips="45", code="SC", name="South Carolina")
+    mommy.make("recipient.StateData", id="53-2020", fips="53", code="WA", name="Washington")
+
+    # References Country
+    mommy.make("references.RefCountryCode", country_code="CAN", country_name="CANADA")
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
     # References CFDA
     mommy.make("references.Cfda", id=100, program_number="10.100", program_title="CFDA 1")
