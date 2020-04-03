@@ -22,7 +22,6 @@ from usaspending_api.references.account_helpers import (
     remove_empty_federal_accounts,
     update_federal_accounts,
 )
-from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger("console")
 
@@ -108,8 +107,8 @@ class Command(BaseCommand):
         value_map = {
             "data_source": "USA",
             "tas_rendering_label": self.generate_tas_rendering_label,
-            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(toptier_code=row["ATA"]).first(),
-            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(toptier_code=row["AID"]).first(),
+            "awarding_toptier_agency": None,
+            "funding_toptier_agency": None,
             "internal_start_date": lambda row: datetime.strftime(
                 datetime.strptime(row["DT_TM_ESTAB"], "%m/%d/%Y  %H:%M:%S"), "%Y-%m-%d"
             ),

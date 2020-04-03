@@ -443,22 +443,6 @@ Also, query performance will stink unless/until the field is indexed.
 CREATE INDEX ON awards(FY(field_name))
 """
 
-CORRECTED_CGAC_PG_FUNCTION_DEF = """
-    CREATE FUNCTION corrected_cgac(text) RETURNS text AS $$
-    SELECT
-        CASE $1
-        WHEN '016' THEN '1601' -- DOL
-        WHEN '011' THEN '1100' -- EOP
-        WHEN '033' THEN '3300' -- SI
-        WHEN '352' THEN '7801' -- FCA
-        WHEN '537' THEN '9566' -- FHFA
-        ELSE $1 END;
-    $$ LANGUAGE SQL;"""
-
-REV_CORRECTED_CGAC_PG_FUNCTION_DEF = """
-    DROP FUNCTION corrected_cgac(text);
-"""
-
 CREATE_READONLY_SQL = """DO $$ BEGIN
 IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly') THEN
 CREATE ROLE readonly;

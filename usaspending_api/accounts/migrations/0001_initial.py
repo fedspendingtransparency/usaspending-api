@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import django.db.models.deletion
 
 from django.db import migrations, models
-from usaspending_api.common.helpers.generic_helper import CORRECTED_CGAC_PG_FUNCTION_DEF, FY_PG_FUNCTION_DEF
+from usaspending_api.common.helpers.generic_helper import FY_PG_FUNCTION_DEF
 
 
 class Migration(migrations.Migration):
@@ -168,5 +168,5 @@ class Migration(migrations.Migration):
             name='treasury_account_identifier',
             field=models.ForeignKey(db_column='treasury_account_identifier', on_delete=django.db.models.deletion.CASCADE, related_name='account_balances', to='accounts.TreasuryAppropriationAccount'),
         ),
-        migrations.RunSQL(sql=[CORRECTED_CGAC_PG_FUNCTION_DEF, FY_PG_FUNCTION_DEF]),
+        migrations.RunSQL(sql=[FY_PG_FUNCTION_DEF]),
     ]
