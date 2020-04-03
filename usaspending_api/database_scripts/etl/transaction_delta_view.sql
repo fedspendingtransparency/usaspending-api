@@ -131,6 +131,21 @@ SELECT
       THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","county_code":"', UTM.pop_county_code, '","county_name":"', UTM.pop_county_name, '"}')
     ELSE NULL
   END AS pop_county_agg_key,
+  CASE
+    WHEN UTM.pop_congressional_code IS NOT NULL
+      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","congressional_code":"', UTM.pop_congressional_code, '"}')
+    ELSE NULL
+  END AS pop_congressional_agg_key,
+  CASE
+    WHEN UTM.pop_state_code IS NOT NULL
+      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","state_name":"', POP_STATE_LOOKUP.name, '"}')
+    ELSE NULL
+  END AS pop_state_agg_key,
+  CASE
+    WHEN UTM.pop_country_code IS NOT NULL
+      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","country_name":"', POP_COUNTRY_LOOKUP.country_name, '"}')
+    ELSE NULL
+  END AS pop_country_agg_key,
 
   UTM.recipient_location_country_code,
   UTM.recipient_location_country_name,
@@ -198,6 +213,19 @@ LEFT JOIN LATERAL (
            END ASC
   LIMIT 1
 ) RECIPIENT_HASH_AND_LEVEL ON TRUE
+LEFT JOIN LATERAL (
+  SELECT country_name
+  FROM   ref_country_code
+  WHERE  country_code = UTM.pop_country_code
+  LIMIT  1
+) POP_COUNTRY_LOOKUP ON TRUE
+LEFT JOIN LATERAL (
+  SELECT   name
+  FROM     state_data
+  WHERE    code = UTM.pop_state_code
+  ORDER BY id desc
+  LIMIT    1
+) POP_STATE_LOOKUP ON TRUE
 LEFT JOIN (
   SELECT
     faba.award_id,
