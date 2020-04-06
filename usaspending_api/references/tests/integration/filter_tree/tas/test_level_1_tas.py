@@ -18,6 +18,13 @@ def test_multiple_fa(client, multiple_federal_accounts):
     assert len(resp.json()["results"]) == 4
 
 
+# Will the count be greater than one if there are multiple  children?
+def test_multiple_children(client, fa_with_multiple_tas):
+    resp = _call_and_expect_200(client, common_query)
+    assert len(resp.json()["results"]) == 1
+    assert resp.json()["results"][0]["count"] == 4
+
+
 # Does the endpoint only return federal accounts with file D data?
 def test_unsupported_fa(client, agency_with_unsupported_fa):
     resp = _call_and_expect_200(client, common_query)
