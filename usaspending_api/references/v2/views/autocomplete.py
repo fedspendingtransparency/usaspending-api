@@ -58,9 +58,8 @@ class BaseAutocompleteViewSet(APIView):
             )
             .order_by("fema_sort", "-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
         ).values(
-            "agency_id",
+            "agency_autocomplete_id",
             "toptier_flag",
-            "toptier_agency_id",
             "toptier_code",
             "toptier_abbreviation",
             "toptier_name",
@@ -70,10 +69,9 @@ class BaseAutocompleteViewSet(APIView):
 
         results = [
             {
-                "id": agency["agency_id"],
+                "id": agency["agency_autocomplete_id"],
                 "toptier_flag": agency["toptier_flag"],
                 "toptier_agency": {
-                    "id": agency["toptier_agency_id"],
                     "toptier_code": agency["toptier_code"],
                     "abbreviation": agency["toptier_abbreviation"],
                     "name": agency["toptier_name"],

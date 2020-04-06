@@ -143,10 +143,10 @@ def spending_over_time_test_data():
                 legal_entity_congressional=f"{transaction_id:02d}",
                 legal_entity_zip5=f"le_zip5_{transaction_id}",
                 legal_entity_city_name=f"le_city_name_{transaction_id}",
-                naics=f"naics_code_{transaction_id}",
+                naics=f"{transaction_id}{transaction_id}",
                 piid=f"piid_{transaction_id}",
                 place_of_perform_country_c="USA",
-                place_of_perform_country_n="USA",
+                place_of_perf_country_desc="UNITED STATES",
                 place_of_performance_state=f"pop_state_code_{transaction_id}",
                 place_of_perform_county_co=f"{transaction_id:03d}",
                 place_of_perform_county_na=f"pop_county_name_{transaction_id}",
@@ -180,7 +180,7 @@ def spending_over_time_test_data():
                 legal_entity_zip5=f"le_zip5_{transaction_id}",
                 legal_entity_city_name=f"le_city_name_{transaction_id}",
                 place_of_perform_country_c="USA",
-                place_of_perform_country_n="USA",
+                place_of_perform_country_n="UNITED STATES",
                 place_of_perfor_state_code=f"pop_state_code_{transaction_id}",
                 place_of_perform_county_co=f"{transaction_id:03d}",
                 place_of_perform_county_na=f"pop_county_name_{transaction_id}",
@@ -810,7 +810,7 @@ def _test_correct_response_for_naics_codes(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "naics_codes": ["naics_code_8", "naics_code_16", "naics_code_26"],
+                    "naics_codes": {"require": ["88", "1616", "2626"]},
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }

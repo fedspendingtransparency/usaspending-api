@@ -57,6 +57,7 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPI
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
+from usaspending_api.common.exceptions import UnprocessableEntityException
 
 logger = logging.getLogger("console")
 
@@ -313,7 +314,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         sort_field = self.get_elastic_sort_by_fields()
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
-
+        # random page jumping was removed due to performance concerns
         if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
             self.last_record_sort_value is not None and self.last_record_unique_id is None
         ):
@@ -321,42 +322,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raise Exception(
                 "Using search_after functionality in Elasticsearch requires both last_record_sort_value and last_record_unique_id."
             )
-
-        # API request is asking to jump to a random, non-sequential page of results
         if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
             self.last_record_unique_id is None and self.last_record_sort_value is None
         ):
-            logger.warning(
-                "WARNING: Jumping to page {page} with page size {limit}. First record number: {record}. Retrieving records past {es_limit} records will have a performance hit when using Elasticsearch".format(
+            raise UnprocessableEntityException(
+                "Page #{page} with limit {limit} is over the maximum result limit {es_limit}. Please provide the 'last_record_sort_value' and 'last_record_unique_id' to paginate sequentially.".format(
                     page=self.pagination["page"],
                     limit=self.pagination["limit"],
-                    record=self.pagination["lower_bound"],
                     es_limit=settings.ES_AWARDS_MAX_RESULT_WINDOW,
                 )
             )
-            sort_by_fields = self.get_sort_by_fields()
-            sort_by_fields.append("award_id")
-            database_fields = self.get_database_fields()
-            base_queryset = self.constants["filter_queryset_func"](self.filters)
-            queryset = self.annotate_queryset(base_queryset)
-            queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
-            queryset = queryset.values(*list(database_fields))[record_num - 1 : record_num]
-
-            if len(queryset) != 1:
-                return {}
-            results = [
-                self.date_to_epoch_millis(queryset[0].get(self.get_sort_by_fields()[0])),
-                queryset[0].get("award_id"),
-            ]
-            search = (
-                AwardSearch()
-                .filter(filter_query)
-                .sort(*sorts)
-                .extra(search_after=[*results])[: self.pagination["limit"] + 1]
-            )
-            response = search.handle_execute()
-            return response
-
         # Search_after values are provided in the API request - use search after
         if self.last_record_sort_value is not None and self.last_record_unique_id is not None:
             search = (

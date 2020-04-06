@@ -77,3 +77,123 @@ def _setup_agency(id, subtiers, special_name):
             subtier_agency_id=sub_id + 3000,
             toptier_flag=False,
         )
+
+
+@pytest.fixture
+def awards_and_transactions(db):
+    # Awards
+    mommy.make("awards.Award", id=1, latest_transaction_id=10)
+    mommy.make("awards.Award", id=2, latest_transaction_id=20)
+    mommy.make("awards.Award", id=3, latest_transaction_id=30)
+    mommy.make("awards.Award", id=4, latest_transaction_id=40)
+    mommy.make("awards.Award", id=5, latest_transaction_id=50)
+    mommy.make("awards.Award", id=6, latest_transaction_id=60)
+
+    # Transaction Normalized
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=10,
+        award_id=1,
+        federal_action_obligation=5,
+        action_date="2020-01-01",
+        is_fpds=False,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=20,
+        award_id=2,
+        federal_action_obligation=50,
+        action_date="2020-01-02",
+        is_fpds=False,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=30,
+        award_id=3,
+        federal_action_obligation=500,
+        action_date="2020-01-03",
+        is_fpds=False,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=40,
+        award_id=4,
+        federal_action_obligation=5000,
+        action_date="2020-01-04",
+        is_fpds=True,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=50,
+        award_id=5,
+        federal_action_obligation=50000,
+        action_date="2020-01-05",
+        is_fpds=True,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=60,
+        award_id=6,
+        federal_action_obligation=500000,
+        action_date="2020-01-06",
+        is_fpds=True,
+    )
+
+    # Transaction FABS
+    mommy.make(
+        "awards.TransactionFABS",
+        transaction_id=10,
+        cfda_number="10.100",
+        place_of_perform_country_c="USA",
+        place_of_perfor_state_code="SC",
+        place_of_perform_county_co="001",
+        place_of_perform_county_na="CHARLESTON",
+    )
+    mommy.make(
+        "awards.TransactionFABS",
+        transaction_id=20,
+        cfda_number="20.200",
+        place_of_perform_country_c="USA",
+        place_of_perfor_state_code="SC",
+        place_of_perform_county_co="005",
+        place_of_perform_county_na="TEST NAME",
+    )
+    mommy.make(
+        "awards.TransactionFABS",
+        transaction_id=30,
+        cfda_number="20.200",
+        place_of_perform_country_c="USA",
+        place_of_perfor_state_code="WA",
+        place_of_perform_county_co="005",
+        place_of_perform_county_na="TEST NAME",
+    )
+
+    # Transaction FPDS
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=40,
+        place_of_perform_country_c="USA",
+        place_of_performance_state="WA",
+        place_of_perform_county_co="005",
+        place_of_perform_county_na="TEST NAME",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=50,
+        place_of_perform_country_c="USA",
+        place_of_performance_state="SC",
+        place_of_perform_county_co="001",
+        place_of_perform_county_na="CHARLESTON",
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=60,
+        place_of_perform_country_c="USA",
+        place_of_performance_state="SC",
+        place_of_perform_county_co="001",
+        place_of_perform_county_na="CHARLESTON",
+    )
+
+    # References CFDA
+    mommy.make("references.Cfda", id=100, program_number="10.100", program_title="CFDA 1")
+    mommy.make("references.Cfda", id=200, program_number="20.200", program_title="CFDA 2")
