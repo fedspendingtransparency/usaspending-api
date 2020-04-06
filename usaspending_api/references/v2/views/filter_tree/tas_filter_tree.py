@@ -63,16 +63,16 @@ class TASFilterTree(FilterTree):
             )
 
     def _generate_agency_node(self, ancestors, data, child_layers):
+        raw_children = self._fa_given_agency(data["toptier_code"])
         if child_layers:
-            raw_children = self._fa_given_agency(data["toptier_code"])
             generated_children = [
                 self.construct_node_from_raw(1, ancestors + [data["toptier_code"]], elem, child_layers - 1).to_JSON()
                 for elem in raw_children
             ]
-            count = len(generated_children)
         else:
             generated_children = None
-            count = DEFAULT_CHILDREN
+
+        count = len(raw_children)
 
         return Node(
             id=data["toptier_code"],
@@ -83,18 +83,18 @@ class TASFilterTree(FilterTree):
         )
 
     def _generate_federal_account_node(self, ancestors, data, child_layers):
+        raw_children = self._tas_given_fa(ancestors[0], data.federal_account_code)
         if child_layers:
-            raw_children = self._tas_given_fa(ancestors[0], data.federal_account_code)
             generated_children = [
                 self.construct_node_from_raw(
                     2, ancestors + [data.federal_account_code], elem, child_layers - 1
                 ).to_JSON()
                 for elem in raw_children
             ]
-            count = len(generated_children)
         else:
             generated_children = None
-            count = DEFAULT_CHILDREN
+
+        count = len(raw_children)
 
         return Node(
             id=data.federal_account_code,
