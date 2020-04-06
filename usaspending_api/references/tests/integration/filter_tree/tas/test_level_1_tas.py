@@ -8,7 +8,7 @@ common_query = base_query + "?depth=0"
 def test_one_fa(client, basic_agency):
     resp = _call_and_expect_200(client, common_query)
     assert resp.json() == {
-        "results": [{"id": "001", "ancestors": ["001"], "description": "Fed Account 001", "count": 0, "children": None}]
+        "results": [{"id": "001", "ancestors": ["001"], "description": "Fed Account 001", "count": 1, "children": None}]
     }
 
 
@@ -16,6 +16,13 @@ def test_one_fa(client, basic_agency):
 def test_multiple_fa(client, multiple_federal_accounts):
     resp = _call_and_expect_200(client, common_query)
     assert len(resp.json()["results"]) == 4
+
+
+# Will the count be greater than one if there are multiple  children?
+def test_multiple_children(client, fa_with_multiple_tas):
+    resp = _call_and_expect_200(client, common_query)
+    assert len(resp.json()["results"]) == 1
+    assert resp.json()["results"][0]["count"] == 4
 
 
 # Does the endpoint only return federal accounts with file D data?
