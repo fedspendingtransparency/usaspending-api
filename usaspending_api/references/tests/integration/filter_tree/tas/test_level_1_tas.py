@@ -8,7 +8,7 @@ common_query = base_query + "?depth=0"
 def test_one_fa(client, basic_agency):
     resp = _call_and_expect_200(client, common_query)
     assert resp.json() == {
-        "results": [{"id": "001", "ancestors": ["001"], "description": "Fed Account 001", "count": 0, "children": None}]
+        "results": [{"id": "001", "ancestors": ["001"], "description": "Fed Account 001", "count": 1, "children": None}]
     }
 
 
