@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # List of Available Program Activities [/api/v2/federal_accounts/{federal_account_id}/available_program_activity]
 
-This endpoint supports the Federal Account page and allow for listing all Program Activities under the Federal Account.
+This endpoint supports the Federal Account page and allow for listing all Program Activities with activity by the Federal Account.
 
 ## GET
 
