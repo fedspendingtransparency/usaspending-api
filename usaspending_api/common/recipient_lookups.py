@@ -46,12 +46,22 @@ def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_u
 
 
 def generate_missing_recipient_hash(recipient_unique_id, recipient_name):
-    # SQL: MD5(UPPER(CONCAT(awardee_or_recipient_uniqu, legal_business_name)))::uuid
+    # SQL: MD5(UPPER(
+    #   CASE
+    #     WHEN awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', awardee_or_recipient_uniqu)
+    #     ELSE CONCAT('name-', awardee_or_recipient_legal) END
+    # ))::uuid AS recipient_hash,
     import hashlib
     import uuid
 
-    h = hashlib.md5("{}{}".format(recipient_unique_id, recipient_name).upper().encode("utf-8")).hexdigest()
-    return str(uuid.UUID(h))
+    if recipient_unique_id is None:
+        prefix = "name"
+        value = recipient_name
+    else:
+        prefix = "duns"
+        value = recipient_unique_id
+
+    return str(uuid.UUID(hashlib.md5(f"{prefix}-{value}".upper().encode("utf-8")).hexdigest()))
 
 
 def fetch_recipient_hash_using_duns(recipient_unique_id):
@@ -84,7 +94,7 @@ def recipient_is_child(recipient_record: dict) -> bool:
 
 
 def combine_recipient_hash_and_level(recipient_hash, recipient_level):
-    return "{}-{}".format(recipient_hash, recipient_level.upper())
+    return f"{recipient_hash}-{recipient_level.upper()}"
 
 
 def _annotate_recipient_id(field_name, queryset, annotation_sql):

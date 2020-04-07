@@ -10,8 +10,15 @@ These endpoints support the advanced search page and allow for complex filtering
 Returns the number of transactions that would be included in a download request for the given filter set.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -34,7 +41,7 @@ Returns the number of transactions that would be included in a download request 
 
 # Data Structures
 
-## FilterObject (object)
+## AdvancedFilterObject (object)
 + `keywords`: `transport` (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
@@ -103,8 +110,8 @@ Returns the number of transactions that would be included in a download request 
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, list[string])
-+ `exclude`: [`3313`] (optional, list[string])
++ `require`: `33` (optional, array[string])
++ `exclude`: `3333` (optional, array[string])
 
 ## TASCodeObject (object)
 + `ata` (optional, string, nullable)

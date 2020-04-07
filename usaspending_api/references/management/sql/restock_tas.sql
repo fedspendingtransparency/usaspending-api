@@ -33,15 +33,7 @@ SELECT
     broker_tas.allocation_transfer_agency AS allocation_transfer_agency_id,
     broker_tas.availability_type_code,
     NULL::TEXT AS availability_type_code_description,
-    (
-        SELECT
-            toptier_agency_id
-        FROM
-            toptier_agency
-        WHERE
-            toptier_agency.toptier_code = broker_tas.allocation_transfer_agency
-        LIMIT 1
-    ) AS awarding_toptier_agency_id,
+    NULL::INT AS awarding_toptier_agency_id,
     broker_tas.beginning_period_of_availa AS beginning_period_of_availability,
     broker_tas.budget_bureau_code,
     broker_tas.budget_bureau_name,
@@ -57,15 +49,7 @@ SELECT
     NULL::INT AS federal_account_id,
     broker_tas.fr_entity_description,
     broker_tas.fr_entity_type AS fr_entity_code,
-    (
-        SELECT
-            toptier_agency_id
-        FROM
-            toptier_agency
-        WHERE
-            toptier_agency.toptier_code = broker_tas.agency_identifier
-        LIMIT 1
-    ) AS funding_toptier_agency_id,
+    NULL::INT AS funding_toptier_agency_id,
     broker_tas.internal_end_date,
     broker_tas.internal_start_date,
     broker_tas.main_account_code,

@@ -10,6 +10,8 @@ from usaspending_api.references.models.gtas_total_obligation import GTASTotalObl
 from usaspending_api.references.models.naics import NAICS
 from usaspending_api.references.models.object_class import ObjectClass
 from usaspending_api.references.models.overall_totals import OverallTotals
+from usaspending_api.references.models.pop_county import PopCounty
+from usaspending_api.references.models.pop_cong_district import PopCongressionalDistrict
 from usaspending_api.references.models.psc import PSC
 from usaspending_api.references.models.ref_country_code import RefCountryCode
 from usaspending_api.references.models.ref_program_activity import RefProgramActivity
@@ -30,6 +32,8 @@ __all__ = [
     "NAICS",
     "ObjectClass",
     "OverallTotals",
+    "PopCongressionalDistrict",
+    "PopCounty",
     "PSC",
     "RefCountryCode",
     "RefProgramActivity",

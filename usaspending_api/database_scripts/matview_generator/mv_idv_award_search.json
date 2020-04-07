@@ -95,7 +95,6 @@
     "    ON (awards.latest_transaction_id = transaction_fpds.transaction_id AND latest_transaction.is_fpds = true)",
     "LEFT OUTER JOIN",
     "  (SELECT",
-    "    recipient_hash,",
     "    legal_business_name AS recipient_name,",
     "    duns",
     "  FROM recipient_lookup AS rlv",

@@ -10,6 +10,13 @@ This end point returns a list of cities for a given limit, country, search strin
 List of cities matching search criteria
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `search_text` (required, string)
         + `limit` (required, number)

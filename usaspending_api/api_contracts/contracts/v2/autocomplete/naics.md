@@ -10,6 +10,13 @@ This endpoint is used by the Advanced Search page.
 This route sends a request to the backend to retrieve NAICS objects matching the specified search text.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `limit` (optional, number)
             + Default: 10

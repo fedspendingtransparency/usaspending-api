@@ -30,18 +30,37 @@ SELECT
 
   UTM.product_or_service_code,
   UTM.product_or_service_description,
+  CASE
+    WHEN UTM.product_or_service_code IS NOT NULL THEN CONCAT('{"code":"', UTM.product_or_service_code, '","description":"', UTM.product_or_service_description, '"}')
+    ELSE NULL
+  END AS psc_agg_key,
   UTM.naics_code,
   UTM.naics_description,
+  CASE
+    WHEN UTM.naics_code IS NOT NULL
+      THEN CONCAT('{"code":"', UTM.naics_code, '","description":"', UTM.naics_description, '"}')
+    ELSE NULL
+  END AS naics_agg_key,
   AWD.type_description,
   UTM.award_category,
 
   UTM.recipient_unique_id,
   UTM.recipient_name,
   UTM.recipient_hash,
+  CASE
+    WHEN RECIPIENT_HASH_AND_LEVEL.recipient_hash IS NULL or RECIPIENT_HASH_AND_LEVEL.recipient_level IS NULL
+      THEN CONCAT('{"hash_with_level": "","name":"', UTM.recipient_name, '","unique_id":"', UTM.recipient_unique_id, '"}')
+    ELSE
+      CONCAT(
+        '{"hash_with_level":"', CONCAT(RECIPIENT_HASH_AND_LEVEL.recipient_hash, '-', RECIPIENT_HASH_AND_LEVEL.recipient_level),
+        '","name":"', UTM.recipient_name,
+        '","unique_id":"', UTM.recipient_unique_id, '"}'
+      )
+  END AS recipient_agg_key,
 
   UTM.parent_recipient_unique_id,
   UPPER(PRL.legal_business_name) AS parent_recipient_name,
-  PRL.recipient_hash as parent_recipient_hash,
+  PRL.recipient_hash AS parent_recipient_hash,
 
   UTM.action_date,
   DATE(UTM.action_date + interval '3 months') AS fiscal_action_date,
@@ -112,6 +131,21 @@ SELECT
       THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","county_code":"', UTM.pop_county_code, '","county_name":"', UTM.pop_county_name, '"}')
     ELSE NULL
   END AS pop_county_agg_key,
+  CASE
+    WHEN UTM.pop_congressional_code IS NOT NULL
+      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","congressional_code":"', UTM.pop_congressional_code, '"}')
+    ELSE NULL
+  END AS pop_congressional_agg_key,
+  CASE
+    WHEN UTM.pop_state_code IS NOT NULL
+      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","state_name":"', POP_STATE_LOOKUP.name, '"}')
+    ELSE NULL
+  END AS pop_state_agg_key,
+  CASE
+    WHEN UTM.pop_country_code IS NOT NULL
+      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","country_name":"', POP_COUNTRY_LOOKUP.country_name, '"}')
+    ELSE NULL
+  END AS pop_country_agg_key,
 
   UTM.recipient_location_country_code,
   UTM.recipient_location_country_name,
@@ -160,6 +194,38 @@ LEFT JOIN (
 LEFT JOIN subtier_agency SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT JOIN references_cfda CFDA ON (FABS.cfda_number = CFDA.program_number)
 LEFT JOIN recipient_lookup PRL ON (PRL.duns = UTM.parent_recipient_unique_id AND UTM.parent_recipient_unique_id IS NOT NULL)
+LEFT JOIN LATERAL (
+  SELECT   recipient_hash, recipient_level, recipient_unique_id
+  FROM     recipient_profile
+  WHERE    (recipient_hash = UTM.recipient_hash or recipient_unique_id = UTM.recipient_unique_id) AND
+           recipient_name NOT IN (
+             'MULTIPLE RECIPIENTS',
+             'REDACTED DUE TO PII',
+             'MULTIPLE FOREIGN RECIPIENTS',
+             'PRIVATE INDIVIDUAL',
+             'INDIVIDUAL RECIPIENT',
+             'MISCELLANEOUS FOREIGN AWARDEES'
+           ) AND recipient_name IS NOT NULL
+  ORDER BY CASE
+             WHEN recipient_level = 'C' then 0
+             WHEN recipient_level = 'R' then 1
+             ELSE 2
+           END ASC
+  LIMIT 1
+) RECIPIENT_HASH_AND_LEVEL ON TRUE
+LEFT JOIN LATERAL (
+  SELECT country_name
+  FROM   ref_country_code
+  WHERE  country_code = UTM.pop_country_code
+  LIMIT  1
+) POP_COUNTRY_LOOKUP ON TRUE
+LEFT JOIN LATERAL (
+  SELECT   name
+  FROM     state_data
+  WHERE    code = UTM.pop_state_code
+  ORDER BY id desc
+  LIMIT    1
+) POP_STATE_LOOKUP ON TRUE
 LEFT JOIN (
   SELECT
     faba.award_id,

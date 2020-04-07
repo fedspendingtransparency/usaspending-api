@@ -12,13 +12,16 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.etl.management.load_base import load_data_into_model
+from usaspending_api.etl.operations.federal_account.update_agency import update_federal_account_agency
+from usaspending_api.etl.operations.treasury_appropriation_account.update_agencies import (
+    update_treasury_appropriation_account_agencies,
+)
 from usaspending_api.references.account_helpers import (
     insert_federal_accounts,
     link_treasury_accounts_to_federal_accounts,
     remove_empty_federal_accounts,
     update_federal_accounts,
 )
-from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger("console")
 
@@ -53,29 +56,13 @@ class Command(BaseCommand):
                 else:
                     call_command("run_sql", "-f", TAS_SQL_PATH)
 
-            # Match funding toptiers by FREC if they didn't match by AID
-            with Timer("Matching Funding Toptier Agency where AID didn't match"):
-                unmapped_funding_agencies = TreasuryAppropriationAccount.objects.filter(funding_toptier_agency=None)
-                match_count = 0
-                msg_str = "=== Found {} unmatched funding agencies across all TAS objects. ==="
-                logger.info(msg_str.format(unmapped_funding_agencies.count()))
-                for next_tas in unmapped_funding_agencies:
-                    frec_match = ToptierAgency.objects.filter(toptier_code=next_tas.fr_entity_code).first()
-                    if frec_match:
-                        match_count += 1
-                        logger.info(
-                            "   Matched unknown funding agency for TAS {} with FREC {}".format(
-                                next_tas.tas_rendering_label, next_tas.fr_entity_code
-                            )
-                        )
-                        next_tas.funding_toptier_agency = frec_match
-                        next_tas.save()
+            # Update TAS agency links.
+            with Timer("Updating TAS agencies"):
+                count = update_treasury_appropriation_account_agencies()
+                logger.info(f"   Updated {count:,} TAS agency links")
 
-                logger.info("=== Updated {} Funding Toptier Agencies with a FREC agency. ===".format(match_count))
-
-            # update TAS fk relationships to federal accounts
-            with Timer("Updated TAS FK relationships to Federal Accounts"):
-                logger.info("=== Updating TAS FK relationships to Federal Accounts ===")
+            # Update Federal Accounts from TAS.
+            with Timer("Updating Federal Accounts from TAS"):
                 deletes = remove_empty_federal_accounts()
                 logger.info(f"   Removed {deletes:,} Federal Account Rows")
                 updates = update_federal_accounts()
@@ -84,6 +71,8 @@ class Command(BaseCommand):
                 logger.info(f"   Created {inserts:,} Federal Account Rows")
                 links = link_treasury_accounts_to_federal_accounts()
                 logger.info(f"   Linked {links:,} Treasury Accounts to Federal Accounts")
+                agencies = update_federal_account_agency()
+                logger.info(f"   Updated {agencies:,} Federal Account agency links")
 
             logger.info("=== TAS loader finished successfully! ===")
 
@@ -118,8 +107,8 @@ class Command(BaseCommand):
         value_map = {
             "data_source": "USA",
             "tas_rendering_label": self.generate_tas_rendering_label,
-            "awarding_toptier_agency": lambda row: ToptierAgency.objects.filter(toptier_code=row["ATA"]).first(),
-            "funding_toptier_agency": lambda row: ToptierAgency.objects.filter(toptier_code=row["AID"]).first(),
+            "awarding_toptier_agency": None,
+            "funding_toptier_agency": None,
             "internal_start_date": lambda row: datetime.strftime(
                 datetime.strptime(row["DT_TM_ESTAB"], "%m/%d/%Y  %H:%M:%S"), "%Y-%m-%d"
             ),

@@ -10,8 +10,18 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
     FundingAgencyViewSet,
     FundingSubagencyViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import CfdaViewSet
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import CountyViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import (
+    CfdaViewSet,
+    PSCViewSet,
+    NAICSViewSet,
+)
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
+    CountyViewSet,
+    DistrictViewSet,
+    StateTerritoryViewSet,
+    CountryViewSet,
+)
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient_duns import RecipientDunsViewSet
 
 
 @pytest.fixture
@@ -286,40 +296,40 @@ def recipient_test_data(db):
         "recipient.RecipientLookup",
         duns="00UOP00",
         legal_business_name="University of Pawnee",
-        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948",
+        recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
     )
     mommy.make(
         "recipient.RecipientLookup",
         duns="1234JD4321",
         legal_business_name="John Doe",
-        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a949",
+        recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
     )
     mommy.make(
         "recipient.RecipientLookup",
         duns=None,
         legal_business_name="MULTIPLE RECIPIENTS",
-        recipient_hash="6dffe44a-554c-26b4-b7ef-44db50083732",
+        recipient_hash="64af1cb7-993c-b64b-1c58-f5289af014c0",
     )
 
     mommy.make(
         "recipient.RecipientProfile",
         recipient_unique_id="00UOP00",
         recipient_level="P",
-        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948",
+        recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
         recipient_name="University of Pawnee",
     )
     mommy.make(
         "recipient.RecipientProfile",
         recipient_unique_id="1234JD4321",
         recipient_level="C",
-        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a949",
+        recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
         recipient_name="John Doe",
     )
     mommy.make(
         "recipient.RecipientProfile",
         recipient_unique_id=None,
         recipient_level="R",
-        recipient_hash="6dffe44a-554c-26b4-b7ef-44db50083732",
+        recipient_hash="64af1cb7-993c-b64b-1c58-f5289af014c0",
         recipient_name="MULTIPLE RECIPIENTS",
     )
 
@@ -664,25 +674,25 @@ def test_category_funding_subagency_subawards(agency_test_data):
 def test_category_recipient_duns_awards(recipient_test_data):
     test_payload = {"category": "recipient_duns", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "recipient_duns",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": None, "recipient_id": None},
+            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": "DUNS Number not provided", "recipient_id": None},
             {
                 "amount": 11,
                 "name": "John Doe",
                 "code": "1234JD4321",
-                "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a949-C",
+                "recipient_id": "0b54895d-2393-ea12-48e3-deae990614d9-C",
             },
             {
                 "amount": 2,
                 "name": "University of Pawnee",
                 "code": "00UOP00",
-                "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a948-P",
+                "recipient_id": "2af2a5a5-3126-2c76-3681-dec2cf148f1a-P",
             },
         ],
         "messages": [get_time_period_message()],
@@ -695,7 +705,7 @@ def test_category_recipient_duns_awards(recipient_test_data):
 def test_category_recipient_duns_subawards(recipient_test_data):
     test_payload = {"category": "recipient_duns", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "recipient_duns",
@@ -706,14 +716,14 @@ def test_category_recipient_duns_subawards(recipient_test_data):
             {
                 "amount": 1100,
                 "code": "1234JD4321",
+                "recipient_id": "0b54895d-2393-ea12-48e3-deae990614d9-C",
                 "name": "JOHN DOE",
-                "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a949-C",
             },
             {
                 "amount": 11,
                 "code": "00UOP00",
+                "recipient_id": "2af2a5a5-3126-2c76-3681-dec2cf148f1a-P",
                 "name": "UNIVERSITY OF PAWNEE",
-                "recipient_id": "f9006d7e-fa6c-fa1c-6bc5-964fe524a948-P",
             },
         ],
         "messages": [get_time_period_message()],
@@ -757,7 +767,7 @@ def test_category_cfda_subawards(cfda_test_data):
 def test_category_psc_awards(psc_test_data):
     test_payload = {"category": "psc", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = PSCViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "psc",
@@ -776,7 +786,7 @@ def test_category_psc_awards(psc_test_data):
 def test_category_naics_awards(naics_test_data):
     test_payload = {"category": "naics", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = NAICSViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "naics",
@@ -833,7 +843,7 @@ def test_category_county_subawards(geo_test_data):
 def test_category_district_awards(geo_test_data):
     test_payload = {"category": "district", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = DistrictViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "district",
@@ -852,7 +862,7 @@ def test_category_district_awards(geo_test_data):
 def test_category_district_subawards(geo_test_data):
     test_payload = {"category": "district", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = DistrictViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "district",
@@ -872,7 +882,7 @@ def test_category_district_subawards(geo_test_data):
 def test_category_state_territory(geo_test_data):
     test_payload = {"category": "state_territory", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = StateTerritoryViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "state_territory",
@@ -889,7 +899,7 @@ def test_category_state_territory(geo_test_data):
 def test_category_state_territory_subawards(geo_test_data):
     test_payload = {"category": "state_territory", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = StateTerritoryViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "state_territory",
@@ -906,7 +916,7 @@ def test_category_state_territory_subawards(geo_test_data):
 def test_category_country(geo_test_data):
     test_payload = {"category": "country", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = CountryViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "country",
@@ -923,7 +933,7 @@ def test_category_country(geo_test_data):
 def test_category_country_subawards(geo_test_data):
     test_payload = {"category": "country", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = BusinessLogic(test_payload, {}).results()
+    spending_by_category_logic = CountryViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "country",

@@ -84,9 +84,12 @@ class Rapidloader:
 
     def complete_process(self) -> None:
         if self.config["create_new_index"]:
-            printf({"msg": "Closing old indices and adding aliases"})
             set_final_index_config(self.elasticsearch_client, self.config["index_name"])
-            swap_aliases(self.elasticsearch_client, self.config["index_name"], self.config["load_type"])
+            if self.config["skip_delete_index"]:
+                printf({"msg": "Skipping deletion of old indices"})
+            else:
+                printf({"msg": "Closing old indices and adding aliases"})
+                swap_aliases(self.elasticsearch_client, self.config["index_name"], self.config["load_type"])
 
         if self.config["snapshot"]:
             printf({"msg": "Taking snapshot"})

@@ -10,8 +10,15 @@ This endpoint supports the federal account landing page, which provides a list o
 This endpoint returns a list of federal accounts, their number, name, managing agency, and budgetary resources.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
-        + `filters` (optional, FilterObject)
+        + `filters` (optional, AdvancedFilterObject)
             The filter takes a fiscal year, but if one is not provided, it defaults to the last certified fiscal year.
         + `sort` (optional, SortObject)
         + `limit` (optional, number)
@@ -58,11 +65,13 @@ This endpoint returns a list of federal accounts, their number, name, managing a
     A unique identifier for the federal account
 + `managing_agency_acronym` (required, string)
 + `agency_identifier` (required, string)
-+ `budgetary_resources` (required, number)
++ `budgetary_resources` (required, number, nullable)
 + `managing_agency` (required, string)
 
-## FilterObject (object)
+## AdvancedFilterObject (object)
 + `fy` (optional, string)
+    Providing `fy` does not change the rows that are returned, instead, it limits the `budgetary_resources` value to the fiscal year indicated.  Federal
+    accounts with no submissions for that fiscal year will return null.
     + Default: `previous fiscal year`
 + `agency_identifier` (optional, string)
 
