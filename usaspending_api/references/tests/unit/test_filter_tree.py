@@ -2,7 +2,7 @@ from usaspending_api.references.v2.views.filter_tree.filter_tree import FilterTr
 
 
 class TestFilterTree(FilterTree):
-    def raw_search(self, tiered_keys):
+    def raw_search(self, tiered_keys, filter_string):
         if len(tiered_keys) == 0:
             return self.toptier_search()
         if len(tiered_keys) == 1:
@@ -35,12 +35,12 @@ class TestFilterTree(FilterTree):
 
 def test_toptier_search():
     test_tree = TestFilterTree()
-    assert _nodes_to_json(test_tree.search(None, None, None, 1)) == [_node_by_id(1), _node_by_id(2)]
+    assert _nodes_to_json(test_tree.search(None, None, None, 1, "test")) == [_node_by_id(1), _node_by_id(2)]
 
 
 def test_tier_one_search():
     test_tree = TestFilterTree()
-    assert _nodes_to_json(test_tree.search("test", None, None, 1)) == [
+    assert _nodes_to_json(test_tree.search("test", None, None, 1, "test")) == [
         _node_by_id(3, ["test"]),
         _node_by_id(4, ["test"]),
     ]
@@ -48,7 +48,7 @@ def test_tier_one_search():
 
 def test_tier_two_search():
     test_tree = TestFilterTree()
-    assert _nodes_to_json(test_tree.search("test", "test2", None, 1)) == [
+    assert _nodes_to_json(test_tree.search("test", "test2", None, 1, "test")) == [
         _node_by_id(5, ["test", "test2"]),
         _node_by_id(6, ["test", "test2"]),
     ]
@@ -56,7 +56,7 @@ def test_tier_two_search():
 
 def test_tier_three_search():
     test_tree = TestFilterTree()
-    assert _nodes_to_json(test_tree.search("test", "test2", "test3", 1)) == [
+    assert _nodes_to_json(test_tree.search("test", "test2", "test3", 1, "test")) == [
         _node_by_id(7, ["test", "test2", "test3"]),
         _node_by_id(8, ["test", "test2", "test3"]),
     ]

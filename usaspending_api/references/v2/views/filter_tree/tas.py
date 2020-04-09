@@ -17,9 +17,17 @@ class TASViewSet(APIView):
 
     def _parse_and_validate(self, request):
 
-        data = {"depth": request.get("depth") or 0}
+        data = {"depth": request.get("depth") or 0, "filter": request.get("filter") or None}
         models = [
-            {"key": "depth", "name": "depth", "type": "integer", "allow_nulls": True, "default": 1, "optional": True}
+            {"key": "depth", "name": "depth", "type": "integer", "allow_nulls": True, "default": 1, "optional": True},
+            {
+                "key": "filter",
+                "name": "filter",
+                "type": "text",
+                "text_type": "search",
+                "allow_nulls": True,
+                "optional": True,
+            },
         ]
         return TinyShield(models).block(data)
 
@@ -29,5 +37,12 @@ class TASViewSet(APIView):
 
         filter_tree = TASFilterTree()
         return Response(
-            {"results": [elem.to_JSON() for elem in filter_tree.search(tier1, tier2, tier3, request_values["depth"])]}
+            {
+                "results": [
+                    elem.to_JSON()
+                    for elem in filter_tree.search(
+                        tier1, tier2, tier3, request_values["depth"], request_values["filter"]
+                    )
+                ]
+            }
         )
