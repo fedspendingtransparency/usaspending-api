@@ -1,17 +1,14 @@
-import json
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.awards.v2.lookups.lookups import (
-    assistance_type_mapping,
-    contract_subaward_mapping,
     contract_type_mapping,
     direct_payment_type_mapping,
     grant_type_mapping,
     idv_type_mapping,
     loan_type_mapping,
-    other_type_mapping,
-    procurement_type_mapping,
+    other_type_mapping
 )
+
 
 class AwardTypeGroups(APIView):
     """
