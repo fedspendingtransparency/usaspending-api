@@ -25,7 +25,7 @@ class Node:
             "ancestors": self.ancestors,
             "description": self.description,
             "count": self.count,
-            "children": [elem.to_JSON() for elem in self.children] if self.children else [],
+            "children": [elem.to_JSON() for elem in self.children] if self.children is not None else None,
         }
 
 
