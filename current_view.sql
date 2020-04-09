@@ -1,7 +1,7 @@
 -- Needs to be present in the Postgres DB if data needs to be retrieved for Elasticsearch
-DROP VIEW IF EXISTS transaction_delta_view;
+DROP VIEW IF EXISTS temp_curr_ex_tx_view;
 
-CREATE VIEW transaction_delta_view AS
+CREATE VIEW temp_curr_ex_tx_view AS
 SELECT
   UTM.transaction_id,
   FPDS.detached_award_proc_unique,
@@ -19,7 +19,7 @@ SELECT
     ELSE UTM.uri
   END AS display_award_id,
 
-  AWD.update_date,
+  TN.update_date,
   UTM.modification_number,
   AWD.generated_unique_award_id,
   UTM.award_id,
@@ -162,9 +162,9 @@ SELECT
 
 FROM universal_transaction_matview UTM
 INNER JOIN transaction_normalized TN ON (UTM.transaction_id = TN.id)
-INNER JOIN awards AWD ON (UTM.award_id = AWD.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
+LEFT JOIN awards AWD ON (UTM.award_id = AWD.id)
 -- Similar joins are already performed on universal_transaction_matview, however, to avoid making the matview larger
 -- than needed they have been placed here. Feel free to phase out if the columns gained from the following joins are
 -- added to the universal_transaction_matview.
