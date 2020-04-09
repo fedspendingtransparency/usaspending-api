@@ -42,7 +42,7 @@ class FilterTree(metaclass=ABCMeta):
 
         retval = [
             self._make_raw_node(ancestor_array, elem, filter_string, child_layers)
-            for elem in self.raw_search(ancestor_array, filter_string, child_layers)
+            for elem in self.raw_search(ancestor_array)
         ]
         if filter_string:
             retval = [elem for elem in retval if self.matches_filter(elem, filter_string)]
@@ -50,7 +50,7 @@ class FilterTree(metaclass=ABCMeta):
 
     def _make_raw_node(self, ancestor_array, data, filter_string, child_layers):
         retval = self.construct_node_from_raw(ancestor_array, data)
-        raw_children = self.raw_search(ancestor_array + [retval.id], filter_string, child_layers - 1)
+        raw_children = self.raw_search(ancestor_array + [retval.id])
         if child_layers:
             children = [
                 self._make_raw_node(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
