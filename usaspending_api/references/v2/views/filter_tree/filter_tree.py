@@ -42,7 +42,7 @@ class FilterTree(metaclass=ABCMeta):
 
         retval = [
             self._make_raw_node(ancestor_array, elem, filter_string, child_layers)
-            for elem in self.raw_search(ancestor_array, filter_string)
+            for elem in self.raw_search(ancestor_array, filter_string, child_layers)
         ]
         if filter_string:
             retval = [elem for elem in retval if self.matches_filter(elem, filter_string)]
@@ -50,16 +50,17 @@ class FilterTree(metaclass=ABCMeta):
 
     def _make_raw_node(self, ancestor_array, data, filter_string, child_layers):
         retval = self.construct_node_from_raw(ancestor_array, data)
+        raw_children = self.raw_search(ancestor_array + [retval.id], filter_string, child_layers - 1)
         if child_layers:
             children = [
                 self._make_raw_node(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
-                for elem in self.raw_search(ancestor_array + [retval.id], filter_string)
+                for elem in raw_children
             ]
             return Node(
                 id=retval.id,
                 ancestors=retval.ancestors,
                 description=retval.description,
-                count=len(self.raw_search(ancestor_array + [retval.id], None)),
+                count=len(raw_children),
                 children=children,
             )
         else:
@@ -67,12 +68,12 @@ class FilterTree(metaclass=ABCMeta):
                 id=retval.id,
                 ancestors=retval.ancestors,
                 description=retval.description,
-                count=len(self.raw_search(ancestor_array + [retval.id], None)),
+                count=len(raw_children),
                 children=None,
             )
 
     @abstractmethod
-    def raw_search(self, tiered_keys, filter_string) -> dict:
+    def raw_search(self, tiered_keys, filter_string, child_layers) -> dict:
         pass
 
     @abstractmethod
@@ -83,5 +84,5 @@ class FilterTree(metaclass=ABCMeta):
         if (filter_string.lower() in node.id.lower()) or (filter_string.lower() in node.description.lower()):
             return True
         if node.children:
-            return len([elem for elem in node.children if self.matches_filter(elem, filter_string)]) > 0
-        return False
+            node.children = [elem for elem in node.children if self.matches_filter(elem, filter_string)]
+        return node.children

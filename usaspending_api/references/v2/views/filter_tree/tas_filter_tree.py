@@ -6,13 +6,13 @@ from django.db.models import Exists, OuterRef
 
 
 class TASFilterTree(FilterTree):
-    def raw_search(self, tiered_keys, filter_string):
+    def raw_search(self, tiered_keys, filter_string, child_layers):
         if len(tiered_keys) == 0:
-            return self._toptier_search(None)
+            return self._toptier_search(filter_string if child_layers == 0 else None)
         if len(tiered_keys) == 1:
-            return self._fa_given_agency(tiered_keys[0], None)
+            return self._fa_given_agency(tiered_keys[0], filter_string if child_layers == 0 else None)
         if len(tiered_keys) == 2:
-            return self._tas_given_fa(tiered_keys[0], tiered_keys[1], None)
+            return self._tas_given_fa(tiered_keys[0], tiered_keys[1], filter_string if child_layers == 0 else None)
         return []
 
     def _toptier_search(self, filter_string):
