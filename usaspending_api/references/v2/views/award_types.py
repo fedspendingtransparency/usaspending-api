@@ -6,7 +6,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
     grant_type_mapping,
     idv_type_mapping,
     loan_type_mapping,
-    other_type_mapping
+    other_type_mapping,
 )
 
 
@@ -18,13 +18,15 @@ class AwardTypeGroups(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/award_types.md"
 
     def get(self, request, format=None):
-        return Response({
-            'results': {
-                'contracts': contract_type_mapping,
-                'loans': loan_type_mapping,
-                'idvs': idv_type_mapping,
-                'grants': grant_type_mapping,
-                'other_financial_assistance': other_type_mapping,
-                'direct_payments': direct_payment_type_mapping,
+        return Response(
+            {
+                "results": {
+                    "contracts": contract_type_mapping,
+                    "loans": loan_type_mapping,
+                    "idvs": idv_type_mapping,
+                    "grants": grant_type_mapping,
+                    "other_financial_assistance": other_type_mapping,
+                    "direct_payments": direct_payment_type_mapping,
+                }
             }
-        })
+        )
