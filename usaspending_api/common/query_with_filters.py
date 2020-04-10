@@ -9,6 +9,7 @@ from elasticsearch_dsl import Q as ES_Q
 from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
 from usaspending_api.search.elasticsearch.filters.naics import NaicsCodes
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
 
 logger = logging.getLogger(__name__)
 
@@ -334,10 +335,14 @@ class _TasCodes(_Filter):
     underscore_name = "tas_codes"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List, query_type: _QueryType) -> ES_Q:
         tas_codes_query = []
 
         for v in filter_values:
+
+            if isinstance(v, str):
+                v = TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary(v)
+
             code_lookup = {
                 "a": v.get("a", ".*"),
                 "aid": v.get("aid", ".*"),
