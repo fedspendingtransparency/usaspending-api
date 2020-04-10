@@ -137,7 +137,15 @@ AWARD_FILTER = [
                     "sub": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
                 },
             },
-            {"type": "array", "array_type": "text", "text_type": "search"},
+            {
+                "name": "tas_codes",
+                "type": "object",
+                "min": 0,
+                "object_keys": {
+                    "require": {"type": "array", "array_type": "text", "text_type": "search", "min": 0},
+                    "exclude": {"type": "array", "array_type": "text", "text_type": "search", "min": 0},
+                },
+            },
         ],
     },
 ]
