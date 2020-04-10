@@ -11,6 +11,3 @@ WEBSITE_AWARD_BINS = {
     "500M": {"lower": 500000000, "upper": 500000000, "enums": ["500M"]},
     ">500M": {"lower": 500000000, "upper": None, "enums": ["500M", ">500M"]},
 }
-
-DOD_CGAC = "097"  # DoD's toptier identifier.
-DOD_SUBSUMED_CGAC = ["017", "021", "057"]  # Air Force, Army, and Navy are to be reported under DoD.

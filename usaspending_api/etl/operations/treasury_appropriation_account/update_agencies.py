@@ -1,6 +1,6 @@
 from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
+from usaspending_api.etl.operations.federal_account.update_agency import DOD_AID, DOD_SUBSUMED_AIDS
 from usaspending_api.etl.operations.federal_account.update_agency import FEDERAL_ACCOUNT_PARENT_AGENCY_MAPPING
-from usaspending_api.references.constants import DOD_CGAC, DOD_SUBSUMED_CGAC
 
 
 def update_treasury_appropriation_account_agencies():
@@ -29,7 +29,7 @@ def update_treasury_appropriation_account_agencies():
                 treasury_appropriation_account as taa
                 left outer join toptier_agency as ata on
                     ata.toptier_code = case
-                        when taa.allocation_transfer_agency_id in {tuple(DOD_SUBSUMED_CGAC)} then '{DOD_CGAC}'
+                        when taa.allocation_transfer_agency_id in {DOD_SUBSUMED_AIDS} then '{DOD_AID}'
                         else taa.allocation_transfer_agency_id
                     end
         ),
