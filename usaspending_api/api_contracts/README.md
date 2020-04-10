@@ -1,5 +1,7 @@
 # API Contracts
 
+Contract files are stored [here](contracts/) in this repo.
+
 ## For Everyone
 All new API endpoint documentation must be in markdown that conforms to the [API Blueprint](https://apiblueprint.org/) syntax.
 
@@ -22,8 +24,8 @@ See [Tools for Testing and Mocking](tools-for-contracts.md)
 1. Include the `Schema` block in the request to help with mock server tools
     - See examples
 1. Include a properly-formatted and indented `Body` section for both a (Post) Request and Response
-1. Use `dredd` to check the syntax of the API Contract.
-    - `--dry-run` is your friend
+1. Use `dredd` or `aglio` to check the syntax of the API Contract.
+1. Use `fixed-type` when defining list and object attributes
 
 Follow these link to see example API Contracts:
 - [[GET] /api/v2/this/is/your/<param_for_endpoint>/ (Example)](template_for_get.md)
