@@ -34,8 +34,8 @@ query_paths = {
                     "potential_total_value_of_award",
                     "award__latest_transaction__contract_data__potential_total_value_awar",
                 ),
-                ("award_base_action_date", "award__earliest_transaction__contract_data__action_date"),
-                ("award_base_action_date_fiscal_year", "award__earliest_transaction__fiscal_year"),
+                ("award_base_action_date", None),  # Annotation is used to create this column
+                ("award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 (
                     "period_of_performance_current_end_date",
@@ -598,8 +598,8 @@ query_paths = {
                 ("total_funding_amount", "award__total_funding_amount"),
                 ("total_face_value_of_loan", "award__total_loan_value"),
                 ("total_loan_subsidy_cost", "award__total_subsidy_cost"),
-                ("award_base_action_date", "award__earliest_transaction__assistance_data__action_date"),
-                ("award_base_action_date_fiscal_year", "award__earliest_transaction__fiscal_year"),
+                ("award_base_action_date", None),  # Annotation is used to create this column
+                ("award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("awarding_agency_code", "award__latest_transaction__assistance_data__awarding_agency_code"),
