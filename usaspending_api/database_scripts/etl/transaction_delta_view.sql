@@ -258,4 +258,5 @@ LEFT JOIN (
     faba.award_id IS NOT NULL
   GROUP BY
     faba.award_id
-) FEDERAL_ACCT ON (FEDERAL_ACCT.award_id = UTM.award_id);
+) FEDERAL_ACCT ON (FEDERAL_ACCT.award_id = UTM.award_id)
+WHERE UTM.action_date >= '2007-10-01';
