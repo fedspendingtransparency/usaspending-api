@@ -151,12 +151,21 @@ def annotate_recipient_id(field_name, queryset):
                 recipient_profile rp
                 inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
             where
-                rl.duns = {outer_table}.recipient_unique_id and
-                rp.recipient_level = case
+                (
+                    (
+                        {outer_table}.recipient_unique_id is null
+                        and rl.duns is null
+                        and {outer_table}.recipient_name = rl.legal_business_name
+                    ) or (
+                        {outer_table}.recipient_unique_id is not null
+                        and rl.duns is not null
+                        and rl.duns = {outer_table}.recipient_unique_id
+                    )
+                )
+                and rp.recipient_level = case
                     when {outer_table}.parent_recipient_unique_id is null then 'R'
-                    else 'C'
-                end and
-                rp.recipient_name not in {special_cases}
+                    else 'C' end
+                and rp.recipient_name not in {special_cases}
         )""",
     )
 
