@@ -277,7 +277,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             per_capita = None
             population = populations.get(shape_code)
             if population:
-                (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
+                per_capita = (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
 
             results.append(
                 {

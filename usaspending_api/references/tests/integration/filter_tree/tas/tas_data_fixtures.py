@@ -47,6 +47,11 @@ def multiple_tas(db, basic_agency):
 
 
 @pytest.fixture
+def fa_with_multiple_tas(db, multiple_tas):
+    _setup_fa(1, 1)
+
+
+@pytest.fixture
 def agency_with_unsupported_fa(db):
     _setup_agency(1)
     _setup_fa(1, 1)
