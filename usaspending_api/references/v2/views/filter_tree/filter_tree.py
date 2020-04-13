@@ -80,7 +80,7 @@ class FilterTree(metaclass=ABCMeta):
     def construct_node_from_raw(self, ancestors: list, data) -> UnlinkedNode:
         pass
 
-    def matches_filter(self, node: Node, filter_string):
+    def matches_filter(self, node: Node, filter_string) -> bool:
         if (filter_string.lower() in node.id.lower()) or (filter_string.lower() in node.description.lower()):
             return True
         if node.children:
