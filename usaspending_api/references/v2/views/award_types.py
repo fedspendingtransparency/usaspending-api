@@ -20,13 +20,11 @@ class AwardTypeGroups(APIView):
     def get(self, request, format=None):
         return Response(
             {
-                "results": {
-                    "contracts": contract_type_mapping,
-                    "loans": loan_type_mapping,
-                    "idvs": idv_type_mapping,
-                    "grants": grant_type_mapping,
-                    "other_financial_assistance": other_type_mapping,
-                    "direct_payments": direct_payment_type_mapping,
-                }
+                "contracts": contract_type_mapping,
+                "loans": loan_type_mapping,
+                "idvs": idv_type_mapping,
+                "grants": grant_type_mapping,
+                "other_financial_assistance": other_type_mapping,
+                "direct_payments": direct_payment_type_mapping,
             }
         )

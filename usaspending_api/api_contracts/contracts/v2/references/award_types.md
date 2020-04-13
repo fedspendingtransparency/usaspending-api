@@ -8,44 +8,42 @@ This endpoint returns a JSON object representing the grouping of award types.
 ## GET    
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, AwardTypes, fixed-type)
+        + (required, AwardTypes, fixed-type)
     + Body
             {
-                "results": {
-                    "contracts": {
-                        "A": "BPA Call",
-                        "B": "Purchase Order",
-                        "C": "Delivery Order",
-                        "D": "Definitive Contract"
-                    },
-                    "loans": {
-                        "07": "Direct Loan",
-                        "08": "Guaranteed/Insured Loan"
-                    },
-                    "idvs": {
-                        "IDV_A": "GWAC Government Wide Acquisition Contract",
-                        "IDV_B": "IDC Multi-Agency Contract, Other Indefinite Delivery Contract",
-                        "IDV_B_A": "IDC Indefinite Delivery Contract / Requirements",
-                        "IDV_B_B": "IDC Indefinite Delivery Contract / Indefinite Quantity",
-                        "IDV_B_C": "IDC Indefinite Delivery Contract / Definite Quantity",
-                        "IDV_C": "FSS Federal Supply Schedule",
-                        "IDV_D": "BOA Basic Ordering Agreement",
-                        "IDV_E": "BPA Blanket Purchase Agreement"
-                    },
-                    "grants": {
-                        "02": "Block Grant",
-                        "03": "Formula Grant",
-                        "04": "Project Grant",
-                        "05": "Cooperative Agreement"
-                    },
-                    "other_financial_assistance": {
-                        "09": "Insurance",
-                        "11": "Other Financial Assistance"
-                    },
-                    "direct_payments": {
-                        "06": "Direct Payment for Specified Use",
-                        "10": "Direct Payment with Unrestricted Use"
-                    }
+                "contracts": {
+                    "A": "BPA Call",
+                    "B": "Purchase Order",
+                    "C": "Delivery Order",
+                    "D": "Definitive Contract"
+                },
+                "loans": {
+                    "07": "Direct Loan",
+                    "08": "Guaranteed/Insured Loan"
+                },
+                "idvs": {
+                    "IDV_A": "GWAC Government Wide Acquisition Contract",
+                    "IDV_B": "IDC Multi-Agency Contract, Other Indefinite Delivery Contract",
+                    "IDV_B_A": "IDC Indefinite Delivery Contract / Requirements",
+                    "IDV_B_B": "IDC Indefinite Delivery Contract / Indefinite Quantity",
+                    "IDV_B_C": "IDC Indefinite Delivery Contract / Definite Quantity",
+                    "IDV_C": "FSS Federal Supply Schedule",
+                    "IDV_D": "BOA Basic Ordering Agreement",
+                    "IDV_E": "BPA Blanket Purchase Agreement"
+                },
+                "grants": {
+                    "02": "Block Grant",
+                    "03": "Formula Grant",
+                    "04": "Project Grant",
+                    "05": "Cooperative Agreement"
+                },
+                "other_financial_assistance": {
+                    "09": "Insurance",
+                    "11": "Other Financial Assistance"
+                },
+                "direct_payments": {
+                    "06": "Direct Payment for Specified Use",
+                    "10": "Direct Payment with Unrestricted Use"
                 }
             }
 
