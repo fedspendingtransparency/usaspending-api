@@ -12,7 +12,10 @@ from usaspending_api.common.etl import ETLQueryFile, ETLTable, mixins
 from usaspending_api.common.helpers.sql_helpers import get_connection, execute_sql
 from usaspending_api.common.helpers.text_helpers import standardize_nullable_whitespace as prep
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
-from usaspending_api.etl.operations.federal_account.update_agency import update_federal_account_agency
+from usaspending_api.etl.operations.federal_account.update_agency import (
+    DOD_SUBSUMED_AIDS,
+    update_federal_account_agency,
+)
 from usaspending_api.etl.operations.treasury_appropriation_account.update_agencies import (
     update_treasury_appropriation_account_agencies,
 )
@@ -172,7 +175,9 @@ class Command(mixins.ETLMixin, BaseCommand):
             self.etl_dml_sql_directory / "subtier_agency_query.sql", temp_table=TEMP_TABLE_NAME
         )
         toptier_agency_query = ETLQueryFile(
-            self.etl_dml_sql_directory / "toptier_agency_query.sql", temp_table=TEMP_TABLE_NAME
+            self.etl_dml_sql_directory / "toptier_agency_query.sql",
+            temp_table=TEMP_TABLE_NAME,
+            dod_subsumed=DOD_SUBSUMED_AIDS,
         )
 
         path = self._get_sql_directory_file_path("raw_agency_create_temp_table")
