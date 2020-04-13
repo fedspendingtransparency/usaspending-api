@@ -19,7 +19,7 @@ Description of the endpoint using the above HTTP method.
 
     + Parameters
         + `param_for_endpoint`: `endpoint` (required, string)
-            Description of the parameter if not obvious.
+            Description of the parameter if not evident from the property name.
 
 
 + Response 200 (application/json)

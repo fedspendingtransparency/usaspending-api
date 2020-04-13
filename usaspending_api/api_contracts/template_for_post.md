@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Search for Widgets that meet the criteria [/api/v5/query/widget/]
 
-Nice description on the endpoint. What does it do? What is it for?
+Nice description of the endpoint. What does it do? What is it for?
 
 ## POST
 
