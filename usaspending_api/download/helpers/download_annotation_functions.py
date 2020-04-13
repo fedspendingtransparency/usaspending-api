@@ -64,6 +64,8 @@ def universal_award_matview_annotations():
 
 def idv_order_annotations():
     annotation_fields = {
+        "award_base_action_date_fiscal_year": FiscalYear("earliest_transaction__action_date"),
+        "award_base_action_date": Cast(F("earliest_transaction__action_date"), DateTimeField()),
         "treasury_accounts_funding_this_award": Subquery(
             Award.objects.filter(id=OuterRef("id"))
             .annotate(value=StringAgg("financial_set__treasury_account__tas_rendering_label", ";", distinct=True))
