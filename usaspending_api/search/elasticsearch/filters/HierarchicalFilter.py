@@ -13,9 +13,6 @@ class HierarchicalFilter:
             node for node in [cls.node(code, False, require, exclude) for code in exclude] if node.is_toptier()
         ]
 
-        print(
-            f"nodes positive {[node.code for node in [cls.node(code, True, require, exclude) for code in require] if not node.is_toptier()]}"
-        )
         positive_query = " OR ".join([node.get_query() for node in positive_nodes])
         negative_query = " AND ".join([node.get_query() for node in negative_nodes])
 

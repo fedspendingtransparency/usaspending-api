@@ -1,5 +1,5 @@
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from elasticsearch_dsl import Q as ES_Q
 from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
 from usaspending_api.search.elasticsearch.filters.HierarchicalFilter import HierarchicalFilter, Node
@@ -20,11 +20,6 @@ class TasCodes(_Filter, HierarchicalFilter):
         else:
             raise InvalidParameterException(f"tas_codes must be an array or object")
 
-        print("querystring " + cls._query_string(require, exclude))
-        print(
-            "query "
-            + str(ES_Q("query_string", query=cls._query_string(require, exclude), default_field="treasury_accounts",))
-        )
         return ES_Q("query_string", query=cls._query_string(require, exclude), default_field="treasury_accounts")
 
     @staticmethod
@@ -36,7 +31,12 @@ class TASNode(Node):
     def _basic_search_unit(self):
         v = self.code
         if isinstance(self.code, str):
-            v = TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary(v)
+            if len(self.code.split("-")) == 1:
+                v = {"aid": self.code}
+            elif len(self.code.split("-")) == 2:
+                v = FederalAccount.fa_rendering_label_to_component_dictionary(v)
+            else:
+                v = TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary(v)
 
         code_lookup = {
             "aid": f"aid={v['aid']}" if v.get("aid") else "*",
