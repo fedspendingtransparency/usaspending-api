@@ -7,18 +7,20 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import (
     ElasticsearchConnectionException,
     InvalidParameterException,
     UnprocessableEntityException,
 )
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
-from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
+from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.common.validator.award_filter import AWARD_FILTER, AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import search_transactions
 from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count
 from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_sum_and_count
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_SOURCE_LOOKUP, TRANSACTIONS_LOOKUP
 
 logger = logging.getLogger(__name__)
 
@@ -81,20 +83,41 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                     },
                 }
             )
-
+        sorts = {TRANSACTIONS_LOOKUP[validated_payload["sort"]]: validated_payload["order"]}
         lower_limit = (validated_payload["page"] - 1) * validated_payload["limit"]
-        success, response, total = search_transactions(validated_payload, lower_limit, validated_payload["limit"] + 1)
-        if not success:
-            raise InvalidParameterException(response)
+        upper_limit = (validated_payload["page"]) * validated_payload["limit"] + 1
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(validated_payload["filters"])
+        search = TransactionSearch().filter(filter_query).sort(sorts)[lower_limit:upper_limit]
+        response = search.handle_execute()
+        return Response(self.build_elasticsearch_result(validated_payload, response))
 
-        metadata = get_simple_pagination_metadata(len(response), validated_payload["limit"], validated_payload["page"])
-
+    def build_elasticsearch_result(self, request, response) -> dict:
         results = []
-        for transaction in response[: validated_payload["limit"]]:
-            results.append(transaction)
+        for res in response:
+            hit = res.to_dict()
+            # Parsing API response values from ES query result JSON
+            # We parse the `hit` (result from elasticsearch) to get the award type, use the type to determine
+            # which lookup dict to use, and then use that lookup to retrieve the correct value requested from `fields`
+            row = {}
+            for field in request["fields"]:
+                row[field] = hit.get(TRANSACTIONS_SOURCE_LOOKUP[field])
+            row["generated_internal_id"] = hit["generated_unique_award_id"]
+            row["internal_id"] = hit["award_id"]
 
-        response = {"limit": validated_payload["limit"], "results": results, "page_metadata": metadata}
-        return Response(response)
+            results.append(row)
+
+        metadata = get_simple_pagination_metadata(len(response), request["limit"], request["page"])
+
+        return {
+            "limit": request["limit"],
+            "results": results[: request["limit"]],
+            "page_metadata": metadata,
+            "messages": [
+                get_generic_filters_message(
+                    request["filters"].keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                )
+            ],
+        }
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)

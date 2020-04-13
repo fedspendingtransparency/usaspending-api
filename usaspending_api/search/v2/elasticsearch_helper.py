@@ -14,6 +14,7 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.query_with_filters import QueryWithFilters
 
 logger = logging.getLogger("console")
 
@@ -103,18 +104,15 @@ def search_transactions(request_data, lower_limit, limit):
 
 
 def get_total_results(keyword, retries=3):
-    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
-    aggregations = {
-        "types": {
-            "filters": {
-                "filters": {
-                    category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()
-                }
-            }
-        }
+    group_by_agg_key_values = {
+        "filters": {category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()}
     }
-    query = {"query": base_query(keyword), "aggs": aggregations}
-    response = es_client_query(index=index_name, body=query, retries=retries)
+    aggs = A("filters", **group_by_agg_key_values)
+    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query({"keywords": keyword})
+    search = TransactionSearch().filter(filter_query)
+    search.aggs.bucket("types", aggs)
+    response = search.handle_execute()
+
     if response:
         try:
             return response["aggregations"]["types"]["buckets"]
