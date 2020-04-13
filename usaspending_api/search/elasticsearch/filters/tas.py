@@ -42,9 +42,9 @@ class TASNode(Node):
             "aid": f"aid={v['aid']}" if v.get("aid") else "*",
             "main": f"main={v['main']}" if v.get("main") else "*",
             "ata": f"ata={v['ata']}" if v.get("ata") else "*",
+            "sub": f"sub={v['sub']}" if v.get("sub") else "*",
             "bpoa": f"bpoa={v['bpoa']}" if v.get("bpoa") else "*",
             "epoa": f"epoa={v['epoa']}" if v.get("epoa") else "*",
-            "sub": f"sub={v['sub']}" if v.get("sub") else "*",
             "a": f"a={v['a']}" if v.get("a") else "*",
         }
 
