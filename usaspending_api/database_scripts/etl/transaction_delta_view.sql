@@ -229,15 +229,15 @@ LEFT JOIN LATERAL (
 LEFT JOIN (
   SELECT
     faba.award_id,
-    JSONB_AGG(
-      DISTINCT JSONB_BUILD_OBJECT(
-        'aid', taa.agency_id,
-        'ata', taa.allocation_transfer_agency_id,
-        'main', taa.main_account_code,
-        'sub', taa.sub_account_code,
-        'bpoa', taa.beginning_period_of_availability,
-        'epoa', taa.ending_period_of_availability,
-        'a', taa.availability_type_code
+    ARRAY_AGG(
+      CONCAT(
+        'aid=', taa.agency_id,
+        'main=', taa.main_account_code,
+        'ata=', taa.allocation_transfer_agency_id,
+        'sub=', taa.sub_account_code,
+        'bpoa=', taa.beginning_period_of_availability,
+        'epoa=', taa.ending_period_of_availability,
+        'a=', taa.availability_type_code
        )
      ) treasury_accounts
  FROM

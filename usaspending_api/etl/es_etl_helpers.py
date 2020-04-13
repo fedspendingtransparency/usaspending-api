@@ -401,7 +401,7 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
     converters = {
         "business_categories": convert_postgres_array_as_string_to_list,
-        "treasury_accounts": convert_postgres_json_array_as_string_to_list,
+        "treasury_accounts": convert_postgres_array_as_string_to_list,
         "federal_accounts": convert_postgres_json_array_as_string_to_list,
     }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary

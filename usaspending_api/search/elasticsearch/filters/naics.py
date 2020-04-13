@@ -24,10 +24,18 @@ class NaicsCodes(_Filter, HierarchicalFilter):
         ]:
             raise InvalidParameterException("naics code filtering only supported for codes with lengths of 2, 4, and 6")
 
-        requires = [str(code) for code in require]
+        require = [str(code) for code in require]
         exclude = [str(code) for code in exclude]
 
-        return ES_Q("query_string", query=cls._query_string(requires, exclude), default_field="naics_code.keyword")
+        print(
+            "query: "
+            + str(
+                ES_Q(
+                    "query_string", query=cls._query_string(require, exclude), default_field="naics_code.keyword"
+                ).to_dict()
+            )
+        )
+        return ES_Q("query_string", query=cls._query_string(require, exclude), default_field="naics_code.keyword")
 
     @staticmethod
     def node(code, positive, positive_naics, negative_naics):
@@ -40,6 +48,12 @@ class NaicsNode(Node):
         if len(self.code) < 6:
             retval += "*"
         return retval
+
+    def is_parent_of(self, other_code):
+        return len(str(other_code)) == len(str(self.code)) + 2 and other_code[: len(str(self.code))] == str(self.code)
+
+    def is_toptier(self):
+        return len(str(self.code)) == 2
 
     def _self_replicate(self, code, positive, positive_naics, negative_naics):
         return NaicsNode(code, positive, positive_naics, negative_naics)

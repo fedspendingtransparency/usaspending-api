@@ -124,7 +124,6 @@ AWARD_FILTER = [
         "type": "any",
         "models": [
             {
-                "name": "tas_codes",
                 "type": "array",
                 "array_type": "object",
                 "object_keys": {
@@ -138,7 +137,6 @@ AWARD_FILTER = [
                 },
             },
             {
-                "name": "tas_codes",
                 "type": "object",
                 "min": 0,
                 "object_keys": {

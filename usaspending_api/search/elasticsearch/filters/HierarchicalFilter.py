@@ -5,15 +5,17 @@ class HierarchicalFilter:
     @classmethod
     def _query_string(cls, require, exclude) -> str:
         """Generates string in proper syntax for Elasticsearch query_string attribute, given API parameters"""
-        positive_codes, negative_codes = cls._order_raw_codes(require, exclude, require + exclude)
 
         positive_nodes = [
-            cls.node(code, True, positive_codes["sub"], negative_codes["sub"]) for code in positive_codes["top"]
+            node for node in [cls.node(code, True, require, exclude) for code in require] if node.is_toptier()
         ]
         negative_nodes = [
-            cls.node(code, False, positive_codes["sub"], negative_codes["sub"]) for code in negative_codes["top"]
+            node for node in [cls.node(code, False, require, exclude) for code in exclude] if node.is_toptier()
         ]
 
+        print(
+            f"nodes positive {[node.code for node in [cls.node(code, True, require, exclude) for code in require] if not node.is_toptier()]}"
+        )
         positive_query = " OR ".join([node.get_query() for node in positive_nodes])
         negative_query = " AND ".join([node.get_query() for node in negative_nodes])
 
@@ -26,11 +28,11 @@ class HierarchicalFilter:
     def _order_raw_codes(requires, exclude, all_codes):
         """Seperates codes into 'top' codes (those with no higher node in either array), and 'sub' codes (those that do)."""
         postive_codes = {
-            "top": [code for code in requires if len([root for root in all_codes if code[:-1].startswith(root)]) == 0]
+            "top": [code for code in requires if len([root for root in all_codes if root.is_parent_of(code)]) == 0]
             # func to know if parent
         }
         negative_codes = {
-            "top": [code for code in exclude if len([root for root in all_codes if code[:-1].startswith(root)]) == 0]
+            "top": [code for code in exclude if len([root for root in all_codes if root.is_parent_of(code)]) == 0]
             # func to know if parent
         }
         postive_codes["sub"] = [code for code in requires if code not in postive_codes["top"] + negative_codes["top"]]
@@ -63,9 +65,7 @@ class Node:
 
     def _pop_children_helper(self, codes, is_positive, positive_codes, negative_codes):
         for other_code in codes:
-            if (
-                len(other_code) == len(self.code) + 2 and other_code[: len(self.code)] == self.code
-            ):  # func to know if parent
+            if self.is_parent_of(other_code):
                 self.children.append(self._self_replicate(other_code, is_positive, positive_codes, negative_codes))
 
     def get_query(self):
@@ -84,11 +84,18 @@ class Node:
             else:
                 retval += f" OR ({joined_child_query})"
 
-        print(retval)
         return f"({retval})"
 
     @abstractmethod
     def _basic_search_unit(self):
+        pass
+
+    @abstractmethod
+    def is_parent_of(self, other_code):
+        pass
+
+    @abstractmethod
+    def is_toptier(self):
         pass
 
     @abstractmethod

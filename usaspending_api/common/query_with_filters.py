@@ -8,8 +8,8 @@ from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
 from usaspending_api.search.elasticsearch.filters.naics import NaicsCodes
+from usaspending_api.search.elasticsearch.filters.tas import TasCodes
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
 
 logger = logging.getLogger(__name__)
 
@@ -331,40 +331,6 @@ class _ExtentCompetedTypeCodes(_Filter):
         return ES_Q("bool", should=extent_competed_query, minimum_should_match=1)
 
 
-class _TasCodes(_Filter):
-    underscore_name = "tas_codes"
-
-    @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List, query_type: _QueryType) -> ES_Q:
-        tas_codes_query = []
-
-        for v in filter_values:
-
-            if isinstance(v, str):
-                v = TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary(v)
-
-            code_lookup = {
-                "a": v.get("a", ".*"),
-                "aid": v.get("aid", ".*"),
-                "ata": v.get("ata", ".*"),
-                "bpoa": v.get("bpoa", ".*"),
-                "epoa": v.get("epoa", ".*"),
-                "main": v.get("main", ".*"),
-                "sub": v.get("sub", ".*"),
-            }
-
-            search_regex = (
-                '\\"a\\": \\"{a}\\", \\"aid\\": \\"{aid}\\", \\"ata\\": \\"{ata}\\",'
-                ' \\"bpoa\\": \\"{bpoa}\\", \\"epoa\\": \\"{epoa}\\", \\"main\\": \\"{main}\\",'
-                ' \\"sub\\": \\"{sub}\\"'.format(**code_lookup)
-            )
-            search_regex = "{" + search_regex + "}"
-            code_query = ES_Q("regexp", treasury_accounts={"value": search_regex})
-            tas_codes_query.append(ES_Q("bool", must=code_query))
-
-        return ES_Q("bool", should=tas_codes_query, minimum_should_match=1)
-
-
 class QueryWithFilters:
 
     filter_lookup = {
@@ -387,7 +353,7 @@ class QueryWithFilters:
         _ContractPricingTypeCodes.underscore_name: _ContractPricingTypeCodes,
         _SetAsideTypeCodes.underscore_name: _SetAsideTypeCodes,
         _ExtentCompetedTypeCodes.underscore_name: _ExtentCompetedTypeCodes,
-        _TasCodes.underscore_name: _TasCodes,
+        TasCodes.underscore_name: TasCodes,
     }
 
     unsupported_filters = ["legal_entities"]
