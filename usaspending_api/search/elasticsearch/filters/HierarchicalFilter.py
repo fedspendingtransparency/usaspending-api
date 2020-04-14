@@ -7,10 +7,11 @@ class HierarchicalFilter:
         """Generates string in proper syntax for Elasticsearch query_string attribute, given API parameters"""
 
         positive_nodes = [
-            node for node in [cls.node(code, True, require, exclude) for code in require] if node.is_toptier()
+            cls.node(code, True, require, exclude) for code in require if cls._has_no_parents(code, require + exclude)
         ]
+
         negative_nodes = [
-            node for node in [cls.node(code, False, require, exclude) for code in exclude] if node.is_toptier()
+            cls.node(code, False, require, exclude) for code in exclude if cls._has_no_parents(code, require + exclude)
         ]
 
         positive_query = " OR ".join([node.get_query() for node in positive_nodes])
@@ -36,6 +37,15 @@ class HierarchicalFilter:
         negative_codes["sub"] = [code for code in exclude if code not in postive_codes["top"] + negative_codes["top"]]
 
         return postive_codes, negative_codes
+
+    @classmethod
+    def _has_no_parents(cls, code, other_codes):
+        return not len([match for match in other_codes if cls.code_is_parent_of(match, code)])
+
+    @staticmethod
+    @abstractmethod
+    def code_is_parent_of(code, other):
+        pass
 
     @staticmethod
     @abstractmethod
@@ -89,10 +99,6 @@ class Node:
 
     @abstractmethod
     def is_parent_of(self, other_code):
-        pass
-
-    @abstractmethod
-    def is_toptier(self):
         pass
 
     @abstractmethod

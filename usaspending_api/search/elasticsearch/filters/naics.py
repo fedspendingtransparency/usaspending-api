@@ -27,15 +27,11 @@ class NaicsCodes(_Filter, HierarchicalFilter):
         require = [str(code) for code in require]
         exclude = [str(code) for code in exclude]
 
-        print(
-            "query: "
-            + str(
-                ES_Q(
-                    "query_string", query=cls._query_string(require, exclude), default_field="naics_code.keyword"
-                ).to_dict()
-            )
-        )
         return ES_Q("query_string", query=cls._query_string(require, exclude), default_field="naics_code.keyword")
+
+    @staticmethod
+    def code_is_parent_of(code, other):
+        return len(str(other)) == len(str(code)) + 2 and other[: len(str(code))] == str(code)
 
     @staticmethod
     def node(code, positive, positive_naics, negative_naics):
@@ -50,10 +46,7 @@ class NaicsNode(Node):
         return retval
 
     def is_parent_of(self, other_code):
-        return len(str(other_code)) == len(str(self.code)) + 2 and other_code[: len(str(self.code))] == str(self.code)
-
-    def is_toptier(self):
-        return len(str(self.code)) == 2
+        return NaicsCodes.code_is_parent_of(self.code, other_code)
 
     def _self_replicate(self, code, positive, positive_naics, negative_naics):
         return NaicsNode(code, positive, positive_naics, negative_naics)

@@ -71,12 +71,13 @@ class TestElasticSearchIndex:
             routing_key = None
             routing_value = None
             if self.index_type == "transactions":
-                transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
+                # transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
                 transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
                 # transaction docs are routed to shards by hashing the recipient_hash field
                 routing_key = options.get("routing", "recipient_agg_key")
             else:
-                transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
+                pass
+                # transaction["treasury_accounts"] = self.convert_json_arrays_to_list(transaction["treasury_accounts"])
             if routing_key:
                 routing_value = transaction.get(routing_key)
             self.client.index(
