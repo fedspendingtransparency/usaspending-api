@@ -6,6 +6,7 @@ import re
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from usaspending_api.awards.v2.lookups.lookups import procurement_type_mapping, assistance_type_mapping
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
@@ -20,8 +21,8 @@ from usaspending_api.references.models import ToptierAgency
 logger = logging.getLogger(__name__)
 
 award_mappings = {
-    "contracts": ["contracts", "idvs"],
-    "assistance": ["grants", "direct_payments", "loans", "other_financial_assistance"],
+    "contracts": list(procurement_type_mapping.keys()),
+    "assistance": list(assistance_type_mapping.keys()),
 }
 
 
@@ -29,8 +30,7 @@ class Command(BaseCommand):
     def download(
         self,
         file_name,
-        award_levels,
-        award_types=None,
+        prime_award_types=None,
         agency=None,
         sub_agency=None,
         date_type=None,
@@ -49,9 +49,8 @@ class Command(BaseCommand):
             date_range["end_date"] = end_date
         json_request = {
             "constraint_type": "year",
-            "award_levels": award_levels,
             "filters": {
-                "award_types": award_types,
+                "prime_award_types": prime_award_types,
                 "agency": str(agency),
                 "date_type": date_type,
                 "date_range": date_range,
@@ -236,9 +235,8 @@ class Command(BaseCommand):
                         self.upload_placeholder(file_name=full_file_name, empty_file=empty_file)
                     else:
                         self.download(
-                            full_file_name,
-                            ["prime_awards"],
-                            award_types=award_mappings[award_type],
+                            file_name=full_file_name,
+                            prime_award_types=award_mappings[award_type],
                             agency=agency["toptier_agency_id"],
                             date_type="action_date",
                             start_date=start_date,

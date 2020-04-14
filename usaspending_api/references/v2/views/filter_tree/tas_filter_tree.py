@@ -25,7 +25,7 @@ class TASFilterTree(FilterTree):
                 )
             )
             .filter(has_faba=True)
-            .values("toptier_code", "name")
+            .values("toptier_code", "name", "abbreviation")
         )
 
         agency_set = raw_agencies
@@ -34,7 +34,7 @@ class TASFilterTree(FilterTree):
         return cfo_sort_results["cfo_agencies"] + cfo_sort_results["other_agencies"]
 
     def _dictionary_from_agency(self, agency):
-        return {"toptier_code": agency["toptier_code"], "name": agency["name"], "id": agency["toptier_code"]}
+        return {"toptier_code": agency["toptier_code"], "name": agency["name"], "abbreviation": agency["abbreviation"]}
 
     def _fa_given_agency(self, agency):
         retval = FederalAccount.objects.annotate(
@@ -61,9 +61,9 @@ class TASFilterTree(FilterTree):
             return UnlinkedNode(id=data.tas_rendering_label, ancestors=ancestors, description=data.account_title)
 
     def _generate_agency_node(self, ancestors, data):
-
-        return UnlinkedNode(id=data["toptier_code"], ancestors=ancestors, description=data["name"])
+        return UnlinkedNode(
+            id=data["toptier_code"], ancestors=ancestors, description=f"{data['name']} ({data['abbreviation']})"
+        )
 
     def _generate_federal_account_node(self, ancestors, data):
-
         return UnlinkedNode(id=data.federal_account_code, ancestors=ancestors, description=data.account_title)
