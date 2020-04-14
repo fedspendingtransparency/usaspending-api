@@ -14,13 +14,13 @@ Returns a list of Treasury Account Symbols associated with the specified federal
     + Parameters
         + `agency`: `020` (required, string) 
         + `federal_account`: `0550`
-        + `depth`: `0` (optional, enum[number]) How many levels deep the search will populate each tree.
+        + `depth` (optional, enum[number]) How many levels deep the search will populate each tree.
             + Members
                     + `0`
                     + `1`
                     + `2` 
         With this tree structure, only TAS will be returned, and the tree depth will always be one, regardless of provided depth.
-        + `filter`: `port` (optional, string) When provided, only results who's id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
+        + `filter` (optional, string) When provided, only results who's id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
     + Schema
         
             {

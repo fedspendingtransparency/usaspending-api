@@ -13,14 +13,14 @@ database fields based on depth in the tree.
 Returns a list of federal accounts associated with the specified agency
 + Request A request with an agency id
     + Parameters
-        + `agency`: `020` (required, string) 
+        + `agency` (required, string) 
         + `depth`: `0` (optional, enum[number]) How many levels deep the search will populate each tree. 
             + Members
                     + `0`
                     + `1`
                     + `2`        
         0 will return only federal accounts, and 1 will return federal accounts and any TAS under them
-        + `filter`: `port` (optional, string) When provided, only results who's id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
+        + `filter` (optional, string) When provided, only results who's id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
     + Schema
     
             {
