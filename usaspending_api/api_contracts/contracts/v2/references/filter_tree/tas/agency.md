@@ -13,8 +13,8 @@ database fields based on depth in the tree.
 Returns a list of federal accounts associated with the specified agency
 + Request A request with an agency id
     + Parameters
-        + `agency` (required, string) 
-        + `depth`: `0` (optional, enum[number]) How many levels deep the search will populate each tree. 
+        + `agency`: '020' (required, string) 
+        + `depth` (optional, enum[number]) How many levels deep the search will populate each tree. 
             + Members
                     + `0`
                     + `1`
