@@ -113,7 +113,7 @@ def get_total_results(keyword, retries=3):
     search.aggs.bucket("types", aggs)
     response = search.handle_execute()
 
-    if response:
+    if response is not None:
         try:
             return response["aggregations"]["types"]["buckets"]
         except KeyError:

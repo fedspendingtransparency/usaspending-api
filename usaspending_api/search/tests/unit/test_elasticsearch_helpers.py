@@ -3,6 +3,7 @@ import pytest
 
 from model_mommy import mommy
 
+from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
 from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count, get_download_ids
 
 
@@ -81,19 +82,21 @@ def transaction_type_data(db):
     mommy.make("awards.Award", id=6, latest_transaction_id=6, is_fpds=True, type="IDV_A", piid="0006")
 
 
-def test_spending_by_transaction_count(transaction_type_data, elasticsearch_transaction_index):
-    elasticsearch_transaction_index.update_index()
+def test_spending_by_transaction_count(monkeypatch, elasticsearch_transaction_index, transaction_type_data):
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
-    request_data = {"filters": {"keywords": ["pop tart"]}}
+    request_data = {"filters": {"keywords": ["pop tarts"]}}
     results = spending_by_transaction_count(request_data)
     expected_results = {"contracts": 1, "grants": 1, "idvs": 1, "loans": 1, "direct_payments": 1, "other": 1}
     assert results == expected_results
 
 
-def test_get_download_ids(transaction_type_data, elasticsearch_transaction_index):
-    elasticsearch_transaction_index.update_index()
+def test_get_download_ids(monkeypatch, transaction_type_data, elasticsearch_transaction_index):
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
-    results = get_download_ids("pop tart", "transaction_id")
+    results = get_download_ids(["pop tart"], "transaction_id")
     transaction_ids = list(itertools.chain.from_iterable(results))
     expected_results = [1, 2, 3, 4, 5, 6]
 
