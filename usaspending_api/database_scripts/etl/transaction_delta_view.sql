@@ -152,10 +152,11 @@ SELECT
   UTM.pop_congressional_code,
   UTM.pop_city_name,
   CASE
-    WHEN UTM.pop_county_code IS NOT NULL
+    WHEN UTM.pop_state_code IS NOT NULL AND UTM.pop_county_code IS NOT NULL
       THEN CONCAT(
         '{"country_code":"', UTM.pop_country_code,
         '","state_code":"', UTM.pop_state_code,
+        '","state_fips":"', POP_STATE_LOOKUP.fips,
         '","county_code":"', UTM.pop_county_code,
         '","county_name":"', UTM.pop_county_name,
         '","population":"', POP_COUNTY_POPULATION.latest_population, '"}'
@@ -163,10 +164,11 @@ SELECT
     ELSE NULL
   END AS pop_county_agg_key,
   CASE
-    WHEN UTM.pop_congressional_code IS NOT NULL
+    WHEN UTM.pop_state_code IS NOT NULL AND UTM.pop_congressional_code IS NOT NULL
       THEN CONCAT(
         '{"country_code":"', UTM.pop_country_code,
         '","state_code":"', UTM.pop_state_code,
+        '","state_fips":"', POP_STATE_LOOKUP.fips,
         '","congressional_code":"', UTM.pop_congressional_code,
         '","population":"', POP_DISTRICT_POPULATION.latest_population, '"}'
       )
@@ -200,10 +202,11 @@ SELECT
   UTM.recipient_location_congressional_code,
   UTM.recipient_location_city_name,
   CASE
-    WHEN UTM.recipient_location_county_code IS NOT NULL
+    WHEN UTM.recipient_location_state_code IS NOT NULL AND UTM.recipient_location_county_code IS NOT NULL
       THEN CONCAT(
         '{"country_code":"', UTM.recipient_location_country_code,
         '","state_code":"', UTM.recipient_location_state_code,
+        '","state_fips":"', RL_STATE_LOOKUP.fips,
         '","county_code":"', UTM.recipient_location_county_code,
         '","county_name":"', UTM.recipient_location_county_name,
         '","population":"', RL_COUNTY_POPULATION.latest_population, '"}'
@@ -211,10 +214,11 @@ SELECT
     ELSE NULL
   END AS recipient_location_county_agg_key,
   CASE
-    WHEN UTM.recipient_location_congressional_code IS NOT NULL
+    WHEN UTM.recipient_location_state_code IS NOT NULL AND UTM.recipient_location_congressional_code IS NOT NULL
       THEN CONCAT(
         '{"country_code":"', UTM.recipient_location_country_code,
         '","state_code":"', UTM.recipient_location_state_code,
+        '","state_fips":"', RL_STATE_LOOKUP.fips,
         '","congressional_code":"', UTM.recipient_location_congressional_code,
         '","population":"', RL_DISTRICT_POPULATION.latest_population, '"}'
       )
