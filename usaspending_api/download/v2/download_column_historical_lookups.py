@@ -34,7 +34,7 @@ query_paths = {
                     "potential_total_value_of_award",
                     "award__latest_transaction__contract_data__potential_total_value_awar",
                 ),
-                ("award_base_action_date", None),  # Annotation is used to create this column
+                ("award_base_action_date", "award__date_signed"),
                 ("award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 (
@@ -598,7 +598,7 @@ query_paths = {
                 ("total_funding_amount", "award__total_funding_amount"),
                 ("total_face_value_of_loan", "award__total_loan_value"),
                 ("total_loan_subsidy_cost", "award__total_subsidy_cost"),
-                ("award_base_action_date", None),  # Annotation is used to create this column
+                ("award_base_action_date", "award__date_signed"),
                 ("award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
@@ -1211,8 +1211,8 @@ query_paths = {
                 ("prime_award_amount", "broker_subaward__award_amount"),
                 ("prime_award_base_action_date", "broker_subaward__action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
-                ("prime_award_period_of_performance_start_date", None),
-                ("prime_award_period_of_performance_current_end_date", None),
+                ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
+                ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("period_of_performance_potential_end_date", None),  # Annotation is used to create this column
                 ("prime_award_awarding_agency_code", "broker_subaward__awarding_agency_code"),
                 ("prime_award_awarding_agency_name", "broker_subaward__awarding_agency_name"),
@@ -1337,8 +1337,8 @@ query_paths = {
                 ("prime_award_amount", "broker_subaward__award_amount"),
                 ("prime_award_base_action_date", "broker_subaward__action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
-                ("prime_award_period_of_performance_start_date", None),
-                ("prime_award_period_of_performance_current_end_date", None),
+                ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
+                ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("prime_award_awarding_agency_code", "broker_subaward__awarding_agency_code"),
                 ("prime_award_awarding_agency_name", "broker_subaward__awarding_agency_name"),
                 ("prime_award_awarding_sub_agency_code", "broker_subaward__awarding_sub_tier_agency_c"),
@@ -1657,6 +1657,8 @@ query_paths = {
                 ("parent_award_id_piid", "parent_award_id"),
                 ("award_id_fain", "fain"),
                 ("award_id_uri", "uri"),
+                ("award_base_action_date", "award__date_signed"),
+                ("award_base_action_date_fiscal_year", "award_base_action_date_fiscal_year"),  # Column is annotated in account_download.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
@@ -1741,6 +1743,8 @@ query_paths = {
                 ("parent_award_id_piid", "parent_award_id"),
                 ("award_id_fain", "fain"),
                 ("award_id_uri", "uri"),
+                ("award_base_action_date", "award__date_signed"),
+                ("award_base_action_date_fiscal_year", "award_base_action_date_fiscal_year"),  # Column is appended to in account_download.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),

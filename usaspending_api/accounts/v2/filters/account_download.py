@@ -8,7 +8,7 @@ from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter
+from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter, FiscalYear
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import CGAC, ToptierAgency
@@ -384,6 +384,7 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction__contract_data__place_of_performance_zip4a",
         "award__latest_transaction__assistance_data__place_of_performance_zip4a",
     )
+    derived_fields["award_base_action_date_fiscal_year"] = FiscalYear("award__date_signed")
 
     derived_fields["usaspending_permalink"] = Case(
         When(
