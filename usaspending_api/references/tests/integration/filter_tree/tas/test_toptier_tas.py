@@ -10,7 +10,7 @@ common_query = base_query + "?depth=0"
 def test_one_agency(client, basic_agency):
     resp = _call_and_expect_200(client, common_query)
     assert resp.json() == {
-        "results": [{"id": "001", "ancestors": [], "description": "Agency 001", "count": 1, "children": None}]
+        "results": [{"id": "001", "ancestors": [], "description": "Agency 001 (001)", "count": 1, "children": None}]
     }
 
 
@@ -31,7 +31,7 @@ def test_agency_order(client, cfo_agencies, non_cfo_agencies):
     assert resp.json()["results"][2]["id"] == CFO_CGACS[3]  # the third CGAC from the cfo_agencies fixture
     assert resp.json()["results"][3]["id"] == CFO_CGACS[7]  # the fourth CGAC from the cfo_agencies fixture
     assert resp.json()["results"][4]["id"] == CFO_CGACS[13]  # the fifth CGAC from the cfo_agencies fixture
-    assert not [elem for elem in resp.json()["results"][5:] if elem["id"] in CFO_CGACS]
+    assert not [elem for elem in resp.json()["results"][5:] if elem["id"][:3] in CFO_CGACS]
 
 
 # Does the endpoint only return agencies with file D data?
