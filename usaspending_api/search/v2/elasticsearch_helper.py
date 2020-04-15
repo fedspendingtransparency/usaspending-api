@@ -35,7 +35,7 @@ def es_sanitize(input_string):
 def es_minimal_sanitize(keyword):
     keyword = concat_if_array(keyword)
     """Remove Lucene special characters instead of escaping for now"""
-    processed_string = re.sub(r"[/:][^!]", "", keyword)
+    processed_string = re.sub(r"[/:\]\[]", "", keyword)
     if len(processed_string) != len(keyword):
         msg = "Stripped characters from ES keyword search string New: '{}' Original: '{}'"
         logger.info(msg.format(processed_string, keyword))
@@ -108,7 +108,9 @@ def get_total_results(keyword, retries=3):
         "filters": {category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()}
     }
     aggs = A("filters", **group_by_agg_key_values)
-    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query({"keywords": keyword})
+    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
+        {"keywords": [es_minimal_sanitize(keyword)]}
+    )
     search = TransactionSearch().filter(filter_query)
     search.aggs.bucket("types", aggs)
     response = search.handle_execute()
@@ -139,13 +141,15 @@ def spending_by_transaction_count(request_data):
 
 
 def get_sum_aggregation_results(keyword, field="transaction_amount"):
-    """
-    Size has to be zero here because you only want the aggregations
-    """
-    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
-    query = {"query": base_query(keyword), "aggs": {"transaction_sum": {"sum": {"field": field}}}}
+    group_by_agg_key_values = {"field": field}
+    aggs = A("sum", **group_by_agg_key_values)
+    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
+        {"keywords": es_minimal_sanitize(keyword)}
+    )
+    search = TransactionSearch().filter(filter_query)
+    search.aggs.bucket("transaction_sum", aggs)
+    response = search.handle_execute()
 
-    response = es_client_query(index=index_name, body=query, retries=10)
     if response:
         return response["aggregations"]
     else:
@@ -164,7 +168,6 @@ def get_download_ids(keyword, field, size=10000):
 
     Note: this only works for fields in ES of integer type.
     """
-    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
     n_iter = DOWNLOAD_QUERY_SIZE // size
 
     max_iterations = 10
@@ -176,19 +179,15 @@ def get_download_ids(keyword, field, size=10000):
     required_iter = (total // size) + 1
     n_iter = min(max(1, required_iter), n_iter)
     for i in range(n_iter):
-        query = {
-            "_source": [field],
-            "query": base_query(keyword),
-            "aggs": {
-                "results": {
-                    "terms": {"field": field, "include": {"partition": i, "num_partitions": n_iter}, "size": size}
-                }
-            },
-            "size": 0,
-        }
-
-        response = es_client_query(index=index_name, body=query, retries=max_iterations, timeout="3m")
-        if not response:
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
+            {"keywords": [es_minimal_sanitize(keyword)]}
+        )
+        search = TransactionSearch().filter(filter_query)
+        group_by_agg_key_values = {"field": field, "include": {"partition": i, "num_partitions": n_iter}, "size": size}
+        aggs = A("terms", **group_by_agg_key_values)
+        search.aggs.bucket("results", aggs)
+        response = search.handle_execute()
+        if response is None:
             raise Exception("Breaking generator, unable to reach cluster")
         results = []
         for result in response["aggregations"]["results"]["buckets"]:
@@ -197,17 +196,15 @@ def get_download_ids(keyword, field, size=10000):
 
 
 def get_sum_and_count_aggregation_results(keyword):
-    index_name = "{}-*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX)
-    query = {
-        "query": base_query(keyword),
-        "aggs": {
-            "prime_awards_obligation_amount": {"sum": {"field": "transaction_amount"}},
-            "prime_awards_count": {"value_count": {"field": "transaction_id"}},
-        },
-        "size": 0,
-    }
-    response = es_client_query(index=index_name, body=query, retries=10)
-    if response:
+    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
+        {"keywords": [es_minimal_sanitize(keyword)]}
+    )
+    search = TransactionSearch().filter(filter_query)
+    search.aggs.bucket("prime_awards_obligation_amount", {"sum": {"field": "transaction_amount"}})
+    search.aggs.bucket("prime_awards_count", {"value_count": {"field": "transaction_id"}})
+    response = search.handle_execute()
+
+    if response is not None:
         try:
             results = {}
             results["prime_awards_count"] = response["aggregations"]["prime_awards_count"]["value"]

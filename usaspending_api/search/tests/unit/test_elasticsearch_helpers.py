@@ -82,11 +82,11 @@ def transaction_type_data(db):
     mommy.make("awards.Award", id=6, latest_transaction_id=6, is_fpds=True, type="IDV_A", piid="0006")
 
 
-def test_spending_by_transaction_count(monkeypatch, elasticsearch_transaction_index, transaction_type_data):
+def test_spending_by_transaction_count(monkeypatch, transaction_type_data, elasticsearch_transaction_index):
     logging_statements = []
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
-    request_data = {"filters": {"keywords": ["pop tarts"]}}
+    request_data = {"filters": {"keywords": ["pop tart"]}}
     results = spending_by_transaction_count(request_data)
     expected_results = {"contracts": 1, "grants": 1, "idvs": 1, "loans": 1, "direct_payments": 1, "other": 1}
     assert results == expected_results

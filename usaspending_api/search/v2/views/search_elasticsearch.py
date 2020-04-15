@@ -18,7 +18,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER, AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count
+from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count, es_minimal_sanitize
 from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_sum_and_count
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_SOURCE_LOOKUP, TRANSACTIONS_LOOKUP
 
@@ -86,7 +86,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         sorts = {TRANSACTIONS_LOOKUP[validated_payload["sort"]]: validated_payload["order"]}
         lower_limit = (validated_payload["page"] - 1) * validated_payload["limit"]
         upper_limit = (validated_payload["page"]) * validated_payload["limit"] + 1
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(validated_payload["filters"])
+        filters = {"keywords": [es_minimal_sanitize(validated_payload["filters"]["keywords"])]}
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters)
         search = TransactionSearch().filter(filter_query).sort(sorts)[lower_limit:upper_limit]
         response = search.handle_execute()
         return Response(self.build_elasticsearch_result(validated_payload, response))
