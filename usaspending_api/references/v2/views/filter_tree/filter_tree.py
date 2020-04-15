@@ -41,43 +41,51 @@ class FilterTree(metaclass=ABCMeta):
             ancestor_array = []
 
         retval = [
-            self._make_raw_node(ancestor_array, elem, filter_string, child_layers)
+            self._linked_node_from_data(ancestor_array, elem, filter_string, child_layers)
             for elem in self.raw_search(ancestor_array)
         ]
         if filter_string:
             retval = [elem for elem in retval if self.matches_filter(elem, filter_string)]
         return retval
 
-    def _make_raw_node(self, ancestor_array, data, filter_string, child_layers):
-        retval = self.construct_node_from_raw(ancestor_array, data)
+    def _linked_node_from_data(self, ancestor_array, data, filter_string, child_layers):
+        retval = self.unlinked_node_from_data(ancestor_array, data)
         raw_children = self.raw_search(ancestor_array + [retval.id])
         if child_layers:
             children = [
-                self._make_raw_node(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
+                self._linked_node_from_data(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
                 for elem in raw_children
             ]
-            return Node(
-                id=retval.id,
-                ancestors=retval.ancestors,
-                description=retval.description,
-                count=len(raw_children),
-                children=children,
-            )
         else:
-            return Node(
-                id=retval.id,
-                ancestors=retval.ancestors,
-                description=retval.description,
-                count=len(raw_children),
-                children=None,
-            )
+            children = None
+
+        return Node(
+            id=retval.id,
+            ancestors=retval.ancestors,
+            description=retval.description,
+            count=len(raw_children),
+            children=children,
+        )
 
     @abstractmethod
-    def raw_search(self, tiered_keys, filter_string, child_layers) -> dict:
+    def raw_search(self, tiered_keys: list, filter_string: str) -> list:
+        """
+        Basic unit of searching, given the path to the parent and the filter string. Output can be a list of any type, and is
+        only used by the unlinked_node_from_data abstract function.
+
+        :param: tiered_keys - list
+        :param: filter_string - string or null
+
+        """
         pass
 
     @abstractmethod
-    def construct_node_from_raw(self, ancestors: list, data) -> UnlinkedNode:
+    def unlinked_node_from_data(self, ancestors: list, data) -> UnlinkedNode:
+        """
+        :param ancestors: list
+        :param data: Single member of the list provided by raw_search
+        :return: Unlinked Node
+        """
         pass
 
     def matches_filter(self, node: Node, filter_string) -> bool:
@@ -85,4 +93,5 @@ class FilterTree(metaclass=ABCMeta):
             return True
         if node.children:
             node.children = [elem for elem in node.children if self.matches_filter(elem, filter_string)]
-        return node.children
+            return len(node.children) > 0
+        return False

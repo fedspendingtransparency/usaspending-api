@@ -16,7 +16,7 @@ class TASFilterTree(FilterTree):
         return []
 
     def _toptier_search(self):
-        raw_agencies = (
+        agency_set = (
             ToptierAgency.objects.annotate(
                 has_faba=Exists(
                     faba_with_file_D_data().filter(
@@ -28,7 +28,6 @@ class TASFilterTree(FilterTree):
             .values("toptier_code", "name", "abbreviation")
         )
 
-        agency_set = raw_agencies
         agency_dictionaries = [self._dictionary_from_agency(agency) for agency in agency_set]
         cfo_sort_results = cfo_presentation_order(agency_dictionaries)
         return cfo_sort_results["cfo_agencies"] + cfo_sort_results["other_agencies"]
@@ -37,22 +36,20 @@ class TASFilterTree(FilterTree):
         return {"toptier_code": agency["toptier_code"], "name": agency["name"], "abbreviation": agency["abbreviation"]}
 
     def _fa_given_agency(self, agency):
-        retval = FederalAccount.objects.annotate(
+        return FederalAccount.objects.annotate(
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk")))
         ).filter(has_faba=True, parent_toptier_agency__toptier_code=agency)
-        return retval
 
     def _tas_given_fa(self, agency, fed_account):
-        retval = TreasuryAppropriationAccount.objects.annotate(
+        return TreasuryAppropriationAccount.objects.annotate(
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
         ).filter(
             has_faba=True,
             federal_account__federal_account_code=fed_account,
             federal_account__parent_toptier_agency__toptier_code=agency,
         )
-        return retval
 
-    def construct_node_from_raw(self, ancestors: list, data) -> UnlinkedNode:
+    def unlinked_node_from_data(self, ancestors: list, data) -> UnlinkedNode:
         if len(ancestors) == 0:  # A tier zero search is returning an agency dictionary
             return self._generate_agency_node(ancestors, data)
         if len(ancestors) == 1:  # A tier one search is returning a FederalAccount object
