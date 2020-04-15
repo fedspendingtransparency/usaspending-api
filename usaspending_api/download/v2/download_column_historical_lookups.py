@@ -1658,7 +1658,10 @@ query_paths = {
                 ("award_id_fain", "fain"),
                 ("award_id_uri", "uri"),
                 ("award_base_action_date", "award__date_signed"),
-                ("award_base_action_date_fiscal_year", "award_base_action_date_fiscal_year"),  # Column is annotated in account_download.py
+                (
+                    "award_base_action_date_fiscal_year",
+                    "award_base_action_date_fiscal_year",
+                ),  # Column is annotated in account_download.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
@@ -1744,7 +1747,10 @@ query_paths = {
                 ("award_id_fain", "fain"),
                 ("award_id_uri", "uri"),
                 ("award_base_action_date", "award__date_signed"),
-                ("award_base_action_date_fiscal_year", "award_base_action_date_fiscal_year"),  # Column is appended to in account_download.py
+                (
+                    "award_base_action_date_fiscal_year",
+                    "award_base_action_date_fiscal_year",
+                ),  # Column is appended to in account_download.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
