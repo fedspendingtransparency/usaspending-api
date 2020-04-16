@@ -1,15 +1,21 @@
-FORMAT 1A
+FORMAT: 1A
 HOST: https://api.usaspending.gov
-
+​
 # Award Types [/api/v2/references/award_types/]
-
+​
 This endpoint returns a JSON object representing the grouping of award types.
-
+​
 ## GET    
 + Response 200 (application/json)
     + Attributes (object)
-        + (required, AwardTypes, fixed-type)
+        + `contracts` (required, ContractTypes, fixed-type)
+        + `loans` (required, LoanTypes, fixed-type)
+        + `idvs` (required, IDVTypes, fixed-type)
+        + `grants` (required, GrantTypes, fixed-type)
+        + `other_financial_assistance` (required, OtherFinancialAssistanceTypes, fixed-type)
+        + `direct_payments` (required, DirectPaymentTypes, fixed-type)
     + Body
+​
             {
                 "contracts": {
                     "A": "BPA Call",
@@ -46,40 +52,39 @@ This endpoint returns a JSON object representing the grouping of award types.
                     "10": "Direct Payment with Unrestricted Use"
                 }
             }
-
+​
 ## Data Structures
-
-### AwardTypes (object)
-+ `contracts` required(object)
-    + `A` (required, string) - BPA Call
-    + `B` (required, string) - Purchase Order
-    + `C` (required, string) - Delivery Order
-    + `D` (required, string) - Definitive Contract
-
-+ `loans` required(object)
-    + `07` (required, string) - Direct Loan
-    + `08` (required, string) - Guaranteed/Insured Loan
-
-+ `idvs` required(object)
-    + `IDV_A` (required, string) - GWAC Government Wide Acquisition Contract
-    + `IDV_B` (required, string) - IDC Multi-Agency Contract, Other Indefinite Delivery Contract
-    + `IDV_B_A` (required, string) - IDC Indefinite Delivery Contract / Requirements
-    + `IDV_B_B` (required, string) - IDC Indefinite Delivery Contract / Indefinite Quantity
-    + `IDV_B_C` (required, string) - IDC Indefinite Delivery Contract / Definite Quantity
-    + `IDV_C` (required, string) - FSS Federal Supply Schedule
-    + `IDV_D` (required, string) - BOA Basic Ordering Agreement
-    + `IDV_E` (required, string) - BPA Blanket Purchase Agreement
-
-+ `grants` required(object)
-    + `02` (required, string) - Block Grant
-    + `03` (required, string) - Formula Grant
-    + `04` (required, string) - Project Grant
-    + `05` (required, string) - Cooperative Agreement
-
-+ `other_financial_assistance` required(object)
-    + `09` (required, string) - Insurance
-    + `11` (required, string) - Other Financial Assistance
-
-+ `direct_payments` required(object)
-    + `06` (required, string) - Direct Payment for Specified Use
-    + `10` (required, string) - Direct Payment with Unrestricted Use
+​
+### ContractTypes (object)
++ `A` (required, string) - BPA Call
++ `B` (required, string) - Purchase Order
++ `C` (required, string) - Delivery Order
++ `D` (required, string) - Definitive Contract
+​
+### LoanTypes (object)
++ `07` (required, string) - Direct Loan
++ `08` (required, string) - Guaranteed/Insured Loan
+​
+### IDVTypes (object)
++ `IDV_A` (required, string) - GWAC Government Wide Acquisition Contract
++ `IDV_B` (required, string) - IDC Multi-Agency Contract, Other Indefinite Delivery Contract
++ `IDV_B_A` (required, string) - IDC Indefinite Delivery Contract / Requirements
++ `IDV_B_B` (required, string) - IDC Indefinite Delivery Contract / Indefinite Quantity
++ `IDV_B_C` (required, string) - IDC Indefinite Delivery Contract / Definite Quantity
++ `IDV_C` (required, string) - FSS Federal Supply Schedule
++ `IDV_D` (required, string) - BOA Basic Ordering Agreement
++ `IDV_E` (required, string) - BPA Blanket Purchase Agreement
+​
+### GrantTypes (object)
++ `02` (required, string) - Block Grant
++ `03` (required, string) - Formula Grant
++ `04` (required, string) - Project Grant
++ `05` (required, string) - Cooperative Agreement
+​
+### OtherFinancialAssistanceTypes (object)
++ `09` (required, string) - Insurance
++ `11` (required, string) - Other Financial Assistance
+​
+### DirectPaymentTypes (object)
++ `06` (required, string) - Direct Payment for Specified Use
++ `10` (required, string) - Direct Payment with Unrestricted Use
