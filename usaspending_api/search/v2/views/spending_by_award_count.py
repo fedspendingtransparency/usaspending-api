@@ -62,7 +62,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
         self.original_filters = request.data.get("filters")
-        json_request = request.data  # TinyShield(models).block(request.data)
+        json_request = TinyShield(models).block(request.data)
         subawards = json_request["subawards"]
         filters = add_date_range_comparison_types(
             json_request.get("filters", None), subawards, gte_date_type="action_date", lte_date_type="date_signed"
