@@ -20,14 +20,8 @@ class TasCodes(_Filter, HierarchicalFilter):
         else:
             raise InvalidParameterException(f"tas_codes must be an array or object")
 
+        print("query " + cls._query_string(require, exclude))
         return ES_Q("query_string", query=cls._query_string(require, exclude), default_field="treasury_accounts")
-
-    @staticmethod
-    def code_is_parent_of(code, other):
-        dict_1 = code if isinstance(code, dict) else TasCodes.string_to_dictionary(code)
-        dict_2 = other if isinstance(other, dict) else TasCodes.string_to_dictionary(other)
-
-        return dict_1.items() > dict_2.items()
 
     @staticmethod
     def node(code, positive, positive_naics, negative_naics):
@@ -72,8 +66,5 @@ class TASNode(Node):
 
         return search_regex
 
-    def is_parent_of(self, other_code):
-        return TasCodes.code_is_parent_of(self.code, other_code)
-
-    def _self_replicate(self, code, positive, positive_naics, negative_naics):
+    def clone(self, code, positive, positive_naics, negative_naics):
         return TASNode(code, positive, positive_naics, negative_naics)

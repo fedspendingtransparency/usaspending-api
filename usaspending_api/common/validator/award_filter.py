@@ -139,10 +139,7 @@ AWARD_FILTER = [
             {
                 "type": "object",
                 "min": 0,
-                "object_keys": {
-                    "require": {"type": "array", "array_type": "text", "text_type": "search", "min": 0},
-                    "exclude": {"type": "array", "array_type": "text", "text_type": "search", "min": 0},
-                },
+                "object_keys": {"require": {"type": "array", "min": 0}, "exclude": {"type": "array", "min": 0},},
             },
         ],
     },

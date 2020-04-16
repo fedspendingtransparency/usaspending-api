@@ -43,9 +43,8 @@ class HierarchicalFilter:
         return not len([match for match in other_codes if cls.code_is_parent_of(match, code)])
 
     @staticmethod
-    @abstractmethod
     def code_is_parent_of(code, other):
-        pass
+        return other[: len(code)] == code and len(code) < len(other)
 
     @staticmethod
     @abstractmethod
@@ -57,11 +56,13 @@ class Node:
     """Represents one part of the final query, either requiring or excluding one code, with any exceptions"""
 
     code: str
+    ancestors: list
     positive: bool
     children: list
 
     def __init__(self, code, positive, positive_codes, negative_codes):
-        self.code = code
+        self.code = code[-1]
+        self.ancestors = code[:-1]
         self.positive = positive
         self.populate_children(positive_codes, negative_codes)
 
@@ -73,7 +74,7 @@ class Node:
     def _pop_children_helper(self, codes, is_positive, positive_codes, negative_codes):
         for other_code in codes:
             if self.is_parent_of(other_code):
-                self.children.append(self._self_replicate(other_code, is_positive, positive_codes, negative_codes))
+                self.children.append(self.clone(other_code, is_positive, positive_codes, negative_codes))
 
     def get_query(self):
         retval = self._basic_search_unit()
@@ -97,10 +98,9 @@ class Node:
     def _basic_search_unit(self):
         pass
 
-    @abstractmethod
-    def is_parent_of(self, other_code):
-        pass
+    def is_parent_of(self, other_path):
+        return self.code in other_path[:-1]
 
     @abstractmethod
-    def _self_replicate(self, code, positive, positive_codes, negative_codes):
+    def clone(self, code, positive, positive_codes, negative_codes):
         pass

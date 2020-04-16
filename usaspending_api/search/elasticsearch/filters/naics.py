@@ -48,5 +48,5 @@ class NaicsNode(Node):
     def is_parent_of(self, other_code):
         return NaicsCodes.code_is_parent_of(self.code, other_code)
 
-    def _self_replicate(self, code, positive, positive_naics, negative_naics):
+    def clone(self, code, positive, positive_naics, negative_naics):
         return NaicsNode(code, positive, positive_naics, negative_naics)
