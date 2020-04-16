@@ -353,7 +353,6 @@ class QueryWithFilters:
         _ContractPricingTypeCodes.underscore_name: _ContractPricingTypeCodes,
         _SetAsideTypeCodes.underscore_name: _SetAsideTypeCodes,
         _ExtentCompetedTypeCodes.underscore_name: _ExtentCompetedTypeCodes,
-        TasCodes.underscore_name: TasCodes,
     }
 
     unsupported_filters = ["legal_entities"]
@@ -362,22 +361,8 @@ class QueryWithFilters:
     def _generate_elasticsearch_query(cls, filters: dict, query_type: _QueryType) -> ES_Q:
         must_queries = []
 
-        # tas_codes and treasury_accounts are unique in that only one needs to match
-        if filters.get(_TreasuryAccounts.underscore_name) or filters.get(TasCodes.underscore_name):
-            tas_queries = []
-            if filters.get(_TreasuryAccounts.underscore_name):
-                tas_queries.append(
-                    _TreasuryAccounts.generate_elasticsearch_query(
-                        filters[_TreasuryAccounts.underscore_name], query_type
-                    )
-                )
-            if filters.get(TasCodes.underscore_name):
-                tas_queries.append(
-                    (TasCodes.generate_elasticsearch_query(filters[TasCodes.underscore_name], query_type))
-                )
-            must_queries.append(ES_Q("bool", should=tas_queries, minimum_should_match=1))
-            filters.pop(_TreasuryAccounts.underscore_name, None)
-            filters.pop(TasCodes.underscore_name, None)
+        # tas_codes are unique in that the same query is spread across two keys
+        must_queries = cls._handle_tas_query(must_queries, filters, query_type)
 
         for filter_type, filter_values in filters.items():
             # Validate the filters
@@ -397,6 +382,25 @@ class QueryWithFilters:
             else:
                 must_queries.append(query)
         return ES_Q("bool", must=must_queries)
+
+    @classmethod
+    def _handle_tas_query(cls, must_queries: list, filters: dict, query_type: _QueryType) -> list:
+        if filters.get(_TreasuryAccounts.underscore_name) or filters.get(TasCodes.underscore_name):
+            tas_queries = []
+            if filters.get(_TreasuryAccounts.underscore_name):
+                tas_queries.append(
+                    _TreasuryAccounts.generate_elasticsearch_query(
+                        filters[_TreasuryAccounts.underscore_name], query_type
+                    )
+                )
+            if filters.get(TasCodes.underscore_name):
+                tas_queries.append(
+                    (TasCodes.generate_elasticsearch_query(filters[TasCodes.underscore_name], query_type))
+                )
+            must_queries.append(ES_Q("bool", should=tas_queries, minimum_should_match=1))
+            filters.pop(_TreasuryAccounts.underscore_name, None)
+            filters.pop(TasCodes.underscore_name, None)
+        return must_queries
 
     @classmethod
     def generate_awards_elasticsearch_query(cls, filters: dict) -> ES_Q:

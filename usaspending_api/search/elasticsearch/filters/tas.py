@@ -10,7 +10,6 @@ class TasCodes(_Filter, HierarchicalFilter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
-        print("filter vals" + str(filter_values))
         if isinstance(filter_values, list):
             require = filter_values
             exclude = []
@@ -20,7 +19,6 @@ class TasCodes(_Filter, HierarchicalFilter):
         else:
             raise InvalidParameterException(f"tas_codes must be an array or object")
 
-        print("query " + cls._query_string(require, exclude))
         return ES_Q("query_string", query=cls._query_string(require, exclude), default_field="treasury_accounts")
 
     @staticmethod

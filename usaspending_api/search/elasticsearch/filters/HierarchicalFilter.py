@@ -5,7 +5,6 @@ class HierarchicalFilter:
     @classmethod
     def _query_string(cls, require, exclude) -> str:
         """Generates string in proper syntax for Elasticsearch query_string attribute, given API parameters"""
-        print(f"require: {require} exclude: {exclude}")
         positive_nodes = [
             cls.node(code, True, require, exclude) for code in require if cls._has_no_parents(code, require + exclude)
         ]
