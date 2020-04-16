@@ -27,12 +27,62 @@ This endpoint returns a high-level overview of a specific recipient, given its i
 + Response 200 (application/json)
 
     + Attributes (RecipientOverview)
+    
+    + Body
+
+            {
+                "name": "ART LINE WHOLESALERS, INC.",
+                "alternate_names": [
+                    "ARTLINE WHOLESALERS INC"
+                ],
+                "duns": "058675323",
+                "recipient_id": "1c0c11fa-ee74-ced4-75c3-0b5a0d4826db-P",
+                "recipient_level": "P",
+                "parent_id": "1c0c11fa-ee74-ced4-75c3-0b5a0d4826db-P",
+                "parent_name": "ART LINE WHOLESALERS, INC.",
+                "parent_duns": "058675323",
+                "parents": [
+                    {
+                        "parent_id": "1c0c11fa-ee74-ced4-75c3-0b5a0d4826db-P",
+                        "parent_duns": "058675323",
+                        "parent_name": "ART LINE WHOLESALERS, INC."
+                    }
+                ],
+                "business_types": [
+                    "category_business",
+                    "corporate_entity_not_tax_exempt",
+                    "minority_owned_business",
+                    "self_certified_small_disadvanted_business",
+                    "small_business",
+                    "special_designations",
+                    "subcontinent_asian_indian_american_owned_business"
+                ],
+                "location": {
+                    "address_line1": "1 MIDLAND AVE",
+                    "address_line2": null,
+                    "address_line3": null,
+                    "foreign_province": null,
+                    "city_name": "HICKSVILLE",
+                    "county_name": null,
+                    "state_code": "NY",
+                    "zip": "11801",
+                    "zip4": "4320",
+                    "foreign_postal_code": null,
+                    "country_name": "UNITED STATES",
+                    "country_code": "USA",
+                    "congressional_code": "03"
+                },
+                "total_transaction_amount": 0,
+                "total_transactions": 0
+            }
 
 # Data Structures
 
 ## RecipientOverview (object)
 + `name` (required, string, nullable)
     Name of the recipient. `null` when the name is not provided.
++ `alternate_names` (required, array[string], fixed-type)
+    Additional names that the recipient has been / is known by.
 + `duns` (required, string, nullable)
     Recipient's DUNS (Data Universal Numbering System) number. `null` when no DUNS is provided.
 + `recipient_id` (required, string)
