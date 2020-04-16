@@ -21,7 +21,9 @@ class _Keywords(_Filter):
         keyword_queries = []
         fields = [
             "recipient_name",
+            "naics_code",
             "naics_description",
+            "product_or_service_code",
             "product_or_service_description",
             "award_description",
             "piid",
@@ -30,6 +32,14 @@ class _Keywords(_Filter):
             "recipient_unique_id",
             "parent_recipient_unique_id",
             "description",
+            "cfda_number",
+            "cfda_title",
+            "awarding_toptier_agency_name",
+            "awarding_subtier_agency_name",
+            "funding_toptier_agency_name",
+            "funding_subtier_agency_name",
+            "business_categories",
+            "type_description",
         ]
         for v in filter_values:
             keyword_queries.append(ES_Q("query_string", query=v + "*", default_operator="AND", fields=fields))
