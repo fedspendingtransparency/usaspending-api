@@ -14,18 +14,18 @@ class NaicsCodes(_Filter, HierarchicalFilter):
             require = filter_values
             exclude = []
         elif isinstance(filter_values, dict):
-            require = filter_values.get("require") or []
-            exclude = filter_values.get("exclude") or []
+            require = [cls.naics_code_to_naics_code_path(str(code)) for code in filter_values.get("require") or []]
+            exclude = [cls.naics_code_to_naics_code_path(str(code)) for code in filter_values.get("exclude") or []]
         else:
             raise InvalidParameterException(f"naics_codes must be an array or object")
 
-        if [value for value in require if len(str(value)) not in [2, 4, 6]] or [
-            value for value in exclude if len(str(value)) not in [2, 4, 6]
+        if [value for value in require if len(value[-1]) not in [2, 4, 6]] or [
+            value for value in exclude if len(value[-1]) not in [2, 4, 6]
         ]:
             raise InvalidParameterException("naics code filtering only supported for codes with lengths of 2, 4, and 6")
 
-        require = [str(code) for code in require]
-        exclude = [str(code) for code in exclude]
+        require = [code for code in require]
+        exclude = [code for code in exclude]
 
         return ES_Q("query_string", query=cls._query_string(require, exclude), default_field="naics_code.keyword")
 
@@ -37,6 +37,17 @@ class NaicsCodes(_Filter, HierarchicalFilter):
     def node(code, positive, positive_naics, negative_naics):
         return NaicsNode(code, positive, positive_naics, negative_naics)
 
+    @staticmethod
+    def naics_code_to_naics_code_path(code):
+        """Special scotch-tape code to convert a single naics into a path to match the heirarchical filter API"""
+        retval = []
+        if len(code) > 2:
+            retval.append(code[:2])
+        if len(code) > 4:
+            retval.append(code[:4])
+        retval.append(code)
+        return retval
+
 
 class NaicsNode(Node):
     def _basic_search_unit(self):
@@ -44,9 +55,6 @@ class NaicsNode(Node):
         if len(self.code) < 6:
             retval += "*"
         return retval
-
-    def is_parent_of(self, other_code):
-        return NaicsCodes.code_is_parent_of(self.code, other_code)
 
     def clone(self, code, positive, positive_naics, negative_naics):
         return NaicsNode(code, positive, positive_naics, negative_naics)
