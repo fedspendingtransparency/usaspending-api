@@ -21,20 +21,6 @@ class HierarchicalFilter:
         else:
             return positive_query + negative_query  # We know that exactly one is blank thanks to TinyShield
 
-    @staticmethod
-    def _order_raw_codes(requires, exclude, all_codes):
-        """Seperates codes into 'top' codes (those with no higher node in either array), and 'sub' codes (those that do)."""
-        postive_codes = {
-            "top": [code for code in requires if len([root for root in all_codes if root.is_parent_of(code)]) == 0]
-        }
-        negative_codes = {
-            "top": [code for code in exclude if len([root for root in all_codes if root.is_parent_of(code)]) == 0]
-        }
-        postive_codes["sub"] = [code for code in requires if code not in postive_codes["top"] + negative_codes["top"]]
-        negative_codes["sub"] = [code for code in exclude if code not in postive_codes["top"] + negative_codes["top"]]
-
-        return postive_codes, negative_codes
-
     @classmethod
     def _has_no_parents(cls, code, other_codes):
         return not len([match for match in other_codes if cls.code_is_parent_of(match, code)])
