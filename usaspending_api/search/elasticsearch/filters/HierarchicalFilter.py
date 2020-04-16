@@ -26,11 +26,9 @@ class HierarchicalFilter:
         """Seperates codes into 'top' codes (those with no higher node in either array), and 'sub' codes (those that do)."""
         postive_codes = {
             "top": [code for code in requires if len([root for root in all_codes if root.is_parent_of(code)]) == 0]
-            # func to know if parent
         }
         negative_codes = {
             "top": [code for code in exclude if len([root for root in all_codes if root.is_parent_of(code)]) == 0]
-            # func to know if parent
         }
         postive_codes["sub"] = [code for code in requires if code not in postive_codes["top"] + negative_codes["top"]]
         negative_codes["sub"] = [code for code in exclude if code not in postive_codes["top"] + negative_codes["top"]]
