@@ -11,7 +11,7 @@ class NaicsCodes(_Filter, HierarchicalFilter):
     def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
         # legacy functionality permits sending a single list of naics codes, which is treated as the required list
         if isinstance(filter_values, list):
-            require = filter_values
+            require = [cls.naics_code_to_naics_code_path(str(code)) for code in filter_values]
             exclude = []
         elif isinstance(filter_values, dict):
             require = [cls.naics_code_to_naics_code_path(str(code)) for code in filter_values.get("require") or []]
