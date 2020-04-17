@@ -18,7 +18,7 @@ def test_match_from_agency(client, monkeypatch, elasticsearch_award_index, award
 @pytest.mark.django_db
 def test_match_from_fa(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_fa_path(0)]},)
+    resp = _query_by_tas(client, {"require": [_fa_path(0)]})
 
     assert resp.json()["results"] == [{"internal_id": 1, "Award ID": "abcdefg", "generated_internal_id": "AWARD_{}"}]
 
@@ -26,7 +26,7 @@ def test_match_from_fa(client, monkeypatch, elasticsearch_award_index, award_wit
 @pytest.mark.django_db
 def test_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(0)]},)
+    resp = _query_by_tas(client, {"require": [_tas_path(0)]})
 
     assert resp.json()["results"] == [{"internal_id": 1, "Award ID": "abcdefg", "generated_internal_id": "AWARD_{}"}]
 
@@ -34,7 +34,7 @@ def test_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_wi
 @pytest.mark.django_db
 def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_agency_path(0) + [TAS_STRINGS[1]]]},)
+    resp = _query_by_tas(client, {"require": [_agency_path(0) + [TAS_STRINGS[1]]]})
 
     assert resp.json()["results"] == []
 
@@ -42,7 +42,7 @@ def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, awar
 @pytest.mark.django_db
 def test_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(0)]},)
+    resp = _query_by_tas(client, {"require": [_tas_path(0)]})
 
     assert resp.json()["results"] == [{"internal_id": 1, "Award ID": "abcdefg", "generated_internal_id": "AWARD_{}"}]
 
