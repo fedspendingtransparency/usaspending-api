@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Dict
+from typing import Dict, Optional
 
 from django.conf import settings
 from elasticsearch_dsl import A, Q as ES_Q
@@ -192,7 +192,7 @@ def get_number_of_unique_terms(filter_query: ES_Q, field: str) -> int:
     return response_dict.get("field_count", {"value": 0})["value"]
 
 
-def get_scaled_sum_aggregations(field_to_sum: str, pagination: Pagination) -> Dict[str, A]:
+def get_scaled_sum_aggregations(field_to_sum: str, pagination: Optional[Pagination] = None) -> Dict[str, A]:
     """
     Creates a sum and bucket_sort aggregation that can be used for many different aggregations.
     The sum aggregation scaled the values by 100 so that the scaled_floats are handled as integers to avoid
@@ -205,16 +205,18 @@ def get_scaled_sum_aggregations(field_to_sum: str, pagination: Pagination) -> Di
     """
     sum_field = A("sum", field=field_to_sum, script={"source": "_value * 100"})
 
-    # Have to create a separate dictionary for the bucket_sort values since "from" is a reserved word
-    bucket_sort_values = {
-        "from": (pagination.page - 1) * pagination.limit,
-        "size": pagination.limit + 1,
-    }
+    if pagination:
+        # Have to create a separate dictionary for the bucket_sort values since "from" is a reserved word
+        bucket_sort_values = {
+            "from": (pagination.page - 1) * pagination.limit,
+            "size": pagination.limit + 1,
+        }
 
-    # Two different bucket sort aggregations to choose from:
-    # sum_bucket_sort -> used when parent aggregation is not sorting
-    # sum_bucket_truncate -> used when parent aggregation is sorting and only a specific page is needed
-    sum_bucket_sort = A("bucket_sort", sort={"sum_field": {"order": "desc"}}, **bucket_sort_values)
-    sum_bucket_truncate = A("bucket_sort", **bucket_sort_values)
-
-    return {"sum_field": sum_field, "sum_bucket_sort": sum_bucket_sort, "sum_bucket_truncate": sum_bucket_truncate}
+        # Two different bucket sort aggregations to choose from:
+        # sum_bucket_sort -> used when parent aggregation is not sorting
+        # sum_bucket_truncate -> used when parent aggregation is sorting and only a specific page is needed
+        sum_bucket_sort = A("bucket_sort", sort={"sum_field": {"order": "desc"}}, **bucket_sort_values)
+        sum_bucket_truncate = A("bucket_sort", **bucket_sort_values)
+        return {"sum_field": sum_field, "sum_bucket_sort": sum_bucket_sort, "sum_bucket_truncate": sum_bucket_truncate}
+    else:
+        return {"sum_field": sum_field}
