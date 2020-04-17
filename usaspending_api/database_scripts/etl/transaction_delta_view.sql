@@ -19,7 +19,7 @@ SELECT
     ELSE UTM.uri
   END AS display_award_id,
 
-  TN.update_date,
+  AWD.update_date,
   UTM.modification_number,
   AWD.generated_unique_award_id,
   UTM.award_id,
@@ -158,21 +158,13 @@ SELECT
 
   TREASURY_ACCT.treasury_accounts,
   FEDERAL_ACCT.federal_accounts,
-  UTM.business_categories,
-
-  -- ALL COLUMNS BELOW THIS CAN BE REMOVED AS A WARMFIX INTO STAGING;
-  -- LEAVING FOR NOW SINCE STAGING AND DEV SHARE AN ELASTICSEARCH CLUSTER;
-  -- WILL NEED TO ALSO DELETE CORRESPONDING TEMPLATE FIELD
-  TAA.id AS awarding_toptier_agency_id,
-  TFA.id AS funding_toptier_agency_id,
-  UTM.awarding_agency_id AS awarding_subtier_agency_id,
-  UTM.funding_agency_id AS funding_subtier_agency_id
+  UTM.business_categories
 
 FROM universal_transaction_matview UTM
 INNER JOIN transaction_normalized TN ON (UTM.transaction_id = TN.id)
+INNER JOIN awards AWD ON (UTM.award_id = AWD.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
-LEFT JOIN awards AWD ON (UTM.award_id = AWD.id)
 -- Similar joins are already performed on universal_transaction_matview, however, to avoid making the matview larger
 -- than needed they have been placed here. Feel free to phase out if the columns gained from the following joins are
 -- added to the universal_transaction_matview.
@@ -266,4 +258,5 @@ LEFT JOIN (
     faba.award_id IS NOT NULL
   GROUP BY
     faba.award_id
-) FEDERAL_ACCT ON (FEDERAL_ACCT.award_id = UTM.award_id);
+) FEDERAL_ACCT ON (FEDERAL_ACCT.award_id = UTM.award_id)
+WHERE UTM.action_date >= '2007-10-01';

@@ -225,18 +225,6 @@
       "funding_agency_id": {
         "type": "integer"
       },
-      "awarding_toptier_agency_id": {
-        "type": "integer"
-      },
-      "awarding_subtier_agency_id": {
-        "type": "integer"
-      },
-      "funding_toptier_agency_id": {
-        "type": "integer"
-      },
-      "funding_subtier_agency_id": {
-        "type": "integer"
-      },
       "awarding_toptier_agency_name": {
         "type": "text",
         "fields": {
