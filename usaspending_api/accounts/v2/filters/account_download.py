@@ -8,7 +8,7 @@ from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter
+from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter, FiscalYear
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import CGAC, ToptierAgency
@@ -133,8 +133,6 @@ def get_agency_name_annotation(relation_name: str, cgac_column_name: str) -> Sub
 
 def generate_treasury_account_query(queryset, account_type, tas_id):
     """ Derive necessary fields for a treasury account-grouped query """
-    # Derive treasury_account_symbol, allocation_transfer_agency_name, agency_name, and federal_account_symbol
-    # for all account types
     derived_fields = {
         "last_reported_submission_period": FiscalYearAndQuarter("reporting_period_end"),
         # treasury_account_symbol: [ATA-]AID-BPOA/EPOA-MAC-SAC or [ATA-]AID-"X"-MAC-SAC
@@ -166,8 +164,10 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
             "{}__sub_account_code".format(tas_id),
             output_field=CharField(),
         ),
-        "allocation_transfer_agency_name": get_agency_name_annotation(tas_id, "allocation_transfer_agency_id"),
-        "agency_name": get_agency_name_annotation(tas_id, "agency_id"),
+        "allocation_transfer_agency_identifer_name": get_agency_name_annotation(
+            tas_id, "allocation_transfer_agency_id"
+        ),
+        "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         # federal_account_symbol: fed_acct_AID-fed_acct_MAC
         "federal_account_symbol": Concat(
             "{}__federal_account__agency_identifier".format(tas_id),
@@ -195,7 +195,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
             Value("-"),
             "{}__federal_account__main_account_code".format(tas_id),
         ),
-        "agency_name": get_agency_name_annotation(tas_id, "agency_id"),
+        "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
         "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR: Max("submission__certified_date"),
     }
@@ -384,6 +384,7 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction__contract_data__place_of_performance_zip4a",
         "award__latest_transaction__assistance_data__place_of_performance_zip4a",
     )
+    derived_fields["award_base_action_date_fiscal_year"] = FiscalYear("award__date_signed")
 
     derived_fields["usaspending_permalink"] = Case(
         When(

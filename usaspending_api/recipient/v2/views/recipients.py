@@ -284,6 +284,11 @@ class RecipientOverView(APIView):
         if not (recipient_name or recipient_duns):
             raise InvalidParameterException("Recipient Hash not found: '{}'.".format(recipient_hash))
 
+        alternate_names = (
+            RecipientLookup.objects.filter(recipient_hash=recipient_hash).values("alternate_names").first()
+        )
+        alternate_names = sorted(alternate_names.get("alternate_names", []))
+
         parents = []
         if recipient_level == "C":
             parents = extract_parents_from_hash(recipient_hash)
@@ -303,6 +308,7 @@ class RecipientOverView(APIView):
 
         result = {
             "name": recipient_name,
+            "alternate_names": alternate_names,
             "duns": recipient_duns,
             "recipient_id": recipient_id,
             "recipient_level": recipient_level,
@@ -341,7 +347,7 @@ class ChildRecipients(APIView):
     This endpoint returns a list of child recipients belonging to the given parent recipient DUNS.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/children/duns.md"
 
     @cache_response()
     def get(self, request, duns):
