@@ -40,6 +40,22 @@ class _Keywords(_Filter):
             "funding_subtier_agency_name",
             "business_categories",
             "type_description",
+            "pop_country_code",
+            "pop_country_name",
+            "pop_state_code",
+            "pop_county_code",
+            "pop_county_name",
+            "pop_zip5",
+            "pop_congressional_code",
+            "pop_city_name",
+            "recipient_location_country_code",
+            "recipient_location_country_name",
+            "recipient_location_state_code",
+            "recipient_location_county_code",
+            "recipient_location_county_name",
+            "recipient_location_zip5",
+            "recipient_location_congressional_code",
+            "recipient_location_city_name"
         ]
         for v in filter_values:
             keyword_queries.append(ES_Q("query_string", query=v + "*", default_operator="AND", fields=fields))

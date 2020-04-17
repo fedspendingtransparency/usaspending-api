@@ -6,13 +6,10 @@ from django.conf import settings
 from elasticsearch_dsl import A, Q as ES_Q
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
-    TRANSACTIONS_LOOKUP,
     TRANSACTIONS_SOURCE_LOOKUP,
-    KEYWORD_DATATYPE_FIELDS,
     INDEX_ALIASES_TO_AWARD_TYPES,
 )
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 
@@ -55,55 +52,7 @@ def format_for_frontend(response):
     return [swap_keys(result) for result in response]
 
 
-def base_query(keyword, fields=KEYWORD_DATATYPE_FIELDS):
-    keyword = es_minimal_sanitize(concat_if_array(keyword))
-    query = {
-        "dis_max": {
-            "queries": [{"query_string": {"query": keyword}}, {"query_string": {"query": keyword, "fields": fields}}]
-        }
-    }
-    return query
-
-
-def search_transactions(request_data, lower_limit, limit):
-    """
-    request_data: dictionary
-    lower_limit: integer
-    limit: integer
-
-    if transaction_type_code not found, return results for contracts
-    """
-
-    keyword = request_data["filters"]["keywords"]
-    query_fields = [TRANSACTIONS_SOURCE_LOOKUP[i] for i in request_data["fields"]]
-    query_fields.extend(["award_id", "generated_unique_award_id"])
-    query_sort = TRANSACTIONS_LOOKUP[request_data["sort"]]
-    query = {
-        "_source": query_fields,
-        "from": lower_limit,
-        "size": limit,
-        "query": base_query(keyword),
-        "sort": [{query_sort: {"order": request_data["order"]}}],
-    }
-
-    for index, award_types in INDEX_ALIASES_TO_AWARD_TYPES.items():
-        if sorted(award_types) == sorted(request_data["filters"]["award_type_codes"]):
-            index_name = "{}-{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, index)
-            break
-    else:
-        logger.exception("Bad/Missing Award Types. Did not meet 100% of a category's types")
-        return False, "Bad/Missing Award Types requested", None
-
-    response = es_client_query(index=index_name, body=query, retries=10)
-    if response:
-        total = response["hits"]["total"]["value"]
-        results = format_for_frontend(response["hits"]["hits"])
-        return True, results, total
-    else:
-        return False, "There was an error connecting to the ElasticSearch cluster", None
-
-
-def get_total_results(keyword, retries=3):
+def get_total_results(keyword):
     group_by_agg_key_values = {
         "filters": {category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()}
     }
@@ -170,8 +119,7 @@ def get_download_ids(keyword, field, size=10000):
     """
     n_iter = DOWNLOAD_QUERY_SIZE // size
 
-    max_iterations = 10
-    results = get_total_results(keyword, max_iterations)
+    results = get_total_results(keyword)
     if results is None:
         logger.error("Error retrieving total results. Max number of attempts reached")
         return

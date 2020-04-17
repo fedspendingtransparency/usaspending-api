@@ -1,10 +1,17 @@
 import itertools
+
 import pytest
 
 from model_mommy import mommy
 
 from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
-from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count, get_download_ids
+from usaspending_api.search.v2.elasticsearch_helper import (
+    spending_by_transaction_count,
+    get_download_ids,
+    es_sanitize,
+    es_minimal_sanitize,
+    swap_keys,
+)
 
 
 @pytest.fixture
@@ -101,3 +108,31 @@ def test_get_download_ids(monkeypatch, transaction_type_data, elasticsearch_tran
     expected_results = [1, 2, 3, 4, 5, 6]
 
     assert transaction_ids == expected_results
+
+
+def test_es_sanitize():
+    test_string = '+-&|!()[]{}^~*?:"/<>\\'
+    processed_string = es_sanitize(test_string)
+    assert processed_string == ""
+
+
+def test_es_minimal_sanitize():
+    test_string = "https://www.localhost:8000/"
+    processed_string = es_minimal_sanitize(test_string)
+    assert processed_string == "httpswww.localhost8000"
+
+
+def test_swap_keys():
+    test = {
+        "Recipient Name": "recipient_name",
+        "Action Date": "action_date",
+        "Transaction Amount": "transaction_amount",
+    }
+
+    results = swap_keys(test)
+
+    assert results == {
+        "recipient_name": "recipient_name",
+        "action_date": "action_date",
+        "transaction_amount": "transaction_amount",
+    }
