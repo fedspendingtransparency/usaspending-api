@@ -494,6 +494,7 @@ def test_recipient_overview(client):
     assert resp.status_code == status.HTTP_200_OK
     expected = {
         "name": "PARENT RECIPIENT",
+        "alternate_names": [],
         "duns": "000000001",
         "recipient_id": "00077a9a-5a70-8919-fd19-330762af6b84-C",
         "recipient_level": "C",

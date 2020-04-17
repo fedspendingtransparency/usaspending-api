@@ -16,12 +16,19 @@ class TASViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/filter_tree/tas.md"
 
     def _parse_and_validate(self, request):
-
-        data = {"depth": request.get("depth") or 0}
         models = [
-            {"key": "depth", "name": "depth", "type": "integer", "allow_nulls": True, "default": 1, "optional": True}
+            {"key": "depth", "name": "depth", "type": "integer", "allow_nulls": True, "default": 0, "optional": True},
+            {
+                "key": "filter",
+                "name": "filter",
+                "type": "text",
+                "text_type": "search",
+                "allow_nulls": True,
+                "optional": True,
+                "default": None,
+            },
         ]
-        return TinyShield(models).block(data)
+        return TinyShield(models).block(request)
 
     @cache_response()
     def get(self, request: Request, tier1: str = None, tier2: str = None, tier3: str = None) -> Response:
@@ -29,5 +36,12 @@ class TASViewSet(APIView):
 
         filter_tree = TASFilterTree()
         return Response(
-            {"results": [elem.to_JSON() for elem in filter_tree.search(tier1, tier2, tier3, request_values["depth"])]}
+            {
+                "results": [
+                    elem.to_JSON()
+                    for elem in filter_tree.search(
+                        tier1, tier2, tier3, request_values["depth"], request_values["filter"]
+                    )
+                ]
+            }
         )
