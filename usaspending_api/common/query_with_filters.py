@@ -55,7 +55,8 @@ class _Keywords(_Filter):
             "recipient_location_county_name",
             "recipient_location_zip5",
             "recipient_location_congressional_code",
-            "recipient_location_city_name"
+            "recipient_location_city_name",
+            "modification_number"
         ]
         for v in filter_values:
             keyword_queries.append(ES_Q("query_string", query=v + "*", default_operator="AND", fields=fields))

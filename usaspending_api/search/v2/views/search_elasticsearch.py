@@ -86,8 +86,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         sorts = {TRANSACTIONS_LOOKUP[validated_payload["sort"]]: validated_payload["order"]}
         lower_limit = (validated_payload["page"] - 1) * validated_payload["limit"]
         upper_limit = (validated_payload["page"]) * validated_payload["limit"] + 1
-        filters = {"keywords": [es_minimal_sanitize(validated_payload["filters"]["keywords"])]}
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters)
+        validated_payload["filters"]["keywords"] = [es_minimal_sanitize(x) for x in validated_payload["filters"]["keywords"]]
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(validated_payload["filters"])
         search = TransactionSearch().filter(filter_query).sort(sorts)[lower_limit:upper_limit]
         response = search.handle_execute()
         return Response(self.build_elasticsearch_result(validated_payload, response))
