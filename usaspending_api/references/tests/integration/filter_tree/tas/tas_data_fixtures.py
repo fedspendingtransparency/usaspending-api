@@ -92,8 +92,8 @@ def _setup_fa(id, agency):
     mommy.make(
         "accounts.FederalAccount",
         id=id,
-        federal_account_code=str(id).zfill(3),
-        account_title=f"Fed Account {str(id).zfill(3)}",
+        federal_account_code=str(id).zfill(4),
+        account_title=f"Fed Account {str(id).zfill(4)}",
         parent_toptier_agency_id=agency,
     )
 
@@ -103,8 +103,8 @@ def _setup_tas(id, fa):
         "accounts.TreasuryAppropriationAccount",
         treasury_account_identifier=id,
         federal_account_id=fa,
-        tas_rendering_label=str(id).zfill(3),
-        account_title=f"TAS {str(id).zfill(3)}",
+        tas_rendering_label=str(id).zfill(5),
+        account_title=f"TAS {str(id).zfill(5)}",
     )
 
 

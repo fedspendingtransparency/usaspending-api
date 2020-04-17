@@ -10,16 +10,19 @@ database fields based on depth in the tree.
 ## Search by Federal Account [GET /api/v2/references/filter_tree/tas/{agency}/{federal_account}/{?depth}]
 
 Returns a list of Treasury Account Symbols associated with the specified federal account
-+ Request A request with a federal account id
++ Request (application/json)
     + Parameters
         + `agency`: `020` (required, string) 
         + `federal_account`: `0550`
-        + `depth`: `0` (optional, enum[number]) How many levels deep the search will populate each tree.
+        + `depth` (optional, enum[number]) 
+        How many levels deep the search will populate each tree.
             + Members
                     + `0`
                     + `1`
                     + `2` 
         With this tree structure, only TAS will be returned, and the tree depth will always be one, regardless of provided depth.
+        + `filter` (optional, string) 
+        When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
     + Schema
         
             {
