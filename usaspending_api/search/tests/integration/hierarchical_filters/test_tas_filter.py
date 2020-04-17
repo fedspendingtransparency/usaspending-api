@@ -10,7 +10,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.fixtures impo
 @pytest.mark.django_db
 def test_match_from_agency(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [[TAS_DICTIONARIES[0]["aid"]]]})
+    resp = _query_by_tas(client, {"require": [_agency_path(0)]})
 
     assert resp.json()["results"] == [{"internal_id": 1, "Award ID": "abcdefg", "generated_internal_id": "AWARD_{}"}]
 
@@ -18,10 +18,7 @@ def test_match_from_agency(client, monkeypatch, elasticsearch_award_index, award
 @pytest.mark.django_db
 def test_match_from_fa(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(
-        client,
-        {"require": [[TAS_DICTIONARIES[0]["aid"], f"{TAS_DICTIONARIES[0]['aid']}-{TAS_DICTIONARIES[0]['main']}"]]},
-    )
+    resp = _query_by_tas(client, {"require": [_fa_path(0)]},)
 
     assert resp.json()["results"] == [{"internal_id": 1, "Award ID": "abcdefg", "generated_internal_id": "AWARD_{}"}]
 
@@ -29,18 +26,7 @@ def test_match_from_fa(client, monkeypatch, elasticsearch_award_index, award_wit
 @pytest.mark.django_db
 def test_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(
-        client,
-        {
-            "require": [
-                [
-                    TAS_DICTIONARIES[0]["aid"],
-                    f"{TAS_DICTIONARIES[0]['aid']}-{TAS_DICTIONARIES[0]['main']}",
-                    TAS_STRINGS[0],
-                ]
-            ]
-        },
-    )
+    resp = _query_by_tas(client, {"require": [_tas_path(0)]},)
 
     assert resp.json()["results"] == [{"internal_id": 1, "Award ID": "abcdefg", "generated_internal_id": "AWARD_{}"}]
 
@@ -48,20 +34,17 @@ def test_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_wi
 @pytest.mark.django_db
 def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(
-        client,
-        {
-            "require": [
-                [
-                    TAS_DICTIONARIES[0]["aid"],
-                    f"{TAS_DICTIONARIES[0]['aid']}-{TAS_DICTIONARIES[0]['main']}",
-                    TAS_STRINGS[0][:-3] + "898",
-                ]
-            ]
-        },
-    )
+    resp = _query_by_tas(client, {"require": [_agency_path(0) + [TAS_STRINGS[1]]]},)
 
     assert resp.json()["results"] == []
+
+
+@pytest.mark.django_db
+def test_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = _query_by_tas(client, {"require": [_tas_path(0)]},)
+
+    assert resp.json()["results"] == [{"internal_id": 1, "Award ID": "abcdefg", "generated_internal_id": "AWARD_{}"}]
 
 
 def _setup_es(client, monkeypatch, elasticsearch_award_index):
@@ -90,3 +73,27 @@ def _query_by_tas(client, tas):
         ),
         **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
+
+
+def _agency_path(index):
+    return [_agency(index)]
+
+
+def _fa_path(index):
+    return [_agency(index), _fa(index)]
+
+
+def _tas_path(index):
+    return [_agency(index), _fa(index), _tas(index)]
+
+
+def _agency(index):
+    return TAS_DICTIONARIES[index]["aid"]
+
+
+def _fa(index):
+    return f"{TAS_DICTIONARIES[index]['aid']}-{TAS_DICTIONARIES[index]['main']}"
+
+
+def _tas(index):
+    return TAS_STRINGS[index]
