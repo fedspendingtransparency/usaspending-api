@@ -48,7 +48,7 @@
         "index": false
       },
       "modification_number": {
-        "type": "integer"
+        "type": "text"
       },
       "generated_unique_award_id": {
         "type": "keyword"
