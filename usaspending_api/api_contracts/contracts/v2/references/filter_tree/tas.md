@@ -20,7 +20,7 @@ Returns a list of toptier agencies that have at least one TAS affiliated with th
                     + `2`
         0 will return only agencies, 1 will return agencies and any federal accounts under them, and so on.
         + `filter` (optional, string) 
-        When provided, only results who's id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node. 
+        When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node. 
     
     + Schema
     

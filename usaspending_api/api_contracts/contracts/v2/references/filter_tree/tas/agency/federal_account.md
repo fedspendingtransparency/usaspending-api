@@ -22,7 +22,7 @@ Returns a list of Treasury Account Symbols associated with the specified federal
                     + `2` 
         With this tree structure, only TAS will be returned, and the tree depth will always be one, regardless of provided depth.
         + `filter` (optional, string) 
-        When provided, only results who's id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
+        When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
     + Schema
         
             {
