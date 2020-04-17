@@ -5,7 +5,7 @@ from django.db import models, connection
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.models import DataSourceTrackedModel
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
 
 
 class FederalAccount(models.Model):
@@ -118,6 +118,8 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     def tas_rendering_label_to_component_dictionary(tas_rendering_label) -> dict:
         try:
             components = tas_rendering_label.split("-")
+            if len(components) < 4 or len(components) > 5:
+                raise Exception  # don't have to be specific here since this is being swallowed and replaced
             retval = {}
             # we go in reverse, since the first component is the only optional one
             retval["sub"] = components[-1]
@@ -139,7 +141,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
 
             return retval
         except Exception:
-            raise InvalidParameterException(
+            raise UnprocessableEntityException(
                 f"Cannot parse provided TAS: {tas_rendering_label}. Valid examples: 000-2010/2010-0400-000, 009-X-1701-000, 019-011-X-1071-000"
             )
 

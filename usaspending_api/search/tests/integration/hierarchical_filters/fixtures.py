@@ -5,7 +5,7 @@ from datetime import datetime
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 
 # ensures that tests aren't failing for having the wrong TAS. We trust functionality of tas_rendering_label_to_component_dictionary because it is tested elsewhere
-TAS_STRINGS = ["000-X-0126-000", "010-024-X-8445-002", "012-2000/2000-1231-000"]
+TAS_STRINGS = ["000-X-0126-000", "010-024-X-8445-002", "012-2000/2000-1231-000", "020-012-2000/2000-1231-000"]
 TAS_DICTIONARIES = [
     TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary(tas) for tas in TAS_STRINGS
 ]
@@ -15,6 +15,18 @@ TAS_DICTIONARIES = [
 def award_with_tas(db):
     award(db, 1)
     tas(db, 1, 0)
+
+
+@pytest.fixture
+def award_with_bpoa_tas(db):
+    award(db, 1)
+    tas(db, 1, 2)
+
+
+@pytest.fixture
+def award_with_ata_tas(db):
+    award(db, 1)
+    tas(db, 1, 3)
 
 
 @pytest.fixture
