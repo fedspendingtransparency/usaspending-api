@@ -1,8 +1,8 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
-​
+
 # Award Types [/api/v2/references/award_types/]
-​
+
 This endpoint returns a JSON object representing the grouping of award types.
 ​
 ## GET    
@@ -15,46 +15,45 @@ This endpoint returns a JSON object representing the grouping of award types.
         + `other_financial_assistance` (required, OtherFinancialAssistanceTypes, fixed-type)
         + `direct_payments` (required, DirectPaymentTypes, fixed-type)
     + Body
-​
-            {
+
+                {
                 "contracts": {
-                    "A": "BPA Call",
-                    "B": "Purchase Order",
-                    "C": "Delivery Order",
-                    "D": "Definitive Contract"
+                "A": "BPA Call",
+                "B": "Purchase Order",
+                "C": "Delivery Order",
+                "D": "Definitive Contract"
                 },
                 "loans": {
-                    "07": "Direct Loan",
-                    "08": "Guaranteed/Insured Loan"
+                "07": "Direct Loan",
+                "08": "Guaranteed/Insured Loan"
                 },
                 "idvs": {
-                    "IDV_A": "GWAC Government Wide Acquisition Contract",
-                    "IDV_B": "IDC Multi-Agency Contract, Other Indefinite Delivery Contract",
-                    "IDV_B_A": "IDC Indefinite Delivery Contract / Requirements",
-                    "IDV_B_B": "IDC Indefinite Delivery Contract / Indefinite Quantity",
-                    "IDV_B_C": "IDC Indefinite Delivery Contract / Definite Quantity",
-                    "IDV_C": "FSS Federal Supply Schedule",
-                    "IDV_D": "BOA Basic Ordering Agreement",
-                    "IDV_E": "BPA Blanket Purchase Agreement"
+                "IDV_A": "GWAC Government Wide Acquisition Contract",
+                "IDV_B": "IDC Multi-Agency Contract, Other Indefinite Delivery Contract",
+                "IDV_B_A": "IDC Indefinite Delivery Contract / Requirements",
+                "IDV_B_B": "IDC Indefinite Delivery Contract / Indefinite Quantity",
+                "IDV_B_C": "IDC Indefinite Delivery Contract / Definite Quantity",
+                "IDV_C": "FSS Federal Supply Schedule",
+                "IDV_D": "BOA Basic Ordering Agreement",
+                "IDV_E": "BPA Blanket Purchase Agreement"
                 },
                 "grants": {
-                    "02": "Block Grant",
-                    "03": "Formula Grant",
-                    "04": "Project Grant",
-                    "05": "Cooperative Agreement"
+                "02": "Block Grant",
+                "03": "Formula Grant",
+                "04": "Project Grant",
+                "05": "Cooperative Agreement"
                 },
                 "other_financial_assistance": {
-                    "09": "Insurance",
-                    "11": "Other Financial Assistance"
+                "09": "Insurance",
+                "11": "Other Financial Assistance"
                 },
                 "direct_payments": {
-                    "06": "Direct Payment for Specified Use",
-                    "10": "Direct Payment with Unrestricted Use"
+                "06": "Direct Payment for Specified Use",
+                "10": "Direct Payment with Unrestricted Use"
                 }
-            }
-​
+                }
+
 ## Data Structures
-​
 ### ContractTypes (object)
 + `A` (required, string) - BPA Call
 + `B` (required, string) - Purchase Order
@@ -74,13 +73,13 @@ This endpoint returns a JSON object representing the grouping of award types.
 + `IDV_C` (required, string) - FSS Federal Supply Schedule
 + `IDV_D` (required, string) - BOA Basic Ordering Agreement
 + `IDV_E` (required, string) - BPA Blanket Purchase Agreement
-​
+
 ### GrantTypes (object)
 + `02` (required, string) - Block Grant
 + `03` (required, string) - Formula Grant
 + `04` (required, string) - Project Grant
 + `05` (required, string) - Cooperative Agreement
-​
+
 ### OtherFinancialAssistanceTypes (object)
 + `09` (required, string) - Insurance
 + `11` (required, string) - Other Financial Assistance
