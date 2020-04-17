@@ -37,6 +37,57 @@ class _Keywords(_Filter):
         return ES_Q("dis_max", queries=keyword_queries)
 
 
+class _Keyword_Search(_Filter):
+    underscore_name = "keyword_search"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
+        keyword_queries = []
+        fields = [
+            "recipient_name",
+            "naics_code",
+            "naics_description",
+            "product_or_service_code",
+            "product_or_service_description",
+            "award_description",
+            "piid",
+            "fain",
+            "uri",
+            "recipient_unique_id",
+            "parent_recipient_unique_id",
+            "description",
+            "cfda_number",
+            "cfda_title",
+            "awarding_toptier_agency_name",
+            "awarding_subtier_agency_name",
+            "funding_toptier_agency_name",
+            "funding_subtier_agency_name",
+            "business_categories",
+            "type_description",
+            "pop_country_code",
+            "pop_country_name",
+            "pop_state_code",
+            "pop_county_code",
+            "pop_county_name",
+            "pop_zip5",
+            "pop_congressional_code",
+            "pop_city_name",
+            "recipient_location_country_code",
+            "recipient_location_country_name",
+            "recipient_location_state_code",
+            "recipient_location_county_code",
+            "recipient_location_county_name",
+            "recipient_location_zip5",
+            "recipient_location_congressional_code",
+            "recipient_location_city_name",
+            "modification_number",
+        ]
+        for v in filter_values:
+            keyword_queries.append(ES_Q("query_string", query=v, default_operator="OR", fields=fields))
+
+        return ES_Q("dis_max", queries=keyword_queries)
+
+
 class _TimePeriods(_Filter):
     underscore_name = "time_period"
 
@@ -364,6 +415,7 @@ class QueryWithFilters:
 
     filter_lookup = {
         _Keywords.underscore_name: _Keywords,
+        _Keyword_Search.underscore_name: _Keyword_Search,
         _TimePeriods.underscore_name: _TimePeriods,
         _AwardTypeCodes.underscore_name: _AwardTypeCodes,
         _Agencies.underscore_name: _Agencies,
