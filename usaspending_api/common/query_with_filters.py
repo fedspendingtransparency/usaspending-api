@@ -21,6 +21,30 @@ class _Keywords(_Filter):
         keyword_queries = []
         fields = [
             "recipient_name",
+            "naics_description",
+            "product_or_service_description",
+            "award_description",
+            "piid",
+            "fain",
+            "uri",
+            "recipient_unique_id",
+            "parent_recipient_unique_id",
+            "description",
+        ]
+        for v in filter_values:
+            keyword_queries.append(ES_Q("query_string", query=v + "*", default_operator="AND", fields=fields))
+
+        return ES_Q("dis_max", queries=keyword_queries)
+
+
+class _Keyword_Search(_Filter):
+    underscore_name = "keyword_search"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
+        keyword_queries = []
+        fields = [
+            "recipient_name",
             "naics_code",
             "naics_description",
             "product_or_service_code",
@@ -59,7 +83,7 @@ class _Keywords(_Filter):
             "modification_number",
         ]
         for v in filter_values:
-            keyword_queries.append(ES_Q("query_string", query=v + "*", default_operator="AND", fields=fields))
+            keyword_queries.append(ES_Q("query_string", query=v, default_operator="OR", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
 
@@ -391,6 +415,7 @@ class QueryWithFilters:
 
     filter_lookup = {
         _Keywords.underscore_name: _Keywords,
+        _Keyword_Search.underscore_name: _Keyword_Search,
         _TimePeriods.underscore_name: _TimePeriods,
         _AwardTypeCodes.underscore_name: _AwardTypeCodes,
         _Agencies.underscore_name: _Agencies,

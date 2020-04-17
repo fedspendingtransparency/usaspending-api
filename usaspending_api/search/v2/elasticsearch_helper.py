@@ -58,7 +58,7 @@ def get_total_results(keyword):
     }
     aggs = A("filters", **group_by_agg_key_values)
     filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
-        {"keywords": [es_minimal_sanitize(keyword)]}
+        {"keyword_search": [es_minimal_sanitize(keyword)]}
     )
     search = TransactionSearch().filter(filter_query)
     search.aggs.bucket("types", aggs)
@@ -128,7 +128,7 @@ def get_download_ids(keyword, field, size=10000):
     n_iter = min(max(1, required_iter), n_iter)
     for i in range(n_iter):
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
-            {"keywords": [es_minimal_sanitize(keyword)]}
+            {"keyword_search": [es_minimal_sanitize(keyword)]}
         )
         search = TransactionSearch().filter(filter_query)
         group_by_agg_key_values = {"field": field, "include": {"partition": i, "num_partitions": n_iter}, "size": size}
@@ -145,7 +145,7 @@ def get_download_ids(keyword, field, size=10000):
 
 def get_sum_and_count_aggregation_results(keyword):
     filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
-        {"keywords": [es_minimal_sanitize(keyword)]}
+        {"keyword_search": [es_minimal_sanitize(keyword)]}
     )
     search = TransactionSearch().filter(filter_query)
     search.aggs.bucket("prime_awards_obligation_amount", {"sum": {"field": "transaction_amount"}})
