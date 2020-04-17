@@ -59,17 +59,17 @@ def account_download_filter(account_type, download_table, filters, account_level
     if filters.get("federal_account", False) and filters["federal_account"] != "all":
         federal_account_obj = FederalAccount.objects.filter(id=filters["federal_account"]).first()
         if federal_account_obj:
-            query_filters["{}__federal_account__id".format(tas_id)] = filters["federal_account"]
+            query_filters[f"{tas_id}__federal_account__id"] = filters["federal_account"]
         else:
             raise InvalidParameterException("Federal Account with that ID does not exist")
 
     # Filter by Budget Function, if provided
     if filters.get("budget_function", False) and filters["budget_function"] != "all":
-        query_filters["{}__budget_function_code".format(tas_id)] = filters["budget_function"]
+        query_filters[f"{tas_id}__budget_function_code"] = filters["budget_function"]
 
     # Filter by Budget SubFunction, if provided
     if filters.get("budget_subfunction", False) and filters["budget_subfunction"] != "all":
-        query_filters["{}__budget_subfunction_code".format(tas_id)] = filters["budget_subfunction"]
+        query_filters[f"{tas_id}__budget_subfunction_code"] = filters["budget_subfunction"]
 
     # Filter by Fiscal Year and Quarter
     reporting_period_start, reporting_period_end, start_date, end_date = retrieve_fyq_filters(
@@ -127,7 +127,7 @@ def get_agency_name_annotation(relation_name: str, cgac_column_name: str) -> Sub
     or FederalAccount join and the CGAC column name and returns an annotation ready Subquery object that
     retrieves the CGAC agency name.
     """
-    outer_ref = "{}__{}".format(relation_name, cgac_column_name)
+    outer_ref = f"{relation_name}__{cgac_column_name}"
     return Subquery(CGAC.objects.filter(cgac_code=OuterRef(outer_ref)).values("agency_name"))
 
 
@@ -140,28 +140,28 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
             Case(
                 When(
                     **{
-                        "{}__allocation_transfer_agency_id__isnull".format(tas_id): False,
-                        "then": Concat("{}__allocation_transfer_agency_id".format(tas_id), Value("-")),
+                        f"{tas_id}__allocation_transfer_agency_id__isnull": False,
+                        "then": Concat(f"{tas_id}__allocation_transfer_agency_id", Value("-")),
                     }
                 ),
                 default=Value(""),
                 output_field=CharField(),
             ),
-            "{}__agency_id".format(tas_id),
+            f"{tas_id}__agency_id",
             Value("-"),
             Case(
-                When(**{"{}__availability_type_code".format(tas_id): "X", "then": Value("X")}),
+                When(**{f"{tas_id}__availability_type_code": "X", "then": Value("X")}),
                 default=Concat(
-                    "{}__beginning_period_of_availability".format(tas_id),
+                    f"{tas_id}__beginning_period_of_availability",
                     Value("/"),
-                    "{}__ending_period_of_availability".format(tas_id),
+                    f"{tas_id}__ending_period_of_availability",
                 ),
                 output_field=CharField(),
             ),
             Value("-"),
-            "{}__main_account_code".format(tas_id),
+            f"{tas_id}__main_account_code",
             Value("-"),
-            "{}__sub_account_code".format(tas_id),
+            f"{tas_id}__sub_account_code",
             output_field=CharField(),
         ),
         "allocation_transfer_agency_identifer_name": get_agency_name_annotation(
@@ -170,9 +170,9 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         # federal_account_symbol: fed_acct_AID-fed_acct_MAC
         "federal_account_symbol": Concat(
-            "{}__federal_account__agency_identifier".format(tas_id),
+            f"{tas_id}__federal_account__agency_identifier",
             Value("-"),
-            "{}__federal_account__main_account_code".format(tas_id),
+            f"{tas_id}__federal_account__main_account_code",
         ),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
     }
@@ -188,12 +188,14 @@ def generate_federal_account_query(queryset, account_type, tas_id):
     """ Group by federal account (and budget function/subfunction) and SUM all other fields """
     derived_fields = {
         "reporting_agency_name": StringAgg("submission__reporting_agency_name", "; ", distinct=True),
+        "budget_function": StringAgg(f"{tas_id}__budget_function_title", "; ", distinct=True),
+        "budget_subfunction": StringAgg(f"{tas_id}__budget_subfunction_title", "; ", distinct=True),
         "last_reported_submission_period": Max(FiscalYearAndQuarter("reporting_period_end")),
         # federal_account_symbol: fed_acct_AID-fed_acct_MAC
         "federal_account_symbol": Concat(
-            "{}__federal_account__agency_identifier".format(tas_id),
+            f"{tas_id}__federal_account__agency_identifier",
             Value("-"),
-            "{}__federal_account__main_account_code".format(tas_id),
+            f"{tas_id}__federal_account__main_account_code",
         ),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
