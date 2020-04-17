@@ -94,6 +94,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/references/filter_tree/tas/<AGENCY\>/](/api/v2/references/filter_tree/tas/020/)|GET| Returns a list of federal accounts associated with the specified agency|
 |[/api/v2/references/filter_tree/tas/<AGENCY\>/<FEDERAL_ACCOUNT\>](/api/v2/references/filter_tree/tas/020/020-0550/)|GET| Returns a list of Treasury Account Symbols associated with the specified federal account|
 |[/api/v2/references/glossary/](/api/v2/references/glossary/)|GET| Returns a list of glossary terms and definitions|
+|[/api/v2/references/award_types/](/api/v2/references/award_types/)|GET| Returns a map of award types by award grouping.|
 |[/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/)|GET|  Returns all toptier agencies and related, relevant data.|
 |[/api/v2/references/naics/](/api/v2/references/naics/)|GET|  Returns all Tier 1 (2-digit) NAICS and related, relevant data.|
 |[/api/v2/references/naics/](/api/v2/references/naics/?filter=forest)|GET| Filter returns NAICS at any level and their parents/grandparents.|
