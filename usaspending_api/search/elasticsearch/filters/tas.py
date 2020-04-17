@@ -6,13 +6,13 @@ from usaspending_api.search.elasticsearch.filters.HierarchicalFilter import Hier
 
 
 class TasCodes(_Filter, HierarchicalFilter):
-    underscore_name = "tas_codes2"
+    underscore_name = "tas_codes"
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
         if isinstance(filter_values, list):
-            require = filter_values
-            exclude = []
+            # This is a legacy usage, and will be dealt with by the other filter
+            return _TreasuryAccounts.generate_elasticsearch_query(filter_values, query_type)
         elif isinstance(filter_values, dict):
             require = filter_values.get("require") or []
             exclude = filter_values.get("exclude") or []
@@ -72,7 +72,7 @@ class TASNode(Node):
 
 
 class _TreasuryAccounts(_Filter):
-    underscore_name = "tas_codes"
+    underscore_name = "treasury_account_components"
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: list, query_type: _QueryType) -> ES_Q:
