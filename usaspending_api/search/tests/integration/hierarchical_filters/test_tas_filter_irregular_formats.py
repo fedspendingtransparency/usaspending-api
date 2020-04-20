@@ -69,7 +69,7 @@ def test_tas_filter_is_legacy(client, monkeypatch, elasticsearch_award_index, aw
 @pytest.mark.django_db
 def test_not_using_es_header(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    client.post(
+    resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
         data=json.dumps(
@@ -85,3 +85,5 @@ def test_not_using_es_header(client, monkeypatch, elasticsearch_award_index, awa
             }
         ),
     )
+
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, "Failed to return 422 Response"
