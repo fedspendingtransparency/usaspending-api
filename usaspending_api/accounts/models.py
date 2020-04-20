@@ -4,7 +4,6 @@ from django.db import models, connection
 
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.models import DataSourceTrackedModel
-from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -85,12 +84,6 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     internal_start_date = models.DateField(blank=True, null=True)
     internal_end_date = models.DateField(blank=True, null=True)
 
-    def update_agency_linkages(self):
-        self.awarding_toptier_agency = ToptierAgency.objects.filter(
-            toptier_code=self.allocation_transfer_agency_id
-        ).first()
-        self.funding_toptier_agency = ToptierAgency.objects.filter(toptier_code=self.agency_id).first()
-
     @staticmethod
     def generate_tas_rendering_label(ata, aid, typecode, bpoa, epoa, mac, sub):
         tas_rendering_label = "-".join(filter(None, (ata, aid)))
@@ -108,14 +101,6 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
     @property
     def program_activities(self):
         return [pb.program_activity for pb in self.program_balances.distinct("program_activity")]
-
-    @property
-    def future_object_classes(self):
-        # TODO: Once FinancialAccountsByProgramActivityObjectClass.object_class has been fixed to point to ObjectClass
-        # instead of RefObjectClassCode, this will work with:
-        #   return [pb.object_class for pb in self.program_balances.distinct('object_class')]
-        results = []
-        return results
 
     @property
     def object_classes(self):
@@ -183,7 +168,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         db_table = "treasury_appropriation_account"
 
     def __str__(self):
-        return "%s" % (self.tas_rendering_label)
+        return self.tas_rendering_label
 
 
 class AppropriationAccountBalancesManager(models.Manager):

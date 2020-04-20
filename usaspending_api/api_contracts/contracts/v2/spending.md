@@ -28,8 +28,15 @@ Note that data for the latest complete quarter is not available until 45 days af
 Using the response from the general Spending Explorer, you can drill down to more detailed grouping fields. However, you must limit the scope of your request to one of the top-level groups and, optionally, additional lower-level groups. Each of your groups will combine to become the scope of your request. For example, if you filter by "Department of Justice" and "Salaries and Expenses," you will only see spending breakdowns for "Salaries and Expenses" within "Department of Justice."
 
 + Request Specific Spending Explorer (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
-        + `type`: `program_activity` (required, enum[string])
+        + `type` (required, enum[string])
             + Members
                 + `federal_account`
                 + `object_class`
@@ -40,39 +47,168 @@ Using the response from the general Spending Explorer, you can drill down to mor
                 + `agency`
                 + `program_activity`
         + `filters` (required, DetailedFilter, fixed-type)
+    + Body
+
+            {
+                "type":"recipient",
+                "filters": {
+                    "fy":"2020",
+                    "quarter":"1",
+                    "budget_function":"500",
+                    "budget_subfunction":"501",
+                    "federal_account":"5901"
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `total`: 1410774412.52 (required, number, nullable)
+        + `total` (required, number, nullable)
             Total should only be null when there are no results.
-        + `end_date`: `2017-09-30` (required, string)
+        + `end_date` (required, string)
             This is the "as-of" date for the data being returned.
         + `results` (required, array[SpendingExplorerDetailedResponse], fixed-type)
+    + Body
+
+            {
+                "total": 10758018561.52,
+                "end_date": "2019-12-31",
+                "results": [
+                    {
+                        "amount": 1338785075,
+                        "id": "EDUCATION, CALIFORNIA DEPARTMENT OF",
+                        "type": "recipient",
+                        "name": "EDUCATION, CALIFORNIA DEPARTMENT OF",
+                        "code": "EDUCATION, CALIFORNIA DEPARTMENT OF",
+                        "total": 1338785075
+                    },
+                    {
+                        "amount": 1049216400,
+                        "id": "TEXAS EDUCATION AGENCY",
+                        "type": "recipient",
+                        "name": "TEXAS EDUCATION AGENCY",
+                        "code": "TEXAS EDUCATION AGENCY",
+                        "total": 1049216400
+                    },
+                    {
+                        "amount": 849061298,
+                        "id": "EDUCATION DEPARTMENT, NEW YORK STATE",
+                        "type": "recipient",
+                        "name": "EDUCATION DEPARTMENT, NEW YORK STATE",
+                        "code": "EDUCATION DEPARTMENT, NEW YORK STATE",
+                        "total": 849061298
+                    },
+                    {
+                        "amount": 638939299,
+                        "id": "EDUCATION, FLORIDA DEPARTMENT OF",
+                        "type": "recipient",
+                        "name": "EDUCATION, FLORIDA DEPARTMENT OF",
+                        "code": "EDUCATION, FLORIDA DEPARTMENT OF",
+                        "total": 638939299
+                    },
+                    {
+                        "amount": 449552712,
+                        "id": "EDUCATION, ILLINOIS STATE BOARD OF",
+                        "type": "recipient",
+                        "name": "EDUCATION, ILLINOIS STATE BOARD OF",
+                        "code": "EDUCATION, ILLINOIS STATE BOARD OF",
+                        "total": 449552712
+                    },
+                    {
+                        "amount": 421294862,
+                        "id": "EDUCATION, PENNSYLVANIA DEPT OF",
+                        "type": "recipient",
+                        "name": "EDUCATION, PENNSYLVANIA DEPT OF",
+                        "code": "EDUCATION, PENNSYLVANIA DEPT OF",
+                        "total": 421294862
+                    },
+                    {
+                        "amount": 392298566,
+                        "id": "DEPARTMENT OF EDUCATION OHIO",
+                        "type": "recipient",
+                        "name": "DEPARTMENT OF EDUCATION OHIO",
+                        "code": "DEPARTMENT OF EDUCATION OHIO",
+                        "total": 392298566
+                    },
+                    {
+                        "amount": 372229194,
+                        "id": "EDUCATION, GEORGIA DEPARTMENT OF",
+                        "type": "recipient",
+                        "name": "EDUCATION, GEORGIA DEPARTMENT OF",
+                        "code": "EDUCATION, GEORGIA DEPARTMENT OF",
+                        "total": 372229194
+                    }
+                ]
+            }
 
 + Request General Spending Explorer (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
-        + `type`: `agency` (required, enum[string])
+        + `type` (required, enum[string])
             + Members
                 + `budget_function`
                 + `agency`
                 + `object_class`
         + `filters` (required, GeneralFilter, fixed-type)
 
+    + Body
+
+            {
+                "type": "federal_account",
+                "filters": {
+                    "fy": 2019,
+                    "quarter": "1"
+                }
+            }
+
 + Response 200 (application/json)
     + Attributes (object)
-        + `total`: 126073789264.49 (required, number, nullable)
+        + `total` (required, number, nullable)
             Total should only be null when there are no results.
-        + `end_date`: `2017-09-30` (required, string)
+        + `end_date` (required, string)
             This is the "as-of" date for the data being returned.
         + `results` (required, array[SpendingExplorerGeneralResponse, SpendingExplorerGeneralUnreportedResponse], fixed-type)
- 
+    + Body
+
+            {
+                "total": 1716262905344.08,
+                "end_date": "2018-12-31",
+                "results": [
+                    {
+                        "id": "050",
+                        "code": "050",
+                        "type": "budget_function",
+                        "name": "National Defense",
+                        "amount": 371478539473.82
+                    },
+                    {
+                        "id": "570",
+                        "code": "570",
+                        "type": "budget_function",
+                        "name": "Medicare",
+                        "amount": 273180031194.15
+                    },
+                    {
+                        "id": "650",
+                        "code": "650",
+                        "type": "budget_function",
+                        "name": "Social Security",
+                        "amount": 270988863288.42
+                    }
+                ]
+            }
 
 
 # Data Structures
 
 ## GeneralFilter (object)
-+ `fy`: `2017` (required, string)
-+ `quarter`: `4` (required, enum[string])
++ `fy`: `2019` (required, string)
++ `quarter` (required, enum[string])
     + Members
         + `1`
         + `2`
@@ -80,43 +216,43 @@ Using the response from the general Spending Explorer, you can drill down to mor
         + `4`
 
 ## DetailedFilter (object)
-+ `fy`: `2017` (required, string)
-+ `quarter`: `4` (required, enum[string])
++ `fy`: `2019` (required, string)
++ `quarter` (required, enum[string])
     + Members
         + `1`
         + `2`
         + `3`
         + `4`
-+ `agency`: 252 (optional, number)
++ `agency` (optional, number)
     This value is the `id` returned in the general Spending Explorer response.
-+ `federal_account`: 830 (optional, number)
++ `federal_account` (optional, number)
     This value is the `id` returned in the previous specific Spending Explorer response.
-+ `object_class`: 123 (optional, number)
-+ `budget_function`: 123 (optional, number)
-+ `budget_subfunction`: 123 (optional, number)
-+ `recipient`: 123 (optional, number)
-+ `program_activity`: 123 (optional, number)
++ `object_class` (optional, number)
++ `budget_function` (optional, number)
++ `budget_subfunction` (optional, number)
++ `recipient` (optional, number)
++ `program_activity` (optional, number)
 
 ## SpendingExplorerGeneralResponse (object)
-+ `code`: `019` (required, string)
-+ `id`: `315` (required, string)
++ `code` (required, string)
++ `id` (required, string)
 + `generated_unique_award_id` (optional, string)
     Durable identifier for an award.  This value only returned for award type.
-+ `type`: `agency` (required, string)
++ `type` (required, string)
     The `type` will always be equal to the `type` parameter you provided in the request.
-+ `name`: `Department of State` (required, string)
-+ `amount`: 63036894632.2 (required, number)
++ `name` (required, string)
++ `amount` (required, number)
 
 ### SpendingExplorerDetailedResponse (object)
-+ `code`: `0006` (required, string)
-+ `id`: `11367` (required, string)
++ `code` (required, string)
++ `id` (required, string)
 + `generated_unique_award_id` (optional, string)
     Durable identifier for an award.  This value only returned for award type requests.
-+ `type`: `program_activity` (required, string)
++ `type` (required, string)
     The `type` will always be equal to the `type` parameter you provided in the request.
-+ `name`: `Law Enforcement Operations` (required, string)
-+ `amount`: 1116815570.99 (required, number)
-+ `account_number`: `123-4567` (optional, string)
++ `name` (required, string)
++ `amount` (required, number)
++ `account_number` (optional, string)
     The response includes `account_number` when the requested `type` was `federal_account`.
 
 ## SpendingExplorerGeneralUnreportedResponse (object)
@@ -124,7 +260,7 @@ Using the response from the general Spending Explorer, you can drill down to mor
 + `id` (optional, nullable)
 + `generated_unique_award_id` (optional, string)
     Durable identifier for an award.  This value only returned for award type.
-+ `type`: `agency` (required, string)
++ `type` (required, string)
     The `type` will always be equal to the `type` parameter you provided in the request.
-+ `name`: `Unreported Data` (required, string)
-+ `amount`: 63036894632.2 (required, number)
++ `name` (required, string)
++ `amount` (required, number)

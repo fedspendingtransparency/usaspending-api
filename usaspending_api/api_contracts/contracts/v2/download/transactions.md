@@ -10,6 +10,13 @@ This endpoint is used by the Advanced Search download page.
 This route sends a request to the backend to begin generating a zipfile of transaction data in CSV form for download.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `columns` (optional, array[string])
         + `filters` (required, Filters, fixed-type)
@@ -166,5 +173,5 @@ This route sends a request to the backend to begin generating a zipfile of trans
 + `zip` (optional, string)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, list[string])
-+ `exclude`: [`3313`] (optional, list[string])
++ `require`: `33` (optional, array[string])
++ `exclude`: `3333` (optional, array[string])

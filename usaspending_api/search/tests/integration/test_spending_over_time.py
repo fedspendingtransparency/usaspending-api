@@ -988,7 +988,7 @@ def _test_correct_response_for_recipient_id(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "recipient_id": "c551b3f8-d9ef-ac00-5e79-33d33ceb7483-R",
+                    "recipient_id": "c687823d-10af-701b-1bad-650c6e680190-R",
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }

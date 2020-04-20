@@ -1503,7 +1503,7 @@ query_paths = {
         ),
         "federal_account": OrderedDict(
             [
-                ("reporting_agency_name", "submission__reporting_agency_name"),
+                ("reporting_agency_name", "reporting_agency_name"),  # Column is appended to in account_download.py
                 (
                     "last_reported_submission_period",
                     "last_reported_submission_period",

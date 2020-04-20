@@ -10,6 +10,13 @@ These endpoints are used to power USAspending.gov's download center.
 Generate files and return metadata using filters on custom account
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `account_level` (required, enum[string])
             The account level is used to filter for a specific type of file.
@@ -23,7 +30,7 @@ Generate files and return metadata using filters on custom account
                 + `csv`
                 + `tsv`
                 + `pstxt`
-        + `filters` (required, FilterObject)
+        + `filters` (required, AdvancedFilterObject)
             The filters used to filter the data
     + Body
 
@@ -74,7 +81,7 @@ Generate files and return metadata using filters on custom account
 
 # Data Structures
 
-## FilterObject (object)
+## AdvancedFilterObject (object)
 + `agency` (optional, string)
     The agency to filter by. This field is an internal id.
     + Default: `all`

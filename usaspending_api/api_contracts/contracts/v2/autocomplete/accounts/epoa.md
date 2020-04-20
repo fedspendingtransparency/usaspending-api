@@ -7,9 +7,15 @@ This endpoint powers the USAspending.gov Ending Period of Availability (EPOA) au
 
 ## POST
 
-List of potential Ending Period of Availabilities 
+List of potential Ending Period of Availabilities
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
 
     + Attributes (object)
         + `filters` (required, ComponentFilters)

@@ -1,7 +1,7 @@
 import ast
 
 from collections import OrderedDict
-from django.db.models import F, Func, OuterRef, Q, Subquery, Sum, When, Value, CharField, Case
+from django.db.models import F, Q, Sum, OuterRef, Subquery, Func, DecimalField, Exists
 from django.utils.dateparse import parse_date
 from fiscalyear import FiscalDateTime
 from rest_framework.response import Response
@@ -13,10 +13,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.helpers import dod_tas_agency_filter
-from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.references.constants import DOD_CGAC, DOD_FEDERAL_ACCOUNTS
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
@@ -512,45 +509,43 @@ class FederalAccountsViewSet(APIView):
         sort_direction = request_data["sort"]["direction"]
         keyword = request_data.get("keyword", None)
         fy = request_data["filters"]["fy"]
-        agency_id = request_data["filters"].get("agency_identifier", None)
+        agency_id = request_data["filters"].get("agency_identifier")
 
         lower_limit = (page - 1) * limit
         upper_limit = page * limit
 
-        taa_filter = Q()
-        if agency_id == DOD_CGAC:
-            taa_filter = dod_tas_agency_filter("treasuryappropriationaccount")
-        elif agency_id is not None:
-            taa_filter = Q(treasuryappropriationaccount__agency_id=agency_id)
+        account_filter = {}
+        if agency_id:
+            account_filter["parent_toptier_agency__toptier_code"] = agency_id
 
-        dod_whens = [
-            When(agency_identifier=aid, main_account_code=main, then=Value(DOD_CGAC))
-            for aid, main in DOD_FEDERAL_ACCOUNTS
-        ]
-
-        agency_subquery = ToptierAgency.objects.filter(toptier_code=OuterRef("corrected_agency_identifier"))
+        # Only return federal accounts that have ever had a submission.  Only return budgetary_resources for
+        # the fiscal year requested.  Note that we use Func instead of Sum below because Sum wants to perform a
+        # grouping when we don't want one.
         queryset = (
-            FederalAccount.objects.filter(
-                taa_filter,
-                treasuryappropriationaccount__account_balances__final_of_fy=True,
-                treasuryappropriationaccount__account_balances__submission__reporting_period_start__fy=fy,
-            )
-            .annotate(
-                corrected_agency_identifier=Case(
-                    *dod_whens,
-                    default=Func(F("agency_identifier"), function="CORRECTED_CGAC"),
-                    output_field=CharField(),
+            FederalAccount.objects.annotate(
+                has_submission=Exists(
+                    SubmissionAttributes.objects.filter(
+                        appropriationaccountbalances__treasury_account_identifier__federal_account_id=OuterRef("id")
+                    ).values("pk")
                 )
             )
+            .filter(**account_filter, has_submission=True)
             .annotate(
                 account_id=F("id"),
                 account_name=F("account_title"),
                 account_number=F("federal_account_code"),
-                budgetary_resources=Sum(
-                    "treasuryappropriationaccount__account_balances__total_budgetary_resources_amount_cpe"
+                budgetary_resources=Subquery(
+                    AppropriationAccountBalances.objects.filter(
+                        final_of_fy=True,
+                        submission__reporting_period_start__fy=fy,
+                        treasury_account_identifier__federal_account_id=OuterRef("id"),
+                    )
+                    .annotate(the_sum=Func(F("total_budgetary_resources_amount_cpe"), function="SUM"))
+                    .values("the_sum"),
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
-                managing_agency=Subquery(agency_subquery.values("name")[:1]),
-                managing_agency_acronym=Subquery(agency_subquery.values("abbreviation")[:1]),
+                managing_agency=F("parent_toptier_agency__name"),
+                managing_agency_acronym=F("parent_toptier_agency__abbreviation"),
             )
         )
 
@@ -564,9 +559,9 @@ class FederalAccountsViewSet(APIView):
             )
 
         if sort_direction == "desc":
-            queryset = queryset.order_by(F(sort_field).desc(nulls_last=True))
+            queryset = queryset.order_by(F(sort_field).desc(nulls_last=True), "-federal_account_code")
         else:
-            queryset = queryset.order_by(F(sort_field).asc())
+            queryset = queryset.order_by(F(sort_field).asc(), "federal_account_code")
 
         result = {"count": queryset.count(), "limit": limit, "page": page, "fy": fy, "keyword": keyword}
         resultset = queryset.values(

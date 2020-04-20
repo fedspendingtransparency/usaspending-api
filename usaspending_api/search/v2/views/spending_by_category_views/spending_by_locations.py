@@ -37,7 +37,11 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             location_info = json.loads(bucket.get("key"))
 
             if self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
-                name = f"{location_info.get('state_code')}-{location_info.get('congressional_code')}"
+                if location_info.get("congressional_code") == "90":
+                    congressional_code = "MULTIPLE DISTRICTS"
+                else:
+                    congressional_code = location_info.get("congressional_code")
+                name = f"{location_info.get('state_code')}-{congressional_code}"
             else:
                 name = location_info.get(f"{self.location_type.value}_name")
 
@@ -48,10 +52,10 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
 
             results.append(
                 {
-                    "amount": Decimal(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                    "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "code": location_info.get(f"{self.location_type.value}_code"),
-                    "name": name,
                     "id": None,
+                    "name": name,
                 }
             )
 
@@ -105,3 +109,36 @@ class CountyViewSet(AbstractLocationViewSet):
 
     location_type = LocationType.COUNTY
     category = Category(name="county", agg_key="pop_county_agg_key")
+
+
+class DistrictViewSet(AbstractLocationViewSet):
+    """
+    This route takes award filters and returns spending by Congressional District.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/district.md"
+
+    location_type = LocationType.CONGRESSIONAL_DISTRICT
+    category = Category(name="district", agg_key="pop_congressional_agg_key")
+
+
+class StateTerritoryViewSet(AbstractLocationViewSet):
+    """
+    This route takes award filters and returns spending by State Territory.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/state_territory.md"
+
+    location_type = LocationType.STATE_TERRITORY
+    category = Category(name="state_territory", agg_key="pop_state_agg_key")
+
+
+class CountryViewSet(AbstractLocationViewSet):
+    """
+    This route takes award filters and returns spending by Country.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/country.md"
+
+    location_type = LocationType.COUNTRY
+    category = Category(name="country", agg_key="pop_country_agg_key")

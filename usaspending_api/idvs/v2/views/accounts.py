@@ -65,8 +65,7 @@ ACCOUNTS_SQL = SQL(
         left outer join treasury_appropriation_account taa on
             taa.treasury_account_identifier = gfaba.treasury_account_id
         left outer join federal_account fa on
-            fa.agency_identifier = taa.agency_id and
-            fa.main_account_code = taa.main_account_code
+            fa.id = taa.federal_account_id
         left outer join agency a on a.id = gfaba.funding_agency_id
         left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     group by

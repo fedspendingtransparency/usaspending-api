@@ -10,9 +10,15 @@ This endpoint is used by the Advanced Search page.
 This route sends a request to the backend to retrieve product or service (PSC) codes and their descriptions based on a search string. This may be the 4-character PSC code or a description string.
 
 + Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            }
+
     + Attributes (object)
         + `limit` (optional, number)
-            + Default: 10
         + `search_text` (required, string)
     + Body
 

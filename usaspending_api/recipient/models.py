@@ -120,6 +120,9 @@ class RecipientLookup(models.Model):
     country_code = models.TextField(null=True)
     congressional_district = models.TextField(null=True)
     business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=False)
+    source = models.TextField(null=False, default="missing value")
+    alternate_names = ArrayField(base_field=models.TextField(), default=list, size=None, null=True)
 
     class Meta:
         db_table = "recipient_lookup"
