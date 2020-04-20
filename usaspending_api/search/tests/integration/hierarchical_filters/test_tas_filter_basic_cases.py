@@ -1,6 +1,13 @@
 import pytest
 
-from usaspending_api.search.tests.integration.hierarchical_filters.fixtures import TAS_DICTIONARIES, TAS_STRINGS
+from usaspending_api.search.tests.integration.hierarchical_filters.fixtures import (
+    BASIC_TAS,
+    ATA_TAS,
+    BPOA_TAS,
+    ATA_BPOA_TAS,
+    TAS_DICTIONARIES,
+    TAS_STRINGS,
+)
 from usaspending_api.search.tests.integration.hierarchical_filters.es_search_test_helpers import (
     _setup_es,
     _query_by_tas,
@@ -10,7 +17,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.es_search_tes
 @pytest.mark.django_db
 def test_match_from_agency(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_agency_path(0)]})
+    resp = _query_by_tas(client, {"require": [_agency_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -18,7 +25,7 @@ def test_match_from_agency(client, monkeypatch, elasticsearch_award_index, award
 @pytest.mark.django_db
 def test_match_from_fa(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_fa_path(0)]})
+    resp = _query_by_tas(client, {"require": [_fa_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -26,7 +33,7 @@ def test_match_from_fa(client, monkeypatch, elasticsearch_award_index, award_wit
 @pytest.mark.django_db
 def test_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(0)]})
+    resp = _query_by_tas(client, {"require": [_tas_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -34,7 +41,7 @@ def test_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_wi
 @pytest.mark.django_db
 def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_agency_path(0) + [TAS_STRINGS[1]]]})
+    resp = _query_by_tas(client, {"require": [_agency_path(BASIC_TAS) + [TAS_STRINGS[ATA_TAS]]]})
 
     assert resp.json()["results"] == []
 
@@ -42,7 +49,8 @@ def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, awar
 @pytest.mark.django_db
 def test_match_from_ata_tas(client, monkeypatch, elasticsearch_award_index, award_with_ata_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(3)]})
+    print(_tas_path(3))
+    resp = _query_by_tas(client, {"require": [_tas_path(ATA_BPOA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -50,7 +58,7 @@ def test_match_from_ata_tas(client, monkeypatch, elasticsearch_award_index, awar
 @pytest.mark.django_db
 def test_match_from_bpoa_tas(client, monkeypatch, elasticsearch_award_index, award_with_bpoa_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(2)]})
+    resp = _query_by_tas(client, {"require": [_tas_path(BPOA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -58,7 +66,7 @@ def test_match_from_bpoa_tas(client, monkeypatch, elasticsearch_award_index, awa
 @pytest.mark.django_db
 def test_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(0), _tas_path(1)]})
+    resp = _query_by_tas(client, {"require": [_tas_path(BASIC_TAS), _tas_path(ATA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -66,7 +74,7 @@ def test_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_i
 @pytest.mark.django_db
 def test_non_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(1), _tas_path(2)]})
+    resp = _query_by_tas(client, {"require": [_tas_path(ATA_TAS), _tas_path(BPOA_TAS)]})
 
     assert resp.json()["results"] == []
 
@@ -74,7 +82,7 @@ def test_non_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_awa
 @pytest.mark.django_db
 def test_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_index, award_with_multiple_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(0)]})
+    resp = _query_by_tas(client, {"require": [_tas_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -82,7 +90,7 @@ def test_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_i
 @pytest.mark.django_db
 def test_double_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_index, award_with_multiple_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(0), _tas_path(1)]})
+    resp = _query_by_tas(client, {"require": [_tas_path(BASIC_TAS), _tas_path(ATA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -90,7 +98,7 @@ def test_double_match_search_multi_tas_award(client, monkeypatch, elasticsearch_
 @pytest.mark.django_db
 def test_non_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_index, award_with_multiple_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(2)]})
+    resp = _query_by_tas(client, {"require": [_tas_path(BPOA_TAS)]})
 
     assert resp.json()["results"] == []
 
@@ -98,7 +106,7 @@ def test_non_match_search_multi_tas_award(client, monkeypatch, elasticsearch_awa
 @pytest.mark.django_db
 def test_match_only_awards_with_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas, award_without_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(0)]})
+    resp = _query_by_tas(client, {"require": [_tas_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -106,7 +114,7 @@ def test_match_only_awards_with_tas(client, monkeypatch, elasticsearch_award_ind
 @pytest.mark.django_db
 def test_match_on_multiple_awards(client, monkeypatch, elasticsearch_award_index, multiple_awards_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(0), _tas_path(1)]})
+    resp = _query_by_tas(client, {"require": [_tas_path(BASIC_TAS), _tas_path(1)]})
 
     assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [_award1(), _award2()].sort(
         key=lambda elem: elem["internal_id"]
