@@ -51,7 +51,7 @@ with unioned as (
                 when pd in (10, 11, 12) then 4
             end quarter,
             case
-                when pd in (1, 2, 3) then ((fy + 1) || '-10-01')::date
+                when pd in (1, 2, 3) then ((fy - 1) || '-10-01')::date
                 when pd in (4, 5, 6) then ((fy) || '-01-01')::date
                 when pd in (7, 8, 9) then ((fy) || '-04-01')::date
                 when pd in (10, 11, 12) then ((fy) || '-07-01')::date
