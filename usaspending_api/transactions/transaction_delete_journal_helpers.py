@@ -49,7 +49,7 @@ def retrieve_deleted_transactions(
             next(reader)  # skip the header
 
             transaction_id_list = [rows[0] for rows in reader]
-            logger.info(f"{len(transaction_id_list):,} deleted ids found")
+            logger.info(f"{len(transaction_id_list):,} delete ids found")
 
             if transaction_id_list:
                 file_date = obj.key[: obj.key.find("_")]
