@@ -3,6 +3,7 @@ import pytest
 from usaspending_api.search.tests.integration.hierarchical_filters.fixtures import (
     BASIC_TAS,
     ATA_TAS,
+    SISTER_TAS,
     TAS_DICTIONARIES,
     TAS_STRINGS,
 )
@@ -155,7 +156,7 @@ def test_double_eclipsing_filters2(client, monkeypatch, elasticsearch_award_inde
 @pytest.mark.django_db
 def test_sibling_filters(client, monkeypatch, elasticsearch_award_index, multiple_awards_with_sibling_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(ATA_TAS)]})
+    resp = _query_by_tas(client, {"require": [_tas_path(SISTER_TAS[1])]})
 
     assert resp.json()["results"] == [_award2()]
 
