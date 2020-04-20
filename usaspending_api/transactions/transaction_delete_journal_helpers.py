@@ -30,22 +30,30 @@ def retrieve_deleted_transactions(
     regex: str, date_fmt: str, start_datetime: datetime, end_datetime: Optional[datetime] = None
 ) -> dict:
     with Timer("Obtaining S3 Object list"):
+        logger.info(f"file regex pattern: {regex}")
+        logger.info(f"date format: {date_fmt}")
+        logger.info(f"start date: {start_datetime}")
+        logger.info(f"end date: {end_datetime}")
+        logger.info(f"S3 bucket name: {settings.DELETED_TRANSACTION_JOURNAL_FILES}")
         objects = access_s3_object_list(settings.DELETED_TRANSACTION_JOURNAL_FILES, regex_pattern=regex)
         if objects is None:
             raise Exception("Problem accessing S3 for deleted records")
         objects = limit_objects_to_date_range(objects, date_fmt, start_datetime, end_datetime)
+        logger.info(f"{len(objects):,} files found in date range.")
 
     deleted_records = defaultdict(list)
     for obj in objects:
-        object_data = access_s3_object(settings.DELETED_TRANSACTION_JOURNAL_FILES, obj)
-        reader = csv.reader(object_data.read().decode("utf-8").splitlines())
-        next(reader)  # skip the header
+        with Timer(f"Read delete ids from {obj.key}"):
+            object_data = access_s3_object(settings.DELETED_TRANSACTION_JOURNAL_FILES, obj)
+            reader = csv.reader(object_data.read().decode("utf-8").splitlines())
+            next(reader)  # skip the header
 
-        transaction_id_list = [rows[0] for rows in reader]
+            transaction_id_list = [rows[0] for rows in reader]
+            logger.info(f"{len(transaction_id_list):,} delete ids found")
 
-        if transaction_id_list:
-            file_date = obj.key[: obj.key.find("_")]
-            deleted_records[file_date].extend(transaction_id_list)
+            if transaction_id_list:
+                file_date = obj.key[: obj.key.find("_")]
+                deleted_records[file_date].extend(transaction_id_list)
 
     return deleted_records
 
