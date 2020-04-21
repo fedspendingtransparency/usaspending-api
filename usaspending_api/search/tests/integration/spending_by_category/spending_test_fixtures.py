@@ -191,6 +191,11 @@ def awards_and_transactions(db):
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
         place_of_performance_congr="10",
+        legal_entity_country_code="CAN",
+        legal_entity_state_code=None,
+        legal_entity_county_code=None,
+        legal_entity_county_name=None,
+        legal_entity_congressional=None,
         awardee_or_recipient_legal="RECIPIENT 1",
         awardee_or_recipient_uniqu=None,
     )
@@ -203,6 +208,11 @@ def awards_and_transactions(db):
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
         place_of_performance_congr="50",
+        legal_entity_country_code="USA",
+        legal_entity_state_code="SC",
+        legal_entity_county_code="001",
+        legal_entity_county_name="CHARLESTON",
+        legal_entity_congressional="90",
         awardee_or_recipient_legal="RECIPIENT 2",
         awardee_or_recipient_uniqu="456789123",
     )
@@ -215,6 +225,11 @@ def awards_and_transactions(db):
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
         place_of_performance_congr="50",
+        legal_entity_country_code="USA",
+        legal_entity_state_code="SC",
+        legal_entity_county_code="001",
+        legal_entity_county_name="CHARLESTON",
+        legal_entity_congressional="50",
         awardee_or_recipient_legal="RECIPIENT 3",
         awardee_or_recipient_uniqu="987654321",
     )
@@ -228,6 +243,11 @@ def awards_and_transactions(db):
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
         place_of_performance_congr="50",
+        legal_entity_country_code="USA",
+        legal_entity_state_code="WA",
+        legal_entity_county_code="005",
+        legal_entity_county_name="TEST NAME",
+        legal_entity_congressional="50",
         awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         awardee_or_recipient_uniqu="096354360",
         product_or_service_code="1005",
@@ -241,6 +261,11 @@ def awards_and_transactions(db):
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
         place_of_performance_congr="10",
+        legal_entity_country_code="USA",
+        legal_entity_state_code="WA",
+        legal_entity_county_code="005",
+        legal_entity_county_name="TEST NAME",
+        legal_entity_congressional="50",
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="123456789",
         product_or_service_code="M123",
@@ -256,6 +281,11 @@ def awards_and_transactions(db):
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
         place_of_performance_congr="90",
+        legal_entity_country_code="USA",
+        legal_entity_state_code="SC",
+        legal_entity_county_code="005",
+        legal_entity_county_name="TEST NAME",
+        legal_entity_congressional="50",
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="123456789",
         naics="222220",
@@ -269,6 +299,11 @@ def awards_and_transactions(db):
         place_of_perform_county_co=None,
         place_of_perform_county_na=None,
         place_of_performance_congr=None,
+        legal_entity_country_code="USA",
+        legal_entity_state_code="SC",
+        legal_entity_county_code="01",
+        legal_entity_county_name="CHARLESTON",
+        legal_entity_congressional="10",
         awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         awardee_or_recipient_uniqu=None,
     )
@@ -280,6 +315,82 @@ def awards_and_transactions(db):
     # References Country
     mommy.make("references.RefCountryCode", country_code="CAN", country_name="CANADA")
     mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+
+    # References Population County
+    mommy.make(
+        "references.PopCounty",
+        id=1,
+        state_code="45",
+        state_name="South Carolina",
+        county_number="001",
+        latest_population=1,
+    )
+    mommy.make(
+        "references.PopCounty",
+        id=2,
+        state_code="45",
+        state_name="South Carolina",
+        county_number="005",
+        latest_population=10,
+    )
+    mommy.make(
+        "references.PopCounty",
+        id=3,
+        state_code="53",
+        state_name="Washington",
+        county_number="005",
+        latest_population=100,
+    )
+    mommy.make(
+        "references.PopCounty",
+        id=4,
+        state_code="45",
+        state_name="South Carolina",
+        county_number="000",
+        latest_population=1000,
+    )
+    mommy.make(
+        "references.PopCounty",
+        id=5,
+        state_code="53",
+        state_name="Washington",
+        county_number="000",
+        latest_population=10000,
+    )
+
+    # References Population Congressional District
+    mommy.make(
+        "references.PopCongressionalDistrict",
+        id=1,
+        state_code="45",
+        state_name="South Carolina",
+        congressional_district="90",
+        latest_population=1,
+    )
+    mommy.make(
+        "references.PopCongressionalDistrict",
+        id=2,
+        state_code="45",
+        state_name="South Carolina",
+        congressional_district="10",
+        latest_population=10,
+    )
+    mommy.make(
+        "references.PopCongressionalDistrict",
+        id=2,
+        state_code="45",
+        state_name="South Carolina",
+        congressional_district="50",
+        latest_population=100,
+    )
+    mommy.make(
+        "references.PopCongressionalDistrict",
+        id=3,
+        state_code="53",
+        state_name="Washington",
+        congressional_district="50",
+        latest_population=1000,
+    )
 
     # References CFDA
     mommy.make("references.Cfda", id=100, program_number="10.100", program_title="CFDA 1")

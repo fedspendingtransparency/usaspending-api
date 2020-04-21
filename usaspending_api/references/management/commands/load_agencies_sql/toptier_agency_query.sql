@@ -23,7 +23,12 @@ from (
     where
         cgac_agency_code is not null and
         agency_name is not null and
-        is_frec is false
+        is_frec is false and
+        -- DOD subsumed agencies are still valid CGACs so they live in the CGAC table,
+        -- but they are no longer valid USAspending toptier agencies as of DEV-4795
+        -- (they never were, really - we just finally got around to cleaning up all
+        -- those account linkages).
+        cgac_agency_code not in {dod_subsumed}
     group by
         cgac_agency_code
 
