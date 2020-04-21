@@ -39,6 +39,14 @@ def test_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_wi
 
 
 @pytest.mark.django_db
+def test_non_match_from_agency(client, monkeypatch, elasticsearch_award_index, award_with_tas):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = _query_by_tas(client, {"require": [_agency_path(ATA_TAS)]})
+
+    assert resp.json()["results"] == []
+
+
+@pytest.mark.django_db
 def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     resp = _query_by_tas(client, {"require": [_agency_path(BASIC_TAS) + [TAS_STRINGS[ATA_TAS]]]})
