@@ -25,6 +25,7 @@ class Migration(migrations.Migration):
                 ('main_account_code', models.TextField()),
                 ('sub_account_code', models.TextField()),
                 ('account_title', models.TextField()),
+                ('budget_function_code', models.TextField(blank=True, null=True)),
                 ('budget_subfunction_code', models.TextField(blank=True, null=True)),
                 ('fr_entity_code', models.TextField(blank=True, null=True)),
                 ('total_budgetary_resources_amount_cpe', models.DecimalField(decimal_places=2, max_digits=23)),

@@ -39,6 +39,7 @@ class HistoricalAppropriationAccountBalances(models.Model):
     sub_account_code = models.TextField()
     account_title = models.TextField()
 
+    budget_function_code = models.TextField(blank=True, null=True)
     budget_subfunction_code = models.TextField(blank=True, null=True)
 
     fr_entity_code = models.TextField(blank=True, null=True)

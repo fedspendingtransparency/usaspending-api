@@ -1,4 +1,5 @@
-with unioned as (
+with
+unioned as (
     select  alloc_xfer_agency, agency_identifier, avail_type_code,
             beg_poa, end_poa, main_acct, sub_acct, tas_title,
             fr_entity, budget_subfunction, fy, pd,
@@ -40,10 +41,15 @@ with unioned as (
             0.00 obligations_amount,
             outlays_amount
     from    temp_load_historical_file_a_data_act_outlays
-), grouped as (
+),
+grouped as (
     select  alloc_xfer_agency, agency_identifier, avail_type_code,
             beg_poa, end_poa, main_acct, sub_acct,
             fr_entity, budget_subfunction, fy, pd,
+            case when alloc_xfer_agency is null then '' else alloc_xfer_agency || '-' end ||
+                agency_identifier || '-' ||
+                case when avail_type_code is null then beg_poa || '/' || end_poa else 'X' end || '-' ||
+                main_acct || '-' || sub_acct tas_rendering_label,
             case
                 when pd in (1, 2, 3) then 1
                 when pd in (4, 5, 6) then 2
@@ -65,10 +71,11 @@ with unioned as (
     group   by alloc_xfer_agency, agency_identifier, avail_type_code,
             beg_poa, end_poa, main_acct, sub_acct,
             fr_entity, budget_subfunction, fy, pd
-), owning_agency as (
+),
+owning_agency as (
     -- This is remarkably similar to how we assign agencies for treasury_appropriation_accounts, however,
-    -- it's just different enough to make reusing the same code challenging.  Since this is just a one
-    -- time load, I'm just going to tweak the logic here.  If we make this a regular thing, look into
+    -- it's just different enough to make reusing the same code challenging.  Since this is just a "one
+    -- time load", we're just going to tweak the logic here.  If we make this a regular thing, look into
     -- consolidating the functions.
     select distinct on (g.agency_identifier, g.main_acct)
         g.agency_identifier,
@@ -106,6 +113,16 @@ with unioned as (
         g.main_acct,
         count(*) desc,
         toptier_code_sorter
+),
+existing as (
+    select  distinct
+            t.tas_rendering_label,
+            t.budget_subfunction_code,
+            sa.reporting_fiscal_year,
+            sa.reporting_fiscal_period
+    from    submission_attributes sa
+            inner join appropriation_account_balances b on sa.submission_id = b.submission_id
+            inner join treasury_appropriation_account t on b.treasury_account_identifier = t.treasury_account_identifier
 )
 insert into historical_appropriation_account_balances (
         tas_rendering_label,
@@ -117,6 +134,7 @@ insert into historical_appropriation_account_balances (
         main_account_code,
         sub_account_code,
         account_title,
+        budget_function_code,
         budget_subfunction_code,
         fr_entity_code,
         total_budgetary_resources_amount_cpe,
@@ -133,10 +151,7 @@ insert into historical_appropriation_account_balances (
         update_date
     )
     select
-        case when g.alloc_xfer_agency is null then '' else g.alloc_xfer_agency || '-' end ||
-            g.agency_identifier || '-' ||
-            case when g.avail_type_code is null then g.beg_poa || '/' || g.end_poa else 'X' end || '-' ||
-            g.main_acct || '-' || g.sub_acct,
+        g.tas_rendering_label,
         g.alloc_xfer_agency,
         g.agency_identifier,
         g.beg_poa,
@@ -145,12 +160,13 @@ insert into historical_appropriation_account_balances (
         g.main_acct,
         g.sub_acct,
         g.tas_title,
+        left(g.budget_subfunction, 2) || '0',
         g.budget_subfunction,
         g.fr_entity,
-        g.budgetary_resources_amount,
-        g.outlays_amount,
-        g.deobligations_amount,
-        g.obligations_amount,
+        coalesce(g.budgetary_resources_amount, 0.00),
+        coalesce(g.outlays_amount, 0.00),
+        coalesce(g.deobligations_amount, 0.00),
+        coalesce(g.obligations_amount, 0.00),
         g.reporting_period_start,
         g.reporting_period_start + interval '3 months' - interval '1 day',
         g.fy,
@@ -161,4 +177,16 @@ insert into historical_appropriation_account_balances (
         now()
     from
         grouped g
-        inner join owning_agency oa on oa.agency_identifier = g.agency_identifier and oa.main_acct = g.main_acct;
+        inner join owning_agency oa on
+            oa.agency_identifier = g.agency_identifier and oa.main_acct = g.main_acct
+        left outer join existing e on
+            e.tas_rendering_label = g.tas_rendering_label and
+            e.budget_subfunction_code = g.budget_subfunction and
+            e.reporting_fiscal_year = g.fy and
+            e.reporting_fiscal_period = g.pd and
+            e.reporting_fiscal_year = 2017
+    where
+        -- As requested in the acceptance criteria for the ticket, we're excluding FY2013 and attempting to
+        -- exclude anything USAspending already knows about for FY2017.
+        g.fy > 2013 and
+        e.tas_rendering_label is null
