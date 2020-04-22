@@ -22,12 +22,14 @@ def access_s3_object_list(
     try:
         bucket = get_s3_bucket(bucket_name=bucket_name)
         bucket_objects = list(bucket.objects.all())
+        logger.info(f"{len(bucket_objects):,} files found in bucket.")
     except Exception:
         logger.exception("Most likely the AWS region or bucket name are configured incorrectly")
         bucket_objects = None
 
     if regex_pattern and bucket_objects:
         bucket_objects = [obj for obj in bucket_objects if re.search(regex_pattern, obj.key)]
+        logger.info(f"{len(bucket_objects):,} files matched file pattern.")
 
     return bucket_objects
 
