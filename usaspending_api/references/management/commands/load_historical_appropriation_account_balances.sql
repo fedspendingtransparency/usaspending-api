@@ -48,7 +48,7 @@ grouped as (
             fr_entity, budget_subfunction, fy, pd,
             case when alloc_xfer_agency is null then '' else alloc_xfer_agency || '-' end ||
                 agency_identifier || '-' ||
-                case when avail_type_code is null then beg_poa || '/' || end_poa else 'X' end || '-' ||
+                case when avail_type_code is null then beg_poa || '/' || end_poa else avail_type_code end || '-' ||
                 main_acct || '-' || sub_acct tas_rendering_label,
             case
                 when pd in (1, 2, 3) then 1
@@ -186,7 +186,10 @@ insert into historical_appropriation_account_balances (
             e.reporting_fiscal_period = g.pd and
             e.reporting_fiscal_year = 2017
     where
-        -- As requested in the acceptance criteria for the ticket, we're excluding FY2013 and attempting to
-        -- exclude anything USAspending already knows about for FY2017.
-        g.fy > 2013 and
-        e.tas_rendering_label is null
+        -- As requested in the acceptance criteria for the ticket, we're excluding FY2013 and prior and
+        -- anything after FY2017Q1.
+        e.tas_rendering_label is null and
+        (
+            (g.fy > 2013 and g.fy < 2017) or
+            (g.fy = 2017 and g.quarter < 2)
+        )
