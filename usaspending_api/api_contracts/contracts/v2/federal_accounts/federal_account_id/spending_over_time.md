@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List of Available Program Activities [/api/v2/federal_accounts/{federal_account_id}/spending_over_time]
+# Account Spending by Time Period [/api/v2/federal_accounts/{federal_account_id}/spending_over_time]
 
-This endpoint supports the Federal Account page and allow for listing spending by the Federal Account.
+This endpoint supports the Federal Account page and allows for listing spending by the Federal Account within certain periods of time.
 
 ## POST
 
