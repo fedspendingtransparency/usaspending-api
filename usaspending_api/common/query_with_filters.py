@@ -8,7 +8,7 @@ from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
 from usaspending_api.search.elasticsearch.filters.naics import NaicsCodes
-from usaspending_api.search.elasticsearch.filters.tas import TasCodes, _TreasuryAccounts
+from usaspending_api.search.elasticsearch.filters.tas import TasCodes, TreasuryAccounts
 from usaspending_api.common.exceptions import InvalidParameterException
 
 logger = logging.getLogger(__name__)
@@ -437,20 +437,18 @@ class QueryWithFilters:
 
     @classmethod
     def _handle_tas_query(cls, must_queries: list, filters: dict, query_type: _QueryType) -> list:
-        if filters.get(_TreasuryAccounts.underscore_name) or filters.get(TasCodes.underscore_name):
+        if filters.get(TreasuryAccounts.underscore_name) or filters.get(TasCodes.underscore_name):
             tas_queries = []
-            if filters.get(_TreasuryAccounts.underscore_name):
+            if filters.get(TreasuryAccounts.underscore_name):
                 tas_queries.append(
-                    _TreasuryAccounts.generate_elasticsearch_query(
-                        filters[_TreasuryAccounts.underscore_name], query_type
-                    )
+                    TreasuryAccounts.generate_elasticsearch_query(filters[TreasuryAccounts.underscore_name], query_type)
                 )
             if filters.get(TasCodes.underscore_name):
                 tas_queries.append(
                     (TasCodes.generate_elasticsearch_query(filters[TasCodes.underscore_name], query_type))
                 )
             must_queries.append(ES_Q("bool", should=tas_queries, minimum_should_match=1))
-            filters.pop(_TreasuryAccounts.underscore_name, None)
+            filters.pop(TreasuryAccounts.underscore_name, None)
             filters.pop(TasCodes.underscore_name, None)
         return must_queries
 

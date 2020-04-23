@@ -12,7 +12,7 @@ class TasCodes(_Filter, HierarchicalFilter):
     def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
         if isinstance(filter_values, list):
             # This is a legacy usage, and will be dealt with by the other filter
-            return _TreasuryAccounts.generate_elasticsearch_query(filter_values, query_type)
+            return TreasuryAccounts.generate_elasticsearch_query(filter_values, query_type)
         elif isinstance(filter_values, dict):
             require = filter_values.get("require") or []
             exclude = filter_values.get("exclude") or []
@@ -71,7 +71,7 @@ class TASNode(Node):
         return TASNode(code, positive, positive_naics, negative_naics)
 
 
-class _TreasuryAccounts(_Filter):
+class TreasuryAccounts(_Filter):
     underscore_name = "treasury_account_components"
 
     @classmethod

@@ -4,7 +4,7 @@ import copy
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
-from usaspending_api.search.elasticsearch.filters.tas import TasCodes, _TreasuryAccounts
+from usaspending_api.search.elasticsearch.filters.tas import TasCodes, TreasuryAccounts
 
 
 TIME_PERIOD_MIN_MESSAGE = (
@@ -130,12 +130,7 @@ AWARD_FILTER = [
             "city": {"type": "text", "text_type": "search", "optional": True},
         },
     },
-    {
-        "name": _TreasuryAccounts.underscore_name,
-        "type": "array",
-        "array_type": "object",
-        "object_keys": OLD_TAS_FILTER,
-    },
+    {"name": TreasuryAccounts.underscore_name, "type": "array", "array_type": "object", "object_keys": OLD_TAS_FILTER},
     {
         "name": TasCodes.underscore_name,
         "type": "any",

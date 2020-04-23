@@ -1,7 +1,7 @@
 import json
 from django.conf import settings
 
-from usaspending_api.search.elasticsearch.filters.tas import TasCodes, _TreasuryAccounts
+from usaspending_api.search.elasticsearch.filters.tas import TasCodes, TreasuryAccounts
 from usaspending_api.common.experimental_api_flags import EXPERIMENTAL_API_HEADER, ELASTICSEARCH_HEADER_VALUE
 
 
@@ -39,7 +39,7 @@ def _query_by_treasury_account_components(client, tas, treasury_accounts):
         filters[TasCodes.underscore_name] = tas
 
     if treasury_accounts:
-        filters[_TreasuryAccounts.underscore_name] = treasury_accounts
+        filters[TreasuryAccounts.underscore_name] = treasury_accounts
 
     return client.post(
         "/api/v2/search/spending_by_award",
