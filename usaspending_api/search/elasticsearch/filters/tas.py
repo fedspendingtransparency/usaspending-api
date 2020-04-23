@@ -35,7 +35,7 @@ class TasCodes(_Filter, HierarchicalFilter):
             return TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary(string)
 
 
-def tas_search_helper_majig(v):
+def search_regex_of(v):
     if isinstance(v, str):
         v = TasCodes.string_to_dictionary(v)
 
@@ -65,7 +65,7 @@ def tas_search_helper_majig(v):
 
 class TASNode(Node):
     def _basic_search_unit(self):
-        return tas_search_helper_majig(self.code)
+        return search_regex_of(self.code)
 
     def clone(self, code, positive, positive_naics, negative_naics):
         return TASNode(code, positive, positive_naics, negative_naics)
