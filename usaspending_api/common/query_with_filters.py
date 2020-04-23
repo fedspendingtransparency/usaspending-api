@@ -9,9 +9,18 @@ from elasticsearch_dsl import Q as ES_Q
 from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
 from usaspending_api.search.elasticsearch.filters.naics import NaicsCodes
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 
 logger = logging.getLogger(__name__)
+
+
+def es_sanitize(input_string):
+    """ Escapes reserved elasticsearch characters and removes when necessary """
+
+    processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', "", input_string)
+    if len(processed_string) != len(input_string):
+        msg = "Stripped characters from input string New: '{}' Original: '{}'"
+        logger.info(msg.format(processed_string, input_string))
+    return processed_string
 
 
 class _Keywords(_Filter):
