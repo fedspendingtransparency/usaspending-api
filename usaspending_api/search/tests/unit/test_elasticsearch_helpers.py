@@ -1,9 +1,17 @@
 import itertools
+
 import pytest
 
 from model_mommy import mommy
 
-from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count, get_download_ids
+from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
+from usaspending_api.search.v2.elasticsearch_helper import (
+    spending_by_transaction_count,
+    get_download_ids,
+    es_sanitize,
+    es_minimal_sanitize,
+    swap_keys,
+)
 
 
 @pytest.fixture
@@ -81,8 +89,9 @@ def transaction_type_data(db):
     mommy.make("awards.Award", id=6, latest_transaction_id=6, is_fpds=True, type="IDV_A", piid="0006")
 
 
-def test_spending_by_transaction_count(transaction_type_data, elasticsearch_transaction_index):
-    elasticsearch_transaction_index.update_index()
+def test_spending_by_transaction_count(monkeypatch, transaction_type_data, elasticsearch_transaction_index):
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
     request_data = {"filters": {"keywords": ["pop tart"]}}
     results = spending_by_transaction_count(request_data)
@@ -90,11 +99,40 @@ def test_spending_by_transaction_count(transaction_type_data, elasticsearch_tran
     assert results == expected_results
 
 
-def test_get_download_ids(transaction_type_data, elasticsearch_transaction_index):
-    elasticsearch_transaction_index.update_index()
+def test_get_download_ids(monkeypatch, transaction_type_data, elasticsearch_transaction_index):
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
-    results = get_download_ids("pop tart", "transaction_id")
+    results = get_download_ids(["pop tart"], "transaction_id")
     transaction_ids = list(itertools.chain.from_iterable(results))
     expected_results = [1, 2, 3, 4, 5, 6]
 
     assert transaction_ids == expected_results
+
+
+def test_es_sanitize():
+    test_string = '+-&|!()[]{}^~*?:"/<>\\'
+    processed_string = es_sanitize(test_string)
+    assert processed_string == ""
+
+
+def test_es_minimal_sanitize():
+    test_string = "https://www.localhost:8000/"
+    processed_string = es_minimal_sanitize(test_string)
+    assert processed_string == "httpswww.localhost8000"
+
+
+def test_swap_keys():
+    test = {
+        "Recipient Name": "recipient_name",
+        "Action Date": "action_date",
+        "Transaction Amount": "transaction_amount",
+    }
+
+    results = swap_keys(test)
+
+    assert results == {
+        "recipient_name": "recipient_name",
+        "action_date": "action_date",
+        "transaction_amount": "transaction_amount",
+    }

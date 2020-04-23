@@ -47,7 +47,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     category: Category
     elasticsearch: bool
     filters: dict
-    obligation_column: int
+    obligation_column: str
     pagination: Pagination
     subawards: bool
     high_cardinality_categories: List[str] = ["recipient_duns"]

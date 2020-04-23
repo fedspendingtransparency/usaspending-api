@@ -5,8 +5,9 @@
 .coverage
 .DS_Store
 
-# JetBrains IDEs
+# IDEs
 **/.idea/
+.vscode
 
 # Temporary and generated files
 log/*

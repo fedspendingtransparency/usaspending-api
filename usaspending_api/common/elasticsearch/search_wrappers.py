@@ -77,10 +77,10 @@ class _Search(Search):
             logger.error(error_template.format(type="Generic", e=str(e)))
         return result
 
-    def handle_execute(self, retries: int = 5, timeout: str = "1m") -> Response:
+    def handle_execute(self, retries: int = 5, timeout: str = "90s") -> Response:
         return self._handle_execute_errors(retries, timeout)
 
-    def handle_count(self, retries: int = 5, timeout: str = "1m") -> int:
+    def handle_count(self, retries: int = 5, timeout: str = "90s") -> int:
         self._handle_execute_errors(retries, timeout)
         return self.count()
 

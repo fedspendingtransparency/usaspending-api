@@ -111,7 +111,12 @@ WITH alternate_names AS (
   )
   SELECT
     COALESCE(an.recipient_hash, apn.recipient_hash) as recipient_hash,
-    an.all_names || apn.all_names as all_names
+    (
+      SELECT array_agg(merged_recipient_names)
+      FROM (
+        SELECT DISTINCT unnest(an.all_names || apn.all_names) as merged_recipient_names
+      ) as merged_arrays
+    ) as all_names
   FROM alt_names an
   FULL OUTER JOIN alt_parent_names apn ON an.recipient_hash = apn.recipient_hash
 )

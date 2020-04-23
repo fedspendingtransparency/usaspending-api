@@ -115,7 +115,7 @@ ES_AWARDS_MAX_RESULT_WINDOW = 50000
 ES_AWARDS_NAME_SUFFIX = "awards"
 ES_AWARDS_QUERY_ALIAS_PREFIX = "award-query"
 ES_AWARDS_WRITE_ALIAS = "award-load-alias"
-ES_TIMEOUT = 30
+ES_TIMEOUT = 90
 ES_REPOSITORY = ""
 
 # Application definition
