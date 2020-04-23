@@ -1,11 +1,11 @@
 import pytest
 
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 
 
 def test_unparsible_tas():
-    with pytest.raises(InvalidParameterException):
+    with pytest.raises(UnprocessableEntityException):
         TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary("badinput")
 
 
