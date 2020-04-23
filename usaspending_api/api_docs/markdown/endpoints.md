@@ -28,13 +28,14 @@ The currently available endpoints are listed in the following table.
 
 | Endpoint | Methods | Description |
 | -------- | ------- | ----------- |
-|[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Treasury Account Symbol Availability Type Code (A) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/aid/](/api/v2/autocomplete/accounts/aid/)|POST| Returns Treasury Account Symbol/Federal Account Agency Identifier (AID) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/ata/](/api/v2/autocomplete/accounts/ata/)|POST| Returns Treasury Account Symbol Allocation Transfer Agency Identifier (ATA) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/bpoa/](/api/v2/autocomplete/accounts/bpoa/)|POST| Returns Treasury Account Symbol Beginning Period of Availability (BPOA) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/epoa/](/api/v2/autocomplete/accounts/epoa/)|POST| Returns Treasury Account Symbol Ending Period of Availability (EPOA) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/main/](/api/v2/autocomplete/accounts/main/)|POST| Returns Treasury Account Symbol/Federal Account Main Account Code (MAIN) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/sub/](/api/v2/autocomplete/accounts/sub/)|POST| Returns Treasury Account Symbol Sub-Account Code (SUB) filtered by other components provided in the request filter | 
+|[/api/v2/agency/test/](/api/v2/agency/test/)|GET| TEMPORARY endpoint for new Django App |
+|[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Treasury Account Symbol Availability Type Code (A) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/aid/](/api/v2/autocomplete/accounts/aid/)|POST| Returns Treasury Account Symbol/Federal Account Agency Identifier (AID) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/ata/](/api/v2/autocomplete/accounts/ata/)|POST| Returns Treasury Account Symbol Allocation Transfer Agency Identifier (ATA) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/bpoa/](/api/v2/autocomplete/accounts/bpoa/)|POST| Returns Treasury Account Symbol Beginning Period of Availability (BPOA) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/epoa/](/api/v2/autocomplete/accounts/epoa/)|POST| Returns Treasury Account Symbol Ending Period of Availability (EPOA) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/main/](/api/v2/autocomplete/accounts/main/)|POST| Returns Treasury Account Symbol/Federal Account Main Account Code (MAIN) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/sub/](/api/v2/autocomplete/accounts/sub/)|POST| Returns Treasury Account Symbol Sub-Account Code (SUB) filtered by other components provided in the request filter |
 |[/api/v2/autocomplete/awarding_agency/](/api/v2/autocomplete/awarding_agency/)|POST| Returns awarding agencies matching the specified search text|
 |[/api/v2/autocomplete/cfda/](/api/v2/autocomplete/cfda/)|POST| Returns CFDA programs matching the specified search text|
 |[/api/v2/autocomplete/city/](/api/v2/autocomplete/city/)|POST| Returns city names matching the search text, sorted by relevance|

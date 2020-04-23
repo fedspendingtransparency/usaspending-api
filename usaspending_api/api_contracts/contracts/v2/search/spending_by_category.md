@@ -22,18 +22,21 @@ This endpoint returns a list of the top results of specific categories sorted by
             + Members
                 + `awarding_agency`
                 + `awarding_subagency`
-                + `funding_agency`
-                + `funding_subagency`
-                + `recipient_duns`
-                + `recipient_parent_duns`
                 + `cfda`
-                + `psc`
-                + `naics`
+                + `country`
                 + `county`
                 + `district`
                 + `federal_account`
-                + `country`
+                + `funding_agency`
+                + `funding_subagency`
+                + `naics`
+                + `object_class`
+                + `program_activity`
+                + `psc`
+                + `recipient_duns`
+                + `recipient_parent_duns`
                 + `state_territory`
+                + `tas`
         + `filters` (required, AdvancedFilterObject)
             The filters to find with said category
         + `limit` (optional, number)

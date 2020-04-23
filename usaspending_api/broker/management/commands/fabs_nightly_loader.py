@@ -150,6 +150,7 @@ class Command(BaseCommand):
         with timer("obtaining delete records", logger.info):
             delete_records = retrieve_deleted_fabs_transactions(start_datetime, end_datetime)
             ids_to_delete = [item for sublist in delete_records.values() for item in sublist if item]
+        logger.info(f"{len(ids_to_delete):,} delete ids found in total")
 
         with timer("retrieving/diff-ing FABS Data", logger.info):
             ids_to_upsert = get_fabs_transaction_ids(afa_ids, start_datetime, end_datetime)
