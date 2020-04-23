@@ -169,6 +169,10 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `exclude` (optional, array[string])
 
 ### TASCodeObject (object)
++ `require`: [[`091`]] (optional, array[array[string]])
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
+
+### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier - three characters
 + `aid` (required, string)

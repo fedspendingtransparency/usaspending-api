@@ -138,6 +138,10 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `exclude`: `3333` (optional, array[string])
 
 ### TASCodeObject (object)
++ `require`: [[`091`]] (optional, array[array[string]])
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
+
+### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier - three characters
 + `aid` (required, string)

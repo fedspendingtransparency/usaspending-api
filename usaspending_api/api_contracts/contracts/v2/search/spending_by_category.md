@@ -148,6 +148,10 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `exclude` (optional, array[string])
 
 ### TASCodeObject (object)
++ `require`: [[`091`]] (optional, array[array[string]])
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
+
+### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier - three characters
 + `aid` (required, string)
