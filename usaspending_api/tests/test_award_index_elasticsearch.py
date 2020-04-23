@@ -2,6 +2,8 @@ import pytest
 
 from model_mommy import mommy
 
+from usaspending_api.search.elasticsearch.filters.tas import search_regex_of
+
 
 @pytest.fixture
 def award_data_fixture(db):
@@ -102,11 +104,6 @@ def test_date_range(award_data_fixture, elasticsearch_award_index):
 
 def test_tas(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
-    search_regex = (
-        '\\"a\\": \\"{a}\\", \\"aid\\": \\"{aid}\\", \\"ata\\": \\"{ata}\\",'
-        ' \\"bpoa\\": \\"{bpoa}\\", \\"epoa\\": \\"{epoa}\\", \\"main\\": \\"{main}\\",'
-        ' \\"sub\\": \\"{sub}\\"'
-    )
 
     tas_code_regexes1 = {
         "aid": "097",
@@ -117,7 +114,7 @@ def test_tas(award_data_fixture, elasticsearch_award_index):
         "epoa": ".*",
         "a": ".*",
     }
-    value_regex1 = "{" + search_regex.format(**tas_code_regexes1) + "}"
+    value_regex1 = search_regex_of(tas_code_regexes1)
     should = {"regexp": {"treasury_accounts": {"value": value_regex1}}}
     query = create_query(should)
     client = elasticsearch_award_index.client
@@ -132,7 +129,7 @@ def test_tas(award_data_fixture, elasticsearch_award_index):
         "epoa": ".*",
         "a": ".*",
     }
-    value_regex2 = "{" + search_regex.format(**tas_code_regexes2) + "}"
+    value_regex2 = search_regex_of(tas_code_regexes2)
     should = {"regexp": {"treasury_accounts": {"value": value_regex2}}}
     query = create_query(should)
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
