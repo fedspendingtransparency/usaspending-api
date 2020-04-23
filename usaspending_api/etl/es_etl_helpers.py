@@ -15,7 +15,7 @@ from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.s3_helpers import access_s3_object_list, access_s3_object
+from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 # ==============================================================================
@@ -637,9 +637,8 @@ def gather_deleted_ids(config):
     printf({"msg": "Gathering all deleted transactions from S3"})
     start = perf_counter()
 
-    bucket_objects = access_s3_object_list(bucket_name=config["s3_bucket"])
-    if bucket_objects is None:
-        raise Exception(f"Issue connecting to {config['s3_bucket']} in s3")
+    bucket_objects = retrieve_s3_bucket_object_list(bucket_name=config["s3_bucket"])
+    printf({"msg": f"{len(bucket_objects):,} files found in bucket '{config['s3_bucket']}'."})
 
     if config["verbose"]:
         printf({"msg": f"CSV data from {config['starting_date']} to now"})
