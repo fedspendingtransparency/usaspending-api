@@ -7,6 +7,8 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Cfda, Definition, NAICS, PSC
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
 from usaspending_api.search.models import AgencyAutocompleteMatview
+from usaspending_api.common.api_versioning import deprecated
+from django.utils.decorators import method_decorator
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -142,6 +144,7 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/naics.md"
 
+    @method_decorator(deprecated, name="list")
     @cache_response()
     def post(self, request):
         """Return all NAICS table entries matching the provided search text"""
