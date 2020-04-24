@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending By Federal Account [/api/v2/search/spending_by_category/federal_account/]
+# Spending By Object Class [/api/v2/search/spending_by_category/object_class/]
 
-This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
+This endpoint supports the Federal Account page and allow for complex filtering for specific subsets of spending data.
 
 ## POST
 
-This endpoint returns a list of the top results of Federal Accounts sorted by the total amounts in descending order.
+This endpoint returns a list of the top results of Object Classes sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Schema
@@ -20,10 +20,10 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
     + Attributes (object)
         + `filters` (required, FilterObject)
             The filters to find with said category
-        + `limit`: 5 (optional, number)
+        + `limit` (optional, number)
             The number of results to include per page
             + Default: 10
-        + `page`: 1 (optional, number)
+        + `page` (optional, number)
             The page of results to return based on the limit
             + Default: 1
         + `subawards` (optional, boolean)
@@ -31,16 +31,16 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `federal_account` (required, string)
+        + `category`: `object_class` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
-        + `limit`: 10 (required, number)
+        + `limit` (required, number)
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
             {
-                "category": "federal_account",
+                "category": "object_class",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
@@ -51,16 +51,20 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
                 },
                 "results": [
                     {
-                        "amount": 4575113.34,
-                        "id": 3573,
-                        "code": "012-4336",
-                        "name": "Commodity Credit Corporation Fund, Agriculture"
-                    },
-                    {
-                        "amount": 548022.0,
-                        "id": 5184,
-                        "code": "070-0411",
-                        "name": "Federal Assistance, Domestic Nuclear Detection Office, Homeland Security"
+                        "name": "Grants, subsidies, and contributions",
+                        "amount": "1350937120908.44",
+                        "id": 200,
+                        "code": "410"
+                    }, {
+                        "name": "Financial transfers",
+                        "amount": "396298886107.56",
+                        "id": 147,
+                        "code": "940"
+                    }, {
+                        "name": "Unknown",
+                        "amount":"0.00",
+                        "id": 213,
+                        "code": "000"
                     }
                 ],
                 "messages": [
