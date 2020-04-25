@@ -39,26 +39,26 @@ Returns PSCs under the provided PSC
     + Body
     
             {
-            "results": [
-            {
-            "id": "AA",
-            "ancestors": [
-                "Research and Development"
-            ],
-            "description": "AGRICULTURE R&D",
-            "count": 4,
-            "children": null
-            },
-            {
-            "id": "F",
-            "ancestors": [
-                "Service"
-            ],
-            "description": "NATURAL RESOURCES MANAGEMENT",
-            "count": 3,
-            "children": null
-            }
-            ]
+                "results": [
+                    {
+                    "id": "AA",
+                    "ancestors": [
+                        "Research and Development"
+                    ],
+                    "description": "AGRICULTURE R&D",
+                    "count": 4,
+                    "children": null
+                    },
+                    {
+                    "id": "F",
+                    "ancestors": [
+                        "Service"
+                    ],
+                    "description": "NATURAL RESOURCES MANAGEMENT",
+                    "count": 3,
+                    "children": null
+                    }
+                ]
             }
        
 ## Data Structures
