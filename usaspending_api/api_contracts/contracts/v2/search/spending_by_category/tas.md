@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending By Federal Account [/api/v2/search/spending_by_category/federal_account/]
+# Spending By Treasury Account Symbol [/api/v2/search/spending_by_category/tas/]
 
-This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
+This endpoint supports the Federal Account page and allow for complex filtering for specific subsets of spending data.
 
 ## POST
 
-This endpoint returns a list of the top results of Federal Accounts sorted by the total amounts in descending order.
+This endpoint returns a list of the top results of Treasury Account Symbol sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Schema
@@ -20,10 +20,10 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
     + Attributes (object)
         + `filters` (required, FilterObject)
             The filters to find with said category
-        + `limit`: 5 (optional, number)
+        + `limit` (optional, number)
             The number of results to include per page
             + Default: 10
-        + `page`: 1 (optional, number)
+        + `page` (optional, number)
             The page of results to return based on the limit
             + Default: 1
         + `subawards` (optional, boolean)
@@ -31,16 +31,16 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `federal_account` (required, string)
+        + `category`: `tas` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
-        + `limit`: 10 (required, number)
+        + `limit` (required, number)
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
             {
-                "category": "federal_account",
+                "category": "object_class",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
@@ -51,16 +51,34 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
                 },
                 "results": [
                     {
-                        "amount": 4575113.34,
-                        "id": 3573,
-                        "code": "012-4336",
-                        "name": "Commodity Credit Corporation Fund, Agriculture"
+                        "amount": "778810613423.36",
+                        "name": "Payments to Health Care Trust Funds, Centers for Medicare and Medicaid Services, Health and Human Services",
+                        "id": 74967,
+                        "code": "075-2019/2019-0580-000"
                     },
                     {
-                        "amount": 548022.0,
-                        "id": 5184,
-                        "code": "070-0411",
-                        "name": "Federal Assistance, Domestic Nuclear Detection Office, Homeland Security"
+                        "amount": "561238182515.60",
+                        "name": "Payments to Health Care Trust Funds, Centers for Medicare and Medicaid Services, Health and Human Services",
+                        "id": 72635,
+                        "code": "075-2018/2018-0580-000"
+                    },
+                    {
+                        "amount": "314040593902.48",
+                        "name": "Payments to Health Care Trust Funds, Centers for Medicare and Medicaid Services, Health and Human Services",
+                        "id": 69570,
+                        "code": "075-2017/2017-0580-000"
+                    },
+                    {
+                        "amount": "93671820637.62",
+                        "name": "Payments to Health Care Trust Funds, Centers for Medicare and Medicaid Services, Health and Human Services",
+                        "id": 77475,
+                        "code": "075-2020/2020-0580-000"
+                    },
+                    {
+                        "amount": "162548976.67",
+                        "name": "Payments to Health Care Trust Funds, Centers for Medicare and Medicaid Services",
+                        "id": 60201,
+                        "code": "075-2014/2014-0580-000"
                     }
                 ],
                 "messages": [

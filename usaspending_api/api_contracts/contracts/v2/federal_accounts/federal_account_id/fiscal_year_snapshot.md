@@ -7,8 +7,17 @@ HOST: https://api.usaspending.gov
 
 This route sends a request to the backend to retrieve budget information for a federal account.  If no fiscal year is supplied, the federal account's most recent fiscal year is used.
 
-+ Parameters
-    + `federal_account_id`:  6000 (required, number)
++ Request (application/json)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "string"
+            }
+
+    + Parameters
+        + `federal_account_id`:  6000 (required, number)
+            Database id for a federal account.
 
 + Response 200 (application/json)
     + Attributes (object)
