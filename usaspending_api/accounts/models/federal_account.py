@@ -1,4 +1,5 @@
 from django.db import models
+from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class FederalAccount(models.Model):
@@ -25,3 +26,18 @@ class FederalAccount(models.Model):
         managed = True
         db_table = "federal_account"
         unique_together = ("agency_identifier", "main_account_code")
+
+    @staticmethod
+    def fa_rendering_label_to_component_dictionary(fa_rendering_label) -> dict:
+        try:
+            components = fa_rendering_label.split("-")
+            retval = {}
+
+            retval["aid"] = components[0]
+            retval["main"] = components[1]
+
+            return retval
+        except Exception:
+            raise InvalidParameterException(
+                f"Cannot parse provided Federal Account: {fa_rendering_label}. Valid examples: 000-0102, 015-8591"
+            )
