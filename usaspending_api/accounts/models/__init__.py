@@ -4,6 +4,9 @@ from usaspending_api.accounts.models.appropriation_account_balances_quarterly im
 )
 from usaspending_api.accounts.models.budget_authority import BudgetAuthority
 from usaspending_api.accounts.models.federal_account import FederalAccount
+from usaspending_api.accounts.models.historical_appropriation_account_balances import (
+    HistoricalAppropriationAccountBalances,
+)
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
 
 
@@ -12,5 +15,6 @@ __all__ = [
     "AppropriationAccountBalancesQuarterly",
     "BudgetAuthority",
     "FederalAccount",
+    "HistoricalAppropriationAccountBalances",
     "TreasuryAppropriationAccount",
 ]

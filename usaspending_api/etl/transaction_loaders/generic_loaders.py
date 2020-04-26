@@ -10,8 +10,8 @@ def insert_award(cursor, load_object):
 
 def update_transaction_fpds(cursor, load_object):
     columns, values, pairs = format_insert_or_update_column_sql(cursor, load_object, "transaction_fpds")
-    transaction_fpds_sql = "UPDATE transaction_fpds SET {} where detached_award_procurement_id = {}".format(
-        pairs, load_object["transaction_fpds"]["detached_award_procurement_id"]
+    transaction_fpds_sql = "UPDATE transaction_fpds SET {} where detached_award_proc_unique = '{}'".format(
+        pairs, load_object["transaction_fpds"]["detached_award_proc_unique"]
     )
     cursor.execute(transaction_fpds_sql)
 

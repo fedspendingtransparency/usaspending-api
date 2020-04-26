@@ -2,8 +2,11 @@ import json
 import pytest
 import random
 
+from django.conf import settings
 from model_mommy import mommy
 from unittest.mock import Mock
+
+from rest_framework import status
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
@@ -102,7 +105,18 @@ def download_test_data(db):
     update_awards()
 
 
-def test_download_count(client, download_test_data):
+def test_download_count(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
+    logging_statements = []
+    monkeypatch.setattr(
+        "usaspending_api.download.v2.download_transaction_count.logger.info",
+        lambda message: logging_statements.append(message),
+    )
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+    )
+    elasticsearch_transaction_index.update_index()
+
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/count/",
@@ -111,5 +125,10 @@ def test_download_count(client, download_test_data):
             {"filters": {"agencies": [{"type": "awarding", "tier": "toptier", "name": "Bureau of Things"}]}}
         ),
     )
+    resp_json = resp.json()
 
-    assert resp.json()["transaction_rows_gt_limit"] is False
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert len(logging_statements) == 1, "Expected one logging statement"
+    assert resp_json["calculated_transaction_count"] == 1
+    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["transaction_rows_gt_limit"] is False
