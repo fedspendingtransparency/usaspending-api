@@ -2,10 +2,12 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from collections import OrderedDict
+from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.common.cache_decorator import cache_response
 
 from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
 from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES
@@ -101,10 +103,14 @@ def create_es_search(scope, search_text, country=None, state=None):
     """
     # The base query that will do a wildcard term-level query
     query = {"must": [{"wildcard": {"{}_city_name.keyword".format(scope): search_text + "*"}}]}
+    q = []
+    must = ES_Q("wildcard", **{"{}_city_name.keyword".format(scope): search_text + "*"})
+    q.append(ES_Q("bool", must=must))
     if country != "USA":
         # A non-USA selected country
         if country != ALL_FOREIGN_COUNTRIES:
             query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
+            q.append(ES_Q("must", match={"{scope}_country_code".format(scope=scope): country}))
         # Create a "Should Not" query with a nested bool, to get everything non-USA
         query["should"] = [
             {
@@ -117,10 +123,28 @@ def create_es_search(scope, search_text, country=None, state=None):
                 }
             }
         ]
-
+        q.append(
+            ES_Q(
+                "bool",
+                **{
+                    "should": {
+                    "bool": {
+                        "must": {"exists": {"field": "{}_country_code".format(scope)}},
+                        "must_not": [
+                            {"match": {"{}_country_code".format(scope): "USA"}},
+                            {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}},
+                        ],
+                    }
+                }
+                },
+                minimum_should_match=1
+            )
+        )
         query["minimum_should_match"] = 1
     else:
         # USA is selected as country
+        q.append(ES_Q(**build_country_match(scope, "USA")))
+        q.append(ES_Q(**build_country_match(scope, "UNITED STATES")))
         query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
         query["should"].append({"bool": {"must_not": {"exists": {"field": "{}_country_code".format(scope)}}}})
         query["minimum_should_match"] = 1
@@ -128,8 +152,11 @@ def create_es_search(scope, search_text, country=None, state=None):
 
     if state:
         # If a state was provided, include it in the filter to limit hits
+        q.append(ES_Q("bool", must={"match": {"{}_state_code".format(scope): es_sanitize(state).upper()}}))
         query["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state).upper()}})
 
+    print(q)
+    search = TransactionSearch().filter()
     return query
 
 
