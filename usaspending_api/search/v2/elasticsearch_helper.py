@@ -19,16 +19,6 @@ DOWNLOAD_QUERY_SIZE = settings.MAX_DOWNLOAD_LIMIT
 TRANSACTIONS_SOURCE_LOOKUP.update({v: k for k, v in TRANSACTIONS_SOURCE_LOOKUP.items()})
 
 
-def es_sanitize(input_string):
-    """ Escapes reserved elasticsearch characters and removes when necessary """
-
-    processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', "", input_string)
-    if len(processed_string) != len(input_string):
-        msg = "Stripped characters from input string New: '{}' Original: '{}'"
-        logger.info(msg.format(processed_string, input_string))
-    return processed_string
-
-
 def es_minimal_sanitize(keyword):
     keyword = concat_if_array(keyword)
     """Remove Lucene special characters instead of escaping for now"""
