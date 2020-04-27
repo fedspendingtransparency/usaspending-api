@@ -17,10 +17,7 @@ class PSCFilterTree(FilterTree):
         return PSC_GROUPS.keys()
 
     def _psc_from_group(self, group):
-        if group in PSC_GROUPS:
-            return self._psc_from_regex(PSC_GROUPS[group])
-        else:
-            return []
+        return self._psc_from_regex(PSC_GROUPS.get(group, "(?!)"))  # The default regex value will match nothing
 
     def _psc_from_regex(self, regex):
         return [

@@ -58,6 +58,11 @@ def test_tier_four_service(client, basic_service):
     assert resp.json() == {"results": [service_tier_four()]}
 
 
+def test_empty_category(client, basic_rnd, basic_product, basic_service):
+    resp = _call_and_expect_200(client, base_query + "WRONG/")
+    assert resp.json() == {"results": []}
+
+
 def _call_and_expect_200(client, url):
     resp = client.get(url)
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
