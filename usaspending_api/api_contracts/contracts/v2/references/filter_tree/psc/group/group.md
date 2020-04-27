@@ -16,7 +16,7 @@ Returns PSCs under the provided group
         Parent group of PSCs to return
         + `depth` (optional, enum[number]) 
             + Default
-                + `0`
+                - `0`
         How many levels deep the search will populate each tree. 
             + Members
                     + `0`

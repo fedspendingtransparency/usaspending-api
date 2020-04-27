@@ -16,7 +16,7 @@ Returns a list of Treasury Account Symbols associated with the specified federal
         + `federal_account`: `0550`
         + `depth` (optional, enum[number]) 
             + Default
-                + `0`
+                - `0`
         How many levels deep the search will populate each tree.
             + Members
                     + `0`

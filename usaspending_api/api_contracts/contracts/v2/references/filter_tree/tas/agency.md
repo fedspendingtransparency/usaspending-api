@@ -17,7 +17,7 @@ Returns a list of federal accounts associated with the specified agency
         + `agency`: `020` (required, string) 
         + `depth` (optional, enum[number])
             + Default
-                + `0`
+                - `0`
             How many levels deep the search will populate each tree.  0 will return only federal accounts, and 1 will return
             federal accounts and any TAS under them.
             + Members

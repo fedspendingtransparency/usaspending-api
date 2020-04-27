@@ -14,7 +14,7 @@ Returns a list of toptier agencies that have at least one TAS affiliated with th
     + Parameters
         + `depth` (optional, enum[number]) 
             + Default
-                + `0`
+                - `0`
         How many levels deep the search will populate each tree. 
             + Members
                     + `0`
