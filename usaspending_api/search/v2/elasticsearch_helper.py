@@ -19,17 +19,6 @@ DOWNLOAD_QUERY_SIZE = settings.MAX_DOWNLOAD_LIMIT
 TRANSACTIONS_SOURCE_LOOKUP.update({v: k for k, v in TRANSACTIONS_SOURCE_LOOKUP.items()})
 
 
-def es_minimal_sanitize(keyword):
-    keyword = concat_if_array(keyword)
-    """Remove Lucene special characters instead of escaping for now"""
-    processed_string = re.sub(r"[%{}/:!^\[\]]", "", keyword)
-    if len(processed_string) != len(keyword):
-        msg = "Stripped characters from ES keyword search string New: '{}' Original: '{}'"
-        logger.info(msg.format(processed_string, keyword))
-        keyword = processed_string
-    return keyword
-
-
 def swap_keys(dictionary_):
     return dict(
         (TRANSACTIONS_SOURCE_LOOKUP.get(old_key, old_key), new_key) for (old_key, new_key) in dictionary_.items()
