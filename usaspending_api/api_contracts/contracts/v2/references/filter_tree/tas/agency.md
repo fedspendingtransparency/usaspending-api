@@ -22,7 +22,7 @@ Returns a list of federal accounts associated with the specified agency
                 + 1
                 + 2        
         + `filter` (optional, string)
-            When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
+        When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
     + Schema
     
             {
