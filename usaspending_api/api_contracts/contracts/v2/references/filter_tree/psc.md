@@ -13,6 +13,8 @@ Returns the basic groupings of Product Service Codes
 + Request (application/json)
     + Parameters
         + `depth` (optional, enum[number]) 
+            + Default
+                + `0`        
         How many levels deep the search will populate each tree. 
             + Members
                     + `0`

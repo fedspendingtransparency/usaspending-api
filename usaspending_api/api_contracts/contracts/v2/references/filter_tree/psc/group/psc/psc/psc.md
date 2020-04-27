@@ -19,6 +19,8 @@ Returns PSCs under the provided PSC
         + `psc2`: `1000` (required, string)
         ID value of the parent node
         + `depth` (optional, enum[number]) 
+            + Default
+                + `0`
         How many levels deep the search will populate each tree. 
             + Members
                     + `0`

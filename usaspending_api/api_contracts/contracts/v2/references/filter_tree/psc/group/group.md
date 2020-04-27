@@ -15,6 +15,8 @@ Returns PSCs under the provided group
         + `group`: `Product` (required, string)
         Parent group of PSCs to return
         + `depth` (optional, enum[number]) 
+            + Default
+                + `0`
         How many levels deep the search will populate each tree. 
             + Members
                     + `0`
