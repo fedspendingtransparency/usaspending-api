@@ -145,6 +145,7 @@ def create_es_search(scope, search_text, country=None, state=None):
         # USA is selected as country
         q.append(ES_Q(**build_country_match(scope, "USA")))
         q.append(ES_Q(**build_country_match(scope, "UNITED STATES")))
+        q.append(ES_Q("bool", must_not={"exists": {"field": "{}_country_code".format(scope)}}))
         query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
         query["should"].append({"bool": {"must_not": {"exists": {"field": "{}_country_code".format(scope)}}}})
         query["minimum_should_match"] = 1
@@ -155,8 +156,8 @@ def create_es_search(scope, search_text, country=None, state=None):
         q.append(ES_Q("bool", must={"match": {"{}_state_code".format(scope): es_sanitize(state).upper()}}))
         query["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state).upper()}})
 
-    print(q)
-    search = TransactionSearch().filter()
+    search = TransactionSearch().filter(ES_Q("bool", should=q))
+    # print(search.to_dict())
     return query
 
 
