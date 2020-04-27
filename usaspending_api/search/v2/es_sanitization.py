@@ -1,9 +1,20 @@
 import logging
 import re
 
-from usaspending_api.search.v2.elasticsearch_helper import concat_if_array
-
 logger = logging.getLogger("console")
+
+
+def concat_if_array(data):
+    if isinstance(data, str):
+        return data
+    else:
+        if isinstance(data, list):
+            str_from_array = " ".join(data)
+            return str_from_array
+        else:
+            # This should never happen if TinyShield is functioning properly
+            logger.error("Keyword submitted was not a string or array")
+            return ""
 
 
 def es_sanitize(input_string):

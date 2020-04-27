@@ -1,5 +1,4 @@
 import logging
-import re
 from typing import Dict, Optional
 
 from django.conf import settings
@@ -12,6 +11,7 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 
 logger = logging.getLogger("console")
 
@@ -147,19 +147,6 @@ def get_sum_and_count_aggregation_results(keyword):
 
 def spending_by_transaction_sum_and_count(request_data):
     return get_sum_and_count_aggregation_results(request_data["filters"]["keywords"])
-
-
-def concat_if_array(data):
-    if isinstance(data, str):
-        return data
-    else:
-        if isinstance(data, list):
-            str_from_array = " ".join(data)
-            return str_from_array
-        else:
-            # This should never happen if TinyShield is functioning properly
-            logger.error("Keyword submitted was not a string or array")
-            return ""
 
 
 def get_number_of_unique_terms(filter_query: ES_Q, field: str) -> int:
