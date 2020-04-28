@@ -4,7 +4,7 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -45,8 +45,7 @@ def test_a_search_endpoint(client, monkeypatch, award_data_fixture, elasticsearc
     An example of how one might test a keyword search.
     """
     # This is the important part.  This ensures data is loaded into your Elasticsearch.
-    logging_statements = []
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     query = {
         "filters": {"keyword": "IND12PB00323", "award_type_codes": ["A", "B", "C", "D"]},
         "fields": [

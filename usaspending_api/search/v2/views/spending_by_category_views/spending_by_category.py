@@ -12,16 +12,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.awards.v2.filters.view_selector import spending_by_category_view_queryset
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, NotImplementedException
-from usaspending_api.common.experimental_api_flags import (
-    is_experimental_elasticsearch_api,
-    mirror_request_to_elasticsearch,
-)
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
@@ -45,12 +40,12 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     """
 
     category: Category
-    elasticsearch: bool
     filters: dict
     obligation_column: str
     pagination: Pagination
     subawards: bool
     high_cardinality_categories: List[str] = ["recipient_duns"]
+    sub_awards_not_implemented: List[str] = ["federal_account", "naics", "psc"]
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -62,32 +57,28 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
-        validated_payload["elasticsearch"] = is_experimental_elasticsearch_api(request)
-        if not validated_payload["elasticsearch"]:
-            mirror_request_to_elasticsearch(request)
+
         return Response(self.perform_search(validated_payload, original_filters))
 
     def perform_search(self, validated_payload: dict, original_filters: dict) -> dict:
 
         self.filters = validated_payload.get("filters", {})
-        self.elasticsearch = validated_payload.get("elasticsearch")
         self.subawards = validated_payload["subawards"]
         self.pagination = self._get_pagination(validated_payload)
 
         if self.subawards:
+            if self.category.name in self.sub_awards_not_implemented:
+                self._raise_not_implemented()
             base_queryset = subaward_filter(self.filters)
             self.obligation_column = "amount"
             results = self.query_django(base_queryset)
-        elif self.elasticsearch:
-            logger.info(
-                f"Using experimental Elasticsearch functionality for 'spending_by_category/{self.category.name}'"
-            )
+        else:
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
             results = self.query_elasticsearch(filter_query)
-        else:
-            base_queryset = spending_by_category_view_queryset(self.category.name, self.filters)
-            self.obligation_column = "generated_pragmatic_obligation"
-            results = self.query_django(base_queryset)
+        # else:
+        #     base_queryset = spending_by_category_view_queryset(self.category.name, self.filters)
+        #     self.obligation_column = "generated_pragmatic_obligation"
+        #     results = self.query_django(base_queryset)
 
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
 
@@ -200,4 +191,9 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
     @abstractmethod
     def query_django(self, base_queryset: QuerySet) -> List[dict]:
+        """
+        Not currently being used as part of DEV-4371 to move default implementation to Elasticsearch. Left old code in
+        place for the time being until the Elasticsearch implementation has lived in Production for a few weeks as the
+        default implementation.
+        """
         pass

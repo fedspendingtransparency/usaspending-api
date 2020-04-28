@@ -3,111 +3,16 @@ import pytest
 
 from rest_framework import status
 
-from django.conf import settings
-from usaspending_api.common.experimental_api_flags import EXPERIMENTAL_API_HEADER, ELASTICSEARCH_HEADER_VALUE
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.mark.django_db
-def test_spending_by_geography_state_success(client):
-    # test for required filters
-    resp = client.post(
-        "/api/v2/search/spending_by_geography",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "scope": "place_of_performance",
-                "geo_layer": "state",
-                "filters": {"recipient_locations": [{"country": "ABC"}]},
-            }
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-
-    # test all filters
-    resp = client.post(
-        "/api/v2/search/spending_by_geography",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "scope": "recipient_location",
-                "geo_layer": "county",
-                "geo_layer_filters": ["WA"],
-                "filters": non_legacy_filters(),
-            }
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-
-
-@pytest.mark.django_db
-def test_spending_by_geography_county_success(client):
-    # test for required filters
-    resp = client.post(
-        "/api/v2/search/spending_by_geography",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "scope": "place_of_performance",
-                "geo_layer": "county",
-                "filters": {"recipient_locations": [{"country": "ABC"}]},
-            }
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-
-    # test all filters
-    resp = client.post(
-        "/api/v2/search/spending_by_geography",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "scope": "recipient_location",
-                "geo_layer": "county",
-                "geo_layer_filters": ["01"],
-                "filters": non_legacy_filters(),
-            }
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-
-
-@pytest.mark.django_db
-def test_spending_by_geography_congressional_success(client):
-    # test for required filters
-    resp = client.post(
-        "/api/v2/search/spending_by_geography",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "scope": "place_of_performance",
-                "geo_layer": "district",
-                "filters": {"recipient_locations": [{"country": "ABC"}]},
-            }
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-
-    # test all filters
-    resp = client.post(
-        "/api/v2/search/spending_by_geography",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "scope": "recipient_location",
-                "geo_layer": "district",
-                "geo_layer_filters": ["01"],
-                "filters": non_legacy_filters(),
-            }
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-
-
-@pytest.mark.django_db
-def test_spending_by_geography_failure(client):
+def test_spending_by_geography_failure(client, monkeypatch, elasticsearch_transaction_index):
     """Verify error on bad autocomplete request for budget function."""
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_geography/",
@@ -155,47 +60,8 @@ def test_spending_by_geography_subawards_failure(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db
-def test_spending_by_geography_incorrect_district(client):
-    resp = client.post(
-        "/api/v2/search/spending_by_geography/",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "scope": "place_of_performance",
-                "geo_layer": "district",
-                "geo_layer_filters": ["01"],
-                "filters": non_legacy_filters(),
-            }
-        ),
-    )
-
-    assert len(resp.data["results"]) == 0
-
-
-"""
-As of 04/14/2020 these are intended for the experimental Elasticsearch functionality that lives alongside the Postgres
-implementation. These tests verify that ES performs as expected, but that it also respects the header put in place
-to trigger the experimental functionality. When ES for spending_by_geography is used as the primary implementation for
-the endpoint these tests should be updated to reflect the change.
-"""
-
-
 def _get_shape_code_for_sort(result_dict):
     return result_dict["shape_code"]
-
-
-def _setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements, **options):
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_geography.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-    )
-
-    elasticsearch_transaction_index.update_index(**options)
 
 
 def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
@@ -203,8 +69,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
     """
 
-    logging_statements = []
-    _setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     test_cases = [
         _test_success_with_all_filters_place_of_performance_county,
@@ -218,15 +83,12 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
     for test in test_cases:
         test(client)
 
-    assert len(logging_statements) == len(test_cases), "Elasticsearch was not used for one of the tests"
-
 
 def _test_success_with_all_filters_place_of_performance_county(client):
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
         data=json.dumps({"scope": "place_of_performance", "geo_layer": "county", "filters": non_legacy_filters()}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -236,7 +98,6 @@ def _test_success_with_all_filters_place_of_performance_district(client):
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
         data=json.dumps({"scope": "place_of_performance", "geo_layer": "district", "filters": non_legacy_filters()}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -246,7 +107,6 @@ def _test_success_with_all_filters_place_of_performance_state(client):
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
         data=json.dumps({"scope": "place_of_performance", "geo_layer": "state", "filters": non_legacy_filters()}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -256,7 +116,6 @@ def _test_success_with_all_filters_recipient_location_county(client):
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
         data=json.dumps({"scope": "recipient_location", "geo_layer": "county", "filters": non_legacy_filters()}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -266,7 +125,6 @@ def _test_success_with_all_filters_recipient_location_district(client):
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
         data=json.dumps({"scope": "recipient_location", "geo_layer": "district", "filters": non_legacy_filters()}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -276,7 +134,6 @@ def _test_success_with_all_filters_recipient_location_state(client):
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
         data=json.dumps({"scope": "recipient_location", "geo_layer": "state", "filters": non_legacy_filters()}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -285,8 +142,7 @@ def test_correct_response_with_geo_filters(
     client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
 ):
 
-    logging_statements = []
-    _setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     test_cases = [
         _test_correct_response_for_place_of_performance_county_with_geo_filters,
@@ -299,8 +155,6 @@ def test_correct_response_with_geo_filters(
 
     for test in test_cases:
         test(client)
-
-    assert len(logging_statements) == len(test_cases), "Elasticsearch was not used for one of the tests"
 
 
 def _test_correct_response_for_place_of_performance_county_with_geo_filters(client):
@@ -315,7 +169,6 @@ def _test_correct_response_for_place_of_performance_county_with_geo_filters(clie
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "place_of_performance",
@@ -357,7 +210,6 @@ def _test_correct_response_for_place_of_performance_district_with_geo_filters(cl
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "place_of_performance",
@@ -399,7 +251,6 @@ def _test_correct_response_for_place_of_performance_state_with_geo_filters(clien
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "place_of_performance",
@@ -434,7 +285,6 @@ def _test_correct_response_for_recipient_location_county_with_geo_filters(client
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "recipient_location",
@@ -476,7 +326,6 @@ def _test_correct_response_for_recipient_location_district_with_geo_filters(clie
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "recipient_location",
@@ -525,7 +374,6 @@ def _test_correct_response_for_recipient_location_state_with_geo_filters(client)
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "recipient_location",
@@ -552,8 +400,7 @@ def test_correct_response_without_geo_filters(
     client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
 ):
 
-    logging_statements = []
-    _setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     test_cases = [
         _test_correct_response_for_place_of_performance_county_without_geo_filters,
@@ -567,8 +414,6 @@ def test_correct_response_without_geo_filters(
     for test in test_cases:
         test(client)
 
-    assert len(logging_statements) == len(test_cases), "Elasticsearch was not used for one of the tests"
-
 
 def _test_correct_response_for_place_of_performance_county_without_geo_filters(client):
     resp = client.post(
@@ -581,7 +426,6 @@ def _test_correct_response_for_place_of_performance_county_without_geo_filters(c
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "place_of_performance",
@@ -629,7 +473,6 @@ def _test_correct_response_for_place_of_performance_district_without_geo_filters
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "place_of_performance",
@@ -684,7 +527,6 @@ def _test_correct_response_for_place_of_performance_state_without_geo_filters(cl
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "place_of_performance",
@@ -725,7 +567,6 @@ def _test_correct_response_for_recipient_location_county_without_geo_filters(cli
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "recipient_location",
@@ -773,7 +614,6 @@ def _test_correct_response_for_recipient_location_district_without_geo_filters(c
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "recipient_location",
@@ -828,7 +668,6 @@ def _test_correct_response_for_recipient_location_state_without_geo_filters(clie
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "recipient_location",
@@ -860,8 +699,7 @@ def _test_correct_response_for_recipient_location_state_without_geo_filters(clie
 
 def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
 
-    logging_statements = []
-    _setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     # Place of Performance - County
     resp = client.post(
@@ -874,7 +712,6 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
                 "filters": {"time_period": [{"start_date": "2008-10-01", "end_date": "2009-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "place_of_performance",
@@ -883,10 +720,7 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
     assert resp.json() == expected_response
-
-    logging_statements.clear()
 
     # Place of Performance - District
     resp = client.post(
@@ -899,7 +733,6 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
                 "filters": {"time_period": [{"start_date": "2008-10-01", "end_date": "2009-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "place_of_performance",
@@ -908,10 +741,7 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
     assert resp.json() == expected_response
-
-    logging_statements.clear()
 
     # Place of Performance - State
     resp = client.post(
@@ -924,7 +754,6 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
                 "filters": {"time_period": [{"start_date": "2008-10-01", "end_date": "2009-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "place_of_performance",
@@ -933,10 +762,7 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
     assert resp.json() == expected_response
-
-    logging_statements.clear()
 
     # Recipient Location - County
     resp = client.post(
@@ -949,7 +775,6 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
                 "filters": {"time_period": [{"start_date": "2008-10-01", "end_date": "2009-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "recipient_location",
@@ -958,10 +783,7 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
     assert resp.json() == expected_response
-
-    logging_statements.clear()
 
     # Recipient Location - District
     resp = client.post(
@@ -974,7 +796,6 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
                 "filters": {"time_period": [{"start_date": "2008-10-01", "end_date": "2009-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "recipient_location",
@@ -983,10 +804,7 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
     assert resp.json() == expected_response
-
-    logging_statements.clear()
 
     # Recipient Location - State
     resp = client.post(
@@ -999,7 +817,6 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
                 "filters": {"time_period": [{"start_date": "2008-10-01", "end_date": "2009-09-30"}]},
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "scope": "recipient_location",
@@ -1008,5 +825,4 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
     assert resp.json() == expected_response

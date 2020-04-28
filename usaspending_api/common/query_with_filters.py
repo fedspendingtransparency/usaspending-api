@@ -37,7 +37,7 @@ class _Keywords(_Filter):
         return ES_Q("dis_max", queries=keyword_queries)
 
 
-class _Keyword_Search(_Filter):
+class _KeywordSearch(_Filter):
     underscore_name = "keyword_search"
 
     @classmethod
@@ -230,6 +230,7 @@ class _RecipientLocations(_Filter):
 
             for location_key, location_value in location_lookup.items():
                 if location_value is not None:
+                    location_value = location_value.upper()
                     location_query.append(ES_Q("match", **{f"recipient_location_{location_key}": location_value}))
 
             recipient_locations_query.append(ES_Q("bool", must=location_query))
@@ -283,6 +284,7 @@ class _PlaceOfPerformanceLocations(_Filter):
 
             for location_key, location_value in location_lookup.items():
                 if location_value is not None:
+                    location_value = location_value.upper()
                     location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
 
             pop_locations_query.append(ES_Q("bool", must=location_query))
@@ -307,11 +309,15 @@ class _AwardIds(_Filter):
     underscore_name = "award_ids"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
         award_ids_query = []
 
         for v in filter_values:
-            award_ids_query.append(ES_Q("match", display_award_id=v))
+            if v and v.startswith('"') and v.endswith('"'):
+                award_ids_query.append(ES_Q("term", display_award_id={"value": v[1:-1]}))
+            else:
+                v = " +".join(v.split())
+                award_ids_query.append(ES_Q("regexp", display_award_id={"value": v}))
 
         return ES_Q("bool", should=award_ids_query, minimum_should_match=1)
 
@@ -415,7 +421,7 @@ class QueryWithFilters:
 
     filter_lookup = {
         _Keywords.underscore_name: _Keywords,
-        _Keyword_Search.underscore_name: _Keyword_Search,
+        _KeywordSearch.underscore_name: _KeywordSearch,
         _TimePeriods.underscore_name: _TimePeriods,
         _AwardTypeCodes.underscore_name: _AwardTypeCodes,
         _Agencies.underscore_name: _Agencies,
