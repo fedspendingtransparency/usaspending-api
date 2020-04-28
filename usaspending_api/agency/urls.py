@@ -1,7 +1,6 @@
 from django.conf.urls import url
-from usaspending_api.agency.views import test, program_activity_count
+from usaspending_api.agency.views.program_activity_count import ProgramActivityCount
 
 urlpatterns = [
-    url(r"^test/$", test.EndpointTest.as_view()),
-    url(r"^(P<pk>[0-9]+)/program_activity/count$", program_activity_count.as_view()),
+    url(r"^(?P<pk>[0-9]+)/program_activity/count/$", ProgramActivityCount.as_view()),
 ]

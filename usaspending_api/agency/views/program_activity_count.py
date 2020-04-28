@@ -3,9 +3,12 @@ from rest_framework.views import APIView
 
 
 class ProgramActivityCount(APIView):
-    """blah"""
+    """
+    Obtain the count of program activity categories for a specific agency in a
+    single fiscal year
+    """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/id/program_activity_count.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/agency_id/program_activity/count.md"
 
-    def get(self, request, parameters):
-        return Response({"status": "up"})
+    def get(self, request, pk):
+        return Response({"count": 7})
