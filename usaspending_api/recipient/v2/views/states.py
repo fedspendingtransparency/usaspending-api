@@ -14,7 +14,7 @@ from usaspending_api.awards.v2.filters.matview_filters import matview_search_fil
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.recipient.models import StateData
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
 

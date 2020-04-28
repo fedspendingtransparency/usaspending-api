@@ -10,7 +10,7 @@ from model_mommy import mommy
 import pytest
 
 # Imports from your apps
-from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.recipient.v2.views.states import obtain_state_totals
 
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
