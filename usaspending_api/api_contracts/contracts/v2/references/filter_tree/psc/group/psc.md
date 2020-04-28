@@ -7,7 +7,7 @@ These endpoints are used to power USAspending.gov's Product Service Code search 
 The response is a forest of filter search nodes, which despite having a unified structure represent different
 database fields based on depth in the tree.
 
-## Toptier Search [GET /api/v2/references/filter_tree/psc/{group}/{psc}/{psc2}/{?depth}{?filter}]
+## Toptier Search [GET /api/v2/references/filter_tree/psc/{group}/{psc}/{?depth}{?filter}]
 
 Returns PSCs under the provided PSC
 + Request (application/json)
@@ -15,8 +15,6 @@ Returns PSCs under the provided PSC
         + `group`: `Product` (required, string)
         Parent group of PSCs to return
         + `psc`: `10` (required, string)
-        ID value of the grandparent node
-        + `psc2`: `1000` (required, string)
         ID value of the parent node
         + `depth` (optional, enum[number]) 
             + Default: 0
