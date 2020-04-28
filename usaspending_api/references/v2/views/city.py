@@ -1,12 +1,10 @@
-from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from collections import OrderedDict
-from elasticsearch_dsl import Q as ES_Q
+from elasticsearch_dsl import Q as ES_Q, A
 
 from usaspending_api.common.cache_decorator import cache_response
 
-from usaspending_api.common.elasticsearch.client import es_client_query
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
@@ -71,23 +69,27 @@ def prepare_search_terms(request_data):
 
 
 def create_elasticsearch_query(return_fields, scope, search_text, country, state, limit):
-    query_string = create_es_search(scope, search_text, country, state)
+    query = create_es_search(scope, search_text, country, state)
     # Buffering the "group by city" to create a handful more buckets, more than the number of shards we expect to have,
     # so that we don't get inconsistent results when the limit gets down to a very low number (e.g. lower than the
     # number of shards we have) such that it may provide inconsistent results in repeated queries
     city_buckets = limit + 100
     if country != "USA":
-        aggs = {"states": {"terms": {"field": return_fields[2], "size": 100}}}
+        aggs = {"field": return_fields[2], "size": 100}
     else:
-        aggs = {"states": {"terms": {"field": return_fields[1], "size": 100}}}
-    query = {
-        "_source": return_fields,
-        "size": 0,
-        "query": {"bool": {"filter": {"bool": query_string}}},
-        "aggs": {
-            "cities": {"terms": {"field": "{}.keyword".format(return_fields[0]), "size": city_buckets}, "aggs": aggs}
-        },
-    }
+        aggs = {"field": return_fields[1], "size": 100}
+    # query = {
+    #     "_source": return_fields,
+    #     "size": 0,
+    #     "query": {"bool": {"filter": {"bool": query_string}}},
+    #     "aggs": {
+    #         "cities": {"terms": {"field": "{}.keyword".format(return_fields[0]), "size": city_buckets}, "aggs": aggs}
+    #     },
+    # }
+    agg_values = {"field": "{}.keyword".format(return_fields[0]), "size": city_buckets}
+    agg_key = A("terms", **agg_values)
+    query.aggs.bucket("cities", agg_key).pipeline("states", A("terms", **aggs))
+    print(query.to_dict())
     return query
 
 
@@ -103,14 +105,10 @@ def create_es_search(scope, search_text, country=None, state=None):
     """
     # The base query that will do a wildcard term-level query
     query = {"must": [{"wildcard": {"{}_city_name.keyword".format(scope): search_text + "*"}}]}
-    q = []
-    must = ES_Q("wildcard", **{"{}_city_name.keyword".format(scope): search_text + "*"})
-    q.append(ES_Q("bool", must=must))
     if country != "USA":
         # A non-USA selected country
         if country != ALL_FOREIGN_COUNTRIES:
             query["must"].append({"match": {"{scope}_country_code".format(scope=scope): country}})
-            q.append(ES_Q("must", match={"{scope}_country_code".format(scope=scope): country}))
         # Create a "Should Not" query with a nested bool, to get everything non-USA
         query["should"] = [
             {
@@ -123,29 +121,9 @@ def create_es_search(scope, search_text, country=None, state=None):
                 }
             }
         ]
-        q.append(
-            ES_Q(
-                "bool",
-                **{
-                    "should": {
-                    "bool": {
-                        "must": {"exists": {"field": "{}_country_code".format(scope)}},
-                        "must_not": [
-                            {"match": {"{}_country_code".format(scope): "USA"}},
-                            {"match_phrase": {"{}_country_code".format(scope): "UNITED STATES"}},
-                        ],
-                    }
-                }
-                },
-                minimum_should_match=1
-            )
-        )
         query["minimum_should_match"] = 1
     else:
         # USA is selected as country
-        q.append(ES_Q(**build_country_match(scope, "USA")))
-        q.append(ES_Q(**build_country_match(scope, "UNITED STATES")))
-        q.append(ES_Q("bool", must_not={"exists": {"field": "{}_country_code".format(scope)}}))
         query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
         query["should"].append({"bool": {"must_not": {"exists": {"field": "{}_country_code".format(scope)}}}})
         query["minimum_should_match"] = 1
@@ -153,12 +131,10 @@ def create_es_search(scope, search_text, country=None, state=None):
 
     if state:
         # If a state was provided, include it in the filter to limit hits
-        q.append(ES_Q("bool", must={"match": {"{}_state_code".format(scope): es_sanitize(state).upper()}}))
         query["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state).upper()}})
 
-    search = TransactionSearch().filter(ES_Q("bool", should=q))
-    # print(search.to_dict())
-    return query
+    search = TransactionSearch().filter(ES_Q("bool", **query))
+    return search
 
 
 def build_country_match(country_match_scope, country_match_country):
@@ -167,8 +143,7 @@ def build_country_match(country_match_scope, country_match_country):
 
 
 def query_elasticsearch(query):
-    hits = es_client_query(index="{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX), body=query)
-
+    hits = query.handle_execute()
     results = []
     if hits and hits["hits"]["total"]["value"] > 0:
         results = parse_elasticsearch_response(hits)

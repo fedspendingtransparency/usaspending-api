@@ -2,7 +2,6 @@ from typing import Union, Optional
 
 import certifi
 import logging
-import json
 
 from django.conf import settings
 from elasticsearch import ConnectionError
@@ -52,29 +51,6 @@ def create_es_client() -> Elasticsearch:
         CLIENT = Elasticsearch(**es_config)
     except Exception as e:
         logger.error("Error creating the elasticsearch client: {}".format(e))
-
-
-def es_client_query(
-    index: str = None, body: dict = None, timeout: str = "1m", retries: int = 5, search: Search = None
-) -> ElasticsearchResponse:
-    if CLIENT is None:
-        create_es_client()
-    if CLIENT is None:  # If CLIENT is still None, don't even attempt to connect to the cluster
-        retries = 0
-    elif retries > 20:
-        retries = 20
-    elif retries < 1:
-        retries = 1
-    for attempt in range(retries):
-        response = _es_search(index=index, body=body, search=search, timeout=timeout)
-        if response is None and search is None:
-            logger.info(f"Failure using these: Index='{index}', Body={json.dumps(body)}")
-        if response is None:
-            logger.info(f"Failure using these: Body={json.dumps(search.to_dict())}")
-        else:
-            return response
-    logger.error(f"Unable to reach elasticsearch cluster. {retries} attempt(s) made")
-    return None
 
 
 def _es_search(
