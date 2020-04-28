@@ -18,7 +18,8 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER, AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count, es_minimal_sanitize
+from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count
+from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_sum_and_count
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TRANSACTIONS_SOURCE_LOOKUP, TRANSACTIONS_LOOKUP
 

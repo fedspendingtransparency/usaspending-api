@@ -8,10 +8,10 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.v2.elasticsearch_helper import (
     spending_by_transaction_count,
     get_download_ids,
-    es_sanitize,
     es_minimal_sanitize,
     swap_keys,
 )
+from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 
 @pytest.fixture

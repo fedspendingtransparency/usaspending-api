@@ -2,13 +2,13 @@ import logging
 
 from django.conf import settings
 
-
 from typing import List
 from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
 from usaspending_api.search.elasticsearch.filters.naics import NaicsCodes
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,9 @@ class _Keywords(_Filter):
             "description",
         ]
         for v in filter_values:
-            keyword_queries.append(ES_Q("query_string", query=v + "*", default_operator="AND", fields=fields))
+            keyword_queries.append(
+                ES_Q("query_string", query=es_sanitize(v) + "*", default_operator="AND", fields=fields)
+            )
 
         return ES_Q("dis_max", queries=keyword_queries)
 
@@ -165,7 +167,7 @@ class _RecipientSearchText(_Filter):
         fields = ["recipient_name"]
 
         for v in filter_values:
-            upper_recipient_string = v.upper()
+            upper_recipient_string = es_sanitize(v.upper())
             recipient_name_query = ES_Q(
                 "query_string", query=upper_recipient_string + "*", default_operator="AND", fields=fields
             )
@@ -314,8 +316,10 @@ class _AwardIds(_Filter):
 
         for v in filter_values:
             if v and v.startswith('"') and v.endswith('"'):
-                award_ids_query.append(ES_Q("term", display_award_id={"value": v[1:-1]}))
+                v = v[1:-1]
+                award_ids_query.append(ES_Q("term", display_award_id={"value": es_sanitize(v)}))
             else:
+                v = es_sanitize(v)
                 v = " +".join(v.split())
                 award_ids_query.append(ES_Q("regexp", display_award_id={"value": v}))
 

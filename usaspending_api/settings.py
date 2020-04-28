@@ -132,6 +132,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "rest_framework_tracking",
+    "usaspending_api.agency",
     "usaspending_api.common",
     "usaspending_api.etl",
     "usaspending_api.references",

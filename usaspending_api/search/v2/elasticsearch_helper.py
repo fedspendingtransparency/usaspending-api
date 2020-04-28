@@ -1,5 +1,4 @@
 import logging
-import re
 from typing import Dict, Optional
 
 from django.conf import settings
@@ -12,32 +11,12 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 
 logger = logging.getLogger("console")
 
 DOWNLOAD_QUERY_SIZE = settings.MAX_DOWNLOAD_LIMIT
 TRANSACTIONS_SOURCE_LOOKUP.update({v: k for k, v in TRANSACTIONS_SOURCE_LOOKUP.items()})
-
-
-def es_sanitize(input_string):
-    """ Escapes reserved elasticsearch characters and removes when necessary """
-
-    processed_string = re.sub(r'([-&!|{}()^~*?:\\/"+\[\]<>])', "", input_string)
-    if len(processed_string) != len(input_string):
-        msg = "Stripped characters from input string New: '{}' Original: '{}'"
-        logger.info(msg.format(processed_string, input_string))
-    return processed_string
-
-
-def es_minimal_sanitize(keyword):
-    keyword = concat_if_array(keyword)
-    """Remove Lucene special characters instead of escaping for now"""
-    processed_string = re.sub(r"[%{}/:!^\[\]]", "", keyword)
-    if len(processed_string) != len(keyword):
-        msg = "Stripped characters from ES keyword search string New: '{}' Original: '{}'"
-        logger.info(msg.format(processed_string, keyword))
-        keyword = processed_string
-    return keyword
 
 
 def swap_keys(dictionary_):
@@ -170,20 +149,14 @@ def spending_by_transaction_sum_and_count(request_data):
     return get_sum_and_count_aggregation_results(request_data["filters"]["keywords"])
 
 
-def concat_if_array(data):
-    if isinstance(data, str):
-        return data
-    else:
-        if isinstance(data, list):
-            str_from_array = " ".join(data)
-            return str_from_array
-        else:
-            # This should never happen if TinyShield is functioning properly
-            logger.error("Keyword submitted was not a string or array")
-            return ""
-
-
 def get_number_of_unique_terms(filter_query: ES_Q, field: str) -> int:
+    """
+    Returns the count for a specific filter_query.
+    NOTE: This will only work when the number of unique values is 40k or less. This is captured in the Elasticsearch
+    documentation for the cardinality aggregation:
+        "The maximum supported value is 40000, thresholds above this number will
+        have the same effect as a threshold of 40000"
+    """
     search = TransactionSearch().filter(filter_query)
     cardinality_aggregation = A("cardinality", field=field)
     search.aggs.metric("field_count", cardinality_aggregation)
