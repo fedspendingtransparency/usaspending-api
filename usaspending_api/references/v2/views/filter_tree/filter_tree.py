@@ -51,11 +51,12 @@ class FilterTree(metaclass=ABCMeta):
     def _linked_node_from_data(self, ancestor_array, data, filter_string, child_layers):
         retval = self.unlinked_node_from_data(ancestor_array, data)
         raw_children = self.raw_search(ancestor_array + [retval.id])
+        temp_children = [
+            self._linked_node_from_data(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
+            for elem in raw_children
+        ]
         if child_layers:
-            children = [
-                self._linked_node_from_data(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
-                for elem in raw_children
-            ]
+            children = temp_children
         else:
             children = None
 
@@ -63,7 +64,7 @@ class FilterTree(metaclass=ABCMeta):
             id=retval.id,
             ancestors=retval.ancestors,
             description=retval.description,
-            count=len(raw_children),
+            count=sum([node.count if node.count else 1 for node in temp_children]),
             children=children,
         )
 
