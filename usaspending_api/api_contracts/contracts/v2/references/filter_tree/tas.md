@@ -3,8 +3,8 @@ HOST: https://api.usaspending.gov
 
 # TAS
 
-These endpoints are used to power USAspending.gov's TAS search component on the advanced search page.
-The response is a forest of filter search nodes, which despite having a unified structure represent different
+This endpoint is used to power USAspending.gov's TAS search component on the advanced search page.
+The response is a forest of search filter nodes, which despite having a unified structure represent different
 database fields based on depth in the tree.
 
 ## Toptier Search [GET /api/v2/references/filter_tree/tas/{?depth}]
@@ -14,9 +14,16 @@ Returns a list of toptier agencies that have at least one TAS affiliated with th
     + Parameters
         + `depth` (optional, number) 
             + Default: 0
-        0 will return only agencies, 1 will return agencies and any federal accounts under them, and so on.
+            
+        Defines how many levels of descendants to return under each node. For example, depth=0 will 
+        return a flat array, while depth=2 will populate the children array of each top level node 
+        with that node's children and grandchildren. The actual depth of each tree may be less than 
+        the value of depth if returned nodes have no children. Negative values are treated as zero. 
         + `filter` (optional, string) 
-        When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node. 
+        
+        Restricts results to nodes with a `id` or `description` matching the filter string. If depth is 
+        greater than zero, nodes will also appear the response if at least one child within depth 
+        matches the filter.
     
     + Schema
     
