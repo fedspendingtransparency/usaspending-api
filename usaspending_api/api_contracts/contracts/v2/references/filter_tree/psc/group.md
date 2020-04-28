@@ -14,20 +14,18 @@ Returns PSCs under the provided group
     + Parameters
         + `group`: `Product` (required, string)
         Parent group of PSCs to return
-        + `depth` (optional, number) 
+        + `depth` (optional, number)
+            Defines how many levels of descendants to return under each node. For example, depth=0 will 
+            return a flat array, while depth=2 will populate the children array of each top level node 
+            with that node's children and grandchildren. The actual depth of each tree may be less than 
+            the value of depth if returned nodes have no children. Negative values are treated as 
+            infinite, returning all descendants.  
             + Default: 0
         
-        Defines how many levels of descendants to return under each node. For example, depth=0 will 
-        return a flat array, while depth=2 will populate the children array of each top level node 
-        with that node's children and grandchildren. The actual depth of each tree may be less than 
-        the value of depth if returned nodes have no children. Negative values are treated as 
-        infinite, returning all descendants. 
-        
         + `filter` (optional, string) 
-                
-        Restricts results to nodes with a `id` or `description` matching the filter string. If depth is 
-        greater than zero, nodes will also appear the response if at least one child within depth 
-        matches the filter.
+            Restricts results to nodes with a `id` or `description` matching the filter string. If depth is 
+            greater than zero, nodes will also appear the response if at least one child within depth 
+            matches the filter.
     
     + Schema
     
