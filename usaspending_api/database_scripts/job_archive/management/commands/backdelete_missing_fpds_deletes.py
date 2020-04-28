@@ -82,4 +82,4 @@ class Command(BaseCommand):
 
                 fpds_command = FPDSCommand()
                 stale_awards = delete_stale_fpds(delete_ids)
-                fpds_command.update_award_records(awards=stale_awards, skip_cd_linkage=True)
+                fpds_command.update_award_records(awards=stale_awards, skip_cd_linkage=False)
