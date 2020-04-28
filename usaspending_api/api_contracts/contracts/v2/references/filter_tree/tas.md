@@ -12,12 +12,8 @@ database fields based on depth in the tree.
 Returns a list of toptier agencies that have at least one TAS affiliated with them
 + Request (application/json)
     + Parameters
-        + `depth` (optional, enum[number]) 
+        + `depth` (optional, number) 
             + Default: 0
-            + Members
-                    + 0
-                    + 1
-                    + 2
         0 will return only agencies, 1 will return agencies and any federal accounts under them, and so on.
         + `filter` (optional, string) 
         When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node. 

@@ -15,12 +15,8 @@ Returns a list of federal accounts associated with the specified agency
 + Request (application/json)
     + Parameters
         + `agency`: `020` (required, string) 
-        + `depth` (optional, enum[number])
+        + `depth` (optional, number)
             + Default: 0
-            + Members
-                + 0
-                + 1
-                + 2        
         + `filter` (optional, string)
         When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
     + Schema

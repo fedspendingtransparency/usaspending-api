@@ -14,13 +14,8 @@ Returns PSCs under the provided group
     + Parameters
         + `group`: `Product` (required, string)
         Parent group of PSCs to return
-        + `depth` (optional, enum[number]) 
+        + `depth` (optional, number) 
             + Default: 0
-            + Members
-                    + `0`
-                    + `1`
-                    + `2`
-                    + `3`
         Depth to populate for each tree returned in results. Trees will only populate with elements that match the filter provided, if any.
         + `filter` (optional, string) 
         When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node. 

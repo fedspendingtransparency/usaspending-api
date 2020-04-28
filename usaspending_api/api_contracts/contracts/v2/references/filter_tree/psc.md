@@ -12,13 +12,8 @@ database fields based on depth in the tree.
 Returns the basic groupings of Product Service Codes
 + Request (application/json)
     + Parameters
-        + `depth` (optional, enum[number]) 
-            + Default: 0        
-            + Members
-                    + 0
-                    + 1
-                    + 2
-                    + 3
+        + `depth` (optional, number) 
+            + Default: 0
         Depth to populate for each tree returned in results. Trees will only populate with elements that match the filter provided, if any.
         + `filter` (optional, string) 
         When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node. 
