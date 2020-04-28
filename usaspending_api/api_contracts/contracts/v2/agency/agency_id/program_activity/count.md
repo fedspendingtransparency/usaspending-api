@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Program Activity Count [/api/v2/agency/<agency_id>/program_activity/count/]
+# Program Activity Count [/api/v2/agency/{agency_id}/program_activity/count/{?fiscal_year}]
 
 Returns the count of unique Program Activity categories in the Agency's appropriations for a single fiscal year
 
@@ -17,6 +17,9 @@ Returns the count of unique Program Activity categories in the Agency's appropri
             }
     + Parameters
         + `agency_id`: 100 (required, number)
+            The primary key of the agency record
+        + `fiscal_year` (optional, number)
+            The desired appropriations fiscal year. Defaults to the current FY
 
 + Response 200 (application/json)
     + Attributes
