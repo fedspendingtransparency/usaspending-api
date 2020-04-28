@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year, generate_fiscal_year
 from usaspending_api.common.helpers.generic_helper import convert_string_to_date
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -41,6 +42,15 @@ class ProgramActivityCount(APIView):
         if not agency:
             raise NotFound(f"Agency with a key '{pk}' does not exist")
 
+        if validated_request_data["fy"] < 2017:
+            # Currently historical data aren't included in this response. Post-MVP functionality to add in the future
+            raise UnprocessableEntityException(
+                (
+                    "Data powering this endpoint was first collected in FY2017 under the DATA Act;"
+                    " as such, there is no data available for earlier Fiscal Years."
+                )
+            )
+
         count = (
             RefProgramActivity.objects.filter(
                 responsible_agency_id=agency["toptier_agency__toptier_code"], budget_year=validated_request_data["fy"],
@@ -50,4 +60,4 @@ class ProgramActivityCount(APIView):
             .count()
         )
 
-        return Response({"count": count})
+        return Response({"program_activity_count": count})

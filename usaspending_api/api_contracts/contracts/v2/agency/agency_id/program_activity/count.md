@@ -23,10 +23,10 @@ Returns the count of unique Program Activity categories in the Agency's appropri
 
 + Response 200 (application/json)
     + Attributes
-        + `count` (required, number)
+        + `program_activity_count` (required, number)
 
     + Body
 
             {
-                "count": 7
+                "program_activity_count": 7
             }
