@@ -12,6 +12,8 @@ from usaspending_api.references.tests.integration.filter_tree.tas.tas_data_fixtu
 from usaspending_api.references.tests.integration.filter_tree.psc.psc_data_fixtures import (
     basic_rnd,
     basic_product,
+    product_with_count_above_one,
+    product_with_branching_count_above_one,
     basic_service,
     no_data,
 )
@@ -28,6 +30,8 @@ __all__ = [
     "fa_with_unsupported_tas",
     "basic_rnd",
     "basic_product",
+    "product_with_count_above_one",
+    "product_with_branching_count_above_one",
     "basic_service",
     "no_data",
 ]

@@ -22,6 +22,21 @@ def basic_product(db):
 
 
 @pytest.fixture
+def product_with_count_above_one(db):
+    _psc(db, product_tier_two())
+    _psc(db, product_tier_three())
+    _psc(db, product_other_tier_three("10"))
+
+
+@pytest.fixture
+def product_with_branching_count_above_one(db):
+    _psc(db, product_tier_two())
+    _psc(db, product_other_tier_two())
+    _psc(db, product_tier_three())
+    _psc(db, product_other_tier_three("11"))
+
+
+@pytest.fixture
 def basic_service(db):
     _psc(db, service_tier_two())
     _psc(db, service_tier_three())
@@ -69,11 +84,25 @@ def product_tier_two():
     return {"id": "10", "description": "tier two Product", "ancestors": ["Product"], "count": 1, "children": None}
 
 
+def product_other_tier_two():
+    return {"id": "11", "description": "tier two Product 2", "ancestors": ["Product"], "count": 1, "children": None}
+
+
 def product_tier_three():
     return {
         "id": "1000",
         "description": "tier three Product",
         "ancestors": ["Product", "10"],
+        "count": 0,
+        "children": None,
+    }
+
+
+def product_other_tier_three(parent):
+    return {
+        "id": "1010",
+        "description": "tier three Product 2",
+        "ancestors": ["Product", parent],
         "count": 0,
         "children": None,
     }

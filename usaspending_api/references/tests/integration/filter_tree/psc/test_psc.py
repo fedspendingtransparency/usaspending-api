@@ -63,6 +63,16 @@ def test_empty_category(client, basic_rnd, basic_product, basic_service):
     assert resp.json() == {"results": []}
 
 
+def test_count_branching_at_bottom(client, product_with_count_above_one):
+    resp = _call_and_expect_200(client, base_query + "Product/")
+    assert resp.json()["results"][0]["count"] == 2
+
+
+def test_count_branching_at_middle(client, product_with_branching_count_above_one):
+    resp = _call_and_expect_200(client, base_query + "Product/")
+    assert resp.json()["results"][0]["count"] == 2
+
+
 def _call_and_expect_200(client, url):
     resp = client.get(url)
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
