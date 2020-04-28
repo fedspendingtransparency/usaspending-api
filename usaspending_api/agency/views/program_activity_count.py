@@ -22,12 +22,12 @@ class ProgramActivityCount(APIView):
 
     @cache_response()
     def get(self, request: Request, pk: str) -> Response:
-        request_dict = {"pk": pk, "fy": request.query_params.get("fiscal_year", current_fiscal_year())}
+        request_dict = {"pk": pk, "fiscal_year": request.query_params.get("fiscal_year", current_fiscal_year())}
         models = [
             {"key": "pk", "name": "pk", "type": "text", "text_type": "search", "optional": False},
             {
-                "key": "fy",
-                "name": "fy",
+                "key": "fiscal_year",
+                "name": "fiscal_year",
                 "type": "integer",
                 "min": generate_fiscal_year(convert_string_to_date(settings.API_SEARCH_MIN_DATE)),
                 "max": current_fiscal_year(),

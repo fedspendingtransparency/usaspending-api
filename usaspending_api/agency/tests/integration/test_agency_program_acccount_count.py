@@ -34,34 +34,19 @@ def agency_data():
         budget_year=str(current_fiscal_year()),
     )
     mommy.make(
-        "references.RefProgramActivity",
-        responsible_agency_id="bbb",
-        program_activity_code="111",
-        budget_year="2017",
+        "references.RefProgramActivity", responsible_agency_id="bbb", program_activity_code="111", budget_year="2017",
     )
     mommy.make(
-        "references.RefProgramActivity",
-        responsible_agency_id="bbb",
-        program_activity_code="111",
-        budget_year="2018",
+        "references.RefProgramActivity", responsible_agency_id="bbb", program_activity_code="111", budget_year="2018",
     )
     mommy.make(
-        "references.RefProgramActivity",
-        responsible_agency_id="ccc",
-        program_activity_code="111",
-        budget_year="2018",
+        "references.RefProgramActivity", responsible_agency_id="ccc", program_activity_code="111", budget_year="2018",
     )
     mommy.make(
-        "references.RefProgramActivity",
-        responsible_agency_id="ccc",
-        program_activity_code="111",
-        budget_year="2019",
+        "references.RefProgramActivity", responsible_agency_id="ccc", program_activity_code="111", budget_year="2019",
     )
     mommy.make(
-        "references.RefProgramActivity",
-        responsible_agency_id="ccc",
-        program_activity_code="111",
-        budget_year="2019",
+        "references.RefProgramActivity", responsible_agency_id="ccc", program_activity_code="111", budget_year="2019",
     )
 
 
