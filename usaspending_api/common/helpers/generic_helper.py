@@ -5,6 +5,7 @@ import time
 
 from calendar import monthrange, isleap
 from datetime import datetime as dt
+from dateutil import parser
 
 from django.conf import settings
 from django.db import connection
@@ -27,6 +28,16 @@ def read_text_file(filepath):
     with open(filepath, "r") as plaintext_file:
         file_content_str = plaintext_file.read()
     return file_content_str
+
+
+def convert_string_to_datetime(input: str) -> datetime.datetime:
+    """Parse a string into a datetime object"""
+    return parser.parse(input)
+
+
+def convert_string_to_date(input: str) -> datetime.date:
+    """Parse a string into a date object"""
+    return convert_string_to_datetime(input).date()
 
 
 def validate_date(date):

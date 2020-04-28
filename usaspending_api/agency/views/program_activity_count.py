@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
+from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year, generate_fiscal_year
+from usaspending_api.common.helpers.generic_helper import convert_string_to_date
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models import Agency, RefProgramActivity
 
@@ -27,8 +28,8 @@ class ProgramActivityCount(APIView):
                 "key": "fy",
                 "name": "fy",
                 "type": "integer",
-                "min": int(settings.API_MIN_DATE[:4]),
-                "max": int(settings.API_MAX_DATE[:4]),
+                "min": generate_fiscal_year(convert_string_to_date(settings.API_SEARCH_MIN_DATE)),
+                "max": current_fiscal_year(),
                 "default": current_fiscal_year(),
             },
         ]
