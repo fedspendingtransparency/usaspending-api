@@ -153,9 +153,9 @@ def test_subset_of_fields_returned(client, monkeypatch, transaction_data, elasti
 
 
 @pytest.mark.django_db
-def test_columns_can_be_sorted(client, transaction_data, elasticsearch_transaction_index):
-
-    elasticsearch_transaction_index.update_index()
+def test_columns_can_be_sorted(client, monkeypatch, transaction_data, elasticsearch_transaction_index):
+    logging_statements = []
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
 
     fields = [
         "Action Date",
