@@ -6,7 +6,7 @@ from elasticsearch_dsl import Q as ES_Q, A
 from usaspending_api.common.cache_decorator import cache_response
 
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
+from usaspending_api.search.v2.es_sanitization import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
 from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES
 
