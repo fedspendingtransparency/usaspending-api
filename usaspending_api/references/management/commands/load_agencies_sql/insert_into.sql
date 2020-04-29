@@ -14,6 +14,7 @@ insert into "{temp_table}" (
     frec_cgac_association,
     user_selectable,
     mission,
+    about_agency_data,
     website,
     congressional_justification,
     icon_filename
