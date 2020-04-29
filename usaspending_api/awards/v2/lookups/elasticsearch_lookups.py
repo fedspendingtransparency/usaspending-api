@@ -17,7 +17,7 @@ TRANSACTIONS_LOOKUP = {
     "Issued Date": "period_of_performance_start_date",
     "Loan Value": "face_value_loan_guarantee",
     "Subsidy Cost": "original_loan_subsidy_cost",
-    "Mod": "modification_number",
+    "Mod": "modification_number.keyword",
     "Award ID": "display_award_id",
     "awarding_agency_id": "awarding_agency_id",
     "internal_id": "award_id",

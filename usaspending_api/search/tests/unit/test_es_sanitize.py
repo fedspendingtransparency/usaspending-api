@@ -1,4 +1,4 @@
-from usaspending_api.search.v2.elasticsearch_helper import es_sanitize
+from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 
 def test_sanitizer():

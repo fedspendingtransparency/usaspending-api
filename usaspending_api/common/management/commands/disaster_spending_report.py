@@ -15,8 +15,8 @@ from django.db import connection
 from openpyxl import load_workbook
 from time import perf_counter
 
-from usaspending_api.common.helpers.generic_helper import generate_fiscal_year_and_quarter, read_text_file
-
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_quarter
+from usaspending_api.common.helpers.generic_helper import read_text_file
 
 TAS_XLSX_FILE = "usaspending_api/data/DEFC ABC Pd 6 FY18.xlsx"
 ASSISTANCE_SQL = read_text_file("usaspending_api/common/management/sql/disaster_spending_assistance.sql")
