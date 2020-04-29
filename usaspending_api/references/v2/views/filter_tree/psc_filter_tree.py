@@ -9,7 +9,6 @@ PSC_GROUPS = {"Research and Development": r"^A.$", "Service": r"^[B-Z]$", "Produ
 class PSCFilterTree(FilterTree):
     def raw_search(self, tiered_keys):
         if not self._path_is_valid(tiered_keys):
-            print(f"path {tiered_keys} is not valid")
             return []
 
         if len(tiered_keys) == 0:
@@ -23,7 +22,6 @@ class PSCFilterTree(FilterTree):
         if len(path) < 2:
             return True
         if PSC_GROUPS[path[0]] is None or not re.match(PSC_GROUPS[path[0]], path[1]):
-            print(f"{path[1]} doesn't start with {PSC_GROUPS[path[0]]}")
             return False
         for x in range(1, len(path) - 1):
             if not path[x + 1].startswith(path[x]):
