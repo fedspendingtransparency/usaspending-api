@@ -9,7 +9,8 @@ from rest_framework.views import APIView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import bolster_missing_time_periods, get_generic_filters_message
+from usaspending_api.common.helpers.fiscal_year_helpers import bolster_missing_time_periods
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile, SummaryAwardRecipient

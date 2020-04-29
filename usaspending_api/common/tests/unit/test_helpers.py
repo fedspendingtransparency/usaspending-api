@@ -4,8 +4,7 @@ from datetime import datetime
 from model_mommy import mommy
 
 from usaspending_api.common.helpers.generic_helper import check_valid_toptier_agency
-from usaspending_api.common.helpers.generic_helper import generate_fiscal_period
-from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_period, generate_fiscal_year
 
 
 @pytest.mark.django_db
