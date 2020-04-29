@@ -81,7 +81,7 @@ class FilterTree(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def unlinked_node_from_data(self, ancestors: list, data) -> UnlinkedNode:
+    def unlinked_node_from_data(self, ancestors: list, data: any) -> UnlinkedNode:
         """
         :param ancestors: list
         :param data: Single member of the list provided by raw_search

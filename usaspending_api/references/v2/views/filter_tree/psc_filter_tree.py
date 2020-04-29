@@ -1,3 +1,5 @@
+import re
+
 from usaspending_api.references.v2.views.filter_tree.filter_tree import UnlinkedNode, FilterTree
 from usaspending_api.references.models import PSC
 
@@ -6,12 +8,25 @@ PSC_GROUPS = {"Research and Development": r"^A.$", "Service": r"^[b-z]$", "Produ
 
 class PSCFilterTree(FilterTree):
     def raw_search(self, tiered_keys):
+        if not self._path_is_valid(tiered_keys):
+            return []
+
         if len(tiered_keys) == 0:
             return self._toptier_search()
         elif len(tiered_keys) == 1:
             return self._psc_from_group(tiered_keys[0])
         else:
             return self._psc_from_parent(tiered_keys[-1])
+
+    def _path_is_valid(self, path: list) -> bool:
+        if len(path) < 2:
+            return True
+        if PSC_GROUPS[path[0]] is None or not re.match(PSC_GROUPS[path[0]], path[1]):
+            return False
+        for x in range(1, len(path)):
+            if not path[x + 1].startswith(path[x]):
+                return False
+        return True
 
     def _toptier_search(self):
         return PSC_GROUPS.keys()
