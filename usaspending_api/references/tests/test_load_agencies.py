@@ -99,6 +99,7 @@ def test_create_agency(disable_vacuuming, monkeypatch):
                 frec_cgac_association=False,
                 user_selectable=True,
                 mission="BOGUS MISSION",
+                about_agency_data="BOGUS ABOUT AGENCY DATA",
                 website="BOGUS WEBSITE",
                 congressional_justification="BOGUS CONGRESSIONAL JUSTIFICATION",
                 icon_filename="BOGUS ICON FILENAME",
