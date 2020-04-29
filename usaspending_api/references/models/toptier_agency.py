@@ -9,6 +9,7 @@ class ToptierAgency(models.Model):
     abbreviation = models.TextField(blank=True, null=True)
     name = models.TextField(db_index=True)
     mission = models.TextField(blank=True, null=True)
+    about_agency_data = models.TextField(blank=True, null=True)
     website = models.URLField(blank=True, null=True)
     justification = models.URLField(blank=True, null=True)
     icon_filename = models.TextField(blank=True, null=True)
