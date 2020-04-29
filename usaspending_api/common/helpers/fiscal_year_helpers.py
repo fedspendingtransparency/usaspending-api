@@ -8,7 +8,7 @@ from usaspending_api.common.helpers.generic_helper import validate_date, min_and
 logger = logging.getLogger(__name__)
 
 
-def current_fiscal_date() -> FiscalDate:
+def current_fiscal_date() -> FiscalDateTime:
     return FiscalDateTime.today()
 
 

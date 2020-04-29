@@ -16,8 +16,8 @@ Returns the count of unique Program Activity categories in the Agency's appropri
                 "type": "number"
             }
     + Parameters
-        + `toptier_code`: 100 (required, number)
-            The toptier code of an agency (could be a CGAG or FREC) so only 3-4 numeric characters are accepted
+        + `toptier_code`: 012 (required, number)
+            The toptier code of an agency (could be a CGAG or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY
 
