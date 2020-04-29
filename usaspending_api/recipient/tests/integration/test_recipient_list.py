@@ -9,7 +9,7 @@ from rest_framework import status
 from model_mommy import mommy
 
 # Imports from your apps
-from usaspending_api.common.helpers.generic_helper import generate_fiscal_year
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.recipient.v2.views.list_recipients import get_recipients
 
