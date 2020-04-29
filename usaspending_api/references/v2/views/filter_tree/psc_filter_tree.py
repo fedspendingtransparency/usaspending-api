@@ -19,13 +19,12 @@ class PSCFilterTree(FilterTree):
             return self._psc_from_parent(tiered_keys[-1])
 
     def _path_is_valid(self, path: list) -> bool:
-        if len(path) < 2:
-            return True
-        if PSC_GROUPS[path[0]] is None or not re.match(PSC_GROUPS[path[0]], path[1]):
-            return False
-        for x in range(1, len(path) - 1):
-            if not path[x + 1].startswith(path[x]):
+        if len(path) > 1:
+            if PSC_GROUPS[path[0]] is None or not re.match(PSC_GROUPS[path[0]], path[1]):
                 return False
+            for x in range(1, len(path) - 1):
+                if not path[x + 1].startswith(path[x]):
+                    return False
         return True
 
     def _toptier_search(self):
