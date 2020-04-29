@@ -46,7 +46,7 @@ def test_happy_path(client, agency_data):
     assert resp.data["mission"] == "TO BOLDLY GO"
     assert resp.data["about_agency_data"] == "ABOUT"
     assert resp.data["website"] == "HTTP"
-    assert resp.data["justification"] == "BECAUSE"
+    assert resp.data["congressional_justification_url"] == "BECAUSE"
     assert resp.data["icon_filename"] == "HAI.jpg"
     assert resp.data["subtier_agency_count"] == 1
 
