@@ -16,6 +16,7 @@ create temporary table "{temp_table}" (
     frec_cgac_association boolean,
     user_selectable boolean,
     mission text,
+    about_agency_data text,
     website text,
     congressional_justification text,
     icon_filename text
