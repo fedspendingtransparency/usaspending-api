@@ -9,7 +9,7 @@ from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year, generate_fiscal_year
 from usaspending_api.common.helpers.generic_helper import convert_string_to_date
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.references.models import Agency, RefProgramActivity
+from usaspending_api.references.models import ToptierAgency, RefProgramActivity
 
 
 class ProgramActivityCount(APIView):
@@ -21,10 +21,10 @@ class ProgramActivityCount(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/agency_id/program_activity/count.md"
 
     @cache_response()
-    def get(self, request: Request, pk: str) -> Response:
-        request_dict = {"pk": pk, "fiscal_year": request.query_params.get("fiscal_year", current_fiscal_year())}
+    def get(self, request: Request, code: str) -> Response:
+        request_dict = {"code": code, "fiscal_year": request.query_params.get("fiscal_year", current_fiscal_year())}
         models = [
-            {"key": "pk", "name": "pk", "type": "text", "text_type": "search", "optional": False},
+            {"key": "code", "name": "code", "type": "text", "text_type": "search", "optional": False},
             {
                 "key": "fiscal_year",
                 "name": "fiscal_year",
@@ -37,10 +37,10 @@ class ProgramActivityCount(APIView):
 
         validated_request_data = TinyShield(models).block(request_dict)
 
-        agency = Agency.objects.filter(id=validated_request_data["pk"]).values("toptier_agency__toptier_code").first()
+        agency = ToptierAgency.objects.filter(toptier_code=validated_request_data["code"]).values().first()
 
         if not agency:
-            raise NotFound(f"Agency with a key '{pk}' does not exist")
+            raise NotFound(f"Agency with a toptier code of '{code}' does not exist")
 
         if validated_request_data["fiscal_year"] < 2017:
             # Currently historical data aren't included in this response. Post-MVP functionality to add in the future
@@ -53,8 +53,7 @@ class ProgramActivityCount(APIView):
 
         count = (
             RefProgramActivity.objects.filter(
-                responsible_agency_id=agency["toptier_agency__toptier_code"],
-                budget_year=validated_request_data["fiscal_year"],
+                responsible_agency_id=agency["toptier_code"], budget_year=validated_request_data["fiscal_year"],
             )
             .values("program_activity_code")
             .distinct()
