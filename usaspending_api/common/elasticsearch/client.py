@@ -4,13 +4,8 @@ import certifi
 import logging
 
 from django.conf import settings
-from elasticsearch import ConnectionError
-from elasticsearch import ConnectionTimeout
 from elasticsearch import Elasticsearch
-from elasticsearch import NotFoundError
-from elasticsearch import TransportError
 from elasticsearch.connection import create_ssl_context
-from elasticsearch_dsl import Search
 from ssl import CERT_NONE
 
 from elasticsearch_dsl.response import Response
@@ -51,26 +46,3 @@ def create_es_client() -> Elasticsearch:
         CLIENT = Elasticsearch(**es_config)
     except Exception as e:
         logger.error("Error creating the elasticsearch client: {}".format(e))
-
-
-def _es_search(
-    index: str = None, body: dict = None, search: Search = None, timeout: int = "1m"
-) -> ElasticsearchResponse:
-    error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
-    result = None
-    try:
-        if search is not None:
-            result = search.using(CLIENT).params(timeout=timeout).execute()
-        else:
-            result = CLIENT.search(index=index, body=body, timeout=timeout)
-    except NameError as e:
-        logger.error(error_template.format(type="Hostname", e=str(e)))
-    except (ConnectionError, ConnectionTimeout) as e:
-        logger.error(error_template.format(type="Connection", e=str(e)))
-    except NotFoundError as e:
-        logger.error(error_template.format(type="404 Not Found", e=str(e)))
-    except TransportError as e:
-        logger.error(error_template.format(type="Transport", e=str(e)))
-    except Exception as e:
-        logger.error(error_template.format(type="Generic", e=str(e)))
-    return result

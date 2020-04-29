@@ -80,7 +80,7 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
         aggs = {"field": return_fields[1], "size": 100}
     agg_values = {"field": "{}.keyword".format(return_fields[0]), "size": city_buckets}
     agg_key = A("terms", **agg_values)
-    query.aggs.bucket("cities", agg_key).pipeline("states", A("terms", **aggs))
+    query.aggs.bucket("cities", agg_key).bucket("states", A("terms", **aggs))
     return query
 
 
