@@ -13,7 +13,7 @@ def _setup_es(client, monkeypatch, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
 
 
-def _query_by_tas(client, tas):
+def query_by_tas(client, tas):
     return client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
@@ -33,7 +33,7 @@ def _query_by_tas(client, tas):
     )
 
 
-def _query_by_treasury_account_components(client, tas, treasury_accounts):
+def query_by_treasury_account_components(client, tas, treasury_accounts):
     filters = {}
     if tas:
         filters[TasCodes.underscore_name] = tas

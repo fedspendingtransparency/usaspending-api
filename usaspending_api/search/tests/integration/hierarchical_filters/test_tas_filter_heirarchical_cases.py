@@ -9,14 +9,14 @@ from usaspending_api.search.tests.integration.hierarchical_filters.fixtures impo
 )
 from usaspending_api.search.tests.integration.hierarchical_filters.es_search_test_helpers import (
     _setup_es,
-    _query_by_tas,
+    query_by_tas,
 )
 
 
 @pytest.mark.django_db
 def test_agency_level_require_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_agency_path(BASIC_TAS)]})
+    resp = query_by_tas(client, {"require": [_agency_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -24,7 +24,7 @@ def test_agency_level_require_match(client, monkeypatch, elasticsearch_award_ind
 @pytest.mark.django_db
 def test_fa_level_require_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_fa_path(BASIC_TAS)]})
+    resp = query_by_tas(client, {"require": [_fa_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -32,7 +32,7 @@ def test_fa_level_require_match(client, monkeypatch, elasticsearch_award_index, 
 @pytest.mark.django_db
 def test_tas_level_require_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(BASIC_TAS)]})
+    resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -40,7 +40,7 @@ def test_tas_level_require_match(client, monkeypatch, elasticsearch_award_index,
 @pytest.mark.django_db
 def test_agency_level_exclude_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"exclude": [_agency_path(ATA_TAS)]})
+    resp = query_by_tas(client, {"exclude": [_agency_path(ATA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -48,7 +48,7 @@ def test_agency_level_exclude_match(client, monkeypatch, elasticsearch_award_ind
 @pytest.mark.django_db
 def test_fa_level_exclude_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"exclude": [_fa_path(ATA_TAS)]})
+    resp = query_by_tas(client, {"exclude": [_fa_path(ATA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -56,7 +56,7 @@ def test_fa_level_exclude_match(client, monkeypatch, elasticsearch_award_index, 
 @pytest.mark.django_db
 def test_tas_level_exclude_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"exclude": [_tas_path(ATA_TAS)]})
+    resp = query_by_tas(client, {"exclude": [_tas_path(ATA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -64,7 +64,7 @@ def test_tas_level_exclude_match(client, monkeypatch, elasticsearch_award_index,
 @pytest.mark.django_db
 def test_agency_level_require_non_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_agency_path(ATA_TAS)]})
+    resp = query_by_tas(client, {"require": [_agency_path(ATA_TAS)]})
 
     assert resp.json()["results"] == []
 
@@ -72,7 +72,7 @@ def test_agency_level_require_non_match(client, monkeypatch, elasticsearch_award
 @pytest.mark.django_db
 def test_fa_level_require_non_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_fa_path(ATA_TAS)]})
+    resp = query_by_tas(client, {"require": [_fa_path(ATA_TAS)]})
 
     assert resp.json()["results"] == []
 
@@ -80,7 +80,7 @@ def test_fa_level_require_non_match(client, monkeypatch, elasticsearch_award_ind
 @pytest.mark.django_db
 def test_tas_level_require_non_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(ATA_TAS)]})
+    resp = query_by_tas(client, {"require": [_tas_path(ATA_TAS)]})
 
     assert resp.json()["results"] == []
 
@@ -88,7 +88,7 @@ def test_tas_level_require_non_match(client, monkeypatch, elasticsearch_award_in
 @pytest.mark.django_db
 def test_agency_level_exclude_non_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"exclude": [_agency_path(BASIC_TAS)]})
+    resp = query_by_tas(client, {"exclude": [_agency_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == []
 
@@ -96,7 +96,7 @@ def test_agency_level_exclude_non_match(client, monkeypatch, elasticsearch_award
 @pytest.mark.django_db
 def test_fa_level_exclude_non_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"exclude": [_fa_path(BASIC_TAS)]})
+    resp = query_by_tas(client, {"exclude": [_fa_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == []
 
@@ -104,7 +104,7 @@ def test_fa_level_exclude_non_match(client, monkeypatch, elasticsearch_award_ind
 @pytest.mark.django_db
 def test_tas_level_exclude_non_match(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"exclude": [_tas_path(BASIC_TAS)]})
+    resp = query_by_tas(client, {"exclude": [_tas_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == []
 
@@ -112,7 +112,7 @@ def test_tas_level_exclude_non_match(client, monkeypatch, elasticsearch_award_in
 @pytest.mark.django_db
 def test_exclude_overrides_require(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(BASIC_TAS)], "exclude": [_tas_path(BASIC_TAS)]})
+    resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS)], "exclude": [_tas_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == []
 
@@ -120,7 +120,7 @@ def test_exclude_overrides_require(client, monkeypatch, elasticsearch_award_inde
 @pytest.mark.django_db
 def test_exclude_eclipsing_require(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_agency_path(BASIC_TAS)], "exclude": [_fa_path(BASIC_TAS)]})
+    resp = query_by_tas(client, {"require": [_agency_path(BASIC_TAS)], "exclude": [_fa_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == []
 
@@ -128,7 +128,7 @@ def test_exclude_eclipsing_require(client, monkeypatch, elasticsearch_award_inde
 @pytest.mark.django_db
 def test_require_eclipsing_exclude(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_fa_path(BASIC_TAS)], "exclude": [_agency_path(BASIC_TAS)]})
+    resp = query_by_tas(client, {"require": [_fa_path(BASIC_TAS)], "exclude": [_agency_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
@@ -136,7 +136,7 @@ def test_require_eclipsing_exclude(client, monkeypatch, elasticsearch_award_inde
 @pytest.mark.django_db
 def test_double_eclipsing_filters(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(
+    resp = query_by_tas(
         client, {"require": [_agency_path(BASIC_TAS), _tas_path(BASIC_TAS)], "exclude": [_fa_path(BASIC_TAS)]}
     )
 
@@ -146,7 +146,7 @@ def test_double_eclipsing_filters(client, monkeypatch, elasticsearch_award_index
 @pytest.mark.django_db
 def test_double_eclipsing_filters2(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(
+    resp = query_by_tas(
         client, {"require": [_fa_path(BASIC_TAS)], "exclude": [_agency_path(BASIC_TAS), _tas_path(BASIC_TAS)]}
     )
 
@@ -156,7 +156,7 @@ def test_double_eclipsing_filters2(client, monkeypatch, elasticsearch_award_inde
 @pytest.mark.django_db
 def test_sibling_filters(client, monkeypatch, elasticsearch_award_index, multiple_awards_with_sibling_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = _query_by_tas(client, {"require": [_tas_path(SISTER_TAS[1])]})
+    resp = query_by_tas(client, {"require": [_tas_path(SISTER_TAS[1])]})
 
     assert resp.json()["results"] == [_award2()]
 
