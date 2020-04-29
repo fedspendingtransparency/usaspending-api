@@ -185,8 +185,8 @@ def test_delete_agency(disable_vacuuming, monkeypatch):
 
     # Make sure the data was affected as expected.
     assert ToptierAgency.objects.count() == toptier_count - 1
-    assert SubtierAgency.objects.count() == subtier_count - 2
-    assert Agency.objects.count() == agency_count - 2
+    assert SubtierAgency.objects.count() == subtier_count - 3
+    assert Agency.objects.count() == agency_count - 3
     assert CGAC.objects.count() == cgac_count - 1
     assert FREC.objects.count() == frec_count  # This frec is associated with more than one agency in our test data
 
