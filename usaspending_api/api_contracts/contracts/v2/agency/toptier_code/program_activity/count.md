@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Program Activity Count [/api/v2/agency/{agency_id}/program_activity/count/{?fiscal_year}]
+# Program Activity Count [/api/v2/agency/{toptier_code}/program_activity/count/{?fiscal_year}]
 
 Returns the count of unique Program Activity categories in the Agency's appropriations for a single fiscal year
 
@@ -16,8 +16,8 @@ Returns the count of unique Program Activity categories in the Agency's appropri
                 "type": "number"
             }
     + Parameters
-        + `agency_id`: 100 (required, number)
-            The primary key of the agency record
+        + `toptier_code`: 100 (required, number)
+            The toptier code of an agency (could be a CGAG or FREC) so only 3-4 numeric characters are accepted
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY
 

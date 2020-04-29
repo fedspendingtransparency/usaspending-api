@@ -18,7 +18,7 @@ class ProgramActivityCount(APIView):
     single fiscal year
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/agency_id/program_activity/count.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/program_activity/count.md"
 
     @cache_response()
     def get(self, request: Request, code: str) -> Response:
