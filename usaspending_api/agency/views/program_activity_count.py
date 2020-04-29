@@ -42,7 +42,7 @@ class ProgramActivityCount(APIView):
         if not agency:
             raise NotFound(f"Agency with a key '{pk}' does not exist")
 
-        if validated_request_data["fy"] < 2017:
+        if validated_request_data["fiscal_year"] < 2017:
             # Currently historical data aren't included in this response. Post-MVP functionality to add in the future
             raise UnprocessableEntityException(
                 (
@@ -53,7 +53,8 @@ class ProgramActivityCount(APIView):
 
         count = (
             RefProgramActivity.objects.filter(
-                responsible_agency_id=agency["toptier_agency__toptier_code"], budget_year=validated_request_data["fy"],
+                responsible_agency_id=agency["toptier_agency__toptier_code"],
+                budget_year=validated_request_data["fiscal_year"],
             )
             .values("program_activity_code")
             .distinct()
