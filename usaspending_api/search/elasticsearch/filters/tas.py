@@ -1,8 +1,10 @@
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from elasticsearch_dsl import Q as ES_Q
 from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
 from usaspending_api.search.elasticsearch.filters.HierarchicalFilter import HierarchicalFilter, Node
+import re
 
 
 class TasCodes(_Filter, HierarchicalFilter):
@@ -59,6 +61,12 @@ def search_regex_of(v):
         + code_lookup["epoa"]
         + code_lookup["a"]
     )
+
+    # TODO: move this to a Tinyshield filter
+    if not re.match(r"^(\d|\w|-|\*|=)+$", search_regex):
+        raise UnprocessableEntityException(f"Unable to parse TAS filter")
+    else:
+        print(search_regex)
 
     return search_regex
 

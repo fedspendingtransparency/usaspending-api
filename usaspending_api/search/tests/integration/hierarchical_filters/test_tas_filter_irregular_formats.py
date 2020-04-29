@@ -87,3 +87,11 @@ def test_not_using_es_header(client, monkeypatch, elasticsearch_award_index, awa
     )
 
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, "Failed to return 422 Response"
+
+
+@pytest.mark.django_db
+def test_tas_filter_inappropriate_characters(client, monkeypatch, elasticsearch_award_index, award_with_tas):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = _query_by_tas(client, {"require": [["011", "[abc]"]]})
+
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, "Failed to return 422 Response"
