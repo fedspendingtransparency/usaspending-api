@@ -20,7 +20,7 @@ class PSCFilterTree(FilterTree):
 
     def _path_is_valid(self, path: list) -> bool:
         if len(path) > 1:
-            if PSC_GROUPS[path[0]] is None or not re.match(PSC_GROUPS[path[0]], path[1]):
+            if PSC_GROUPS.get(path[0]) is None or not re.match(PSC_GROUPS[path[0]], path[1]):
                 return False
             for x in range(1, len(path) - 1):
                 if not path[x + 1].startswith(path[x]):
