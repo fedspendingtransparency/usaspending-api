@@ -70,6 +70,7 @@ Returns the number of transactions that would be included in a download request 
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
 ## TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)

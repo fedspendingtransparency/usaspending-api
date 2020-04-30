@@ -70,10 +70,11 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `program_numbers`: `10.331` (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
 + `psc_codes`: `8940`, `8910` (optional, array[string])
++ `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
-+ `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
 

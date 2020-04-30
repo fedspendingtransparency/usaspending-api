@@ -143,6 +143,8 @@ This route sends a request to the backend to begin generating a zipfile of trans
 + `recipient_type_names` (optional, array[string])
 + `set_aside_type_codes` (optional, array[string])
 + `time_period` (optional, array[TimePeriod], fixed-type)
++ `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
 ### AwardAmount (object)
 + `lower_bound` (optional, number)
