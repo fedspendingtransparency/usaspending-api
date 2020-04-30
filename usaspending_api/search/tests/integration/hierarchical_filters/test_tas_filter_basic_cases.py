@@ -1,6 +1,6 @@
 import pytest
 
-from usaspending_api.search.tests.integration.hierarchical_filters.fixtures import (
+from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures import (
     BASIC_TAS,
     ATA_TAS,
     BPOA_TAS,

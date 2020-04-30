@@ -30,7 +30,7 @@ class TasCodes(_Filter, HierarchicalFilter):
     @staticmethod
     def string_to_dictionary(string):
         if len(string.split("-")) == 1:
-            return {"aid": string}
+            return {"agency": string}
         elif len(string.split("-")) == 2:
             return FederalAccount.fa_rendering_label_to_component_dictionary(string)
         else:
@@ -42,6 +42,9 @@ def search_regex_of(v):
         v = TasCodes.string_to_dictionary(v)
 
     code_lookup = {
+        "agency": f"agency={v['agency']}" if v.get("agency") else "*",
+        "faaid": f"faaid={v['faaid']}" if v.get("faaid") else "*",
+        "famain": f"famain={v['famain']}" if v.get("famain") else "*",
         "aid": f"aid={v['aid']}" if v.get("aid") else "*",
         "main": f"main={v['main']}" if v.get("main") else "*",
         "ata": f"ata={v['ata']}" if v.get("ata") else "*",
@@ -53,7 +56,10 @@ def search_regex_of(v):
 
     # This is NOT the order of elements as displayed in the tas rendering label, but instead the order in the award_delta_view and transaction_delta_view
     search_regex = (
-        code_lookup["aid"]
+        code_lookup["agency"]
+        + code_lookup["faaid"]
+        + code_lookup["famain"]
+        + code_lookup["aid"]
         + code_lookup["main"]
         + code_lookup["ata"]
         + code_lookup["sub"]
@@ -66,6 +72,7 @@ def search_regex_of(v):
     if not re.match(r"^(\d|\w|-|\*|=)+$", search_regex):
         raise UnprocessableEntityException(f"Unable to parse TAS filter")
 
+    print(search_regex)
     return search_regex
 
 
@@ -95,7 +102,8 @@ class TreasuryAccounts(_Filter):
                 "a": v.get("a", ".*"),
             }
 
-            search_regex = f"aid={code_lookup['aid']}main={code_lookup['main']}ata={code_lookup['ata']}sub={code_lookup['sub']}bpoa={code_lookup['bpoa']}epoa={code_lookup['epoa']}a={code_lookup['a']}"
+            search_regex = f".*aid={code_lookup['aid']}main={code_lookup['main']}ata={code_lookup['ata']}sub={code_lookup['sub']}bpoa={code_lookup['bpoa']}epoa={code_lookup['epoa']}a={code_lookup['a']}"
+            print(search_regex)
             code_query = ES_Q("regexp", treasury_accounts={"value": search_regex})
             tas_codes_query.append(ES_Q("bool", must=code_query))
 

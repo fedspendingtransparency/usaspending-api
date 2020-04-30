@@ -96,6 +96,9 @@ LEFT JOIN (
     faba.award_id,
     ARRAY_AGG(
       DISTINCT CONCAT(
+        'agency=', agency.toptier_code,
+        'faaid=', fa.agency_identifier,
+        'famain=', fa.main_account_code,
         'aid=', taa.agency_id,
         'main=', taa.main_account_code,
         'ata=', taa.allocation_transfer_agency_id,
@@ -108,6 +111,8 @@ LEFT JOIN (
  FROM
    treasury_appropriation_account taa
    INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
+   INNER JOIN federal_account fa ON (taa.federal_account_id = fa.id)
+   INNER JOIN toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
  WHERE
    faba.award_id IS NOT NULL
  GROUP BY

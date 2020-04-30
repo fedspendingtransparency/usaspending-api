@@ -1,4 +1,4 @@
-from usaspending_api.search.tests.integration.hierarchical_filters.fixtures import (
+from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures import (
     award,
     award_with_tas,
     award_with_bpoa_tas,

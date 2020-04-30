@@ -7,7 +7,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.es_search_tes
     query_by_tas,
     query_by_treasury_account_components,
 )
-from usaspending_api.search.tests.integration.hierarchical_filters.fixtures import TAS_DICTIONARIES
+from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures import TAS_DICTIONARIES
 from usaspending_api.search.elasticsearch.filters.tas import TasCodes
 
 

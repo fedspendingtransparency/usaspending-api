@@ -25,26 +25,27 @@ TAS_DICTIONARIES = [
 @pytest.fixture
 def award_with_tas(db):
     award(db, 1)
-    tas(db, 1, BASIC_TAS)
+    tas_with_agency(db, 1, BASIC_TAS)
 
 
 @pytest.fixture
 def award_with_bpoa_tas(db):
     award(db, 1)
-    tas(db, 1, BPOA_TAS)
+    tas_with_agency(db, 1, BPOA_TAS)
 
 
 @pytest.fixture
 def award_with_ata_tas(db):
     award(db, 1)
-    tas(db, 1, ATA_BPOA_TAS)
+    tas_with_agency(db, 1, ATA_BPOA_TAS)
 
 
 @pytest.fixture
 def award_with_multiple_tas(db):
     award(db, 1)
-    tas(db, 1, BASIC_TAS)
-    tas(db, 1, ATA_TAS)
+    agency(db, 1)
+    tas_with_fa(db, 1, 1, BASIC_TAS)
+    tas_with_fa(db, 1, 1, ATA_TAS)
 
 
 @pytest.fixture
@@ -55,17 +56,18 @@ def award_without_tas(db):
 @pytest.fixture
 def multiple_awards_with_tas(db):
     award(db, 1)
-    tas(db, 1, BASIC_TAS)
+    tas_with_agency(db, 1, BASIC_TAS)
     award(db, 2)
-    tas(db, 2, ATA_TAS)
+    tas_with_agency(db, 2, ATA_TAS)
 
 
 @pytest.fixture
 def multiple_awards_with_sibling_tas(db):
     award(db, 1)
-    tas(db, 1, SISTER_TAS[0])
+    agency(db, 1)
+    tas_with_fa(db, 1, 1, SISTER_TAS[0])
     award(db, 2)
-    tas(db, 2, SISTER_TAS[1])
+    tas(db, 2, 1, SISTER_TAS[1])
 
 
 def award(db, id):
@@ -85,11 +87,14 @@ def award(db, id):
     mommy.make("awards.TransactionNormalized", id=1000 + id, award=award, action_date=datetime(2017, 12, 1))
 
 
-def tas(db, award_id, index):
-    mommy.make("accounts.FederalAccount", id=index + 1)
+def agency(db, toptier_code):
+    mommy.make("references.ToptierAgency", toptier_agency_id=int(toptier_code), toptier_code=toptier_code)
+
+
+def tas(db, award_id, fa_id, index):
     mommy.make(
         "accounts.TreasuryAppropriationAccount",
-        treasury_account_identifier=index + 1,
+        treasury_account_identifier=index,
         allocation_transfer_agency_id=TAS_DICTIONARIES[index].get("ata"),
         agency_id=TAS_DICTIONARIES[index]["aid"],
         main_account_code=TAS_DICTIONARIES[index]["main"],
@@ -97,6 +102,22 @@ def tas(db, award_id, index):
         availability_type_code=TAS_DICTIONARIES[index].get("a"),
         beginning_period_of_availability=TAS_DICTIONARIES[index].get("bpoa"),
         ending_period_of_availability=TAS_DICTIONARIES[index].get("epoa"),
-        federal_account_id=index + 1,
+        federal_account_id=fa_id,
     )
-    mommy.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index + 1)
+    mommy.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
+
+
+def tas_with_fa(db, award_id, agency, index):
+    mommy.make(
+        "accounts.FederalAccount",
+        id=index,
+        parent_toptier_agency_id=int(agency),
+        agency_identifier=TAS_DICTIONARIES[index]["aid"],
+        main_account_code=TAS_DICTIONARIES[index]["main"],
+    )
+    tas(db, award_id, index, index)
+
+
+def tas_with_agency(db, award_id, index):
+    agency(db, TAS_DICTIONARIES[index]["aid"])
+    tas_with_fa(db, award_id, TAS_DICTIONARIES[index]["aid"], index)
