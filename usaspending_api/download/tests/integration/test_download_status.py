@@ -13,6 +13,7 @@ from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -161,7 +162,8 @@ def test_download_assistance_status(client, download_test_data):
     assert resp.json()["total_columns"] == 4
 
 
-def test_download_awards_status(client, download_test_data):
+def test_download_awards_status(client, download_test_data, monkeypatch, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
@@ -280,7 +282,8 @@ def test_download_idv_status(client, download_test_data):
     assert resp.json()["total_columns"] == 5
 
 
-def test_download_transactions_status(client, download_test_data):
+def test_download_transactions_status(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
@@ -328,7 +331,8 @@ def test_download_transactions_status(client, download_test_data):
     assert resp.json()["total_columns"] == 3
 
 
-def test_download_transactions_limit(client, download_test_data):
+def test_download_transactions_limit(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     dl_resp = client.post(

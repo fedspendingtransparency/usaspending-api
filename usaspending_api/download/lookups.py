@@ -74,7 +74,6 @@ VALUE_MAPPINGS = {
         "annotations_function": universal_award_matview_annotations,
     },
     # Elasticsearch Award Level
-    # Lives alongside Postgres functionality for /api/v2/download/awards/ as of 1/17/2020
     "elasticsearch_awards": {
         "source_type": "award",
         "table": AwardSearchView,
@@ -99,7 +98,6 @@ VALUE_MAPPINGS = {
         "annotations_function": universal_transaction_matview_annotations,
     },
     # Elasticsearch Transaction Level
-    # Lives alongside Postgres functionality for /api/v2/download/transactions/ as of 1/17/2020
     "elasticsearch_transactions": {
         "source_type": "award",
         "table": UniversalTransactionView,

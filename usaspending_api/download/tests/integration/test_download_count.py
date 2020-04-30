@@ -14,6 +14,7 @@ from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -106,16 +107,7 @@ def download_test_data(db):
 
 
 def test_download_count(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.download.v2.download_transaction_count.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-    )
-    elasticsearch_transaction_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
@@ -128,7 +120,6 @@ def test_download_count(client, download_test_data, monkeypatch, elasticsearch_t
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
     assert resp_json["calculated_transaction_count"] == 1
     assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
     assert resp_json["transaction_rows_gt_limit"] is False
