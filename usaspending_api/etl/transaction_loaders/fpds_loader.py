@@ -23,22 +23,18 @@ from usaspending_api.etl.transaction_loaders.generic_loaders import (
 )
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
-from usaspending_api.transactions.transaction_delete_journal_helpers import retrieve_deleted_fpds_transactions
 
 logger = logging.getLogger("console")
 
 failed_ids = []
 
 
-def delete_stale_fpds(date):
+def delete_stale_fpds(detached_award_procurement_ids):
     """
     Removed transaction_fpds and transaction_normalized records matching any of the
     provided detached_award_procurement_id list
     Returns list of awards touched
     """
-
-    detached_award_procurement_ids = retrieve_deleted_fpds_transactions(start_datetime=date)
-
     if not detached_award_procurement_ids:
         return []
 
@@ -67,7 +63,7 @@ def delete_stale_fpds(date):
             "returning id".format(ids=txn_id_str)
         )
         deleted_awards = cursor.fetchall()
-        logger.info(f"{len(deleted_awards)} awards were unlinked from transactions due to pending deletes")
+        logger.info(f"{len(deleted_awards):,} awards were unlinked from transactions due to pending deletes")
 
         cursor.execute(f"delete from transaction_fpds where transaction_id in ({txn_id_str}) returning transaction_id")
         deleted_fpds = set(cursor.fetchall())
@@ -78,6 +74,8 @@ def delete_stale_fpds(date):
         if deleted_transactions != deleted_fpds:
             msg = "Delete Mismatch! Counts of transaction_normalized ({}) and transaction_fpds ({}) deletes"
             raise RuntimeError(msg.format(len(deleted_transactions), len(deleted_fpds)))
+
+        logger.info(f"{len(deleted_fpds):,} transactions deleted")
 
         return awards_touched
 
