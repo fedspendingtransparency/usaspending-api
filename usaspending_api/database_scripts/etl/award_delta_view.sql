@@ -95,7 +95,7 @@ LEFT JOIN (
   SELECT
     faba.award_id,
     ARRAY_AGG(
-      CONCAT(
+      DISTINCT CONCAT(
         'aid=', taa.agency_id,
         'main=', taa.main_account_code,
         'ata=', taa.allocation_transfer_agency_id,
