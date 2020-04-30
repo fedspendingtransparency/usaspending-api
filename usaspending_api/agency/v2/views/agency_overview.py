@@ -18,10 +18,24 @@ class AgencyOverview(AgencyBase):
 
     @cache_response()
     def get(self, request, *args, **kwargs):
-        toptier_agency = self.toptier_agency
-        fiscal_year = self.fiscal_year
+        return Response(
+            {
+                "fiscal_year": self.fiscal_year,
+                "toptier_code": self.toptier_agency.toptier_code,
+                "name": self.toptier_agency.name,
+                "abbreviation": self.toptier_agency.abbreviation,
+                "icon_filename": self.toptier_agency.icon_filename,
+                "mission": self.toptier_agency.mission,
+                "website": self.toptier_agency.website,
+                "congressional_justification_url": self.toptier_agency.justification,
+                "about_agency_data": self.toptier_agency.about_agency_data,
+                "subtier_agency_count": self._subtier_agency_count(),
+            }
+        )
+
+    def _subtier_agency_count(self):
         min_fiscal_year = fy(settings.API_SEARCH_MIN_DATE)
-        subtier_agency_count = (
+        return (
             SubtierAgency.objects.filter(agency__toptier_agency=self.toptier_agency)
             .annotate(
                 was_an_awarding_agency=Exists(
@@ -33,19 +47,4 @@ class AgencyOverview(AgencyBase):
             .filter(was_an_awarding_agency=True)
             .values("pk")
             .count()
-        )
-
-        return Response(
-            {
-                "fiscal_year": fiscal_year,
-                "toptier_code": toptier_agency.toptier_code,
-                "name": toptier_agency.name,
-                "abbreviation": toptier_agency.abbreviation,
-                "icon_filename": toptier_agency.icon_filename,
-                "mission": toptier_agency.mission,
-                "website": toptier_agency.website,
-                "congressional_justification_url": toptier_agency.justification,
-                "about_agency_data": toptier_agency.about_agency_data,
-                "subtier_agency_count": subtier_agency_count,
-            }
         )
