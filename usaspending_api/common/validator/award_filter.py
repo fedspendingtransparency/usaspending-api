@@ -13,7 +13,7 @@ TIME_PERIOD_MIN_MESSAGE = (
     "listed on https://api.usaspending.gov/docs/endpoints."
 )
 
-OLD_TAS_FILTER = {
+TAS_COMPONENTS_FILTER = {
     "ata": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
     "aid": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": False},
     "bpoa": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
@@ -130,12 +130,17 @@ AWARD_FILTER = [
             "city": {"type": "text", "text_type": "search", "optional": True},
         },
     },
-    {"name": TreasuryAccounts.underscore_name, "type": "array", "array_type": "object", "object_keys": OLD_TAS_FILTER},
+    {
+        "name": TreasuryAccounts.underscore_name,
+        "type": "array",
+        "array_type": "object",
+        "object_keys": TAS_COMPONENTS_FILTER,
+    },
     {
         "name": TasCodes.underscore_name,
         "type": "any",
         "models": [
-            {"type": "array", "array_type": "object", "object_keys": OLD_TAS_FILTER},
+            {"type": "array", "array_type": "object", "object_keys": TAS_COMPONENTS_FILTER},
             {
                 "type": "object",
                 "min": 0,
