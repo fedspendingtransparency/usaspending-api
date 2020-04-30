@@ -1,6 +1,7 @@
 import json
 import pytest
 
+from django.conf import settings
 from model_mommy import mommy
 
 
@@ -53,8 +54,11 @@ def award_data_fixture(db):
     mommy.make("awards.Award", id=4, latest_transaction_id=4, is_fpds=True, type="A", piid="0003")
 
 
-def test_city_search_matches_found(client, award_data_fixture, elasticsearch_transaction_index):
-
+def test_city_search_matches_found(client, monkeypatch, award_data_fixture, elasticsearch_transaction_index):
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+    )
     elasticsearch_transaction_index.update_index()
     body = {"filter": {"country_code": "USA", "scope": "recipient_location"}, "search_text": "arli", "limit": 20}
     response = client.post("/api/v2/autocomplete/city", content_type="application/json", data=json.dumps(body))
@@ -63,8 +67,11 @@ def test_city_search_matches_found(client, award_data_fixture, elasticsearch_tra
         assert entry["city_name"].lower().find("arl") > -1
 
 
-def test_city_search_no_matches(client, award_data_fixture, elasticsearch_transaction_index):
-
+def test_city_search_no_matches(client, monkeypatch, award_data_fixture, elasticsearch_transaction_index):
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+    )
     elasticsearch_transaction_index.update_index()
     body = {"filter": {"country_code": "USA", "scope": "recipient_location"}, "search_text": "bhqlg", "limit": 20}
     response = client.post("/api/v2/autocomplete/city", content_type="application/json", data=json.dumps(body))
@@ -83,8 +90,11 @@ def test_city_search_no_matches(client, award_data_fixture, elasticsearch_transa
         assert False  # this should never be reached
 
 
-def test_city_search_special_characters(client, award_data_fixture, elasticsearch_transaction_index):
-
+def test_city_search_special_characters(client, monkeypatch, award_data_fixture, elasticsearch_transaction_index):
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+    )
     elasticsearch_transaction_index.update_index()
     body = {
         "filter": {"country_code": "USA", "scope": "recipient_location"},
@@ -97,7 +107,11 @@ def test_city_search_special_characters(client, award_data_fixture, elasticsearc
         assert entry["city_name"].lower().find("arl") > -1
 
 
-def test_city_search_non_usa(client, award_data_fixture, elasticsearch_transaction_index):
+def test_city_search_non_usa(client, monkeypatch, award_data_fixture, elasticsearch_transaction_index):
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+    )
     elasticsearch_transaction_index.update_index()
     body = {"filter": {"country_code": "GBR", "scope": "recipient_location"}, "search_text": "bri", "limit": 20}
     response = client.post("/api/v2/autocomplete/city", content_type="application/json", data=json.dumps(body))
@@ -112,7 +126,11 @@ def test_city_search_non_usa(client, award_data_fixture, elasticsearch_transacti
         assert entry["city_name"].lower().find("bri") > -1
 
 
-def test_city_search_foreign(client, award_data_fixture, elasticsearch_transaction_index):
+def test_city_search_foreign(client, monkeypatch, award_data_fixture, elasticsearch_transaction_index):
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+    )
     elasticsearch_transaction_index.update_index()
     body = {"filter": {"country_code": "FOREIGN", "scope": "recipient_location"}, "search_text": "bri", "limit": 20}
     response = client.post("/api/v2/autocomplete/city", content_type="application/json", data=json.dumps(body))
@@ -121,7 +139,11 @@ def test_city_search_foreign(client, award_data_fixture, elasticsearch_transacti
         assert entry["city_name"].lower().find("bri") > -1
 
 
-def test_city_search_nulls_are_usa(client, award_data_fixture, elasticsearch_transaction_index):
+def test_city_search_nulls_are_usa(client, monkeypatch, award_data_fixture, elasticsearch_transaction_index):
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+    )
     elasticsearch_transaction_index.update_index()
     body = {"filter": {"country_code": "USA", "scope": "recipient_location"}, "search_text": "phil", "limit": 20}
     response = client.post("/api/v2/autocomplete/city", content_type="application/json", data=json.dumps(body))
