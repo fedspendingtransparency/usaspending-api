@@ -64,7 +64,6 @@ def search_regex_of(v):
 
     # TODO: move this to a Tinyshield filter
     if not re.match(r"^(\d|\w|-|\*|=)+$", search_regex):
-        print(search_regex)
         raise UnprocessableEntityException(f"Unable to parse TAS filter")
 
     return search_regex
