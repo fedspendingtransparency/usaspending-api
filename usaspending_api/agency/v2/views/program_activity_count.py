@@ -19,7 +19,16 @@ class ProgramActivityCount(AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        count = (
+        return Response(
+            {
+                "toptier_code": self.toptier_code,
+                "fiscal_year": self.fiscal_year,
+                "program_activity_count": self._program_activity_count(),
+            }
+        )
+
+    def _program_activity_count(self):
+        return (
             RefProgramActivity.objects.annotate(
                 include=Exists(
                     FinancialAccountsByProgramActivityObjectClass.objects.filter(
@@ -33,7 +42,4 @@ class ProgramActivityCount(AgencyBase):
             .filter(include=True)
             .values("pk")
             .count()
-        )
-        return Response(
-            {"toptier_code": self.toptier_code, "fiscal_year": self.fiscal_year, "program_activity_count": count}
         )
