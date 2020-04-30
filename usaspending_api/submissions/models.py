@@ -6,7 +6,7 @@ class SubmissionAttributes(models.Model):
     broker_submission_id = models.IntegerField(null=True)
     certified_date = models.DateField(blank=True, null=True)
     usaspending_update = models.DateField(blank=True, null=True)
-    toptier_code = models.TextField(blank=True, null=True)
+    toptier_code = models.TextField(blank=True, null=True, db_index=True)
     reporting_agency_name = models.TextField(blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
@@ -36,6 +36,5 @@ class SubmissionAttributes(models.Model):
     @classmethod
     def last_certified_fy(cls):
         """FY for reporting purposes is the last FY for which submissions have been certified."""
-
         result = cls.objects.filter(certified_date__isnull=False).aggregate(fy=models.Max("reporting_fiscal_year"))
         return result["fy"]

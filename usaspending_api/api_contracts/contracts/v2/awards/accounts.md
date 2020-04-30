@@ -48,8 +48,8 @@ This endpoint returns a list of federal accounts under a given award.
 
 + Response 200 (application/json)
     + Attributes
-       + `results` (required, array[AccountListing], fixed-type)
-       + `page_metadata` (required, PageMetadata, fixed-type)
+        + `results` (required, array[AccountListing], fixed-type)
+        + `page_metadata` (required, PageMetadata, fixed-type)
     + Body
 
             {
