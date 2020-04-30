@@ -13,6 +13,7 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, prune_empty_awards
 from usaspending_api.etl.transaction_loaders.fpds_loader import load_fpds_transactions, failed_ids, delete_stale_fpds
+from usaspending_api.transactions.transaction_delete_journal_helpers import retrieve_deleted_fpds_transactions
 
 logger = logging.getLogger("script")
 
@@ -49,7 +50,8 @@ class Command(BaseCommand):
         else:
             logger.info(f"Handling fpds transactions since {date}...")
 
-            stale_awards = delete_stale_fpds(date)
+            detached_award_procurement_ids = retrieve_deleted_fpds_transactions(start_datetime=date)
+            stale_awards = delete_stale_fpds(detached_award_procurement_ids)
             self.update_award_records(awards=stale_awards, skip_cd_linkage=True)
 
         with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
