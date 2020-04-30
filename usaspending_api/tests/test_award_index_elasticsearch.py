@@ -52,7 +52,9 @@ def award_data_fixture(db):
         total_obligation=1000000.00,
         date_signed="2016-10-1",
     )
-    mommy.make("accounts.FederalAccount", id=1)
+    mommy.make(
+        "accounts.FederalAccount", id=1, parent_toptier_agency_id=1, agency_identifier="1", main_account_code="0001"
+    )
     mommy.make(
         "accounts.TreasuryAppropriationAccount",
         treasury_account_identifier=1,
@@ -112,7 +114,7 @@ def test_tas(award_data_fixture, elasticsearch_award_index):
         "epoa": ".*",
         "a": ".*",
     }
-    value_regex1 = f"aid={tas_code_regexes1['aid']}main={tas_code_regexes1['main']}.*"
+    value_regex1 = f".*aid={tas_code_regexes1['aid']}main={tas_code_regexes1['main']}.*"
     should = {"regexp": {"treasury_accounts": {"value": value_regex1}}}
     query = create_query(should)
     client = elasticsearch_award_index.client
@@ -127,7 +129,7 @@ def test_tas(award_data_fixture, elasticsearch_award_index):
         "epoa": ".*",
         "a": ".*",
     }
-    value_regex2 = f"aid={tas_code_regexes2['aid']}main={tas_code_regexes2['main']}.*"
+    value_regex2 = f".*aid={tas_code_regexes2['aid']}main={tas_code_regexes2['main']}.*"
     should = {"regexp": {"treasury_accounts": {"value": value_regex2}}}
     query = create_query(should)
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
