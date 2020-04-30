@@ -110,6 +110,22 @@ def test_tas_level_exclude_non_match(client, monkeypatch, elasticsearch_award_in
 
 
 @pytest.mark.django_db
+def test_double_require(client, monkeypatch, elasticsearch_award_index, award_with_tas):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas(client, {"require": [_fa_path(BASIC_TAS), _tas_path(BASIC_TAS)]})
+
+    assert resp.json()["results"] == [_award1()]
+
+
+@pytest.mark.django_db
+def test_double_exclude(client, monkeypatch, elasticsearch_award_index, award_with_tas):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas(client, {"exclude": [_fa_path(BASIC_TAS), _tas_path(BASIC_TAS)]})
+
+    assert resp.json()["results"] == []
+
+
+@pytest.mark.django_db
 def test_exclude_overrides_require(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS)], "exclude": [_tas_path(BASIC_TAS)]})
