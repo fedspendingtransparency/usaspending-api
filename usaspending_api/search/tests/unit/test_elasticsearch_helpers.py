@@ -4,7 +4,7 @@ import pytest
 
 from model_mommy import mommy
 
-from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.v2.elasticsearch_helper import (
     spending_by_transaction_count,
     get_download_ids,
@@ -90,8 +90,7 @@ def transaction_type_data(db):
 
 
 def test_spending_by_transaction_count(monkeypatch, transaction_type_data, elasticsearch_transaction_index):
-    logging_statements = []
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     request_data = {"filters": {"keywords": ["pop tart"]}}
     results = spending_by_transaction_count(request_data)
@@ -100,8 +99,7 @@ def test_spending_by_transaction_count(monkeypatch, transaction_type_data, elast
 
 
 def test_get_download_ids(monkeypatch, transaction_type_data, elasticsearch_transaction_index):
-    logging_statements = []
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     results = get_download_ids(["pop tart"], "transaction_id")
     transaction_ids = list(itertools.chain.from_iterable(results))

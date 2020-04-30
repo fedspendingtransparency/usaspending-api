@@ -2,13 +2,12 @@ import json
 import pytest
 from datetime import datetime
 
-from django.conf import settings
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.common.experimental_api_flags import EXPERIMENTAL_API_HEADER, ELASTICSEARCH_HEADER_VALUE
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters, legacy_filters
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.mark.django_db
@@ -88,20 +87,8 @@ def test_spending_by_award_subaward_success(client, spending_by_award_test_data)
 
 
 @pytest.mark.django_db
-def test_spending_by_award_success(client):
-
-    resp = client.post(
-        "/api/v2/search/spending_by_award",
-        content_type="application/json",
-        data=json.dumps(
-            {"subawards": False, "fields": ["Award ID"], "sort": "Award ID", "filters": non_legacy_filters()}
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-
-
-@pytest.mark.django_db
-def test_spending_by_award_legacy_filters(client):
+def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -112,11 +99,13 @@ def test_spending_by_award_legacy_filters(client):
 
 
 @pytest.mark.django_db
-def test_no_intersection(client):
+def test_no_intersection(client, monkeypatch, elasticsearch_award_index):
 
     mommy.make("awards.Award", id=1, type="A", latest_transaction_id=1)
     mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
     mommy.make("awards.TransactionFPDS", transaction_id=1)
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     request = {
         "subawards": False,
@@ -191,7 +180,11 @@ def awards_over_different_date_ranges():
 
 
 @pytest.mark.django_db
-def test_date_range_search_with_one_range(client, awards_over_different_date_ranges):
+def test_date_range_search_with_one_range(
+    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
     contract_type_list = all_award_types_mappings["contracts"]
     grants_type_list = all_award_types_mappings["grants"]
 
@@ -274,7 +267,11 @@ def test_date_range_search_with_one_range(client, awards_over_different_date_ran
 
 
 @pytest.mark.django_db
-def test_date_range_search_with_two_ranges(client, awards_over_different_date_ranges):
+def test_date_range_search_with_two_ranges(
+    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
     contract_type_list = all_award_types_mappings["contracts"]
     grants_type_list = all_award_types_mappings["grants"]
 
@@ -368,114 +365,6 @@ def test_date_range_search_with_two_ranges(client, awards_over_different_date_ra
         "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_no_awards)
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data["results"]) == 0
-
-
-"""
-These are intended for the experimental Elasticsearch functionality that lives alongside the Postgres
-implementation. These tests verify that ES performs as expected, but that it also respects the header put in place
-to trigger the experimental functionality. When ES for spending_by_award is used as the primary implementation for
-the endpoint these tests should be updated to reflect the change.
-"""
-
-
-@pytest.mark.django_db
-def test_spending_by_award_elasticsearch_http_header(client, monkeypatch, elasticsearch_award_index):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_award.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
-        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
-    )
-
-    elasticsearch_award_index.update_index()
-
-    # Logging statement is triggered for Prime Awards when Header is present
-    resp = client.post(
-        "/api/v2/search/spending_by_award",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {"award_type_codes": ["A"], "keywords": ["test", "testing"]},
-                "fields": ["Award ID"],
-                "page": 1,
-                "limit": 60,
-                "sort": "Award ID",
-                "order": "desc",
-                "subawards": False,
-            }
-        ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    assert len(logging_statements) == 1, "Expected one logging statement"
-    assert (
-        logging_statements[0] == "Using experimental Elasticsearch functionality for 'spending_by_award'"
-    ), "Expected a different logging statement"
-
-    # Logging statement is NOT triggered for Prime Awards when Header is NOT present
-    logging_statements.clear()
-    resp = client.post(
-        "/api/v2/search/spending_by_award",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {"award_type_codes": ["A"], "keywords": ["test", "testing"]},
-                "fields": ["Award ID"],
-                "page": 1,
-                "limit": 60,
-                "sort": "Award ID",
-                "order": "desc",
-                "subawards": False,
-            }
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    assert len(logging_statements) == 0, "Expected zero logging statements for Prime Awards without the Header"
-
-    # Logging statement is NOT triggered for Sub Awards when Header is present
-    logging_statements.clear()
-    resp = client.post(
-        "/api/v2/search/spending_by_award",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "subawards": True,
-                "filters": {"award_type_codes": ["A"], "keywords": ["test", "testing"]},
-                "fields": ["Sub-Award ID"],
-                "page": 1,
-                "limit": 60,
-                "sort": "Sub-Award ID",
-                "order": "desc",
-            }
-        ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    assert len(logging_statements) == 0, "Expected zero logging statements for Sub Awards with the Header"
-
-    # Logging statement is NOT triggered for Sub Awards when Header is NOT present
-    logging_statements.clear()
-    resp = client.post(
-        "/api/v2/search/spending_by_award",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "subawards": True,
-                "filters": {"award_type_codes": ["A"], "keywords": ["test", "testing"]},
-                "fields": ["Sub-Award ID"],
-                "page": 1,
-                "limit": 60,
-                "sort": "Sub-Award ID",
-                "order": "desc",
-            }
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    assert len(logging_statements) == 0, "Expected zero logging statements for Sub Awards without the Header"
 
 
 @pytest.mark.django_db
@@ -483,16 +372,8 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
     """
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    elasticsearch_award_index.update_index()
-
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_award.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-
-    logging_statements.clear()
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
@@ -507,10 +388,8 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_200_OK, f"Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
 
 
 @pytest.mark.django_db
@@ -518,18 +397,7 @@ def test_inclusive_naics_code(client, monkeypatch, spending_by_award_test_data, 
     """
         Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
     """
-
-    elasticsearch_award_index.update_index()
-
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_award.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
-        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
-    )
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -549,12 +417,9 @@ def test_inclusive_naics_code(client, monkeypatch, spending_by_award_test_data, 
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
-
-    assert len(logging_statements) != 0, "Elasticsearch was not used for this test"
 
 
 @pytest.mark.django_db
@@ -562,18 +427,7 @@ def test_exclusive_naics_code(client, monkeypatch, spending_by_award_test_data, 
     """
         Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
     """
-
-    elasticsearch_award_index.update_index()
-
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_award.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
-        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
-    )
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -593,12 +447,9 @@ def test_exclusive_naics_code(client, monkeypatch, spending_by_award_test_data, 
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 0
-
-    assert len(logging_statements) != 0, "Elasticsearch was not used for this test"
 
 
 @pytest.mark.django_db
@@ -623,17 +474,7 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
     mommy.make("awards.TransactionNormalized", id=8, award_id=5, action_date="2019-10-1", is_fpds=True)
     mommy.make("awards.TransactionFPDS", transaction_id=8, naics="222233", awardee_or_recipient_uniqu="duns_1001")
 
-    elasticsearch_award_index.update_index()
-
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_award.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
-        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
-    )
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -653,13 +494,11 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 5, "Award ID": None, "generated_internal_id": "ASST_NON_TESTING_4"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
-    assert len(logging_statements) != 0, "Elasticsearch was not used for this test"
 
 
 @pytest.mark.django_db
@@ -668,17 +507,7 @@ def test_correct_response_for_each_filter(client, monkeypatch, spending_by_award
     Verify the content of the response when using different filters. This function creates the ES Index
     and then calls each of the tests instead of recreating the ES Index multiple times with the same data.
     """
-    elasticsearch_award_index.update_index()
-
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_award.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
-        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
-    )
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     test_cases = [
         _test_correct_response_for_keywords,
@@ -703,8 +532,6 @@ def test_correct_response_for_each_filter(client, monkeypatch, spending_by_award
     for test in test_cases:
         test(client)
 
-    assert len(logging_statements) == len(test_cases), "Elasticsearch was not used for one of the tests"
-
 
 def _test_correct_response_for_keywords(client):
     resp = client.post(
@@ -721,7 +548,6 @@ def _test_correct_response_for_keywords(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -747,7 +573,6 @@ def _test_correct_response_for_time_period(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -773,7 +598,6 @@ def _test_correct_response_for_award_type_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
         {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
@@ -807,7 +631,6 @@ def _test_correct_response_for_agencies(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -834,7 +657,6 @@ def _test_correct_response_for_tas_components(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -861,7 +683,6 @@ def _test_correct_response_for_pop_location(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -891,7 +712,6 @@ def _test_correct_response_for_recipient_location(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
@@ -921,7 +741,6 @@ def _test_correct_response_for_recipient_search_text(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -948,7 +767,6 @@ def _test_correct_response_for_recipient_type_names(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
@@ -978,7 +796,6 @@ def _test_correct_response_for_award_amounts(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
@@ -1008,7 +825,6 @@ def _test_correct_response_for_cfda_program(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -1035,7 +851,6 @@ def _test_correct_response_for_naics_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -1062,7 +877,6 @@ def _test_correct_response_for_psc_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -1089,7 +903,6 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -1118,7 +931,6 @@ def _test_correct_response_for_set_aside_type_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -1145,7 +957,6 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -1174,7 +985,6 @@ def _test_correct_response_for_recipient_id(client):
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [{"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}]
     assert resp.status_code == status.HTTP_200_OK
@@ -1184,43 +994,23 @@ def _test_correct_response_for_recipient_id(client):
 
 @pytest.mark.django_db
 def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_index):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_award.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
-        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
-    )
-
-    elasticsearch_award_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # Fails with no request data
-    resp = client.post(
-        "/api/v2/search/spending_by_award",
-        content_type="application/json",
-        data=json.dumps({}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
-    )
+    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps({}),)
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert len(logging_statements) == 0, "Expected zero logging statements"
     assert resp.json().get("detail") == "Missing value: 'fields' is a required field"
 
     # Fails with empty filters
-    logging_statements.clear()
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
         data=json.dumps({"fields": [], "filters": {}, "page": 1, "limit": 60, "subawards": False}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert len(logging_statements) == 0, "Expected zero logging statements"
     assert resp.json().get("detail") == "Missing value: 'filters|award_type_codes' is a required field"
 
     # fails with empty field
-    logging_statements.clear()
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
@@ -1236,26 +1026,15 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
                 "subawards": False,
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert len(logging_statements) == 0, "Expected zero logging statements"
     assert resp.json().get("detail") == "Field 'fields' value '[]' is below min '1' items"
 
 
 @pytest.mark.django_db
 def test_search_after(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.search.v2.views.spending_by_award.logger.info",
-        lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
-        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
-    )
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    elasticsearch_award_index.update_index()
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
@@ -1272,13 +1051,11 @@ def test_search_after(client, monkeypatch, spending_by_award_test_data, elastics
                 "last_record_sort_value": "abc111",
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_result = [
         {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
         {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(logging_statements) == 1
     assert len(resp.json().get("results")) == 2
     assert resp.json().get("results") == expected_result, "Award Type Code filter does not match expected result"

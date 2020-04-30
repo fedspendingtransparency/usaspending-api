@@ -19,10 +19,6 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.experimental_api_flags import (
-    is_experimental_elasticsearch_api,
-    mirror_request_to_elasticsearch,
-)
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     bolster_missing_time_periods,
     generate_fiscal_date_range,
@@ -192,9 +188,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         self.group = GROUPING_LOOKUP[json_request["group"]]
         self.subawards = json_request["subawards"]
         self.filters = json_request["filters"]
-        self.elasticsearch = is_experimental_elasticsearch_api(request)
-        if not self.elasticsearch:
-            mirror_request_to_elasticsearch(request)
 
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
         # Otherwise, users will see blank results for years
@@ -209,10 +202,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
         time_periods = self.filters.get("time_period", [default_time_period])
 
-        if self.elasticsearch and not self.subawards:
-            logger.info("Using experimental Elasticsearch functionality for 'spending_over_time'")
-            results = self.query_elasticsearch(time_periods)
-        else:
+        if self.subawards:
             db_results, values = self.database_data_layer()
             results = bolster_missing_time_periods(
                 filter_time_periods=time_periods,
@@ -220,6 +210,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 date_range_type=values[-1],
                 columns={"aggregated_amount": "aggregated_amount"},
             )
+        else:
+            results = self.query_elasticsearch(time_periods)
 
         return Response(
             OrderedDict(

@@ -45,10 +45,6 @@ from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.experimental_api_flags import (
-    is_experimental_elasticsearch_api,
-    mirror_request_to_elasticsearch,
-)
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -130,20 +126,20 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "sort_order": json_request["order"],
             "upper_bound": json_request["page"] * json_request["limit"] + 1,
         }
-        self.elasticsearch = is_experimental_elasticsearch_api(request)
-        if not self.elasticsearch:
-            mirror_request_to_elasticsearch(request)
+
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
             return Response(self.populate_response(results=[], has_next=False))
+
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
 
-        if self.elasticsearch and not self.is_subaward:
+        if self.is_subaward:
+            response = Response(self.create_response(self.construct_queryset()))
+        else:
             self.last_record_unique_id = json_request.get("last_record_unique_id")
             self.last_record_sort_value = json_request.get("last_record_sort_value")
-            logger.info("Using experimental Elasticsearch functionality for 'spending_by_award'")
-            return Response(self.construct_es_response(self.query_elasticsearch()))
-        return Response(self.create_response(self.construct_queryset()))
+            response = Response(self.construct_es_response(self.query_elasticsearch()))
+        return response
 
     @staticmethod
     def validate_request_data(request_data):
@@ -320,17 +316,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
         ):
             # malformed request
             raise Exception(
-                "Using search_after functionality in Elasticsearch requires both last_record_sort_value and last_record_unique_id."
+                "Using search_after functionality in Elasticsearch requires both"
+                " last_record_sort_value and last_record_unique_id."
             )
         if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
             self.last_record_unique_id is None and self.last_record_sort_value is None
         ):
             raise UnprocessableEntityException(
-                "Page #{page} with limit {limit} is over the maximum result limit {es_limit}. Please provide the 'last_record_sort_value' and 'last_record_unique_id' to paginate sequentially.".format(
-                    page=self.pagination["page"],
-                    limit=self.pagination["limit"],
-                    es_limit=settings.ES_AWARDS_MAX_RESULT_WINDOW,
-                )
+                f"Page #{self.pagination['page']} with limit {self.pagination['limit']} is over the maximum result"
+                f" limit {settings.ES_AWARDS_MAX_RESULT_WINDOW}. Please provide the 'last_record_sort_value' and"
+                " 'last_record_unique_id' to paginate sequentially."
             )
         # Search_after values are provided in the API request - use search after
         if self.last_record_sort_value is not None and self.last_record_unique_id is not None:
