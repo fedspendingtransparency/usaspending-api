@@ -21,7 +21,7 @@ class TasCodes(_Filter, HierarchicalFilter):
         else:
             raise InvalidParameterException(f"tas_codes must be an array or object")
 
-        return ES_Q("query_string", query=cls._query_string(require, exclude), default_field="treasury_accounts")
+        return ES_Q("query_string", query=cls._query_string(require, exclude), default_field="tas_paths")
 
     @staticmethod
     def node(code, positive, positive_naics, negative_naics):
@@ -101,8 +101,8 @@ class TreasuryAccounts(_Filter):
                 "a": v.get("a", ".*"),
             }
 
-            search_regex = f".*aid={code_lookup['aid']}main={code_lookup['main']}ata={code_lookup['ata']}sub={code_lookup['sub']}bpoa={code_lookup['bpoa']}epoa={code_lookup['epoa']}a={code_lookup['a']}"
-            code_query = ES_Q("regexp", treasury_accounts={"value": search_regex})
+            search_regex = f"aid={code_lookup['aid']}main={code_lookup['main']}ata={code_lookup['ata']}sub={code_lookup['sub']}bpoa={code_lookup['bpoa']}epoa={code_lookup['epoa']}a={code_lookup['a']}"
+            code_query = ES_Q("regexp", tas_components={"value": search_regex})
             tas_codes_query.append(ES_Q("bool", must=code_query))
 
         return ES_Q("bool", should=tas_codes_query, minimum_should_match=1)

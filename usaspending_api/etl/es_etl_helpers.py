@@ -107,7 +107,8 @@ VIEW_COLUMNS = [
     "recipient_location_county_agg_key",
     "recipient_location_congressional_agg_key",
     "recipient_location_state_agg_key",
-    "treasury_accounts",
+    "tas_paths",
+    "tas_components",
     "federal_accounts",
     "business_categories",
 ]
@@ -177,7 +178,8 @@ AWARD_VIEW_COLUMNS = [
     "product_or_service_description",
     "naics_code",
     "naics_description",
-    "treasury_accounts",
+    "tas_paths",
+    "tas_components",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
@@ -400,7 +402,8 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
     converters = {
         "business_categories": convert_postgres_array_as_string_to_list,
-        "treasury_accounts": convert_postgres_array_as_string_to_list,
+        "tas_paths": convert_postgres_array_as_string_to_list,
+        "tas_components": convert_postgres_array_as_string_to_list,
         "federal_accounts": convert_postgres_json_array_as_string_to_list,
     }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary

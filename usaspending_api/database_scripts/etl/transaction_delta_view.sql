@@ -235,7 +235,8 @@ SELECT
     ELSE NULL
   END AS recipient_location_state_agg_key,
 
-  TREASURY_ACCT.treasury_accounts,
+  TREASURY_ACCT.tas_paths,
+  TREASURY_ACCT.tas_components,
   FEDERAL_ACCT.federal_accounts,
   UTM.business_categories
 
@@ -317,7 +318,18 @@ LEFT JOIN (
         'epoa=', taa.ending_period_of_availability,
         'a=', taa.availability_type_code
        )
-     ) treasury_accounts
+     ) tas_paths,
+     ARRAY_AGG(
+      DISTINCT CONCAT(
+        'aid=', taa.agency_id,
+        'main=', taa.main_account_code,
+        'ata=', taa.allocation_transfer_agency_id,
+        'sub=', taa.sub_account_code,
+        'bpoa=', taa.beginning_period_of_availability,
+        'epoa=', taa.ending_period_of_availability,
+        'a=', taa.availability_type_code
+       )
+     ) tas_components
  FROM
    treasury_appropriation_account taa
    INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
