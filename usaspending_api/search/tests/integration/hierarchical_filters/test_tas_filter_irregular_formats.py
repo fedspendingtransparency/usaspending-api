@@ -78,16 +78,8 @@ def test_treasury_account_component_filter_appropriate_characters(
     client, monkeypatch, elasticsearch_award_index, award_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-     # "R" doesn't represent anything special here, it just makes sure the code is ok with any capital letter
-     resp = query_by_treasury_account_components(client, [{"a": "R" }], None)
-        client,
-        [
-            {
-                "a": "R"  # "R" doesn't represent anything special here, it just makes sure the code is ok with any capital letter
-            }
-        ],
-        None,
-    )
+    # "R" doesn't represent anything special here, it just makes sure the code is ok with any capital letter
+    resp = query_by_treasury_account_components(client, [{"a": "R"}], None)
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 422 Response"
 
