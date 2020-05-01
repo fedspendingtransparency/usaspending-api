@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Program Activity Count [/api/v2/agency/{toptier_code}/program_activity/count/{?fiscal_year}]
+# Program Activity Count [/api/v2/agency/{toptier_code}/object_class/count/{?fiscal_year}]
 
-Returns the count of Program Activity categories in the Agency's appropriations for a single fiscal year
+Returns the count of Object Classes in the Agency's appropriations for a single fiscal year
 
 ## GET
 
@@ -24,12 +24,12 @@ Returns the count of Program Activity categories in the Agency's appropriations 
     + Attributes
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
-        + `program_activity_count` (required, number)
+        + `object_class_count` (required, number)
 
     + Body
 
             {
                 "toptier_code": "012",
-                "fiscal_year": 2020,
-                "program_activity_count": 7
+                "fiscal_year": 2018,
+                "object_class_count": 81
             }
