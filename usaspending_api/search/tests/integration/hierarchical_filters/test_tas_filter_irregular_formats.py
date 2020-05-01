@@ -88,7 +88,6 @@ def test_treasury_account_component_filter_appropriate_characters(
         None,
     )
 
-    print(resp.json())
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 422 Response"
 
 
