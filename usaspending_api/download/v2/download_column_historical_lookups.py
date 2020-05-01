@@ -1266,6 +1266,8 @@ query_paths = {
                 ("prime_award_project_title", "broker_subaward__program_title"),
                 ("prime_award_naics_code", "broker_subaward__naics"),
                 ("prime_award_naics_description", "broker_subaward__naics_description"),
+                ("national_interest_action_code", "award__latest_transaction__contract_data__national_interest_action"),
+                ("national_interest_action", "award__latest_transaction__contract_data__national_interest_desc"),
                 ("subaward_type", "broker_subaward__subaward_type"),
                 ("subaward_fsrs_report_id", "broker_subaward__internal_id"),
                 ("subaward_fsrs_report_year", "broker_subaward__subaward_report_year"),
@@ -1732,6 +1734,8 @@ query_paths = {
                 ),
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
+                ("national_interest_action_code", "award__latest_transaction__contract_data__national_interest_action"),
+                ("national_interest_action", "award__latest_transaction__contract_data__national_interest_desc"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
                 ("last_modified_date", "submission__certified_date"),
             ]
@@ -1822,6 +1826,8 @@ query_paths = {
                 ),
                 ("naics_code", "award__latest_transaction__contract_data__naics"),
                 ("naics_description", "award__latest_transaction__contract_data__naics_description"),
+                ("national_interest_action_code", "award__latest_transaction__contract_data__national_interest_action"),
+                ("national_interest_action", "award__latest_transaction__contract_data__national_interest_desc"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,

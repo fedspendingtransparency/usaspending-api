@@ -16,11 +16,9 @@ from typing import Optional, List, Dict
 
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.awards.v2.filters.view_selector import spending_by_geography
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
@@ -120,7 +118,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             self.queryset = subaward_filter(self.filters)
             self.obligation_column = "amount"
             result = self.query_django()
-        elif is_experimental_elasticsearch_api(request):
+        else:
             if self.scope_field_name == "pop":
                 scope_filter_name = "place_of_performance_scope"
             else:
@@ -133,10 +131,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             self.obligation_column = "generated_pragmatic_obligation"
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
             result = self.query_elasticsearch(filter_query)
-        else:
-            self.queryset, self.model_name = spending_by_geography(self.filters)
-            self.obligation_column = "generated_pragmatic_obligation"
-            result = self.query_django()
+
+        # else:
+        #     self.queryset, self.model_name = spending_by_geography(self.filters)
+        #     self.obligation_column = "generated_pragmatic_obligation"
+        #     result = self.query_django()
 
         return Response(
             {
@@ -379,8 +378,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch(self, filter_query: ES_Q) -> list:
-        logger.info("Using experimental Elasticsearch functionality for 'spending_by_geography'")
-
         search = self.build_elasticsearch_search_with_aggregation(filter_query)
         if search is None:
             return []
