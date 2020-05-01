@@ -23,8 +23,8 @@ Returns the count of unique Federal Account and Treasury Account categories in t
 
 + Response 200 (application/json)
     + Attributes
-        + `toptier_code`: (required, string)
-        + `fiscal_year`: (required, number)
+        + `toptier_code` (required, string)
+        + `fiscal_year` (required, number)
         + `federal_account_count` (required, number)
         + `treasury_account_count` (required, number)
 
