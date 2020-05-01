@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Program Activity Count [/api/v2/agency/{toptier_code}/program_activity/count/{?fiscal_year}]
 
-Returns the count of unique Program Activity categories in the Agency's appropriations for a single fiscal year
+Returns the count of Program Activity categories in the Agency's appropriations for a single fiscal year
 
 ## GET
 
