@@ -379,6 +379,35 @@ Request parameter description:
 * When `exclude` is provided,  search will only return results that do NOT have a NAICS code that starts with any element from the exclude list. 
 * If an element matches both lists, the more specific rule (longer prefix) supercedes.
 
+## TAS
+
+**Description:** There are two filters for TAS: tas_codes and treasury_account_components. Unlike other filters, these two work on OR logic with each other (but AND logic with all other filters)
+
+**Example Request:**
+```
+{
+    "tas_codes": {
+        "require": [["091"]],
+        "exclude": [["091","091-0800"]]
+    }, 
+    "treasury_account_components": [{"aid":"005","bpoa":"2015","epoa":"2015","main":"0107","sub":"000"}]
+}
+```
+
+`tas_codes` (TASFilterObject) : Two nullable arrays of arrays of strings: `require` and `exclude`. 
+* When `require` is provided, search will only return results that have a TAS code that is a descendant of one of the paths from the require list. 
+* When `exclude` is provided,  search will only return results that do NOT have a TAS code that is a descendant of one of the paths from the exclude list. 
+* If an element matches both lists, the more specific rule (longer array) supercedes.
+
+`treasury_account_components` (TreasuryAccountComponentsObject): List of objects. Each object can have any of the following keys, and will filter results down to those that match the value for each key provided:
+* `ata` Allocation Transfer Agency
+* `aid` Agency Identifier
+* `bpoa` Beginning Period of Availability
+* `epoa` Ending Period of Availability
+* `a` Availability Code
+* `main` Main Account Code
+* `sub` Sub Account Code
+
 ## PSC
 
 **Description:** Filtering based on autocomplete selections for PSC Code.

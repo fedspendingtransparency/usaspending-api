@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db import models
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.models import DataSourceTrackedModel
+from usaspending_api.common.exceptions import UnprocessableEntityException
 
 
 class TreasuryAppropriationAccount(DataSourceTrackedModel):
@@ -69,6 +70,37 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
         tas_rendering_label = "-".join(filter(None, (tas_rendering_label, mac, sub)))
 
         return tas_rendering_label
+
+    @staticmethod
+    def tas_rendering_label_to_component_dictionary(tas_rendering_label) -> dict:
+        try:
+            components = tas_rendering_label.split("-")
+            if len(components) < 4 or len(components) > 5:
+                raise Exception  # don't have to be specific here since this is being swallowed and replaced
+            retval = {}
+            # we go in reverse, since the first component is the only optional one
+            retval["sub"] = components[-1]
+            retval["main"] = components[-2]
+
+            # the third component from the back can either be two years, or one character
+            if len(components[-3]) > 1:
+                dates = components[-3].split("/")
+                retval["bpoa"] = dates[0]
+                retval["epoa"] = dates[1]
+            else:
+                retval["a"] = components[-3]
+
+            retval["aid"] = components[-4]
+
+            # ata may or may not be present
+            if len(components) > 4:
+                retval["ata"] = components[-5]
+
+            return retval
+        except Exception:
+            raise UnprocessableEntityException(
+                f"Cannot parse provided TAS: {tas_rendering_label}. Valid examples: 000-2010/2010-0400-000, 009-X-1701-000, 019-011-X-1071-000"
+            )
 
     @property
     def program_activities(self):

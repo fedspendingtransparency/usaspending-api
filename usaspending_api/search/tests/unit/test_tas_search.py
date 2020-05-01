@@ -14,7 +14,7 @@ from model_mommy import mommy
 
 # Imports from your apps
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -26,11 +26,13 @@ def mock_tas_data(db):
         "references.SubtierAgency", subtier_agency_id=22, name="Department of Sub-Pizza", abbreviation="DOSP"
     )
     mommy.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2)
+    mommy.make(FederalAccount, id=1, parent_toptier_agency_id=99, agency_identifier="99", main_account_code="0001")
     mommy.make(
         TreasuryAppropriationAccount,
         treasury_account_identifier=1,
         allocation_transfer_agency_id="028",
         agency_id="028",
+        federal_account_id=1,
         main_account_code="8006",
         sub_account_code="000",
         availability_type_code="X",
@@ -43,6 +45,7 @@ def mock_tas_data(db):
         treasury_account_identifier=2,
         allocation_transfer_agency_id="004",
         agency_id="028",
+        federal_account_id=1,
         main_account_code="8006",
         sub_account_code="005",
         availability_type_code=None,
@@ -55,6 +58,7 @@ def mock_tas_data(db):
         treasury_account_identifier=3,
         allocation_transfer_agency_id="001",
         agency_id="011",
+        federal_account_id=1,
         main_account_code="8007",
         sub_account_code="001",
         availability_type_code="X",
