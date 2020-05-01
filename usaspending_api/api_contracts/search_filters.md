@@ -399,7 +399,7 @@ Request parameter description:
 * When `exclude` is provided,  search will only return results that do NOT have a TAS code that is a descendant of one of the paths from the exclude list. 
 * If an element matches both lists, the more specific rule (longer array) supercedes.
 
-`treasury_account_components`: List of objects. Each object can have any of the following keys, and will filter results down to those that match the value for each key provided:
+`treasury_account_components` (TreasuryAccountComponentsObject): List of objects. Each object can have any of the following keys, and will filter results down to those that match the value for each key provided:
 * `ata` Allocation Transfer Agency
 * `aid` Agency Identifier
 * `bpoa` Beginning Period of Availability
