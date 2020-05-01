@@ -48,7 +48,7 @@ urlpatterns = [
     url(r"^api/v2/spending/", include("usaspending_api.spending_explorer.v2.urls")),
     url(r"^api/v2/subawards/", include("usaspending_api.awards.v2.urls_subawards")),
     url(r"^api/v2/transactions/", include("usaspending_api.awards.v2.urls_transactions")),
-    url(r"^api/v2/agency/", include("usaspending_api.agency.urls")),
+    url(r"^api/v2/agency/", include("usaspending_api.agency.v2.urls")),
     url(r"^api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     url(r"^docs/", include("usaspending_api.api_docs.urls")),
     url(r"^status/", views.StatusView.as_view()),

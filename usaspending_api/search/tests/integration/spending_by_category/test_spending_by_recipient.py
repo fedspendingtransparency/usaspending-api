@@ -7,10 +7,9 @@ from elasticsearch_dsl import A
 from rest_framework import status
 
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.experimental_api_flags import ELASTICSEARCH_HEADER_VALUE, EXPERIMENTAL_API_HEADER
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
-from usaspending_api.search.tests.integration.spending_by_category.utilities import setup_elasticsearch_test
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 def _make_fpds_transaction(id, award_id, obligation, action_date, recipient_duns, recipient_name):
@@ -95,10 +94,9 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
     # Push DB data into the test ES cluster
     # NOTE: Force routing of documents by the piid field, which will separate them int 3 groups, leading to an
     # inaccurate sum and ordering of sums
-    logging_statements = []
 
     # Using piid (derived from the transaction's award) to route transaction documents to shards
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements, routing="piid")
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, routing="piid")
 
     search = TransactionSearch()
     total = search.handle_count()
@@ -185,8 +183,7 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     mommy.make("awards.Award", id=3, latest_transaction_id=9)
 
     # Push DB data into the test ES cluster
-    logging_statements = []
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     search = TransactionSearch()
     total = search.handle_count()
@@ -213,29 +210,24 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
     """
 
-    logging_statements = []
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_category/recipient_duns",
         content_type="application/json",
         data=json.dumps({"filters": non_legacy_filters()}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
 
 
 def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
 
-    logging_statements = []
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_category/recipient_duns",
         content_type="application/json",
         data=json.dumps({"filters": {"time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}]}}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "category": "recipient_duns",
@@ -267,20 +259,17 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
     assert resp.json() == expected_response
 
 
 def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
 
-    logging_statements = []
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index, logging_statements)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_category/recipient_duns",
         content_type="application/json",
         data=json.dumps({"filters": {"time_period": [{"start_date": "2007-10-01", "end_date": "2008-09-30"}]}}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
     expected_response = {
         "category": "recipient_duns",
@@ -290,5 +279,4 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert len(logging_statements) == 1, "Expected one logging statement"
     assert resp.json() == expected_response

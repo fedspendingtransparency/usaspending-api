@@ -80,7 +80,8 @@ SELECT
   vw_award_search.product_or_service_description,
   vw_award_search.naics_code,
   vw_award_search.naics_description,
-  TREASURY_ACCT.treasury_accounts
+  TREASURY_ACCT.tas_paths,
+  TREASURY_ACCT.tas_components
 FROM vw_award_search
 INNER JOIN awards a ON (a.id = vw_award_search.award_id)
 LEFT JOIN (
@@ -94,20 +95,36 @@ LEFT JOIN (
 LEFT JOIN (
   SELECT
     faba.award_id,
-    JSONB_AGG(
-      DISTINCT JSONB_BUILD_OBJECT(
-        'aid', taa.agency_id,
-        'ata', taa.allocation_transfer_agency_id,
-        'main', taa.main_account_code,
-        'sub', taa.sub_account_code,
-        'bpoa', taa.beginning_period_of_availability,
-        'epoa', taa.ending_period_of_availability,
-        'a', taa.availability_type_code
+    ARRAY_AGG(
+      DISTINCT CONCAT(
+        'agency=', agency.toptier_code,
+        'faaid=', fa.agency_identifier,
+        'famain=', fa.main_account_code,
+        'aid=', taa.agency_id,
+        'main=', taa.main_account_code,
+        'ata=', taa.allocation_transfer_agency_id,
+        'sub=', taa.sub_account_code,
+        'bpoa=', taa.beginning_period_of_availability,
+        'epoa=', taa.ending_period_of_availability,
+        'a=', taa.availability_type_code
        )
-     ) treasury_accounts
+     ) tas_paths,
+     ARRAY_AGG(
+      DISTINCT CONCAT(
+        'aid=', taa.agency_id,
+        'main=', taa.main_account_code,
+        'ata=', taa.allocation_transfer_agency_id,
+        'sub=', taa.sub_account_code,
+        'bpoa=', taa.beginning_period_of_availability,
+        'epoa=', taa.ending_period_of_availability,
+        'a=', taa.availability_type_code
+       )
+     ) tas_components
  FROM
    treasury_appropriation_account taa
    INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
+   INNER JOIN federal_account fa ON (taa.federal_account_id = fa.id)
+   INNER JOIN toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
  WHERE
    faba.award_id IS NOT NULL
  GROUP BY

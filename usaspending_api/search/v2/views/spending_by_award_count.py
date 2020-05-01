@@ -17,10 +17,6 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_connectors.spending_by_award_count_asyncpg import fetch_all_category_counts
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.experimental_api_flags import (
-    is_experimental_elasticsearch_api,
-    mirror_request_to_elasticsearch,
-)
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.helpers.orm_helpers import category_to_award_materialized_views
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -67,37 +63,22 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         filters = add_date_range_comparison_types(
             json_request.get("filters", None), subawards, gte_date_type="action_date", lte_date_type="date_signed"
         )
-        elasticsearch = is_experimental_elasticsearch_api(request)
-        if not elasticsearch:
-            mirror_request_to_elasticsearch(request)
-
-        if elasticsearch and not subawards:
-            logger.info("Using experimental Elasticsearch functionality for 'spending_by_award_count'")
-            results = self.query_elasticsearch(filters)
-            return Response(
-                {
-                    "results": results,
-                    "messages": get_generic_filters_message(
-                        self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-                    ),
-                }
-            )
 
         if filters is None:
             raise InvalidParameterException("Missing required request parameters: 'filters'")
 
-        empty_results = {"contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
-        if subawards:
-            empty_results = {"subcontracts": 0, "subgrants": 0}
-
         if "award_type_codes" in filters and "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
-            return Response({"results": empty_results})
-
-        if subawards:
+            empty_results = {"contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
+            if subawards:
+                empty_results = {"subcontracts": 0, "subgrants": 0}
+            results = empty_results
+        elif subawards:
             results = self.handle_subawards(filters)
+            # else:
+            #     results = self.handle_awards(filters, empty_results)
         else:
-            results = self.handle_awards(filters, empty_results)
+            results = self.query_elasticsearch(filters)
 
         return Response(
             {
