@@ -514,7 +514,7 @@ def test_correct_response_for_each_filter(client, monkeypatch, spending_by_award
         _test_correct_response_for_time_period,
         _test_correct_response_for_award_type_codes,
         _test_correct_response_for_agencies,
-        _test_correct_response_for_tas_codes,
+        _test_correct_response_for_tas_components,
         _test_correct_response_for_pop_location,
         _test_correct_response_for_recipient_location,
         _test_correct_response_for_recipient_search_text,
@@ -638,7 +638,7 @@ def _test_correct_response_for_agencies(client):
     assert resp.json().get("results") == expected_result, "Agency filter does not match expected result"
 
 
-def _test_correct_response_for_tas_codes(client):
+def _test_correct_response_for_tas_components(client):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",

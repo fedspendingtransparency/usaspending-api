@@ -413,7 +413,10 @@
         "naics_description": {
           "type": "text"
         },
-        "treasury_accounts": {
+        "tas_paths": {
+          "type": "keyword"
+        },
+        "tas_components": {
           "type": "keyword"
         }
       }

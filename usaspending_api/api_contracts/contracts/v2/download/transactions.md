@@ -143,6 +143,8 @@ This route sends a request to the backend to begin generating a zipfile of trans
 + `recipient_type_names` (optional, array[string])
 + `set_aside_type_codes` (optional, array[string])
 + `time_period` (optional, array[TimePeriod], fixed-type)
++ `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
 ### AwardAmount (object)
 + `lower_bound` (optional, number)
@@ -175,3 +177,23 @@ This route sends a request to the backend to begin generating a zipfile of trans
 ### NAICSCodeObject (object)
 + `require`: `33` (optional, array[string])
 + `exclude`: `3333` (optional, array[string])
+
+### TASCodeObject (object)
++ `require`: [[`091`]] (optional, array[array[string]])
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
+
+### TreasuryAccountComponentsObject (object)
++ `ata` (optional, string, nullable)
+    Allocation Transfer Agency Identifier - three characters
++ `aid` (required, string)
+    Agency Identifier - three characters
++ `bpoa` (optional, string, nullable)
+    Beginning Period of Availability - four digits
++ `epoa` (optional, string, nullable)
+    Ending Period of Availability - four digits
++ `a` (optional, string, nullable)
+    Availability Type Code - X or null
++ `main` (required, string)
+    Main Account Code - four digits
++ `sub` (optional, string, nullable)
+    Sub-Account Code - three digits
