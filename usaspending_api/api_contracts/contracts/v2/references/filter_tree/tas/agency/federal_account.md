@@ -37,7 +37,7 @@ Returns a list of Treasury Account Symbols associated with the specified federal
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array[TASFilterTreeNode], fixed-type)
+        + `results` (required, array[FilterTreeNode], fixed-type)
     + Body
 
             {

@@ -35,7 +35,7 @@ Returns a list of toptier agencies that have at least one TAS affiliated with th
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array[TASFilterTreeNode], fixed-type)
+        + `results` (required, array[FilterTreeNode], fixed-type)
     + Body
 
             {

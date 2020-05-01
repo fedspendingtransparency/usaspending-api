@@ -38,7 +38,7 @@ Returns a list of federal accounts associated with the specified agency
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array[TASFilterTreeNode], fixed-type)
+        + `results` (required, array[FilterTreeNode], fixed-type)
     + Body
 
             {
