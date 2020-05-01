@@ -45,8 +45,8 @@ def agency_data():
 def test_federal_account_count_success(client, agency_data):
     resp = client.get(url.format(code="007", filter=""))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["federal_account_count"] == 2
-    assert resp.data["treasury_account_count"] == 3
+    assert resp.data["federal_account_count"] == 1
+    assert resp.data["treasury_account_count"] == 1
 
     resp = client.get(url.format(code="007", filter="?fiscal_year=2017"))
     assert resp.status_code == status.HTTP_200_OK
