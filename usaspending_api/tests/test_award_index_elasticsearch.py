@@ -115,7 +115,7 @@ def test_tas(award_data_fixture, elasticsearch_award_index):
         "a": ".*",
     }
     value_regex1 = f".*aid={tas_code_regexes1['aid']}main={tas_code_regexes1['main']}.*"
-    should = {"regexp": {"treasury_accounts": {"value": value_regex1}}}
+    should = {"regexp": {"tas_paths": {"value": value_regex1}}}
     query = create_query(should)
     client = elasticsearch_award_index.client
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
@@ -130,7 +130,7 @@ def test_tas(award_data_fixture, elasticsearch_award_index):
         "a": ".*",
     }
     value_regex2 = f".*aid={tas_code_regexes2['aid']}main={tas_code_regexes2['main']}.*"
-    should = {"regexp": {"treasury_accounts": {"value": value_regex2}}}
+    should = {"regexp": {"tas_paths": {"value": value_regex2}}}
     query = create_query(should)
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
     assert response["hits"]["total"]["value"] == 0
