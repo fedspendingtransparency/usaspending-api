@@ -7,6 +7,7 @@ from rest_framework import status
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -51,7 +52,8 @@ def award_data_fixture():
 
 
 @pytest.mark.django_db
-def test_spending_by_award_type_success(client):
+def test_spending_by_award_type_success(client, monkeypatch, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # test for filters
     resp = client.post(
@@ -62,20 +64,10 @@ def test_spending_by_award_type_success(client):
     assert resp.status_code == status.HTTP_200_OK
 
 
-# ===================================================
-# Below test SKIPPED due to the introduction of asyncpg.
-# asyncpg is a different library to open DB connections to Postgres and supports async functions
-# The test data fixtures hold an open idle DB transaction which blocks SQL queries using the new connection
-# These test need to be re-implemented, but the team has allowed this feature to move forward
-# As the task is much larger than anticipated
+@pytest.mark.django_db
+def test_spending_by_award_count_filters(client, monkeypatch, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-# Tony, August 2019
-# ===================================================
-
-
-@pytest.mark.skip
-@pytest.mark.django_db(transaction=True)
-def test_spending_by_award_count_filters(client):
     resp = client.post(
         "/api/v2/search/spending_by_award_count",
         content_type="application/json",
@@ -85,8 +77,9 @@ def test_spending_by_award_count_filters(client):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_type_failure(client):
+def test_spending_by_award_type_failure(client, monkeypatch, elasticsearch_award_index):
     """Verify error on bad autocomplete request for budget function."""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_award_count/",
@@ -97,7 +90,8 @@ def test_spending_by_award_type_failure(client):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_no_intersection(client, award_data_fixture):
+def test_spending_by_award_no_intersection(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     request = {"subawards": False, "fields": ["Award ID"], "sort": "Award ID", "filters": {"award_type_codes": ["07"]}}
 
@@ -222,7 +216,11 @@ def awards_over_different_date_ranges_with_different_counts():
 
 
 @pytest.mark.django_db
-def test_date_range_search_counts_with_one_range(client, awards_over_different_date_ranges_with_different_counts):
+def test_date_range_search_counts_with_one_range(
+    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges_with_different_counts
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
     request = {
         "subawards": False,
         "auditTrail": "Award Table - Tab Counts",
@@ -282,7 +280,11 @@ def test_date_range_search_counts_with_one_range(client, awards_over_different_d
 
 
 @pytest.mark.django_db
-def test_date_range_search_counts_with_two_ranges(client, awards_over_different_date_ranges_with_different_counts):
+def test_date_range_search_counts_with_two_ranges(
+    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges_with_different_counts
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
     request = {
         "subawards": False,
         "auditTrail": "Award Table - Tab Counts",

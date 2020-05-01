@@ -499,7 +499,10 @@
           }
         }
       },
-      "treasury_accounts": {
+      "tas_paths": {
+        "type": "keyword"
+      },
+      "tas_components": {
         "type": "keyword"
       },
       "federal_accounts": {

@@ -7,6 +7,7 @@ from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
 from usaspending_api.search.elasticsearch.filters.naics import NaicsCodes
+from usaspending_api.search.elasticsearch.filters.tas import TasCodes, TreasuryAccounts
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
@@ -39,7 +40,7 @@ class _Keywords(_Filter):
         return ES_Q("dis_max", queries=keyword_queries)
 
 
-class _Keyword_Search(_Filter):
+class _KeywordSearch(_Filter):
     underscore_name = "keyword_search"
 
     @classmethod
@@ -232,6 +233,7 @@ class _RecipientLocations(_Filter):
 
             for location_key, location_value in location_lookup.items():
                 if location_value is not None:
+                    location_value = location_value.upper()
                     location_query.append(ES_Q("match", **{f"recipient_location_{location_key}": location_value}))
 
             recipient_locations_query.append(ES_Q("bool", must=location_query))
@@ -285,6 +287,7 @@ class _PlaceOfPerformanceLocations(_Filter):
 
             for location_key, location_value in location_lookup.items():
                 if location_value is not None:
+                    location_value = location_value.upper()
                     location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
 
             pop_locations_query.append(ES_Q("bool", must=location_query))
@@ -309,11 +312,17 @@ class _AwardIds(_Filter):
     underscore_name = "award_ids"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
         award_ids_query = []
 
         for v in filter_values:
-            award_ids_query.append(ES_Q("match", display_award_id=es_sanitize(v)))
+            if v and v.startswith('"') and v.endswith('"'):
+                v = v[1:-1]
+                award_ids_query.append(ES_Q("term", display_award_id={"value": es_sanitize(v)}))
+            else:
+                v = es_sanitize(v)
+                v = " +".join(v.split())
+                award_ids_query.append(ES_Q("regexp", display_award_id={"value": v}))
 
         return ES_Q("bool", should=award_ids_query, minimum_should_match=1)
 
@@ -383,41 +392,11 @@ class _ExtentCompetedTypeCodes(_Filter):
         return ES_Q("bool", should=extent_competed_query, minimum_should_match=1)
 
 
-class _TasCodes(_Filter):
-    underscore_name = "tas_codes"
-
-    @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType) -> ES_Q:
-        tas_codes_query = []
-
-        for v in filter_values:
-            code_lookup = {
-                "a": v.get("a", ".*"),
-                "aid": v.get("aid", ".*"),
-                "ata": v.get("ata", ".*"),
-                "bpoa": v.get("bpoa", ".*"),
-                "epoa": v.get("epoa", ".*"),
-                "main": v.get("main", ".*"),
-                "sub": v.get("sub", ".*"),
-            }
-
-            search_regex = (
-                '\\"a\\": \\"{a}\\", \\"aid\\": \\"{aid}\\", \\"ata\\": \\"{ata}\\",'
-                ' \\"bpoa\\": \\"{bpoa}\\", \\"epoa\\": \\"{epoa}\\", \\"main\\": \\"{main}\\",'
-                ' \\"sub\\": \\"{sub}\\"'.format(**code_lookup)
-            )
-            search_regex = "{" + search_regex + "}"
-            code_query = ES_Q("regexp", treasury_accounts={"value": search_regex})
-            tas_codes_query.append(ES_Q("bool", must=code_query))
-
-        return ES_Q("bool", should=tas_codes_query, minimum_should_match=1)
-
-
 class QueryWithFilters:
 
     filter_lookup = {
         _Keywords.underscore_name: _Keywords,
-        _Keyword_Search.underscore_name: _Keyword_Search,
+        _KeywordSearch.underscore_name: _KeywordSearch,
         _TimePeriods.underscore_name: _TimePeriods,
         _AwardTypeCodes.underscore_name: _AwardTypeCodes,
         _Agencies.underscore_name: _Agencies,
@@ -436,7 +415,6 @@ class QueryWithFilters:
         _ContractPricingTypeCodes.underscore_name: _ContractPricingTypeCodes,
         _SetAsideTypeCodes.underscore_name: _SetAsideTypeCodes,
         _ExtentCompetedTypeCodes.underscore_name: _ExtentCompetedTypeCodes,
-        _TasCodes.underscore_name: _TasCodes,
     }
 
     unsupported_filters = ["legal_entities"]
@@ -444,6 +422,9 @@ class QueryWithFilters:
     @classmethod
     def _generate_elasticsearch_query(cls, filters: dict, query_type: _QueryType) -> ES_Q:
         must_queries = []
+
+        # tas_codes are unique in that the same query is spread across two keys
+        must_queries = cls._handle_tas_query(must_queries, filters, query_type)
 
         for filter_type, filter_values in filters.items():
             # Validate the filters
@@ -463,6 +444,23 @@ class QueryWithFilters:
             else:
                 must_queries.append(query)
         return ES_Q("bool", must=must_queries)
+
+    @classmethod
+    def _handle_tas_query(cls, must_queries: list, filters: dict, query_type: _QueryType) -> list:
+        if filters.get(TreasuryAccounts.underscore_name) or filters.get(TasCodes.underscore_name):
+            tas_queries = []
+            if filters.get(TreasuryAccounts.underscore_name):
+                tas_queries.append(
+                    TreasuryAccounts.generate_elasticsearch_query(filters[TreasuryAccounts.underscore_name], query_type)
+                )
+            if filters.get(TasCodes.underscore_name):
+                tas_queries.append(
+                    (TasCodes.generate_elasticsearch_query(filters[TasCodes.underscore_name], query_type))
+                )
+            must_queries.append(ES_Q("bool", should=tas_queries, minimum_should_match=1))
+            filters.pop(TreasuryAccounts.underscore_name, None)
+            filters.pop(TasCodes.underscore_name, None)
+        return must_queries
 
     @classmethod
     def generate_awards_elasticsearch_query(cls, filters: dict) -> ES_Q:

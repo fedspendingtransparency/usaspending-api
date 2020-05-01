@@ -125,6 +125,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -169,6 +170,10 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `exclude` (optional, array[string])
 
 ### TASCodeObject (object)
++ `require`: [[`091`]] (optional, array[array[string]])
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
+
+### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier - three characters
 + `aid` (required, string)

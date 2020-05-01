@@ -3,10 +3,9 @@ HOST: https://api.usaspending.gov
 
 # Program Activity Count [/api/v2/agency/{toptier_code}/program_activity/count/{?fiscal_year}]
 
-Returns the count of unique Program Activity categories in the Agency's appropriations for a single fiscal year
+Returns the count of Program Activity categories in the Agency's appropriations for a single fiscal year
 
 ## GET
-
 
 + Request (application/json)
     + Schema
@@ -19,14 +18,18 @@ Returns the count of unique Program Activity categories in the Agency's appropri
         + `toptier_code`: 012 (required, number)
             The toptier code of an agency (could be a CGAG or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
-            The desired appropriations fiscal year. Defaults to the current FY
+            The desired appropriations fiscal year. Defaults to the current FY.
 
 + Response 200 (application/json)
     + Attributes
+        + `toptier_code` (required, string)
+        + `fiscal_year` (required, number)
         + `program_activity_count` (required, number)
 
     + Body
 
             {
+                "toptier_code": "012",
+                "fiscal_year": 2020,
                 "program_activity_count": 7
             }
