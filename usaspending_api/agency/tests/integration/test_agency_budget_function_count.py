@@ -12,10 +12,12 @@ def test_budget_function_count_success(client, agency_account_data):
     resp = client.get(url.format(code="007", filter=""))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["budget_function_count"] == 1
+    assert resp.data["budget_sub_function_count"] == 1
 
     resp = client.get(url.format(code="007", filter="?fiscal_year=2017"))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["budget_function_count"] == 0
+    assert resp.data["budget_sub_function_count"] == 0
 
 
 @pytest.mark.django_db
@@ -35,10 +37,12 @@ def test_budget_function_count_specific(client, agency_account_data):
     resp = client.get(url.format(code="008", filter="?fiscal_year=2017"))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["budget_function_count"] == 1
+    assert resp.data["budget_sub_function_count"] == 1
 
     resp = client.get(url.format(code="008", filter="?fiscal_year=2018"))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["budget_function_count"] == 1
+    assert resp.data["budget_sub_function_count"] == 1
 
 
 @pytest.mark.django_db
@@ -46,3 +50,4 @@ def test_budget_function_count_ignore_duplicates(client, agency_account_data):
     resp = client.get(url.format(code="009", filter="?fiscal_year=2019"))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["budget_function_count"] == 1
+    assert resp.data["budget_sub_function_count"] == 1
