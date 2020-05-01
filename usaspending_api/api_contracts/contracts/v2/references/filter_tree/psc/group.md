@@ -13,7 +13,7 @@ Returns PSCs under the provided group
 + Request (application/json)
     + Parameters
         + `group`: `Product` (required, string)
-        Parent group of PSCs to return
+        Parent group of PSCs to return. Currently all PSCs are grouped under either "Product", "Service", or "Research and Development".
         + `depth` (optional, number)
             Defines how many levels of descendants to return under each node. For example, depth=0 will 
             return a flat array, while depth=2 will populate the children array of each top level node 
@@ -70,4 +70,4 @@ Returns PSCs under the provided group
 + `description` (required, string)
 + `ancestors` (required, array[string])
 + `count` (required, number)
-+ `children` (required, array[FilterTreeNode], nullable)
++ `children` (required, array[FilterTreeNode], nullable, fixed-type)

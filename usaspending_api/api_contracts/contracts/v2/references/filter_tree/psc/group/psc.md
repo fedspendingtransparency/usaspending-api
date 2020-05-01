@@ -13,7 +13,7 @@ Returns PSCs under the provided PSC
 + Request (application/json)
     + Parameters
         + `group`: `Product` (required, string)
-        Parent group of PSCs to return
+        Parent group of PSCs to return. Currently all PSCs are grouped under either "Product", "Service", or "Research and Development".
         + `psc`: `10` (required, string)
         ID value of the parent node
         + `depth` (optional, number) 
@@ -73,4 +73,4 @@ Returns PSCs under the provided PSC
 + `description` (required, string)
 + `ancestors` (required, array[string])
 + `count` (required, number)
-+ `children` (required, array[FilterTreeNode], nullable)
++ `children` (required, array[FilterTreeNode], nullable, fixed-type)

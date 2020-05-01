@@ -71,4 +71,4 @@ Returns the basic groupings of Product Service Codes
 + `description` (required, string)
 + `ancestors` (required, array[string])
 + `count` (required, number)
-+ `children` (required, array[FilterTreeNode], nullable)
++ `children` (required, array[FilterTreeNode], nullable, fixed-type)

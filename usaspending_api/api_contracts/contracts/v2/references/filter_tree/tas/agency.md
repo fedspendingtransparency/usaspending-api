@@ -558,10 +558,10 @@ Returns a list of federal accounts associated with the specified agency
 
 ## Data Structures
 
-### TASFilterTreeNode (object)
+### FilterTreeNode (object)
 
 + `id` (required, string)
 + `description` (required, string)
 + `ancestors` (required, array[string])
 + `count` (required, number)
-+ `children` (required, array[TASFilterTreeNode], fixed-type, nullable)
++ `children` (required, array[FilterTreeNode], fixed-type, nullable)
