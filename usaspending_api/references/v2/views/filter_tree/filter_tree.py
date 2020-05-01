@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 DEFAULT_CHILDREN = 0
 
@@ -81,7 +82,7 @@ class FilterTree(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def unlinked_node_from_data(self, ancestors: list, data: any) -> UnlinkedNode:
+    def unlinked_node_from_data(self, ancestors: list, data: Any) -> UnlinkedNode:
         """
         :param ancestors: list
         :param data: Single member of the list provided by raw_search
