@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Program Activity Count [/api/v2/agency/{toptier_code}/object_class/count/{?fiscal_year}]
 
-Returns the count of unique Object Classes in the Agency's appropriations for a single fiscal year
+Returns the count of Object Classes in the Agency's appropriations for a single fiscal year
 
 ## GET
 
