@@ -1,16 +1,12 @@
 import json
-from django.conf import settings
 
 from usaspending_api.search.elasticsearch.filters.tas import TasCodes, TreasuryAccounts
 from usaspending_api.common.experimental_api_flags import EXPERIMENTAL_API_HEADER, ELASTICSEARCH_HEADER_VALUE
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 def _setup_es(client, monkeypatch, elasticsearch_award_index):
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.AwardSearch._index_name",
-        settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
-    )
-    elasticsearch_award_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
 
 def query_by_tas(client, tas):
