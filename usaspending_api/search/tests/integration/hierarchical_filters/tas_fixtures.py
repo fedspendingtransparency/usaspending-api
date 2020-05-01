@@ -4,6 +4,7 @@ from datetime import datetime
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 
+UNINTUITIVE_AGENCY = "898"
 # ensures that tests aren't failing for having the wrong TAS. We trust functionality of tas_rendering_label_to_component_dictionary because it is tested elsewhere
 BASIC_TAS = 0
 ATA_TAS = 1
@@ -41,11 +42,19 @@ def award_with_ata_tas(db):
 
 
 @pytest.fixture
+def tas_with_nonintuitive_agency(db):
+    award(db, 1)
+    agency(db, 1, UNINTUITIVE_AGENCY)  # none of the tas have ata or aid 898
+    tas_with_fa(db, award_id=1, agency=1, index=BASIC_TAS)
+
+
+@pytest.fixture
 def award_with_multiple_tas(db):
     award(db, 1)
-    agency(db, 1)
-    tas_with_fa(db, 1, 1, BASIC_TAS)
-    tas_with_fa(db, 1, 1, ATA_TAS)
+    agency(db, 1, TAS_DICTIONARIES[BASIC_TAS]["aid"])
+    agency(db, 2, TAS_DICTIONARIES[ATA_TAS]["ata"])
+    tas_with_fa(db, award_id=1, agency=1, index=BASIC_TAS)
+    tas_with_fa(db, award_id=1, agency=2, index=ATA_TAS)
 
 
 @pytest.fixture
@@ -64,10 +73,10 @@ def multiple_awards_with_tas(db):
 @pytest.fixture
 def multiple_awards_with_sibling_tas(db):
     award(db, 1)
-    agency(db, 1)
-    tas_with_fa(db, 1, 1, SISTER_TAS[0])
+    agency(db, 1, TAS_DICTIONARIES[SISTER_TAS[0]]["aid"])
+    tas_with_fa(db, award_id=1, agency=1, index=SISTER_TAS[0])
     award(db, 2)
-    tas(db, 2, 1, SISTER_TAS[1])
+    tas(db, award_id=2, fa_id=1, index=SISTER_TAS[1])
 
 
 def award(db, id):
@@ -87,8 +96,8 @@ def award(db, id):
     mommy.make("awards.TransactionNormalized", id=1000 + id, award=award, action_date=datetime(2017, 12, 1))
 
 
-def agency(db, toptier_code):
-    mommy.make("references.ToptierAgency", toptier_agency_id=int(toptier_code), toptier_code=toptier_code)
+def agency(db, agency_id, toptier_code):
+    mommy.make("references.ToptierAgency", toptier_agency_id=agency_id, toptier_code=toptier_code)
 
 
 def tas(db, award_id, fa_id, index):
@@ -119,5 +128,5 @@ def tas_with_fa(db, award_id, agency, index):
 
 
 def tas_with_agency(db, award_id, index):
-    agency(db, TAS_DICTIONARIES[index]["aid"])
-    tas_with_fa(db, award_id, TAS_DICTIONARIES[index]["aid"], index)
+    agency(db, agency_id=award_id, toptier_code=TAS_DICTIONARIES[index]["aid"])
+    tas_with_fa(db, award_id=award_id, agency=award_id, index=index)

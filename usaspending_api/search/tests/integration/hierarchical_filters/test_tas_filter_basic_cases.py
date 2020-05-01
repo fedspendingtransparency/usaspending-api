@@ -7,6 +7,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures 
     ATA_BPOA_TAS,
     TAS_DICTIONARIES,
     TAS_STRINGS,
+    UNINTUITIVE_AGENCY,
 )
 from usaspending_api.search.tests.integration.hierarchical_filters.es_search_test_helpers import (
     _setup_es,
@@ -57,7 +58,6 @@ def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, awar
 @pytest.mark.django_db
 def test_match_from_ata_tas(client, monkeypatch, elasticsearch_award_index, award_with_ata_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    print(_tas_path(3))
     resp = query_by_tas(client, {"require": [_tas_path(ATA_BPOA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
@@ -69,6 +69,39 @@ def test_match_from_bpoa_tas(client, monkeypatch, elasticsearch_award_index, awa
     resp = query_by_tas(client, {"require": [_tas_path(BPOA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
+
+
+@pytest.mark.django_db
+def test_match_unintuitive_tas(client, monkeypatch, elasticsearch_award_index, tas_with_nonintuitive_agency):
+    # ensure that api can find a TAS that is under an agency not implied by the tas code
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas(client, {"require": [[UNINTUITIVE_AGENCY, _fa(BASIC_TAS), _tas(BASIC_TAS)]]})
+
+    assert resp.json()["results"] == [_award1()]
+
+
+@pytest.mark.django_db
+def test_non_match_unintuitive_tas_from_agency(
+    client, monkeypatch, elasticsearch_award_index, tas_with_nonintuitive_agency
+):
+    # ensure that api CANNOT find a TAS from the agency in the TAS code's aid, because it's actually linked under a
+    # different agency
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas(client, {"require": [_agency_path(BASIC_TAS)]})
+
+    assert resp.json()["results"] == []
+
+
+@pytest.mark.django_db
+def test_non_match_unintuitive_tas_from_tas(
+    client, monkeypatch, elasticsearch_award_index, tas_with_nonintuitive_agency
+):
+    # ensure that api CANNOT find a TAS from the agency in the TAS code's aid, because it's actually linked under a
+    # different agency
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS)]})
+
+    assert resp.json()["results"] == []
 
 
 @pytest.mark.django_db

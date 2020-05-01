@@ -16,6 +16,7 @@ class HierarchicalFilter:
         positive_query = " OR ".join([node.get_query() for node in positive_nodes])
         negative_query = " AND ".join([node.get_query() for node in negative_nodes])
 
+        print(f"+{positive_query} -{negative_query}")
         if positive_query and negative_query:
             return f"{positive_query} AND {negative_query}"
         else:

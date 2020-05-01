@@ -72,13 +72,12 @@ def search_regex_of(v):
     if not re.match(r"^(\d|\w|-|\*|=)+$", search_regex):
         raise UnprocessableEntityException(f"Unable to parse TAS filter")
 
-    print(search_regex)
     return search_regex
 
 
 class TASNode(Node):
     def _basic_search_unit(self):
-        return search_regex_of(self.code)
+        return f'({" AND ".join([search_regex_of(code) for code in self.ancestors] + [(search_regex_of(self.code))])})'
 
     def clone(self, code, positive, positive_naics, negative_naics):
         return TASNode(code, positive, positive_naics, negative_naics)
@@ -103,7 +102,6 @@ class TreasuryAccounts(_Filter):
             }
 
             search_regex = f".*aid={code_lookup['aid']}main={code_lookup['main']}ata={code_lookup['ata']}sub={code_lookup['sub']}bpoa={code_lookup['bpoa']}epoa={code_lookup['epoa']}a={code_lookup['a']}"
-            print(search_regex)
             code_query = ES_Q("regexp", treasury_accounts={"value": search_regex})
             tas_codes_query.append(ES_Q("bool", must=code_query))
 
