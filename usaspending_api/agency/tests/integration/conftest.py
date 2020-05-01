@@ -21,21 +21,21 @@ def agency_account_data():
         funding_toptier_agency=ta1,
         budget_function_code=100,
         budget_subfunction_code=1100,
-        federal_account=fa1
+        federal_account=fa1,
     )
     tas2 = mommy.make(
         "accounts.TreasuryAppropriationAccount",
         funding_toptier_agency=ta2,
         budget_function_code=200,
         budget_subfunction_code=2100,
-        federal_account=fa2
+        federal_account=fa2,
     )
     tas3 = mommy.make(
         "accounts.TreasuryAppropriationAccount",
         funding_toptier_agency=ta3,
         budget_function_code=300,
         budget_subfunction_code=3100,
-        federal_account=fa3
+        federal_account=fa3,
     )
 
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
