@@ -4,6 +4,7 @@ from operator import ior
 from django.db.models import Q
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.common.exceptions import UnprocessableEntityException
 
 
 def build_award_ids_filter(queryset, values, award_id_fields):
@@ -36,6 +37,8 @@ def build_tas_codes_filter(queryset, tas_filters):
         - Grabbing the list of all treasury_account_identifiers that match the filters provided.
         - Assembling an integer array overlap (&&) query to search for those integers.
     """
+    if isinstance(tas_filters, dict):
+        raise UnprocessableEntityException("Heirarchical TAS filters not supported in Postgres implementation")
 
     tas_qs = Q()
     for tas_filter in tas_filters:

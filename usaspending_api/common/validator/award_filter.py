@@ -4,6 +4,7 @@ import copy
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
+from usaspending_api.search.elasticsearch.filters.tas import TasCodes, TreasuryAccounts
 
 
 TIME_PERIOD_MIN_MESSAGE = (
@@ -11,6 +12,16 @@ TIME_PERIOD_MIN_MESSAGE = (
     "Custom Award Download feature on the website or one of our download or bulk_download API endpoints "
     "listed on https://api.usaspending.gov/docs/endpoints."
 )
+
+TAS_COMPONENTS_FILTER = {
+    "ata": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+    "aid": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": False},
+    "bpoa": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+    "epoa": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+    "a": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+    "main": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": False},
+    "sub": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+}
 
 AWARD_FILTER = [
     {"name": "award_ids", "type": "array", "array_type": "text", "text_type": "search"},
@@ -120,18 +131,35 @@ AWARD_FILTER = [
         },
     },
     {
-        "name": "tas_codes",
+        "name": TreasuryAccounts.underscore_name,
         "type": "array",
         "array_type": "object",
-        "object_keys": {
-            "ata": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-            "aid": {"type": "text", "text_type": "search", "optional": False, "allow_nulls": False},
-            "bpoa": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-            "epoa": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-            "a": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-            "main": {"type": "text", "text_type": "search", "optional": False, "allow_nulls": False},
-            "sub": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-        },
+        "object_keys": TAS_COMPONENTS_FILTER,
+    },
+    {
+        "name": TasCodes.underscore_name,
+        "type": "any",
+        "models": [
+            {"type": "array", "array_type": "object", "object_keys": TAS_COMPONENTS_FILTER},
+            {
+                "type": "object",
+                "min": 0,
+                "object_keys": {
+                    "require": {
+                        "type": "array",
+                        "array_type": "any",
+                        "models": [{"type": "array", "array_type": "text", "text_type": "search"}],
+                        "min": 0,
+                    },
+                    "exclude": {
+                        "type": "array",
+                        "array_type": "any",
+                        "models": [{"type": "array", "array_type": "text", "text_type": "search"}],
+                        "min": 0,
+                    },
+                },
+            },
+        ],
     },
 ]
 

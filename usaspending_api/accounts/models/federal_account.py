@@ -25,3 +25,7 @@ class FederalAccount(models.Model):
         managed = True
         db_table = "federal_account"
         unique_together = ("agency_identifier", "main_account_code")
+
+    @staticmethod
+    def fa_rendering_label_to_component_dictionary(fa_rendering_label) -> dict:
+        return {"faaid": fa_rendering_label.split("-")[0], "famain": fa_rendering_label.split("-")[1]}

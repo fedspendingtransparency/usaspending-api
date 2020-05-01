@@ -107,7 +107,15 @@ def spending_by_award_test_data():
         total_obligation=12.00,
     )
 
-    mommy.make("accounts.FederalAccount", id=1)
+    # Toptier Agency
+    toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
+
+    mommy.make("references.ToptierAgency", **toptier_agency_1)
+
+    # TAS
+    mommy.make(
+        "accounts.FederalAccount", id=1, parent_toptier_agency_id=1, agency_identifier="1", main_account_code="0001"
+    )
     mommy.make(
         "accounts.TreasuryAppropriationAccount",
         treasury_account_identifier=1,
@@ -116,11 +124,6 @@ def spending_by_award_test_data():
         federal_account_id=1,
     )
     mommy.make("awards.FinancialAccountsByAwards", award_id=1, treasury_account_id=1)
-
-    # Toptier Agency
-    toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
-
-    mommy.make("references.ToptierAgency", **toptier_agency_1)
 
     # Subtier Agency
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
