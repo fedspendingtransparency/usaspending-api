@@ -66,6 +66,7 @@ def spending_over_time_test_data():
         mommy.make(
             "accounts.FederalAccount",
             id=federal_account_id,
+            parent_toptier_agency_id=toptier_awarding_agency_id,
             account_title=f"federal_account_title_{transaction_id}",
             federal_account_code=f"federal_account_code_{transaction_id}",
         )
