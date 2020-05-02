@@ -1,15 +1,15 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# TAS
+# PSC
 
-This endpoint is used to power USAspending.gov's TAS search component on the advanced search page.
+This endpoint is used to power USAspending.gov's "Product or Service Code" search component on the advanced search page.
 The response is a forest of search filter nodes, which despite having a unified structure represent different
 database fields based on depth in the tree.
 
-## Toptier Search [GET /api/v2/references/filter_tree/tas/{?depth}]
+## Toptier Search [GET /api/v2/references/filter_tree/psc/{?depth}{?filter}]
 
-Returns a list of toptier agencies that have at least one TAS affiliated with them
+Returns the basic groupings of Product Service Codes
 + Request (application/json)
     + Parameters
         + `depth` (optional, number) 
@@ -19,12 +19,11 @@ Returns a list of toptier agencies that have at least one TAS affiliated with th
             the value of depth if returned nodes have no children. Negative values are treated as 
             infinite, returning all descendants. 
             + Default: 0
-        
+         
         + `filter` (optional, string) 
             Restricts results to nodes with a `id` or `description` matching the filter string. If depth is 
             greater than zero, nodes will also appear the response if at least one child within depth 
             matches the filter.
-        
     
     + Schema
     
@@ -37,14 +36,28 @@ Returns a list of toptier agencies that have at least one TAS affiliated with th
     + Attributes (object)
         + `results` (required, array[FilterTreeNode], fixed-type)
     + Body
-
+    
             {
             "results": [
             {
-            "id": "012",
+            "id": "Research and Development",
             "ancestors": [],
-            "description": "Department of Agriculture",
-            "count": 139,
+            "description": "",
+            "count": 21,
+            "children": null
+            },
+            {
+            "id": "Service",
+            "ancestors": [],
+            "description": "",
+            "count": 23,
+            "children": null
+            },
+            {
+            "id": "Product",
+            "ancestors": [],
+            "description": "",
+            "count": 77,
             "children": null
             }
             ]

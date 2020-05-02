@@ -95,9 +95,13 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/recipient/state/](/api/v2/recipient/state/)|GET| Returns basic information about the specified state|
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency|
 |[/api/v2/references/data_dictionary/](/api/v2/references/data_dictionary/)|GET| Returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary|
+|[/api/v2/references/filter_tree/psc/](/api/v2/references/filter_tree/psc/)|GET| Returns a list of PSC groupings|
+|[/api/v2/references/filter_tree/psc/<GROUP\>/](/api/v2/references/filter_tree/psc/Product/)|GET| Returns a list of PSC under the provided path|
+|[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/](/api/v2/references/filter_tree/psc/Product/10/)|GET| Returns a list of PSC under the provided path|
+|[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/<PSC\>/](/api/v2/references/filter_tree/psc/Service/C/C1/)|GET| Returns a list of PSC under the provided path|
 |[/api/v2/references/filter_tree/tas/](/api/v2/references/filter_tree/tas/)|GET| Returns a list of toptier agencies that have at least one TAS affiliated with them|
 |[/api/v2/references/filter_tree/tas/<AGENCY\>/](/api/v2/references/filter_tree/tas/020/)|GET| Returns a list of federal accounts associated with the specified agency|
-|[/api/v2/references/filter_tree/tas/<AGENCY\>/<FEDERAL_ACCOUNT\>](/api/v2/references/filter_tree/tas/020/020-0550/)|GET| Returns a list of Treasury Account Symbols associated with the specified federal account|
+|[/api/v2/references/filter_tree/tas/<AGENCY\>/<FEDERAL_ACCOUNT\>/](/api/v2/references/filter_tree/tas/020/020-0550/)|GET| Returns a list of Treasury Account Symbols associated with the specified federal account|
 |[/api/v2/references/glossary/](/api/v2/references/glossary/)|GET| Returns a list of glossary terms and definitions|
 |[/api/v2/references/award_types/](/api/v2/references/award_types/)|GET| Returns a map of award types by award grouping.|
 |[/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/)|GET|  Returns all toptier agencies and related, relevant data.|
