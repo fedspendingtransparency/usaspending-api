@@ -202,6 +202,13 @@ def unused_filters_message(filters):
     return f"The following filters from the request were not used: {filters}. See https://api.usaspending.gov/docs/endpoints for a list of appropriate filters"
 
 
+def get_account_data_time_period_message():
+    return (
+        f"Account data powering this endpoint were first collected in FY2017 Q2 under the DATA Act; "
+        f"as such, there are no data available for prior fiscal years."
+    )
+
+
 # Raw SQL run during a migration
 FY_PG_FUNCTION_DEF = """
     CREATE OR REPLACE FUNCTION fy(raw_date DATE)

@@ -23,11 +23,12 @@ class ProgramActivityCount(AgencyBase):
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
-                "program_activity_count": self._program_activity_count(),
+                "program_activity_count": self.get_program_activity_count(),
+                "messages": self.standard_response_messages,
             }
         )
 
-    def _program_activity_count(self):
+    def get_program_activity_count(self):
         return (
             RefProgramActivity.objects.annotate(
                 include=Exists(

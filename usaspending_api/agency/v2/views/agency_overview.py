@@ -29,18 +29,19 @@ class AgencyOverview(AgencyBase):
                 "website": self.toptier_agency.website,
                 "congressional_justification_url": self.toptier_agency.justification,
                 "about_agency_data": self.toptier_agency.about_agency_data,
-                "subtier_agency_count": self._subtier_agency_count(),
+                "subtier_agency_count": self.get_subtier_agency_count(),
+                "messages": [],  # Currently no applicable messages
             }
         )
 
-    def _subtier_agency_count(self):
-        min_fiscal_year = fy(settings.API_SEARCH_MIN_DATE)
+    def get_subtier_agency_count(self):
         return (
             SubtierAgency.objects.filter(agency__toptier_agency=self.toptier_agency)
             .annotate(
                 was_an_awarding_agency=Exists(
                     TransactionNormalized.objects.filter(
-                        fiscal_year__gte=min_fiscal_year, awarding_agency__subtier_agency=OuterRef("pk")
+                        fiscal_year__gte=fy(settings.API_SEARCH_MIN_DATE),
+                        awarding_agency__subtier_agency=OuterRef("pk"),
                     ).values("pk")
                 )
             )

@@ -49,6 +49,7 @@ def test_happy_path(client, agency_data):
     assert resp.data["congressional_justification_url"] == "BECAUSE"
     assert resp.data["icon_filename"] == "HAI.jpg"
     assert resp.data["subtier_agency_count"] == 1
+    assert resp.data["messages"] == []
 
     resp = client.get(URL.format(code="001", filter=f"?fiscal_year={current_fiscal_year()}"))
     assert resp.status_code == status.HTTP_200_OK

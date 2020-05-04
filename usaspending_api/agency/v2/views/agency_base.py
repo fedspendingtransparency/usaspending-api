@@ -1,11 +1,12 @@
-from re import fullmatch
-
 from django.conf import settings
+from django.utils.functional import cached_property
+from re import fullmatch
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
+from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 from usaspending_api.references.models import ToptierAgency
 
 
@@ -16,7 +17,7 @@ class AgencyBase(APIView):
         # either a three or four digit numeric string based on the regex pattern in our route url.
         return self.kwargs["toptier_code"]
 
-    @property
+    @cached_property
     def fiscal_year(self):
         fiscal_year = str(self.request.query_params.get("fiscal_year", current_fiscal_year()))
         if not fullmatch("[0-9]{4}", fiscal_year):
@@ -33,9 +34,13 @@ class AgencyBase(APIView):
             )
         return fiscal_year
 
-    @property
+    @cached_property
     def toptier_agency(self):
         toptier_agency = ToptierAgency.objects.account_agencies().filter(toptier_code=self.toptier_code).first()
         if not toptier_agency:
             raise NotFound(f"Agency with a toptier code of '{self.toptier_code}' does not exist")
         return toptier_agency
+
+    @property
+    def standard_response_messages(self):
+        return [get_account_data_time_period_message()] if self.fiscal_year < 2017 else []

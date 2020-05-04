@@ -26,6 +26,8 @@ Returns the count of unique Budget Functions in the Agency's appropriations for 
         + `fiscal_year` (required, number)
         + `budget_function_count` (required, number)
         + `budget_sub_function_count` (required, number)
+        + `messages` (required, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
 
@@ -33,5 +35,6 @@ Returns the count of unique Budget Functions in the Agency's appropriations for 
                 "toptier_code": "012",
                 "fiscal_year": 2018,
                 "budget_function_count": 4,
-                "budget_sub_function_count": 17
+                "budget_sub_function_count": 17,
+                "messages": ["Account data powering this endpoint were first collected in FY2017 Q2..."]
             }

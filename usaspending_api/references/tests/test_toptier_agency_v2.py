@@ -82,6 +82,7 @@ def test_award_type_endpoint(client, create_agency_data):
                 "obligated_amount": 2.0,
                 "outlay_amount": 2.0,
                 "percentage_of_total_budget_authority": 2.391930450298678e-13,
+                "toptier_code": "100",
             },
             {
                 "abbreviation": "tta_abrev_2",
@@ -95,6 +96,7 @@ def test_award_type_endpoint(client, create_agency_data):
                 "obligated_amount": 14.0,
                 "outlay_amount": 14.00,
                 "percentage_of_total_budget_authority": 1.6743513152090746e-12,
+                "toptier_code": "200",
             },
         ]
     }
@@ -115,6 +117,7 @@ def test_award_type_endpoint(client, create_agency_data):
                 "obligated_amount": 14.0,
                 "outlay_amount": 14.0,
                 "percentage_of_total_budget_authority": 1.6743513152090746e-12,
+                "toptier_code": "200",
             },
             {
                 "abbreviation": "tta_abrev",
@@ -128,6 +131,7 @@ def test_award_type_endpoint(client, create_agency_data):
                 "obligated_amount": 2.0,
                 "outlay_amount": 2.0,
                 "percentage_of_total_budget_authority": 2.391930450298678e-13,
+                "toptier_code": "100",
             },
         ]
     }
