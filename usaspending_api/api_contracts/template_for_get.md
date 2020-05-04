@@ -9,16 +9,18 @@ Description of the endpoint as a whole not taking into account the different HTT
 
 Description of the endpoint using the above HTTP method.
 
-+ Parameters
-    + `param_for_endpoint`: `endpoint` (required, string)
-        Description of the parameter if not obvious.
-        
 + Request (application/json)
-    + Attributes
-        + `string_attribute`: `hello world` (required, string)
-        + `optional_attribute` (optional, string, nullable)
-        + `number_attribute`: 123456.78 (required, number)
-        + `boolean_attribute`: true (optional, boolean)
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "string"
+            }
+
+    + Parameters
+        + `param_for_endpoint`: `endpoint` (required, string)
+            Description of the parameter if not evident from the property name.
+
 
 + Response 200 (application/json)
     + Attributes
@@ -29,6 +31,16 @@ Description of the endpoint using the above HTTP method.
                 + `A`
                 + `B`
                 + `C`
+
+    + Body
+
+            {
+                "data_structure_array": [
+                    [25, 43],
+                    [19, -67]
+                ],
+                "name": "A"
+            }
 
 # Data Structures
 

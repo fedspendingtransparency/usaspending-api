@@ -7,7 +7,7 @@ You should be using Node 6.11.0
 
 ### Contracts
 
-Contracts are stored in the `/contracts` directory. They must be written in [API Blueprint](https://apiblueprint.org/) but saved with a `.md` extension.
+Contracts are stored [here](contracts/). They must be written in [API Blueprint](https://apiblueprint.org/) but saved with a `.md` extension.
 
 ## For Testers and Automation
 
@@ -99,6 +99,13 @@ Testing a specific API contract:
 ```
 dredd ./contracts/state/StateProfile.md http://localhost:8000 --language=python --hookfiles=./hooks/hooks.py --hooks-worker-timeout=10000
 ```
+
+Dredd can also be used to test contract file syntax. Use the `--dry-run` flag to see parsing warnings and errors.
+
+```
+dredd ./contracts/path/to/file.md http://localhost:8000 --dry-run
+```
+
 
 **Remember:** Your developed endpoint must pass *all* API contracts at PR time.
 

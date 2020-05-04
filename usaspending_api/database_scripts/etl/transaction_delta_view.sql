@@ -19,7 +19,10 @@ SELECT
     ELSE UTM.uri
   END AS display_award_id,
 
-  TN.update_date,
+  CASE
+    WHEN AWD.update_date > TN.update_date THEN AWD.update_date
+    ELSE TN.update_date
+  END AS update_date,
   UTM.modification_number,
   AWD.generated_unique_award_id,
   UTM.award_id,
@@ -31,7 +34,11 @@ SELECT
   UTM.product_or_service_code,
   UTM.product_or_service_description,
   CASE
-    WHEN UTM.product_or_service_code IS NOT NULL THEN CONCAT('{"code":"', UTM.product_or_service_code, '","description":"', UTM.product_or_service_description, '"}')
+    WHEN UTM.product_or_service_code IS NOT NULL
+      THEN CONCAT(
+        '{"code":"', UTM.product_or_service_code,
+        '","description":"', UTM.product_or_service_description, '"}'
+      )
     ELSE NULL
   END AS psc_agg_key,
   UTM.naics_code,
@@ -87,29 +94,50 @@ SELECT
   UTM.funding_subtier_agency_abbreviation,
   CASE
     WHEN UTM.awarding_toptier_agency_name IS NOT NULL
-      THEN CONCAT('{"name":"', UTM.awarding_toptier_agency_name, '","abbreviation":"', UTM.awarding_toptier_agency_abbreviation, '","id":"', TAA.id, '"}')
+      THEN CONCAT(
+        '{"name":"', UTM.awarding_toptier_agency_name,
+        '","abbreviation":"', UTM.awarding_toptier_agency_abbreviation,
+        '","id":"', TAA.id, '"}'
+      )
     ELSE NULL
   END AS awarding_toptier_agency_agg_key,
   CASE
     WHEN UTM.funding_toptier_agency_name IS NOT NULL
-      THEN CONCAT('{"name":"', UTM.funding_toptier_agency_name, '","abbreviation":"', UTM.funding_toptier_agency_abbreviation, '","id":"', TFA.id, '"}')
+      THEN CONCAT(
+        '{"name":"', UTM.funding_toptier_agency_name,
+        '","abbreviation":"', UTM.funding_toptier_agency_abbreviation,
+        '","id":"', TFA.id, '"}'
+      )
     ELSE NULL
   END AS funding_toptier_agency_agg_key,
   CASE
     WHEN UTM.awarding_subtier_agency_name IS NOT NULL
-      THEN CONCAT('{"name":"', UTM.awarding_subtier_agency_name, '","abbreviation":"', UTM.awarding_subtier_agency_abbreviation, '","id":"', AA.id, '"}')
+      THEN CONCAT(
+        '{"name":"', UTM.awarding_subtier_agency_name,
+        '","abbreviation":"', UTM.awarding_subtier_agency_abbreviation,
+        '","id":"', AA.id, '"}'
+      )
     ELSE NULL
   END AS awarding_subtier_agency_agg_key,
   CASE
     WHEN UTM.funding_subtier_agency_name IS NOT NULL
-      THEN CONCAT('{"name":"', UTM.funding_subtier_agency_name, '","abbreviation":"', UTM.funding_subtier_agency_abbreviation, '","id":"', FA.id, '"}')
+      THEN CONCAT(
+        '{"name":"', UTM.funding_subtier_agency_name,
+        '","abbreviation":"', UTM.funding_subtier_agency_abbreviation,
+        '","id":"', FA.id, '"}'
+      )
     ELSE NULL
   END AS funding_subtier_agency_agg_key,
 
   UTM.cfda_number,
   CFDA.program_title AS cfda_title,
   CASE
-    WHEN UTM.cfda_number IS NOT NULL THEN CONCAT('{"code":"', UTM.cfda_number, '","description":"', CFDA.program_title, '","id":"', CFDA.id, '"}')
+    WHEN UTM.cfda_number IS NOT NULL
+      THEN CONCAT(
+        '{"code":"', UTM.cfda_number,
+        '","description":"', CFDA.program_title,
+        '","id":"', CFDA.id, '"}'
+      )
     ELSE NULL
   END AS cfda_agg_key,
 
@@ -127,23 +155,44 @@ SELECT
   UTM.pop_congressional_code,
   UTM.pop_city_name,
   CASE
-    WHEN UTM.pop_county_code IS NOT NULL
-      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","county_code":"', UTM.pop_county_code, '","county_name":"', UTM.pop_county_name, '"}')
+    WHEN UTM.pop_state_code IS NOT NULL AND UTM.pop_county_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', UTM.pop_country_code,
+        '","state_code":"', UTM.pop_state_code,
+        '","state_fips":"', POP_STATE_LOOKUP.fips,
+        '","county_code":"', UTM.pop_county_code,
+        '","county_name":"', UTM.pop_county_name,
+        '","population":"', POP_COUNTY_POPULATION.latest_population, '"}'
+      )
     ELSE NULL
   END AS pop_county_agg_key,
   CASE
-    WHEN UTM.pop_congressional_code IS NOT NULL
-      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","congressional_code":"', UTM.pop_congressional_code, '"}')
+    WHEN UTM.pop_state_code IS NOT NULL AND UTM.pop_congressional_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', UTM.pop_country_code,
+        '","state_code":"', UTM.pop_state_code,
+        '","state_fips":"', POP_STATE_LOOKUP.fips,
+        '","congressional_code":"', UTM.pop_congressional_code,
+        '","population":"', POP_DISTRICT_POPULATION.latest_population, '"}'
+      )
     ELSE NULL
   END AS pop_congressional_agg_key,
   CASE
     WHEN UTM.pop_state_code IS NOT NULL
-      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","state_code":"', UTM.pop_state_code, '","state_name":"', POP_STATE_LOOKUP.name, '"}')
+      THEN CONCAT(
+        '{"country_code":"', UTM.pop_country_code,
+        '","state_code":"', UTM.pop_state_code,
+        '","state_name":"', POP_STATE_LOOKUP.name,
+        '","population":"', POP_STATE_POPULATION.latest_population, '"}'
+      )
     ELSE NULL
   END AS pop_state_agg_key,
   CASE
     WHEN UTM.pop_country_code IS NOT NULL
-      THEN CONCAT('{"country_code":"', UTM.pop_country_code, '","country_name":"', POP_COUNTRY_LOOKUP.country_name, '"}')
+      THEN CONCAT(
+        '{"country_code":"', UTM.pop_country_code,
+        '","country_name":"', POP_COUNTRY_LOOKUP.country_name, '"}'
+      )
     ELSE NULL
   END AS pop_country_agg_key,
 
@@ -155,24 +204,49 @@ SELECT
   UTM.recipient_location_zip5,
   UTM.recipient_location_congressional_code,
   UTM.recipient_location_city_name,
+  CASE
+    WHEN UTM.recipient_location_state_code IS NOT NULL AND UTM.recipient_location_county_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', UTM.recipient_location_country_code,
+        '","state_code":"', UTM.recipient_location_state_code,
+        '","state_fips":"', RL_STATE_LOOKUP.fips,
+        '","county_code":"', UTM.recipient_location_county_code,
+        '","county_name":"', UTM.recipient_location_county_name,
+        '","population":"', RL_COUNTY_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS recipient_location_county_agg_key,
+  CASE
+    WHEN UTM.recipient_location_state_code IS NOT NULL AND UTM.recipient_location_congressional_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', UTM.recipient_location_country_code,
+        '","state_code":"', UTM.recipient_location_state_code,
+        '","state_fips":"', RL_STATE_LOOKUP.fips,
+        '","congressional_code":"', UTM.recipient_location_congressional_code,
+        '","population":"', RL_DISTRICT_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS recipient_location_congressional_agg_key,
+  CASE
+    WHEN UTM.recipient_location_state_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', UTM.recipient_location_country_code,
+        '","state_code":"', UTM.recipient_location_state_code,
+        '","state_name":"', RL_STATE_LOOKUP.name,
+        '","population":"', RL_STATE_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS recipient_location_state_agg_key,
 
   TREASURY_ACCT.treasury_accounts,
   FEDERAL_ACCT.federal_accounts,
-  UTM.business_categories,
-
-  -- ALL COLUMNS BELOW THIS CAN BE REMOVED AS A WARMFIX INTO STAGING;
-  -- LEAVING FOR NOW SINCE STAGING AND DEV SHARE AN ELASTICSEARCH CLUSTER;
-  -- WILL NEED TO ALSO DELETE CORRESPONDING TEMPLATE FIELD
-  TAA.id AS awarding_toptier_agency_id,
-  TFA.id AS funding_toptier_agency_id,
-  UTM.awarding_agency_id AS awarding_subtier_agency_id,
-  UTM.funding_agency_id AS funding_subtier_agency_id
+  UTM.business_categories
 
 FROM universal_transaction_matview UTM
 INNER JOIN transaction_normalized TN ON (UTM.transaction_id = TN.id)
+INNER JOIN awards AWD ON (UTM.award_id = AWD.id)
 LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
 LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
-LEFT JOIN awards AWD ON (UTM.award_id = AWD.id)
 -- Similar joins are already performed on universal_transaction_matview, however, to avoid making the matview larger
 -- than needed they have been placed here. Feel free to phase out if the columns gained from the following joins are
 -- added to the universal_transaction_matview.
@@ -213,19 +287,23 @@ LEFT JOIN LATERAL (
            END ASC
   LIMIT 1
 ) RECIPIENT_HASH_AND_LEVEL ON TRUE
-LEFT JOIN LATERAL (
-  SELECT country_name
-  FROM   ref_country_code
-  WHERE  country_code = UTM.pop_country_code
-  LIMIT  1
-) POP_COUNTRY_LOOKUP ON TRUE
-LEFT JOIN LATERAL (
-  SELECT   name
+LEFT JOIN ref_country_code POP_COUNTRY_LOOKUP ON (POP_COUNTRY_LOOKUP.country_code = UTM.pop_country_code)
+LEFT JOIN (
+  SELECT   code, name, fips, MAX(id)
   FROM     state_data
-  WHERE    code = UTM.pop_state_code
-  ORDER BY id desc
-  LIMIT    1
-) POP_STATE_LOOKUP ON TRUE
+  GROUP BY code, name, fips
+) POP_STATE_LOOKUP ON (POP_STATE_LOOKUP.code = UTM.pop_state_code)
+LEFT JOIN ref_population_county POP_STATE_POPULATION ON (POP_STATE_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_STATE_POPULATION.county_number = '000')
+LEFT JOIN ref_population_county POP_COUNTY_POPULATION ON (POP_COUNTY_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_COUNTY_POPULATION.county_number = UTM.pop_county_code)
+LEFT JOIN ref_population_cong_district POP_DISTRICT_POPULATION ON (POP_DISTRICT_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_DISTRICT_POPULATION.congressional_district = UTM.pop_congressional_code)
+LEFT JOIN (
+  SELECT   code, name, fips, MAX(id)
+  FROM     state_data
+  GROUP BY code, name, fips
+) RL_STATE_LOOKUP ON (RL_STATE_LOOKUP.code = UTM.recipient_location_state_code)
+LEFT JOIN ref_population_county RL_STATE_POPULATION ON (RL_STATE_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_STATE_POPULATION.county_number = '000')
+LEFT JOIN ref_population_county RL_COUNTY_POPULATION ON (RL_COUNTY_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_COUNTY_POPULATION.county_number = UTM.recipient_location_county_code)
+LEFT JOIN ref_population_cong_district RL_DISTRICT_POPULATION ON (RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_DISTRICT_POPULATION.congressional_district = UTM.recipient_location_congressional_code)
 LEFT JOIN (
   SELECT
     faba.award_id,
@@ -266,4 +344,5 @@ LEFT JOIN (
     faba.award_id IS NOT NULL
   GROUP BY
     faba.award_id
-) FEDERAL_ACCT ON (FEDERAL_ACCT.award_id = UTM.award_id);
+) FEDERAL_ACCT ON (FEDERAL_ACCT.award_id = UTM.award_id)
+WHERE UTM.action_date >= '2007-10-01';

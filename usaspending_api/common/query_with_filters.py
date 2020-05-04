@@ -2,13 +2,13 @@ import logging
 
 from django.conf import settings
 
-
 from typing import List
 from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
 from usaspending_api.search.elasticsearch.filters.naics import NaicsCodes
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,60 @@ class _Keywords(_Filter):
             "description",
         ]
         for v in filter_values:
-            keyword_queries.append(ES_Q("query_string", query=v + "*", default_operator="AND", fields=fields))
+            keyword_queries.append(
+                ES_Q("query_string", query=es_sanitize(v) + "*", default_operator="AND", fields=fields)
+            )
+
+        return ES_Q("dis_max", queries=keyword_queries)
+
+
+class _Keyword_Search(_Filter):
+    underscore_name = "keyword_search"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
+        keyword_queries = []
+        fields = [
+            "recipient_name",
+            "naics_code",
+            "naics_description",
+            "product_or_service_code",
+            "product_or_service_description",
+            "award_description",
+            "piid",
+            "fain",
+            "uri",
+            "recipient_unique_id",
+            "parent_recipient_unique_id",
+            "description",
+            "cfda_number",
+            "cfda_title",
+            "awarding_toptier_agency_name",
+            "awarding_subtier_agency_name",
+            "funding_toptier_agency_name",
+            "funding_subtier_agency_name",
+            "business_categories",
+            "type_description",
+            "pop_country_code",
+            "pop_country_name",
+            "pop_state_code",
+            "pop_county_code",
+            "pop_county_name",
+            "pop_zip5",
+            "pop_congressional_code",
+            "pop_city_name",
+            "recipient_location_country_code",
+            "recipient_location_country_name",
+            "recipient_location_state_code",
+            "recipient_location_county_code",
+            "recipient_location_county_name",
+            "recipient_location_zip5",
+            "recipient_location_congressional_code",
+            "recipient_location_city_name",
+            "modification_number",
+        ]
+        for v in filter_values:
+            keyword_queries.append(ES_Q("query_string", query=v, default_operator="OR", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
 
@@ -114,7 +167,7 @@ class _RecipientSearchText(_Filter):
         fields = ["recipient_name"]
 
         for v in filter_values:
-            upper_recipient_string = v.upper()
+            upper_recipient_string = es_sanitize(v.upper())
             recipient_name_query = ES_Q(
                 "query_string", query=upper_recipient_string + "*", default_operator="AND", fields=fields
             )
@@ -260,7 +313,7 @@ class _AwardIds(_Filter):
         award_ids_query = []
 
         for v in filter_values:
-            award_ids_query.append(ES_Q("match", display_award_id=v))
+            award_ids_query.append(ES_Q("match", display_award_id=es_sanitize(v)))
 
         return ES_Q("bool", should=award_ids_query, minimum_should_match=1)
 
@@ -364,6 +417,7 @@ class QueryWithFilters:
 
     filter_lookup = {
         _Keywords.underscore_name: _Keywords,
+        _Keyword_Search.underscore_name: _Keyword_Search,
         _TimePeriods.underscore_name: _TimePeriods,
         _AwardTypeCodes.underscore_name: _AwardTypeCodes,
         _Agencies.underscore_name: _Agencies,
