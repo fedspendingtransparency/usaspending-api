@@ -19,7 +19,10 @@ SELECT
     ELSE UTM.uri
   END AS display_award_id,
 
-  AWD.update_date,
+  CASE
+    WHEN AWD.update_date > TN.update_date THEN AWD.update_date
+    ELSE TN.update_date
+  END AS update_date,
   UTM.modification_number,
   AWD.generated_unique_award_id,
   UTM.award_id,
