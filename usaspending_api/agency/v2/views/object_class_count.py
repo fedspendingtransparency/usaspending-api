@@ -23,11 +23,12 @@ class ObjectClassCount(AgencyBase):
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
-                "object_class_count": self.object_class_queryset().count(),
+                "object_class_count": self.get_object_class_count(),
+                "messages": self.standard_response_messages,
             }
         )
 
-    def object_class_queryset(self):
+    def get_object_class_count(self):
         return (
             ObjectClass.objects.annotate(
                 include=Exists(
@@ -41,4 +42,5 @@ class ObjectClassCount(AgencyBase):
             )
             .filter(include=True)
             .values("pk")
+            .count()
         )

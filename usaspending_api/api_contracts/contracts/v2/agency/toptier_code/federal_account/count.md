@@ -7,7 +7,6 @@ Returns the count of unique Federal Account and Treasury Account categories in t
 
 ## GET
 
-
 + Request (application/json)
     + Schema
 
@@ -27,6 +26,8 @@ Returns the count of unique Federal Account and Treasury Account categories in t
         + `fiscal_year` (required, number)
         + `federal_account_count` (required, number)
         + `treasury_account_count` (required, number)
+        + `messages` (required, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
 
@@ -34,5 +35,6 @@ Returns the count of unique Federal Account and Treasury Account categories in t
                 "toptier_code": 014,
                 "fiscal_year": 2018,
                 "federal_account_count": 7,
-                "treasury_account_count": 7
+                "treasury_account_count": 7,
+                "messages": ["Account data powering this endpoint were first collected in FY2017 Q2..."]
             }

@@ -2,10 +2,10 @@ from django.db.models import Exists, OuterRef
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
 
 
 class BudgetFunctionCount(AgencyBase):
@@ -19,7 +19,7 @@ class BudgetFunctionCount(AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        rows = list(self.budget_function_queryset())
+        rows = list(self.get_budget_function_queryset())
 
         return Response(
             {
@@ -27,10 +27,11 @@ class BudgetFunctionCount(AgencyBase):
                 "fiscal_year": self.fiscal_year,
                 "budget_function_count": len(set([row["budget_function_code"] for row in rows])),
                 "budget_sub_function_count": len(set([row["budget_subfunction_code"] for row in rows])),
+                "messages": self.standard_response_messages,
             }
         )
 
-    def budget_function_queryset(self):
+    def get_budget_function_queryset(self):
         return (
             TreasuryAppropriationAccount.objects.annotate(
                 include=Exists(

@@ -25,11 +25,14 @@ Returns the count of Program Activity categories in the Agency's appropriations 
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
         + `program_activity_count` (required, number)
+        + `messages` (required, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
 
             {
                 "toptier_code": "012",
                 "fiscal_year": 2020,
-                "program_activity_count": 7
+                "program_activity_count": 7,
+                "messages": ["Account data powering this endpoint were first collected in FY2017 Q2..."]
             }
