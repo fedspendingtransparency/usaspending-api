@@ -11,7 +11,7 @@ from usaspending_api.references.models import ToptierAgency
 
 
 class AgencyBase(APIView):
-    @cached_property
+    @property
     def toptier_code(self):
         # We don't have to do any validation here because Django has already checked this to be
         # either a three or four digit numeric string based on the regex pattern in our route url.
