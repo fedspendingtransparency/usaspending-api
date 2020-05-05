@@ -9,7 +9,14 @@ from usaspending_api.references.tests.integration.filter_tree.tas.tas_data_fixtu
     fa_with_multiple_tas,
     fa_with_unsupported_tas,
 )
-
+from usaspending_api.references.tests.integration.filter_tree.psc.psc_data_fixtures import (
+    basic_rnd,
+    basic_product,
+    product_with_count_above_one,
+    product_with_branching_count_above_one,
+    basic_service,
+    no_data,
+)
 
 __all__ = [
     "basic_agency",
@@ -21,4 +28,10 @@ __all__ = [
     "multiple_tas",
     "fa_with_multiple_tas",
     "fa_with_unsupported_tas",
+    "basic_rnd",
+    "basic_product",
+    "product_with_count_above_one",
+    "product_with_branching_count_above_one",
+    "basic_service",
+    "no_data",
 ]

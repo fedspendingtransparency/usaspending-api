@@ -34,3 +34,4 @@ This endpoint returns a list of toptier agencies, their budgetary resources, and
 + `outlay_amount` (required, number)
 + `percentage_of_total_budget_authority` (required, number)
     `percentage_of_total_budget_authority` is the percentage of the agency's budget authority compared to the total government budget authority, expressed as a decimal value.
++ `toptier_code` (required, string)

@@ -150,6 +150,13 @@ def spending_by_transaction_sum_and_count(request_data):
 
 
 def get_number_of_unique_terms(filter_query: ES_Q, field: str) -> int:
+    """
+    Returns the count for a specific filter_query.
+    NOTE: This will only work when the number of unique values is 40k or less. This is captured in the Elasticsearch
+    documentation for the cardinality aggregation:
+        "The maximum supported value is 40000, thresholds above this number will
+        have the same effect as a threshold of 40000"
+    """
     search = TransactionSearch().filter(filter_query)
     cardinality_aggregation = A("cardinality", field=field)
     search.aggs.metric("field_count", cardinality_aggregation)

@@ -1,11 +1,11 @@
-from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from collections import OrderedDict
+from elasticsearch_dsl import Q as ES_Q, A
 
 from usaspending_api.common.cache_decorator import cache_response
 
-from usaspending_api.common.elasticsearch.client import es_client_query
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
 from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES
@@ -69,23 +69,18 @@ def prepare_search_terms(request_data):
 
 
 def create_elasticsearch_query(return_fields, scope, search_text, country, state, limit):
-    query_string = create_es_search(scope, search_text, country, state)
+    query = create_es_search(scope, search_text, country, state)
     # Buffering the "group by city" to create a handful more buckets, more than the number of shards we expect to have,
     # so that we don't get inconsistent results when the limit gets down to a very low number (e.g. lower than the
     # number of shards we have) such that it may provide inconsistent results in repeated queries
     city_buckets = limit + 100
     if country != "USA":
-        aggs = {"states": {"terms": {"field": return_fields[2], "size": 100}}}
+        aggs = {"field": return_fields[2], "size": 100}
     else:
-        aggs = {"states": {"terms": {"field": return_fields[1], "size": 100}}}
-    query = {
-        "_source": return_fields,
-        "size": 0,
-        "query": {"bool": {"filter": {"bool": query_string}}},
-        "aggs": {
-            "cities": {"terms": {"field": "{}.keyword".format(return_fields[0]), "size": city_buckets}, "aggs": aggs}
-        },
-    }
+        aggs = {"field": return_fields[1], "size": 100}
+    agg_values = {"field": "{}.keyword".format(return_fields[0]), "size": city_buckets}
+    agg_key = A("terms", **agg_values)
+    query.aggs.bucket("cities", agg_key).bucket("states", A("terms", **aggs))
     return query
 
 
@@ -117,7 +112,6 @@ def create_es_search(scope, search_text, country=None, state=None):
                 }
             }
         ]
-
         query["minimum_should_match"] = 1
     else:
         # USA is selected as country
@@ -130,7 +124,8 @@ def create_es_search(scope, search_text, country=None, state=None):
         # If a state was provided, include it in the filter to limit hits
         query["must"].append({"match": {"{}_state_code".format(scope): es_sanitize(state).upper()}})
 
-    return query
+    search = TransactionSearch().filter(ES_Q("bool", **query))
+    return search
 
 
 def build_country_match(country_match_scope, country_match_country):
@@ -139,8 +134,7 @@ def build_country_match(country_match_scope, country_match_country):
 
 
 def query_elasticsearch(query):
-    hits = es_client_query(index="{}*".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX), body=query)
-
+    hits = query.handle_execute()
     results = []
     if hits and hits["hits"]["total"]["value"] > 0:
         results = parse_elasticsearch_response(hits)

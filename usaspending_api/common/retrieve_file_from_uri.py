@@ -57,6 +57,13 @@ class RetrieveFileFromUri:
         else:
             raise NotImplementedError("No handler for scheme: {}!".format(self.parsed_url_obj.scheme))
 
+    def copy_to_temporary_file(self):
+        """Sometimes it is super helpful to just have a nice, concrete, local file to work with."""
+        with tempfile.NamedTemporaryFile() as tf:
+            path = tf.name
+        self.copy(path)
+        return path
+
     def _handle_s3(self, text):
         file_path = self.parsed_url_obj.path[1:]  # remove leading '/' character
         boto3_s3 = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)

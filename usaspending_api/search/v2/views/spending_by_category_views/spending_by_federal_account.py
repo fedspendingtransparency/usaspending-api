@@ -6,7 +6,6 @@ from typing import List
 
 from django.db.models import QuerySet
 
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
     AbstractSpendingByCategoryViewSet,
@@ -41,19 +40,21 @@ class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMet
         return results
 
     def query_django(self, base_queryset: QuerySet) -> List[dict]:
-        if "recipient_id" not in self.filters:
-            raise InvalidParameterException("Federal Account category requires recipient_id in search filter")
-        django_filters = {"federal_account_id__isnull": False}
-        django_values = ["federal_account_id", "federal_account_display", "account_title"]
-        queryset = self.common_db_query(base_queryset, django_filters, django_values)
-        lower_limit = self.pagination.lower_limit
-        upper_limit = self.pagination.upper_limit
-        query_results = list(queryset[lower_limit:upper_limit])
-        for row in query_results:
-            row["id"] = row.pop("federal_account_id")
-            row["code"] = row.pop("federal_account_display")
-            row["name"] = row.pop("account_title")
-        return query_results
+        if self.subawards:
+            self._raise_not_implemented()
+        # if "recipient_id" not in self.filters:
+        #     raise InvalidParameterException("Federal Account category requires recipient_id in search filter")
+        # django_filters = {"federal_account_id__isnull": False}
+        # django_values = ["federal_account_id", "federal_account_display", "account_title"]
+        # queryset = self.common_db_query(base_queryset, django_filters, django_values)
+        # lower_limit = self.pagination.lower_limit
+        # upper_limit = self.pagination.upper_limit
+        # query_results = list(queryset[lower_limit:upper_limit])
+        # for row in query_results:
+        #     row["id"] = row.pop("federal_account_id")
+        #     row["code"] = row.pop("federal_account_display")
+        #     row["name"] = row.pop("account_title")
+        # return query_results
 
 
 class FederalAccountViewSet(AbstractAccountViewSet):

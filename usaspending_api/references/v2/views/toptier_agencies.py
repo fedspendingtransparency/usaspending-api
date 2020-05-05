@@ -107,6 +107,7 @@ class ToptierAgenciesViewSet(APIView):
             response["results"].append(
                 {
                     "agency_id": agency.id,
+                    "toptier_code": toptier_agency.toptier_code,
                     "abbreviation": abbreviation,
                     "agency_name": toptier_agency.name,
                     "congressional_justification_url": cj,

@@ -3,8 +3,8 @@ HOST: https://api.usaspending.gov
 
 # TAS
 
-These endpoints are used to power USAspending.gov's TAS search component on the advanced search page.
-The response is a forest of filter search nodes, which despite having a unified structure represent different
+This endpoint is used to power USAspending.gov's TAS search component on the advanced search page.
+The response is a forest of search filter nodes, which despite having a unified structure represent different
 database fields based on depth in the tree.
 
 ## Search by Federal Account [GET /api/v2/references/filter_tree/tas/{agency}/{federal_account}/{?depth}]
@@ -14,15 +14,19 @@ Returns a list of Treasury Account Symbols associated with the specified federal
     + Parameters
         + `agency`: `020` (required, string) 
         + `federal_account`: `0550`
-        + `depth` (optional, enum[number]) 
-        How many levels deep the search will populate each tree.
-            + Members
-                    + `0`
-                    + `1`
-                    + `2` 
-        With this tree structure, only TAS will be returned, and the tree depth will always be one, regardless of provided depth.
-        + `filter` (optional, string) 
-        When provided, only results whose id or name matches the provided string (case insensitive) will be returned, along with any ancestors to a matching node.
+        + `depth` (optional, number) 
+            Defines how many levels of descendants to return under each node. For example, depth=0 will 
+            return a flat array, while depth=2 will populate the children array of each top level node 
+            with that node's children and grandchildren. The actual depth of each tree may be less than 
+            the value of depth if returned nodes have no children. Negative values are treated as 
+            infinite, returning all descendants. 
+            + Default: 0
+                  
+        + `filter` (optional, string)
+            Restricts results to nodes with a `id` or `description` matching the filter string. If depth is 
+            greater than zero, nodes will also appear the response if at least one child within depth 
+            matches the filter.        
+        
     + Schema
         
             {
@@ -33,7 +37,7 @@ Returns a list of Treasury Account Symbols associated with the specified federal
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array[TASFilterTreeNode], fixed-type)
+        + `results` (required, array[FilterTreeNode], fixed-type)
     + Body
 
             {
@@ -153,10 +157,10 @@ Returns a list of Treasury Account Symbols associated with the specified federal
 
 ## Data Structures
 
-### TASFilterTreeNode (object)
+### FilterTreeNode (object)
 
 + `id` (required, string)
 + `description` (required, string)
 + `ancestors` (required, array[string])
 + `count` (required, number)
-+ `children` (required, array[TASFilterTreeNode], nullable)
++ `children` (required, array[FilterTreeNode], nullable, fixed-type)

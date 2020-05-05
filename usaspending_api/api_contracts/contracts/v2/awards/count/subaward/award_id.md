@@ -16,7 +16,6 @@ This endpoint returns the number of subawards associated with the given award.
             {
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "string"
-
             }
 
     + Parameters

@@ -3,6 +3,7 @@ select
     abbreviation,
     name,
     mission,
+    about_agency_data,
     website,
     justification,
     icon_filename
@@ -15,6 +16,7 @@ from (
         max(agency_abbreviation) as abbreviation,
         max(agency_name) as name,
         max(mission) as mission,
+        max(about_agency_data) as about_agency_data,
         max(website) as website,
         max(congressional_justification) as justification,
         max(icon_filename) as icon_filename
@@ -40,6 +42,7 @@ from (
         max(frec_abbreviation) as abbreviation,
         max(frec_entity_description) as name,
         max(mission) as mission,
+        max(about_agency_data) as about_agency_data,
         max(website) as website,
         max(congressional_justification) as justification,
         max(icon_filename) as icon_filename

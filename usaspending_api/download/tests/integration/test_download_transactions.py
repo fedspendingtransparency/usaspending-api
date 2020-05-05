@@ -5,15 +5,12 @@ import random
 from django.conf import settings
 from model_mommy import mommy
 from rest_framework import status
-from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.common.experimental_api_flags import EXPERIMENTAL_API_HEADER, ELASTICSEARCH_HEADER_VALUE
-from usaspending_api.download.filestreaming import download_generation
-from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -105,8 +102,11 @@ def download_test_data(db):
     update_awards()
 
 
-def test_download_transactions_without_columns(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_transactions_without_columns(
+    client, monkeypatch, download_test_data, elasticsearch_transaction_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
@@ -117,8 +117,9 @@ def test_download_transactions_without_columns(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
-def test_download_transactions_with_columns(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_transactions_with_columns(client, monkeypatch, download_test_data, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
@@ -141,8 +142,9 @@ def test_download_transactions_with_columns(client, download_test_data):
 
 
 @pytest.mark.django_db
-def test_download_transactions_bad_limit(client):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_transactions_bad_limit(client, monkeypatch, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
@@ -151,8 +153,11 @@ def test_download_transactions_bad_limit(client):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-def test_download_transactions_excessive_limit(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_transactions_excessive_limit(
+    client, monkeypatch, download_test_data, elasticsearch_transaction_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
@@ -161,215 +166,25 @@ def test_download_transactions_excessive_limit(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-def test_download_transactions_bad_column_list_raises(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_transactions_bad_column_list_raises(
+    client, monkeypatch, download_test_data, elasticsearch_transaction_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     payload = {"filters": {"award_type_codes": []}, "columns": ["modification_number", "bogus_column"]}
-    resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
+    resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload),)
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert "Unknown columns" in resp.json()["detail"]
     assert "bogus_column" in resp.json()["detail"]
     assert "modification_number" not in resp.json()["detail"]
 
 
-def test_download_transactions_bad_filter_type_raises(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+def test_download_transactions_bad_filter_type_raises(
+    client, monkeypatch, download_test_data, elasticsearch_transaction_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     payload = {"filters": "01", "columns": []}
-    resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
+    resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload),)
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp.json()["detail"] == "Filters parameter not provided as a dict"
-
-
-"""
-These are intended for the experimental Elasticsearch functionality that lives alongside the Postgres
-implementation. These tests verify that ES performs as expected, but that it also respects the header put in place
-to trigger the experimental functionality. When ES for '/download/transactions' is used as the primary
-implementation for the endpoint these tests should be updated to reflect the change.
-"""
-
-
-def test_es_download_transactions_without_columns(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index
-):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-    )
-
-    elasticsearch_transaction_index.update_index()
-
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
-    resp = client.post(
-        "/api/v2/download/transactions/",
-        content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": []}, "columns": []}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
-    )
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert len(logging_statements) == 1, "Expected one logging statement"
-    assert (
-        logging_statements[0] == "Using experimental Elasticsearch functionality for '/download/transactions'"
-    ), "Expected a different logging statement"
-    assert ".zip" in resp.json()["file_url"]
-
-
-def test_es_download_transactions_with_columns(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index
-):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-    )
-
-    elasticsearch_transaction_index.update_index()
-
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
-    resp = client.post(
-        "/api/v2/download/transactions/",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {"award_type_codes": []},
-                "columns": [
-                    "assistance_transaction_unique_key",
-                    "award_id_fain",
-                    "modification_number",
-                    "sai_number",
-                    "contract_transaction_unique_key",
-                ],
-            }
-        ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
-    )
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert len(logging_statements) == 1, "Expected one logging statement"
-    assert (
-        logging_statements[0] == "Using experimental Elasticsearch functionality for '/download/transactions'"
-    ), "Expected a different logging statement"
-    assert ".zip" in resp.json()["file_url"]
-
-
-@pytest.mark.django_db
-def test_es_download_transactions_bad_limit(client, monkeypatch, elasticsearch_transaction_index):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-    )
-
-    elasticsearch_transaction_index.update_index()
-
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
-    resp = client.post(
-        "/api/v2/download/transactions/",
-        content_type="application/json",
-        data=json.dumps({"limit": "wombats", "filters": {"award_type_codes": []}, "columns": []}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
-    )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert len(logging_statements) == 1, "Expected one logging statement"
-    assert (
-        logging_statements[0] == "Using experimental Elasticsearch functionality for '/download/transactions'"
-    ), "Expected a different logging statement"
-
-
-def test_es_download_transactions_excessive_limit(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index
-):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-    )
-
-    elasticsearch_transaction_index.update_index()
-
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
-    resp = client.post(
-        "/api/v2/download/transactions/",
-        content_type="application/json",
-        data=json.dumps({"limit": settings.MAX_DOWNLOAD_LIMIT + 1, "filters": {"award_type_codes": []}, "columns": []}),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
-    )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert len(logging_statements) == 1, "Expected one logging statement"
-    assert (
-        logging_statements[0] == "Using experimental Elasticsearch functionality for '/download/transactions'"
-    ), "Expected a different logging statement"
-
-
-def test_es_download_transactions_bad_column_list_raises(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index
-):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-    )
-
-    elasticsearch_transaction_index.update_index()
-
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
-    payload = {"filters": {"award_type_codes": []}, "columns": ["modification_number", "bogus_column"]}
-    resp = client.post(
-        "/api/v2/download/transactions/",
-        content_type="application/json",
-        data=json.dumps(payload),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
-    )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert len(logging_statements) == 1, "Expected one logging statement"
-    assert (
-        logging_statements[0] == "Using experimental Elasticsearch functionality for '/download/transactions'"
-    ), "Expected a different logging statement"
-    assert "Unknown columns" in resp.json()["detail"]
-    assert "bogus_column" in resp.json()["detail"]
-    assert "modification_number" not in resp.json()["detail"]
-
-
-def test_es_download_transactions_bad_filter_type_raises(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index
-):
-    logging_statements = []
-    monkeypatch.setattr(
-        "usaspending_api.download.v2.views.logger.info", lambda message: logging_statements.append(message),
-    )
-    monkeypatch.setattr(
-        "usaspending_api.common.elasticsearch.search_wrappers.TransactionSearch._index_name",
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
-    )
-
-    elasticsearch_transaction_index.update_index()
-
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
-    payload = {"filters": "01", "columns": []}
-    resp = client.post(
-        "/api/v2/download/transactions/",
-        content_type="application/json",
-        data=json.dumps(payload),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
-    )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert len(logging_statements) == 1, "Expected one logging statement"
-    assert (
-        logging_statements[0] == "Using experimental Elasticsearch functionality for '/download/transactions'"
-    ), "Expected a different logging statement"
     assert resp.json()["detail"] == "Filters parameter not provided as a dict"

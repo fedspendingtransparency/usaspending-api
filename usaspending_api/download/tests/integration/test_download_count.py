@@ -2,8 +2,11 @@ import json
 import pytest
 import random
 
+from django.conf import settings
 from model_mommy import mommy
 from unittest.mock import Mock
+
+from rest_framework import status
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
@@ -11,6 +14,7 @@ from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -102,7 +106,9 @@ def download_test_data(db):
     update_awards()
 
 
-def test_download_count(client, download_test_data):
+def test_download_count(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     resp = client.post(
         "/api/v2/download/count/",
@@ -111,5 +117,9 @@ def test_download_count(client, download_test_data):
             {"filters": {"agencies": [{"type": "awarding", "tier": "toptier", "name": "Bureau of Things"}]}}
         ),
     )
+    resp_json = resp.json()
 
-    assert resp.json()["transaction_rows_gt_limit"] is False
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp_json["calculated_transaction_count"] == 1
+    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["transaction_rows_gt_limit"] is False

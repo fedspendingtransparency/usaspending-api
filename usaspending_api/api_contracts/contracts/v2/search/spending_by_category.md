@@ -22,18 +22,21 @@ This endpoint returns a list of the top results of specific categories sorted by
             + Members
                 + `awarding_agency`
                 + `awarding_subagency`
-                + `funding_agency`
-                + `funding_subagency`
-                + `recipient_duns`
-                + `recipient_parent_duns`
                 + `cfda`
-                + `psc`
-                + `naics`
+                + `country`
                 + `county`
                 + `district`
                 + `federal_account`
-                + `country`
+                + `funding_agency`
+                + `funding_subagency`
+                + `naics`
+                + `object_class`
+                + `program_activity`
+                + `psc`
+                + `recipient_duns`
+                + `recipient_parent_duns`
                 + `state_territory`
+                + `tas`
         + `filters` (required, AdvancedFilterObject)
             The filters to find with said category
         + `limit` (optional, number)
@@ -104,6 +107,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `set_aside_type_codes` (optional, array[string])
 + `extent_competed_type_codes` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
 ### TimePeriodObject (object)
 + `start_date` (required, string)
@@ -148,6 +152,10 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `exclude` (optional, array[string])
 
 ### TASCodeObject (object)
++ `require`: [[`091`]] (optional, array[array[string]])
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
+
+### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier - three characters
 + `aid` (required, string)

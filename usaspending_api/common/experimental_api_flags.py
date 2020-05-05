@@ -39,7 +39,7 @@ def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
         HttpHeaders.parse_header_name(EXPERIMENTAL_API_HEADER): ELASTICSEARCH_HEADER_VALUE,
     }
 
-    logger.warning(f"Mirroring inbound request with elasticsearch experimental header.")
+    logger.warning("Mirroring inbound request with elasticsearch experimental header.")
 
     # NOTE: Purposely desiring an immediate timeout, with ignoring of that timeout error,
     # since this is a fire-and-forget way to siphon off duplicate load-testing traffic to the server,

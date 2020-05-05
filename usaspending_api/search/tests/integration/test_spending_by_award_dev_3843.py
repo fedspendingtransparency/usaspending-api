@@ -3,6 +3,7 @@ import pytest
 
 from rest_framework import status
 from usaspending_api.awards.models import Award, Subaward
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -37,10 +38,12 @@ def build_request_data(award_ids, subawards):
 
 
 @pytest.mark.django_db
-def test_award_id_search(client, award_id_search_data):
+def test_award_id_search(client, monkeypatch, elasticsearch_award_index, award_id_search_data):
     """
     DEV-3843 requested that we support searching exact award id matches when awards ids are surrounded by quotes.
     """
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
     # Control test.  This should return only the one award.
     resp = client.post(
         "/api/v2/search/spending_by_award", content_type="application/json", data=build_request_data(["abc111"], False)
