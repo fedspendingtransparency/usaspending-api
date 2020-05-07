@@ -1,0 +1,45 @@
+import pytest
+
+from datetime import datetime, timedelta, timezone
+from model_mommy import mommy
+from usaspending_api.awards.models import TransactionFABS
+from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
+from usaspending_api.broker.management.commands.fabs_nightly_loader import (
+    get_incremental_load_start_datetime,
+    SUBMISSION_LOOKBACK_MINUTES,
+)
+from usaspending_api.broker.models import ExternalDataLoadDate
+
+
+@pytest.mark.django_db()
+def test_get_incremental_load_start_datetime():
+
+    may4 = datetime(2020, 5, 4, tzinfo=timezone.utc)
+    may5 = datetime(2020, 5, 5, tzinfo=timezone.utc)
+    may6 = datetime(2020, 5, 6, tzinfo=timezone.utc)
+    lookback_minutes = timedelta(minutes=SUBMISSION_LOOKBACK_MINUTES)
+
+    # With no data in the database, this should fail.
+    with pytest.raises(RuntimeError):
+        get_incremental_load_start_datetime()
+
+    # Add a last load.
+    mommy.make(
+        "broker.ExternalDataLoadDate",
+        external_data_type__external_data_type_id=EXTERNAL_DATA_TYPE_DICT["fabs"],
+        last_load_date=may5,
+    )
+    assert get_incremental_load_start_datetime() == may5 - lookback_minutes
+
+    # Add a FABS updated_at that is older than last load date so it is chosen.
+    mommy.make("awards.TransactionFABS", transaction__id=1, updated_at=may4)
+    assert get_incremental_load_start_datetime() == may4 - lookback_minutes
+
+    # Make FABS updated_at newer so last load date is chosen.
+    TransactionFABS.objects.filter(transaction_id=1).update(updated_at=may6)
+    assert get_incremental_load_start_datetime() == may5 - lookback_minutes
+
+    # Getting rid of last load date should cause retrieval to fail.  Basically the same as the first test.
+    ExternalDataLoadDate.objects.all().delete()
+    with pytest.raises(RuntimeError):
+        get_incremental_load_start_datetime()

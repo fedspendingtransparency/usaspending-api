@@ -1,11 +1,14 @@
 import logging
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from django.core.management.base import BaseCommand
 from django.db import connection
+from django.db.models import Max
 
+from usaspending_api.awards.models import TransactionFABS
 from usaspending_api.broker import lookups
 from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 from usaspending_api.broker.models import ExternalDataLoadDate
@@ -14,41 +17,44 @@ from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.transactions.transaction_delete_journal_helpers import retrieve_deleted_fabs_transactions
 
+
 logger = logging.getLogger("script")
 
 
 SUBMISSION_LOOKBACK_MINUTES = 15
 
 
-def get_last_load_date():
+def get_incremental_load_start_datetime():
     """
-    Wraps the get_load_load_date helper which is responsible for grabbing the
-    last load date from the database.
+    This function is designed to help prevent two issues we've discovered with the FABS nightly
+    pipline:
 
-    Without getting into too much detail, SUBMISSION_LOOKBACK_MINUTES is used
-    to counter a very rare race condition where database commits are saved ever
-    so slightly out of order with the updated_at timestamp.  It will be
-    subtracted from the last_run_date to ensure submissions with similar
-    updated_at times do not fall through the cracks.  An unfortunate side
-    effect is that some submissions may be processed more than once which
-    SHOULDN'T cause any problems but will add to the run time.  To minimize
-    this, keep the value as small as possible while still preventing skips.  To
-    be clear, the original fabs loader did this as well, just in a way that did
-    not always prevent skips.
+     #1 We return the minimum of the last load date and the max transaction_fabs updated_at date
+        to prevent FABS transactions submitted between when the source records are copied from
+        Broker and when FABS transactions are processed from being skipped.
+
+     #2 We then subtract SUBMISSION_LOOKBACK_MINUTES from #1 to counter a very rare race condition
+        where database commits are saved ever so slightly out of order when compared to the
+        updated_at timestamp due to commit duration which can cause specific transactions to be
+        skipped.
+
+    An unfortunate side effect is that some submissions will be processed more than once which
+    SHOULDN'T cause any problems but will add to the run time.  To minimize this, keep the
+    SUBMISSION_LOOKBACK_MINUTES value as small as possible while still preventing skips.  To be
+    clear, the original fabs loader did this as well, just in a way that did not always prevent
+    skips (by always running since midnight - which had its own issues).
     """
-    from usaspending_api.broker.helpers.last_load_date import get_last_load_date
-
     last_load_date = get_last_load_date("fabs", SUBMISSION_LOOKBACK_MINUTES)
     if last_load_date is None:
-        external_data_type_id = lookups.EXTERNAL_DATA_TYPE_DICT["fabs"]
         raise RuntimeError(
-            "Unable to find last_load_date in table {} for external_data_type_id={}. "
-            "If this is expected and the goal is to reload all submissions, supply the "
-            "--reload-all switch on the command line.".format(
-                ExternalDataLoadDate.objects.model._meta.db_table, external_data_type_id
-            )
+            f"Unable to find last_load_date in table {ExternalDataLoadDate.objects.model._meta.db_table} "
+            f"for external_data_type_id={lookups.EXTERNAL_DATA_TYPE_DICT['fabs']}.  If this is expected and "
+            f"the goal is to reload all submissions, supply the --reload-all switch on the command line."
         )
-    return last_load_date
+    max_updated_at = TransactionFABS.objects.aggregate(Max("updated_at"))["updated_at__max"]
+    if max_updated_at is None:
+        return last_load_date
+    return min((last_load_date, max_updated_at - timedelta(minutes=SUBMISSION_LOOKBACK_MINUTES)))
 
 
 def _get_ids(sql, afa_ids, start_datetime, end_datetime):
@@ -144,7 +150,7 @@ class Command(BaseCommand):
         is_incremental_load = not any((reload_all, afa_ids, start_datetime, end_datetime))
 
         if is_incremental_load:
-            start_datetime = get_last_load_date()
+            start_datetime = get_incremental_load_start_datetime()
             logger.info("Processing data for FABS starting from %s" % start_datetime)
 
         with timer("obtaining delete records", logger.info):
