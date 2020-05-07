@@ -7,7 +7,8 @@ from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
-from usaspending_api.search.helpers.matview_filter_helpers import build_tas_codes_filter, build_award_ids_filter
+from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
+from usaspending_api.search.filters.postgres.tas import TasCodes
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -234,6 +235,6 @@ def subaward_filter(filters, for_downloads=False):
             queryset = queryset.filter(or_queryset)
 
         elif key == "tas_codes":
-            queryset = build_tas_codes_filter(queryset, value)
+            queryset = TasCodes.build_tas_codes_filter(queryset, value)
 
     return queryset

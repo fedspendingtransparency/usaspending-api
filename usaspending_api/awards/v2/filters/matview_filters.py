@@ -12,7 +12,8 @@ from usaspending_api.common.exceptions import InvalidParameterException, NotImpl
 from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
-from usaspending_api.search.helpers.matview_filter_helpers import build_tas_codes_filter, build_award_ids_filter
+from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
+from usaspending_api.search.filters.postgres.tas import TasCodes
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -43,6 +44,7 @@ def matview_search_filter(filters, model, for_downloads=False):
     faba_queryset = FinancialAccountsByAwards.objects.filter(award__isnull=False)
 
     for key, value in filters.items():
+        print(key)
         if value is None:
             raise InvalidParameterException("Invalid filter: " + key + " has null as its value.")
 
@@ -297,8 +299,9 @@ def matview_search_filter(filters, model, for_downloads=False):
                 or_queryset |= Q(extent_competed__exact=v)
             queryset = queryset.filter(or_queryset)
 
-        elif key == "tas_codes":
-            queryset = build_tas_codes_filter(queryset, value)
+        elif key == TasCodes.underscore_name:
+            print("actually got here")
+            queryset = TasCodes.build_tas_codes_filter(queryset, value)
 
         # Federal Account Filter
         elif key == "federal_account_ids":
