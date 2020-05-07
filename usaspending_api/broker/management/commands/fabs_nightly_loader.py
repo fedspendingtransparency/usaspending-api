@@ -86,14 +86,14 @@ def get_fabs_transaction_ids(afa_ids, start_datetime, end_datetime):
 
 def read_afa_ids_from_file(afa_id_file_path):
     with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
-        return tuple(l.decode("utf-8").rstrip() for l in f if l)
+        return {l.decode("utf-8").rstrip() for l in f if l}
 
 
 class Command(BaseCommand):
     help = (
-        "Update FABS data in USAspending from source data. Command line parameters "
-        "are ANDed together so, for example, providing a transaction id and a "
-        "submission id that do not overlap will result no new FABs records."
+        "Update FABS data in USAspending from source data. Providing no options "
+        "performs an incremental (from last run) load. Deletes are only executed "
+        "with incremental loads."
     )
 
     def add_arguments(self, parser):
@@ -107,11 +107,23 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
+            "--afa-ids",
+            default=[],
+            metavar="AFA_ID",
+            nargs="+",
+            help="A list of Broker transaction IDs (afa_generated_unique) to "
+            "reload. IDs provided here will be combined with any --afa-id-file "
+            "IDs provided. Nonexistent IDs will be ignored. If any AFA IDs start "
+            "with a dash or other special shell character, use the --afa-id-file "
+            "option.",
+        )
+
+        parser.add_argument(
             "--afa-id-file",
             metavar="FILEPATH",
-            type=str,
-            help="A file containing only broker transaction IDs (afa_generated_unique) "
-            "to reload, one ID per line. Nonexistent IDs will be ignored.",
+            help="A file containing only Broker transaction IDs (afa_generated_unique) "
+            "to reload, one ID per line. IDs provided here will be combined with any "
+            "--afa-ids IDs provided. Nonexistent IDs will be ignored.",
         )
 
         parser.add_argument(
@@ -142,7 +154,9 @@ class Command(BaseCommand):
             start_datetime = None
             end_datetime = None
         else:
-            afa_ids = read_afa_ids_from_file(options["afa_id_file"]) if options["afa_id_file"] else None
+            afa_ids = set(options["afa_ids"])
+            if options["afa_id_file"]:
+                afa_ids = tuple(afa_ids | read_afa_ids_from_file(options["afa_id_file"]))
             start_datetime = options["start_datetime"]
             end_datetime = options["end_datetime"]
 
@@ -153,15 +167,16 @@ class Command(BaseCommand):
             start_datetime = get_incremental_load_start_datetime()
             logger.info("Processing data for FABS starting from %s" % start_datetime)
 
-        with timer("obtaining delete records", logger.info):
-            delete_records = retrieve_deleted_fabs_transactions(start_datetime, end_datetime)
-            ids_to_delete = [item for sublist in delete_records.values() for item in sublist if item]
-        logger.info(f"{len(ids_to_delete):,} delete ids found in total")
+            # We only perform deletes with incremental loads.
+            with timer("obtaining delete records", logger.info):
+                delete_records = retrieve_deleted_fabs_transactions(start_datetime, end_datetime)
+                ids_to_delete = [item for sublist in delete_records.values() for item in sublist if item]
+            logger.info(f"{len(ids_to_delete):,} delete ids found in total")
 
         with timer("retrieving/diff-ing FABS Data", logger.info):
             ids_to_upsert = get_fabs_transaction_ids(afa_ids, start_datetime, end_datetime)
 
-        update_award_ids = delete_fabs_transactions(ids_to_delete)
+        update_award_ids = delete_fabs_transactions(ids_to_delete) if is_incremental_load else []
         upsert_fabs_transactions(ids_to_upsert, update_award_ids)
 
         if is_incremental_load:
