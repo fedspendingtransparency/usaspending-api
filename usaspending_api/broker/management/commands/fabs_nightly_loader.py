@@ -64,7 +64,7 @@ def get_incremental_load_start_datetime():
         return last_load_date
 
     # We add a little tiny bit of time to the max_updated_at to prevent us from always reprocessing
-    # records since the SQL that grabs new records is using >= updated_at.  I realize this is a hack
+    # records since the SQL that grabs new records is using updated_at >=.  I realize this is a hack
     # but the pipeline is already running for too long so anything we can do to prevent enlongating
     # it should be welcome.
     max_updated_at += timedelta(milliseconds=UPDATED_AT_MODIFIER_MS)
