@@ -19,12 +19,11 @@ class TasCodes(HierarchicalFilter):
         else:
             raise InvalidParameterException(f"tas_codes must be an array or object")
 
-        print(cls._query_string(require, exclude))
         return queryset.filter(
             treasury_account_identifiers__overlap=list(
-                TreasuryAppropriationAccount.objects.filter(
-                    tas_rendering_label__iregex=cls._query_string(require, exclude)
-                ).values_list("treasury_account_identifier", flat=True)
+                cls._query_string(TreasuryAppropriationAccount.objects.all(), require, exclude).values_list(
+                    "treasury_account_identifier", flat=True
+                )
             )
         )
 
@@ -44,7 +43,7 @@ def string_to_dictionary(string):
 
 def search_regex_of(v):
     if isinstance(v, str):
-        v = TasCodes.string_to_dictionary(v)
+        v = string_to_dictionary(v)
 
     code_lookup = {
         "ata": v["ata"] if v.get("ata") else None,
@@ -72,7 +71,7 @@ def search_regex_of(v):
 
 class TASNode(Node):
     def _basic_search_unit(self):
-        return search_regex_of(string_to_dictionary(self.code))
+        return {"tas_rendering_label__iregex": search_regex_of(self.code)}
 
     def clone(self, code, positive, positive_naics, negative_naics):
         return TASNode(code, positive, positive_naics, negative_naics)

@@ -3,8 +3,7 @@ from abc import abstractmethod
 
 class HierarchicalFilter:
     @classmethod
-    def _query_string(cls, require, exclude) -> str:
-        """Generates string in proper syntax for Elasticsearch query_string attribute, given API parameters"""
+    def _query_string(cls, queryset, require, exclude):
         positive_nodes = [
             cls.node(code, True, require, exclude) for code in require if cls._has_no_parents(code, require + exclude)
         ]
@@ -13,13 +12,14 @@ class HierarchicalFilter:
             cls.node(code, False, require, exclude) for code in exclude if cls._has_no_parents(code, require + exclude)
         ]
 
-        positive_query = "|".join([node.get_query() for node in positive_nodes])
-        negative_query = "|".join([node.get_query() for node in negative_nodes])
+        return positive_nodes[0].get_query(queryset)
+        # positive_query = [node.get_query() for node in positive_nodes]
+        # negative_query = [node.get_query() for node in negative_nodes]
 
-        if positive_query and negative_query:
-            return positive_query
-        else:
-            return positive_query + negative_query  # We know that exactly one is blank thanks to TinyShield
+        # if positive_query and negative_query:
+        #    return positive_query
+        # else:
+        #    return positive_query + negative_query  # We know that exactly one is blank thanks to TinyShield
 
     @classmethod
     def _has_no_parents(cls, code, other_codes):
@@ -59,24 +59,17 @@ class Node:
             if self.is_parent_of(other_code):
                 self.children.append(self.clone(other_code, is_positive, positive_codes, negative_codes))
 
-    def get_query(self):
+    def get_query(self, query):
         retval = self._basic_search_unit()
-        if not self.positive:
-            retval = f"?!{retval}"
-        retval = f"({retval})"
+        if self.positive:
+            return query.filter(**retval)
+        else:
+            return query.exclude(**retval)
 
-        positive_child_query = "|".join([child.get_query() for child in self.children if child.positive])
-
-        if self.children:
-            if self.positive:
-                retval += f"|({positive_child_query})"
-            else:
-                retval = positive_child_query
-
-        return f"({retval})"
+        # positive_child_query = "|".join([child.get_query() for child in self.children if child.positive])
 
     @abstractmethod
-    def _basic_search_unit(self):
+    def _basic_search_unit(self) -> dict:
         pass
 
     def is_parent_of(self, other_path):
