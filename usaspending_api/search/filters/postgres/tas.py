@@ -71,7 +71,12 @@ def search_regex_of(v):
 
 class TASNode(Node):
     def _basic_search_unit(self):
-        return {"tas_rendering_label__iregex": search_regex_of(self.code)}
+        if len(self.ancestors) == 1:
+            return {"tas_rendering_label__iregex": search_regex_of(self.code)}
+        elif len(self.ancestors) == 2:
+            return {"federal_account__federal_account_code": self.code}
+        else:
+            return {"funding_toptier_agency__toptier_code": self.code}
 
     def clone(self, code, positive, positive_naics, negative_naics):
         return TASNode(code, positive, positive_naics, negative_naics)
