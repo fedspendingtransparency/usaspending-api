@@ -4,7 +4,7 @@ import copy
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
-from usaspending_api.search.elasticsearch.filters.tas import TasCodes, TreasuryAccounts
+from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
 
 
 TIME_PERIOD_MIN_MESSAGE = (
