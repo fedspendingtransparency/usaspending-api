@@ -57,11 +57,15 @@ class Node:
     def get_query(self, query):
         retval = self._basic_search_unit()
         if self.positive:
-            return query.filter(**retval)
+            query = query.filter(**retval)
+            for node in [child for child in self.children if not child.positive]:
+                query = node.get_query(query)
+            return query
         else:
-            return query.exclude(**retval)
-
-        # positive_child_query = "|".join([child.get_query() for child in self.children if child.positive])
+            query = query.exclude(**retval)
+            for node in [child for child in self.children if child.positive]:
+                query = node.get_query(query)
+            return query
 
     @abstractmethod
     def _basic_search_unit(self) -> dict:
