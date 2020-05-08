@@ -12,14 +12,9 @@ class HierarchicalFilter:
             cls.node(code, False, require, exclude) for code in exclude if cls._has_no_parents(code, require + exclude)
         ]
 
-        return positive_nodes[0].get_query(queryset)
-        # positive_query = [node.get_query() for node in positive_nodes]
-        # negative_query = [node.get_query() for node in negative_nodes]
-
-        # if positive_query and negative_query:
-        #    return positive_query
-        # else:
-        #    return positive_query + negative_query  # We know that exactly one is blank thanks to TinyShield
+        for node in positive_nodes + negative_nodes:
+            queryset = node.get_query(queryset)
+        return queryset
 
     @classmethod
     def _has_no_parents(cls, code, other_codes):
