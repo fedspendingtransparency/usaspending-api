@@ -1,7 +1,6 @@
 import json
 
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
-from usaspending_api.common.experimental_api_flags import EXPERIMENTAL_API_HEADER, ELASTICSEARCH_HEADER_VALUE
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -25,7 +24,6 @@ def query_by_tas(client, tas):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
 
 
@@ -52,5 +50,4 @@ def query_by_treasury_account_components(client, tas, treasury_accounts):
                 },
             }
         ),
-        **{EXPERIMENTAL_API_HEADER: ELASTICSEARCH_HEADER_VALUE},
     )
