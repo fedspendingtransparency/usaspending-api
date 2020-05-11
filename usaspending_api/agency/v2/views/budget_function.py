@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from typing import Any
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
@@ -39,14 +40,16 @@ class BudgetFunction(AgencyBase):
 
     @cache_response()
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        rows = list(self.get_budget_function_queryset(request))
-
+        results = list(self.get_budget_function_queryset(request))
+        page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
-                "results": self.combine_subfunctions(rows),
+                "limit": self.pagination.limit,
+                "results": self.combine_subfunctions(results),
                 "messages": self.standard_response_messages,
+                "page_metadata": page_metadata,
             }
         )
 
@@ -56,7 +59,7 @@ class BudgetFunction(AgencyBase):
             filters.append(
                 Q(
                     Q(treasury_account__budget_function_title__icontains=request.data["filter"])
-                    | Q(treausry_account__budget_subfunction_title__icontains=request.data["filter"])
+                    | Q(treasury_account__budget_subfunction_title__icontains=request.data["filter"])
                 )
             )
 
@@ -84,5 +87,7 @@ class BudgetFunction(AgencyBase):
                 obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
                 gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
             )
+            # .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
         )
+        print(self.pagination)
         return results
