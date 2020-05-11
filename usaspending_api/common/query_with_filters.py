@@ -5,9 +5,9 @@ from django.conf import settings
 from typing import List
 from elasticsearch_dsl import Q as ES_Q
 
-from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
-from usaspending_api.search.elasticsearch.filters.naics import NaicsCodes
-from usaspending_api.search.elasticsearch.filters.tas import TasCodes, TreasuryAccounts
+from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
+from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
+from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 

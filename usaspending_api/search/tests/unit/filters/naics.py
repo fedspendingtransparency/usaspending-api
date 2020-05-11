@@ -1,4 +1,4 @@
-from usaspending_api.search.elasticsearch.filters.naics import NaicsCodes
+from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.common.exceptions import InvalidParameterException
 from pytest import raises
 

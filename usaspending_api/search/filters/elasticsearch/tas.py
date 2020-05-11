@@ -2,8 +2,8 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from elasticsearch_dsl import Q as ES_Q
-from usaspending_api.search.elasticsearch.filters.filter import _Filter, _QueryType
-from usaspending_api.search.elasticsearch.filters.HierarchicalFilter import HierarchicalFilter, Node
+from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
+from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import HierarchicalFilter, Node
 import re
 
 
