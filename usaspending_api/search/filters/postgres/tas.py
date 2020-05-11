@@ -4,8 +4,6 @@ from django.db.models import Q
 from usaspending_api.search.filters.postgres.HierarchicalFilter import HierarchicalFilter, Node
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
 
-from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
-
 
 class TasCodes(HierarchicalFilter):
     underscore_name = "tas_codes"
@@ -21,9 +19,6 @@ class TasCodes(HierarchicalFilter):
         else:
             raise InvalidParameterException(f"tas_codes must be an array or object")
 
-        print(
-            generate_raw_quoted_query(cls._query_string(TreasuryAppropriationAccount.objects.all(), require, exclude))
-        )
         return queryset.filter(
             treasury_account_identifiers__overlap=list(
                 cls._query_string(TreasuryAppropriationAccount.objects.all(), require, exclude).values_list(
