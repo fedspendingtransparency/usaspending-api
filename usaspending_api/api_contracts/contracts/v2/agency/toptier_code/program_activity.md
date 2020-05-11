@@ -47,7 +47,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                 "order": "asc",
                 "sort": "gross_outlay_amount",
                 "page": 1,
-                "limit": 3
+                "limit": 2
             }
 
 + Response 200 (application/json)
@@ -66,7 +66,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
             {
                 "toptier_code": "086",
                 "fiscal_year": 2018,
-                "limit": 3,
+                "limit": 2,
                 "page_metadata": {
                     "page": 1,
                     "next": 2,
@@ -84,11 +84,6 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                         "name": "CONTRACT RENEWALS",
                         "obligated_amount": 225.26,
                         "gross_outlay_amount": -161252.0
-                    },
-                    {
-                        "name": "UNKNOWN/OTHER",
-                        "obligated_amount": 0.0,
-                        "gross_outlay_amount": 0.0
                     }
                 ],
                 "messages": []
