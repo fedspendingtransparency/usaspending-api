@@ -1,8 +1,7 @@
-from django.db.models import Exists, OuterRef, Q, F, Sum, Subquery
+from django.db.models import Q, Sum
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
@@ -21,7 +20,6 @@ class BudgetFunction(AgencyBase):
         return None
 
     def combine_subfunctions(self, rows):
-        print(rows)
         budget_functions = [
             {
                 "code": row["treasury_account__budget_function_code"],
@@ -34,10 +32,15 @@ class BudgetFunction(AgencyBase):
                 {
                     "code": row["treasury_account__budget_subfunction_code"],
                     "name": row["treasury_account__budget_subfunction_title"],
+                    "obligated_amount": row["obligated_amount"],
+                    "gross_outlay_amount": row["gross_outlay_amount"],
                 }
                 for row in rows
                 if item["code"] == row["treasury_account__budget_function_code"]
             ]
+        for item in budget_functions:
+            item["obligated_amount"] = sum([x["obligated_amount"] for x in item["children"]])
+            item["gross_outlay_amount"] = sum([x["gross_outlay_amount"] for x in item["children"]])
         return budget_functions
 
     @cache_response()
@@ -63,7 +66,7 @@ class BudgetFunction(AgencyBase):
                 )
             )
 
-        queryset_results = (
+        results = (
             (
                 FinancialAccountsByProgramActivityObjectClass.objects.filter(
                     final_of_fy=True,
@@ -87,24 +90,4 @@ class BudgetFunction(AgencyBase):
                 gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
             )
         )
-        print(queryset_results.query)
-        return queryset_results
-        # subquery = FinancialAccountsByProgramActivityObjectClass.objects.filter(
-        #                 treasury_account_id=OuterRef("pk"),
-        #                 final_of_fy=True,
-        #                 treasury_account__funding_toptier_agency=self.toptier_agency,
-        #                 submission__reporting_fiscal_year=self.fiscal_year
-        #             ).annotate(gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"))
-        # non_zeroes = subquery.exclude(gross_outlay_amount_by_program_object_class_cpe=0, obligations_incurred_by_program_object_class_cpe=0)
-        # results = (
-        #     TreasuryAppropriationAccount.objects.annotate(
-        #         include=Exists(non_zeroes.values("pk")),
-        #         gross_outlay_amount=subquery.values("gross_outlay_amount")
-        #         # obligated_amount=subquery.values("obligations_incurred_by_program_object_class_cpe")
-        #     )
-        #     .filter(*filters)
-        #     .values("budget_function_code", "budget_function_title", "budget_subfunction_code", "budget_subfunction_title")
-        #     .distinct()
-        # )
-        # print(results.query)
-        # return results
+        return results
