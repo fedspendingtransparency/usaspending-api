@@ -31,7 +31,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
         + `sort` (optional, enum[string])
             Optional parameter indicating what value results should be sorted by.
             + Default: `obligated_amount`
-            + Members:
+            + Members
                 + `name`
                 + `obligated_amount`
                 + `gross_outlay_amount`
