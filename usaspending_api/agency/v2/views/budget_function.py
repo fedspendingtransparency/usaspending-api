@@ -14,33 +14,27 @@ class BudgetFunction(AgencyBase):
     been submitted in File B.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/budget_function/id.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/budget_function/budget_function.md"
 
     def validate_request(self):
         return None
 
     def combine_subfunctions(self, rows):
-        budget_functions = [
-            {
-                "code": row["treasury_account__budget_function_code"],
-                "name": row["treasury_account__budget_function_title"],
-            }
-            for row in rows
-        ]
+        names = set([row["treasury_account__budget_function_title"] for row in rows])
+        budget_functions = [{"name": x} for x in names]
         for item in budget_functions:
             item["children"] = [
                 {
-                    "code": row["treasury_account__budget_subfunction_code"],
                     "name": row["treasury_account__budget_subfunction_title"],
                     "obligated_amount": row["obligated_amount"],
                     "gross_outlay_amount": row["gross_outlay_amount"],
                 }
                 for row in rows
-                if item["code"] == row["treasury_account__budget_function_code"]
+                if item["name"] == row["treasury_account__budget_function_title"]
             ]
-        for item in budget_functions:
             item["obligated_amount"] = sum([x["obligated_amount"] for x in item["children"]])
             item["gross_outlay_amount"] = sum([x["gross_outlay_amount"] for x in item["children"]])
+
         return budget_functions
 
     @cache_response()
@@ -51,7 +45,7 @@ class BudgetFunction(AgencyBase):
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
-                "budget_functions": self.combine_subfunctions(rows),
+                "results": self.combine_subfunctions(rows),
                 "messages": self.standard_response_messages,
             }
         )
@@ -85,6 +79,7 @@ class BudgetFunction(AgencyBase):
                 "treasury_account__budget_subfunction_code",
                 "treasury_account__budget_subfunction_title",
             )
+            .distinct()
             .annotate(
                 obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
                 gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
