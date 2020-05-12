@@ -42,7 +42,6 @@ def test_budget_function_list_success(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    # this agency doesn't have any data for 2017, so we expect this to return no results
     body = {"fiscal_year": 2017}
     resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
     expected_result = {
@@ -51,7 +50,14 @@ def test_budget_function_list_success(client, agency_account_data):
         "limit": 10,
         "messages": [],
         "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
-        "results": [],
+        "results": [
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 2",
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 2A", "obligated_amount": 10.0}],
+            }
+        ],
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
@@ -320,7 +326,14 @@ def test_budget_function_list_search(client, agency_account_data):
         "limit": 10,
         "messages": [],
         "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
-        "results": [{"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0, "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 3A", "obligated_amount": 100.0}]}],
+        "results": [
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 3",
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 3A", "obligated_amount": 100.0}],
+            }
+        ],
     }
 
     assert resp.status_code == status.HTTP_200_OK

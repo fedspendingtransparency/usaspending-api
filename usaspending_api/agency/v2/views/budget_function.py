@@ -8,7 +8,7 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
-class BudgetFunction(AgencyBase):
+class BudgetFunctionList(AgencyBase):
     """
     Obtain the count of budget functions for a specific agency in a single
     fiscal year based on whether or not that budget function has ever
@@ -48,7 +48,9 @@ class BudgetFunction(AgencyBase):
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
                 "limit": self.pagination.limit,
-                "results": results,
+                "results": results[
+                    ((self.pagination.page - 1) * self.pagination.limit) : self.pagination.limit * self.pagination.page
+                ],
                 "messages": self.standard_response_messages,
                 "page_metadata": page_metadata,
             }
