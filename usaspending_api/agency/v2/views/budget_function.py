@@ -41,16 +41,16 @@ class BudgetFunctionList(AgencyBase):
 
     @cache_response()
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        results = self.format_results(list(self.get_budget_function_queryset(request)))
+        results = self.format_results(list(self.get_budget_function_queryset(request)))[
+            self.pagination.lower_limit : self.pagination.upper_limit
+        ]
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
                 "limit": self.pagination.limit,
-                "results": results[
-                    ((self.pagination.page - 1) * self.pagination.limit) : self.pagination.limit * self.pagination.page
-                ],
+                "results": results,
                 "messages": self.standard_response_messages,
                 "page_metadata": page_metadata,
             }

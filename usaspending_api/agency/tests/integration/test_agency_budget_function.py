@@ -52,10 +52,10 @@ def test_budget_function_list_success(client, agency_account_data):
         "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
         "results": [
             {
-                "gross_outlay_amount": 1000000.0,
+                "gross_outlay_amount": 10000.0,
                 "name": "NAME 2",
-                "obligated_amount": 10.0,
-                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 2A", "obligated_amount": 10.0}],
+                "obligated_amount": 1000.0,
+                "children": [{"gross_outlay_amount": 10000.0, "name": "NAME 2A", "obligated_amount": 1000.0}],
             }
         ],
     }
