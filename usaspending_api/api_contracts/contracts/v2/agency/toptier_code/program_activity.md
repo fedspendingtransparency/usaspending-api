@@ -1,11 +1,11 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List Program Activity [/api/v2/agency/{toptier_code}/program_activity/]
+# List Program Activity [/api/v2/agency/{toptier_code}/program_activity/{?fiscal_year,filter,order,sort,page,limit}]
 
 Returns a list of Program Activity in the Agency's appropriations for a single fiscal year
 
-## POST
+## GET
 
 + Request (application/json)
     + Schema
@@ -17,7 +17,6 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
     + Parameters
         + `toptier_code`: 086 (required, number)
             The toptier code of an agency (could be a CGAG or FREC) so only numeric character strings of length 3-4 are accepted.
-    + Attributes
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY.
         + `filter` (optional, string)
@@ -40,15 +39,6 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
         + `limit` (optional, number)
             How many results are returned.
             + Default: 10
-    + Body
-
-            {
-                "fiscal_year": 2018,
-                "order": "asc",
-                "sort": "gross_outlay_amount",
-                "page": 1,
-                "limit": 2
-            }
 
 + Response 200 (application/json)
     + Attributes

@@ -1,4 +1,3 @@
-import json
 import pytest
 
 
@@ -6,12 +5,12 @@ from rest_framework import status
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 
 
-url = "/api/v2/agency/{code}/program_activity/"
+url = "/api/v2/agency/{code}/program_activity/{query_params}"
 
 
 @pytest.mark.django_db
 def test_program_activity_list_success(client, agency_account_data):
-    resp = client.post(url.format(code="007"), content_type="application/json",)
+    resp = client.get(url.format(code="007", query_params=""))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
@@ -28,8 +27,8 @@ def test_program_activity_list_success(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    body = {"fiscal_year": 2017}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2017"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2017,
         "toptier_code": "007",
@@ -41,8 +40,8 @@ def test_program_activity_list_success(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    body = {"fiscal_year": 2016}
-    resp = client.post(url.format(code="010"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2016"
+    resp = client.get(url.format(code="010", query_params=query_params))
     expected_result = {
         "fiscal_year": 2016,
         "toptier_code": "010",
@@ -61,36 +60,36 @@ def test_program_activity_list_success(client, agency_account_data):
 
 @pytest.mark.django_db
 def test_program_activity_list_too_early(client, agency_account_data):
-    body = {"fiscal_year": 2007}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2007"
+    resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db
 def test_program_activity_list_future(client, agency_account_data):
-    body = {"fiscal_year": current_fiscal_year() + 1}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = f"?fiscal_year={current_fiscal_year() + 1}"
+    resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db
 def test_program_activity_list_bad_sort(client, agency_account_data):
-    body = {"sort": "not valid"}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?sort=not%20valid"
+    resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
 def test_program_activity_list_bad_order(client, agency_account_data):
-    body = {"order": "not valid"}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?order=not%20valid"
+    resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
 def test_program_activity_list_specific(client, agency_account_data):
-    body = {"fiscal_year": 2017}
-    resp = client.post(url.format(code="008"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2017"
+    resp = client.get(url.format(code="008", query_params=query_params))
     expected_result = {
         "fiscal_year": 2017,
         "toptier_code": "008",
@@ -102,8 +101,8 @@ def test_program_activity_list_specific(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    body = {"fiscal_year": 2018}
-    resp = client.post(url.format(code="008"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2018"
+    resp = client.get(url.format(code="008", query_params=query_params))
     expected_result = {
         "fiscal_year": 2018,
         "toptier_code": "008",
@@ -118,8 +117,8 @@ def test_program_activity_list_specific(client, agency_account_data):
 
 @pytest.mark.django_db
 def test_program_activity_list_ignore_duplicates(client, agency_account_data):
-    body = {"fiscal_year": 2019}
-    resp = client.post(url.format(code="009"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2019"
+    resp = client.get(url.format(code="009", query_params=query_params))
     expected_result = {
         "fiscal_year": 2019,
         "toptier_code": "009",
@@ -134,8 +133,8 @@ def test_program_activity_list_ignore_duplicates(client, agency_account_data):
 
 @pytest.mark.django_db
 def test_program_activity_list_sort_by_name(client, agency_account_data):
-    body = {"fiscal_year": 2020, "order": "asc", "sort": "name"}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2020&order=asc&sort=name"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
@@ -152,8 +151,8 @@ def test_program_activity_list_sort_by_name(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    body = {"fiscal_year": 2020, "order": "desc", "sort": "name"}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2020&order=desc&sort=name"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
@@ -173,8 +172,8 @@ def test_program_activity_list_sort_by_name(client, agency_account_data):
 
 @pytest.mark.django_db
 def test_program_activity_list_sort_by_obligated_amount(client, agency_account_data):
-    body = {"fiscal_year": 2020, "order": "asc", "sort": "obligated_amount"}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2020&order=asc&sort=obligated_amount"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
@@ -191,8 +190,8 @@ def test_program_activity_list_sort_by_obligated_amount(client, agency_account_d
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    body = {"fiscal_year": 2020, "order": "desc", "sort": "obligated_amount"}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2020&order=desc&sort=obligated_amount"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
@@ -212,8 +211,8 @@ def test_program_activity_list_sort_by_obligated_amount(client, agency_account_d
 
 @pytest.mark.django_db
 def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_account_data):
-    body = {"fiscal_year": 2020, "order": "asc", "sort": "gross_outlay_amount"}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2020&order=asc&sort=gross_outlay_amount"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
@@ -230,8 +229,8 @@ def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_accoun
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    body = {"fiscal_year": 2020, "order": "desc", "sort": "gross_outlay_amount"}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2020&order=desc&sort=gross_outlay_amount"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
@@ -251,8 +250,8 @@ def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_accoun
 
 @pytest.mark.django_db
 def test_program_activity_list_search(client, agency_account_data):
-    body = {"fiscal_year": 2020, "filter": "NAME 3"}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2020&filter=NAME%203"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
@@ -265,8 +264,8 @@ def test_program_activity_list_search(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    body = {"fiscal_year": 2020, "filter": "AME 2"}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2020&filter=AME%202"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
@@ -282,8 +281,8 @@ def test_program_activity_list_search(client, agency_account_data):
 
 @pytest.mark.django_db
 def test_program_activity_list_pagination(client, agency_account_data):
-    body = {"fiscal_year": 2020, "limit": 2, "page": 1}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2020&limit=2&page=1"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
@@ -299,8 +298,8 @@ def test_program_activity_list_pagination(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    body = {"fiscal_year": 2020, "limit": 2, "page": 2}
-    resp = client.post(url.format(code="007"), content_type="application/json", data=json.dumps(body))
+    query_params = "?fiscal_year=2020&limit=2&page=2"
+    resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
