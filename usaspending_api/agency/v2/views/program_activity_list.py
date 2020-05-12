@@ -8,7 +8,7 @@ from usaspending_api.common.helpers.generic_helper import get_simple_pagination_
 from usaspending_api.references.models import RefProgramActivity
 
 
-class ProgramActivityList(AgencyBase, ListMixin):
+class ProgramActivityList(ListMixin, AgencyBase):
     """
     Obtain the list of program activity categories for a specific agency in a
     single fiscal year based on whether or not that program activity has ever
