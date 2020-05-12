@@ -20,7 +20,7 @@ class BudgetFunction(AgencyBase):
     def validate_request(self):
         return None
 
-    def combine_subfunctions(self, rows):
+    def format_results(self, rows):
         names = set([row["treasury_account__budget_function_title"] for row in rows])
         budget_functions = [{"name": x} for x in names]
         for item in budget_functions:
@@ -35,19 +35,20 @@ class BudgetFunction(AgencyBase):
             ]
             item["obligated_amount"] = sum([x["obligated_amount"] for x in item["children"]])
             item["gross_outlay_amount"] = sum([x["gross_outlay_amount"] for x in item["children"]])
-
+        order = self.pagination.sort_order == "desc"
+        budget_functions = sorted(budget_functions, key=lambda x: x[self.pagination.sort_key], reverse=order)
         return budget_functions
 
     @cache_response()
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        results = list(self.get_budget_function_queryset(request))
+        results = self.format_results(list(self.get_budget_function_queryset(request)))
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
                 "limit": self.pagination.limit,
-                "results": self.combine_subfunctions(results),
+                "results": results,
                 "messages": self.standard_response_messages,
                 "page_metadata": page_metadata,
             }
@@ -82,12 +83,9 @@ class BudgetFunction(AgencyBase):
                 "treasury_account__budget_subfunction_code",
                 "treasury_account__budget_subfunction_title",
             )
-            .distinct()
             .annotate(
                 obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
                 gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
             )
-            # .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
         )
-        print(self.pagination)
         return results

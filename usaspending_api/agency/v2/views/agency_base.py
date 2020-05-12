@@ -66,7 +66,7 @@ class AgencyBase(APIView):
             lower_limit=(request_data["page"] - 1) * request_data["limit"],
             upper_limit=(request_data["page"] * request_data["limit"]) + 1,
             sort_key=request_data.get("sort", "obligated_amount"),
-            sort_order=request_data["order"]
+            sort_order=request_data["order"],
         )
 
     @property
