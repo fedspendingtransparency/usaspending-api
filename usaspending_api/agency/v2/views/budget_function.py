@@ -50,7 +50,7 @@ class BudgetFunctionList(AgencyBase):
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
                 "limit": self.pagination.limit,
-                "results": results,
+                "results": results[:self.pagination.limit],
                 "messages": self.standard_response_messages,
                 "page_metadata": page_metadata,
             }
