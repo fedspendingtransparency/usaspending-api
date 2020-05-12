@@ -17,7 +17,7 @@ class HierarchicalFilter:
         negative_query = " AND ".join([node.get_query() for node in negative_nodes])
 
         if positive_query and negative_query:
-            return f"{positive_query} AND {negative_query}"
+            return f"({positive_query}) AND {negative_query}"
         else:
             return positive_query + negative_query  # We know that exactly one is blank thanks to TinyShield
 
@@ -66,6 +66,8 @@ class Node:
         retval = f"({retval})"
 
         positive_child_query = " OR ".join([child.get_query() for child in self.children if child.positive])
+        if positive_child_query:
+            positive_child_query = f"({positive_child_query})"
         negative_child_query = " AND ".join([child.get_query() for child in self.children if not child.positive])
         joined_child_query = " AND ".join(query for query in [positive_child_query, negative_child_query] if query)
 
