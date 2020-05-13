@@ -20,7 +20,8 @@ def check_types_and_assign_defaults(old_dict, new_dict, defaults_dict):
         # scope of this ticket and adds risk.
         if field == "psc_codes":
             if not isinstance(new_dict[field], type(defaults_dict[field])) and not isinstance(new_dict[field], dict):
-                raise InvalidParameterException(f"{field} parameter not provided as a list or dict")
+                type_name = type(defaults_dict[field]).__name__
+                raise InvalidParameterException(f"{field} parameter not provided as a {type_name} or dict")
         elif not isinstance(new_dict[field], type(defaults_dict[field])):
             type_name = type(defaults_dict[field]).__name__
             raise InvalidParameterException(f"{field} parameter not provided as a {type_name}")
