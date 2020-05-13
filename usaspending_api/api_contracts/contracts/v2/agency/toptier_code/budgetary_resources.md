@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Agency Overview [/api/v2/agency/{toptier_code}/budgetary_resources/{?fiscal_year}]
 
-Returns budgetary resources for the agency and fiscal year indicated.
+Returns budgetary resources and obligations for the agency and fiscal year requested.
 
 ## GET
 
@@ -27,16 +27,40 @@ Returns budgetary resources for the agency and fiscal year indicated.
         + `agency_budgetary_resources` (required, number, nullable)
         + `prior_year_agency_budgetary_resources` (required, number, nullable)
         + `total_federal_budgetary_resources` (required, number, nullable)
-        + `messages` (required, array[string])
+        + `agency_total_obligated` (required, number, nullable)
+        + `agency_obligation_by_period` (required, array, fixed-type)
+            + (object)
+                + `period` (required, number)
+                + `obligated` (required, number)
+        + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
 
             {
-                "fiscal_year": 2020,
-                "toptier_code": "020",
-                "agency_budgetary_resources": 1829326357849.28,
-                "prior_year_agency_budgetary_resources": 1444672550856.93,
-                "total_federal_budgetary_resources": 6834681645095.6,
+                "fiscal_year": 2019,
+                "toptier_code": "012",
+                "agency_budgetary_resources": 242452364827.19,
+                "prior_year_agency_budgetary_resources": 224393842858.3,
+                "total_federal_budgetary_resources": 7885819024455.14,
+                "agency_total_obligated": 170897830109.04,
+                "agency_obligation_by_period": [
+                    {
+                        "period": 3,
+                        "obligated": 46698411999.28
+                    },
+                    {
+                        "period": 6,
+                        "obligated": 85901744451.98
+                    },
+                    {
+                        "period": 9,
+                        "obligated": 120689245470.66
+                    },
+                    {
+                        "period": 12,
+                        "obligated": 170898908395.86
+                    }
+                ],
                 "messages": []
             }

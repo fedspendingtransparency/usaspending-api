@@ -25,7 +25,7 @@ Returns the count of Object Classes in the Agency's appropriations for a single 
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
         + `object_class_count` (required, number)
-        + `messages` (required, array[string])
+        + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body

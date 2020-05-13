@@ -26,7 +26,7 @@ Returns the count of unique Federal Account and Treasury Account categories in t
         + `fiscal_year` (required, number)
         + `federal_account_count` (required, number)
         + `treasury_account_count` (required, number)
-        + `messages` (required, array[string])
+        + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body

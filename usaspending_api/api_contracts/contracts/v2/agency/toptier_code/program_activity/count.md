@@ -25,7 +25,7 @@ Returns the count of Program Activity categories in the Agency's appropriations 
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
         + `program_activity_count` (required, number)
-        + `messages` (required, array[string])
+        + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body

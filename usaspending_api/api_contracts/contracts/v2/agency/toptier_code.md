@@ -32,7 +32,7 @@ Returns some basic information regarding the agency for the fiscal year specifie
         + `congressional_justification_url` (required, string, nullable)
         + `about_agency_data` (required, string, nullable)
         + `subtier_agency_count` (required, number)
-        + `messages` (required, array[string])
+        + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body

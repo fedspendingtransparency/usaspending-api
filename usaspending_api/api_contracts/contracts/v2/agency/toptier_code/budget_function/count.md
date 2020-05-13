@@ -26,7 +26,7 @@ Returns the count of unique Budget Functions in the Agency's appropriations for 
         + `fiscal_year` (required, number)
         + `budget_function_count` (required, number)
         + `budget_sub_function_count` (required, number)
-        + `messages` (required, array[string])
+        + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
