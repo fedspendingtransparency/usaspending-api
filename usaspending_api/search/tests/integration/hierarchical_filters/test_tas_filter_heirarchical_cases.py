@@ -170,9 +170,83 @@ def test_double_eclipsing_filters2(client, monkeypatch, elasticsearch_award_inde
 
 
 @pytest.mark.django_db
-def test_sibling_filters(client, monkeypatch, elasticsearch_award_index, multiple_awards_with_sibling_tas):
+def test_sibling_filters_on_one_sibling(
+    client, monkeypatch, elasticsearch_award_index, multiple_awards_with_sibling_tas
+):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     resp = query_by_tas(client, {"require": [_tas_path(SISTER_TAS[1])]})
+
+    assert resp.json()["results"] == [_award2()]
+
+
+@pytest.mark.django_db
+def test_sibling_filters_on_both_siblings(
+    client, monkeypatch, elasticsearch_award_index, multiple_awards_with_sibling_tas
+):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas(client, {"require": [_tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[1])]})
+
+    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [_award1(), _award2()].sort(
+        key=lambda elem: elem["internal_id"]
+    )
+
+
+@pytest.mark.django_db
+def test_sibling_filters_excluding_one_sibling(
+    client, monkeypatch, elasticsearch_award_index, multiple_awards_with_sibling_tas
+):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas(
+        client, {"require": [_tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[2])], "exclude": [_tas_path(SISTER_TAS[2])]}
+    )
+
+    assert resp.json()["results"] == [_award1()]
+
+
+@pytest.mark.django_db
+def test_sibling_filters_excluding_two_siblings(
+    client, monkeypatch, elasticsearch_award_index, multiple_awards_with_sibling_tas
+):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas(
+        client,
+        {
+            "require": [_tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[1])],
+            "exclude": [_tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[2])],
+        },
+    )
+
+    assert resp.json()["results"] == [_award2()]
+
+
+@pytest.mark.django_db
+def test_sibling_filters_with_fa_excluding_one_sibling(
+    client, monkeypatch, elasticsearch_award_index, multiple_awards_with_sibling_tas
+):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas(
+        client,
+        {
+            "require": [_fa_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[2])],
+            "exclude": [_tas_path(SISTER_TAS[2])],
+        },
+    )
+
+    assert resp.json()["results"] == [_award1()]
+
+
+@pytest.mark.django_db
+def test_sibling_filters_with_fa_excluding_two_siblings(
+    client, monkeypatch, elasticsearch_award_index, multiple_awards_with_sibling_tas
+):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas(
+        client,
+        {
+            "require": [_fa_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[1])],
+            "exclude": [_tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[2])],
+        },
+    )
 
     assert resp.json()["results"] == [_award2()]
 
