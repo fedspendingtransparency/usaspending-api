@@ -126,7 +126,7 @@ def test_budget_function_list_sort_by_name(client, agency_account_data):
                 "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
             },
             {
-                "gross_outlay_amount": 10000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
                 "obligated_amount": 10.0,
                 "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
