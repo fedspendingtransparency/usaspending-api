@@ -2,13 +2,13 @@ from django.db.models import Q, Sum
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
-from usaspending_api.agency.v2.views.agency_base import AgencyBase
+from usaspending_api.agency.v2.views.agency_base import AgencyBase, ListMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
-class BudgetFunctionList(AgencyBase):
+class BudgetFunctionList(ListMixin, AgencyBase):
     """
     Obtain the count of budget functions for a specific agency in a single
     fiscal year based on whether or not that budget function has ever
@@ -40,8 +40,8 @@ class BudgetFunctionList(AgencyBase):
         return budget_functions
 
     @cache_response()
-    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        results = self.format_results(list(self.get_budget_function_queryset(request)))[
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        results = self.format_results(list(self.get_budget_function_queryset()))[
             self.pagination.lower_limit : self.pagination.upper_limit
         ]
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
@@ -56,28 +56,26 @@ class BudgetFunctionList(AgencyBase):
             }
         )
 
-    def get_budget_function_queryset(self, request):
-        filters = [~Q(treasury_account__budget_function_code=""), ~Q(treasury_account__budget_function_code=None)]
-        if request.data.get("filter") is not None:
+    def get_budget_function_queryset(self):
+        filters = [
+            Q(final_of_fy=True),
+            Q(treasury_account__funding_toptier_agency=self.toptier_agency),
+            Q(submission__reporting_fiscal_year=self.fiscal_year),
+        ]
+        if self.filter is not None:
             filters.append(
                 Q(
-                    Q(treasury_account__budget_function_title__icontains=request.data["filter"])
-                    | Q(treasury_account__budget_subfunction_title__icontains=request.data["filter"])
+                    Q(treasury_account__budget_function_title__icontains=self.filter)
+                    | Q(treasury_account__budget_subfunction_title__icontains=self.filter)
                 )
             )
 
         results = (
             (
-                FinancialAccountsByProgramActivityObjectClass.objects.filter(
-                    final_of_fy=True,
-                    treasury_account__funding_toptier_agency=self.toptier_agency,
-                    submission__reporting_fiscal_year=self.fiscal_year,
-                )
-                .exclude(
+                FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters).exclude(
                     obligations_incurred_by_program_object_class_cpe=0,
                     gross_outlay_amount_by_program_object_class_cpe=0,
                 )
-                .filter(*filters)
             )
             .values(
                 "treasury_account__budget_function_code",
