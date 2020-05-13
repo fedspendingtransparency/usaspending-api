@@ -69,7 +69,8 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
-+ `psc_codes`: `8940`, `8910` (optional, array[string])
++ `psc_codes` (optional, enum[PSCCodeObject, array[string]])
+    Supports new PSCCodeObject or legacy array of codes.
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
@@ -117,8 +118,14 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: `33` (optional, array[string])
-+ `exclude`: `3333` (optional, array[string])
++ `require`: [`33`] (optional, array[string])
++ `exclude`: [`3333`] (optional, array[string])
+
+### PSCCodeObject (object)
++ `require`: [`B5`] (optional, array[string])
+    Can be PSC codes or Tier1 category names.
++ `exclude`: [`B502`] (optional, array[string])
+    Can be PSC codes or Tier1 category names.
 
 ### TASCodeObject (object)
 + `require`: [[`091`]] (optional, array[array[string]])

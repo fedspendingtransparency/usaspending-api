@@ -102,7 +102,8 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers` (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
-+ `psc_codes` (optional, array[string])
++ `psc_codes` (optional, enum[PSCCodeObject, array[string]])
+    Supports new PSCCodeObject or legacy array of codes.
 + `contract_pricing_type_codes` (optional, array[string])
 + `set_aside_type_codes` (optional, array[string])
 + `extent_competed_type_codes` (optional, array[string])
@@ -150,6 +151,12 @@ This endpoint returns a list of the top results of specific categories sorted by
 ### NAICSCodeObject (object)
 + `require` (optional, array[string])
 + `exclude` (optional, array[string])
+
+### PSCCodeObject (object)
++ `require`: [`B5`] (optional, array[string])
+    Can be PSC codes or Tier1 category names.
++ `exclude`: [`B502`] (optional, array[string])
+    Can be PSC codes or Tier1 category names.
 
 ### TASCodeObject (object)
 + `require`: [[`091`]] (optional, array[array[string]])

@@ -1,15 +1,15 @@
 import logging
 
 from django.conf import settings
-
-from typing import List
 from elasticsearch_dsl import Q as ES_Q
-
+from typing import List
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
+from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.v2.es_sanitization import es_sanitize
+
 
 logger = logging.getLogger(__name__)
 
@@ -340,19 +340,6 @@ class _ProgramNumbers(_Filter):
         return ES_Q("bool", should=programs_numbers_query, minimum_should_match=1)
 
 
-class _PscCodes(_Filter):
-    underscore_name = "psc_codes"
-
-    @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
-        psc_codes_query = []
-
-        for v in filter_values:
-            psc_codes_query.append(ES_Q("match", product_or_service_code__keyword=v))
-
-        return ES_Q("bool", should=psc_codes_query, minimum_should_match=1)
-
-
 class _ContractPricingTypeCodes(_Filter):
     underscore_name = "contract_pricing_type_codes"
 
@@ -411,7 +398,7 @@ class QueryWithFilters:
         _AwardIds.underscore_name: _AwardIds,
         _ProgramNumbers.underscore_name: _ProgramNumbers,
         NaicsCodes.underscore_name: NaicsCodes,
-        _PscCodes.underscore_name: _PscCodes,
+        PSCCodes.underscore_name: PSCCodes,
         _ContractPricingTypeCodes.underscore_name: _ContractPricingTypeCodes,
         _SetAsideTypeCodes.underscore_name: _SetAsideTypeCodes,
         _ExtentCompetedTypeCodes.underscore_name: _ExtentCompetedTypeCodes,

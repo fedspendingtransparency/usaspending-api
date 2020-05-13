@@ -169,7 +169,7 @@ def spending_by_award_test_data():
         legal_entity_county_code="013",
         legal_entity_city_name="ARLINGTON",
         naics="112233",
-        product_or_service_code="PSC_test",
+        product_or_service_code="PSC1",
         type_of_contract_pricing="contract_pricing_test",
         type_set_aside="type_set_aside_test",
         extent_competed="extent_competed_test",
@@ -212,6 +212,7 @@ def spending_by_award_test_data():
         piid="PIID1001",
         awarding_toptier_agency_name="awarding toptier 8001",
         awarding_subtier_agency_name="awarding subtier 8001",
+        product_or_service_code="PSC2",
     )
     mommy.make(
         "awards.Subaward",

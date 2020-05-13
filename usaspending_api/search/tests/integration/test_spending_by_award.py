@@ -522,7 +522,10 @@ def test_correct_response_for_each_filter(client, monkeypatch, spending_by_award
         _test_correct_response_for_award_amounts,
         _test_correct_response_for_cfda_program,
         _test_correct_response_for_naics_codes,
-        _test_correct_response_for_psc_codes,
+        _test_correct_response_for_psc_code_list,
+        _test_correct_response_for_psc_code_object,
+        _test_correct_response_for_psc_code_list_subawards,
+        _test_correct_response_for_psc_code_object_subawards,
         _test_correct_response_for_contract_pricing_type_codes,
         _test_correct_response_for_set_aside_type_codes,
         _test_correct_response_for_set_extent_competed_type_codes,
@@ -858,7 +861,7 @@ def _test_correct_response_for_naics_codes(client):
     assert resp.json().get("results") == expected_result, "NAICS Code filter does not match expected result"
 
 
-def _test_correct_response_for_psc_codes(client):
+def _test_correct_response_for_psc_code_list(client):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
@@ -866,7 +869,7 @@ def _test_correct_response_for_psc_codes(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "psc_codes": ["PSC_test"],
+                    "psc_codes": ["PSC1"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -879,6 +882,100 @@ def _test_correct_response_for_psc_codes(client):
         ),
     )
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
+
+
+def _test_correct_response_for_psc_code_object(client):
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "psc_codes": {"require": ["PSC1"], "exclude": ["PSC0"]},
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "desc",
+                "subawards": False,
+            }
+        ),
+    )
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
+
+
+def _test_correct_response_for_psc_code_list_subawards(client):
+    """ As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both. """
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "psc_codes": ["PSC2"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Sub-Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Sub-Award ID",
+                "order": "desc",
+                "subawards": True,
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "internal_id": "11111",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11111",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
+
+
+def _test_correct_response_for_psc_code_object_subawards(client):
+    """ As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both. """
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "psc_codes": {"require": ["PSC2"], "exclude": ["PSC0"]},
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Sub-Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Sub-Award ID",
+                "order": "desc",
+                "subawards": True,
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "internal_id": "11111",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11111",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
@@ -997,7 +1094,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # Fails with no request data
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps({}),)
+    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps({}))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert resp.json().get("detail") == "Missing value: 'fields' is a required field"
 

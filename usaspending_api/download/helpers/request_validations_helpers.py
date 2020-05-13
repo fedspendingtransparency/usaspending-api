@@ -3,8 +3,8 @@ import logging
 from datetime import datetime
 from django.conf import settings
 from rest_framework.exceptions import ParseError
-
 from usaspending_api.common.exceptions import InvalidParameterException
+
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +16,9 @@ def check_types_and_assign_defaults(old_dict, new_dict, defaults_dict):
         new_dict[field] = old_dict.get(field, defaults_dict[field])
 
         # Validate the field's data type
-        if not isinstance(new_dict[field], type(defaults_dict[field])):
-            type_name = type(defaults_dict[field]).__name__
-            raise InvalidParameterException("{} parameter not provided as a {}".format(field, type_name))
+        # if not isinstance(new_dict[field], type(defaults_dict[field])):
+        #     type_name = type(defaults_dict[field]).__name__
+        #     raise InvalidParameterException("{} parameter not provided as a {}".format(field, type_name))
 
         # Remove empty filters
         if new_dict[field] == defaults_dict[field]:

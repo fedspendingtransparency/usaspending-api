@@ -136,7 +136,8 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `place_of_performance_scope` (optional, string)
 + `program_activity_ids` (optional, array[string])
 + `program_numbers` (optional, array[string])
-+ `psc_codes` (optional, array[string])
++ `psc_codes` (optional, enum[PSCCodeObject, array[string]])
+    Supports new PSCCodeObject or legacy array of codes.
 + `recipient_locations` (optional, array[Location], fixed-type)
 + `recipient_search_text` (optional, string)
 + `recipient_scope` (optional, string)
@@ -175,8 +176,14 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `zip` (optional, string)
 
 ### NAICSCodeObject (object)
-+ `require`: `33` (optional, array[string])
-+ `exclude`: `3333` (optional, array[string])
++ `require`: [`33`] (optional, array[string])
++ `exclude`: [`3333`] (optional, array[string])
+
+### PSCCodeObject (object)
++ `require`: [`B5`] (optional, array[string])
+    Can be PSC codes or Tier1 category names.
++ `exclude`: [`B502`] (optional, array[string])
+    Can be PSC codes or Tier1 category names.
 
 ### TASCodeObject (object)
 + `require`: [[`091`]] (optional, array[array[string]])

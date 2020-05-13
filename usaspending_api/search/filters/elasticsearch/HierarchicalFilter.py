@@ -17,7 +17,7 @@ class HierarchicalFilter:
         negative_query = " AND ".join([node.get_query() for node in negative_nodes])
 
         if positive_query and negative_query:
-            return f"{positive_query} AND {negative_query}"
+            return f"({positive_query}) AND {negative_query}"
         else:
             return positive_query + negative_query  # We know that exactly one is blank thanks to TinyShield
 

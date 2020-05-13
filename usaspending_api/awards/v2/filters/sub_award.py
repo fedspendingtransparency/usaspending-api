@@ -2,12 +2,13 @@ import itertools
 import logging
 
 from django.db.models import Q
-from usaspending_api.search.models import SubawardView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
+from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.helpers.matview_filter_helpers import build_tas_codes_filter, build_award_ids_filter
+from usaspending_api.search.models import SubawardView
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -215,10 +216,13 @@ def subaward_filter(filters, for_downloads=False):
             queryset = build_award_ids_filter(queryset, value, ("piid", "fain"))
 
         # add "naics_codes" (column naics) after NAICS are mapped to subawards
-        elif key in ("program_numbers", "psc_codes", "contract_pricing_type_codes"):
+        elif key == "psc_codes":
+            queryset = PSCCodes.generate_postgres_query(value, queryset)
+
+        # add "naics_codes" (column naics) after NAICS are mapped to subawards
+        elif key in ("program_numbers", "contract_pricing_type_codes"):
             filter_to_col = {
                 "program_numbers": "cfda_number",
-                "psc_codes": "product_or_service_code",
                 "contract_pricing_type_codes": "type_of_contract_pricing",
             }
             in_query = [v for v in value]
