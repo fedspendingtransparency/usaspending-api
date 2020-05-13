@@ -15,10 +15,15 @@ def check_types_and_assign_defaults(old_dict, new_dict, defaults_dict):
         # Set the new value to the old value, or the default if it doesn't exist
         new_dict[field] = old_dict.get(field, defaults_dict[field])
 
-        # Validate the field's data type
-        # if not isinstance(new_dict[field], type(defaults_dict[field])):
-        #     type_name = type(defaults_dict[field]).__name__
-        #     raise InvalidParameterException("{} parameter not provided as a {}".format(field, type_name))
+        # Validate the field's data type.  psc_codes:  I hate doing this so much, but I don't know
+        # a better way without redesigning how validation works which is definitely outside of the
+        # scope of this ticket and adds risk.
+        if field == "psc_codes":
+            if not isinstance(new_dict[field], type(defaults_dict[field])) and not isinstance(new_dict[field], dict):
+                raise InvalidParameterException(f"{field} parameter not provided as a list or dict")
+        elif not isinstance(new_dict[field], type(defaults_dict[field])):
+            type_name = type(defaults_dict[field]).__name__
+            raise InvalidParameterException(f"{field} parameter not provided as a {type_name}")
 
         # Remove empty filters
         if new_dict[field] == defaults_dict[field]:
