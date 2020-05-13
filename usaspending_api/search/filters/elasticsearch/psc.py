@@ -78,10 +78,6 @@ class PSCCodes(_Filter, HierarchicalFilter):
         return [[f] for f in flattened_list]
 
     @staticmethod
-    def code_is_parent_of(code, other):
-        return len(str(other)) == len(str(code)) + 2 and other[: len(str(code))] == str(code)
-
-    @staticmethod
     def node(code, positive, positive_psc, negative_psc):
         return PSCNode(code, positive, positive_psc, negative_psc)
 
