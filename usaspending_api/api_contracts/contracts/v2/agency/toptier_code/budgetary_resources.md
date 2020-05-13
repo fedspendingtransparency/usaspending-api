@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Program Activity Count [/api/v2/agency/{toptier_code}/program_activity/count/{?fiscal_year}]
+# Agency Overview [/api/v2/agency/{toptier_code}/budgetary_resources/{?fiscal_year}]
 
-Returns the count of Program Activity categories in the Agency's appropriations for a single fiscal year
+Returns budgetary resources for the agency and fiscal year indicated.
 
 ## GET
 
@@ -18,21 +18,25 @@ Returns the count of Program Activity categories in the Agency's appropriations 
         + `toptier_code`: 012 (required, number)
             The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
-            The desired appropriations fiscal year. Defaults to the current FY.
+            The desired "as of" fiscal year. Defaults to the current fiscal year.
 
 + Response 200 (application/json)
     + Attributes
-        + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
-        + `program_activity_count` (required, number)
+        + `toptier_code` (required, string)
+        + `agency_budgetary_resources` (required, number, nullable)
+        + `prior_year_agency_budgetary_resources` (required, number, nullable)
+        + `total_federal_budgetary_resources` (required, number, nullable)
         + `messages` (required, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
 
             {
-                "toptier_code": "012",
                 "fiscal_year": 2020,
-                "program_activity_count": 7,
-                "messages": ["Account data powering this endpoint were first collected in FY2017 Q2..."]
+                "toptier_code": "020",
+                "agency_budgetary_resources": 1829326357849.28,
+                "prior_year_agency_budgetary_resources": 1444672550856.93,
+                "total_federal_budgetary_resources": 6834681645095.6,
+                "messages": []
             }

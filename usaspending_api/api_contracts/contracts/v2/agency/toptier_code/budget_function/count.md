@@ -16,7 +16,7 @@ Returns the count of unique Budget Functions in the Agency's appropriations for 
             }
     + Parameters
         + `toptier_code`: 012 (required, number)
-            The toptier code of an agency (could be a CGAG or FREC) so only numeric character strings of length 3-4 are accepted.
+            The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY.
 
