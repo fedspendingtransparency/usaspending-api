@@ -1,4 +1,4 @@
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, List
@@ -67,13 +67,14 @@ class FederalAccountList(ListMixin, AgencyBase):
         )
 
     def get_federal_account_list(self) -> List[dict]:
-        filters = {
-            "final_of_fy": True,
-            "treasury_account__funding_toptier_agency": self.toptier_agency,
-            "submission__reporting_fiscal_year": self.fiscal_year,
-        }
+        filters = [
+            Q(final_of_fy=True),
+            Q(treasury_account__funding_toptier_agency= self.toptier_agency),
+            Q(submission__reporting_fiscal_year= self.fiscal_year),
+        ]
         if self.filter:
-            filters["treasury_account__account_title__icontains"] = self.filter
+            filters.append(Q(Q(treasury_account__account_title__icontains=self.filter) | Q(treasury_account__federal_account__account_title__icontains=self.filter)))
+
         results = (
             (
                 FinancialAccountsByProgramActivityObjectClass.objects.filter(
@@ -85,7 +86,7 @@ class FederalAccountList(ListMixin, AgencyBase):
                     obligations_incurred_by_program_object_class_cpe=0,
                     gross_outlay_amount_by_program_object_class_cpe=0,
                 )
-                .filter(**filters)
+                .filter(*filters)
             )
             .values(
                 "treasury_account__tas_rendering_label",
