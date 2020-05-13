@@ -4,6 +4,7 @@ from usaspending_api.agency.v2.views.budget_function_count import BudgetFunction
 from usaspending_api.agency.v2.views.object_class_count import ObjectClassCount
 from usaspending_api.agency.v2.views.program_activity_count import ProgramActivityCount
 from usaspending_api.agency.v2.views.federal_account_count import FederalAccountCount
+from usaspending_api.agency.v2.views.federal_account_list import FederalAccountList
 
 
 urlpatterns = [
@@ -14,6 +15,7 @@ urlpatterns = [
                 path("", AgencyOverview.as_view()),
                 path("budget_function/count/", BudgetFunctionCount.as_view()),
                 path("federal_account/count/", FederalAccountCount.as_view()),
+                path("federal_account/", FederalAccountList.as_view()),
                 path("object_class/count/", ObjectClassCount.as_view()),
                 path("program_activity/count/", ProgramActivityCount.as_view()),
             ]
