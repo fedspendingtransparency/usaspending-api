@@ -3,10 +3,13 @@ from django.utils.functional import cached_property
 from re import fullmatch
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
+
+from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
+from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
 from usaspending_api.references.models import ToptierAgency
 
 
@@ -44,3 +47,24 @@ class AgencyBase(APIView):
     @property
     def standard_response_messages(self):
         return [get_account_data_time_period_message()] if self.fiscal_year < 2017 else []
+
+
+class ListMixin:
+    @cached_property
+    def pagination(self):
+        sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
+        default_sort_column = "obligated_amount"
+        model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
+        request_data = TinyShield(model).block(self.request.query_params)
+        return Pagination(
+            page=request_data["page"],
+            limit=request_data["limit"],
+            lower_limit=(request_data["page"] - 1) * request_data["limit"],
+            upper_limit=(request_data["page"] * request_data["limit"]) + 1,
+            sort_key=request_data.get("sort", "obligated_amount"),
+            sort_order=request_data["order"],
+        )
+
+    @property
+    def filter(self):
+        return self.request.query_params.get("filter")
