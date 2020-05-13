@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List Program Activity [/api/v2/agency/{toptier_code}/program_activity/{?fiscal_year,filter,order,sort,page,limit}]
+# List Program Activities [/api/v2/agency/{toptier_code}/program_activity/{?fiscal_year,filter,order,sort,page,limit}]
 
 Returns a list of Program Activity in the Agency's appropriations for a single fiscal year
 
@@ -36,6 +36,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                 + `gross_outlay_amount`
         + `page` (optional, number)
             The page number that is currently returned.
+            + Default: 1
         + `limit` (optional, number)
             How many results are returned.
             + Default: 10
