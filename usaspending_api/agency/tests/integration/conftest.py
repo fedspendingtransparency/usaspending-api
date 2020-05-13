@@ -55,6 +55,24 @@ def agency_account_data():
         budget_subfunction_title="NAME 4A",
         federal_account=fa4,
     )
+    tas5 = mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        funding_toptier_agency=ta1,
+        budget_function_code=200,
+        budget_function_title="NAME 5",
+        budget_subfunction_code=2100,
+        budget_subfunction_title="NAME 5A",
+        federal_account=fa2,
+    )
+    tas6 = mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        funding_toptier_agency=ta1,
+        budget_function_code=300,
+        budget_function_title="NAME 6",
+        budget_subfunction_code=3100,
+        budget_subfunction_title="NAME 6A",
+        federal_account=fa3,
+    )
 
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2)
@@ -178,7 +196,7 @@ def agency_account_data():
     mommy.make(
         fabpaoc,
         final_of_fy=True,
-        treasury_account=tas2,
+        treasury_account=tas5,
         submission=sub1,
         obligations_incurred_by_program_object_class_cpe=10,
         gross_outlay_amount_by_program_object_class_cpe=1000000,
@@ -186,7 +204,7 @@ def agency_account_data():
     mommy.make(
         fabpaoc,
         final_of_fy=True,
-        treasury_account=tas3,
+        treasury_account=tas6,
         submission=sub1,
         obligations_incurred_by_program_object_class_cpe=100,
         gross_outlay_amount_by_program_object_class_cpe=100000,
