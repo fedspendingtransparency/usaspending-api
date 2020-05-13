@@ -42,10 +42,10 @@ def test_budget_function_list_success(client, agency_account_data):
     assert resp.json() == expected_result
 
     query_params = "?fiscal_year=2017"
-    resp = client.get(url.format(code="007", query_params=query_params))
+    resp = client.get(url.format(code="008", query_params=query_params))
     expected_result = {
         "fiscal_year": 2017,
-        "toptier_code": "007",
+        "toptier_code": "008",
         "limit": 10,
         "messages": [],
         "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
@@ -294,7 +294,7 @@ def test_budget_function_list_sort_by_gross_outlay_amount(client, agency_account
                 "gross_outlay_amount": 11100000.0,
                 "name": "NAME 1",
                 "obligated_amount": 111.0,
-                "children": [{"gross_outlay_amount": 10000000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
             },
             {
                 "gross_outlay_amount": 1000000.0,
