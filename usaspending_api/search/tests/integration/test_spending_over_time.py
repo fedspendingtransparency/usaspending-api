@@ -153,7 +153,7 @@ def spending_over_time_test_data():
                 place_of_performance_zip5=f"POP_ZIP5_{transaction_id}",
                 place_of_performance_congr=f"{transaction_id:02d}",
                 place_of_perform_city_name=f"POP_CITY_NAME_{transaction_id}",
-                product_or_service_code=f"psc_code_{transaction_id}",
+                product_or_service_code=str(transaction_id).zfill(4),
                 transaction_id=transaction_id,
                 type_of_contract_pricing=f"type_of_contract_pricing_{transaction_id}",
                 type_set_aside=f"type_set_aside_{transaction_id}",
@@ -744,7 +744,7 @@ def _test_correct_response_for_psc_codes(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "psc_codes": ["psc_code_2", "psc_code_12", "psc_code_24"],
+                    "psc_codes": ["0002", "0012", "0024"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
