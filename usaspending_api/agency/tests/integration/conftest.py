@@ -7,8 +7,8 @@ from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_ye
 @pytest.fixture
 def agency_account_data():
     ta1 = mommy.make("references.ToptierAgency", toptier_code="007")
-    # ta2 = mommy.make("references.ToptierAgency", toptier_code="008")
-    # ta3 = mommy.make("references.ToptierAgency", toptier_code="009")
+    ta2 = mommy.make("references.ToptierAgency", toptier_code="008")
+    ta3 = mommy.make("references.ToptierAgency", toptier_code="009")
     ta4 = mommy.make("references.ToptierAgency", toptier_code="010")
     sub1 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=current_fiscal_year())
     sub2 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
@@ -98,7 +98,7 @@ def agency_account_data():
     mommy.make(
         fabpaoc,
         final_of_fy=True,
-        treasury_account=tas2,
+        treasury_account=tas1,
         submission=sub1,
         program_activity=pa2,
         object_class=oc2,
@@ -108,7 +108,7 @@ def agency_account_data():
     mommy.make(
         fabpaoc,
         final_of_fy=True,
-        treasury_account=tas3,
+        treasury_account=tas1,
         submission=sub1,
         program_activity=pa3,
         object_class=oc3,

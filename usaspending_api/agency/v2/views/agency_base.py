@@ -52,14 +52,14 @@ class AgencyBase(APIView):
     def standard_response_messages(self):
         return [get_account_data_time_period_message()] if self.fiscal_year < 2017 else []
 
+
+class ListMixin:
     @cached_property
     def pagination(self):
-        if self.request.method == "GET":
-            return None
         sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
         default_sort_column = "obligated_amount"
         model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
-        request_data = TinyShield(model).block(self.request.data)
+        request_data = TinyShield(model).block(self.request.query_params)
         return Pagination(
             page=request_data["page"],
             limit=request_data["limit"],
@@ -71,6 +71,4 @@ class AgencyBase(APIView):
 
     @property
     def filter(self):
-        if self.request.method == "GET":
-            return None
-        return self.request.data.get("filter")
+        return self.request.query_params.get("filter")
