@@ -372,16 +372,16 @@ def test_budget_function_list_pagination(client, agency_account_data):
         "page_metadata": {"hasNext": True, "hasPrevious": False, "next": 2, "page": 1, "previous": None},
         "results": [
             {
+                "gross_outlay_amount": 11100000.0,
+                "name": "NAME 1",
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
+            },
+            {
                 "gross_outlay_amount": 100000.0,
                 "name": "NAME 6",
                 "obligated_amount": 100.0,
                 "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
-            },
-            {
-                "gross_outlay_amount": 1000000.0,
-                "name": "NAME 5",
-                "obligated_amount": 10.0,
-                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             },
         ],
     }
@@ -399,10 +399,10 @@ def test_budget_function_list_pagination(client, agency_account_data):
         "page_metadata": {"hasNext": False, "hasPrevious": True, "next": None, "page": 2, "previous": 1},
         "results": [
             {
-                "gross_outlay_amount": 11100000.0,
-                "name": "NAME 1",
-                "obligated_amount": 111.0,
-                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             },
         ],
     }
