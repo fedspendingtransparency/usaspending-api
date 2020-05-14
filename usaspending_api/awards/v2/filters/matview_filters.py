@@ -13,7 +13,7 @@ from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_gr
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
 from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
-from usaspending_api.search.filters.postgres.tas import TasCodes
+from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -300,8 +300,10 @@ def matview_search_filter(filters, model, for_downloads=False):
             queryset = queryset.filter(or_queryset)
 
         elif key == TasCodes.underscore_name:
-            print("actually got here")
             queryset = TasCodes.build_tas_codes_filter(queryset, value)
+
+        elif key == TreasuryAccounts.underscore_name:
+            queryset = TreasuryAccounts.build_tas_codes_filter(queryset, value)
 
         # Federal Account Filter
         elif key == "federal_account_ids":

@@ -9,7 +9,12 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures 
     multiple_awards_with_tas,
     multiple_awards_with_sibling_tas,
 )
-from usaspending_api.search.tests.integration.hierarchical_filters.tas_subaward_fixtures import subaward_with_tas
+from usaspending_api.search.tests.integration.hierarchical_filters.tas_subaward_fixtures import (
+    subaward_with_tas,
+    subaward_with_unintuitive_agency,
+    subaward_with_ata_tas,
+    subaward_with_bpoa_tas,
+)
 
 __all__ = [
     "award",
@@ -22,4 +27,7 @@ __all__ = [
     "award_with_ata_tas",
     "multiple_awards_with_sibling_tas",
     "subaward_with_tas",
+    "subaward_with_ata_tas",
+    "subaward_with_bpoa_tas",
+    "subaward_with_unintuitive_agency",
 ]

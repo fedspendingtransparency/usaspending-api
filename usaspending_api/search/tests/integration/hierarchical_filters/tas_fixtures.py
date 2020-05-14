@@ -38,7 +38,7 @@ def award_with_bpoa_tas(db):
 @pytest.fixture
 def award_with_ata_tas(db):
     award(db, 1)
-    tas_with_agency(db, 1, ATA_BPOA_TAS)
+    tas_with_agency(db, 1, ATA_TAS)
 
 
 @pytest.fixture
@@ -111,6 +111,15 @@ def tas(db, award_id, fa_id, index):
         availability_type_code=TAS_DICTIONARIES[index].get("a"),
         beginning_period_of_availability=TAS_DICTIONARIES[index].get("bpoa"),
         ending_period_of_availability=TAS_DICTIONARIES[index].get("epoa"),
+        tas_rendering_label=TreasuryAppropriationAccount.generate_tas_rendering_label(
+            TAS_DICTIONARIES[index].get("ata"),
+            TAS_DICTIONARIES[index]["aid"],
+            TAS_DICTIONARIES[index].get("a"),
+            TAS_DICTIONARIES[index].get("bpoa"),
+            TAS_DICTIONARIES[index].get("epoa"),
+            TAS_DICTIONARIES[index]["main"],
+            TAS_DICTIONARIES[index]["sub"],
+        ),
         federal_account_id=fa_id,
     )
     mommy.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
@@ -123,6 +132,7 @@ def tas_with_fa(db, award_id, agency, index):
         parent_toptier_agency_id=int(agency),
         agency_identifier=TAS_DICTIONARIES[index]["aid"],
         main_account_code=TAS_DICTIONARIES[index]["main"],
+        federal_account_code=f"{TAS_DICTIONARIES[index]['aid']}-{TAS_DICTIONARIES[index]['main']}",
     )
     tas(db, award_id, index, index)
 

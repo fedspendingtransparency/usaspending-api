@@ -8,7 +8,7 @@ from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_fi
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
-from usaspending_api.search.filters.postgres.tas import TasCodes
+from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -23,7 +23,6 @@ def subaward_download(filters):
 
 # TODO: Performance when multiple false values are initially provided
 def subaward_filter(filters, for_downloads=False):
-
     queryset = SubawardView.objects.all()
 
     recipient_scope_q = Q(recipient_location_country_code="USA") | Q(recipient_location_country_name="UNITED STATES")
@@ -234,7 +233,10 @@ def subaward_filter(filters, for_downloads=False):
                 or_queryset |= Q(**{"{}__exact".format(filter_to_col[key]): in_query})
             queryset = queryset.filter(or_queryset)
 
-        elif key == "tas_codes":
+        elif key == TasCodes.underscore_name:
             queryset = TasCodes.build_tas_codes_filter(queryset, value)
+
+        elif key == TreasuryAccounts.underscore_name:
+            queryset = TreasuryAccounts.build_tas_codes_filter(queryset, value)
 
     return queryset

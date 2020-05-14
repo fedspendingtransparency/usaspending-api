@@ -38,6 +38,7 @@ def query_by_tas_subaward(client, tas):
                 "sort": "Sub-Award ID",
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
+                    TasCodes.underscore_name: tas,
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }

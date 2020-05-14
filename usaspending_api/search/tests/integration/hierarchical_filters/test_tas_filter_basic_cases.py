@@ -58,7 +58,7 @@ def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, awar
 @pytest.mark.django_db
 def test_match_from_ata_tas(client, monkeypatch, elasticsearch_award_index, award_with_ata_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_tas_path(ATA_BPOA_TAS)]})
+    resp = query_by_tas(client, {"require": [_tas_path(ATA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 
