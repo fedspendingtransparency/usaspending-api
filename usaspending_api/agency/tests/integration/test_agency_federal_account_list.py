@@ -156,19 +156,22 @@ def test_federal_account_list_sort_by_name(client, agency_account_data):
                 "name": "FA 1",
                 "code": "001-0000",
                 "obligated_amount": 111.0,
-                "children": [{
+                "children": [
+                    {
                         "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
                         "obligated_amount": 111.0,
-                    }],
+                    }
+                ],
             },
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
-                "children": [{
+                "children": [
+                    {
                         "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
@@ -181,12 +184,14 @@ def test_federal_account_list_sort_by_name(client, agency_account_data):
                 "name": "FA 3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
-                "children": [{
+                "children": [
+                    {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
-                    }],
+                    }
+                ],
             },
         ],
     }
@@ -282,12 +287,14 @@ def test_federal_account_list_sort_by_obligated_amount(client, agency_account_da
                 "name": "FA 3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
-                "children": [{
+                "children": [
+                    {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
-                    }],
+                    }
+                ],
             },
             {
                 "gross_outlay_amount": 11100000.0,
