@@ -98,7 +98,7 @@ Returns a list of Budget Function in the Agency's appropriations for a single fi
 + `name` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
-+ `children` (optional, array[BudgetSubFunction])
++ `children` (required, array[BudgetSubFunction])
 
 ## BudgetSubFunction (object
 + `name` (required, string)
