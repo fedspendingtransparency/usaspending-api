@@ -15,7 +15,7 @@ class BudgetFunctionList(ListMixin, AgencyBase):
     been submitted in File B.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/budget_function/budget_function.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/budget_function.md"
 
     def validate_request(self):
         return None
@@ -62,6 +62,12 @@ class BudgetFunctionList(ListMixin, AgencyBase):
             Q(final_of_fy=True),
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
             Q(submission__reporting_fiscal_year=self.fiscal_year),
+            Q(
+                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
+                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
+            ),
         ]
         if self.filter is not None:
             filters.append(
@@ -72,12 +78,7 @@ class BudgetFunctionList(ListMixin, AgencyBase):
             )
 
         results = (
-            (
-                FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters).exclude(
-                    obligations_incurred_by_program_object_class_cpe=0,
-                    gross_outlay_amount_by_program_object_class_cpe=0,
-                )
-            )
+            (FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters))
             .values(
                 "treasury_account__budget_function_code",
                 "treasury_account__budget_function_title",

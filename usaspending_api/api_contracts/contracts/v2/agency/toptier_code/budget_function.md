@@ -37,6 +37,7 @@ Returns a list of Budget Function in the Agency's appropriations for a single fi
                 + `gross_outlay_amount`
         + `page` (optional, number)
             The page number that is currently returned.
+            + Default: 1
         + `limit` (optional, number)
             How many results are returned.
             + Default: 10
@@ -97,7 +98,12 @@ Returns a list of Budget Function in the Agency's appropriations for a single fi
 + `name` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
-+ `children` (optional, array[BudgetFunction])
++ `children` (optional, array[BudgetSubFunction])
+
+## BudgetSubFunction (object
++ `name` (required, string)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## PageMetadata (object)
 + `page` (required, number)
