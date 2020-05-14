@@ -7,11 +7,11 @@ from usaspending_api.references.v2.views.filter_tree.filter_tree import Unlinked
 
 PSC_GROUPS = {
     # A
-    "Research and Development": {"pattern": r"^A.$", "search_terms": ["A"]},
+    "Research and Development": {"pattern": r"^A.$", "expanded_terms": [["A"]]},
     # B - Z
-    "Service": {"pattern": r"^[B-Z]$", "search_terms": [letter for letter in ascii_uppercase if letter != "A"]},
+    "Service": {"pattern": r"^[B-Z]$", "expanded_terms": [[letter] for letter in ascii_uppercase if letter != "A"]},
     # 0 - 9
-    "Product": {"pattern": r"^\d\d$", "search_terms": list(digits)},
+    "Product": {"pattern": r"^\d\d$", "expanded_terms": [[digit] for digit in digits]},
 }
 
 

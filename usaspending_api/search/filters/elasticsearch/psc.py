@@ -9,22 +9,24 @@ from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import Hier
 
 class PSCCodes(_Filter, HierarchicalFilter):
     underscore_name = "psc_codes"
-    validation_pattern = compile("|".join(list(PSC_GROUPS) + ["[A-Z0-9]{1,4}"]))
+    validation_pattern = compile("[A-Z0-9]{1,4}")
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
-        require, exclude = cls.validate_filter_values(filter_values)
-        require = cls.expand_psc_list(require)
-        exclude = cls.expand_psc_list(exclude)
+        cls.validate_filter_values(filter_values)
+        require, exclude = cls.split_filter_values(filter_values)
+        require = cls.handle_tier1_names(require)
+        exclude = cls.handle_tier1_names(exclude)
         return ES_Q(
             "query_string", query=cls._query_string(require, exclude), default_field="product_or_service_code.keyword"
         )
 
     @classmethod
     def generate_postgres_query(cls, filter_values, queryset) -> QuerySet:
-        require, exclude = cls.validate_filter_values(filter_values)
-        require = cls.expand_psc_list(require)
-        exclude = cls.expand_psc_list(exclude)
+        cls.validate_filter_values(filter_values)
+        require, exclude = cls.split_filter_values(filter_values)
+        require = cls.handle_tier1_names(require)
+        exclude = cls.handle_tier1_names(exclude)
         requires = Q()
         for r in require:
             requires |= Q(product_or_service_code__startswith=r[-1])
@@ -35,47 +37,88 @@ class PSCCodes(_Filter, HierarchicalFilter):
 
     @classmethod
     def validate_filter_values(cls, filter_values):
-        def validate_codes(codes):
-            for code in codes:
-                if not cls.validation_pattern.fullmatch(code):
-                    raise UnprocessableEntityException(
-                        f"PSC codes must be one to four character alphanumeric strings or one of the "
-                        f"Tier1 category names: {tuple(PSC_GROUPS)}.  Offending code: '{code}'."
-                    )
-            return codes
-
-        # legacy functionality permits sending a single list of psc codes, which is treated as the required list
         if isinstance(filter_values, list):
-            require = validate_codes(filter_values)
+            # Legacy.
+            for code in filter_values:
+                if not isinstance(code, str) or not cls.validation_pattern.fullmatch(code):
+                    raise UnprocessableEntityException(
+                        f"PSC codes must be one to four character uppercased alphanumeric strings.  "
+                        f"Offending code: '{code}'."
+                    )
+        elif isinstance(filter_values, dict):
+            # PSCCodeObject
+            for key in ("require", "exclude"):
+                code_lists = filter_values.get(key) or []
+                if not isinstance(code_lists, list):
+                    raise UnprocessableEntityException(f"require and exclude properties must be arrays.")
+                for code_list in code_lists:
+                    if not isinstance(code_list, list):
+                        raise UnprocessableEntityException(f"require and exclude properties must be arrays of arrays.")
+                    for seq, code in enumerate(code_list):
+                        if seq == 0 and code not in PSC_GROUPS:
+                            raise UnprocessableEntityException(
+                                f"Tier1 PSC filter values must be one of: {tuple(PSC_GROUPS)}.  "
+                                f"Offending code: '{code}'."
+                            )
+                        elif seq > 0 and (not isinstance(code, str) or not cls.validation_pattern.fullmatch(code)):
+                            raise UnprocessableEntityException(
+                                f"PSC codes must be one to four character uppercased alphanumeric strings.  "
+                                f"Offending code: '{code}'."
+                            )
+        else:
+            raise UnprocessableEntityException(f"psc_codes must be an array or object")
+
+    @classmethod
+    def split_filter_values(cls, filter_values):
+        """ Here we assume that filter_values has already been run through validate_filter_values. """
+        if isinstance(filter_values, list):
+            # Legacy is treated as a "require" filter.
+            require = [[f] for f in filter_values]
             exclude = []
         elif isinstance(filter_values, dict):
-            require = validate_codes(filter_values.get("require") or [])
-            exclude = validate_codes(filter_values.get("exclude") or [])
+            # PSCCodeObject
+            require = filter_values.get("require") or []
+            exclude = filter_values.get("exclude") or []
         else:
             raise UnprocessableEntityException(f"psc_codes must be an array or object")
 
         return require, exclude
 
     @staticmethod
-    def expand_psc_list(codes):
+    def handle_tier1_names(code_lists):
         """
-        The PSC list can contain PSC codes or Tier1 names.  Tier1 names map to lists of partial codes
-        (see PSC_GROUPS).  This function replaces Tier1 names with their equivalent partial codes and
-        joins them together with any PSC codes provided by the caller.  Note that the tree view search
-        framework expects lists of lists so we perform that conversion here as well.
+        The PSC lists can contain PSC codes and/or Tier1 names.  Tier1 names map to lists of prefix codes
+        (see PSC_GROUPS).  If we have only been supplied a Tier1 name, we need to expand it out into something
+        the database can understand.  If we have been supplied a tree branch, we need to remove the Tier1 name
+        since it has no meaning in the database.
 
         For example
 
-            ["ABCD", "Product", "1234"]
+            [["Service", "B", "B5"], ["Product"]]
 
-        should convert to
+        should become
 
-            [["ABCD"], ["1"], ["2"], ["3"], ["4"], ["5"], ["6"], ["7"], ["8"], ["9"], ["1234"]]
+            [["B", "B5"], ["0"], ["1"], ["2"], ["3"], ["4"], ["5"], ["6"], ["7"], ["8"], ["9"]]
+
+        Here we assume that code_lists has already been run through validate_filter_values.
         """
-        flattened_list = []
-        for code in codes:
-            flattened_list.extend(PSC_GROUPS.get(code, {}).get("search_terms") or [code])
-        return [[f] for f in flattened_list]
+        expanded_list = []
+        for code_list in code_lists:
+            if code_list[0] in PSC_GROUPS:
+                if len(code_list) == 1:
+                    # Replace group name with terms.
+                    expanded_list.extend(PSC_GROUPS[code_list[0]]["expanded_terms"])
+                else:
+                    # Remove group name.
+                    expanded_list.append(code_list[1:])
+            else:
+                # Legacy won't have group names.
+                expanded_list.append(code_list)
+        return expanded_list
+
+    @staticmethod
+    def code_is_parent_of(code, other):
+        return other[: len(code)] == code and len(code) < len(other)
 
     @staticmethod
     def node(code, positive, positive_psc, negative_psc):
@@ -84,10 +127,8 @@ class PSCCodes(_Filter, HierarchicalFilter):
 
 class PSCNode(Node):
     def _basic_search_unit(self):
-        retval = self.code
-        if len(self.code) < 4:
-            retval += "*"
-        return retval
+        """ All PSC leaf codes are four digits.  Anything shorter than that is a prefix. """
+        return (self.code + "*") if len(self.code) < 4 else self.code
 
     def clone(self, code, positive, positive_psc, negative_psc):
         return PSCNode(code, positive, positive_psc, negative_psc)

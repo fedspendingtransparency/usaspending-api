@@ -7,6 +7,35 @@ def upper_case_dict_values(input_dict):
             input_dict[key] = input_dict[key].upper()
 
 
+def order_nested_filter_tree_object(nested_object):
+    """
+    Filter tree searches look a bit like:
+        {
+          "psc_codes": {
+              "require": [["Service", "B", "B5"]],
+              "exclude": [["Service", "B", "B5", "B502"]]
+          }
+        }
+    The position of the the values in the innermost lists is important.  Exclude them from sorting.
+    """
+    if not isinstance(nested_object, dict):
+        return order_nested_object(nested_object)
+
+    # Sort the keys and sort the outer list of "require" and "exclude" but do not recurse the inner lists.
+    # Everything else is handled using the default sorting behavior.
+    return OrderedDict(
+        [
+            (
+                key,
+                sorted(nested_object[key])
+                if key in ("require", "exclude") and isinstance(nested_object[key], list)
+                else order_nested_object(nested_object[key]),
+            )
+            for key in sorted(nested_object.keys())
+        ]
+    )
+
+
 def order_nested_object(nested_object):
     """
     Simply recursively order the item. To be used for standardizing objects for JSON dumps
@@ -28,6 +57,18 @@ def order_nested_object(nested_object):
         else:
             return sorted([order_nested_object(subitem) for subitem in nested_object])
     elif isinstance(nested_object, dict):
-        return OrderedDict([(key, order_nested_object(nested_object[key])) for key in sorted(nested_object.keys())])
+        # Filter tree values are positional and require special handling.  Some filter tree filters
+        # support legacy lists so only perform special handling if the filter is the newer style dictionary.
+        return OrderedDict(
+            [
+                (
+                    key,
+                    order_nested_filter_tree_object(nested_object[key])
+                    if key in ("naics_codes", "psc_codes", "tas_codes") and isinstance(nested_object[key], dict)
+                    else order_nested_object(nested_object[key]),
+                )
+                for key in sorted(nested_object.keys())
+            ]
+        )
     else:
         return nested_object

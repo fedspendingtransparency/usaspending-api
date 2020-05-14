@@ -122,10 +122,8 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `exclude`: [`3333`] (optional, array[string])
 
 ### PSCCodeObject (object)
-+ `require`: [`B5`] (optional, array[string])
-    Can be PSC codes or Tier1 category names.
-+ `exclude`: [`B502`] (optional, array[string])
-    Can be PSC codes or Tier1 category names.
++ `require`: [[`Service`, `B`, `B5`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`Service`, `B`, `B5`, `B502`]] (optional, array[array[string]], fixed-type)
 
 ### TASCodeObject (object)
 + `require`: [[`091`]] (optional, array[array[string]])
