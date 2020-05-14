@@ -1,4 +1,4 @@
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
@@ -29,21 +29,21 @@ class ProgramActivityCount(AgencyBase):
         )
 
     def get_program_activity_count(self):
+        q = (
+            Q(obligations_incurred_by_program_object_class_cpe__gt=0)
+            | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
+            | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
+            | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
+        )
+        filters = {
+            "program_activity_id": OuterRef("pk"),
+            "final_of_fy": True,
+            "treasury_account__funding_toptier_agency": self.toptier_agency,
+            "submission__reporting_fiscal_year": self.fiscal_year,
+        }
         return (
             RefProgramActivity.objects.annotate(
-                include=Exists(
-                    FinancialAccountsByProgramActivityObjectClass.objects.filter(
-                        program_activity_id=OuterRef("pk"),
-                        final_of_fy=True,
-                        treasury_account__funding_toptier_agency=self.toptier_agency,
-                        submission__reporting_fiscal_year=self.fiscal_year,
-                    )
-                    .exclude(
-                        obligations_incurred_by_program_object_class_cpe=0,
-                        gross_outlay_amount_by_program_object_class_cpe=0,
-                    )
-                    .values("pk")
-                )
+                include=Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(q, **filters).values("pk"))
             )
             .filter(include=True)
             .values("pk")
