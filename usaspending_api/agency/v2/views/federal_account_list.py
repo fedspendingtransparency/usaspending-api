@@ -10,8 +10,8 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 
 class FederalAccountList(ListMixin, AgencyBase):
     """
-    Obtain the list of program activity categories for a specific agency in a
-    single fiscal year based on whether or not that program activity has ever
+    Obtain the list of federal accounts and treasury accounts for a specific agency in a
+    single fiscal year based on whether or not that federal account/treasury account has ever
     been submitted in File B.
     """
 
