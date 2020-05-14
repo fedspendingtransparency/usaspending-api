@@ -37,7 +37,12 @@ class ProgramActivityCount(AgencyBase):
                         final_of_fy=True,
                         treasury_account__funding_toptier_agency=self.toptier_agency,
                         submission__reporting_fiscal_year=self.fiscal_year,
-                    ).values("pk")
+                    )
+                    .exclude(
+                        obligations_incurred_by_program_object_class_cpe=0,
+                        gross_outlay_amount_by_program_object_class_cpe=0,
+                    )
+                    .values("pk")
                 )
             )
             .filter(include=True)
