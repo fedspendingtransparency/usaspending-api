@@ -21,6 +21,7 @@ class BudgetFunctionList(ListMixin, AgencyBase):
         return None
 
     def format_results(self, rows):
+        order = self.pagination.sort_order == "desc"
         names = set([row["treasury_account__budget_function_title"] for row in rows])
         budget_functions = [{"name": x} for x in names]
         for item in budget_functions:
@@ -35,7 +36,7 @@ class BudgetFunctionList(ListMixin, AgencyBase):
             ]
             item["obligated_amount"] = sum([x["obligated_amount"] for x in item["children"]])
             item["gross_outlay_amount"] = sum([x["gross_outlay_amount"] for x in item["children"]])
-        order = self.pagination.sort_order == "desc"
+            item["children"] = sorted(item["children"], key=lambda x: x[self.pagination.sort_key], reverse=order)
         budget_functions = sorted(budget_functions, key=lambda x: x[self.pagination.sort_key], reverse=order)
         return budget_functions
 
