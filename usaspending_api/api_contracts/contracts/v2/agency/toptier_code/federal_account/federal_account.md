@@ -48,7 +48,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
         + `limit` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
-        + `results` (required, array[ProgramActivity], fixed-type)
+        + `results` (required, array[FederalAccount], fixed-type)
         + `messages` (required, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
