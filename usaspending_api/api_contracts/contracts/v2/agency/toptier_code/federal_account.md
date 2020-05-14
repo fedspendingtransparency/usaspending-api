@@ -95,7 +95,13 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 + `code` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
-+ `children` (optional, array[FederalAccount]
++ `children` (required, array[TreasuryAccount]
+
+## TreasuryAccount (object
++ `name` (required, string)
++ `code` (required, string)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## PageMetadata (object)
 + `page` (required, number)

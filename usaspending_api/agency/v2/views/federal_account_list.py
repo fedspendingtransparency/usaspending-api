@@ -71,6 +71,12 @@ class FederalAccountList(ListMixin, AgencyBase):
             Q(final_of_fy=True),
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
             Q(submission__reporting_fiscal_year=self.fiscal_year),
+            Q(
+                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
+                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
+            ),
         ]
         if self.filter:
             filters.append(
@@ -81,18 +87,7 @@ class FederalAccountList(ListMixin, AgencyBase):
             )
 
         results = (
-            (
-                FinancialAccountsByProgramActivityObjectClass.objects.filter(
-                    final_of_fy=True,
-                    treasury_account__funding_toptier_agency=self.toptier_agency,
-                    submission__reporting_fiscal_year=self.fiscal_year,
-                )
-                .exclude(
-                    obligations_incurred_by_program_object_class_cpe=0,
-                    gross_outlay_amount_by_program_object_class_cpe=0,
-                )
-                .filter(*filters)
-            )
+            (FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters))
             .values(
                 "treasury_account__tas_rendering_label",
                 "treasury_account__account_title",
