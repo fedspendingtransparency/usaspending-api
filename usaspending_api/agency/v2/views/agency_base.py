@@ -22,10 +22,7 @@ class AgencyBase(APIView):
 
     @cached_property
     def fiscal_year(self):
-        if self.request.method == "GET":
-            fiscal_year = self.request.query_params.get("fiscal_year")
-        else:
-            fiscal_year = self.request.data.get("fiscal_year")
+        fiscal_year = str(self.request.query_params.get("fiscal_year", current_fiscal_year()))
         fiscal_year = str(fiscal_year or current_fiscal_year())
         if not fullmatch("[0-9]{4}", fiscal_year):
             raise UnprocessableEntityException("Unrecognized fiscal_year format. Should be YYYY.")
