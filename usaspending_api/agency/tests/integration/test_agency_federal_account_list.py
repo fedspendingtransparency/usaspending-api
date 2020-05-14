@@ -344,7 +344,14 @@ def test_federal_account_list_sort_by_obligated_amount(client, agency_account_da
                 "name": "FA 3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
-                "children": [{"gross_outlay_amount": 100000.0, "name": "TA 6", "obligated_amount": 100.0}],
+                "children": [
+                    {
+                        "gross_outlay_amount": 100000.0,
+                        "name": "TA 6",
+                        "code": "003-2017/2018-0000-000",
+                        "obligated_amount": 100.0,
+                    }
+                ],
             },
             {
                 "gross_outlay_amount": 1000000.0,
@@ -383,7 +390,14 @@ def test_federal_account_list_sort_by_gross_outlay_amount(client, agency_account
                 "name": "FA 3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
-                "children": [{"gross_outlay_amount": 100000.0, "name": "TA 6", "obligated_amount": 100.0}],
+                "children": [
+                    {
+                        "gross_outlay_amount": 100000.0,
+                        "name": "TA 6",
+                        "code": "003-2017/2018-0000-000",
+                        "obligated_amount": 100.0,
+                    }
+                ],
             },
             {
                 "gross_outlay_amount": 1000000.0,
@@ -508,7 +522,7 @@ def test_federal_account_list_search(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = "?fiscal_year=2020&filter=AME 5"
+    query_params = "?fiscal_year=2020&filter=TA 5"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,

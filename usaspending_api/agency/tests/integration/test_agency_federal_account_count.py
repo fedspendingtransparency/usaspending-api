@@ -12,8 +12,8 @@ url = "/api/v2/agency/{code}/federal_account/count/{filter}"
 def test_federal_account_count_success(client, agency_account_data):
     resp = client.get(url.format(code="007", filter=""))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["federal_account_count"] == 1
-    assert resp.data["treasury_account_count"] == 1
+    assert resp.data["federal_account_count"] == 3
+    assert resp.data["treasury_account_count"] == 3
 
     resp = client.get(url.format(code="007", filter="?fiscal_year=2017"))
     assert resp.status_code == status.HTTP_200_OK
@@ -43,8 +43,8 @@ def test_program_activity_count_future(client, agency_account_data):
 def test_federal_account_count_specific(client, agency_account_data):
     resp = client.get(url.format(code="008", filter="?fiscal_year=2017"))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["federal_account_count"] == 3
-    assert resp.data["treasury_account_count"] == 3
+    assert resp.data["federal_account_count"] == 1
+    assert resp.data["treasury_account_count"] == 1
 
     resp = client.get(url.format(code="008", filter="?fiscal_year=2018"))
     assert resp.status_code == status.HTTP_200_OK
