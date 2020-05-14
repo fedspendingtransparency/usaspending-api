@@ -69,11 +69,16 @@ class FederalAccountList(ListMixin, AgencyBase):
     def get_federal_account_list(self) -> List[dict]:
         filters = [
             Q(final_of_fy=True),
-            Q(treasury_account__funding_toptier_agency= self.toptier_agency),
-            Q(submission__reporting_fiscal_year= self.fiscal_year),
+            Q(treasury_account__funding_toptier_agency=self.toptier_agency),
+            Q(submission__reporting_fiscal_year=self.fiscal_year),
         ]
         if self.filter:
-            filters.append(Q(Q(treasury_account__account_title__icontains=self.filter) | Q(treasury_account__federal_account__account_title__icontains=self.filter)))
+            filters.append(
+                Q(
+                    Q(treasury_account__account_title__icontains=self.filter)
+                    | Q(treasury_account__federal_account__account_title__icontains=self.filter)
+                )
+            )
 
         results = (
             (
