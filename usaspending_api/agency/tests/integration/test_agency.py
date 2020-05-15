@@ -40,6 +40,7 @@ def agency_data():
 def test_happy_path(client, agency_data):
     resp = client.get(URL.format(code="001", filter=""))
     assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["fiscal_year"] == current_fiscal_year()
     assert resp.data["toptier_code"] == "001"
     assert resp.data["abbreviation"] == "ABBR"
     assert resp.data["name"] == "NAME"
@@ -53,16 +54,19 @@ def test_happy_path(client, agency_data):
 
     resp = client.get(URL.format(code="001", filter=f"?fiscal_year={current_fiscal_year()}"))
     assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["fiscal_year"] == current_fiscal_year()
     assert resp.data["toptier_code"] == "001"
     assert resp.data["subtier_agency_count"] == 1
 
     resp = client.get(URL.format(code="001", filter=f"?fiscal_year={current_fiscal_year() - 1}"))
     assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["fiscal_year"] == current_fiscal_year() - 1
     assert resp.data["toptier_code"] == "001"
     assert resp.data["subtier_agency_count"] == 1
 
     resp = client.get(URL.format(code="002", filter=""))
     assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["fiscal_year"] == current_fiscal_year()
     assert resp.data["toptier_code"] == "002"
     assert resp.data["subtier_agency_count"] == 0
 
