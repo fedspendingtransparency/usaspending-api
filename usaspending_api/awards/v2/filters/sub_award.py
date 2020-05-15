@@ -55,7 +55,8 @@ def subaward_filter(filters, for_downloads=False):
             "contract_pricing_type_codes",
             "set_aside_type_codes",
             "extent_competed_type_codes",
-            "tas_codes",
+            TasCodes.underscore_name,
+            TreasuryAccounts.underscore_name,
         ]
 
         if key not in key_list:
@@ -233,10 +234,17 @@ def subaward_filter(filters, for_downloads=False):
                 or_queryset |= Q(**{"{}__exact".format(filter_to_col[key]): in_query})
             queryset = queryset.filter(or_queryset)
 
+        # Because these two filters OR with each other, we need to know about the presense of both filters to know what to do
+        # This filter was picked arbitrarily to be the one that checks for the other
         elif key == TasCodes.underscore_name:
-            queryset = TasCodes.build_tas_codes_filter(queryset, value)
+            if TreasuryAccounts.underscore_name in filters.keys():
+                q = TasCodes.build_tas_codes_filter(queryset, value)
+                q |= TreasuryAccounts.build_tas_codes_filter(queryset, filters[TreasuryAccounts.underscore_name])
+                queryset = queryset.filter(q)
+            else:
+                queryset = queryset.filter(TasCodes.build_tas_codes_filter(queryset, value))
 
-        elif key == TreasuryAccounts.underscore_name:
-            queryset = TreasuryAccounts.build_tas_codes_filter(queryset, value)
+        elif key == TreasuryAccounts.underscore_name and TasCodes.underscore_name not in filters.keys():
+            queryset = queryset.filter(TreasuryAccounts.build_tas_codes_filter(queryset, value))
 
     return queryset

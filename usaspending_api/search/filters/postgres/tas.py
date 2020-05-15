@@ -19,7 +19,7 @@ class TasCodes(HierarchicalFilter):
         else:
             raise InvalidParameterException(f"tas_codes must be an array or object")
 
-        return queryset.filter(
+        return Q(
             treasury_account_identifiers__overlap=list(
                 cls._query_string(TreasuryAppropriationAccount.objects.all(), require, exclude).values_list(
                     "treasury_account_identifier", flat=True
@@ -95,6 +95,7 @@ class TreasuryAccounts:
             - Assembling an integer array overlap (&&) query to search for those integers.
         """
 
+        print(tas_filters)
         tas_qs = Q()
         for tas_filter in tas_filters:
             tas_qs |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas_filter.items()})
@@ -103,7 +104,7 @@ class TreasuryAccounts:
         if not tas_qs:
             return queryset
 
-        return queryset.filter(
+        return Q(
             treasury_account_identifiers__overlap=list(
                 TreasuryAppropriationAccount.objects.filter(tas_qs).values_list(
                     "treasury_account_identifier", flat=True

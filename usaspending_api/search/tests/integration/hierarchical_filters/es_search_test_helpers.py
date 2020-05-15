@@ -70,3 +70,29 @@ def query_by_treasury_account_components(client, tas, treasury_accounts):
             }
         ),
     )
+
+
+def query_by_treasury_account_components_subaward(client, tas, treasury_accounts):
+    filters = {}
+    if tas:
+        filters[TasCodes.underscore_name] = tas
+
+    if treasury_accounts:
+        filters[TreasuryAccounts.underscore_name] = treasury_accounts
+
+    return client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "subawards": True,
+                "fields": ["Sub-Award ID"],
+                "sort": "Sub-Award ID",
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                    **filters,
+                },
+            }
+        ),
+    )
