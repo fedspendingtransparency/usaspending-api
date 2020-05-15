@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List Program Activities [/api/v2/agency/{toptier_code}/program_activity/{?fiscal_year,filter,order,sort,page,limit}]
+# List Object Classes [/api/v2/agency/{toptier_code}/object_class/{?fiscal_year,filter,order,sort,page,limit}]
 
-Returns a list of Program Activity in the Agency's appropriations for a single fiscal year
+Returns a list of Object Classes in the Agency's appropriations for a single fiscal year
 
 ## GET
 
@@ -20,7 +20,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY.
         + `filter` (optional, string)
-            This will filter the Program Activity by their name to those matching the text.
+            This will filter the Object Classes by their name to those matching the text.
         + `order` (optional, enum[string])
             Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
             + Default: `desc`
@@ -47,7 +47,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
-        + `results` (required, array[ProgramActivity], fixed-type)
+        + `results` (required, array[ObjectClass], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
@@ -55,7 +55,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 
             {
                 "toptier_code": "086",
-                "fiscal_year": 2018,
+                "fiscal_year": 2020,
                 "page_metadata": {
                     "limit": 2,
                     "page": 1,
@@ -67,14 +67,14 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                 },
                 "results": [
                     {
-                        "name": "TI INFORMATION TECHNOLOGY",
-                        "obligated_amount": 18482.4,
-                        "gross_outlay_amount": -236601.1
+                        "name": "Grants, subsidies, and contributions",
+                        "obligated_amount": 12329194065.31,
+                        "gross_outlay_amount": 13196218848.88
                     },
                     {
-                        "name": "CONTRACT RENEWALS",
-                        "obligated_amount": 225.26,
-                        "gross_outlay_amount": -161252.0
+                        "name": "Full-time permanent",
+                        "obligated_amount": 221101112.31,
+                        "gross_outlay_amount": 230953611.8
                     }
                 ],
                 "messages": []
@@ -82,7 +82,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 
 # Data Structures
 
-## ProgramActivity (object)
+## ObjectClass (object)
 + `name` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)

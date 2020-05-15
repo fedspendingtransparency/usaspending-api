@@ -9,7 +9,6 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import (
-    ElasticsearchConnectionException,
     InvalidParameterException,
     UnprocessableEntityException,
 )
@@ -158,8 +157,6 @@ class TransactionSummaryVisualizationViewSet(APIView):
         validated_payload = TinyShield(models).block(request.data)
 
         results = spending_by_transaction_sum_and_count(validated_payload)
-        if not results:
-            raise ElasticsearchConnectionException("Error generating the transaction sums and counts")
         return Response({"results": results})
 
 
@@ -187,6 +184,4 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
         ]
         validated_payload = TinyShield(models).block(request.data)
         results = spending_by_transaction_count(validated_payload)
-        if not results:
-            raise ElasticsearchConnectionException("Error during the aggregations")
         return Response({"results": results})

@@ -96,6 +96,7 @@ List of table columns
 + `Award Type` (optional, string, nullable)
 + `Awarding Agency Code` (optional, string, nullable)
 + `Awarding Agency` (optional, string, nullable)
++ `awarding_agency_id` (optional, number, nullable)
 + `Awarding Sub Agency Code` (optional, string, nullable)
 + `Awarding Sub Agency` (optional, string, nullable)
 + `Base Obligation Date` (optional, string)
