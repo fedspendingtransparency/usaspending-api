@@ -384,7 +384,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 row["Award Amount"] = float(row["Award Amount"])
             if row.get("Awarding Agency"):
                 code = row.pop("agency_code")
-                row["Awarding Agency ID"] = self.get_agency_database_id(code)
+                row["awarding_agency_id"] = self.get_agency_database_id(code)
             row["generated_internal_id"] = hit["generated_unique_award_id"]
             row["recipient_id"] = hit.get("recipient_unique_id")
             row["parent_recipient_unique_id"] = hit.get("parent_recipient_unique_id")
