@@ -5,6 +5,7 @@ from usaspending_api.agency.v2.views.budgetary_resources import BudgetaryResourc
 from usaspending_api.agency.v2.views.object_class_count import ObjectClassCount
 from usaspending_api.agency.v2.views.federal_account_count import FederalAccountCount
 from usaspending_api.agency.v2.views.federal_account_list import FederalAccountList
+from usaspending_api.agency.v2.views.object_class_list import ObjectClassList
 from usaspending_api.agency.v2.views.program_activity_count import ProgramActivityCount
 from usaspending_api.agency.v2.views.program_activity_list import ProgramActivityList
 
@@ -19,6 +20,7 @@ urlpatterns = [
                 path("budgetary_resources/", BudgetaryResources.as_view()),
                 path("federal_account/count/", FederalAccountCount.as_view()),
                 path("federal_account/", FederalAccountList.as_view()),
+                path("object_class/", ObjectClassList.as_view()),
                 path("object_class/count/", ObjectClassCount.as_view()),
                 path("program_activity/", ProgramActivityList.as_view()),
                 path("program_activity/count/", ProgramActivityCount.as_view()),
