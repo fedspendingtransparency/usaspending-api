@@ -1,4 +1,4 @@
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
@@ -32,16 +32,21 @@ class BudgetFunctionCount(AgencyBase):
         )
 
     def get_budget_function_queryset(self):
+        filters = [
+            Q(treasury_account_id=OuterRef("pk")),
+            Q(final_of_fy=True),
+            Q(treasury_account__funding_toptier_agency=self.toptier_agency),
+            Q(submission__reporting_fiscal_year=self.fiscal_year),
+            Q(
+                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
+                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
+            ),
+        ]
         return (
             TreasuryAppropriationAccount.objects.annotate(
-                include=Exists(
-                    FinancialAccountsByProgramActivityObjectClass.objects.filter(
-                        treasury_account_id=OuterRef("pk"),
-                        final_of_fy=True,
-                        treasury_account__funding_toptier_agency=self.toptier_agency,
-                        submission__reporting_fiscal_year=self.fiscal_year,
-                    ).values("pk")
-                )
+                include=Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters).values("pk"))
             )
             .filter(include=True)
             .values("budget_function_code", "budget_subfunction_code")

@@ -85,6 +85,24 @@ def agency_account_data():
         account_title="TA 6",
         tas_rendering_label="003-2017/2018-0000-000",
     )
+    tas5 = mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        funding_toptier_agency=ta1,
+        budget_function_code=200,
+        budget_function_title="NAME 5",
+        budget_subfunction_code=2100,
+        budget_subfunction_title="NAME 5A",
+        federal_account=fa2,
+    )
+    tas6 = mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        funding_toptier_agency=ta1,
+        budget_function_code=300,
+        budget_function_title="NAME 6",
+        budget_subfunction_code=3100,
+        budget_subfunction_title="NAME 6A",
+        federal_account=fa3,
+    )
 
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2)
