@@ -5,7 +5,11 @@ from fiscalyear import FiscalDate, FiscalQuarter, FiscalDateTime, datetime
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import validate_date, min_and_max_from_date_ranges
 
+
 logger = logging.getLogger(__name__)
+
+
+SUBMISSION_WINDOW_DAYS = 45
 
 
 def current_fiscal_date() -> FiscalDateTime:
@@ -162,39 +166,42 @@ def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
     """ Generate the most recently completed fiscal quarter """
 
     # Get the current fiscal year so that it can be compared against the FY in the request
-    day_difference = current_fiscal_date() - datetime.timedelta(days=45)
+    day_difference = current_fiscal_date() - datetime.timedelta(days=SUBMISSION_WINDOW_DAYS)
     current_fiscal_date_adjusted = FiscalDateTime(day_difference.year, day_difference.month, day_difference.day)
 
-    # Attempting to get data for current fiscal year (minus 45 days)
+    # Attempting to get data for current fiscal year (minus SUBMISSION_WINDOW_DAYS days)
     if fiscal_year == current_fiscal_date_adjusted.fiscal_year:
         current_fiscal_quarter = current_fiscal_date_adjusted.quarter
         # If a fiscal quarter has been requested
         if fiscal_quarter:
-            # If the fiscal quarter requested is not yet completed (or within 45 days of being completed), error out
+            # If the fiscal quarter requested is not yet completed (or within SUBMISSION_WINDOW_DAYS
+            # days of being completed), error out
             if current_fiscal_quarter <= fiscal_quarter:
                 raise InvalidParameterException(
-                    "Requested fiscal year and quarter must have been completed over 45 "
-                    "days prior to the current date."
+                    f"Requested fiscal year and quarter must have been completed over {SUBMISSION_WINDOW_DAYS} "
+                    f"days prior to the current date."
                 )
         # If no fiscal quarter has been requested
         else:
-            # If it's currently the first quarter (or within 45 days of the first quarter), throw an error
+            # If it's currently the first quarter (or within SUBMISSION_WINDOW_DAYS days of the
+            # first quarter), throw an error
             if current_fiscal_quarter == 1:
                 raise InvalidParameterException(
-                    "Cannot obtain data for current fiscal year. At least one quarter must "
-                    "be completed for over 45 days."
+                    f"Cannot obtain data for current fiscal year. At least one quarter must "
+                    f"be completed for over {SUBMISSION_WINDOW_DAYS} days."
                 )
             # roll back to the last completed fiscal quarter if it's any other quarter
             else:
                 fiscal_quarter = current_fiscal_quarter - 1
-    # Attempting to get data for any fiscal year before the current one (minus 45 days)
+    # Attempting to get data for any fiscal year before the current one (minus SUBMISSION_WINDOW_DAYS days)
     elif fiscal_year < current_fiscal_date_adjusted.fiscal_year:
         # If no fiscal quarter has been requested, give the fourth quarter of the year requested
         if not fiscal_quarter:
             fiscal_quarter = 4
     else:
         raise InvalidParameterException(
-            "Cannot obtain data for future fiscal years or fiscal years that have not been active for over 45 days."
+            f"Cannot obtain data for future fiscal years or fiscal years that have "
+            f"not been active for over {SUBMISSION_WINDOW_DAYS} days."
         )
 
     # get the fiscal date
@@ -202,6 +209,42 @@ def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
     fiscal_date = datetime.datetime.strftime(fiscal_date, "%Y-%m-%d")
 
     return fiscal_date, fiscal_quarter
+
+
+def calculate_last_completed_fiscal_quarter(fiscal_year, as_of_date=current_fiscal_date()):
+    """
+    Effectively a minimalistic implementation of generate_last_completed_fiscal_quarter.  Returns either
+    the most recently completed fiscal quarter or None if it's too early in the fiscal year for the first
+    quarter to be considered "completed".  Should always return None for future fiscal years.  as_of_date
+    was intended for unit testing purposes, but who knows, maybe you'll find another use for it being the
+    unquestionable genius that you are.
+    """
+
+    # Get the current fiscal year so that it can be compared against the FY in the request.
+    day_difference = as_of_date - datetime.timedelta(days=SUBMISSION_WINDOW_DAYS)
+    current_fiscal_date_adjusted = FiscalDateTime(day_difference.year, day_difference.month, day_difference.day)
+
+    if fiscal_year == current_fiscal_date_adjusted.fiscal_year:
+        current_fiscal_quarter = current_fiscal_date_adjusted.quarter
+        # If it's currently the first quarter (or within SUBMISSION_WINDOW_DAYS days of the
+        # first quarter), return None because it's too soon for there to be a completed quarter
+        # for fiscal_year.
+        if current_fiscal_quarter == 1:
+            fiscal_quarter = None
+        else:
+            fiscal_quarter = current_fiscal_quarter - 1
+    elif fiscal_year < current_fiscal_date_adjusted.fiscal_year:
+        fiscal_quarter = 4
+    else:
+        # The future cannot have completed quarters unless you're into shady accounting.
+        fiscal_quarter = None
+
+    return fiscal_quarter
+
+
+def convert_fiscal_quarter_to_fiscal_period(fiscal_quarter):
+    """ Returns None if fiscal_quarter is invalid or not a number. """
+    return {1: 3, 2: 6, 3: 9, 4: 12}.get(fiscal_quarter)
 
 
 # aliasing the generate_fiscal_month function to the more appropriate function name

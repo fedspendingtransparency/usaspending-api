@@ -16,7 +16,7 @@ Returns the count of unique Federal Account and Treasury Account categories in t
             }
     + Parameters
         + `toptier_code`: 012 (required, number)
-            The toptier code of an agency (could be a CGAG or FREC) so only numeric character strings of length 3-4 are accepted.
+            The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY
 
@@ -26,7 +26,7 @@ Returns the count of unique Federal Account and Treasury Account categories in t
         + `fiscal_year` (required, number)
         + `federal_account_count` (required, number)
         + `treasury_account_count` (required, number)
-        + `messages` (required, array[string])
+        + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body

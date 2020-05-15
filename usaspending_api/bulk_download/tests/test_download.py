@@ -423,6 +423,10 @@ def award_data(transactional_db):
         place_of_perform_country_na="CANADA",
     )
 
+    # Ref Country Code
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+    mommy.make("references.RefCountryCode", country_code="CAN", country_name="CANADA")
+
     # Set latest_award for each award
     update_awards()
 
