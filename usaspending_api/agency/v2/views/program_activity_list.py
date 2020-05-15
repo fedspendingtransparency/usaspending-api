@@ -36,23 +36,29 @@ class ProgramActivityList(ListMixin, AgencyBase):
         )
 
     def get_program_activity_list(self) -> List[dict]:
-        # So I think we've found a bug in Django.  Using ~Q(whatever=0) is generating some crazy NOT IN SQL
-        # that produces incorrect results whereas this totally unnecessary syntax produces correct results.
-        q = (
-            Q(financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe__gt=0)
-            | Q(financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe__lt=0)
-            | Q(financialaccountsbyprogramactivityobjectclass__gross_outlay_amount_by_program_object_class_cpe__gt=0)
-            | Q(financialaccountsbyprogramactivityobjectclass__gross_outlay_amount_by_program_object_class_cpe__lt=0)
-        )
-        filters = {
-            "financialaccountsbyprogramactivityobjectclass__final_of_fy": True,
-            "financialaccountsbyprogramactivityobjectclass__treasury_account__funding_toptier_agency": self.toptier_agency,
-            "financialaccountsbyprogramactivityobjectclass__submission__reporting_fiscal_year": self.fiscal_year,
-        }
+        filters = [
+            Q(financialaccountsbyprogramactivityobjectclass__final_of_fy=True),
+            Q(
+                financialaccountsbyprogramactivityobjectclass__treasury_account__funding_toptier_agency=self.toptier_agency
+            ),
+            Q(financialaccountsbyprogramactivityobjectclass__submission__reporting_fiscal_year=self.fiscal_year),
+            Q(
+                Q(financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe__gt=0)
+                | Q(
+                    financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe__lt=0
+                )
+                | Q(
+                    financialaccountsbyprogramactivityobjectclass__gross_outlay_amount_by_program_object_class_cpe__gt=0
+                )
+                | Q(
+                    financialaccountsbyprogramactivityobjectclass__gross_outlay_amount_by_program_object_class_cpe__lt=0
+                )
+            ),
+        ]
         if self.filter:
-            filters["program_activity_name__icontains"] = self.filter
+            filters.append(Q(program_activity_name__icontains=self.filter))
         queryset_results = (
-            RefProgramActivity.objects.filter(q, **filters)
+            RefProgramActivity.objects.filter(*filters)
             .annotate(
                 name=F("program_activity_name"),
                 obligated_amount=Sum(

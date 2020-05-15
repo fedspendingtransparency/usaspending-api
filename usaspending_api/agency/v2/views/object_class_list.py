@@ -36,21 +36,29 @@ class ObjectClassList(ListMixin, AgencyBase):
         )
 
     def get_object_class_list(self) -> List[dict]:
-        q = (
-            Q(financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe__gt=0)
-            | Q(financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe__lt=0)
-            | Q(financialaccountsbyprogramactivityobjectclass__gross_outlay_amount_by_program_object_class_cpe__gt=0)
-            | Q(financialaccountsbyprogramactivityobjectclass__gross_outlay_amount_by_program_object_class_cpe__lt=0)
-        )
-        filters = {
-            "financialaccountsbyprogramactivityobjectclass__final_of_fy": True,
-            "financialaccountsbyprogramactivityobjectclass__treasury_account__funding_toptier_agency": self.toptier_agency,
-            "financialaccountsbyprogramactivityobjectclass__submission__reporting_fiscal_year": self.fiscal_year,
-        }
+        filters = [
+            Q(financialaccountsbyprogramactivityobjectclass__final_of_fy=True),
+            Q(
+                financialaccountsbyprogramactivityobjectclass__treasury_account__funding_toptier_agency=self.toptier_agency
+            ),
+            Q(financialaccountsbyprogramactivityobjectclass__submission__reporting_fiscal_year=self.fiscal_year),
+            Q(
+                Q(financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe__gt=0)
+                | Q(
+                    financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe__lt=0
+                )
+                | Q(
+                    financialaccountsbyprogramactivityobjectclass__gross_outlay_amount_by_program_object_class_cpe__gt=0
+                )
+                | Q(
+                    financialaccountsbyprogramactivityobjectclass__gross_outlay_amount_by_program_object_class_cpe__lt=0
+                )
+            ),
+        ]
         if self.filter:
-            filters["object_class_name__icontains"] = self.filter
+            filters.append(Q(object_class_name__icontains=self.filter))
         queryset_results = (
-            ObjectClass.objects.filter(q, **filters)
+            ObjectClass.objects.filter(*filters)
             .annotate(
                 name=F("object_class_name"),
                 obligated_amount=Sum(
