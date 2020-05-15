@@ -16,7 +16,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
             }
     + Parameters
         + `toptier_code`: 086 (required, number)
-            The toptier code of an agency (could be a CGAG or FREC) so only numeric character strings of length 3-4 are accepted.
+            The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY.
         + `filter` (optional, string)
@@ -49,7 +49,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `results` (required, array[ProgramActivity], fixed-type)
-        + `messages` (required, array[string])
+        + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
