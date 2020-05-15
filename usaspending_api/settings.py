@@ -115,7 +115,7 @@ ES_AWARDS_MAX_RESULT_WINDOW = 50000
 ES_AWARDS_NAME_SUFFIX = "awards"
 ES_AWARDS_QUERY_ALIAS_PREFIX = "award-query"
 ES_AWARDS_WRITE_ALIAS = "award-load-alias"
-ES_TIMEOUT = 90
+ES_TIMEOUT = 1
 ES_REPOSITORY = ""
 
 # Application definition
@@ -281,6 +281,7 @@ REST_FRAMEWORK = {
         "usaspending_api.common.renderers.DocumentAPIRenderer",
         "usaspending_api.common.renderers.BrowsableAPIRendererWithoutForms",
     ),
+    "EXCEPTION_HANDLER": "usaspending_api.common.custom_exception_handler.custom_exception_handler"
 }
 
 # Internationalization
