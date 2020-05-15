@@ -81,12 +81,11 @@ class FederalAccountList(ListMixin, AgencyBase):
         if self.filter:
             filters.append(
                 Q(
-                    Q(treasury_account__account_title__icontains=self.filter) |
-                    Q(treasury_account__tas_rendering_label__icontains=self.filter)
+                    Q(treasury_account__account_title__icontains=self.filter)
+                    | Q(treasury_account__tas_rendering_label__icontains=self.filter)
                     | Q(treasury_account__federal_account__account_title__icontains=self.filter)
                     | Q(treasury_account__federal_account__federal_account_code__icontains=self.filter)
                 ),
-
             )
 
         results = (
