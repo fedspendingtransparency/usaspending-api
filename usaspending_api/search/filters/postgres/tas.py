@@ -95,7 +95,6 @@ class TreasuryAccounts:
             - Assembling an integer array overlap (&&) query to search for those integers.
         """
 
-        print(tas_filters)
         tas_qs = Q()
         for tas_filter in tas_filters:
             tas_qs |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas_filter.items()})
