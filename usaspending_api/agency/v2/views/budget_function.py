@@ -17,9 +17,6 @@ class BudgetFunctionList(ListMixin, AgencyBase):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/budget_function.md"
 
-    def validate_request(self):
-        return None
-
     def format_results(self, rows):
         order = self.pagination.sort_order == "desc"
         names = set([row["treasury_account__budget_function_title"] for row in rows])
