@@ -44,7 +44,6 @@ def matview_search_filter(filters, model, for_downloads=False):
     faba_queryset = FinancialAccountsByAwards.objects.filter(award__isnull=False)
 
     for key, value in filters.items():
-        print(key)
         if value is None:
             raise InvalidParameterException("Invalid filter: " + key + " has null as its value.")
 
