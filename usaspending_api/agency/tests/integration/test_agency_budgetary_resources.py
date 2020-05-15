@@ -7,7 +7,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_ye
 
 
 URL = "/api/v2/agency/{code}/budgetary_resources/{filter}"
-FY = current_fiscal_year() - 1
+FY = current_fiscal_year() - 2
 PRIOR_FY = FY - 1
 
 
@@ -94,10 +94,10 @@ def test_budgetary_resources(client, data_fixture):
     resp = client.get(URL.format(code="001", filter=""))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == {
-        "fiscal_year": FY + 1,
+        "fiscal_year": FY + 2,
         "toptier_code": "001",
         "agency_budgetary_resources": None,
-        "prior_year_agency_budgetary_resources": Decimal("4.00"),
+        "prior_year_agency_budgetary_resources": None,
         "total_federal_budgetary_resources": None,
         "agency_total_obligated": None,
         "agency_obligation_by_period": [],
