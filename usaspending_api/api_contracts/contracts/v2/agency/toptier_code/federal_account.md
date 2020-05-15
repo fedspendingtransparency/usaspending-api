@@ -45,7 +45,6 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
     + Attributes
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
-        + `limit` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `results` (required, array[FederalAccount], fixed-type)
@@ -57,14 +56,14 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
             {
                 "toptier_code": "086",
                 "fiscal_year": 2018,
-                "limit": 2,
                 "page_metadata": {
                     "page": 1,
+                    "total": 1,
+                    "limit": 2,
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
                     "hasPrevious": false,
-                    "count": 1
                 },
                 "results": [
                     "code": "086-0302",
@@ -106,6 +105,8 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 
 ## PageMetadata (object)
 + `page` (required, number)
++ `total` (required, number)
++ `limit` (required, number)
 + `next` (optional, number, nullable)
 + `previous` (optional, number, nullable)
 + `hasNext` (required, boolean)
