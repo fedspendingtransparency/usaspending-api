@@ -67,3 +67,49 @@ def test_dates_are_fiscal_year_bookends():
     assert fyh.dates_are_fiscal_year_bookends(date_2, date_4) is False
     assert fyh.dates_are_fiscal_year_bookends(date_1, date_5) is False
     assert fyh.dates_are_fiscal_year_bookends(date_6, date_1) is True
+
+
+def test_calculate_last_completed_fiscal_quarter():
+    """
+    FY2000 Q1 == 1999-10-01 - 1999-12-31 available after 2000-02-14
+    FY2000 Q2 == 2000-01-01 - 2000-03-31 available after 2000-05-15
+    FY2000 Q3 == 2000-04-01 - 2000-06-30 available after 2000-08-14
+    FY2000 Q4 == 2000-07-01 - 2000-09-30 available after 2000-11-14
+    """
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(1999, 10, 1)) is None
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(1999, 11, 1)) is None
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(1999, 12, 1)) is None
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 1, 1)) is None
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 2, 1)) is None
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 2, 14)) is None
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 2, 15)) == 1
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 3, 1)) == 1
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 4, 1)) == 1
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 5, 1)) == 1
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 5, 15)) == 1
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 5, 16)) == 2
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 6, 1)) == 2
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 7, 1)) == 2
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 8, 1)) == 2
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 9, 1)) == 3
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 10, 1)) == 3
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 11, 1)) == 3
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 12, 1)) == 4
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2001, 1, 1)) == 4
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2001, 2, 1)) == 4
+    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2001, 3, 1)) == 4
+
+    # Test a fiscal year WAY in the future.  We should definitely have flying cars by then.
+    assert fyh.calculate_last_completed_fiscal_quarter(2010, date(2001, 3, 1)) is None
+
+    # And one test using the default as_of_date just to make sure nothing catches on fire.
+    assert fyh.calculate_last_completed_fiscal_quarter(2000) == 4
+
+
+def test_convert_fiscal_quarter_to_fiscal_period():
+    assert fyh.convert_fiscal_quarter_to_fiscal_period(1) == 3
+    assert fyh.convert_fiscal_quarter_to_fiscal_period(2) == 6
+    assert fyh.convert_fiscal_quarter_to_fiscal_period(3) == 9
+    assert fyh.convert_fiscal_quarter_to_fiscal_period(4) == 12
+    assert fyh.convert_fiscal_quarter_to_fiscal_period(None) is None
+    assert fyh.convert_fiscal_quarter_to_fiscal_period("1") is None
