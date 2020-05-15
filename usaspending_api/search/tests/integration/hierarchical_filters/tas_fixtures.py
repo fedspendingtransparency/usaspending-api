@@ -10,13 +10,14 @@ BASIC_TAS = 0
 ATA_TAS = 1
 BPOA_TAS = 2
 ATA_BPOA_TAS = 3
-SISTER_TAS = [1, 4]
+SISTER_TAS = [1, 4, 5]
 TAS_STRINGS = [
     "000-X-0126-000",
     "010-024-X-8445-002",
     "012-2000/2000-1231-000",
     "020-012-2000/2000-1231-000",
     "010-024-X-8445-552",
+    "010-024-X-8445-578",
 ]
 TAS_DICTIONARIES = [
     TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary(tas) for tas in TAS_STRINGS
@@ -77,6 +78,8 @@ def multiple_awards_with_sibling_tas(db):
     tas_with_fa(db, award_id=1, agency=1, index=SISTER_TAS[0])
     award(db, 2)
     tas(db, award_id=2, fa_id=1, index=SISTER_TAS[1])
+    award(db, 3)
+    tas(db, award_id=3, fa_id=1, index=SISTER_TAS[2])
 
 
 def award(db, id):
