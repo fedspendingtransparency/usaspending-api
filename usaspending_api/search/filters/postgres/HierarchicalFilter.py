@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from django.db.models import Q
 
 
 class HierarchicalFilter:
@@ -12,8 +13,13 @@ class HierarchicalFilter:
             cls.node(code, False, require, exclude) for code in exclude if cls._has_no_parents(code, require + exclude)
         ]
 
-        for node in positive_nodes + negative_nodes:
-            queryset = node.get_query(queryset)
+        q = Q()
+        for node in positive_nodes:
+            q |= node.get_query()
+        for node in negative_nodes:
+            q &= node.get_query()
+
+        queryset = queryset.filter(q)
         return queryset
 
     @classmethod
@@ -54,18 +60,15 @@ class Node:
             if self.is_parent_of(other_code):
                 self.children.append(self.clone(other_code, is_positive, positive_codes, negative_codes))
 
-    def get_query(self, query):
-        retval = self._basic_search_unit()
+    def get_query(self) -> Q:
+        filter = self._basic_search_unit()
         if self.positive:
-            query = query.filter(**retval)
             for node in [child for child in self.children if not child.positive]:
-                query = node.get_query(query)
-            return query
+                filter &= node.get_query()
         else:
-            query = query.exclude(**retval)
             for node in [child for child in self.children if child.positive]:
-                query = node.get_query(query)
-            return query
+                filter |= node.get_query()
+        return filter
 
     @abstractmethod
     def _basic_search_unit(self) -> dict:

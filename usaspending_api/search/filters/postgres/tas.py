@@ -3,7 +3,6 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount, Federa
 from django.db.models import Q
 from usaspending_api.search.filters.postgres.HierarchicalFilter import HierarchicalFilter, Node
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
-from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 
 
 class TasCodes(HierarchicalFilter):
@@ -73,11 +72,11 @@ def search_regex_of(v):
 class TASNode(Node):
     def _basic_search_unit(self):
         if len(self.ancestors) == 2:
-            return {"tas_rendering_label__iregex": search_regex_of(self.code)}
+            return Q(**{"tas_rendering_label__iregex": search_regex_of(self.code)})
         elif len(self.ancestors) == 1:
-            return {"federal_account__federal_account_code": self.code}
+            return Q(**{"federal_account__federal_account_code": self.code})
         else:
-            return {"federal_account__parent_toptier_agency__toptier_code": self.code}
+            return Q(**{"federal_account__parent_toptier_agency__toptier_code": self.code})
 
     def clone(self, code, positive, positive_naics, negative_naics):
         return TASNode(code, positive, positive_naics, negative_naics)

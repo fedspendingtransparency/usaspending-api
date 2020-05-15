@@ -11,7 +11,6 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures 
 )
 from usaspending_api.search.tests.integration.hierarchical_filters.es_search_test_helpers import (
     _setup_es,
-    query_by_tas,
     query_by_tas_subaward,
 )
 
@@ -88,7 +87,9 @@ def test_match_from_unintuitive_tas(client, monkeypatch, elasticsearch_award_ind
 
 
 @pytest.mark.django_db
-def test_non_match_from_unintuitive_tas_from_agency(client, monkeypatch, elasticsearch_award_index, subaward_with_tas):
+def test_non_match_from_unintuitive_tas_from_agency(
+    client, monkeypatch, elasticsearch_award_index, subaward_with_unintuitive_agency
+):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     # ensure that api CANNOT find a TAS from the agency in the TAS code's aid, because it's actually linked under a
     # different agency
@@ -97,91 +98,66 @@ def test_non_match_from_unintuitive_tas_from_agency(client, monkeypatch, elastic
     assert resp.json()["results"] == []
 
 
-"""
-
-
-
-
 @pytest.mark.django_db
-def test_non_match_unintuitive_tas_from_agency(
-    client, monkeypatch, elasticsearch_award_index, tas_with_nonintuitive_agency
+def test_non_match_from_unintuitive_tas_from_tas(
+    client, monkeypatch, elasticsearch_award_index, subaward_with_unintuitive_agency
 ):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
     # ensure that api CANNOT find a TAS from the agency in the TAS code's aid, because it's actually linked under a
     # different agency
-    _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_agency_path(BASIC_TAS)]})
+    resp = query_by_tas_subaward(client, {"require": [_tas_path(ATA_TAS)]})
 
     assert resp.json()["results"] == []
 
 
 @pytest.mark.django_db
-def test_non_match_unintuitive_tas_from_tas(
-    client, monkeypatch, elasticsearch_award_index, tas_with_nonintuitive_agency
+def test_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_index, subaward_with_multiple_tas):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas_subaward(client, {"require": [_tas_path(BPOA_TAS), _tas_path(ATA_TAS)]})
+
+    assert resp.json()["results"] == [_subaward1()]
+
+
+@pytest.mark.django_db
+def test_non_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_index, subaward_with_multiple_tas):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas_subaward(client, {"require": [_tas_path(ATA_BPOA_TAS), _tas_path(BPOA_TAS)]})
+
+    assert resp.json()["results"] == []
+
+
+@pytest.mark.django_db
+def test_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_index, subaward_with_multiple_tas):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas_subaward(client, {"require": [_tas_path(BASIC_TAS)]})
+
+    assert resp.json()["results"] == [_subaward1()]
+
+
+@pytest.mark.django_db
+def test_double_match_search_multi_tas_award(
+    client, monkeypatch, elasticsearch_award_index, subaward_with_multiple_tas
 ):
-    # ensure that api CANNOT find a TAS from the agency in the TAS code's aid, because it's actually linked under a
-    # different agency
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS)]})
+    resp = query_by_tas_subaward(client, {"require": [_tas_path(BASIC_TAS), _tas_path(ATA_TAS)]})
+
+    assert resp.json()["results"] == [_subaward1()]
+
+
+@pytest.mark.django_db
+def test_match_only_awards_with_tas(client, monkeypatch, elasticsearch_award_index, subaward_with_no_tas):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas_subaward(client, {"require": [_tas_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == []
 
 
 @pytest.mark.django_db
-def test_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
+def test_match_on_multiple_awards(client, monkeypatch, elasticsearch_award_index, subaward_with_no_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS), _tas_path(ATA_TAS)]})
-
-    assert resp.json()["results"] == [_award1()]
-
-
-@pytest.mark.django_db
-def test_non_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
-    _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_tas_path(ATA_TAS), _tas_path(BPOA_TAS)]})
+    resp = query_by_tas_subaward(client, {"require": [_tas_path(BASIC_TAS)]})
 
     assert resp.json()["results"] == []
-
-
-@pytest.mark.django_db
-def test_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_index, award_with_multiple_tas):
-    _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS)]})
-
-    assert resp.json()["results"] == [_award1()]
-
-
-@pytest.mark.django_db
-def test_double_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_index, award_with_multiple_tas):
-    _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS), _tas_path(ATA_TAS)]})
-
-    assert resp.json()["results"] == [_award1()]
-
-
-@pytest.mark.django_db
-def test_non_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_index, award_with_multiple_tas):
-    _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_tas_path(BPOA_TAS)]})
-
-    assert resp.json()["results"] == []
-
-
-@pytest.mark.django_db
-def test_match_only_awards_with_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas, award_without_tas):
-    _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS)]})
-
-    assert resp.json()["results"] == [_award1()]
-
-
-@pytest.mark.django_db
-def test_match_on_multiple_awards(client, monkeypatch, elasticsearch_award_index, multiple_awards_with_tas):
-    _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS), _tas_path(1)]})
-
-    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [_award1(), _award2()].sort(
-        key=lambda elem: elem["internal_id"]
-    )"""
 
 
 def _subaward1():
