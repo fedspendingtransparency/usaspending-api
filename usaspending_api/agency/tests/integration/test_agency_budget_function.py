@@ -16,7 +16,7 @@ def test_budget_function_list_success(client, agency_account_data):
         "toptier_code": "007",
         "limit": 10,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None, "count": 3},
         "results": [
             {
                 "gross_outlay_amount": 11100000.0,
@@ -48,7 +48,7 @@ def test_budget_function_list_success(client, agency_account_data):
         "toptier_code": "008",
         "limit": 10,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None"count": 1},
         "results": [
             {
                 "gross_outlay_amount": 10000.0,
@@ -73,7 +73,7 @@ def test_budget_function_list_success(client, agency_account_data):
             "FY2017 Q2 under the DATA Act; as such, there are no data "
             "available for prior fiscal years."
         ],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None,"count": 0},
         "results": [],
     }
     assert resp.status_code == status.HTTP_200_OK
@@ -117,7 +117,7 @@ def test_budget_function_list_sort_by_name(client, agency_account_data):
         "toptier_code": "007",
         "limit": 10,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None, "count": 3},
         "results": [
             {
                 "gross_outlay_amount": 11100000.0,
@@ -150,7 +150,7 @@ def test_budget_function_list_sort_by_name(client, agency_account_data):
         "toptier_code": "007",
         "limit": 10,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None, "count": 3},
         "results": [
             {
                 "gross_outlay_amount": 100000.0,
@@ -186,7 +186,7 @@ def test_budget_function_list_sort_by_obligated_amount(client, agency_account_da
         "toptier_code": "007",
         "limit": 10,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None, "count": 3},
         "results": [
             {
                 "gross_outlay_amount": 1000000.0,
@@ -219,7 +219,7 @@ def test_budget_function_list_sort_by_obligated_amount(client, agency_account_da
         "toptier_code": "007",
         "limit": 10,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None, "count": 3},
         "results": [
             {
                 "gross_outlay_amount": 11100000.0,
@@ -255,7 +255,7 @@ def test_budget_function_list_sort_by_gross_outlay_amount(client, agency_account
         "toptier_code": "007",
         "limit": 10,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None, "count": 3},
         "results": [
             {
                 "gross_outlay_amount": 100000.0,
@@ -288,7 +288,7 @@ def test_budget_function_list_sort_by_gross_outlay_amount(client, agency_account
         "toptier_code": "007",
         "limit": 10,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None, "count": 3},
         "results": [
             {
                 "gross_outlay_amount": 11100000.0,
@@ -324,7 +324,7 @@ def test_budget_function_list_search(client, agency_account_data):
         "toptier_code": "007",
         "limit": 10,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None, "count": 1},
         "results": [
             {
                 "gross_outlay_amount": 100000.0,
@@ -345,7 +345,7 @@ def test_budget_function_list_search(client, agency_account_data):
         "toptier_code": "007",
         "limit": 10,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": False, "hasPrevious": False, "next": None, "page": 1, "previous": None, "count": 1},
         "results": [
             {
                 "gross_outlay_amount": 1000000.0,
@@ -369,7 +369,7 @@ def test_budget_function_list_pagination(client, agency_account_data):
         "toptier_code": "007",
         "limit": 2,
         "messages": [],
-        "page_metadata": {"hasNext": True, "hasPrevious": False, "next": 2, "page": 1, "previous": None},
+        "page_metadata": {"hasNext": True, "hasPrevious": False, "next": 2, "page": 1, "previous": None, "count": 3},
         "results": [
             {
                 "gross_outlay_amount": 11100000.0,
@@ -396,7 +396,7 @@ def test_budget_function_list_pagination(client, agency_account_data):
         "toptier_code": "007",
         "limit": 2,
         "messages": [],
-        "page_metadata": {"hasNext": False, "hasPrevious": True, "next": None, "page": 2, "previous": 1},
+        "page_metadata": {"hasNext": False, "hasPrevious": True, "next": None, "page": 2, "previous": 1, "count": 3},
         "results": [
             {
                 "gross_outlay_amount": 1000000.0,

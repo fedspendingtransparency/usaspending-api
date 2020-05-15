@@ -111,3 +111,4 @@ Returns a list of Budget Function in the Agency's appropriations for a single fi
 + `previous` (optional, number)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
++ `count` (required, number)
