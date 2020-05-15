@@ -1,6 +1,8 @@
 from decimal import Decimal
 from django.db.models import F, Sum, Value, CharField, Q
 from django.db.models.functions import Coalesce
+
+from usaspending_api.common.recipient_lookups import annotate_recipient_id
 from usaspending_api.references.models import Agency
 
 
@@ -103,19 +105,25 @@ class Explorer(object):
                 | Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal__isnull=False)
             )
             .annotate(
-                id=Coalesce(
-                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
-                ),
                 type=Value("recipient", output_field=CharField()),
                 name=Coalesce(
                     "award__latest_transaction__contract_data__awardee_or_recipient_legal",
                     "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
                 ),
                 code=Coalesce(
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
-                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
+                    "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu",
+                    "award__latest_transaction__contract_data__awardee_or_recipient_uniqu",
                 ),
+            )
+        )
+
+        alt_set = (
+            annotate_recipient_id(
+                "id",
+                alt_set,
+                id_lookup="COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu)",
+                parent_id_lookup="COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide)",
+                name_lookup="COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)",
             )
             .values("id", "type", "name", "code", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))

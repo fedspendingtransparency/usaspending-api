@@ -97,7 +97,7 @@ def combine_recipient_hash_and_level(recipient_hash, recipient_level):
     return f"{recipient_hash}-{recipient_level.upper()}"
 
 
-def _annotate_recipient_id(field_name, queryset, annotation_sql):
+def _annotate_recipient_id(alias_name, queryset, annotation_sql):
     """
     Add recipient id (recipient hash + recipient level) to a queryset.  The assumption here is that
     the queryset is based on a data source that contains recipient_unique_id and
@@ -137,14 +137,19 @@ def _annotate_recipient_id(field_name, queryset, annotation_sql):
                 [],
             )
 
-    return queryset.annotate(**{field_name: RecipientId()})
+    return queryset.annotate(**{alias_name: RecipientId()})
 
 
-def annotate_recipient_id(field_name, queryset):
+def annotate_recipient_id(alias_name, queryset, id_lookup=None, parent_id_lookup=None, name_lookup=None):
+    if not all([v is not None for v in [id_lookup, parent_id_lookup, name_lookup]]):
+        id_lookup = "{outer_table}.recipient_unique_id"
+        parent_id_lookup = "{outer_table}.parent_recipient_unique_id"
+        name_lookup = "{outer_table}.recipient_name"
+
     return _annotate_recipient_id(
-        field_name,
+        alias_name,
         queryset,
-        """(
+        f"""(
             select
                 rp.recipient_hash || '-' ||  rp.recipient_level
             from
@@ -153,26 +158,26 @@ def annotate_recipient_id(field_name, queryset):
             where
                 (
                     (
-                        {outer_table}.recipient_unique_id is null
+                        {id_lookup} is null
                         and rl.duns is null
-                        and {outer_table}.recipient_name = rl.legal_business_name
+                        and {name_lookup} = rl.legal_business_name
                     ) or (
-                        {outer_table}.recipient_unique_id is not null
+                        {id_lookup} is not null
                         and rl.duns is not null
-                        and rl.duns = {outer_table}.recipient_unique_id
+                        and rl.duns = {id_lookup}
                     )
                 )
                 and rp.recipient_level = case
-                    when {outer_table}.parent_recipient_unique_id is null then 'R'
+                    when {parent_id_lookup} is null then 'R'
                     else 'C' end
-                and rp.recipient_name not in {special_cases}
+                and rp.recipient_name not in {{special_cases}}
         )""",
     )
 
 
-def annotate_prime_award_recipient_id(field_name, queryset):
+def annotate_prime_award_recipient_id(alias_name, queryset):
     return _annotate_recipient_id(
-        field_name,
+        alias_name,
         queryset,
         """(
             select
