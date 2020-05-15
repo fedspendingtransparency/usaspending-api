@@ -4,7 +4,6 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures 
     BASIC_TAS,
     ATA_TAS,
     BPOA_TAS,
-    ATA_BPOA_TAS,
     TAS_DICTIONARIES,
     TAS_STRINGS,
     UNINTUITIVE_AGENCY,
