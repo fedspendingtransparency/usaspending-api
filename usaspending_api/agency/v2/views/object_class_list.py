@@ -19,8 +19,11 @@ class ObjectClassList(ListMixin, AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        results = self.get_object_class_list()
+        results = list(self.get_object_class_list())
+        count = len(results)
+        results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
+        page_metadata["count"] = count
         return Response(
             {
                 "toptier_code": self.toptier_code,
@@ -60,4 +63,4 @@ class ObjectClassList(ListMixin, AgencyBase):
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
             .values("name", "obligated_amount", "gross_outlay_amount")
         )
-        return queryset_results[self.pagination.lower_limit : self.pagination.upper_limit]
+        return queryset_results

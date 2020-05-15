@@ -63,7 +63,8 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
-                    "hasPrevious": false
+                    "hasPrevious": false,
+                    "count": 10
                 },
                 "results": [
                     {
@@ -93,3 +94,4 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 + `previous` (optional, number)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
++ `count` (required, number)

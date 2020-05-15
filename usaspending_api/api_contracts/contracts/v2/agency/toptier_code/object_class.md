@@ -63,7 +63,8 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
-                    "hasPrevious": false
+                    "hasPrevious": false,
+                    "count": 10
                 },
                 "results": [
                     {
@@ -93,3 +94,4 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
 + `previous` (optional, number)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
++ `count` (required, number)
