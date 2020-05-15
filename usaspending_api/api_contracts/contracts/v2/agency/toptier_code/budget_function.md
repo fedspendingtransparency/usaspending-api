@@ -41,21 +41,11 @@ Returns a list of Budget Function in the Agency's appropriations for a single fi
         + `limit` (optional, number)
             How many results are returned.
             + Default: 10
-    + Body
-
-            {
-                "fiscal_year": 2018,
-                "order": "asc",
-                "sort": "gross_outlay_amount",
-                "page": 1,
-                "limit": 2
-            }
 
 + Response 200 (application/json)
     + Attributes
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
-        + `limit` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `results` (required, array[BudgetFunction], fixed-type)
@@ -67,14 +57,14 @@ Returns a list of Budget Function in the Agency's appropriations for a single fi
             {
                 "toptier_code": "086",
                 "fiscal_year": 2018,
-                "limit": 2,
                 "page_metadata": {
                     "page": 1,
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
                     "hasPrevious": false,
-                    "count": 1
+                    "total": 1,
+                    "limit": 2
                 },
                 "results": [
                     {
@@ -112,4 +102,5 @@ Returns a list of Budget Function in the Agency's appropriations for a single fi
 + `previous` (optional, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
-+ `count` (required, number)
++ `total` (required, number)
++ `limit` (required, number)

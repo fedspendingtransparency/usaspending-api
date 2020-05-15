@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from typing import Any
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, ListMixin
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
@@ -40,16 +40,14 @@ class BudgetFunctionList(ListMixin, AgencyBase):
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         results = self.format_results(list(self.get_budget_function_queryset()))
-        count = len(results)
-        results = results[self.pagination.lower_limit : self.pagination.upper_limit]
-        page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
-        page_metadata["count"] = count
+        results = results
+        page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
                 "limit": self.pagination.limit,
-                "results": results[: self.pagination.limit],
+                "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
                 "messages": self.standard_response_messages,
                 "page_metadata": page_metadata,
             }
