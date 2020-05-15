@@ -5,11 +5,11 @@ from rest_framework import status
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 
 
-url = "/api/v2/agency/{code}/program_activity/{query_params}"
+url = "/api/v2/agency/{code}/object_class/{query_params}"
 
 
 @pytest.mark.django_db
-def test_program_activity_list_success(client, agency_account_data):
+def test_object_class_list_success(client, agency_account_data):
     resp = client.get(url.format(code="007", query_params=""))
     expected_result = {
         "fiscal_year": 2020,
@@ -25,9 +25,9 @@ def test_program_activity_list_success(client, agency_account_data):
             "total": 3,
         },
         "results": [
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+            {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
+            {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
         ],
     }
 
@@ -80,35 +80,35 @@ def test_program_activity_list_success(client, agency_account_data):
 
 
 @pytest.mark.django_db
-def test_program_activity_list_too_early(client, agency_account_data):
+def test_object_class_list_too_early(client, agency_account_data):
     query_params = "?fiscal_year=2007"
     resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db
-def test_program_activity_list_future(client, agency_account_data):
+def test_object_class_list_future(client, agency_account_data):
     query_params = f"?fiscal_year={current_fiscal_year() + 1}"
     resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db
-def test_program_activity_list_bad_sort(client, agency_account_data):
+def test_object_class_list_bad_sort(client, agency_account_data):
     query_params = "?sort=not%20valid"
     resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
-def test_program_activity_list_bad_order(client, agency_account_data):
+def test_object_class_list_bad_order(client, agency_account_data):
     query_params = "?order=not%20valid"
     resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
-def test_program_activity_list_specific(client, agency_account_data):
+def test_object_class_list_specific(client, agency_account_data):
     query_params = "?fiscal_year=2017"
     resp = client.get(url.format(code="008", query_params=query_params))
     expected_result = {
@@ -124,7 +124,7 @@ def test_program_activity_list_specific(client, agency_account_data):
             "previous": None,
             "total": 1,
         },
-        "results": [{"gross_outlay_amount": 10000.0, "name": "NAME 4", "obligated_amount": 1000.0}],
+        "results": [{"gross_outlay_amount": 10000.0, "name": "interest", "obligated_amount": 1000.0}],
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
@@ -144,14 +144,14 @@ def test_program_activity_list_specific(client, agency_account_data):
             "previous": None,
             "total": 1,
         },
-        "results": [{"gross_outlay_amount": 1000.0, "name": "NAME 4", "obligated_amount": 10000.0}],
+        "results": [{"gross_outlay_amount": 1000.0, "name": "supplies", "obligated_amount": 10000.0}],
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
 
 @pytest.mark.django_db
-def test_program_activity_list_ignore_duplicates(client, agency_account_data):
+def test_object_class_list_ignore_duplicates(client, agency_account_data):
     query_params = "?fiscal_year=2019"
     resp = client.get(url.format(code="009", query_params=query_params))
     expected_result = {
@@ -167,14 +167,14 @@ def test_program_activity_list_ignore_duplicates(client, agency_account_data):
             "previous": None,
             "total": 1,
         },
-        "results": [{"gross_outlay_amount": 11.0, "name": "NAME 4", "obligated_amount": 11000000.0}],
+        "results": [{"gross_outlay_amount": 11.0, "name": "interest", "obligated_amount": 11000000.0}],
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
 
 @pytest.mark.django_db
-def test_program_activity_list_sort_by_name(client, agency_account_data):
+def test_object_class_list_sort_by_name(client, agency_account_data):
     query_params = "?fiscal_year=2020&order=asc&sort=name"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
@@ -191,9 +191,9 @@ def test_program_activity_list_sort_by_name(client, agency_account_data):
             "total": 3,
         },
         "results": [
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
+            {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
+            {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
         ],
     }
 
@@ -216,9 +216,9 @@ def test_program_activity_list_sort_by_name(client, agency_account_data):
             "total": 3,
         },
         "results": [
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+            {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
+            {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
         ],
     }
 
@@ -227,7 +227,7 @@ def test_program_activity_list_sort_by_name(client, agency_account_data):
 
 
 @pytest.mark.django_db
-def test_program_activity_list_sort_by_obligated_amount(client, agency_account_data):
+def test_object_class_list_sort_by_obligated_amount(client, agency_account_data):
     query_params = "?fiscal_year=2020&order=asc&sort=obligated_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
@@ -244,9 +244,9 @@ def test_program_activity_list_sort_by_obligated_amount(client, agency_account_d
             "total": 3,
         },
         "results": [
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
+            {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
+            {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
         ],
     }
 
@@ -269,9 +269,9 @@ def test_program_activity_list_sort_by_obligated_amount(client, agency_account_d
             "total": 3,
         },
         "results": [
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+            {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
+            {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
         ],
     }
 
@@ -280,7 +280,7 @@ def test_program_activity_list_sort_by_obligated_amount(client, agency_account_d
 
 
 @pytest.mark.django_db
-def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_account_data):
+def test_object_class_list_sort_by_gross_outlay_amount(client, agency_account_data):
     query_params = "?fiscal_year=2020&order=asc&sort=gross_outlay_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
@@ -297,9 +297,9 @@ def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_accoun
             "total": 3,
         },
         "results": [
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+            {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
+            {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
         ],
     }
 
@@ -322,9 +322,9 @@ def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_accoun
             "total": 3,
         },
         "results": [
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
+            {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
+            {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
         ],
     }
 
@@ -333,8 +333,8 @@ def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_accoun
 
 
 @pytest.mark.django_db
-def test_program_activity_list_search(client, agency_account_data):
-    query_params = "?fiscal_year=2020&filter=NAME%203"
+def test_object_class_list_search(client, agency_account_data):
+    query_params = "?fiscal_year=2020&filter=supplies"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
@@ -349,13 +349,13 @@ def test_program_activity_list_search(client, agency_account_data):
             "previous": None,
             "total": 1,
         },
-        "results": [{"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0}],
+        "results": [{"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0}],
     }
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = "?fiscal_year=2020&filter=AME%202"
+    query_params = "?fiscal_year=2020&filter=uipm"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
@@ -370,7 +370,7 @@ def test_program_activity_list_search(client, agency_account_data):
             "previous": None,
             "total": 1,
         },
-        "results": [{"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0}],
+        "results": [{"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0}],
     }
 
     assert resp.status_code == status.HTTP_200_OK
@@ -378,7 +378,7 @@ def test_program_activity_list_search(client, agency_account_data):
 
 
 @pytest.mark.django_db
-def test_program_activity_list_pagination(client, agency_account_data):
+def test_object_class_list_pagination(client, agency_account_data):
     query_params = "?fiscal_year=2020&limit=2&page=1"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
@@ -395,8 +395,8 @@ def test_program_activity_list_pagination(client, agency_account_data):
             "total": 3,
         },
         "results": [
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
+            {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
         ],
     }
 
@@ -418,7 +418,7 @@ def test_program_activity_list_pagination(client, agency_account_data):
             "previous": 1,
             "total": 3,
         },
-        "results": [{"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0}],
+        "results": [{"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0}],
     }
 
     assert resp.status_code == status.HTTP_200_OK
