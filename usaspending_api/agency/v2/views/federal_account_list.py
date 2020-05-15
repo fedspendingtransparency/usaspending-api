@@ -59,7 +59,7 @@ class FederalAccountList(ListMixin, AgencyBase):
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
                 "page_metadata": page_metadata,
-                "results": results[self.pagination.lower_limit : self.pagination.upper_limit][: self.pagination.limit],
+                "results": results[self.pagination.lower_limit : self.pagination.upper_limit]
                 "messages": self.standard_response_messages,
             }
         )
