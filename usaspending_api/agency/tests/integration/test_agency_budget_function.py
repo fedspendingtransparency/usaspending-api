@@ -82,7 +82,7 @@ def test_budget_function_list_success(client, agency_account_data):
         "fiscal_year": 2016,
         "toptier_code": "010",
         "messages": [
-            "Actotal data powering this endpoint were first collected in "
+            "Account data powering this endpoint were first collected in "
             "FY2017 Q2 under the DATA Act; as such, there are no data "
             "available for prior fiscal years."
         ],

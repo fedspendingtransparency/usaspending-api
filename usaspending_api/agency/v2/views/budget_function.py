@@ -45,7 +45,9 @@ class BudgetFunctionList(ListMixin, AgencyBase):
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
-                "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
+                "results": (results[self.pagination.lower_limit : self.pagination.upper_limit])[
+                    : self.pagination.limit
+                ],
                 "messages": self.standard_response_messages,
                 "page_metadata": page_metadata,
             }
