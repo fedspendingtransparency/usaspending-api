@@ -106,8 +106,8 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 
 ## PageMetadata (object)
 + `page` (required, number)
-+ `next` (optional, number)
-+ `previous` (optional, number)
++ `next` (optional, number, nullable)
++ `previous` (optional, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `count` (required, number)
