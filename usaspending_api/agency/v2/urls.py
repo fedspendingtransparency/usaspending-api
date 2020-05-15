@@ -2,7 +2,6 @@ from django.urls import include, path, re_path
 from usaspending_api.agency.v2.views.agency_overview import AgencyOverview
 from usaspending_api.agency.v2.views.budget_function_count import BudgetFunctionCount
 from usaspending_api.agency.v2.views.budgetary_resources import BudgetaryResources
-from usaspending_api.agency.v2.views.federal_account_count import FederalAccountCount
 from usaspending_api.agency.v2.views.object_class_count import ObjectClassCount
 from usaspending_api.agency.v2.views.federal_account_count import FederalAccountCount
 from usaspending_api.agency.v2.views.federal_account_list import FederalAccountList
