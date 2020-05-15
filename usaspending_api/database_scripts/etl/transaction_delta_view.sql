@@ -191,7 +191,7 @@ SELECT
     WHEN UTM.pop_country_code IS NOT NULL
       THEN CONCAT(
         '{"country_code":"', UTM.pop_country_code,
-        '","country_name":"', POP_COUNTRY_LOOKUP.country_name, '"}'
+        '","country_name":"', UTM.pop_country_name, '"}'
       )
     ELSE NULL
   END AS pop_country_agg_key,
@@ -288,7 +288,6 @@ LEFT JOIN LATERAL (
            END ASC
   LIMIT 1
 ) RECIPIENT_HASH_AND_LEVEL ON TRUE
-LEFT JOIN ref_country_code POP_COUNTRY_LOOKUP ON (POP_COUNTRY_LOOKUP.country_code = UTM.pop_country_code)
 LEFT JOIN (
   SELECT   code, name, fips, MAX(id)
   FROM     state_data
