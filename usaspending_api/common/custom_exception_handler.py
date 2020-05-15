@@ -4,6 +4,7 @@ from requests.exceptions import ReadTimeout
 from rest_framework.response import Response
 from urllib3.exceptions import ReadTimeoutError
 
+
 def custom_exception_handler(exc, context):
     # Call REST framework's default exception handler first,
     # to get the standard error response.

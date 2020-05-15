@@ -8,7 +8,6 @@ from elasticsearch.connection import create_ssl_context
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.response import Response
 from elasticsearch import ConnectionError, Elasticsearch
-from urllib3.exceptions import ReadTimeoutError
 from elasticsearch import ConnectionTimeout
 from elasticsearch import NotFoundError
 from elasticsearch import TransportError
@@ -83,10 +82,10 @@ class _Search(Search):
             raise Exception(e)
         return result
 
-    def handle_execute(self, retries: int = 5, timeout: str = "1ms") -> Response:
+    def handle_execute(self, retries: int = 5, timeout: str = "90s") -> Response:
         return self._handle_execute_errors(retries, timeout)
 
-    def handle_count(self, retries: int = 5, timeout: str = "1ms") -> int:
+    def handle_count(self, retries: int = 5, timeout: str = "90s") -> int:
         self._handle_execute_errors(retries, timeout)
         return self.count()
 
