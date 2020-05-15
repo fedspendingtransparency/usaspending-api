@@ -114,7 +114,7 @@ def test_federal_account_list_success(client, agency_account_data):
         "fiscal_year": 2016,
         "toptier_code": "010",
         "messages": [
-            "Actotal data powering this endpoint were first collected in "
+            "Account data powering this endpoint were first collected in "
             "FY2017 Q2 under the DATA Act; as such, there are no data "
             "available for prior fiscal years."
         ],
@@ -597,7 +597,6 @@ def test_federal_account_list_search(client, agency_account_data):
     expected_result = {
         "fiscal_year": 2020,
         "toptier_code": "007",
-        "limit": 10,
         "messages": [],
         "page_metadata": {
             "hasNext": False,
@@ -606,6 +605,7 @@ def test_federal_account_list_search(client, agency_account_data):
             "page": 1,
             "previous": None,
             "total": 1,
+            "limit": 10,
         },
         "results": [
             {
