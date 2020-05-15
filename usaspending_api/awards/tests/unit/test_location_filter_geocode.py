@@ -78,6 +78,8 @@ def award_data_fixture(db):
     )
     mommy.make("awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", type="A")
 
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+
 
 def test_geocode_filter_locations(award_data_fixture):
 

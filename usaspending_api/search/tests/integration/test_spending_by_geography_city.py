@@ -36,6 +36,7 @@ def award_data_fixture(db):
     )
     mommy.make("references.PopCounty", state_name="California", county_number="000", latest_population=2403)
     mommy.make("recipient.StateData", id="06-2020", fips="06", code="CA", name="California")
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
 def test_geocode_filter_by_city(client, monkeypatch, elasticsearch_transaction_index, award_data_fixture):
