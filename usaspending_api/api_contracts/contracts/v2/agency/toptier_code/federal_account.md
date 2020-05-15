@@ -16,7 +16,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
             }
     + Parameters
         + `toptier_code`: 086 (required, number)
-            The toptier code of an agency (could be a CGAG or FREC) so only numeric character strings of length 3-4 are accepted.
+            The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY.
         + `filter` (optional, string)
@@ -49,7 +49,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `results` (required, array[FederalAccount], fixed-type)
-        + `messages` (required, array[string])
+        + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
@@ -63,7 +63,8 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
-                    "hasPrevious": false
+                    "hasPrevious": false,
+                    "count": 1
                 },
                 "results": [
                     "code": "086-0302",
@@ -95,7 +96,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 + `code` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
-+ `children` (required, array[TreasuryAccount]
++ `children` (required, array[TreasuryAccount], fixed-type)
 
 ## TreasuryAccount (object
 + `name` (required, string)
@@ -109,3 +110,4 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 + `previous` (optional, number)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
++ `count` (required, number)
