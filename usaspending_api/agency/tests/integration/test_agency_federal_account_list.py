@@ -5,11 +5,11 @@ from rest_framework import status
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 
 
-url = "/api/v2/agency/{code}/federal_actotal/{query_params}"
+url = "/api/v2/agency/{code}/federal_account/{query_params}"
 
 
 @pytest.mark.django_db
-def test_federal_actotal_list_success(client, agency_actotal_data):
+def test_federal_account_list_success(client, agency_account_data):
     resp = client.get(url.format(code="007", query_params=""))
     expected_result = {
         "fiscal_year": 2020,
@@ -134,35 +134,35 @@ def test_federal_actotal_list_success(client, agency_actotal_data):
 
 
 @pytest.mark.django_db
-def test_federal_actotal_list_too_early(client, agency_actotal_data):
+def test_federal_account_list_too_early(client, agency_account_data):
     query_params = "?fiscal_year=2007"
     resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db
-def test_federal_actotal_list_future(client, agency_actotal_data):
+def test_federal_account_list_future(client, agency_account_data):
     query_params = "?fiscal_year=" + str(current_fiscal_year() + 1)
     resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db
-def test_federal_actotal_list_bad_sort(client, agency_actotal_data):
+def test_federal_account_list_bad_sort(client, agency_account_data):
     query_params = "?sort=not valid"
     resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
-def test_federal_actotal_list_bad_order(client, agency_actotal_data):
+def test_federal_account_list_bad_order(client, agency_account_data):
     query_params = "?order=not valid"
     resp = client.get(url.format(code="007", query_params=query_params))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db
-def test_federal_actotal_list_sort_by_name(client, agency_actotal_data):
+def test_federal_account_list_sort_by_name(client, agency_account_data):
     query_params = "?fiscal_year=2020&order=asc&sort=name"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
@@ -293,7 +293,7 @@ def test_federal_actotal_list_sort_by_name(client, agency_actotal_data):
 
 
 @pytest.mark.django_db
-def test_federal_actotal_list_sort_by_obligated_amount(client, agency_actotal_data):
+def test_federal_account_list_sort_by_obligated_amount(client, agency_account_data):
     query_params = "?fiscal_year=2020&order=asc&sort=obligated_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
@@ -424,7 +424,7 @@ def test_federal_actotal_list_sort_by_obligated_amount(client, agency_actotal_da
 
 
 @pytest.mark.django_db
-def test_federal_actotal_list_sort_by_gross_outlay_amount(client, agency_actotal_data):
+def test_federal_account_list_sort_by_gross_outlay_amount(client, agency_account_data):
     query_params = "?fiscal_year=2020&order=asc&sort=gross_outlay_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
@@ -555,7 +555,7 @@ def test_federal_actotal_list_sort_by_gross_outlay_amount(client, agency_actotal
 
 
 @pytest.mark.django_db
-def test_federal_actotal_list_search(client, agency_actotal_data):
+def test_federal_account_list_search(client, agency_account_data):
     query_params = "?fiscal_year=2020&filter=FA 3"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
@@ -630,7 +630,7 @@ def test_federal_actotal_list_search(client, agency_actotal_data):
 
 
 @pytest.mark.django_db
-def test_federal_actotal_list_pagination(client, agency_actotal_data):
+def test_federal_account_list_pagination(client, agency_account_data):
     query_params = "?fiscal_year=2020&limit=2&page=1"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
