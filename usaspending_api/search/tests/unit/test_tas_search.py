@@ -126,6 +126,8 @@ def mock_tas_data(db):
         subaward_number="3A",
     )
 
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+
 
 def test_spending_by_award_tas_success(client, monkeypatch, elasticsearch_award_index, mock_tas_data):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)

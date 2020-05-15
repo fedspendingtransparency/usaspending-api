@@ -63,6 +63,7 @@ def award_data_fixture(db):
         federal_account_id=1,
     )
     mommy.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
 def create_query(should) -> dict:
