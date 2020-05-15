@@ -29,21 +29,21 @@ class ProgramActivityCount(AgencyBase):
         )
 
     def get_program_activity_count(self):
-        q = (
-            Q(obligations_incurred_by_program_object_class_cpe__gt=0)
-            | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
-            | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
-            | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
-        )
-        filters = {
-            "program_activity_id": OuterRef("pk"),
-            "final_of_fy": True,
-            "treasury_account__funding_toptier_agency": self.toptier_agency,
-            "submission__reporting_fiscal_year": self.fiscal_year,
-        }
+        filters = [
+            Q(program_activity_id=OuterRef("pk")),
+            Q(final_of_fy=True),
+            Q(treasury_account__funding_toptier_agency=self.toptier_agency),
+            Q(submission__reporting_fiscal_year=self.fiscal_year),
+            Q(
+                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
+                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
+            ),
+        ]
         return (
             RefProgramActivity.objects.annotate(
-                include=Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(q, **filters).values("pk"))
+                include=Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters).values("pk"))
             )
             .filter(include=True)
             .values("pk")
