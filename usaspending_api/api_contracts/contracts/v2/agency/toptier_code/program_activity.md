@@ -45,7 +45,6 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
     + Attributes
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
-        + `limit` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `results` (required, array[ProgramActivity], fixed-type)
@@ -63,7 +62,9 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
-                    "hasPrevious": false
+                    "hasPrevious": false,
+                    "limit": 10,
+                    "total": 2
                 },
                 "results": [
                     {
@@ -89,7 +90,9 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 
 ## PageMetadata (object)
 + `page` (required, number)
-+ `next` (optional, number)
-+ `previous` (optional, number)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
++ `total` (required, number)
++ `limit` (required, number)
