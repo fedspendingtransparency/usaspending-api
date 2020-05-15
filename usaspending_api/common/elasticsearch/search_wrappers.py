@@ -62,24 +62,23 @@ class _Search(Search):
 
     def _handle_execute_errors(self, retries: int, timeout: str) -> Response:
         error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
-        result = None
         try:
             result = self._handle_execute_retry(retries, timeout)
         except NameError as e:
             logger.error(error_template.format(type="Hostname", e=str(e)))
-            raise NameError(e)
+            raise
         except (ConnectionError, ConnectionTimeout) as e:
             logger.error(error_template.format(type="Connection", e=str(e)))
-            raise ConnectionError(e)
+            raise
         except NotFoundError as e:
             logger.error(error_template.format(type="404 Not Found", e=str(e)))
-            raise NotFoundError(e)
+            raise
         except TransportError as e:
             logger.error(error_template.format(type="Transport", e=str(e)))
-            raise TransportError(e)
+            raise
         except Exception as e:
             logger.error(error_template.format(type="Generic", e=str(e)))
-            raise Exception(e)
+            raise
         return result
 
     def handle_execute(self, retries: int = 5, timeout: str = "90s") -> Response:
