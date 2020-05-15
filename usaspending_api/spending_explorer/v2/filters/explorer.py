@@ -1,8 +1,6 @@
 from decimal import Decimal
 from django.db.models import F, Sum, Value, CharField, Q
 from django.db.models.functions import Coalesce
-
-from usaspending_api.common.recipient_lookups import annotate_recipient_id
 from usaspending_api.references.models import Agency
 
 
@@ -106,30 +104,21 @@ class Explorer(object):
             )
             .annotate(
                 id=Coalesce(
-                    "award__latest_transaction__contract_data__awardee_or_recipient_uniqu",
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu",
+                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
+                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
                 ),
                 type=Value("recipient", output_field=CharField()),
                 name=Coalesce(
                     "award__latest_transaction__contract_data__awardee_or_recipient_legal",
                     "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
                 ),
-                recipient_unique_id=Coalesce(
-                    "award__latest_transaction__contract_data__awardee_or_recipient_uniqu",
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu",
-                ),
-                parent_recipient_unique_id=Coalesce(
-                    "award__latest_transaction__contract_data__ultimate_parent_unique_ide",
-                    "award__latest_transaction__assistance_data__ultimate_parent_unique_ide",
+                code=Coalesce(
+                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
+                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
                 ),
             )
-            .values("id", "type", "name", "amount")
+            .values("id", "type", "name", "code", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))
-        )
-
-        alt_set = (
-            annotate_recipient_id("code", alt_set)
-            .values("id", "type", "name", "code", "amount", "total")
             .order_by("-total")
         )
 
