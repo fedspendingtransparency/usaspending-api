@@ -10,7 +10,6 @@ from usaspending_api.agency.v2.views.program_activity_count import ProgramActivi
 from usaspending_api.agency.v2.views.program_activity_list import ProgramActivityList
 
 
-
 urlpatterns = [
     re_path(
         "(?P<toptier_code>[0-9]{3,4})/",
