@@ -98,6 +98,5 @@ class FederalAccountList(ListMixin, AgencyBase):
                 obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
                 gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
             )
-            .distinct()
         )
         return results
