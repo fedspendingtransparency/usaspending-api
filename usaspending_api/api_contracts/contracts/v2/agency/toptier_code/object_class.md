@@ -45,7 +45,6 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
     + Attributes
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
-        + `limit` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `results` (required, array[ObjectClass], fixed-type)
@@ -57,8 +56,8 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
             {
                 "toptier_code": "086",
                 "fiscal_year": 2020,
-                "limit": 10,
                 "page_metadata": {
+                    "limit": 2,
                     "page": 1,
                     "next": 2,
                     "previous": null,
@@ -89,9 +88,10 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
 + `gross_outlay_amount` (required, number)
 
 ## PageMetadata (object)
++ `limit` (required, number)
 + `page` (required, number)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
-+ `count` (required, number)
++ `total` (required, number)
