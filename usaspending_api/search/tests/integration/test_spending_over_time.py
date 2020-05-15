@@ -128,6 +128,9 @@ def spending_over_time_test_data():
             subtier_code=f"subtier_funding_agency_code_{transaction_id}",
         )
 
+        # Ref Country Code
+        mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+
         # FPDS / FABS
         if is_fpds:
             mommy.make(

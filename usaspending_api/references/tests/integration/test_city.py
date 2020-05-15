@@ -53,6 +53,9 @@ def award_data_fixture(db):
     )
     mommy.make("awards.Award", id=4, latest_transaction_id=4, is_fpds=True, type="A", piid="0003")
 
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+    mommy.make("references.RefCountryCode", country_code="GBR", country_name="UNITED KINGDOM")
+
 
 def test_city_search_matches_found(client, monkeypatch, award_data_fixture, elasticsearch_transaction_index):
     monkeypatch.setattr(
