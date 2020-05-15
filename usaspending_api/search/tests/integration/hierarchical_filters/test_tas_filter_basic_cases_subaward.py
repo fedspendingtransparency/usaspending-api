@@ -169,10 +169,6 @@ def _subaward1():
     }
 
 
-def _award2():
-    return {"internal_id": 2, "Award ID": "abcdefg", "generated_internal_id": "AWARD_2"}
-
-
 def _agency_path(index):
     return [_agency(index)]
 

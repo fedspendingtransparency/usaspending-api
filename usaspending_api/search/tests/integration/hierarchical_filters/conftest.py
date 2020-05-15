@@ -17,6 +17,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_subaward_
     subaward_with_multiple_tas,
     subaward_with_no_tas,
     multiple_subawards_with_tas,
+    multiple_subawards_with_sibling_tas,
 )
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "subaward_with_multiple_tas",
     "subaward_with_no_tas",
     "multiple_subawards_with_tas",
+    "multiple_subawards_with_sibling_tas",
 ]

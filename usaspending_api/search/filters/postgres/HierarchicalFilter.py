@@ -61,7 +61,11 @@ class Node:
                 self.children.append(self.clone(other_code, is_positive, positive_codes, negative_codes))
 
     def get_query(self) -> Q:
-        filter = self._basic_search_unit()
+        if self.positive:
+            filter = self._basic_search_unit()
+        else:
+            filter = ~self._basic_search_unit()
+
         if self.positive:
             for node in [child for child in self.children if not child.positive]:
                 filter &= node.get_query()

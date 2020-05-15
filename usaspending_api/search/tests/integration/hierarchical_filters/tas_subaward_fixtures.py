@@ -39,6 +39,12 @@ def multiple_subawards_with_tas(db, multiple_awards_with_tas):
     subaward(db, 2)
 
 
+@pytest.fixture
+def multiple_subawards_with_sibling_tas(db, multiple_awards_with_sibling_tas):
+    subaward(db, 1)
+    subaward(db, 2)
+
+
 def subaward(db, award_id):
     mommy.make(
         "awards.Subaward",
