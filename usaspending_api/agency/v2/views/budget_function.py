@@ -40,7 +40,6 @@ class BudgetFunctionList(ListMixin, AgencyBase):
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         results = self.format_results(list(self.get_budget_function_queryset()))
-        results = results
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
             {
