@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 Returns a list of Budget Function in the Agency's appropriations for a single fiscal year
 
-## POST
+## GET
 
 + Request (application/json)
     + Schema
@@ -73,7 +73,8 @@ Returns a list of Budget Function in the Agency's appropriations for a single fi
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
-                    "hasPrevious": false
+                    "hasPrevious": false,
+                    "count": 1
                 },
                 "results": [
                     {
@@ -107,8 +108,8 @@ Returns a list of Budget Function in the Agency's appropriations for a single fi
 
 ## PageMetadata (object)
 + `page` (required, number)
-+ `next` (optional, number)
-+ `previous` (optional, number)
++ `next` (optional, number, nullable)
++ `previous` (optional, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `count` (required, number)

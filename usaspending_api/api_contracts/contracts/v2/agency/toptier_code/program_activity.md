@@ -89,7 +89,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 
 ## PageMetadata (object)
 + `page` (required, number)
-+ `next` (optional, number)
-+ `previous` (optional, number)
++ `next` (optional, number, nullable)
++ `previous` (optional, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
