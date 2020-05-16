@@ -17,11 +17,11 @@ urlpatterns = [
         include(
             [
                 path("", AgencyOverview.as_view()),
-                path("budget_function/count/", BudgetFunctionCount.as_view()),
                 path("budget_function/", BudgetFunctionList.as_view()),
+                path("budget_function/count/", BudgetFunctionCount.as_view()),
                 path("budgetary_resources/", BudgetaryResources.as_view()),
-                path("federal_account/count/", FederalAccountCount.as_view()),
                 path("federal_account/", FederalAccountList.as_view()),
+                path("federal_account/count/", FederalAccountCount.as_view()),
                 path("object_class/", ObjectClassList.as_view()),
                 path("object_class/count/", ObjectClassCount.as_view()),
                 path("program_activity/", ProgramActivityList.as_view()),

@@ -98,8 +98,8 @@ Returns a list of Budget Function in the Agency's appropriations for a single fi
 
 ## PageMetadata (object)
 + `page` (required, number)
-+ `next` (optional, number, nullable)
-+ `previous` (optional, number, nullable)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `total` (required, number)
