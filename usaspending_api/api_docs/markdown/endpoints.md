@@ -32,6 +32,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/](/api/v2/agency/012/budget_function/)|POST| Returns a list of Budget Functions and Budget Subfunctions for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/count/](/api/v2/agency/012/budget_function/count/)|GET| Returns the count of Budget Functions for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budgetary_resources/](/api/v2/agency/012/budgetary_resources/)|GET| Returns budgetary resources and obligations for the agency and fiscal year requested |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/federal_account/](/api/v2/agency/012/federal_account/)|GET| Returns a list of Federal Accounts and Treasury Accounts for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/federal_account/count/](/api/v2/agency/012/federal_account/count/)|GET| Returns the count of Federal Accounts and Treasury Accounts for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/object_class/](/api/v2/agency/012/object_class/)|GET| Returns a list of Object Classes for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/object_class/count/](/api/v2/agency/012/object_class/count/)|GET| Returns the count of Object Classes for the agency in a single fiscal year |
