@@ -896,7 +896,10 @@ def _test_correct_response_for_psc_code_object(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "psc_codes": {"require": ["PSC1"], "exclude": ["PSC0"]},
+                    "psc_codes": {
+                        "require": [["Service", "P", "PSC", "PSC1"]],
+                        "exclude": [["Service", "P", "PSC", "PSC0"]],
+                    },
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -957,7 +960,10 @@ def _test_correct_response_for_psc_code_object_subawards(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "psc_codes": {"require": ["PSC2"], "exclude": ["PSC0"]},
+                    "psc_codes": {
+                        "require": [["Service", "P", "PSC", "PSC2"]],
+                        "exclude": [["Service", "P", "PSC", "PSC0"]],
+                    },
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Sub-Award ID"],
@@ -990,7 +996,10 @@ def _test_eclipsed_psc_code(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "psc_codes": {"require": ["PSC1"], "exclude": ["PSC1"]},
+                    "psc_codes": {
+                        "require": [["Service", "P", "PSC", "PSC1"]],
+                        "exclude": [["Service", "P", "PSC", "PSC1"]],
+                    },
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -1004,6 +1013,60 @@ def _test_eclipsed_psc_code(client):
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 0
+
+
+def _test_more_sophisticated_eclipsed_psc_code_1(client):
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "psc_codes": {
+                        "require": [["Service"], ["Service", "P", "PSC"]],
+                        "exclude": [["Service", "P"], ["Service", "P", "PSC", "PSC1"]],
+                    },
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "desc",
+                "subawards": False,
+            }
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 0
+
+
+def _test_more_sophisticated_eclipsed_psc_code_2(client):
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "psc_codes": {
+                        "require": [["Service", "P"], ["Service", "P", "PSC", "PSC1"]],
+                        "exclude": [["Service"], ["Service", "P", "PSC"]],
+                    },
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "desc",
+                "subawards": False,
+            }
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
 
 
 def _test_correct_response_for_contract_pricing_type_codes(client):
