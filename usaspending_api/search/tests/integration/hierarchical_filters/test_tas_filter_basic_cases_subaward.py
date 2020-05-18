@@ -123,7 +123,6 @@ def test_non_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_awa
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     resp = query_by_tas_subaward(client, {"require": [_tas_path(ATA_BPOA_TAS), _tas_path(BPOA_TAS)]})
 
-    print(resp.json())
     assert resp.json()["results"] == []
 
 
