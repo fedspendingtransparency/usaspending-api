@@ -1,8 +1,10 @@
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from django.db.models import Q
 from usaspending_api.search.filters.postgres.HierarchicalFilter import HierarchicalFilter, Node
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
+import re
 
 
 class TasCodes(HierarchicalFilter):
@@ -65,6 +67,10 @@ def search_regex_of(v):
         code_lookup["main"],
         code_lookup["sub"],
     )
+
+    # TODO: move this to a Tinyshield filter
+    if not re.match(r"^(\d|\w|-|\*|\.)+$", search_regex):
+        raise UnprocessableEntityException(f"Unable to parse TAS filter {search_regex}")
 
     return search_regex
 
