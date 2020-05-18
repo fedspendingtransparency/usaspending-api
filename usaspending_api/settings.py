@@ -281,6 +281,7 @@ REST_FRAMEWORK = {
         "usaspending_api.common.renderers.DocumentAPIRenderer",
         "usaspending_api.common.renderers.BrowsableAPIRendererWithoutForms",
     ),
+    "EXCEPTION_HANDLER": "usaspending_api.common.custom_exception_handler.custom_exception_handler",
 }
 
 # Internationalization

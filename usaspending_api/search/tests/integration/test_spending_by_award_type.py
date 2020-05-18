@@ -63,6 +63,9 @@ def test_data():
         place_of_performance_zip5="00004",
     )
 
+    mommy.make("references.RefCountryCode", country_code="GIB", country_name="GIBRALTAR")
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+
 
 @pytest.mark.django_db
 def test_spending_by_award_type_success(client, monkeypatch, elasticsearch_award_index):

@@ -277,3 +277,6 @@ def spending_by_award_test_data():
         "program_activity": RefProgramActivity.objects.get(pk=1),
     }
     mommy.make("awards.FinancialAccountsByAwards", **financial_accounts_by_awards_1)
+
+    # Ref Country Code
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")

@@ -451,3 +451,7 @@ def awards_and_transactions(db):
     # NAICS
     mommy.make("references.NAICS", code="111110", description="NAICS 1")
     mommy.make("references.NAICS", code="222220", description="NAICS 2")
+
+    # Ref Country Code
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+    mommy.make("references.RefCountryCode", country_code="CAN", country_name="CANADA")
