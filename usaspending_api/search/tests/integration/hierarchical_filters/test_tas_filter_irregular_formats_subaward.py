@@ -1,7 +1,7 @@
 import pytest
 from rest_framework import status
 
-from usaspending_api.search.tests.integration.hierarchical_filters.es_search_test_helpers import (
+from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_test_helpers import (
     _setup_es,
     query_by_tas_subaward,
     query_by_treasury_account_components,

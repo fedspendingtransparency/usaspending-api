@@ -9,7 +9,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures 
     TAS_STRINGS,
     UNINTUITIVE_AGENCY,
 )
-from usaspending_api.search.tests.integration.hierarchical_filters.es_search_test_helpers import (
+from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_test_helpers import (
     _setup_es,
     query_by_tas_subaward,
 )
