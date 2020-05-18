@@ -141,10 +141,15 @@ def _annotate_recipient_id(alias_name, queryset, annotation_sql):
 
 
 def annotate_recipient_id(alias_name, queryset, id_lookup=None, parent_id_lookup=None, name_lookup=None):
-    if not all([v is not None for v in [id_lookup, parent_id_lookup, name_lookup]]):
+    param_check = [v is not None for v in [id_lookup, parent_id_lookup, name_lookup]]
+    if sum(param_check) == 0:
         id_lookup = "{outer_table}.recipient_unique_id"
         parent_id_lookup = "{outer_table}.parent_recipient_unique_id"
         name_lookup = "{outer_table}.recipient_name"
+    elif sum(param_check) < 3:
+        raise Exception(
+            "Invalid parameters for 'annotate_recipient_id'; requires all or just 'alias_name' and 'queryset'"
+        )
 
     return _annotate_recipient_id(
         alias_name,

@@ -2,7 +2,9 @@ import pytest
 
 from model_mommy import mommy
 
-from usaspending_api.common.recipient_lookups import obtain_recipient_uri
+from usaspending_api.awards.models import TransactionFABS
+from usaspending_api.common.recipient_lookups import obtain_recipient_uri, annotate_recipient_id
+from usaspending_api.search.models import UniversalTransactionView
 
 
 @pytest.fixture
@@ -101,3 +103,104 @@ def test_parent_recipient_with_id_and_name(recipient_lookup):
     }
     expected_result = "01c03484-d1bd-41cc-2aca-4b427a2d0611-P"
     assert obtain_recipient_uri(**child_recipient_parameters) == expected_result
+
+
+@pytest.mark.django_db
+def test_annotate_recipient_id_success():
+    # Test when all parameters are provided
+    values = {
+        "alias_name": "some_name",
+        "queryset": TransactionFABS.objects,
+        "id_lookup": "transaction_fabs.awardee_or_recipient_uniqu",
+        "parent_id_lookup": "transaction_fabs.ultimate_parent_unique_ide",
+        "name_lookup": "transaction_fabs.awardee_or_recipient_legal",
+    }
+    queryset = annotate_recipient_id(**values)
+
+    expected_sql = """select
+                rp.recipient_hash || '-' ||  rp.recipient_level
+            from
+                recipient_profile rp
+                inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
+            where
+                (
+                    (
+                        transaction_fabs.awardee_or_recipient_uniqu is null
+                        and rl.duns is null
+                        and transaction_fabs.awardee_or_recipient_legal = rl.legal_business_name
+                    ) or (
+                        transaction_fabs.awardee_or_recipient_uniqu is not null
+                        and rl.duns is not null
+                        and rl.duns = transaction_fabs.awardee_or_recipient_uniqu
+                    )
+                )
+                and rp.recipient_level = case
+                    when transaction_fabs.ultimate_parent_unique_ide is null then 'R'
+                    else 'C' end
+                and rp.recipient_name not in ('MULTIPLE RECIPIENTS', 'REDACTED DUE TO PII', 'MULTIPLE FOREIGN RECIPIENTS', 'PRIVATE INDIVIDUAL', 'INDIVIDUAL RECIPIENT', 'MISCELLANEOUS FOREIGN AWARDEES')
+        ) AS "some_name" """
+
+    assert expected_sql in str(queryset.query)
+
+    # Test when only required parameters are provided
+    values = {"alias_name": "some_name", "queryset": UniversalTransactionView.objects}
+    queryset = annotate_recipient_id(**values)
+
+    expected_sql = """select
+                rp.recipient_hash || '-' ||  rp.recipient_level
+            from
+                recipient_profile rp
+                inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
+            where
+                (
+                    (
+                        "universal_transaction_matview".recipient_unique_id is null
+                        and rl.duns is null
+                        and "universal_transaction_matview".recipient_name = rl.legal_business_name
+                    ) or (
+                        "universal_transaction_matview".recipient_unique_id is not null
+                        and rl.duns is not null
+                        and rl.duns = "universal_transaction_matview".recipient_unique_id
+                    )
+                )
+                and rp.recipient_level = case
+                    when "universal_transaction_matview".parent_recipient_unique_id is null then 'R'
+                    else 'C' end
+                and rp.recipient_name not in ('MULTIPLE RECIPIENTS', 'REDACTED DUE TO PII', 'MULTIPLE FOREIGN RECIPIENTS', 'PRIVATE INDIVIDUAL', 'INDIVIDUAL RECIPIENT', 'MISCELLANEOUS FOREIGN AWARDEES')
+        ) AS "some_name" """
+
+    assert expected_sql in str(queryset.query)
+
+
+@pytest.mark.django_db
+def test_annotate_recipient_id_failure():
+    # Test when only one optional parameter is provided
+    values = {
+        "alias_name": "some_name",
+        "queryset": TransactionFABS.objects,
+        "name_lookup": "transaction_fabs.awardee_or_recipient_legal",
+    }
+    try:
+        annotate_recipient_id(**values)
+    except Exception as e:
+        assert (
+            str(e) == "Invalid parameters for 'annotate_recipient_id'; requires all or just 'alias_name' and 'queryset'"
+        )
+    else:
+        assert False, "Expected an exception to be raised"
+
+    # Test when only two optional parameters are provided
+    values = {
+        "alias_name": "some_name",
+        "queryset": TransactionFABS.objects,
+        "id_lookup": "transaction_fabs.awardee_or_recipient_uniqu",
+        "parent_id_lookup": "transaction_fabs.ultimate_parent_unique_ide",
+    }
+    try:
+        annotate_recipient_id(**values)
+    except Exception as e:
+        assert (
+            str(e) == "Invalid parameters for 'annotate_recipient_id'; requires all or just 'alias_name' and 'queryset'"
+        )
+    else:
+        assert False, "Expected an exception to be raised"
