@@ -242,7 +242,6 @@ def subaward_filter(filters, for_downloads=False):
                 q |= TreasuryAccounts.build_tas_codes_filter(queryset, filters[TreasuryAccounts.underscore_name])
             queryset = queryset.filter(q)
 
-
         elif key == TreasuryAccounts.underscore_name and TasCodes.underscore_name not in filters.keys():
             queryset = queryset.filter(TreasuryAccounts.build_tas_codes_filter(queryset, value))
 
