@@ -70,6 +70,7 @@ Returns the number of transactions that would be included in a download request 
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
 ## TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -113,10 +114,14 @@ Returns the number of transactions that would be included in a download request 
 + `require`: `33` (optional, array[string])
 + `exclude`: `3333` (optional, array[string])
 
-## TASCodeObject (object)
+### TASCodeObject (object)
++ `require`: [[`091`]] (optional, array[array[string]])
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
+
+### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier - three characters
-+ `aid`: `000` (required, string)
++ `aid` (required, string)
     Agency Identifier - three characters
 + `bpoa` (optional, string, nullable)
     Beginning Period of Availability - four digits
@@ -124,7 +129,7 @@ Returns the number of transactions that would be included in a download request 
     Ending Period of Availability - four digits
 + `a` (optional, string, nullable)
     Availability Type Code - X or null
-+ `main`: `3500` (required, string)
++ `main` (required, string)
     Main Account Code - four digits
 + `sub` (optional, string, nullable)
     Sub-Account Code - three digits

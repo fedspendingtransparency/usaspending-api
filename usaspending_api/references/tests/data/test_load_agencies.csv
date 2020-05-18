@@ -1,30 +1,30 @@
-CGAC AGENCY CODE,AGENCY NAME,AGENCY ABBREVIATION,FREC,FREC Entity Description,FREC ABBREVIATION,SUBTIER CODE,SUBTIER NAME,SUBTIER ABBREVIATION,Admin Org Name,ADMIN_ORG,TOPTIER_FLAG,IS_FREC,FREC CGAC ASSOCIATION,USER SELECTABLE ON USASPENDING.GOV,MISSION,WEBSITE,CONGRESSIONAL JUSTIFICATION,ICON FILENAME,COMMENT
-000,U.S. Congress,CONGRESS,0000,Non - Reporting,,0010,The Senate,,,,TRUE,FALSE,FALSE,FALSE,,,,,
-000,U.S. Congress,CONGRESS,0000,Non - Reporting,,0050,The House of Representatives,,,,FALSE,FALSE,FALSE,FALSE,,,,,
-001,Architect of the Capitol,AOC,0100,Architect of the Capitol,AOC,0100,Architect of the Capitol,AOC,,,TRUE,FALSE,TRUE,FALSE,,,,,
-002,The Legislative Branch,LEG BRANCH,0000,Non - Reporting,,0000,The Legislative Branch,,,,TRUE,FALSE,TRUE,FALSE,,,,,
-002,The Legislative Branch,LEG BRANCH,0000,Non - Reporting,,0001,"Congress, Generally, No Additional Specification Available",,,,FALSE,FALSE,TRUE,FALSE,,,,,
-002,The Legislative Branch,LEG BRANCH,0000,Non - Reporting,,0099,Joint House and Senate Entities,,,,FALSE,FALSE,TRUE,FALSE,,,,,
-002,The Legislative Branch,LEG BRANCH,0000,Non - Reporting,,0363,Federal Library and Information Center Committee,FLICC,,,FALSE,FALSE,TRUE,FALSE,,,,,
-002,The Legislative Branch,LEG BRANCH,0000,Non - Reporting,,0962,Permanent Committee for the Oliver Wendell Holmes Devise,,,,FALSE,FALSE,TRUE,FALSE,,,,,
-003,Library of Congress,LOC,0300,Library of Congress,LOC,0300,Library of Congress,LOC,,,TRUE,FALSE,TRUE,FALSE,,,,,
-003,Library of Congress,LOC,0300,Library of Congress,LOC,0361,Library of Congress Trust Fund Board,,,,FALSE,FALSE,TRUE,FALSE,,,,,
-003,Library of Congress,LOC,0300,Library of Congress,LOC,0362,Permanent Committee for the Oliver Wendell Holmes Devise,,,,FALSE,FALSE,TRUE,FALSE,,,,,
-004,Government Publishing Office,GPO,0400,Government Publishing Office,GPO,0400,Government Publishing Office,GPO,,,TRUE,FALSE,TRUE,FALSE,,,,,Changed to match new name (per a-11 and GPO website)
-005,Government Accountability Office,GAO,0500,Government Accountability Office,GAO,0500,Government Accountability Office,GAO,,,TRUE,FALSE,TRUE,FALSE,"Our Mission is to support the Congress in meeting its constitutional responsibilities and to help improve the performance and ensure the accountability of the federal government for the benefit of the American people. We provide Congress with timely information that is objective, fact-based, nonpartisan, nonideological, fair, and balanced.",https://www.gao.gov/,https://www.gao.gov/cj,,
-005,Government Accountability Office,GAO,0500,Government Accountability Office,GAO,0501,Comptroller General of the United States,,,,FALSE,FALSE,TRUE,FALSE,,,,,
-005,Government Accountability Office,GAO,0500,Government Accountability Office,GAO,0559,"GAO, Except Comptroller General",,,,FALSE,FALSE,TRUE,FALSE,,,,,
-008,Congressional Budget Office,CBO,0800,Congressional Budget Office,CBO,0800,Congressional Budget Office,CBO,,,TRUE,FALSE,TRUE,FALSE,,,,,
-009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0900,Legislative Branch Boards and Commissions,,,,TRUE,FALSE,FALSE,FALSE,,,,,
-009,Legislative Branch Boards and Commissions,LEG ORGS,0902,Comm. On Security & Cooperation - Europe,CSCE,0901,Commission on Security and Cooperation In Europe,CSCE,Commission on Security and Cooperation in Europe,05,FALSE,FALSE,FALSE,FALSE,,,,,
-009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0902,Botanic Garden,USBG,Botanic Garden,02,FALSE,FALSE,FALSE,FALSE,,,,,
-009,Legislative Branch Boards and Commissions,LEG ORGS,0000,Non - Reporting,,0904,Office of Compliance,OOC,Office of Compliance,16,FALSE,FALSE,FALSE,FALSE,,,,,Moved under 009 from 002
-009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0911,Commission on Agricultural Workers,,,,FALSE,FALSE,FALSE,FALSE,,,,,
-009,Legislative Branch Boards and Commissions,LEG ORGS,0904,John C. Stennis Center,,0914,John C. Stennis Center for Public Service Training and Development,,John C. Stennis Center for Public Service Training and Development,12,FALSE,FALSE,TRUE,FALSE,,,,,
-009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0915,Advisory Commission on Electronic Commerce,,,,FALSE,FALSE,FALSE,FALSE,,,,,"The Commission completed its work with its Report to Congress, which was delivered on April 12, 2000, ahead of schedule. The Commission's offices are closed."
-009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0916,National Commission on Terrorism,,,,FALSE,FALSE,FALSE,FALSE,,,,,Final Report published June 2000. AKA the Bremer Commission
-009,Legislative Branch Boards and Commissions,LEG ORGS,0905,U.S. Capital Preservation Commission,,0929,U.S. Capitol Preservation Commission,,U.S. Capitol Preservation Commission,13,FALSE,FALSE,TRUE,FALSE,,,,,Moved under 009 from 002
-009,Legislative Branch Boards and Commissions,LEG ORGS,0908,Open World Leadership Center Funds,,0945,Open World Leadership Center,,,,FALSE,FALSE,TRUE,FALSE,,,,,
-009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0973,National Commission on Terrorist Attacks Upon the United States,9-11 COMMISSION,,,FALSE,FALSE,FALSE,FALSE,,,,,"""The Commission closed on August 21, 2004."""
-009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0975,Commission on the Review of the Overseas Military Facility Structure of the United States,,,,FALSE,FALSE,FALSE,FALSE,,,,,Disbanded in 2005
-009,Legislative Branch Boards and Commissions,LEG ORGS,0911,Antitrust Modernization Commission,AMC,0977,Antitrust Modernization Commission,AMC,Antitrust Modernization Commission,19,FALSE,FALSE,TRUE,FALSE,,,,,"""The Antitrust Modernization Commission terminated on May 31, 2007, pursuant to the Antitrust Modernization Commission Act, as amended."""
+CGAC AGENCY CODE,AGENCY NAME,AGENCY ABBREVIATION,FREC,FREC Entity Description,FREC ABBREVIATION,SUBTIER CODE,SUBTIER NAME,SUBTIER ABBREVIATION,Admin Org Name,ADMIN_ORG,TOPTIER_FLAG,IS_FREC,FREC CGAC ASSOCIATION,USER SELECTABLE ON USASPENDING.GOV,MISSION,ABOUT AGENCY DATA,WEBSITE,CONGRESSIONAL JUSTIFICATION,ICON FILENAME,COMMENT
+000,U.S. Congress,CONGRESS,0000,Non - Reporting,,0010,The Senate,,,,TRUE,FALSE,FALSE,FALSE,,,,,,
+000,U.S. Congress,CONGRESS,0000,Non - Reporting,,0011,The United States Senate Sergeant at Arms,SAA,,,FALSE,FALSE,FALSE,FALSE,,,,,,Added per GSA on 2/24/20
+000,U.S. Congress,CONGRESS,0000,Non - Reporting,,0050,The House of Representatives,,,,FALSE,FALSE,FALSE,FALSE,,,,,,
+001,Architect of the Capitol,AOC,0100,Architect of the Capitol,AOC,0100,Architect of the Capitol,AOC,,,TRUE,FALSE,TRUE,FALSE,,,,,,
+002,The Legislative Branch,LEG BRANCH,0000,Non - Reporting,,0000,The Legislative Branch,,,,TRUE,FALSE,TRUE,FALSE,,,,,,
+002,The Legislative Branch,LEG BRANCH,0000,Non - Reporting,,0001,"Congress, Generally, No Additional Specification Available",,,,FALSE,FALSE,TRUE,FALSE,,,,,,
+002,The Legislative Branch,LEG BRANCH,0000,Non - Reporting,,0099,Joint House and Senate Entities,,,,FALSE,FALSE,TRUE,FALSE,,,,,,
+002,The Legislative Branch,LEG BRANCH,0000,Non - Reporting,,0363,Federal Library and Information Center Committee,FLICC,,,FALSE,FALSE,TRUE,FALSE,,,,,,
+002,The Legislative Branch,LEG BRANCH,0000,Non - Reporting,,0962,Permanent Committee for the Oliver Wendell Holmes Devise,,,,FALSE,FALSE,TRUE,FALSE,,,,,,
+003,Library of Congress,LOC,0300,Library of Congress,LOC,0300,Library of Congress,LOC,,,TRUE,FALSE,TRUE,TRUE,,,,,,
+003,Library of Congress,LOC,0300,Library of Congress,LOC,0361,Library of Congress Trust Fund Board,,,,FALSE,FALSE,TRUE,FALSE,,,,,,
+003,Library of Congress,LOC,0300,Library of Congress,LOC,0362,Permanent Committee for the Oliver Wendell Holmes Devise,,,,FALSE,FALSE,TRUE,FALSE,,,,,,
+004,United States Government Publishing Office,GPO,0400,Government Publishing Office,GPO,0400,United States Government Publishing Office,GPO,,,TRUE,FALSE,TRUE,FALSE,,,,,,Changed to match new name (per a-11 and GPO website). Changed name again on 12/4/19 per GPO request.
+005,Government Accountability Office,GAO,0500,Government Accountability Office,GAO,0500,Government Accountability Office,GAO,,,TRUE,FALSE,TRUE,TRUE,"Our Mission is to support the Congress in meeting its constitutional responsibilities and to help improve the performance and ensure the accountability of the federal government for the benefit of the American people. We provide Congress with timely information that is objective, fact-based, nonpartisan, nonideological, fair, and balanced.",,https://www.gao.gov/,https://www.gao.gov/cj,,
+005,Government Accountability Office,GAO,0500,Government Accountability Office,GAO,0501,Comptroller General of the United States,,,,FALSE,FALSE,TRUE,FALSE,,,,,,
+005,Government Accountability Office,GAO,0500,Government Accountability Office,GAO,0559,"GAO, Except Comptroller General",,,,FALSE,FALSE,TRUE,TRUE,,,,,,
+008,Congressional Budget Office,CBO,0800,Congressional Budget Office,CBO,0800,Congressional Budget Office,CBO,,,TRUE,FALSE,TRUE,FALSE,,,,,,
+009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0900,Legislative Branch Boards and Commissions,,,,TRUE,FALSE,FALSE,FALSE,,,,,,
+009,Legislative Branch Boards and Commissions,LEG ORGS,0902,Comm. On Security & Cooperation - Europe,CSCE,0901,Commission on Security and Cooperation In Europe,CSCE,Commission on Security and Cooperation in Europe,05,FALSE,FALSE,TRUE,FALSE,,,,,,
+009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0902,Botanic Garden,USBG,Botanic Garden,02,FALSE,FALSE,FALSE,FALSE,,,,,,
+009,Legislative Branch Boards and Commissions,LEG ORGS,0000,Non - Reporting,,0904,Office of Compliance,OOC,Office of Compliance,16,FALSE,FALSE,FALSE,FALSE,,,,,,Moved under 009 from 002
+009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0911,Commission on Agricultural Workers,,,,FALSE,FALSE,FALSE,FALSE,,,,,,
+009,Legislative Branch Boards and Commissions,LEG ORGS,0904,John C. Stennis Center,,0914,John C. Stennis Center for Public Service Training and Development,,John C. Stennis Center for Public Service Training and Development,12,FALSE,FALSE,TRUE,FALSE,,,,,,
+009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0915,Advisory Commission on Electronic Commerce,,,,FALSE,FALSE,FALSE,FALSE,,,,,,"The Commission completed its work with its Report to Congress, which was delivered on April 12, 2000, ahead of schedule. The Commission's offices are closed."
+009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0916,National Commission on Terrorism,,,,FALSE,FALSE,FALSE,FALSE,,,,,,Final Report published June 2000. AKA the Bremer Commission
+009,Legislative Branch Boards and Commissions,LEG ORGS,0905,U.S. Capital Preservation Commission,,0929,U.S. Capitol Preservation Commission,,U.S. Capitol Preservation Commission,13,FALSE,FALSE,TRUE,FALSE,,,,,,Moved under 009 from 002
+009,Legislative Branch Boards and Commissions,LEG ORGS,0908,Open World Leadership Center Funds,,0945,Open World Leadership Center,,,,FALSE,FALSE,TRUE,FALSE,,,,,,
+009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0973,National Commission on Terrorist Attacks Upon the United States,9-11 COMMISSION,,,FALSE,FALSE,FALSE,FALSE,,,,,,"""The Commission closed on August 21, 2004."""
+009,Legislative Branch Boards and Commissions,LEG ORGS,,,,0975,Commission on the Review of the Overseas Military Facility Structure of the United States,,,,FALSE,FALSE,FALSE,FALSE,,,,,,Disbanded in 2005

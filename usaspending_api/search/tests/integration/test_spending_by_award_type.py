@@ -4,6 +4,7 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -62,9 +63,13 @@ def test_data():
         place_of_performance_zip5="00004",
     )
 
+    mommy.make("references.RefCountryCode", country_code="GIB", country_name="GIBRALTAR")
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+
 
 @pytest.mark.django_db
-def test_spending_by_award_type_success(client):
+def test_spending_by_award_type_success(client, monkeypatch, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # test small request
     resp = client.post(
@@ -107,7 +112,8 @@ def test_spending_by_award_type_success(client):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_type_failure(client):
+def test_spending_by_award_type_failure(client, monkeypatch, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # test incomplete IDV award types
     resp = client.post(
@@ -130,8 +136,9 @@ def test_spending_by_award_type_failure(client):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_pop_zip_filter(client, test_data):
+def test_spending_by_award_pop_zip_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Test that filtering by pop zips works"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # test simple, single zip
     resp = client.post(
@@ -207,8 +214,9 @@ def test_spending_by_award_pop_zip_filter(client, test_data):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_recipient_zip_filter(client, test_data):
+def test_spending_by_award_recipient_zip_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Test that filtering by recipient zips works"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # test simple, single zip
     resp = client.post(
@@ -278,8 +286,9 @@ def test_spending_by_award_recipient_zip_filter(client, test_data):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_both_zip_filter(client, test_data):
+def test_spending_by_award_both_zip_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Test that filtering by both kinds of zips works"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # test simple, single pair of zips that both match
     resp = client.post(
@@ -347,8 +356,9 @@ def test_spending_by_award_both_zip_filter(client, test_data):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_foreign_filter(client, test_data):
+def test_spending_by_award_foreign_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Verify that foreign country filter is returning the correct results """
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_award/",

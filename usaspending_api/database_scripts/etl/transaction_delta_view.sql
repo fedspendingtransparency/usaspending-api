@@ -191,7 +191,7 @@ SELECT
     WHEN UTM.pop_country_code IS NOT NULL
       THEN CONCAT(
         '{"country_code":"', UTM.pop_country_code,
-        '","country_name":"', POP_COUNTRY_LOOKUP.country_name, '"}'
+        '","country_name":"', UTM.pop_country_name, '"}'
       )
     ELSE NULL
   END AS pop_country_agg_key,
@@ -238,7 +238,8 @@ SELECT
     ELSE NULL
   END AS recipient_location_state_agg_key,
 
-  TREASURY_ACCT.treasury_accounts,
+  TREASURY_ACCT.tas_paths,
+  TREASURY_ACCT.tas_components,
   FEDERAL_ACCT.federal_accounts,
   UTM.business_categories
 
@@ -287,7 +288,6 @@ LEFT JOIN LATERAL (
            END ASC
   LIMIT 1
 ) RECIPIENT_HASH_AND_LEVEL ON TRUE
-LEFT JOIN ref_country_code POP_COUNTRY_LOOKUP ON (POP_COUNTRY_LOOKUP.country_code = UTM.pop_country_code)
 LEFT JOIN (
   SELECT   code, name, fips, MAX(id)
   FROM     state_data
@@ -307,20 +307,36 @@ LEFT JOIN ref_population_cong_district RL_DISTRICT_POPULATION ON (RL_DISTRICT_PO
 LEFT JOIN (
   SELECT
     faba.award_id,
-    JSONB_AGG(
-      DISTINCT JSONB_BUILD_OBJECT(
-        'aid', taa.agency_id,
-        'ata', taa.allocation_transfer_agency_id,
-        'main', taa.main_account_code,
-        'sub', taa.sub_account_code,
-        'bpoa', taa.beginning_period_of_availability,
-        'epoa', taa.ending_period_of_availability,
-        'a', taa.availability_type_code
+    ARRAY_AGG(
+      DISTINCT CONCAT(
+        'agency=', agency.toptier_code,
+        'faaid=', fa.agency_identifier,
+        'famain=', fa.main_account_code,
+        'aid=', taa.agency_id,
+        'main=', taa.main_account_code,
+        'ata=', taa.allocation_transfer_agency_id,
+        'sub=', taa.sub_account_code,
+        'bpoa=', taa.beginning_period_of_availability,
+        'epoa=', taa.ending_period_of_availability,
+        'a=', taa.availability_type_code
        )
-     ) treasury_accounts
+     ) tas_paths,
+     ARRAY_AGG(
+      DISTINCT CONCAT(
+        'aid=', taa.agency_id,
+        'main=', taa.main_account_code,
+        'ata=', taa.allocation_transfer_agency_id,
+        'sub=', taa.sub_account_code,
+        'bpoa=', taa.beginning_period_of_availability,
+        'epoa=', taa.ending_period_of_availability,
+        'a=', taa.availability_type_code
+       )
+     ) tas_components
  FROM
    treasury_appropriation_account taa
    INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
+   INNER JOIN federal_account fa ON (taa.federal_account_id = fa.id)
+   INNER JOIN toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
  WHERE
    faba.award_id IS NOT NULL
  GROUP BY

@@ -4,6 +4,8 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
 
 @pytest.fixture
 def award_data_fixture(db):
@@ -14,6 +16,7 @@ def award_data_fixture(db):
         legal_entity_city_name="BURBANK",
         legal_entity_country_code="USA",
         legal_entity_state_code="CA",
+        legal_entity_county_code="000",
         piid="piiiiid",
         place_of_perform_city_name="AUSTIN",
         place_of_performance_state="TX",
@@ -32,9 +35,12 @@ def award_data_fixture(db):
         recipient_location_state_code="CA",
     )
     mommy.make("references.PopCounty", state_name="California", county_number="000", latest_population=2403)
+    mommy.make("recipient.StateData", id="06-2020", fips="06", code="CA", name="California")
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
-def test_geocode_filter_by_city(client, award_data_fixture):
+def test_geocode_filter_by_city(client, monkeypatch, elasticsearch_transaction_index, award_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     # Place of performance that does exist.
     resp = client.post(

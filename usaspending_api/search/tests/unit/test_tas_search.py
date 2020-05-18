@@ -14,7 +14,8 @@ from model_mommy import mommy
 
 # Imports from your apps
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -25,11 +26,13 @@ def mock_tas_data(db):
         "references.SubtierAgency", subtier_agency_id=22, name="Department of Sub-Pizza", abbreviation="DOSP"
     )
     mommy.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2)
+    mommy.make(FederalAccount, id=1, parent_toptier_agency_id=99, agency_identifier="99", main_account_code="0001")
     mommy.make(
         TreasuryAppropriationAccount,
         treasury_account_identifier=1,
         allocation_transfer_agency_id="028",
         agency_id="028",
+        federal_account_id=1,
         main_account_code="8006",
         sub_account_code="000",
         availability_type_code="X",
@@ -42,6 +45,7 @@ def mock_tas_data(db):
         treasury_account_identifier=2,
         allocation_transfer_agency_id="004",
         agency_id="028",
+        federal_account_id=1,
         main_account_code="8006",
         sub_account_code="005",
         availability_type_code=None,
@@ -54,6 +58,7 @@ def mock_tas_data(db):
         treasury_account_identifier=3,
         allocation_transfer_agency_id="001",
         agency_id="011",
+        federal_account_id=1,
         main_account_code="8007",
         sub_account_code="001",
         availability_type_code="X",
@@ -121,8 +126,11 @@ def mock_tas_data(db):
         subaward_number="3A",
     )
 
+    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
-def test_spending_by_award_tas_success(client, mock_tas_data):
+
+def test_spending_by_award_tas_success(client, monkeypatch, elasticsearch_award_index, mock_tas_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     data = {
         "filters": {"tas_codes": [{"aid": "028", "main": "8006"}], "award_type_codes": ["A", "B", "C", "D"]},
@@ -147,7 +155,9 @@ def test_spending_by_award_tas_success(client, mock_tas_data):
     assert len(resp.data["results"]) == 1
 
 
-def test_spending_by_award_tas_dates(client, mock_tas_data):
+def test_spending_by_award_tas_dates(client, monkeypatch, elasticsearch_award_index, mock_tas_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
     data = {
         "filters": {
             "tas_codes": [{"aid": "028", "main": "8006", "bpoa": "2011"}],
@@ -173,7 +183,9 @@ def test_spending_by_award_tas_dates(client, mock_tas_data):
     assert len(resp.data["results"]) == 2
 
 
-def test_spending_by_award_tas_sub_account(client, mock_tas_data):
+def test_spending_by_award_tas_sub_account(client, monkeypatch, elasticsearch_award_index, mock_tas_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
     data = {
         "filters": {
             "tas_codes": [{"aid": "028", "main": "8006", "sub": "000"}],
@@ -199,7 +211,9 @@ def test_spending_by_award_tas_sub_account(client, mock_tas_data):
     assert len(resp.data["results"]) == 1
 
 
-def test_spending_by_award_tas_ata(client, mock_tas_data):
+def test_spending_by_award_tas_ata(client, monkeypatch, elasticsearch_award_index, mock_tas_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
     data = {
         "filters": {
             "tas_codes": [{"aid": "028", "main": "8006", "ata": "004"}],
@@ -247,7 +261,9 @@ def test_spending_by_award_subaward_failure(client, mock_tas_data):
     assert len(resp.data["results"]) == 0
 
 
-def test_spending_over_time(client, mock_tas_data):
+def test_spending_over_time(client, monkeypatch, elasticsearch_transaction_index, mock_tas_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     data = {"group": "fiscal_year", "filters": {"tas_codes": [{"aid": "028", "main": "8006"}]}, "subawards": False}
     resp = client.post("/api/v2/search/spending_over_time", content_type="application/json", data=json.dumps(data))
     assert resp.status_code == status.HTTP_200_OK
@@ -255,7 +271,9 @@ def test_spending_over_time(client, mock_tas_data):
     assert len(resp.data["results"]) == FiscalDate.today().fiscal_year - earliest_fiscal_year_we_care_about
 
 
-def test_spending_by_geography(client, mock_tas_data):
+def test_spending_by_geography(client, monkeypatch, elasticsearch_transaction_index, mock_tas_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     data = {
         "scope": "place_of_performance",
         "geo_layer": "state",
@@ -267,12 +285,15 @@ def test_spending_by_geography(client, mock_tas_data):
     assert len(resp.data["results"]) == 1
 
 
-def test_spending_by_category(client, mock_tas_data):
+def test_spending_by_category(client, monkeypatch, elasticsearch_transaction_index, mock_tas_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     data = {
-        "category": "awarding_agency",
         "filters": {"tas_codes": [{"aid": "028", "main": "8006"}]},
         "subawards": False,
     }
-    resp = client.post("/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_agency", content_type="application/json", data=json.dumps(data)
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1

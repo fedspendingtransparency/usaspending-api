@@ -15,7 +15,7 @@ from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.s3_helpers import access_s3_object_list, access_s3_object
+from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 # ==============================================================================
@@ -107,7 +107,8 @@ VIEW_COLUMNS = [
     "recipient_location_county_agg_key",
     "recipient_location_congressional_agg_key",
     "recipient_location_state_agg_key",
-    "treasury_accounts",
+    "tas_paths",
+    "tas_components",
     "federal_accounts",
     "business_categories",
 ]
@@ -177,7 +178,8 @@ AWARD_VIEW_COLUMNS = [
     "product_or_service_description",
     "naics_code",
     "naics_description",
-    "treasury_accounts",
+    "tas_paths",
+    "tas_components",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
@@ -400,7 +402,8 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
     converters = {
         "business_categories": convert_postgres_array_as_string_to_list,
-        "treasury_accounts": convert_postgres_json_array_as_string_to_list,
+        "tas_paths": convert_postgres_array_as_string_to_list,
+        "tas_components": convert_postgres_array_as_string_to_list,
         "federal_accounts": convert_postgres_json_array_as_string_to_list,
     }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
@@ -637,9 +640,8 @@ def gather_deleted_ids(config):
     printf({"msg": "Gathering all deleted transactions from S3"})
     start = perf_counter()
 
-    bucket_objects = access_s3_object_list(bucket_name=config["s3_bucket"])
-    if bucket_objects is None:
-        raise Exception(f"Issue connecting to {config['s3_bucket']} in s3")
+    bucket_objects = retrieve_s3_bucket_object_list(bucket_name=config["s3_bucket"])
+    printf({"msg": f"{len(bucket_objects):,} files found in bucket '{config['s3_bucket']}'."})
 
     if config["verbose"]:
         printf({"msg": f"CSV data from {config['starting_date']} to now"})

@@ -4,7 +4,7 @@ import datetime
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
 
-from usaspending_api.common.helpers.generic_helper import create_full_time_periods
+from usaspending_api.common.helpers.fiscal_year_helpers import create_full_time_periods
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
 logger = logging.getLogger("console")

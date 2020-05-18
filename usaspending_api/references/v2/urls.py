@@ -1,7 +1,7 @@
 from django.conf.urls import url
 
 from usaspending_api.references.v2.views import agency, toptier_agencies, data_dictionary, glossary, award_types
-from usaspending_api.references.v2.views.filter_tree import naics, tas
+from usaspending_api.references.v2.views.filter_tree import naics, tas, psc
 
 urlpatterns = [
     url(r"^agency/(?P<pk>[0-9]+)/$", agency.AgencyViewSet.as_view()),
@@ -14,5 +14,9 @@ urlpatterns = [
     url(r"^filter_tree/tas/(?P<tier1>\w*)/$", tas.TASViewSet.as_view()),
     url(r"^filter_tree/tas/(?P<tier1>\w*)/(?P<tier2>(\w|-)*)/$", tas.TASViewSet.as_view()),
     url(r"^filter_tree/tas/(?P<tier1>\w*)/(?P<tier2>(\w|-)*)/(?P<tier3>.*)/$", tas.TASViewSet.as_view()),
+    url(r"^filter_tree/psc/$", psc.PSCViewSet.as_view()),
+    url(r"^filter_tree/psc/(?P<tier1>(\w| )*)/$", psc.PSCViewSet.as_view()),
+    url(r"^filter_tree/psc/(?P<tier1>(\w| )*)/(?P<tier2>\w*)/$", psc.PSCViewSet.as_view()),
+    url(r"^filter_tree/psc/(?P<tier1>(\w| )*)/(?P<tier2>\w*)/(?P<tier3>\w*)/$", psc.PSCViewSet.as_view()),
     url(r"^award_types/$", award_types.AwardTypeGroups.as_view()),
 ]

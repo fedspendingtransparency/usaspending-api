@@ -1,9 +1,5 @@
 import logging
 
-from usaspending_api.common.experimental_api_flags import (
-    is_experimental_elasticsearch_api,
-    mirror_request_to_elasticsearch,
-)
 from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
 
 logger = logging.getLogger("console")
@@ -17,11 +13,9 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/awards.md"
 
     def post(self, request):
-        if is_experimental_elasticsearch_api(request):
-            logger.info("Using experimental Elasticsearch functionality for '/download/awards'")
-            request.data["award_levels"] = ["elasticsearch_awards", "sub_awards"]
-        else:
-            request.data["award_levels"] = ["awards", "sub_awards"]
+        request.data["award_levels"] = ["elasticsearch_awards", "sub_awards"]
+        # else:
+        #     request.data["award_levels"] = ["awards", "sub_awards"]
         request.data["constraint_type"] = "row_count"
         return BaseDownloadViewSet.post(self, request, "award")
 
@@ -71,12 +65,9 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/transactions.md"
 
     def post(self, request):
-        if is_experimental_elasticsearch_api(request):
-            logger.info("Using experimental Elasticsearch functionality for '/download/transactions'")
-            request.data["award_levels"] = ["elasticsearch_transactions", "sub_awards"]
-        else:
-            mirror_request_to_elasticsearch(request)
-            request.data["award_levels"] = ["transactions", "sub_awards"]
+        request.data["award_levels"] = ["elasticsearch_transactions", "sub_awards"]
+        # else:
+        #     request.data["award_levels"] = ["transactions", "sub_awards"]
         request.data["constraint_type"] = "row_count"
         return BaseDownloadViewSet.post(self, request, "award")
 

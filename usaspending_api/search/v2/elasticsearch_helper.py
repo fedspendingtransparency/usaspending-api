@@ -110,7 +110,12 @@ def get_download_ids(keyword, field, size=10000):
             {"keyword_search": [es_minimal_sanitize(keyword)]}
         )
         search = TransactionSearch().filter(filter_query)
-        group_by_agg_key_values = {"field": field, "include": {"partition": i, "num_partitions": n_iter}, "size": size}
+        group_by_agg_key_values = {
+            "field": field,
+            "include": {"partition": i, "num_partitions": n_iter},
+            "size": size,
+            "shard_size": size,
+        }
         aggs = A("terms", **group_by_agg_key_values)
         search.aggs.bucket("results", aggs)
         response = search.handle_execute()
@@ -150,6 +155,13 @@ def spending_by_transaction_sum_and_count(request_data):
 
 
 def get_number_of_unique_terms(filter_query: ES_Q, field: str) -> int:
+    """
+    Returns the count for a specific filter_query.
+    NOTE: This will only work when the number of unique values is 40k or less. This is captured in the Elasticsearch
+    documentation for the cardinality aggregation:
+        "The maximum supported value is 40000, thresholds above this number will
+        have the same effect as a threshold of 40000"
+    """
     search = TransactionSearch().filter(filter_query)
     cardinality_aggregation = A("cardinality", field=field)
     search.aggs.metric("field_count", cardinality_aggregation)

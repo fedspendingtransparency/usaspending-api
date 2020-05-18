@@ -2,7 +2,7 @@ from django.db.models import Sum
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import generate_last_completed_fiscal_quarter
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_last_completed_fiscal_quarter
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASTotalObligation
 from usaspending_api.spending_explorer.v2.filters.explorer import Explorer

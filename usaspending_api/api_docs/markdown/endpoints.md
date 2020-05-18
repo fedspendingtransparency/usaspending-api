@@ -28,13 +28,18 @@ The currently available endpoints are listed in the following table.
 
 | Endpoint | Methods | Description |
 | -------- | ------- | ----------- |
-|[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Treasury Account Symbol Availability Type Code (A) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/aid/](/api/v2/autocomplete/accounts/aid/)|POST| Returns Treasury Account Symbol/Federal Account Agency Identifier (AID) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/ata/](/api/v2/autocomplete/accounts/ata/)|POST| Returns Treasury Account Symbol Allocation Transfer Agency Identifier (ATA) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/bpoa/](/api/v2/autocomplete/accounts/bpoa/)|POST| Returns Treasury Account Symbol Beginning Period of Availability (BPOA) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/epoa/](/api/v2/autocomplete/accounts/epoa/)|POST| Returns Treasury Account Symbol Ending Period of Availability (EPOA) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/main/](/api/v2/autocomplete/accounts/main/)|POST| Returns Treasury Account Symbol/Federal Account Main Account Code (MAIN) filtered by other components provided in the request filter | 
-|[/api/v2/autocomplete/accounts/sub/](/api/v2/autocomplete/accounts/sub/)|POST| Returns Treasury Account Symbol Sub-Account Code (SUB) filtered by other components provided in the request filter | 
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/](/api/v2/agency/012/)|GET| Returns agency overview information for USAspending.gov's Agency Details page for agencies that have ever awarded. |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/count/](/api/v2/agency/012/budget_function/count/)|GET| Returns the count of Budget Functions for the agency in a single fiscal year |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/federal_account/count/](/api/v2/agency/012/federal_account/count/)|GET| Returns the count of Federal Accounts and Treasury Accounts for the agency in a single fiscal year |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/object_class/count/](/api/v2/agency/012/object_class/count/)|GET| Returns the count of Object Classes for the agency in a single fiscal year |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/program_activity/count/](/api/v2/agency/012/program_activity/count/)|GET| Returns the count of Program Activity categories for the agency in a single fiscal year |
+|[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Treasury Account Symbol Availability Type Code (A) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/aid/](/api/v2/autocomplete/accounts/aid/)|POST| Returns Treasury Account Symbol/Federal Account Agency Identifier (AID) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/ata/](/api/v2/autocomplete/accounts/ata/)|POST| Returns Treasury Account Symbol Allocation Transfer Agency Identifier (ATA) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/bpoa/](/api/v2/autocomplete/accounts/bpoa/)|POST| Returns Treasury Account Symbol Beginning Period of Availability (BPOA) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/epoa/](/api/v2/autocomplete/accounts/epoa/)|POST| Returns Treasury Account Symbol Ending Period of Availability (EPOA) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/main/](/api/v2/autocomplete/accounts/main/)|POST| Returns Treasury Account Symbol/Federal Account Main Account Code (MAIN) filtered by other components provided in the request filter |
+|[/api/v2/autocomplete/accounts/sub/](/api/v2/autocomplete/accounts/sub/)|POST| Returns Treasury Account Symbol Sub-Account Code (SUB) filtered by other components provided in the request filter |
 |[/api/v2/autocomplete/awarding_agency/](/api/v2/autocomplete/awarding_agency/)|POST| Returns awarding agencies matching the specified search text|
 |[/api/v2/autocomplete/cfda/](/api/v2/autocomplete/cfda/)|POST| Returns CFDA programs matching the specified search text|
 |[/api/v2/autocomplete/city/](/api/v2/autocomplete/city/)|POST| Returns city names matching the search text, sorted by relevance|
@@ -83,16 +88,20 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/idvs/funding_rollup/](/api/v2/idvs/funding_rollup/)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for all contracts under an IDV|
 |[/api/v2/idvs/count/federal_account/<AWARD_ID\>/](/api/v2/idvs/count/federal_account/CONT_IDV_NNK14MA74C_8000/)|GET| Returns the number of federal accounts associated with children and grandchild awards of an IDV.|
 |[/api/v2/recipient/children/<DUNS\>/](/api/v2/recipient/children/006928857/)|GET| Returns recipient details based on DUNS number|
-|[/api/v2/recipient/duns/<HASH_VALUE\>/](/api/v2/recipient/duns/42c19cbe-ced7-5d41-2f80-cd27a22b1575-P/)|GET| Returns a high-level overview of a specific recipient, given its id|
+|[/api/v2/recipient/duns/<HASH_VALUE\>/](/api/v2/recipient/duns/99a44eeb-23ef-e7c4-1f84-9a695b6f5d2e-R/)|GET| Returns a high-level overview of a specific recipient, given its id|
 |[/api/v2/recipient/duns/](/api/v2/recipient/duns/)|POST| Returns a list of recipients in USAspending DB|
 |[/api/v2/recipient/state/<FIPS\>/](/api/v2/recipient/state/51/)|GET| Returns basic information about the specified state|
 |[/api/v2/recipient/state/awards/<FIPS\>/](/api/v2/recipient/state/awards/51/)|GET| Returns award breakdown based on FIPS|
 |[/api/v2/recipient/state/](/api/v2/recipient/state/)|GET| Returns basic information about the specified state|
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency|
 |[/api/v2/references/data_dictionary/](/api/v2/references/data_dictionary/)|GET| Returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary|
+|[/api/v2/references/filter_tree/psc/](/api/v2/references/filter_tree/psc/)|GET| Returns a list of PSC groupings|
+|[/api/v2/references/filter_tree/psc/<GROUP\>/](/api/v2/references/filter_tree/psc/Product/)|GET| Returns a list of PSC under the provided path|
+|[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/](/api/v2/references/filter_tree/psc/Product/10/)|GET| Returns a list of PSC under the provided path|
+|[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/<PSC\>/](/api/v2/references/filter_tree/psc/Service/C/C1/)|GET| Returns a list of PSC under the provided path|
 |[/api/v2/references/filter_tree/tas/](/api/v2/references/filter_tree/tas/)|GET| Returns a list of toptier agencies that have at least one TAS affiliated with them|
 |[/api/v2/references/filter_tree/tas/<AGENCY\>/](/api/v2/references/filter_tree/tas/020/)|GET| Returns a list of federal accounts associated with the specified agency|
-|[/api/v2/references/filter_tree/tas/<AGENCY\>/<FEDERAL_ACCOUNT\>](/api/v2/references/filter_tree/tas/020/020-0550/)|GET| Returns a list of Treasury Account Symbols associated with the specified federal account|
+|[/api/v2/references/filter_tree/tas/<AGENCY\>/<FEDERAL_ACCOUNT\>/](/api/v2/references/filter_tree/tas/020/020-0550/)|GET| Returns a list of Treasury Account Symbols associated with the specified federal account|
 |[/api/v2/references/glossary/](/api/v2/references/glossary/)|GET| Returns a list of glossary terms and definitions|
 |[/api/v2/references/award_types/](/api/v2/references/award_types/)|GET| Returns a map of award types by award grouping.|
 |[/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/)|GET|  Returns all toptier agencies and related, relevant data.|

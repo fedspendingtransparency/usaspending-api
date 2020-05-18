@@ -5,11 +5,11 @@ import time
 
 from calendar import monthrange, isleap
 from datetime import datetime as dt
-from dateutil.relativedelta import relativedelta
+from dateutil import parser
+
 from django.conf import settings
 from django.db import connection
-from fiscalyear import FiscalDateTime, FiscalQuarter, datetime, FiscalDate
-from usaspending_api.common.exceptions import InvalidParameterException
+from fiscalyear import datetime
 from usaspending_api.common.matview_manager import (
     OVERLAY_VIEWS,
     DEPENDENCY_FILEPATH,
@@ -30,6 +30,16 @@ def read_text_file(filepath):
     return file_content_str
 
 
+def convert_string_to_datetime(input: str) -> datetime.datetime:
+    """Parse a string into a datetime object"""
+    return parser.parse(input)
+
+
+def convert_string_to_date(input: str) -> datetime.date:
+    """Parse a string into a date object"""
+    return convert_string_to_datetime(input).date()
+
+
 def validate_date(date):
     if not isinstance(date, (datetime.datetime, datetime.date)):
         raise TypeError("Incorrect parameter type provided")
@@ -44,42 +54,6 @@ def check_valid_toptier_agency(agency_id):
     return agency is not None
 
 
-def generate_fiscal_year(date):
-    """ Generate fiscal year based on the date provided """
-    validate_date(date)
-
-    year = date.year
-    if date.month in [10, 11, 12]:
-        year += 1
-    return year
-
-
-def generate_fiscal_month(date):
-    """ Generate fiscal period based on the date provided """
-    validate_date(date)
-
-    if date.month in [10, 11, 12]:
-        return date.month - 9
-    return date.month + 3
-
-
-def generate_fiscal_quarter(date):
-    """ Generate fiscal quarter based on the date provided """
-    validate_date(date)
-    return FiscalDate(date.year, date.month, date.day).quarter
-
-
-def generate_fiscal_year_and_quarter(date):
-    validate_date(date)
-    quarter = FiscalDate(date.year, date.month, date.day).quarter
-    year = generate_fiscal_year(date)
-    return "{}-Q{}".format(year, quarter)
-
-
-# aliasing the generate_fiscal_month function to the more appropriate function name
-generate_fiscal_period = generate_fiscal_month
-
-
 def generate_date_from_string(date_str):
     """ Expects a string with format YYYY-MM-DD. returns datetime.date """
     try:
@@ -87,16 +61,6 @@ def generate_date_from_string(date_str):
     except Exception as e:
         logger.error(str(e))
     return None
-
-
-def dates_are_fiscal_year_bookends(start, end):
-    """ Returns true if the start and end dates fall on fiscal year(s) start and end date """
-    try:
-        if start.month == 10 and start.day == 1 and end.month == 9 and end.day == 30 and start.year < end.year:
-            return True
-    except Exception as e:
-        logger.error(str(e))
-    return False
 
 
 def dates_are_month_bookends(start, end):
@@ -113,89 +77,6 @@ def min_and_max_from_date_ranges(filter_time_periods: list) -> tuple:
     min_date = min([t.get("start_date", settings.API_MAX_DATE) for t in filter_time_periods])
     max_date = max([t.get("end_date", settings.API_SEARCH_MIN_DATE) for t in filter_time_periods])
     return dt.strptime(min_date, "%Y-%m-%d"), dt.strptime(max_date, "%Y-%m-%d")
-
-
-def create_full_time_periods(min_date, max_date, group, columns):
-    cols = {col: 0 for col in columns.keys()}
-    fiscal_years = [int(fy) for fy in range(generate_fiscal_year(min_date), generate_fiscal_year(max_date) + 1)]
-    if group == "fy":
-        return [{**cols, **{"time_period": {"fy": str(fy)}}} for fy in fiscal_years]
-
-    if group == "month":
-        period = generate_fiscal_month(min_date)
-        ending = generate_fiscal_month(max_date)
-        rollover = 12
-    else:  # quarter
-        period = generate_fiscal_quarter(min_date)
-        ending = generate_fiscal_quarter(max_date)
-        rollover = 4
-
-    results = []
-    for fy in fiscal_years:
-        while period <= rollover and not (period > ending and fy == fiscal_years[-1]):
-            results.append({**cols, **{"time_period": {"fy": str(fy), group: str(period)}}})
-            period += 1
-        period = 1
-
-    return results
-
-
-def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type, columns):
-    """ Given the following, generate a list of dict results split by fiscal years/quarters/months
-
-        Args:
-            filter_time_periods: list of time_period objects usually provided by filters
-                - {'start_date':..., 'end_date':...}
-            queryset: the resulting data to split into these results
-            date_range_type: how the results are split
-                - 'fy', 'quarter', or 'month'
-            columns: dictionary of columns to include from the queryset
-                - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
-        Returns:
-            list of dict results split by fiscal years/quarters/months
-    """
-    min_date, max_date = min_and_max_from_date_ranges(filter_time_periods)
-    results = create_full_time_periods(min_date, max_date, date_range_type, columns)
-
-    for row in queryset:
-        for item in results:
-            same_year = str(item["time_period"]["fy"]) == str(row["fy"])
-            same_period = str(item["time_period"][date_range_type]) == str(row[date_range_type])
-            if same_year and same_period:
-                for column_name, column_in_queryset in columns.items():
-                    item[column_name] = row[column_in_queryset]
-
-    for result in results:
-        result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
-        del result["time_period"]["fy"]
-    return results
-
-
-def generate_fiscal_date_range(min_date: datetime, max_date: datetime, frequency: str) -> list:
-    """
-    Using a min date, max date, and a frequency indicator generates a list of dictionaries that contain
-    the fiscal_year, quarter, and month.
-    """
-    if frequency == "fiscal_year":
-        interval = 12
-    elif frequency == "quarter":
-        interval = 3
-    else:  # month
-        interval = 1
-
-    date_range = []
-    current_date = min_date
-    while current_date <= max_date:
-        date_range.append(
-            {
-                "fiscal_year": generate_fiscal_year(current_date),
-                "fiscal_quarter": generate_fiscal_quarter(current_date),
-                "fiscal_month": generate_fiscal_month(current_date),
-            }
-        )
-        current_date = current_date + relativedelta(months=interval)
-
-    return date_range
 
 
 def within_one_year(d1, d2):
@@ -236,53 +117,6 @@ def generate_matviews(materialized_views_as_traditional_views=False):
             cursor.execute(sql)
         for view_sql_file in OVERLAY_VIEWS:
             cursor.execute(view_sql_file.read_text())
-
-
-def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
-    """ Generate the most recently completed fiscal quarter """
-
-    # Get the current fiscal year so that it can be compared against the FY in the request
-    current_fiscal_date = FiscalDateTime.today()
-    day_difference = current_fiscal_date - datetime.timedelta(days=45)
-    current_fiscal_date_adjusted = FiscalDateTime(day_difference.year, day_difference.month, day_difference.day)
-
-    # Attempting to get data for current fiscal year (minus 45 days)
-    if fiscal_year == current_fiscal_date_adjusted.fiscal_year:
-        current_fiscal_quarter = current_fiscal_date_adjusted.quarter
-        # If a fiscal quarter has been requested
-        if fiscal_quarter:
-            # If the fiscal quarter requested is not yet completed (or within 45 days of being completed), error out
-            if current_fiscal_quarter <= fiscal_quarter:
-                raise InvalidParameterException(
-                    "Requested fiscal year and quarter must have been completed over 45 "
-                    "days prior to the current date."
-                )
-        # If no fiscal quarter has been requested
-        else:
-            # If it's currently the first quarter (or within 45 days of the first quarter), throw an error
-            if current_fiscal_quarter == 1:
-                raise InvalidParameterException(
-                    "Cannot obtain data for current fiscal year. At least one quarter must "
-                    "be completed for over 45 days."
-                )
-            # roll back to the last completed fiscal quarter if it's any other quarter
-            else:
-                fiscal_quarter = current_fiscal_quarter - 1
-    # Attempting to get data for any fiscal year before the current one (minus 45 days)
-    elif fiscal_year < current_fiscal_date_adjusted.fiscal_year:
-        # If no fiscal quarter has been requested, give the fourth quarter of the year requested
-        if not fiscal_quarter:
-            fiscal_quarter = 4
-    else:
-        raise InvalidParameterException(
-            "Cannot obtain data for future fiscal years or fiscal years that have not been active for over 45 days."
-        )
-
-    # get the fiscal date
-    fiscal_date = FiscalQuarter(fiscal_year, fiscal_quarter).end
-    fiscal_date = datetime.datetime.strftime(fiscal_date, "%Y-%m-%d")
-
-    return fiscal_date, fiscal_quarter
 
 
 def get_pagination(results, limit, page, benchmarks=False):
@@ -366,6 +200,13 @@ def get_time_period_message():
 
 def unused_filters_message(filters):
     return f"The following filters from the request were not used: {filters}. See https://api.usaspending.gov/docs/endpoints for a list of appropriate filters"
+
+
+def get_account_data_time_period_message():
+    return (
+        f"Account data powering this endpoint were first collected in FY2017 Q2 under the DATA Act; "
+        f"as such, there are no data available for prior fiscal years."
+    )
 
 
 # Raw SQL run during a migration
