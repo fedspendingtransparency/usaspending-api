@@ -301,12 +301,11 @@ def matview_search_filter(filters, model, for_downloads=False):
         # Because these two filters OR with each other, we need to know about the presense of both filters to know what to do
         # This filter was picked arbitrarily to be the one that checks for the other
         elif key == TasCodes.underscore_name:
+            q = TasCodes.build_tas_codes_filter(queryset, value)
             if TreasuryAccounts.underscore_name in filters.keys():
-                q = TasCodes.build_tas_codes_filter(queryset, value)
                 q |= TreasuryAccounts.build_tas_codes_filter(queryset, filters[TreasuryAccounts.underscore_name])
-                queryset = queryset.filter(q)
-            else:
-                queryset = queryset.filter(TasCodes.build_tas_codes_filter(queryset, value))
+            queryset = queryset.filter(q)
+
 
         elif key == TreasuryAccounts.underscore_name and TasCodes.underscore_name not in filters.keys():
             queryset = queryset.filter(TreasuryAccounts.build_tas_codes_filter(queryset, value))
