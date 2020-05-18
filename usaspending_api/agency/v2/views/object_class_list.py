@@ -1,25 +1,25 @@
-from django.db.models import Sum, F, Q
+from django.db.models import Q, Sum, F
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, List
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, ListMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.references.models import RefProgramActivity
+from usaspending_api.references.models import ObjectClass
 
 
-class ProgramActivityList(ListMixin, AgencyBase):
+class ObjectClassList(ListMixin, AgencyBase):
     """
-    Obtain the list of program activity categories for a specific agency in a
-    single fiscal year based on whether or not that program activity has ever
+    Obtain the list of object classes for a specific agency in a single
+    fiscal year based on whether or not that object class has ever
     been submitted in File B.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/program_activity.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/object_class.md"
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        results = list(self.get_program_activity_list())
+        results = list(self.get_object_class_list())
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         return Response(
@@ -32,7 +32,7 @@ class ProgramActivityList(ListMixin, AgencyBase):
             }
         )
 
-    def get_program_activity_list(self) -> List[dict]:
+    def get_object_class_list(self) -> List[dict]:
         filters = [
             Q(financialaccountsbyprogramactivityobjectclass__final_of_fy=True),
             Q(
@@ -53,11 +53,11 @@ class ProgramActivityList(ListMixin, AgencyBase):
             ),
         ]
         if self.filter:
-            filters.append(Q(program_activity_name__icontains=self.filter))
+            filters.append(Q(object_class_name__icontains=self.filter))
         queryset_results = (
-            RefProgramActivity.objects.filter(*filters)
+            ObjectClass.objects.filter(*filters)
             .annotate(
-                name=F("program_activity_name"),
+                name=F("object_class_name"),
                 obligated_amount=Sum(
                     "financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe"
                 ),

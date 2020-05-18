@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List Program Activities [/api/v2/agency/{toptier_code}/program_activity/{?fiscal_year,filter,order,sort,page,limit}]
+# List Budget Function [/api/v2/agency/{toptier_code}/budget_function/]
 
-Returns a list of Program Activity in the Agency's appropriations for a single fiscal year
+Returns a list of Budget Function in the Agency's appropriations for a single fiscal year
 
 ## GET
 
@@ -17,10 +17,11 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
     + Parameters
         + `toptier_code`: 086 (required, number)
             The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
+    + Attributes
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY.
         + `filter` (optional, string)
-            This will filter the Program Activity by their name to those matching the text.
+            This will filter the Budget Function by their name to those matching the text.
         + `order` (optional, enum[string])
             Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
             + Default: `desc`
@@ -47,7 +48,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
-        + `results` (required, array[ProgramActivity], fixed-type)
+        + `results` (required, array[BudgetFunction], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
@@ -57,24 +58,26 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                 "toptier_code": "086",
                 "fiscal_year": 2018,
                 "page_metadata": {
-                    "limit": 2,
                     "page": 1,
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
                     "hasPrevious": false,
-                    "count": 10
+                    "total": 1,
+                    "limit": 2
                 },
                 "results": [
                     {
-                        "name": "TI INFORMATION TECHNOLOGY",
-                        "obligated_amount": 18482.4,
-                        "gross_outlay_amount": -236601.1
-                    },
-                    {
-                        "name": "CONTRACT RENEWALS",
-                        "obligated_amount": 225.26,
-                        "gross_outlay_amount": -161252.0
+                        "name": "Health",
+                        "children": [
+                            {
+                                "name": "Health care services",
+                                "obligated_amount": 4982.19,
+                                "gross_outlay_amount": 4982.19
+                            }
+                        ],
+                        "obligated_amount": 4982.19,
+                        "gross_outlay_amount": 4982.19
                     }
                 ],
                 "messages": []
@@ -82,16 +85,22 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 
 # Data Structures
 
-## ProgramActivity (object)
+## BudgetFunction (object)
++ `name` (required, string)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
++ `children` (required, array[BudgetSubFunction], fixed-type)
+
+## BudgetSubFunction (object
 + `name` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
 
 ## PageMetadata (object)
-+ `limit` (required, number)
 + `page` (required, number)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `total` (required, number)
++ `limit` (required, number)

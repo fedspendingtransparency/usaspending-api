@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 import logging
 from usaspending_api.awards.models import Award
+from usaspending_api.references.models import Agency
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter_determine_award_matview_model
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
@@ -54,6 +55,7 @@ from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
 from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.submissions.models import SubmissionAttributes
 
 logger = logging.getLogger("console")
 
@@ -345,6 +347,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return response
 
+    def get_agency_database_id(self, code):
+        if len(str(code)) < 3:
+            code = "{zeroes}{code}".format(zeroes=("0" * (3 - len(str(code)))), code=code)
+
+        agency_id = Agency.objects.filter(toptier_agency__toptier_code=code, toptier_flag=True).first()
+        submission = SubmissionAttributes.objects.filter(toptier_code=code).first()
+        if submission is None or agency_id is None:
+            return None
+        return agency_id.id
+
     def construct_es_response(self, response) -> dict:
         results = []
         for res in response:
@@ -360,6 +372,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         field
                     )
                 )
+                if "Awarding Agency" in self.fields:
+                    row["agency_code"] = hit["awarding_toptier_agency_code"]
 
             row["internal_id"] = int(row["internal_id"])
             if row.get("Loan Value"):
@@ -368,6 +382,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 row["Subsidy Cost"] = float(row["Subsidy Cost"])
             if row.get("Award Amount"):
                 row["Award Amount"] = float(row["Award Amount"])
+            if row.get("Awarding Agency"):
+                code = row.pop("agency_code")
+                row["awarding_agency_id"] = self.get_agency_database_id(code)
             row["generated_internal_id"] = hit["generated_unique_award_id"]
             row["recipient_id"] = hit.get("recipient_unique_id")
             row["parent_recipient_unique_id"] = hit.get("parent_recipient_unique_id")
