@@ -16,7 +16,7 @@ Returns some basic information regarding the agency for the fiscal year specifie
             }
     + Parameters
         + `toptier_code`: 012 (required, number)
-            The toptier code of an agency (could be a CGAG or FREC) so only numeric character strings of length 3-4 are accepted.
+            The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
             The desired "as of" fiscal year. Defaults to the current fiscal year.
 
@@ -32,7 +32,7 @@ Returns some basic information regarding the agency for the fiscal year specifie
         + `congressional_justification_url` (required, string, nullable)
         + `about_agency_data` (required, string, nullable)
         + `subtier_agency_count` (required, number)
-        + `messages` (required, array[string])
+        + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
