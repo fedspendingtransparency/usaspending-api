@@ -30,7 +30,7 @@ class TasCodes(_Filter, HierarchicalFilter):
 
 def search_regex_of(v):
     if isinstance(v, str):
-        v = string_to_dictionary(v)
+        v = string_to_dictionary(v, "agency")
 
     code_lookup = {
         "agency": f"agency={v['agency']}" if v.get("agency") else "*",

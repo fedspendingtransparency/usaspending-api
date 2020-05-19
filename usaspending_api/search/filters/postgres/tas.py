@@ -34,9 +34,9 @@ class TasCodes(HierarchicalFilter):
         return TASNode(code, positive, positive_naics, negative_naics)
 
 
-def string_to_dictionary(string):
+def string_to_dictionary(string, true_agency_name):
     if len(string.split("-")) == 1:
-        return {"aid": string}
+        return {true_agency_name: string}
     elif len(string.split("-")) == 2:
         return FederalAccount.fa_rendering_label_to_component_dictionary(string)
     else:
@@ -45,7 +45,7 @@ def string_to_dictionary(string):
 
 def search_regex_of(v):
     if isinstance(v, str):
-        v = string_to_dictionary(v)
+        v = string_to_dictionary(v, "aid")
 
     code_lookup = {
         "ata": v["ata"] if v.get("ata") else None,
