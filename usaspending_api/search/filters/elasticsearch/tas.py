@@ -1,9 +1,9 @@
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from elasticsearch_dsl import Q as ES_Q
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
 from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import HierarchicalFilter, Node
+from usaspending_api.search.filters.postgres.tas import string_to_dictionary
 import re
 
 
@@ -27,19 +27,10 @@ class TasCodes(_Filter, HierarchicalFilter):
     def node(code, positive, positive_naics, negative_naics):
         return TASNode(code, positive, positive_naics, negative_naics)
 
-    @staticmethod
-    def string_to_dictionary(string):
-        if len(string.split("-")) == 1:
-            return {"agency": string}
-        elif len(string.split("-")) == 2:
-            return FederalAccount.fa_rendering_label_to_component_dictionary(string)
-        else:
-            return TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary(string)
-
 
 def search_regex_of(v):
     if isinstance(v, str):
-        v = TasCodes.string_to_dictionary(v)
+        v = string_to_dictionary(v)
 
     code_lookup = {
         "agency": f"agency={v['agency']}" if v.get("agency") else "*",
