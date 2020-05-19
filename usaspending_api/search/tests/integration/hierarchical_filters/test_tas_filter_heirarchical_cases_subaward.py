@@ -170,6 +170,20 @@ def test_double_eclipsing_filters2(client, monkeypatch, elasticsearch_award_inde
 
 
 @pytest.mark.django_db
+def test_sibling_eclipsing_filters(client, monkeypatch, elasticsearch_award_index, multiple_subawards_with_tas):
+    _setup_es(client, monkeypatch, elasticsearch_award_index)
+    resp = query_by_tas_subaward(
+        client,
+        {
+            "require": [_agency_path(BASIC_TAS), _tas_path(ATA_TAS)],
+            "exclude": [_agency_path(ATA_TAS), _tas_path(BASIC_TAS)],
+        },
+    )
+
+    assert resp.json()["results"] == [_subaward2()]
+
+
+@pytest.mark.django_db
 def test_sibling_filters_one_match(client, monkeypatch, elasticsearch_award_index, multiple_subawards_with_sibling_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     resp = query_by_tas_subaward(client, {"require": [_tas_path(SISTER_TAS[1])]})
