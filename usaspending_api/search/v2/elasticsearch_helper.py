@@ -110,7 +110,12 @@ def get_download_ids(keyword, field, size=10000):
             {"keyword_search": [es_minimal_sanitize(keyword)]}
         )
         search = TransactionSearch().filter(filter_query)
-        group_by_agg_key_values = {"field": field, "include": {"partition": i, "num_partitions": n_iter}, "size": size}
+        group_by_agg_key_values = {
+            "field": field,
+            "include": {"partition": i, "num_partitions": n_iter},
+            "size": size,
+            "shard_size": size,
+        }
         aggs = A("terms", **group_by_agg_key_values)
         search.aggs.bucket("results", aggs)
         response = search.handle_execute()
