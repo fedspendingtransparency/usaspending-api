@@ -13,16 +13,16 @@ class HierarchicalFilter:
             cls.node(code, False, require, exclude) for code in exclude if cls._has_no_parents(code, require + exclude)
         ]
 
-        # filter out any positive nodes with an identical negative node
-        positive_nodes = [
-            node for node in positive_nodes if node.code not in [neg_node.code for neg_node in negative_nodes]
-        ]
-
         q = Q()
         for node in positive_nodes:
-            q |= node.get_query()
+            # cancel out any require codes that also are excluded at top level
+            if node.code not in [neg_node.code for neg_node in negative_nodes]:
+                q |= node.get_query()
+            else:
+                q |= Q(pk__in=[])
         for node in negative_nodes:
-            q |= node.get_query()
+            if node.children or node.code not in [pos_node.code for pos_node in positive_nodes]:
+                q |= node.get_query()
 
         queryset = queryset.filter(q)
         return queryset
@@ -72,7 +72,6 @@ class Node:
                 filter &= node.get_query()
         else:
             if [child for child in self.children if child.positive]:
-                print("triggered this part")
                 filter = Q()
                 for node in [child for child in self.children if child.positive]:
                     filter |= node.get_query()
