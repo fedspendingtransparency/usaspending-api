@@ -100,6 +100,8 @@ class TreasuryAccounts:
             - Grabbing the list of all treasury_account_identifiers that match the filters provided.
             - Assembling an integer array overlap (&&) query to search for those integers.
         """
+        if not tas_filters:
+            return Q(treasury_account_identifiers__overlap=[])
 
         tas_qs = Q()
         for tas_filter in tas_filters:
