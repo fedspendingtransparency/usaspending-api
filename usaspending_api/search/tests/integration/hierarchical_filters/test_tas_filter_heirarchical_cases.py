@@ -232,7 +232,9 @@ def test_sibling_filters_with_fa_excluding_one_sibling(
         },
     )
 
-    assert resp.json()["results"] == [_award1()]
+    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [_award1(), _award2()].sort(
+        key=lambda elem: elem["internal_id"]
+    )
 
 
 @pytest.mark.django_db
