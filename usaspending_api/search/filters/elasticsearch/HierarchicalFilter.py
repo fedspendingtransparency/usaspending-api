@@ -30,7 +30,6 @@ class HierarchicalFilter:
         )
 
         if positive_query and negative_query:
-            print(f"({positive_query}) OR ({negative_query})")
             return f"({positive_query}) OR ({negative_query})"
         if not positive_query and not negative_query:
             return "NOT *"  # return nothing
@@ -90,7 +89,6 @@ class Node:
             else:
                 retval = f"(NOT {retval})"
 
-        print(retval)
         return retval
 
     @abstractmethod
