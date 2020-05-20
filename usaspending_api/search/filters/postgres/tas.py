@@ -105,10 +105,6 @@ class TreasuryAccounts:
         for tas_filter in tas_filters:
             tas_qs |= Q(**{TAS_COMPONENT_TO_FIELD_MAPPING[k]: v for k, v in tas_filter.items()})
 
-        # No sense continuing if this resulted in an empty Q statement for whatever reason.
-        if not tas_qs:
-            return queryset
-
         return Q(
             treasury_account_identifiers__overlap=list(
                 TreasuryAppropriationAccount.objects.filter(tas_qs).values_list(
