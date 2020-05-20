@@ -348,9 +348,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
         return response
 
     def get_agency_database_id(self, code):
-        if len(str(code)) < 3:
-            code = "{zeroes}{code}".format(zeroes=("0" * (3 - len(str(code)))), code=code)
-
+        if len(str(int(code))) < 3:
+            code = "{zeroes}{code}".format(zeroes=("0" * (3 - len(str(int(code))))), code=int(code))
         agency_id = Agency.objects.filter(toptier_agency__toptier_code=code, toptier_flag=True).first()
         submission = SubmissionAttributes.objects.filter(toptier_code=code).first()
         if submission is None or agency_id is None:
