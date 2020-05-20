@@ -93,13 +93,6 @@ class TreasuryAccounts:
 
     @staticmethod
     def build_tas_codes_filter(queryset, tas_filters):
-        """
-        Filter the queryset to take advantage of the GIN indexed integer array of
-        treasury_appropriation_account treasury_account_identifiers by:
-
-            - Grabbing the list of all treasury_account_identifiers that match the filters provided.
-            - Assembling an integer array overlap (&&) query to search for those integers.
-        """
         if not tas_filters:
             return Q(treasury_account_identifiers__overlap=[])
 
