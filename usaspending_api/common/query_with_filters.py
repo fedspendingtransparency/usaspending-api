@@ -48,6 +48,7 @@ class _KeywordSearch(_Filter):
         keyword_queries = []
         fields = [
             "recipient_name",
+            "parent_recipient_name",
             "naics_code",
             "naics_description",
             "product_or_service_code",
