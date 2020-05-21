@@ -57,7 +57,7 @@ from usaspending_api.common.recipient_lookups import annotate_recipient_id, anno
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.submissions.models import SubmissionAttributes
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 GLOBAL_MAP = {
     "award": {
@@ -136,11 +136,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
 
         if self.is_subaward:
-            response = Response(self.create_response(self.construct_queryset()))
+            response = Response(self.create_response_for_subawards(self.construct_queryset()))
         else:
             self.last_record_unique_id = json_request.get("last_record_unique_id")
             self.last_record_sort_value = json_request.get("last_record_sort_value")
-            response = Response(self.construct_es_response(self.query_elasticsearch()))
+            response = Response(self.construct_es_response_for_prime_awards(self.query_elasticsearch()))
         return response
 
     @staticmethod
@@ -198,7 +198,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
         return queryset.values(*list(database_fields))[self.pagination["lower_bound"] : self.pagination["upper_bound"]]
 
-    def create_response(self, queryset):
+    def create_response_for_subawards(self, queryset):
         results = []
         rows = list(queryset)
         for record in rows[: self.pagination["limit"]]:
@@ -233,20 +233,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def get_sort_by_fields(self):
         if self.pagination["sort_key"] == "Award ID":
             sort_by_fields = self.constants["award_id_fields"]
-        elif self.is_subaward:
+        else:
             if set(self.filters["award_type_codes"]) <= set(procurement_type_mapping):
                 sort_by_fields = [contract_subaward_mapping[self.pagination["sort_key"]]]
             elif set(self.filters["award_type_codes"]) <= set(assistance_type_mapping):
                 sort_by_fields = [grant_subaward_mapping[self.pagination["sort_key"]]]
-        else:
-            if set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
-                sort_by_fields = [award_contracts_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
-                sort_by_fields = [loan_award_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(idv_type_mapping):
-                sort_by_fields = [award_idv_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
-                sort_by_fields = [non_loan_assistance_award_mapping[self.pagination["sort_key"]]]
 
         return sort_by_fields
 
@@ -357,7 +348,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return None
         return agency_id.id
 
-    def construct_es_response(self, response) -> dict:
+    def construct_es_response_for_prime_awards(self, response) -> dict:
         results = []
         for res in response:
             hit = res.to_dict()

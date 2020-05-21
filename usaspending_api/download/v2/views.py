@@ -14,8 +14,6 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["award_levels"] = ["elasticsearch_awards", "sub_awards"]
-        # else:
-        #     request.data["award_levels"] = ["awards", "sub_awards"]
         request.data["constraint_type"] = "row_count"
         return BaseDownloadViewSet.post(self, request, "award")
 
@@ -66,8 +64,6 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["award_levels"] = ["elasticsearch_transactions", "sub_awards"]
-        # else:
-        #     request.data["award_levels"] = ["transactions", "sub_awards"]
         request.data["constraint_type"] = "row_count"
         return BaseDownloadViewSet.post(self, request, "award")
 
