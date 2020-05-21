@@ -101,6 +101,4 @@ class SpendingByCategoryVisualizationViewSet(APIView):
     @staticmethod
     def raise_not_implemented(payload):
         msg = f"Category '{payload['category']}' is not implemented"
-        if payload["subawards"]:
-            msg += " when `subawards` is True"
-        raise NotImplementedException(msg.format(payload["category"]))
+        raise NotImplementedException(msg)

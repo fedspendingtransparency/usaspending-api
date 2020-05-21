@@ -61,7 +61,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
 
         return results
 
-    def query_django(self, base_queryset: QuerySet) -> List[dict]:
+    def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
         django_filters = {f"pop_{self.location_type.value}_code__isnull": False}
 
         if self.location_type == LocationType.COUNTY:
