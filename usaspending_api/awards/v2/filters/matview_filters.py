@@ -5,6 +5,7 @@ from django.db.models import Q
 
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.search.filters.postgres.psc import PSCCodes
 from usaspending_api.search.models import AwardSearchView, UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
@@ -66,11 +67,12 @@ def matview_search_filter(filters, model, for_downloads=False):
             "award_ids",
             "program_numbers",
             "naics_codes",
-            "psc_codes",
+            PSCCodes.underscore_name,
             "contract_pricing_type_codes",
             "set_aside_type_codes",
             "extent_competed_type_codes",
-            "tas_codes",
+            TasCodes.underscore_name,
+            TreasuryAccounts.underscore_name,
             # next 3 keys used by federal account page
             "federal_account_ids",
             "object_class",
@@ -276,10 +278,9 @@ def matview_search_filter(filters, model, for_downloads=False):
             regex = f"^({'|'.join([str(elem) for elem in require])}).*"
             queryset = queryset.filter(naics_code__regex=regex)
 
-        elif key == "psc_codes":
-            in_query = [v for v in value]
-            if len(in_query) != 0:
-                queryset = queryset.filter(product_or_service_code__in=in_query)
+        elif key == PSCCodes.underscore_name:
+            q = PSCCodes.build_tas_codes_filter(value)
+            queryset = queryset.filter(q) if q else queryset
 
         elif key == "contract_pricing_type_codes":
             in_query = [v for v in value]
