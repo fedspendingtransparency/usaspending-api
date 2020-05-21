@@ -347,6 +347,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return response
 
+    # For an unknown reason, ES tends to return the awarding agency toptier codes as integers or floats, instead of as
+    # text. This function casts the code back to a string and appends any leading zeroes that were lost.
     def get_agency_database_id(self, code):
         if len(str(int(code))) < 3:
             code = "{zeroes}{code}".format(zeroes=("0" * (3 - len(str(int(code))))), code=int(code))
