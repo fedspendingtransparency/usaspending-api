@@ -6,7 +6,7 @@ from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
-from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
+from usaspending_api.search.filters.postgres.psc import PSCCodes
 from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
 from usaspending_api.search.models import SubawardView
@@ -52,7 +52,7 @@ def subaward_filter(filters, for_downloads=False):
             "award_ids",
             "program_numbers",
             "naics_codes",
-            "psc_codes",
+            PSCCodes.underscore_name,
             "contract_pricing_type_codes",
             "set_aside_type_codes",
             "extent_competed_type_codes",
@@ -216,9 +216,9 @@ def subaward_filter(filters, for_downloads=False):
         elif key == "award_ids":
             queryset = build_award_ids_filter(queryset, value, ("piid", "fain"))
 
-        # add "naics_codes" (column naics) after NAICS are mapped to subawards
-        elif key == "psc_codes":
-            queryset = PSCCodes.generate_postgres_query(value, queryset)
+        elif key == PSCCodes.underscore_name:
+            q = PSCCodes.build_tas_codes_filter(value)
+            queryset = queryset.filter(q) if q else queryset
 
         # add "naics_codes" (column naics) after NAICS are mapped to subawards
         elif key in ("program_numbers", "contract_pricing_type_codes"):

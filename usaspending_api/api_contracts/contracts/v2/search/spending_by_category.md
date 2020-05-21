@@ -157,8 +157,8 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `exclude`: [[`Service`, `B`, `B5`, `B502`]] (optional, array[array[string]], fixed-type)
 
 ### TASCodeObject (object)
-+ `require`: [[`091`]] (optional, array[array[string]])
-+ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
++ `require`: [[`091`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)

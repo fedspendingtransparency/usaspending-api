@@ -182,7 +182,7 @@ List of table columns
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
-+ `tas_codes` (optional, TASCodeObject)
++ `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `psc_codes` (optional, enum[PSCCodeObject, array[string]])
     Supports new PSCCodeObject or legacy array of codes.
 + `contract_pricing_type_codes`: `J` (optional, array[string])
@@ -231,16 +231,16 @@ List of table columns
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, array[string])
-+ `exclude`: [`3333`] (optional, array[string])
++ `require`: [`33`] (optional, array[string], fixed-type)
++ `exclude`: [`3333`] (optional, array[string], fixed-type)
 
 ### PSCCodeObject (object)
 + `require`: [[`Service`, `B`, `B5`]] (optional, array[array[string]], fixed-type)
 + `exclude`: [[`Service`, `B`, `B5`, `B502`]] (optional, array[array[string]], fixed-type)
 
 ### TASCodeObject (object)
-+ `require`: [[`091`]] (optional, array[array[string]])
-+ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
++ `require`: [[`091`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)

@@ -118,16 +118,16 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, array[string])
-+ `exclude`: [`3333`] (optional, array[string])
++ `require`: [`33`] (optional, array[string], fixed-type)
++ `exclude`: [`3333`] (optional, array[string], fixed-type)
 
 ### PSCCodeObject (object)
 + `require`: [[`Service`, `B`, `B5`]] (optional, array[array[string]], fixed-type)
 + `exclude`: [[`Service`, `B`, `B5`, `B502`]] (optional, array[array[string]], fixed-type)
 
 ### TASCodeObject (object)
-+ `require`: [[`091`]] (optional, array[array[string]])
-+ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
++ `require`: [[`091`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
