@@ -4,7 +4,7 @@ from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryT
 from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import HierarchicalFilter, Node
 
 
-class PSCCodes(_Filter, PSCCodesMixin, HierarchicalFilter):
+class PSCCodes(PSCCodesMixin, _Filter, HierarchicalFilter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
         cls.validate_filter_values(filter_values)

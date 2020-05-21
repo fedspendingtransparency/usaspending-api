@@ -17,7 +17,9 @@ def check_types_and_assign_defaults(old_dict, new_dict, defaults_dict):
 
         # Validate the field's data type.  psc_codes:  I hate doing this so much, but I don't know
         # a better way without redesigning how validation works which is definitely outside of the
-        # scope of this ticket and adds risk.
+        # scope of this ticket and adds risk.  In a nutshell, psc_codes can support lists or dicts.
+        # The original function is designed to match the type of the field value with the type of
+        # its default value which doesn't permit more than a single type.
         if field == "psc_codes":
             if not isinstance(new_dict[field], type(defaults_dict[field])) and not isinstance(new_dict[field], dict):
                 type_name = type(defaults_dict[field]).__name__

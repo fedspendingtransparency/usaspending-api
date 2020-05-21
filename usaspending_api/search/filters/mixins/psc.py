@@ -9,6 +9,7 @@ class PSCCodesMixin:
 
     @classmethod
     def validate_filter_values(cls, filter_values):
+        """ This is validation on top of whatever TinyShield performs. """
         if isinstance(filter_values, list):
             # Legacy.
             for code in filter_values:
@@ -22,7 +23,7 @@ class PSCCodesMixin:
             for key in ("require", "exclude"):
                 code_lists = filter_values.get(key) or []
                 if not isinstance(code_lists, list):
-                    raise UnprocessableEntityException(f"require and exclude properties must be arrays.")
+                    raise UnprocessableEntityException(f"require and exclude properties must be arrays of arrays.")
                 for code_list in code_lists:
                     if not isinstance(code_list, list):
                         raise UnprocessableEntityException(f"require and exclude properties must be arrays of arrays.")
