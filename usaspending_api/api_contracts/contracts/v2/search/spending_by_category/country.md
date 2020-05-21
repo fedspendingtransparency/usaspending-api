@@ -106,11 +106,13 @@ This endpoint returns a list of the top results of Countries sorted by the total
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
-+ `psc_codes`: `8940`, `8910` (optional, array[string])
++ `psc_codes` (optional, enum[PSCCodeObject, array[string]])
+    Supports new PSCCodeObject or legacy array of codes.
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -148,10 +150,18 @@ This endpoint returns a list of the top results of Countries sorted by the total
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: `33` (optional, array[string])
-+ `exclude`: `3333` (optional, array[string])
++ `require`: [`33`] (optional, array[string], fixed-type)
++ `exclude`: [`3333`] (optional, array[string], fixed-type)
+
+### PSCCodeObject (object)
++ `require`: [[`Service`, `B`, `B5`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`Service`, `B`, `B5`, `B502`]] (optional, array[array[string]], fixed-type)
 
 ### TASCodeObject (object)
++ `require`: [[`091`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
+
+### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier - three characters
 + `aid` (required, string)

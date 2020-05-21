@@ -1,10 +1,10 @@
 from abc import abstractmethod
+from django.db.models import Q
 
 
 class HierarchicalFilter:
     @classmethod
-    def _query_string(cls, require, exclude) -> str:
-        """Generates string in proper syntax for Elasticsearch query_string attribute, given API parameters"""
+    def _query_string(cls, queryset, require, exclude):
         positive_nodes = [
             cls.node(code, True, require, exclude) for code in require if cls._has_no_parents(code, require + exclude)
         ]
@@ -13,28 +13,19 @@ class HierarchicalFilter:
             cls.node(code, False, require, exclude) for code in exclude if cls._has_no_parents(code, require + exclude)
         ]
 
-        positive_query = " OR ".join(
-            [
-                node.get_query()
-                for node in positive_nodes
-                if node.code not in [neg_node.code for neg_node in negative_nodes]
-            ]
-        )
-        negative_query = " OR ".join(
-            [
-                node.get_query()
-                for node in negative_nodes
-                if (node.children or not positive_nodes)
-                and node.code not in [pos_node.code for pos_node in positive_nodes]
-            ]
-        )
+        q = Q()
+        for node in positive_nodes:
+            # cancel out any require codes that also are excluded at top level
+            if node.code not in [neg_node.code for neg_node in negative_nodes]:
+                q |= node.get_query()
+            else:
+                q |= Q(pk__in=[])
+        for node in negative_nodes:
+            if node.children or node.code not in [pos_node.code for pos_node in positive_nodes]:
+                q |= node.get_query()
 
-        if positive_query and negative_query:
-            return f"({positive_query}) OR ({negative_query})"
-        if not positive_query and not negative_query:
-            return "NOT *"  # return nothing
-        else:
-            return positive_query + negative_query  # We know that exactly one is blank thanks to TinyShield
+        queryset = queryset.filter(q)
+        return queryset
 
     @classmethod
     def _has_no_parents(cls, code, other_codes):
@@ -74,25 +65,23 @@ class Node:
             if self.is_parent_of(other_code):
                 self.children.append(self.clone(other_code, is_positive, positive_codes, negative_codes))
 
-    def get_query(self):
-        retval = self._basic_search_unit()
+    def get_query(self) -> Q:
         if self.positive:
-            retval = f"({retval})"
-            negative_child_query = " AND ".join([child.get_query() for child in self.children if not child.positive])
-            if negative_child_query:
-                negative_child_query = f"({negative_child_query})"
-                retval = f"({retval} AND ({negative_child_query}))"
+            filter = self._basic_search_unit()
+            for node in [child for child in self.children if not child.positive]:
+                filter &= node.get_query()
         else:
             if [child for child in self.children if child.positive]:
-                positive_child_query = " OR ".join([child.get_query() for child in self.children if child.positive])
-                retval = f"({positive_child_query})"
+                filter = Q()
+                for node in [child for child in self.children if child.positive]:
+                    filter |= node.get_query()
             else:
-                retval = f"(NOT {retval})"
+                filter = ~self._basic_search_unit()
 
-        return retval
+        return filter
 
     @abstractmethod
-    def _basic_search_unit(self):
+    def _basic_search_unit(self) -> dict:
         pass
 
     def is_parent_of(self, other_path):
