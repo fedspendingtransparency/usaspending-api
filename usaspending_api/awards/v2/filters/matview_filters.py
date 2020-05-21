@@ -12,7 +12,8 @@ from usaspending_api.common.exceptions import InvalidParameterException, NotImpl
 from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
-from usaspending_api.search.helpers.matview_filter_helpers import build_tas_codes_filter, build_award_ids_filter
+from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
+from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -297,8 +298,16 @@ def matview_search_filter(filters, model, for_downloads=False):
                 or_queryset |= Q(extent_competed__exact=v)
             queryset = queryset.filter(or_queryset)
 
-        elif key == "tas_codes":
-            queryset = build_tas_codes_filter(queryset, value)
+        # Because these two filters OR with each other, we need to know about the presense of both filters to know what to do
+        # This filter was picked arbitrarily to be the one that checks for the other
+        elif key == TasCodes.underscore_name:
+            q = TasCodes.build_tas_codes_filter(queryset, value)
+            if TreasuryAccounts.underscore_name in filters.keys():
+                q |= TreasuryAccounts.build_tas_codes_filter(queryset, filters[TreasuryAccounts.underscore_name])
+            queryset = queryset.filter(q)
+
+        elif key == TreasuryAccounts.underscore_name and TasCodes.underscore_name not in filters.keys():
+            queryset = queryset.filter(TreasuryAccounts.build_tas_codes_filter(queryset, value))
 
         # Federal Account Filter
         elif key == "federal_account_ids":

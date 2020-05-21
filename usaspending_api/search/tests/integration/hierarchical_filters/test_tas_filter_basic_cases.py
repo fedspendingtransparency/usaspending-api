@@ -4,12 +4,11 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures 
     BASIC_TAS,
     ATA_TAS,
     BPOA_TAS,
-    ATA_BPOA_TAS,
     TAS_DICTIONARIES,
     TAS_STRINGS,
     UNINTUITIVE_AGENCY,
 )
-from usaspending_api.search.tests.integration.hierarchical_filters.es_search_test_helpers import (
+from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_test_helpers import (
     _setup_es,
     query_by_tas,
 )
@@ -58,7 +57,7 @@ def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, awar
 @pytest.mark.django_db
 def test_match_from_ata_tas(client, monkeypatch, elasticsearch_award_index, award_with_ata_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(client, {"require": [_tas_path(ATA_BPOA_TAS)]})
+    resp = query_by_tas(client, {"require": [_tas_path(ATA_TAS)]})
 
     assert resp.json()["results"] == [_award1()]
 

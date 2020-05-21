@@ -7,7 +7,8 @@ from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
-from usaspending_api.search.helpers.matview_filter_helpers import build_tas_codes_filter, build_award_ids_filter
+from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
+from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -22,7 +23,6 @@ def subaward_download(filters):
 
 # TODO: Performance when multiple false values are initially provided
 def subaward_filter(filters, for_downloads=False):
-
     queryset = SubawardView.objects.all()
 
     recipient_scope_q = Q(recipient_location_country_code="USA") | Q(recipient_location_country_name="UNITED STATES")
@@ -55,7 +55,8 @@ def subaward_filter(filters, for_downloads=False):
             "contract_pricing_type_codes",
             "set_aside_type_codes",
             "extent_competed_type_codes",
-            "tas_codes",
+            TasCodes.underscore_name,
+            TreasuryAccounts.underscore_name,
         ]
 
         if key not in key_list:
@@ -233,7 +234,15 @@ def subaward_filter(filters, for_downloads=False):
                 or_queryset |= Q(**{"{}__exact".format(filter_to_col[key]): in_query})
             queryset = queryset.filter(or_queryset)
 
-        elif key == "tas_codes":
-            queryset = build_tas_codes_filter(queryset, value)
+        # Because these two filters OR with each other, we need to know about the presense of both filters to know what to do
+        # This filter was picked arbitrarily to be the one that checks for the other
+        elif key == TasCodes.underscore_name:
+            q = TasCodes.build_tas_codes_filter(queryset, value)
+            if TreasuryAccounts.underscore_name in filters.keys():
+                q |= TreasuryAccounts.build_tas_codes_filter(queryset, filters[TreasuryAccounts.underscore_name])
+            queryset = queryset.filter(q)
+
+        elif key == TreasuryAccounts.underscore_name and TasCodes.underscore_name not in filters.keys():
+            queryset = queryset.filter(TreasuryAccounts.build_tas_codes_filter(queryset, value))
 
     return queryset
