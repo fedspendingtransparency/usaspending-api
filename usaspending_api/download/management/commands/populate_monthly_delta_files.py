@@ -225,7 +225,7 @@ class Command(BaseCommand):
         return pd.Series(tid.split("_") + [tid])
 
     def add_deletion_records(self, source_path, working_dir, award_type, agency_code, source, generate_since):
-        """ Retrieve deletion files from S3 and append necessary records to the end of the the file """
+        """ Retrieve deletion files from S3 and append necessary records to the end of the file """
         logger.info("Retrieving deletion records from S3 files and appending to the CSV")
 
         # Retrieve all SubtierAgency IDs within this TopTierAgency

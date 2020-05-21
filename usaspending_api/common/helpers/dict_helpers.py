@@ -1,4 +1,7 @@
 from collections import OrderedDict
+from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
+from usaspending_api.search.filters.elasticsearch.tas import TasCodes
+from usaspending_api.search.filters.mixins.psc import PSCCodesMixin
 
 
 def upper_case_dict_values(input_dict):
@@ -16,7 +19,7 @@ def order_nested_filter_tree_object(nested_object):
               "exclude": [["Service", "B", "B5", "B502"]]
           }
         }
-    The position of the the values in the innermost lists is important.  Exclude them from sorting.
+    The position of the values in the innermost lists is important.  Exclude them from sorting.
     """
     if not isinstance(nested_object, dict):
         return order_nested_object(nested_object)
@@ -64,7 +67,8 @@ def order_nested_object(nested_object):
                 (
                     key,
                     order_nested_filter_tree_object(nested_object[key])
-                    if key in ("naics_codes", "psc_codes", "tas_codes") and isinstance(nested_object[key], dict)
+                    if key in (NaicsCodes.underscore_name, PSCCodesMixin.underscore_name, TasCodes.underscore_name)
+                    and isinstance(nested_object[key], dict)
                     else order_nested_object(nested_object[key]),
                 )
                 for key in sorted(nested_object.keys())
