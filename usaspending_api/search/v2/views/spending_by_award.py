@@ -1,6 +1,5 @@
 import copy
 
-
 from sys import maxsize
 from django.conf import settings
 from django.db.models import F
@@ -11,7 +10,6 @@ import logging
 from usaspending_api.awards.models import Award
 from usaspending_api.references.models import Agency
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter_determine_award_matview_model
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
@@ -22,12 +20,6 @@ from usaspending_api.awards.v2.lookups.lookups import (
     loan_type_mapping,
     non_loan_assistance_type_mapping,
     procurement_type_mapping,
-)
-from usaspending_api.awards.v2.lookups.matview_lookups import (
-    award_contracts_mapping,
-    award_idv_mapping,
-    loan_award_mapping,
-    non_loan_assistance_award_mapping,
 )
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     contracts_mapping,
@@ -52,7 +44,7 @@ from usaspending_api.common.helpers.generic_helper import get_generic_filters_me
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
+from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -60,31 +52,14 @@ logger = logging.getLogger(__name__)
 
 GLOBAL_MAP = {
     "award": {
-        "minimum_db_fields": {"award_id", "piid", "fain", "uri", "type"},
-        "api_to_db_mapping_list": [
-            award_contracts_mapping,
-            award_idv_mapping,
-            loan_award_mapping,
-            non_loan_assistance_award_mapping,
-        ],
         "award_semaphore": "type",
-        "award_id_fields": ["piid", "fain", "uri"],
         "internal_id_fields": {"internal_id": "award_id"},
-        "generated_award_field": ("generated_internal_id", "internal_id"),
-        "type_code_to_field_map": {
-            **{award_type: award_contracts_mapping for award_type in contract_type_mapping},
-            **{award_type: award_idv_mapping for award_type in idv_type_mapping},
-            **{award_type: loan_award_mapping for award_type in loan_type_mapping},
-            **{award_type: non_loan_assistance_award_mapping for award_type in non_loan_assistance_type_mapping},
-        },
         "elasticsearch_type_code_to_field_map": {
             **{award_type: CONTRACT_SOURCE_LOOKUP for award_type in contract_type_mapping},
             **{award_type: IDV_SOURCE_LOOKUP for award_type in idv_type_mapping},
             **{award_type: LOAN_SOURCE_LOOKUP for award_type in loan_type_mapping},
             **{award_type: NON_LOAN_ASST_SOURCE_LOOKUP for award_type in non_loan_assistance_type_mapping},
         },
-        "annotations": {"_recipient_id": annotate_recipient_id},
-        "filter_queryset_func": matview_search_filter_determine_award_matview_model,
     },
     "subaward": {
         "minimum_db_fields": {"subaward_number", "piid", "fain", "award_type", "award_id"},
