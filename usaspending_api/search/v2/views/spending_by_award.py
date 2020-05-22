@@ -1,7 +1,6 @@
 import copy
 
 
-from datetime import datetime
 from sys import maxsize
 from django.conf import settings
 from django.db.models import F
@@ -289,14 +288,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
             ),
         }
-
-    def date_to_epoch_millis(self, date):
-        if "DATE" in self.pagination["sort_key"].upper():
-            if date is not None and type(date) != "str":
-                date = date.strftime("%Y-%m-%d")
-            d = datetime.strptime(date, "%Y-%m-%d")
-            date = int(d.timestamp() * 1000)
-        return date
 
     def query_elasticsearch(self) -> list:
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
