@@ -1,9 +1,10 @@
-from sys import maxsize
-from django.conf import settings
 import copy
 
+from django.conf import settings
+from sys import maxsize
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
+from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
 
 
@@ -21,6 +22,25 @@ TAS_COMPONENTS_FILTER = {
     "a": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
     "main": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": False},
     "sub": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+}
+
+STANDARD_FILTER_TREE_MODEL = {
+    "type": "object",
+    "min": 0,
+    "object_keys": {
+        "require": {
+            "type": "array",
+            "array_type": "any",
+            "models": [{"type": "array", "array_type": "text", "text_type": "search"}],
+            "min": 0,
+        },
+        "exclude": {
+            "type": "array",
+            "array_type": "any",
+            "models": [{"type": "array", "array_type": "text", "text_type": "search"}],
+            "min": 0,
+        },
+    },
 }
 
 AWARD_FILTER = [
@@ -53,7 +73,14 @@ AWARD_FILTER = [
     },
     {"name": "place_of_performance_scope", "type": "enum", "enum_values": ["domestic", "foreign"]},
     {"name": "program_numbers", "type": "array", "array_type": "text", "text_type": "search"},
-    {"name": "psc_codes", "type": "array", "array_type": "text", "text_type": "search"},
+    {
+        "name": PSCCodes.underscore_name,
+        "type": "any",
+        "models": [
+            {"type": "array", "array_type": "text", "text_type": "search", "min": 0},
+            STANDARD_FILTER_TREE_MODEL,
+        ],
+    },
     {"name": "recipient_id", "type": "text", "text_type": "search"},
     {"name": "recipient_scope", "type": "enum", "enum_values": ("domestic", "foreign")},
     {"name": "recipient_search_text", "type": "array", "array_type": "text", "text_type": "search"},
@@ -141,24 +168,7 @@ AWARD_FILTER = [
         "type": "any",
         "models": [
             {"type": "array", "array_type": "object", "object_keys": TAS_COMPONENTS_FILTER},
-            {
-                "type": "object",
-                "min": 0,
-                "object_keys": {
-                    "require": {
-                        "type": "array",
-                        "array_type": "any",
-                        "models": [{"type": "array", "array_type": "text", "text_type": "search"}],
-                        "min": 0,
-                    },
-                    "exclude": {
-                        "type": "array",
-                        "array_type": "any",
-                        "models": [{"type": "array", "array_type": "text", "text_type": "search"}],
-                        "min": 0,
-                    },
-                },
-            },
+            STANDARD_FILTER_TREE_MODEL,
         ],
     },
 ]

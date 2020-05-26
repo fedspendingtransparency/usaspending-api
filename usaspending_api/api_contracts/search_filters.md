@@ -410,7 +410,7 @@ Request parameter description:
 
 ## PSC
 
-**Description:** Filtering based on autocomplete selections for PSC Code.
+**Description:** Filtering based on autocomplete or tree filter selections for PSC Code.
 
 **Example Request:**
 ```
@@ -418,9 +418,21 @@ Request parameter description:
     "psc_codes": ["1510"]
 }
 ```
+*OR*
+```
+{
+    "psc_codes": {
+        "require": [["091"]]
+        "exclude": [["091", "091-0800"]]
+    }
+}
+```
 
 Request parameter description:
-* `psc_codes` (List) : Top level key name for filter. Contains list of Strings corresponding to PSC Codes.
+* `psc_codes` (List or Object) : Top level key name for filter.  Contains list of Strings corresponding to PSC Codes or an object that exposes `require` and `exclude` filters where:
+    * When `require` is provided, search will only return results that have a PSC code that is a descendant of one of the paths from the require list. 
+    * When `exclude` is provided, search will only return results that do NOT have a PSC code that is a descendant of one of the paths from the exclude list. 
+    * If an element matches both lists, the more specific rule (longer array) supercedes.
 
 ## Type of Contract Pricing
 

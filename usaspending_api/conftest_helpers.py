@@ -104,7 +104,7 @@ class TestElasticSearchIndex:
 
 
 def ensure_broker_server_dblink_exists():
-    """Ensure that all the database extensions exist, and the the broker database is setup as a foreign data server
+    """Ensure that all the database extensions exist, and the broker database is setup as a foreign data server
 
     This leverages SQL script files and connection strings in ``settings.DATABASES`` in order to setup these database
     objects. The connection strings for BOTH the USAspending and the Broker databases are needed,

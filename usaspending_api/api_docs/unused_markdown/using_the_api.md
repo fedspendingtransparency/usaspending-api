@@ -717,7 +717,7 @@ This is a special type of autocomplete query that allows users to search for geo
     * `CONGRESSIONAL DISTRICT` - Will specify the parent as the state containing the district.
     * `COUNTRY` - Will specify the parent as the country code for reference purposes.
     * `CITY` - Will specify the state the city is in for domestic cities, or the country for foreign cities.
-    * `COUNTY` - Will specify the state the the city is in for domestic cities.
+    * `COUNTY` - Will specify the state the city is in for domestic cities.
     * `STATE` - Will specify the country the state is in.
     * `ZIP` - Will specify the state the ZIP code falls in. If a ZIP code falls in multiple states, two results will be generated.
     * `POSTAL CODE` - Will specify the country the postal code falls in.
