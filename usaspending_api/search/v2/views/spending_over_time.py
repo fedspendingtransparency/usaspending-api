@@ -14,7 +14,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.awards.v2.filters.view_selector import spending_over_time
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
@@ -35,7 +34,7 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
 GROUPING_LOOKUP = {
@@ -78,15 +77,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return validated_data
 
-    def database_data_layer(self) -> tuple:
-        if self.subawards:
-            queryset = subaward_filter(self.filters)
-            obligation_column = "amount"
-        else:
-            queryset = spending_over_time(self.filters)
-            obligation_column = "generated_pragmatic_obligation"
-
+    def database_data_layer_for_subawards(self) -> tuple:
+        queryset = subaward_filter(self.filters)
+        obligation_column = "amount"
         values = ["fy"]
+
         if self.group == "month":
             queryset = queryset.annotate(month=FiscalMonth("action_date"), fy=FiscalYear("action_date"))
             values.append("month")
@@ -174,7 +169,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return results
 
-    def query_elasticsearch(self, time_periods: list) -> list:
+    def query_elasticsearch_for_prime_awards(self, time_periods: list) -> list:
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
         search = TransactionSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
@@ -203,7 +198,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         time_periods = self.filters.get("time_period", [default_time_period])
 
         if self.subawards:
-            db_results, values = self.database_data_layer()
+            db_results, values = self.database_data_layer_for_subawards()
             results = bolster_missing_time_periods(
                 filter_time_periods=time_periods,
                 queryset=db_results,
@@ -211,7 +206,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 columns={"aggregated_amount": "aggregated_amount"},
             )
         else:
-            results = self.query_elasticsearch(time_periods)
+            results = self.query_elasticsearch_for_prime_awards(time_periods)
 
         return Response(
             OrderedDict(

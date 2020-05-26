@@ -44,7 +44,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
 
         return results
 
-    def query_django(self, base_queryset: QuerySet) -> List[dict]:
+    def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
         django_filters = {f"{self.agency_type.value}_agency_name__isnull": False}
         django_values = [f"{self.agency_type.value}_agency_name", f"{self.agency_type.value}_agency_abbreviation"]
         queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(
