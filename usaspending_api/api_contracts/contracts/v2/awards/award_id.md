@@ -36,7 +36,7 @@ This endpoint returns a list of data that is associated with the award profile p
                 "base_exercised_options": 61241.34,
                 "base_and_all_options": 61241.34,
                 "parent_award": {
-                    "agency_id": "1173,
+                    "agency_id": 1173,
                     "agency_name": "Department of Defense",
                     "sub_agency_id": "9700",
                     "sub_agency_name": "Department of Defense",
@@ -77,6 +77,7 @@ This endpoint returns a list of data that is associated with the award profile p
                     "multi_year_contract": "N",
                     "consolidated_contract": "N",
                     "type_of_contract_pricing": "J",
+                    "national_interest_action": "NONE",
                     "multiple_or_single_award_description": null,
                     "solicitation_procedures_description": "NEGOTIATED PROPOSAL/QUOTE",
                     "extent_competed_description": "FULL AND OPEN COMPETITION",
@@ -114,10 +115,12 @@ This endpoint returns a list of data that is associated with the award profile p
                     "purchase_card_as_payment_method": "N",
                     "purchase_card_as_payment_method_description": "NO",
                     "consolidated_contract_description": "NO",
-                    "type_of_contract_pricing_description": "FIRM FIXED PRICE"
+                    "type_of_contract_pricing_description": "FIRM FIXED PRICE",
+                    "national_interest_action_description": "NONE"
                 },
                 "funding_agency": {
                     "id": 1219,
+                    "has_agency_page": true,
                     "toptier_agency": {
                         "name": "Department of Defense",
                         "code": "097",
@@ -132,6 +135,7 @@ This endpoint returns a list of data that is associated with the award profile p
                 },
                 "awarding_agency": {
                     "id": 1219,
+                    "has_agency_page": true,
                     "toptier_agency": {
                         "name": "Department of Defense",
                         "code": "097",
@@ -147,14 +151,14 @@ This endpoint returns a list of data that is associated with the award profile p
                 "period_of_performance": {
                     "start_date": "2016-06-24",
                     "end_date": "2016-06-27",
-                    "last_modified_date": "2016-06-27 10:13:23",
+                    "last_modified_date": "2019-10-27 20:06:44",
                     "potential_end_date": "2016-06-27 00:00:00"
                 },
                 "recipient": {
-                    "recipient_hash": "7aa9e102-b0b4-6fa9-aaf8-9d4047a84544-C",
+                    "recipient_hash": "a704b6c0-d296-fc75-79e9-7a9546b3b634-C",
                     "recipient_name": "MCKESSON CORPORATION",
                     "recipient_unique_id": "105919864",
-                    "parent_recipient_hash": "a10af851-96dd-8b60-d4ad-a1a1cdcfa97f-P",
+                    "parent_recipient_hash": "8b51f520-c590-0517-1e0d-45336a1b9332-P",
                     "parent_recipient_name": "MCKESSON CORPORATION",
                     "parent_recipient_unique_id": "177667227",
                     "business_categories": [
@@ -272,6 +276,7 @@ This endpoint returns a list of data that is associated with the award profile p
                 "total_subaward_amount": null,
                 "awarding_agency": {
                     "id": 153,
+                    "has_agency_page": true,
                     "toptier_agency": {
                         "name": "Department of Agriculture",
                         "code": "012",
@@ -286,6 +291,7 @@ This endpoint returns a list of data that is associated with the award profile p
                 },
                 "funding_agency": {
                     "id": 153,
+                    "has_agency_page": true,
                     "toptier_agency": {
                         "name": "Department of Agriculture",
                         "code": "012",
@@ -299,7 +305,7 @@ This endpoint returns a list of data that is associated with the award profile p
                     "office_agency_name": null
                 },
                 "recipient": {
-                    "recipient_hash": null,
+                    "recipient_hash": "6e4362a8-7dd7-8d86-d2ff-8faa5eefe0aa-R",
                     "recipient_name": "REDACTED DUE TO PII",
                     "recipient_unique_id": null,
                     "parent_recipient_hash": null,
@@ -454,6 +460,7 @@ This endpoint returns a list of data that is associated with the award profile p
                     "multi_year_contract": null,
                     "consolidated_contract": "N",
                     "type_of_contract_pricing": "1",
+                    "national_interest_action": "NONE",
                     "multiple_or_single_award_description": "SINGLE AWARD",
                     "solicitation_procedures_description": null,
                     "extent_competed_description": null,
@@ -491,10 +498,12 @@ This endpoint returns a list of data that is associated with the award profile p
                     "purchase_card_as_payment_method": null,
                     "purchase_card_as_payment_method_description": null,
                     "consolidated_contract_description": "NO",
-                    "type_of_contract_pricing_description": "ORDER DEPENDENT (IDV ALLOWS PRICING ARRANGEMENT TO BE DETERMINED SEPARATELY FOR EACH ORDER)"
+                    "type_of_contract_pricing_description": "ORDER DEPENDENT (IDV ALLOWS PRICING ARRANGEMENT TO BE DETERMINED SEPARATELY FOR EACH ORDER)",
+                    "national_interest_action_description": "NONE"
                 },
                 "funding_agency": {
                     "id": 1196,
+                    "has_agency_page": true,
                     "toptier_agency": {
                         "name": "Department of Defense",
                         "code": "097",
@@ -509,6 +518,7 @@ This endpoint returns a list of data that is associated with the award profile p
                 },
                 "awarding_agency": {
                     "id": 1196,
+                    "has_agency_page": true,
                     "toptier_agency": {
                         "name": "Department of Defense",
                         "code": "097",
@@ -528,10 +538,10 @@ This endpoint returns a list of data that is associated with the award profile p
                     "potential_end_date": null
                 },
                 "recipient": {
-                    "recipient_hash": "fc621300-584a-1b6f-0e5f-aba6b0deb70a-C",
+                    "recipient_hash": "fcc89367-99ce-1509-091c-ce26fb52556b-C",
                     "recipient_name": "GRADLYN - G.K. AIRFREIGHT SERVICE GMBH",
                     "recipient_unique_id": "317771921",
-                    "parent_recipient_hash": "fc621300-584a-1b6f-0e5f-aba6b0deb70a-P",
+                    "parent_recipient_hash": "fcc89367-99ce-1509-091c-ce26fb52556b-P",
                     "parent_recipient_name": "GK AIRFREIGHT-SERVICE GRADLYN KENNELS GMBH",
                     "parent_recipient_unique_id": "317771921",
                     "business_categories": [
@@ -553,7 +563,7 @@ This endpoint returns a list of data that is associated with the award profile p
                         "address_line2": "BUILDING 458",
                         "address_line3": null,
                         "congressional_code": null,
-                        "zip4": null,
+                        "zip4": "60549",
                         "zip5": null,
                         "foreign_postal_code": null,
                         "foreign_province": null
@@ -667,6 +677,8 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the contract has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
++ `national_interest_action` (required, string)
++ `national_interest_action_description` (required, string)
 
 ## IDVResponse (object)
 + `category` (required, enum[string])
@@ -706,6 +718,8 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the idv has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
++ `national_interest_action` (required, string)
++ `national_interest_action_description` (required, string)
 
 ## FinancialAssistanceResponse (object)
 + `category` (required, enum[string])
