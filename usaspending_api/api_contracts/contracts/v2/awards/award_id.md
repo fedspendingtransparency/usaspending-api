@@ -718,8 +718,8 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the idv has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
-+ `national_interest_action` (required, string)
-+ `national_interest_action_description` (required, string)
++ `national_interest_action` (required, string, nullable)
++ `national_interest_action_description` (required, string, nullable)
 
 ## FinancialAssistanceResponse (object)
 + `category` (required, enum[string])
