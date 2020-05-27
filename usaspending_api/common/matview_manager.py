@@ -22,14 +22,6 @@ MATERIALIZED_VIEWS = OrderedDict(
             },
         ),
         (
-            "mv_award_summary",
-            {
-                "model": mv.AwardSummaryMatview,
-                "json_filepath": str(JSON_DIR / "mv_award_summary.json"),
-                "sql_filename": "mv_award_summary.sql",
-            },
-        ),
-        (
             "mv_contract_award_search",
             {
                 "model": mv.ContractAwardSearchMatview,
@@ -107,14 +99,6 @@ MATERIALIZED_VIEWS = OrderedDict(
                 "model": mv.SummaryTransactionView,
                 "json_filepath": str(JSON_DIR / "summary_transaction_view.json"),
                 "sql_filename": "summary_transaction_view.sql",
-            },
-        ),
-        (
-            "summary_view",
-            {
-                "model": mv.SummaryView,
-                "json_filepath": str(JSON_DIR / "summary_view.json"),
-                "sql_filename": "summary_view.sql",
             },
         ),
         (

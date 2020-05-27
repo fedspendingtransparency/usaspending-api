@@ -1,5 +1,4 @@
 VACUUM (ANALYZE, VERBOSE) mv_agency_autocomplete;
-VACUUM (ANALYZE, VERBOSE) mv_award_summary;
 VACUUM (ANALYZE, VERBOSE) mv_contract_award_search;
 VACUUM (ANALYZE, VERBOSE) mv_directpayment_award_search;
 VACUUM (ANALYZE, VERBOSE) mv_grant_award_search;
@@ -11,6 +10,5 @@ VACUUM (ANALYZE, VERBOSE) subaward_view;
 VACUUM (ANALYZE, VERBOSE) summary_state_view;
 VACUUM (ANALYZE, VERBOSE) summary_transaction_month_view;
 VACUUM (ANALYZE, VERBOSE) summary_transaction_view;
-VACUUM (ANALYZE, VERBOSE) summary_view;
 VACUUM (ANALYZE, VERBOSE) tas_autocomplete_matview;
 VACUUM (ANALYZE, VERBOSE) universal_transaction_matview;
