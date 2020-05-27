@@ -8,6 +8,7 @@ from usaspending_api.search.models.mv_loan_award_search import LoanAwardSearchMa
 from usaspending_api.search.models.mv_other_award_search import OtherAwardSearchMatview
 from usaspending_api.search.models.mv_pre2008_award_search import Pre2008AwardSearchMatview
 from usaspending_api.search.models.subaward_view import SubawardView
+from usaspending_api.search.models.summary_state_view import SummaryStateView
 from usaspending_api.search.models.summary_transaction_month_view import SummaryTransactionMonthView
 from usaspending_api.search.models.summary_transaction_view import SummaryTransactionView
 from usaspending_api.search.models.summary_view import SummaryView
@@ -28,6 +29,7 @@ __all__ = [
     "OtherAwardSearchMatview",
     "Pre2008AwardSearchMatview",
     "SubawardView",
+    "SummaryStateView",
     "SummaryTransactionMonthView",
     "SummaryTransactionView",
     "SummaryView",

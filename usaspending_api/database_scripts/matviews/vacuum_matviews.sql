@@ -8,6 +8,7 @@ VACUUM (ANALYZE, VERBOSE) mv_loan_award_search;
 VACUUM (ANALYZE, VERBOSE) mv_other_award_search;
 VACUUM (ANALYZE, VERBOSE) mv_pre2008_award_search;
 VACUUM (ANALYZE, VERBOSE) subaward_view;
+VACUUM (ANALYZE, VERBOSE) summary_state_view;
 VACUUM (ANALYZE, VERBOSE) summary_transaction_month_view;
 VACUUM (ANALYZE, VERBOSE) summary_transaction_view;
 VACUUM (ANALYZE, VERBOSE) summary_view;
