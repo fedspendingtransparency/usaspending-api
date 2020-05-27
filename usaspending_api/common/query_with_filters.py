@@ -322,6 +322,8 @@ class _AwardIds(_Filter):
                 award_ids_query.append(ES_Q("term", display_award_id={"value": es_sanitize(v)}))
             else:
                 v = es_sanitize(v)
+                # v = " +".join(v.split())
+                # award_ids_query.append(ES_Q("regexp", display_award_id={"value": v}))
                 award_ids_query.append(ES_Q("match", display_award_id=v))
 
         return ES_Q("bool", should=award_ids_query, minimum_should_match=1)
