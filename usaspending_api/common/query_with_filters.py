@@ -323,7 +323,7 @@ class _AwardIds(_Filter):
             else:
                 v = es_sanitize(v)
                 v = " ".join(v.split())
-                award_ids_query.append(ES_Q("match", display_award_id={"query": v, "operator": "AND"}))
+                award_ids_query.append(ES_Q("match", display_award_id__raw={"query": v, "operator": "and" }))
 
         return ES_Q("bool", should=award_ids_query, minimum_should_match=1)
 
