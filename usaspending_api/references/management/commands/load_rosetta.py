@@ -51,9 +51,7 @@ def extract_data_from_source_file(filepath: str) -> dict:
     sheet = wb["Public"]
     last_column = get_column_letter(sheet.max_column)
     cell_range = "A2:{}2".format(last_column)
-    headers = [
-        {"column": cell.column, "display": cell.value, "raw": cell.value.lower()} for cell in sheet[cell_range][0]
-    ]
+    headers = [{"column": cell.column, "value": cell.value} for cell in sheet[cell_range][0]]
 
     sections = []
     for header in headers:
@@ -70,7 +68,7 @@ def extract_data_from_source_file(filepath: str) -> dict:
             continue
         elements[row[0]] = [r.strip() if (r and r.strip() != "N/A") else None for r in row]
 
-    field_names = list(header["display"] for header in headers)
+    field_names = list(header["value"] for header in headers)
     row_count = len(elements)
     logger.info("Columns in file: {} with {} rows of elements".format(field_names, row_count))
 
@@ -92,7 +90,9 @@ def load_xlsx_data_to_model(rosetta_object: dict):
     json_doc = {
         "metadata": rosetta_object["metadata"],
         "sections": rosetta_object["sections"],
-        "headers": rosetta_object["headers"],
+        "headers": [
+            {"display": header["value"], "raw": header["value"].lower()} for header in rosetta_object["headers"]
+        ],
         "rows": list(row for row in rosetta_object["data"].values()),
     }
 
