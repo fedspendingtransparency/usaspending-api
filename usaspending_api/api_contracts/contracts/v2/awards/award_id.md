@@ -78,6 +78,7 @@ This endpoint returns a list of data that is associated with the award profile p
                     "consolidated_contract": "N",
                     "type_of_contract_pricing": "J",
                     "national_interest_action": "NONE",
+                    "national_interest_action_description": "NONE",
                     "multiple_or_single_award_description": null,
                     "solicitation_procedures_description": "NEGOTIATED PROPOSAL/QUOTE",
                     "extent_competed_description": "FULL AND OPEN COMPETITION",
@@ -115,8 +116,7 @@ This endpoint returns a list of data that is associated with the award profile p
                     "purchase_card_as_payment_method": "N",
                     "purchase_card_as_payment_method_description": "NO",
                     "consolidated_contract_description": "NO",
-                    "type_of_contract_pricing_description": "FIRM FIXED PRICE",
-                    "national_interest_action_description": "NONE"
+                    "type_of_contract_pricing_description": "FIRM FIXED PRICE"
                 },
                 "funding_agency": {
                     "id": 1219,
@@ -461,6 +461,7 @@ This endpoint returns a list of data that is associated with the award profile p
                     "consolidated_contract": "N",
                     "type_of_contract_pricing": "1",
                     "national_interest_action": "NONE",
+                    "national_interest_action_description": "NONE",
                     "multiple_or_single_award_description": "SINGLE AWARD",
                     "solicitation_procedures_description": null,
                     "extent_competed_description": null,
@@ -498,8 +499,7 @@ This endpoint returns a list of data that is associated with the award profile p
                     "purchase_card_as_payment_method": null,
                     "purchase_card_as_payment_method_description": null,
                     "consolidated_contract_description": "NO",
-                    "type_of_contract_pricing_description": "ORDER DEPENDENT (IDV ALLOWS PRICING ARRANGEMENT TO BE DETERMINED SEPARATELY FOR EACH ORDER)",
-                    "national_interest_action_description": "NONE"
+                    "type_of_contract_pricing_description": "ORDER DEPENDENT (IDV ALLOWS PRICING ARRANGEMENT TO BE DETERMINED SEPARATELY FOR EACH ORDER)"
                 },
                 "funding_agency": {
                     "id": 1196,
@@ -677,8 +677,6 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the contract has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
-+ `national_interest_action` (required, string)
-+ `national_interest_action_description` (required, string)
 
 ## IDVResponse (object)
 + `category` (required, enum[string])
@@ -718,8 +716,6 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the idv has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
-+ `national_interest_action` (required, string, nullable)
-+ `national_interest_action_description` (required, string, nullable)
 
 ## FinancialAssistanceResponse (object)
 + `category` (required, enum[string])
@@ -899,6 +895,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `multiple_or_single_award_description` (required, string, nullable)
 + `naics` (required, string, nullable)
 + `naics_description` (required, string, nullable)
++ `national_interest_action` (required, string, nullable)
++ `national_interest_action_description` (required, string, nullable)
 + `number_of_offers_received` (required, string, nullable)
 + `other_than_full_and_open` (required, string, nullable)
 + `other_than_full_and_open_description` (required, string, nullable)
