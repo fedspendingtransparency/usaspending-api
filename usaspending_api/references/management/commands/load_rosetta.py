@@ -91,7 +91,8 @@ def load_xlsx_data_to_model(rosetta_object: dict):
         "metadata": rosetta_object["metadata"],
         "sections": rosetta_object["sections"],
         "headers": [
-            {"display": header["value"], "raw": header["value"].lower()} for header in rosetta_object["headers"]
+            {"display": header["value"], "raw": f"{header['column']}:{header['value'].lower().replace(' ','_')}"}
+            for header in rosetta_object["headers"]
         ],
         "rows": list(row for row in rosetta_object["data"].values()),
     }
