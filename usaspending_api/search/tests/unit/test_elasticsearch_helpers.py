@@ -109,7 +109,7 @@ def test_get_download_ids(monkeypatch, transaction_type_data, elasticsearch_tran
 
 
 def test_es_sanitize():
-    test_string = '+-&|!()[]{}^~*?:"/<>\\'
+    test_string = '+&|()[]{}*?:"<>\\'
     processed_string = es_sanitize(test_string)
     assert processed_string == ""
 
