@@ -166,11 +166,12 @@ class _RecipientSearchText(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
         recipient_search_query = []
+        fields = ["recipient_name"]
 
         for v in filter_values:
             upper_recipient_string = es_sanitize(v.upper())
             recipient_name_query = ES_Q(
-                "match", recipient_name={"query": upper_recipient_string + "*", "operator": "AND"}
+                "query_string", query=upper_recipient_string + "*", default_operator="AND", fields=fields
             )
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
