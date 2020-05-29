@@ -117,7 +117,7 @@ def test_es_sanitize():
 def test_es_minimal_sanitize():
     test_string = "https://www.localhost:8000/"
     processed_string = es_minimal_sanitize(test_string)
-    assert processed_string == "httpswww.localhost8000"
+    assert processed_string == "https\/\/www.localhost8000\/"
 
 
 def test_swap_keys():
