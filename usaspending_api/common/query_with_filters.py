@@ -85,7 +85,7 @@ class _KeywordSearch(_Filter):
             "modification_number",
         ]
         for v in filter_values:
-            keyword_queries.append(ES_Q("query_string", query=v, default_operator="OR", fields=fields))
+            keyword_queries.append(ES_Q("multi_match", query=v, operator="OR", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
 
