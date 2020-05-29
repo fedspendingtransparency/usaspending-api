@@ -33,7 +33,9 @@ class _Keywords(_Filter):
             "description",
         ]
         for v in filter_values:
-            keyword_queries.append(ES_Q("multi_match", query=es_sanitize(v) + "*", operator="AND", fields=fields))
+            keyword_queries.append(
+                ES_Q("query_string", query=es_sanitize(v) + "*", default_operator="AND", fields=fields)
+            )
 
         return ES_Q("dis_max", queries=keyword_queries)
 
@@ -85,7 +87,7 @@ class _KeywordSearch(_Filter):
             "modification_number",
         ]
         for v in filter_values:
-            keyword_queries.append(ES_Q("multi_match", query=v, operator="OR", fields=fields))
+            keyword_queries.append(ES_Q("query_string", query=v, default_operator="OR", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
 
@@ -319,8 +321,8 @@ class _AwardIds(_Filter):
                 award_ids_query.append(ES_Q("term", display_award_id={"value": es_sanitize(v)}))
             else:
                 v = es_sanitize(v)
-                v = " ".join(v.split())
-                award_ids_query.append(ES_Q("match", display_award_id__raw={"query": v, "operator": "and"}))
+                v = " +".join(v.split())
+                award_ids_query.append(ES_Q("regexp", display_award_id={"value": v}))
 
         return ES_Q("bool", should=award_ids_query, minimum_should_match=1)
 
