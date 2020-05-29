@@ -15,6 +15,25 @@ from usaspending_api.references.models import Rosetta
 logger = logging.getLogger("console")
 
 
+EXCEL_COLUMNS = [
+    "Element",
+    "Definition",
+    "FPDS Data Dictionary Element",
+    "Grouping",
+    "Award File",
+    "Award Element",
+    "Subaward File",
+    "Subaward Element",
+    "Account File",
+    "Account Element",
+    "Table",
+    "Element",
+    "Award File",
+    "Award Element",
+    "Subaward Element",
+]
+
+
 class Command(BaseCommand):
     help = "Loads an Excel spreadsheet of DATA Act/USAspending data names across the various systems into <>"
 
@@ -96,6 +115,9 @@ def load_xlsx_data_to_model(rosetta_object: dict):
         ],
         "rows": list(row for row in rosetta_object["data"].values()),
     }
+
+    if [elem["display"] for elem in json_doc["headers"]] != EXCEL_COLUMNS:
+        raise Exception(f"Columns in excel file don't match reference in code!")
 
     rosetta = Rosetta(document_name="api_response", document=json_doc)
     rosetta.save()
