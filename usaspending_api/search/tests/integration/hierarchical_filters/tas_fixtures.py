@@ -10,13 +10,14 @@ BASIC_TAS = 0
 ATA_TAS = 1
 BPOA_TAS = 2
 ATA_BPOA_TAS = 3
-SISTER_TAS = [1, 4]
+SISTER_TAS = [1, 4, 5]
 TAS_STRINGS = [
     "000-X-0126-000",
     "010-024-X-8445-002",
     "012-2000/2000-1231-000",
     "020-012-2000/2000-1231-000",
     "010-024-X-8445-552",
+    "010-024-X-8445-578",
 ]
 TAS_DICTIONARIES = [
     TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary(tas) for tas in TAS_STRINGS
@@ -38,7 +39,7 @@ def award_with_bpoa_tas(db):
 @pytest.fixture
 def award_with_ata_tas(db):
     award(db, 1)
-    tas_with_agency(db, 1, ATA_BPOA_TAS)
+    tas_with_agency(db, 1, ATA_TAS)
 
 
 @pytest.fixture
@@ -77,6 +78,8 @@ def multiple_awards_with_sibling_tas(db):
     tas_with_fa(db, award_id=1, agency=1, index=SISTER_TAS[0])
     award(db, 2)
     tas(db, award_id=2, fa_id=1, index=SISTER_TAS[1])
+    award(db, 3)
+    tas(db, award_id=3, fa_id=1, index=SISTER_TAS[2])
 
 
 def award(db, id):
@@ -111,6 +114,15 @@ def tas(db, award_id, fa_id, index):
         availability_type_code=TAS_DICTIONARIES[index].get("a"),
         beginning_period_of_availability=TAS_DICTIONARIES[index].get("bpoa"),
         ending_period_of_availability=TAS_DICTIONARIES[index].get("epoa"),
+        tas_rendering_label=TreasuryAppropriationAccount.generate_tas_rendering_label(
+            TAS_DICTIONARIES[index].get("ata"),
+            TAS_DICTIONARIES[index]["aid"],
+            TAS_DICTIONARIES[index].get("a"),
+            TAS_DICTIONARIES[index].get("bpoa"),
+            TAS_DICTIONARIES[index].get("epoa"),
+            TAS_DICTIONARIES[index]["main"],
+            TAS_DICTIONARIES[index]["sub"],
+        ),
         federal_account_id=fa_id,
     )
     mommy.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
@@ -123,6 +135,7 @@ def tas_with_fa(db, award_id, agency, index):
         parent_toptier_agency_id=int(agency),
         agency_identifier=TAS_DICTIONARIES[index]["aid"],
         main_account_code=TAS_DICTIONARIES[index]["main"],
+        federal_account_code=f"{TAS_DICTIONARIES[index]['aid']}-{TAS_DICTIONARIES[index]['main']}",
     )
     tas(db, award_id, index, index)
 

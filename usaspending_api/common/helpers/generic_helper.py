@@ -274,7 +274,7 @@ To add this field to the serializer:
 (see awards/tests/test_awards.py)
 
 2. Add a SerializerMethodField and `def get_field_name__fy`
-to the the serializer (see awards/serializers.py)
+to the serializer (see awards/serializers.py)
 
 3. add field_name`__fy` to the model's `get_default_fields`
 (see awards/models.py)

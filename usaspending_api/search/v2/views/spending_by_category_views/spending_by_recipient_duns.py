@@ -5,7 +5,7 @@ from typing import List
 from django.db.models import QuerySet, F, Case, When, Value, IntegerField
 
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
-from usaspending_api.recipient.models import RecipientProfile, RecipientLookup
+from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
@@ -77,15 +77,10 @@ class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
 
         return results
 
-    def query_django(self, base_queryset: QuerySet) -> List[dict]:
+    def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
         django_filters = {}
-        if self.subawards:
-            django_values = ["recipient_name", "recipient_unique_id"]
-            annotations = {"name": F("recipient_name"), "code": F("recipient_unique_id")}
-        else:
-            django_values = ["recipient_hash"]
-            annotations = {}
-
+        django_values = ["recipient_name", "recipient_unique_id"]
+        annotations = {"name": F("recipient_name"), "code": F("recipient_unique_id")}
         queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(**annotations)
         lower_limit = self.pagination.lower_limit
         upper_limit = self.pagination.upper_limit
@@ -94,23 +89,7 @@ class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
         for row in query_results:
             row["recipient_id"] = self._get_recipient_id(row)
 
-            if self.subawards:
-                for key in django_values:
-                    del row[key]
-            if not self.subawards:
-                lookup = (
-                    RecipientLookup.objects.filter(recipient_hash=row["recipient_hash"])
-                    .values("legal_business_name", "duns")
-                    .first()
-                )
-
-                # The Recipient Name + DUNS should always be retrievable in RecipientLookup
-                # For odd edge cases or data sync issues, handle gracefully:
-                if lookup is None:
-                    lookup = {}
-
-                row["name"] = lookup.get("legal_business_name")
-                row["code"] = lookup.get("duns") or "DUNS Number not provided"
-                del row["recipient_hash"]
+            for key in django_values:
+                del row[key]
 
         return query_results

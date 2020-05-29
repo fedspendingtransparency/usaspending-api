@@ -1,7 +1,5 @@
 import copy
 
-
-from datetime import datetime
 from sys import maxsize
 from django.conf import settings
 from django.db.models import F
@@ -10,8 +8,8 @@ from rest_framework.views import APIView
 
 import logging
 from usaspending_api.awards.models import Award
+from usaspending_api.references.models import Agency
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
-from usaspending_api.awards.v2.filters.matview_filters import matview_search_filter_determine_award_matview_model
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
@@ -22,12 +20,6 @@ from usaspending_api.awards.v2.lookups.lookups import (
     loan_type_mapping,
     non_loan_assistance_type_mapping,
     procurement_type_mapping,
-)
-from usaspending_api.awards.v2.lookups.matview_lookups import (
-    award_contracts_mapping,
-    award_idv_mapping,
-    loan_award_mapping,
-    non_loan_assistance_award_mapping,
 )
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     contracts_mapping,
@@ -52,38 +44,22 @@ from usaspending_api.common.helpers.generic_helper import get_generic_filters_me
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.recipient_lookups import annotate_recipient_id, annotate_prime_award_recipient_id
+from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
 from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.submissions.models import SubmissionAttributes
 
-logger = logging.getLogger("console")
+logger = logging.getLogger(__name__)
 
 GLOBAL_MAP = {
     "award": {
-        "minimum_db_fields": {"award_id", "piid", "fain", "uri", "type"},
-        "api_to_db_mapping_list": [
-            award_contracts_mapping,
-            award_idv_mapping,
-            loan_award_mapping,
-            non_loan_assistance_award_mapping,
-        ],
         "award_semaphore": "type",
-        "award_id_fields": ["piid", "fain", "uri"],
         "internal_id_fields": {"internal_id": "award_id"},
-        "generated_award_field": ("generated_internal_id", "internal_id"),
-        "type_code_to_field_map": {
-            **{award_type: award_contracts_mapping for award_type in contract_type_mapping},
-            **{award_type: award_idv_mapping for award_type in idv_type_mapping},
-            **{award_type: loan_award_mapping for award_type in loan_type_mapping},
-            **{award_type: non_loan_assistance_award_mapping for award_type in non_loan_assistance_type_mapping},
-        },
         "elasticsearch_type_code_to_field_map": {
             **{award_type: CONTRACT_SOURCE_LOOKUP for award_type in contract_type_mapping},
             **{award_type: IDV_SOURCE_LOOKUP for award_type in idv_type_mapping},
             **{award_type: LOAN_SOURCE_LOOKUP for award_type in loan_type_mapping},
             **{award_type: NON_LOAN_ASST_SOURCE_LOOKUP for award_type in non_loan_assistance_type_mapping},
         },
-        "annotations": {"_recipient_id": annotate_recipient_id},
-        "filter_queryset_func": matview_search_filter_determine_award_matview_model,
     },
     "subaward": {
         "minimum_db_fields": {"subaward_number", "piid", "fain", "award_type", "award_id"},
@@ -134,11 +110,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
 
         if self.is_subaward:
-            response = Response(self.create_response(self.construct_queryset()))
+            response = Response(self.create_response_for_subawards(self.construct_queryset()))
         else:
             self.last_record_unique_id = json_request.get("last_record_unique_id")
             self.last_record_sort_value = json_request.get("last_record_sort_value")
-            response = Response(self.construct_es_response(self.query_elasticsearch()))
+            response = Response(self.construct_es_response_for_prime_awards(self.query_elasticsearch()))
         return response
 
     @staticmethod
@@ -196,7 +172,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
         return queryset.values(*list(database_fields))[self.pagination["lower_bound"] : self.pagination["upper_bound"]]
 
-    def create_response(self, queryset):
+    def create_response_for_subawards(self, queryset):
         results = []
         rows = list(queryset)
         for record in rows[: self.pagination["limit"]]:
@@ -231,20 +207,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def get_sort_by_fields(self):
         if self.pagination["sort_key"] == "Award ID":
             sort_by_fields = self.constants["award_id_fields"]
-        elif self.is_subaward:
+        else:
             if set(self.filters["award_type_codes"]) <= set(procurement_type_mapping):
                 sort_by_fields = [contract_subaward_mapping[self.pagination["sort_key"]]]
             elif set(self.filters["award_type_codes"]) <= set(assistance_type_mapping):
                 sort_by_fields = [grant_subaward_mapping[self.pagination["sort_key"]]]
-        else:
-            if set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
-                sort_by_fields = [award_contracts_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
-                sort_by_fields = [loan_award_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(idv_type_mapping):
-                sort_by_fields = [award_idv_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
-                sort_by_fields = [non_loan_assistance_award_mapping[self.pagination["sort_key"]]]
 
         return sort_by_fields
 
@@ -297,14 +264,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
             ),
         }
 
-    def date_to_epoch_millis(self, date):
-        if "DATE" in self.pagination["sort_key"].upper():
-            if date is not None and type(date) != "str":
-                date = date.strftime("%Y-%m-%d")
-            d = datetime.strptime(date, "%Y-%m-%d")
-            date = int(d.timestamp() * 1000)
-        return date
-
     def query_elasticsearch(self) -> list:
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         sort_field = self.get_elastic_sort_by_fields()
@@ -345,7 +304,18 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return response
 
-    def construct_es_response(self, response) -> dict:
+    # For an unknown reason, ES tends to return the awarding agency toptier codes as integers or floats, instead of as
+    # text. This function casts the code back to a string and appends any leading zeroes that were lost.
+    def get_agency_database_id(self, code):
+        if len(str(int(code))) < 3:
+            code = "{zeroes}{code}".format(zeroes=("0" * (3 - len(str(int(code))))), code=int(code))
+        agency_id = Agency.objects.filter(toptier_agency__toptier_code=code, toptier_flag=True).first()
+        submission = SubmissionAttributes.objects.filter(toptier_code=code).first()
+        if submission is None or agency_id is None:
+            return None
+        return agency_id.id
+
+    def construct_es_response_for_prime_awards(self, response) -> dict:
         results = []
         for res in response:
             hit = res.to_dict()
@@ -360,6 +330,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         field
                     )
                 )
+                if "Awarding Agency" in self.fields:
+                    row["agency_code"] = hit["awarding_toptier_agency_code"]
 
             row["internal_id"] = int(row["internal_id"])
             if row.get("Loan Value"):
@@ -368,6 +340,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 row["Subsidy Cost"] = float(row["Subsidy Cost"])
             if row.get("Award Amount"):
                 row["Award Amount"] = float(row["Award Amount"])
+            if row.get("Awarding Agency"):
+                code = row.pop("agency_code")
+                row["awarding_agency_id"] = self.get_agency_database_id(code)
             row["generated_internal_id"] = hit["generated_unique_award_id"]
             row["recipient_id"] = hit.get("recipient_unique_id")
             row["parent_recipient_unique_id"] = hit.get("parent_recipient_unique_id")

@@ -132,11 +132,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
             result = self.query_elasticsearch(filter_query)
 
-        # else:
-        #     self.queryset, self.model_name = spending_by_geography(self.filters)
-        #     self.obligation_column = "generated_pragmatic_obligation"
-        #     result = self.query_django()
-
         return Response(
             {
                 "scope": json_request["scope"],

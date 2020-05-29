@@ -13,11 +13,26 @@ class HierarchicalFilter:
             cls.node(code, False, require, exclude) for code in exclude if cls._has_no_parents(code, require + exclude)
         ]
 
-        positive_query = " OR ".join([node.get_query() for node in positive_nodes])
-        negative_query = " AND ".join([node.get_query() for node in negative_nodes])
+        positive_query = " OR ".join(
+            [
+                node.get_query()
+                for node in positive_nodes
+                if node.code not in [neg_node.code for neg_node in negative_nodes]
+            ]
+        )
+        negative_query = " OR ".join(
+            [
+                node.get_query()
+                for node in negative_nodes
+                if (node.children or not positive_nodes)
+                and node.code not in [pos_node.code for pos_node in positive_nodes]
+            ]
+        )
 
         if positive_query and negative_query:
-            return f"{positive_query} AND {negative_query}"
+            return f"({positive_query}) OR ({negative_query})"
+        if not positive_query and not negative_query:
+            return "NOT *"  # return nothing
         else:
             return positive_query + negative_query  # We know that exactly one is blank thanks to TinyShield
 
@@ -61,21 +76,20 @@ class Node:
 
     def get_query(self):
         retval = self._basic_search_unit()
-        if not self.positive:
-            retval = f"NOT {retval}"
-        retval = f"({retval})"
-
-        positive_child_query = " OR ".join([child.get_query() for child in self.children if child.positive])
-        negative_child_query = " AND ".join([child.get_query() for child in self.children if not child.positive])
-        joined_child_query = " AND ".join(query for query in [positive_child_query, negative_child_query] if query)
-
-        if self.children:
-            if self.positive:
-                retval += f" AND ({joined_child_query})"
+        if self.positive:
+            retval = f"({retval})"
+            negative_child_query = " AND ".join([child.get_query() for child in self.children if not child.positive])
+            if negative_child_query:
+                negative_child_query = f"({negative_child_query})"
+                retval = f"({retval} AND ({negative_child_query}))"
+        else:
+            if [child for child in self.children if child.positive]:
+                positive_child_query = " OR ".join([child.get_query() for child in self.children if child.positive])
+                retval = f"({positive_child_query})"
             else:
-                retval += f" OR ({joined_child_query})"
+                retval = f"(NOT {retval})"
 
-        return f"({retval})"
+        return retval
 
     @abstractmethod
     def _basic_search_unit(self):
