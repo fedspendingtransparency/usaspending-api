@@ -75,5 +75,4 @@ def test_rosetta_fresh_load():
 
     actual_result = Rosetta.objects.filter(document_name="api_response").values("document")
 
-    print(actual_result[0]["document"]["metadata"])
     assert expected_result == actual_result[0]["document"]
