@@ -63,7 +63,7 @@ def test_rosetta_fresh_load():
             "total_rows": 1,
             "total_size": "56.15KB",
             "total_columns": 15,
-            "download_location": "/Users/brianzito/Documents/DATA/usaspending-api/usaspending_api/references/tests/data/20181219rosetta-test-file.xlsx",
+            "download_location": test_file_path,
         },
         "sections": [
             {"colspan": 4, "section": "Schema Data Label & Description"},
