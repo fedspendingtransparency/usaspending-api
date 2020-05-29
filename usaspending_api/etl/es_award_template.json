@@ -39,12 +39,7 @@
           }
         },
         "display_award_id": {
-          "type": "keyword",
-          "fields": {
-            "raw": {
-              "type": "text"
-            }
-          }
+          "type": "keyword"
         },
         "category": {
           "type": "text"
