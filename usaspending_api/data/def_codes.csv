@@ -1,0 +1,18 @@
+DEFC,Public Law,Public Law Short Title,Group Name
+A,Emergency PL 115-56,"Supplemental Appropriations for Disaster Relief Requirements Act, 2017",
+B,Emergency PL 115-72,"Additional Supplemental Appropriations for Disaster Relief Requirements Act, 2017",
+C,Emergency PL 115-123,Bipartisan Budget Act of 2018,
+D,Emergency PL 115-254,FAA Reauthorization Act of 2018,
+E,Emergency PL 116-20,"Additional Supplemental Appropriations for Disaster Relief Act, 2019.",
+F,Emergency PL 116-26,"EMERGENCY SUPPLEMENTAL APPROPRIATIONS FOR HUMANITARIAN ASSISTANCE AND SECURITY AT THE SOUTHERN BORDER ACT, 2019",
+G,Emergency PL 116-93,"Consolidated Appropriations Act, 2020",
+H,Disaster PL 116-93,"Consolidated Appropriations Act, 2020",
+I,Emergency PL 116-94,"Further Consolidated Appropriations Act, 2020",
+J,Wildfire Suppression PL 116-94,"Further Consolidated Appropriations Act, 2020",
+K,Emergency PL 116-113,United States-Mexico-Canada Agreement Implementation Act,covid_19
+L,Emergency P.L. 116-123,"Coronavirus Preparedness and Response Supplemental Appropriations Act, 2020",covid_19
+M,Emergency P.L. 116-127,Families First Coronavirus Response Act,covid_19
+N,Emergency P.L. 116-136,"Coronavirus Aid, Relief, and Economic Security Act or the CARES Act",covid_19
+O,Nonemergency P.L. 116-136,"Coronavirus Aid, Relief, and Economic Security Act or the CARES Act",covid_19
+P,Emergency P.L. 116-139,Paycheck Protection Program and Health Care Enhancement Act),covid_19
+Q,Excluded from tracking,,
