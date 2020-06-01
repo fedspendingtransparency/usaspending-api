@@ -1,9 +1,18 @@
 import re
 
-from usaspending_api.references.v2.views.filter_tree.filter_tree import UnlinkedNode, FilterTree
+from string import ascii_uppercase, digits
 from usaspending_api.references.models import PSC
+from usaspending_api.references.v2.views.filter_tree.filter_tree import UnlinkedNode, FilterTree
 
-PSC_GROUPS = {"Research and Development": r"^A.$", "Service": r"^[B-Z]$", "Product": r"^\d\d$"}
+
+PSC_GROUPS = {
+    # A
+    "Research and Development": {"pattern": r"^A.$", "expanded_terms": [["A"]]},
+    # B - Z
+    "Service": {"pattern": r"^[B-Z]$", "expanded_terms": [[letter] for letter in ascii_uppercase if letter != "A"]},
+    # 0 - 9
+    "Product": {"pattern": r"^\d\d$", "expanded_terms": [[digit] for digit in digits]},
+}
 
 
 class PSCFilterTree(FilterTree):
@@ -20,7 +29,7 @@ class PSCFilterTree(FilterTree):
 
     def _path_is_valid(self, path: list) -> bool:
         if len(path) > 1:
-            if PSC_GROUPS.get(path[0]) is None or not re.match(PSC_GROUPS[path[0]], path[1]):
+            if PSC_GROUPS.get(path[0]) is None or not re.match(PSC_GROUPS[path[0]]["pattern"], path[1]):
                 return False
             for x in range(1, len(path) - 1):
                 if not path[x + 1].startswith(path[x]):
@@ -31,7 +40,8 @@ class PSCFilterTree(FilterTree):
         return PSC_GROUPS.keys()
 
     def _psc_from_group(self, group):
-        return self._psc_from_regex(PSC_GROUPS.get(group, "(?!)"))  # The default regex value will match nothing
+        # The default regex value will match nothing
+        return self._psc_from_regex(PSC_GROUPS.get(group, {}).get("pattern") or "(?!)")
 
     def _psc_from_regex(self, regex):
         return [

@@ -102,7 +102,8 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers` (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
-+ `psc_codes` (optional, array[string])
++ `psc_codes` (optional, enum[PSCCodeObject, array[string]])
+    Supports new PSCCodeObject or legacy array of codes.
 + `contract_pricing_type_codes` (optional, array[string])
 + `set_aside_type_codes` (optional, array[string])
 + `extent_competed_type_codes` (optional, array[string])
@@ -151,9 +152,13 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `require` (optional, array[string])
 + `exclude` (optional, array[string])
 
+### PSCCodeObject (object)
++ `require`: [[`Service`, `B`, `B5`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`Service`, `B`, `B5`, `B502`]] (optional, array[array[string]], fixed-type)
+
 ### TASCodeObject (object)
-+ `require`: [[`091`]] (optional, array[array[string]])
-+ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
++ `require`: [[`091`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)

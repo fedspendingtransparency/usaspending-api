@@ -96,6 +96,7 @@ List of table columns
 + `Award Type` (optional, string, nullable)
 + `Awarding Agency Code` (optional, string, nullable)
 + `Awarding Agency` (optional, string, nullable)
++ `awarding_agency_id` (optional, number, nullable)
 + `Awarding Sub Agency Code` (optional, string, nullable)
 + `Awarding Sub Agency` (optional, string, nullable)
 + `Base Obligation Date` (optional, string)
@@ -181,8 +182,9 @@ List of table columns
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
-+ `tas_codes` (optional, TASCodeObject)
-+ `psc_codes`: `8940`, `8910` (optional, array[string])
++ `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `psc_codes` (optional, enum[PSCCodeObject, array[string]])
+    Supports new PSCCodeObject or legacy array of codes.
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
@@ -229,12 +231,16 @@ List of table columns
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: `33` (optional, array[string])
-+ `exclude`: `3333` (optional, array[string])
++ `require`: [`33`] (optional, array[string], fixed-type)
++ `exclude`: [`3333`] (optional, array[string], fixed-type)
+
+### PSCCodeObject (object)
++ `require`: [[`Service`, `B`, `B5`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`Service`, `B`, `B5`, `B502`]] (optional, array[array[string]], fixed-type)
 
 ### TASCodeObject (object)
-+ `require`: [[`091`]] (optional, array[array[string]])
-+ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]])
++ `require`: [[`091`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)

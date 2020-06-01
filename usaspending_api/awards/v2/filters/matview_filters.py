@@ -5,6 +5,7 @@ from django.db.models import Q
 
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.search.filters.postgres.psc import PSCCodes
 from usaspending_api.search.models import AwardSearchView, UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
@@ -12,7 +13,8 @@ from usaspending_api.common.exceptions import InvalidParameterException, NotImpl
 from usaspending_api.common.helpers.orm_helpers import obtain_view_from_award_group
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
-from usaspending_api.search.helpers.matview_filter_helpers import build_tas_codes_filter, build_award_ids_filter
+from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
+from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -65,11 +67,12 @@ def matview_search_filter(filters, model, for_downloads=False):
             "award_ids",
             "program_numbers",
             "naics_codes",
-            "psc_codes",
+            PSCCodes.underscore_name,
             "contract_pricing_type_codes",
             "set_aside_type_codes",
             "extent_competed_type_codes",
-            "tas_codes",
+            TasCodes.underscore_name,
+            TreasuryAccounts.underscore_name,
             # next 3 keys used by federal account page
             "federal_account_ids",
             "object_class",
@@ -275,10 +278,9 @@ def matview_search_filter(filters, model, for_downloads=False):
             regex = f"^({'|'.join([str(elem) for elem in require])}).*"
             queryset = queryset.filter(naics_code__regex=regex)
 
-        elif key == "psc_codes":
-            in_query = [v for v in value]
-            if len(in_query) != 0:
-                queryset = queryset.filter(product_or_service_code__in=in_query)
+        elif key == PSCCodes.underscore_name:
+            q = PSCCodes.build_tas_codes_filter(value)
+            queryset = queryset.filter(q) if q else queryset
 
         elif key == "contract_pricing_type_codes":
             in_query = [v for v in value]
@@ -297,8 +299,16 @@ def matview_search_filter(filters, model, for_downloads=False):
                 or_queryset |= Q(extent_competed__exact=v)
             queryset = queryset.filter(or_queryset)
 
-        elif key == "tas_codes":
-            queryset = build_tas_codes_filter(queryset, value)
+        # Because these two filters OR with each other, we need to know about the presense of both filters to know what to do
+        # This filter was picked arbitrarily to be the one that checks for the other
+        elif key == TasCodes.underscore_name:
+            q = TasCodes.build_tas_codes_filter(queryset, value)
+            if TreasuryAccounts.underscore_name in filters.keys():
+                q |= TreasuryAccounts.build_tas_codes_filter(queryset, filters[TreasuryAccounts.underscore_name])
+            queryset = queryset.filter(q)
+
+        elif key == TreasuryAccounts.underscore_name and TasCodes.underscore_name not in filters.keys():
+            queryset = queryset.filter(TreasuryAccounts.build_tas_codes_filter(queryset, value))
 
         # Federal Account Filter
         elif key == "federal_account_ids":

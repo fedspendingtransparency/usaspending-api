@@ -18,6 +18,10 @@ def test_program_activity_count_success(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["program_activity_count"] == 0
 
+    resp = client.get(url.format(code="010", filter="?fiscal_year=2016"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["program_activity_count"] == 0
+
 
 @pytest.mark.django_db
 def test_program_activity_count_too_early(client, agency_account_data):
