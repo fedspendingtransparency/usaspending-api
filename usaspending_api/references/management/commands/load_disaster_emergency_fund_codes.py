@@ -116,7 +116,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         if not DEF_CODE_PATTERN.fullmatch(raw_def_codes.code):
             messages.append(
                 f"Invalid DEF Code '{raw_def_codes.code}' in row "
-                f"{raw_def_codes.row_number:,}. DEF codes must be only one alphanumeric character."
+                f"{raw_def_codes.row_number:,}. DEF codes must be only one or two alphanumeric characters."
             )
 
         if not raw_def_codes.public_law:
