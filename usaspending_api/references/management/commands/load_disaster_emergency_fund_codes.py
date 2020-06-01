@@ -13,7 +13,7 @@ from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
 
-DEF_CODE_PATTERN = re.compile("[a-zA-Z0-9]")
+DEF_CODE_PATTERN = re.compile("[a-zA-Z0-9][a-zA-Z0-9]?")
 
 CREATE_TEMP_TABLE = """
     drop table if exists temp_load_disaster_emergency_fund_codes;
@@ -27,7 +27,7 @@ CREATE_TEMP_TABLE = """
     );
 """
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 DisasterEmergencyFundCode = namedtuple(
     "DisasterEmergencyFundCode", ["row_number", "code", "public_law", "title", "group_name"]
@@ -40,7 +40,7 @@ class Command(mixins.ETLMixin, BaseCommand):
     of the project that can be found at: "usaspending_api/data/def_codes.csv"
 
     Command:
-        ./manage.py load_disaster_emergency_fund_codes usaspending_api/data/def_codes.csv
+        ./manage.py load_disaster_emergency_fund_codes
     """
 
     help = "Load DEF Code CSV file.  If anything fails, nothing gets saved.  DOES NOT DELETE RECORDS."
@@ -50,12 +50,15 @@ class Command(mixins.ETLMixin, BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument(
-            "def_code_file", metavar="FILE", help="Path or URI of the raw DEF Code CSV file to be loaded."
+            "--def_code_file", metavar="FILE", help="Path or URI of the raw DEF Code CSV file to be loaded."
         )
 
     def handle(self, *args, **options):
 
-        self.def_code_file = options["def_code_file"]
+        if options["def_code_file"]:
+            self.def_code_file = options["def_code_file"]
+        else:
+            self.def_code_file = "https://files.usaspending.gov/reference_data/def_codes.csv"
 
         logger.info("DEF Code FILE: {}".format(self.def_code_file))
 

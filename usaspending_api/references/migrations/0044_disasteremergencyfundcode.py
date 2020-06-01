@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='DisasterEmergencyFundCode',
             fields=[
-                ('code', models.CharField(max_length=1, primary_key=True, serialize=False)),
+                ('code', models.CharField(max_length=2, primary_key=True, serialize=False)),
                 ('public_law', models.TextField()),
                 ('title', models.TextField(null=True)),
                 ('group_name', models.TextField(null=True)),
