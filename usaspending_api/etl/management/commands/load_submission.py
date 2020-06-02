@@ -6,16 +6,11 @@ from datetime import datetime
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import transaction
-
-from usaspending_api.accounts.models import (
-    AppropriationAccountBalances,
-    AppropriationAccountBalancesQuarterly,
-    TreasuryAppropriationAccount,
-)
+from usaspending_api.accounts.models import AppropriationAccountBalances, TreasuryAppropriationAccount
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.etl.helpers import get_fiscal_quarter, get_previous_submission
+from usaspending_api.etl.helpers import get_fiscal_quarter
 from usaspending_api.etl.management import load_base
 from usaspending_api.etl.management.helpers.load_submission import (
     CertifiedAwardFinancial,
@@ -23,10 +18,7 @@ from usaspending_api.etl.management.helpers.load_submission import (
     get_or_create_program_activity,
 )
 from usaspending_api.etl.management.load_base import load_data_into_model
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-    TasProgramActivityObjectClassQuarterly,
-)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.helpers import retrive_agency_name_from_code
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -35,20 +27,19 @@ from usaspending_api.submissions.models import SubmissionAttributes
 # account data
 TAS_ID_TO_ACCOUNT = {}
 
-# Lists to store for update_awards and update_procurement_awards
-AWARD_UPDATE_ID_LIST = []
-
 logger = logging.getLogger("console")
 
 
 class Command(load_base.Command):
     """
-    This command will load a single submission from the DATA Act broker. If we've already loaded the specified broker
-    submission, this command will remove the existing records before loading them again.
+    This command will load a single submission from the DATA Act broker. If we've already loaded the specified
+    broker submission, this command will remove the existing records before loading them again.
     """
 
-    help = "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable \
-                must set so we can pull submission data from their db."
+    help = (
+        "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable "
+        "must set so we can pull submission data from their db."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument("submission_id", nargs=1, help="the data broker submission id to load", type=int)
@@ -188,8 +179,6 @@ def get_submission_attributes(broker_submission_id, submission_data):
         # TODO: now that we're chaining submissions together, get clarification on what should happen when a submission
         # in the middle of the chain is deleted
 
-        TasProgramActivityObjectClassQuarterly.refresh_downstream_quarterly_numbers(submission_attributes.submission_id)
-
         logger.info("Broker submission id {} already exists. It will be deleted.".format(broker_submission_id))
         call_command("rm_submission", broker_submission_id)
 
@@ -198,28 +187,6 @@ def get_submission_attributes(broker_submission_id, submission_data):
         submission_data["cgac_code"] if submission_data["cgac_code"] else submission_data["frec_code"]
     )
     submission_data["reporting_agency_name"] = retrive_agency_name_from_code(submission_data["toptier_code"])
-
-    # Find the previous submission for this CGAC and fiscal year (if there is one)
-    previous_submission = get_previous_submission(
-        submission_data["toptier_code"],
-        submission_data["reporting_fiscal_year"],
-        submission_data["reporting_fiscal_period"],
-    )
-
-    # if another submission lists the previous submission as its previous submission, set to null and update later
-    potential_conflicts = []
-    if previous_submission:
-        potential_conflicts = SubmissionAttributes.objects.filter(previous_submission=previous_submission)
-        if potential_conflicts:
-            logger.info("==== ATTENTION! Previous Submission ID Conflict Detected ====")
-            for conflict in potential_conflicts:
-                logger.info(
-                    "Temporarily setting {}'s Previous Submission ID from {} to null".format(
-                        conflict, previous_submission.submission_id
-                    )
-                )
-                conflict.previous_submission = None
-                conflict.save()
 
     # Update and save submission attributes
     field_map = {
@@ -232,7 +199,6 @@ def get_submission_attributes(broker_submission_id, submission_data):
     value_map = {
         "broker_submission_id": broker_submission_id,
         "reporting_fiscal_quarter": get_fiscal_quarter(submission_data["reporting_fiscal_period"]),
-        "previous_submission": previous_submission,
         # pull in broker's last update date to use as certified date
         "certified_date": submission_data["updated_at"].date()
         if type(submission_data["updated_at"]) == datetime
@@ -242,19 +208,6 @@ def get_submission_attributes(broker_submission_id, submission_data):
     new_submission = load_data_into_model(
         submission_attributes, submission_data, field_map=field_map, value_map=value_map, save=True
     )
-
-    # If there were any submissions which were temporarily modified, reassign the submission
-    for conflict in potential_conflicts:
-        remapped_previous = get_previous_submission(
-            conflict.toptier_code, conflict.reporting_fiscal_year, conflict.reporting_fiscal_period
-        )
-        logger.info(
-            "New Previous Submission ID for Submission ID {} permanently mapped to {} ".format(
-                conflict.submission_id, remapped_previous
-            )
-        )
-        conflict.previous_submission = remapped_previous
-        conflict.save()
 
     return new_submission
 
@@ -302,9 +255,6 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
         )
 
     AppropriationAccountBalances.populate_final_of_fy()
-
-    # Insert File A quarterly numbers for this submission
-    AppropriationAccountBalancesQuarterly.insert_quarterly_numbers(submission_attributes.submission_id)
 
     for key in skipped_tas:
         logger.info("Skipped %d rows due to missing TAS: %s", skipped_tas[key]["count"], key)
@@ -487,9 +437,6 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
         }
 
         load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True, reverse=reverse)
-
-    # Insert File B quarterly numbers for this submission
-    TasProgramActivityObjectClassQuarterly.insert_quarterly_numbers(submission_attributes.submission_id)
 
     FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 

@@ -37,17 +37,9 @@ class DownloadTransactionCountViewSet(APIView):
         if json_request["subawards"]:
             total_count = subaward_filter(filters).count()
         else:
-            logger.info("Using Elasticsearch functionality for '/download/count'")
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters)
             search = TransactionSearch().filter(filter_query)
             total_count = search.handle_count()
-        # else:
-        #     queryset, model = download_transaction_count(filters)
-        #     if model in ["UniversalTransactionView"]:
-        #         total_count = queryset.count()
-        #     else:
-        #     # "summary" materialized views are pre-aggregated and contain a counts col
-        #         total_count = queryset.aggregate(total_count=Sum("counts"))["total_count"]
 
         if total_count is None:
             total_count = 0

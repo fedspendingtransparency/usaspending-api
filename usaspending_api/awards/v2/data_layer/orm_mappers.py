@@ -199,6 +199,8 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("type_of_contract_pric_desc", "type_of_contract_pricing_description"),
         ("last_modified", "_last_modified"),
         ("period_of_perf_potential_e", "_period_of_perf_potential_e"),
+        ("national_interest_action", "national_interest_action"),
+        ("national_interest_desc", "national_interest_action_description"),
         # "Recipient" fields below
         ("awardee_or_recipient_legal", "_recipient_name"),
         ("awardee_or_recipient_uniqu", "_recipient_unique_id"),

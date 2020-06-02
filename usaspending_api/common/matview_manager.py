@@ -22,14 +22,6 @@ MATERIALIZED_VIEWS = OrderedDict(
             },
         ),
         (
-            "mv_award_summary",
-            {
-                "model": mv.AwardSummaryMatview,
-                "json_filepath": str(JSON_DIR / "mv_award_summary.json"),
-                "sql_filename": "mv_award_summary.sql",
-            },
-        ),
-        (
             "mv_contract_award_search",
             {
                 "model": mv.ContractAwardSearchMatview,
@@ -102,22 +94,6 @@ MATERIALIZED_VIEWS = OrderedDict(
             },
         ),
         (
-            "summary_transaction_fed_acct_view",
-            {
-                "model": mv.SummaryTransactionFedAcctView,
-                "json_filepath": str(JSON_DIR / "summary_transaction_fed_acct_view.json"),
-                "sql_filename": "summary_transaction_fed_acct_view.sql",
-            },
-        ),
-        (
-            "summary_transaction_geo_view",
-            {
-                "model": mv.SummaryTransactionGeoView,
-                "json_filepath": str(JSON_DIR / "summary_transaction_geo_view.json"),
-                "sql_filename": "summary_transaction_geo_view.sql",
-            },
-        ),
-        (
             "summary_transaction_month_view",
             {
                 "model": mv.SummaryTransactionMonthView,
@@ -126,51 +102,11 @@ MATERIALIZED_VIEWS = OrderedDict(
             },
         ),
         (
-            "summary_transaction_recipient_view",
-            {
-                "model": mv.SummaryTransactionRecipientView,
-                "json_filepath": str(JSON_DIR / "summary_transaction_recipient_view.json"),
-                "sql_filename": "summary_transaction_recipient_view.sql",
-            },
-        ),
-        (
             "summary_transaction_view",
             {
                 "model": mv.SummaryTransactionView,
                 "json_filepath": str(JSON_DIR / "summary_transaction_view.json"),
                 "sql_filename": "summary_transaction_view.sql",
-            },
-        ),
-        (
-            "summary_view",
-            {
-                "model": mv.SummaryView,
-                "json_filepath": str(JSON_DIR / "summary_view.json"),
-                "sql_filename": "summary_view.sql",
-            },
-        ),
-        (
-            "summary_view_cfda_number",
-            {
-                "model": mv.SummaryCfdaNumbersView,
-                "json_filepath": str(JSON_DIR / "summary_view_cfda_number.json"),
-                "sql_filename": "summary_view_cfda_number.sql",
-            },
-        ),
-        (
-            "summary_view_naics_codes",
-            {
-                "model": mv.SummaryNaicsCodesView,
-                "json_filepath": str(JSON_DIR / "summary_view_naics_codes.json"),
-                "sql_filename": "summary_view_naics_codes.sql",
-            },
-        ),
-        (
-            "summary_view_psc_codes",
-            {
-                "model": mv.SummaryPscCodesView,
-                "json_filepath": str(JSON_DIR / "summary_view_psc_codes.json"),
-                "sql_filename": "summary_view_psc_codes.sql",
             },
         ),
         (

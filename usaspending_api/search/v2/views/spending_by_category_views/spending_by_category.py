@@ -45,7 +45,6 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     pagination: Pagination
     subawards: bool
     high_cardinality_categories: List[str] = ["recipient_duns"]
-    sub_awards_not_implemented: List[str] = ["federal_account", "naics", "psc"]
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -67,18 +66,12 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         self.pagination = self._get_pagination(validated_payload)
 
         if self.subawards:
-            if self.category.name in self.sub_awards_not_implemented:
-                self._raise_not_implemented()
             base_queryset = subaward_filter(self.filters)
             self.obligation_column = "amount"
-            results = self.query_django(base_queryset)
+            results = self.query_django_for_subawards(base_queryset)
         else:
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
-            results = self.query_elasticsearch(filter_query)
-        # else:
-        #     base_queryset = spending_by_category_view_queryset(self.category.name, self.filters)
-        #     self.obligation_column = "generated_pragmatic_obligation"
-        #     results = self.query_django(base_queryset)
+            results = self.query_elasticsearch_for_prime_awards(filter_query)
 
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
 
@@ -174,7 +167,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         return search
 
-    def query_elasticsearch(self, filter_query: ES_Q) -> list:
+    def query_elasticsearch_for_prime_awards(self, filter_query: ES_Q) -> list:
         search = self.build_elasticsearch_search_with_aggregations(filter_query)
         if search is None:
             return []
@@ -190,10 +183,9 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def query_django(self, base_queryset: QuerySet) -> List[dict]:
+    def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
         """
-        Not currently being used as part of DEV-4371 to move default implementation to Elasticsearch. Left old code in
-        place for the time being until the Elasticsearch implementation has lived in Production for a few weeks as the
-        default implementation.
+        Sub-awards are still implemented with Postgres and thus this function is called when a request is received
+        to query a category for sub-awards.
         """
         pass

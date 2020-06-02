@@ -3,6 +3,7 @@ from usaspending_api.references.models.cfda import Cfda
 from usaspending_api.references.models.cgac import CGAC
 from usaspending_api.references.models.city_county_state_code import CityCountyStateCode
 from usaspending_api.references.models.definition import Definition
+from usaspending_api.references.models.disaster_emergency_fund_code import DisasterEmergencyFundCode
 from usaspending_api.references.models.filter_hash import FilterHash
 from usaspending_api.references.models.frec import FREC
 from usaspending_api.references.models.frec_map import FrecMap
@@ -25,6 +26,7 @@ __all__ = [
     "CGAC",
     "CityCountyStateCode",
     "Definition",
+    "DisasterEmergencyFundCode",
     "FilterHash",
     "FREC",
     "FrecMap",

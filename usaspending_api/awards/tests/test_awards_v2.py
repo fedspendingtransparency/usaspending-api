@@ -442,6 +442,8 @@ def awards_and_transactions(db):
         "type_set_aside_description": None,
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
         "ultimate_parent_unique_ide": "123",
+        "national_interest_action": "NONE",
+        "national_interest_desc": "NONE",
     }
     cont_trans_2 = {
         "pk": 6,
@@ -521,6 +523,8 @@ def awards_and_transactions(db):
         "type_set_aside_description": None,
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
         "ultimate_parent_unique_ide": "123",
+        "national_interest_action": "NONE",
+        "national_interest_desc": "NONE",
     }
     cont_trans_3 = {
         "pk": 7,
@@ -600,6 +604,8 @@ def awards_and_transactions(db):
         "type_set_aside_description": None,
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
         "ultimate_parent_unique_ide": "123",
+        "national_interest_action": "NONE",
+        "national_interest_desc": "NONE",
     }
     cont_trans_4 = {
         "pk": 8,
@@ -609,6 +615,8 @@ def awards_and_transactions(db):
         "multiple_or_single_aw_desc": None,
         "piid": "AWARD7",
         "type_of_idc_description": None,
+        "national_interest_action": "NONE",
+        "national_interest_desc": "NONE",
     }
     cont_trans_5 = {
         "pk": 9,
@@ -618,6 +626,8 @@ def awards_and_transactions(db):
         "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 9",
         "piid": "AWARD8",
         "type_of_idc_description": "IDC DESCRIPTION TRANS 9",
+        "national_interest_action": "NONE",
+        "national_interest_desc": "NONE",
     }
     cont_trans_6 = {
         "pk": 10,
@@ -627,6 +637,8 @@ def awards_and_transactions(db):
         "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 10",
         "piid": "AWARD9",
         "type_of_idc_description": "IDC DESCRIPTION TRANS 10",
+        "national_interest_action": "NONE",
+        "national_interest_desc": "NONE",
     }
     cont_trans_7 = {
         "pk": 11,
@@ -634,6 +646,8 @@ def awards_and_transactions(db):
         "agency_id": "2000",
         "piid": "AWARD10",
         "legal_entity_zip4": "0000",
+        "national_interest_action": "NONE",
+        "national_interest_desc": "NONE",
     }
 
     mommy.make("awards.TransactionFPDS", **cont_trans_1)
@@ -1274,6 +1288,8 @@ expected_response_cont = {
         "multiple_or_single_award_description": None,
         "naics": "111120",
         "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
+        "national_interest_action": "NONE",
+        "national_interest_action_description": "NONE",
         "number_of_offers_received": None,
         "other_than_full_and_open": None,
         "other_than_full_and_open_description": None,

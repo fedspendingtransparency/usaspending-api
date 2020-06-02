@@ -1,21 +1,14 @@
-from datetime import datetime
 import logging
-import signal
 import os
-from collections import OrderedDict
-
-from django.db import transaction
 import pandas as pd
+import signal
 
-from usaspending_api.awards.models import TransactionFPDS
+from collections import OrderedDict
+from datetime import datetime
 from django.core.management.base import BaseCommand
+from django.db import transaction
+from usaspending_api.awards.models import TransactionFPDS
 
-# This dictionary will hold a map of tas_id -> treasury_account to ensure we don't keep hitting the databroker DB for
-# account data
-TAS_ID_TO_ACCOUNT = {}
-
-# Lists to store for update_awards and update_procurement_awards
-AWARD_UPDATE_ID_LIST = []
 
 logger = logging.getLogger("console")
 
