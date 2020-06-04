@@ -24,6 +24,14 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     treasury_account = models.ForeignKey(
         TreasuryAppropriationAccount, models.CASCADE, related_name="program_balances", null=True
     )
+    disaster_emergency_fund = models.ForeignKey(
+        "references.DisasterEmergencyFundCode",
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        db_index=True,
+        db_column="disaster_emergency_fund_code",
+    )
     ussgl480100_undelivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl480100_undelivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
