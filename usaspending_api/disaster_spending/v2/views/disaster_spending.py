@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.disaster_spending.v2.filters.type_filter import type_filter
+from usaspending_api.spending_explorer.v2.filters.type_filter import type_filter
 
 # Limits the amount of results the spending explorer returns
 SPENDING_EXPLORER_LIMIT = 500
