@@ -33,9 +33,10 @@ class _Keywords(_Filter):
             "description",
         ]
         for v in filter_values:
-            keyword_queries.append(
-                ES_Q("query_string", query=es_sanitize(v) + r"\*", default_operator="AND", fields=fields)
-            )
+            query = es_sanitize(v) + "*"
+            if "\\" in es_sanitize(v):
+                query = es_sanitize(v) + r"\*"
+            keyword_queries.append(ES_Q("query_string", query=query, default_operator="AND", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
 
