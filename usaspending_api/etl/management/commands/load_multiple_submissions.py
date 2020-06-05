@@ -48,8 +48,7 @@ class Command(BaseCommand):
         else:
             logger.info("There are no new or updated submissions to load.")
             return
-        print("oh dear")
-        exit
+
         failed_submissions = []
         for submission_id in submission_ids:
             try:
@@ -78,7 +77,7 @@ class Command(BaseCommand):
         else:
             # In order to prevent skips, we're just always going to look back 7 days.  Since submission is a
             # relatively low volume table, this should not cause any noticeable performance issues.
-            since -= timedelta(days=7)
+            since -= timedelta(days=14)
             logger.info(f"Performing incremental load starting from {since}.")
         return since
 
