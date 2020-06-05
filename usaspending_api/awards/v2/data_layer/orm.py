@@ -42,6 +42,8 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
 
     response.update(award)
 
+    account_data = fetch_account_details_award(award["id"])
+    response["file_c"] = account_data
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
     response["record_type"] = transaction["record_type"]
@@ -75,6 +77,8 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
     if not award:
         return None
 
+    account_data = fetch_account_details_award(award["id"])
+    response["file_c"] = account_data
     response.update(award)
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
@@ -576,4 +580,64 @@ def fetch_naics_hierarchy(naics: str) -> dict:
     except NAICS.DoesNotExist:
         pass
     results = {"toptier_code": toptier_code, "midtier_code": midtier_code, "base_code": base_code}
+    return results
+
+
+def fetch_account_details_award(award_id: int) -> dict:
+    queryset = FinancialAccountsByAwards.objects.filter(award_id=award_id).values("disaster_emergency_fund_code_id").annotate(
+                obligated_amount=Sum("obligations_delivered_orders_unpaid_total_cpe"),
+                gross_outlay_amount=Sum("gross_outlay_amount_by_award_cpe"),
+            )
+    outlay_by_code = []
+    obligation_by_code = []
+    total_outlay = 0
+    total_obligations = 0
+    for row in queryset:
+        total_outlay += row["gross_outlay_amount"]
+        total_obligations += row["obligated_amount"]
+        outlay_by_code.append(
+            {
+                row["disaster_emergency_fund_code_id"]: row["gross_outlay_amount"]
+            }
+        )
+        obligation_by_code.append(
+            {
+                row["disaster_emergency_fund_code_id"]: row["obligated_amount"]
+            }
+        )
+
+    results = {
+        "total_account_outlay": total_outlay,
+        "total_account_obligation": total_obligations,
+        "account_outlays_by_defc": outlay_by_code,
+        "account_obligations_by_defc": obligation_by_code
+    }
+    return results
+
+
+def fetch_account_details_idv(award_id: int) -> dict:
+    queryset = FinancialAccountsByAwards.objects.filter(award_id=award_id).values("disaster_emergency_fund_code_id").annotate(
+                obligated_amount=Sum("obligations_delivered_orders_unpaid_total_cpe"),
+                gross_outlay_amount=Sum("gross_outlay_amount_by_award_cpe"),
+            )
+    code_breakdown = []
+    for row in queryset:
+        code_breakdown.append(
+            {
+                "gross_outlay_amount": row["gross_outlay_amount"],
+                "obligated_amount": row["obligated_amount"],
+                "disaster_emergency_fund_code": row["disaster_emergency_fund_code_id"],
+            }
+        )
+    total_outlay = 0
+    total_obligations = 0
+    for x in code_breakdown:
+        total_outlay += x["gross_outlay_amount"]
+        total_obligations += x["obligated_amount"]
+
+    results = {
+        "disaster_codes_breakdown": code_breakdown,
+        "total_gross_outlay_amount": total_outlay,
+        "total_obligated_amount": total_obligations
+    }
     return results
