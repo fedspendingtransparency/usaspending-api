@@ -68,9 +68,7 @@ class Command(BaseCommand):
                 frec = next_broker_sub[3]
 
                 api_cursor.execute(
-                    "SELECT update_date FROM submission_attributes WHERE broker_submission_id = {}".format(
-                        submission_id
-                    )
+                    "SELECT update_date FROM submission_attributes WHERE submission_id = {}".format(submission_id)
                 )
 
                 if api_cursor.rowcount:
