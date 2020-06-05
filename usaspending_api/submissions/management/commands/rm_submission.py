@@ -30,12 +30,12 @@ class Command(BaseCommand):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-        broker_submission_id = options["submission_id"][0]
+        submission_id = options["submission_id"][0]
 
         try:
-            submission = SubmissionAttributes.objects.get(broker_submission_id=broker_submission_id)
+            submission = SubmissionAttributes.objects.get(submission_id=submission_id)
         except ObjectDoesNotExist:
-            raise "Broker submission id {} does not exist".format(broker_submission_id)
+            raise "Broker submission id {} does not exist".format(submission_id)
 
         deleted_stats = submission.delete()
 
@@ -45,4 +45,4 @@ class Command(BaseCommand):
         for (model, count) in deleted_stats[1].items():
             statistics += "\n  {}: {}".format(model, count)
 
-        self.logger.info("Deleted broker submission id {}. ".format(broker_submission_id) + statistics)
+        self.logger.info("Deleted broker submission id {}. ".format(submission_id) + statistics)

@@ -111,7 +111,7 @@ class CertifiedAwardFinancialIterator:
         sql = f"""
             select  *
             from    certified_award_financial
-            where   submission_id = {self.submission_attributes.broker_submission_id} and
+            where   submission_id = {self.submission_attributes.submission_id} and
                     {"" if self._last_id is None else f"certified_award_financial_id > {self._last_id} and"}
                     transaction_obligated_amou is not null and
                     transaction_obligated_amou != 0
@@ -154,7 +154,7 @@ class CertifiedAwardFinancial:
         sql = f"""
             select  count(*)
             from    certified_award_financial
-            where   submission_id = {self.submission_attributes.broker_submission_id} and
+            where   submission_id = {self.submission_attributes.submission_id} and
                     transaction_obligated_amou is not null and
                     transaction_obligated_amou != 0
         """
