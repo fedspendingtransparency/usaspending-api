@@ -29,11 +29,12 @@ class TestThingWithMultipleDatabases(TestCase):
                     (5, 'xYz', false),
                     (6, 'XYZ', false),
                     (7, 'lmn', false),
-                    (8, 'opq', false)
+                    (8, 'opq', true)
                 )
                 """
             )
 
     def test_get_delete_pks_for_afa_keys(self):
         assert get_delete_pks_for_afa_keys(None) == []
+        assert get_delete_pks_for_afa_keys([]) == []
         assert set(get_delete_pks_for_afa_keys(["abc", "xyZ"])) == {1, 2, 4, 5, 6}
