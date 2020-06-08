@@ -11,6 +11,8 @@ from django.utils.crypto import get_random_string
 from pathlib import Path
 from ddtrace import patch_all
 
+# ENABLE_CARES_ACT_FEATURES = True
+
 # All paths inside the project should be additive to BASE_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
 BASE_DIR = APP_DIR.parent

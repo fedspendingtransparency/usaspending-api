@@ -1600,8 +1600,8 @@ query_paths = {
                 #
                 #
 
-                ("disaster_emergency_fund_code", "disaster_emergency_fund_code"),
-                ("disaster_emergency_fund_name", "disaster_emergency_fund_title"),
+                ("disaster_emergency_fund_code", "disaster_emergency_fund_code__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund_code__title"),
 
                 #
                 #
@@ -1638,8 +1638,8 @@ query_paths = {
                 #
                 #
 
-                ("disaster_emergency_fund_code", "disaster_emergency_fund_code"),
-                ("disaster_emergency_fund_name", "disaster_emergency_fund_title"),
+                ("disaster_emergency_fund_code", "disaster_emergency_fund_code__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund_code__title"),
 
                 #
                 #
@@ -1693,8 +1693,8 @@ query_paths = {
                 #
                 #
 
-                ("disaster_emergency_fund_code", "disaster_emergency_fund_code"),
-                ("disaster_emergency_fund_name", "disaster_emergency_fund_title"),
+                ("disaster_emergency_fund_code", "disaster_emergency_fund_code__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund_code__title"),
 
                 #
                 #
@@ -1806,8 +1806,8 @@ query_paths = {
                 #
                 #
 
-                ("disaster_emergency_fund_code", "disaster_emergency_fund_code"),
-                ("disaster_emergency_fund_name", "disaster_emergency_fund_title"),
+                ("disaster_emergency_fund_code", "disaster_emergency_fund_code__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund_code__title"),
 
                 #
                 #

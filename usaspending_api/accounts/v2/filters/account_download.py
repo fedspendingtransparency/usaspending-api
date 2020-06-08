@@ -103,8 +103,8 @@ def account_download_filter(account_type, download_table, filters, account_level
 
         ## DEV-5180
         if settings.ENABLE_CARES_ACT_FEATURES is True:
-            unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund_code")
-            unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund_name")
+            unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund_code__code")
+            unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund_code__name") ## ?
 
 
         distinct_cols = unique_columns_mapping[account_type]
