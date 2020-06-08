@@ -1066,6 +1066,20 @@ def test_zip4_switch(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["recipient"]["location"]["zip4"] == "0000"
 
 
+def test_file_c_data(client, awards_and_transactions):
+    mommy.make("references.DisasterEmergencyFundCode", code="L")
+    mommy.make(
+        "awards.FinancialAcccountsByAwards",
+        award_id=1,
+        obligations_delivered_orders_unpaid_total_cpe=100,
+        gross_outlay_amount_by_award_cpe=100,
+        disaster_emergency_fund_code="L",
+    )
+
+    resp = client.get("/api/v2/awards/1")
+    print(resp.data)
+
+
 expected_response_asst = {
     "id": 1,
     "record_type": 111,

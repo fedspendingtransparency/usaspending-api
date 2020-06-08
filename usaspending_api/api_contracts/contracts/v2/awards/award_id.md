@@ -252,6 +252,18 @@ This endpoint returns a list of data that is associated with the award profile p
                         "code": "325411",
                         "description": "Medicinal and Botanical Manufacturing"
                     }
+                },
+                "file_c": {
+                    "total_account_outlay": 3.0,
+                    "total_account_obligation": 3.0,
+                    "account_outlays_by_defc": {
+                        "P": 2.0,
+                        "L": 1.0
+                    },
+                    "account_obligations_by_defc": {
+                        "P": 2.0,
+                        "L": 1.0
+                    }
                 }
             }
 
@@ -404,6 +416,18 @@ This endpoint returns a list of data that is associated with the award profile p
                     "address_line3": null,
                     "foreign_province": null,
                     "foreign_postal_code": null
+                },
+                "file_c": {
+                    "total_account_outlay": 3.0,
+                    "total_account_obligation": 3.0,
+                    "account_outlays_by_defc": {
+                        "P": 2.0,
+                        "L": 1.0
+                    },
+                    "account_obligations_by_defc": {
+                        "P": 2.0,
+                        "L": 1.0
+                    }
                 }
             }
 
@@ -637,6 +661,18 @@ This endpoint returns a list of data that is associated with the award profile p
                     "base_code": {
                         "code": "488510",
                         "description": "Freight Transportation Arrangement"
+                    }
+                },
+                "file_c": {
+                    "total_account_outlay": 3.0,
+                    "total_account_obligation": 3.0,
+                    "account_outlays_by_defc": {
+                        "P": 2.0,
+                        "L": 1.0
+                    },
+                    "account_obligations_by_defc": {
+                        "P": 2.0,
+                        "L": 1.0
                     }
                 }
             }
@@ -943,3 +979,9 @@ This endpoint returns a list of data that is associated with the award profile p
 ## HierarchyLeaf (object)
 + `description` (optional, string)
 + `code` (optional, string)
+
+## FileC (object)
++ `total_account_outlay` (required, number)
++ `total_account_obligation` (required, number)
++ `account_obligations_by_defc` (required, object, fixed-type)
++ `account_outlays_by_defc` (required, object, fixed-type)
