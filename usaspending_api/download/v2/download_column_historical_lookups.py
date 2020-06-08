@@ -1906,7 +1906,7 @@ query_paths = {
 }
 
 
-# check the ENABLE_CARES_ACT_FEATURES and delete keys if necessary
+# check the ENABLE_CARES_ACT_FEATURES and delete keys if necessary DEV-5180
 if settings.ENABLE_CARES_ACT_FEATURES is False:
     query_paths["object_class_program_activity"]["treasury_account"].pop("disaster_emergency_fund_code")
     query_paths["object_class_program_activity"]["federal_account"].pop("disaster_emergency_fund_code")

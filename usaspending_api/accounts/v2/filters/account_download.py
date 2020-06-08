@@ -91,8 +91,6 @@ def account_download_filter(account_type, download_table, filters, account_level
             "object_class_program_activity": "financial_accounts_by_program_activity_object_class_id",
         }
 
-        ###
-
         unique_columns_mapping = {
             "account_balances": ["treasury_account_identifier__tas_rendering_label"],
             "object_class_program_activity": [
@@ -103,12 +101,10 @@ def account_download_filter(account_type, download_table, filters, account_level
             ],
         }
 
-        ##
+        ## DEV-5180
         if settings.ENABLE_CARES_ACT_FEATURES is True:
             unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund_code")
             unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund_name")
-
-
 
 
         distinct_cols = unique_columns_mapping[account_type]
