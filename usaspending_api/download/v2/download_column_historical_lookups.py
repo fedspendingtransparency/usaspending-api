@@ -1910,13 +1910,11 @@ query_paths = {
 if settings.ENABLE_CARES_ACT_FEATURES is False:
     query_paths["object_class_program_activity"]["treasury_account"].pop("disaster_emergency_fund_code")
     query_paths["object_class_program_activity"]["federal_account"].pop("disaster_emergency_fund_code")
-
-    query_paths["object_class_program_activity"]["treasury_account"].pop("disaster_emergency_fund_name")
-    query_paths["object_class_program_activity"]["federal_account"].pop("disaster_emergency_fund_name")
-
     query_paths["award_financial"]["treasury_account"].pop("disaster_emergency_fund_code")
     query_paths["award_financial"]["federal_account"].pop("disaster_emergency_fund_code")
 
+    query_paths["object_class_program_activity"]["treasury_account"].pop("disaster_emergency_fund_name")
+    query_paths["object_class_program_activity"]["federal_account"].pop("disaster_emergency_fund_name")
     query_paths["award_financial"]["treasury_account"].pop("disaster_emergency_fund_name")
     query_paths["award_financial"]["federal_account"].pop("disaster_emergency_fund_name")
 
