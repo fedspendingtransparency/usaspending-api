@@ -130,10 +130,6 @@ VALUE_MAPPINGS = {
         "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
         "filter_function": account_download_filter,
     },
-
-    ####### DEV-5180
-
-
     # Object Class Program Activity Account Data
     "object_class_program_activity": {
         "source_type": "account",
@@ -151,10 +147,6 @@ VALUE_MAPPINGS = {
         "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByAward_{timestamp}",
         "filter_function": account_download_filter,
     },
-
-    ####### DEV-5180
-
-
     "idv_orders": {
         "source_type": "award",
         "table": Award,

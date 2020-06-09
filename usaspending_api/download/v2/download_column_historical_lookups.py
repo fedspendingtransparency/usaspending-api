@@ -1595,17 +1595,8 @@ query_paths = {
                 ("object_class_code", "object_class__object_class"),
                 ("object_class_name", "object_class__object_class_name"),
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
-
-
-                #
-                #
-
-                ("disaster_emergency_fund_code", "disaster_emergency_fund_code__code"),
-                ("disaster_emergency_fund_name", "disaster_emergency_fund_code__title"),
-
-                #
-                #
-
+                ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("obligations_incurred", "obligations_incurred_by_program_object_class_cpe"),
                 (
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
@@ -1633,18 +1624,8 @@ query_paths = {
                 ("object_class_code", "object_class__object_class"),
                 ("object_class_name", "object_class__object_class_name"),
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
-
-
-                #
-                #
-
-                ("disaster_emergency_fund_code", "disaster_emergency_fund_code__code"),
-                ("disaster_emergency_fund_name", "disaster_emergency_fund_code__title"),
-
-                #
-                #
-
-
+                ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("obligations_incurred", "obligations_incurred"),
                 (
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
@@ -1688,18 +1669,8 @@ query_paths = {
                 ("object_class_code", "object_class__object_class"),
                 ("object_class_name", "object_class__object_class_name"),
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
-
-
-                #
-                #
-
-                ("disaster_emergency_fund_code", "disaster_emergency_fund_code__code"),
-                ("disaster_emergency_fund_name", "disaster_emergency_fund_code__title"),
-
-                #
-                #
-
-
+                ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("award_id_piid", "piid"),
                 ("parent_award_id_piid", "parent_award_id"),
                 ("award_id_fain", "fain"),
@@ -1713,14 +1684,11 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-
                 #
                 #
-                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_fyb_to_period_end"),
+                # ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_fyb_to_period_end"),
                 #
                 #
-
-
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
                 ("award_type", "award_type"),  # Column is appended to in account_download.py
@@ -1800,20 +1768,8 @@ query_paths = {
                 ("object_class_code", "object_class__object_class"),
                 ("object_class_name", "object_class__object_class_name"),
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
-
-
-
-                #
-                #
-
-                ("disaster_emergency_fund_code", "disaster_emergency_fund_code__code"),
-                ("disaster_emergency_fund_name", "disaster_emergency_fund_code__title"),
-
-                #
-                #
-
-
-
+                ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("award_id_piid", "piid"),
                 ("parent_award_id_piid", "parent_award_id"),
                 ("award_id_fain", "fain"),
@@ -1827,14 +1783,11 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-
-
+                # find out if this is the difference betweend fyb and cpe
+                #
+                # ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_fyb_to_period_end"),
                 #
                 #
-                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_fyb_to_period_end"),
-                #
-                #
-
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
                 ("award_type", "award_type"),  # Column is appended to in account_download.py
@@ -1918,8 +1871,8 @@ if settings.ENABLE_CARES_ACT_FEATURES is False:
     query_paths["award_financial"]["treasury_account"].pop("disaster_emergency_fund_name")
     query_paths["award_financial"]["federal_account"].pop("disaster_emergency_fund_name")
 
-    query_paths["award_financial"]["treasury_account"].pop("gross_outlay_amount_fyb_to_period_end")
-    query_paths["award_financial"]["federal_account"].pop("gross_outlay_amount_fyb_to_period_end")
+    # query_paths["award_financial"]["treasury_account"].pop("gross_outlay_amount_fyb_to_period_end")
+    # query_paths["award_financial"]["federal_account"].pop("gross_outlay_amount_fyb_to_period_end")
 
 
 # IDV Orders are nearly identical to awards but start from the Awards table
