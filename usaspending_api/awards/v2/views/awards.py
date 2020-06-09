@@ -75,15 +75,12 @@ class AwardRetrieveViewSet(APIView):
         else:
             response_content = construct_assistance_response(request_dict)
 
-        response_content["disaster_emergency_fund_codes"] = [
-            {"code": row["disaster_emergency_fund__code"], "title": row["disaster_emergency_fund__title"]}
-            for row in (
-                FinancialAccountsByAwards.objects.filter(award=award, disaster_emergency_fund__isnull=False)
-                .order_by("disaster_emergency_fund__code")
-                .distinct()
-                .values("disaster_emergency_fund__code", "disaster_emergency_fund__title")
-            )
-        ]
+        response_content["disaster_emergency_fund_codes"] = (
+            FinancialAccountsByAwards.objects.filter(award=award, disaster_emergency_fund__isnull=False)
+            .order_by("disaster_emergency_fund__code")
+            .distinct()
+            .values_list("disaster_emergency_fund__code", flat=True)
+        )
 
         return response_content
 

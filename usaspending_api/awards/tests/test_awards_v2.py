@@ -1093,7 +1093,7 @@ def test_defc(client, awards_and_transactions):
 
     resp = client.get("/api/v2/awards/ASST_AGG_1830212.0481163_3620/")
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["disaster_emergency_fund_codes"] == [{"code": "A", "title": "AA"}, {"code": "B", "title": "BB"}]
+    assert resp.data["disaster_emergency_fund_codes"] == ["A", "B"]
 
 
 expected_response_asst = {

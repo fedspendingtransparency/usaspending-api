@@ -253,16 +253,7 @@ This endpoint returns a list of data that is associated with the award profile p
                         "description": "Medicinal and Botanical Manufacturing"
                     }
                 },
-                "disaster_emergency_fund_codes": [
-                    {
-                        "code": "L",
-                        "title": "Coronavirus Preparedness and Response Supplemental Appropriations Act, 2020"
-                    },
-                    {
-                        "code": "M",
-                        "title": "Families First Coronavirus Response Act"
-                    }
-                ]
+                "disaster_emergency_fund_codes": ["L", "M"]
             }
 
 + Request A request with a financial assistance id (application/json)
@@ -415,16 +406,7 @@ This endpoint returns a list of data that is associated with the award profile p
                     "foreign_province": null,
                     "foreign_postal_code": null
                 },
-                "disaster_emergency_fund_codes": [
-                    {
-                        "code": "L",
-                        "title": "Coronavirus Preparedness and Response Supplemental Appropriations Act, 2020"
-                    },
-                    {
-                        "code": "M",
-                        "title": "Families First Coronavirus Response Act"
-                    }
-                ]
+                "disaster_emergency_fund_codes": ["L", "M"]
             }
 
 + Request A request with an IDV id (application/json)
@@ -659,16 +641,7 @@ This endpoint returns a list of data that is associated with the award profile p
                         "description": "Freight Transportation Arrangement"
                     }
                 },
-                "disaster_emergency_fund_codes": [
-                    {
-                        "code": "L",
-                        "title": "Coronavirus Preparedness and Response Supplemental Appropriations Act, 2020"
-                    },
-                    {
-                        "code": "M",
-                        "title": "Families First Coronavirus Response Act"
-                    }
-                ]
+                "disaster_emergency_fund_codes": ["L", "M"]
             }
 
 # Data Structures
@@ -707,7 +680,7 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the contract has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
-+ `disaster_emergency_fund_codes` (required, array[DEFC], fixed-type)
++ `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## IDVResponse (object)
 + `category` (required, enum[string])
@@ -976,7 +949,3 @@ This endpoint returns a list of data that is associated with the award profile p
 ## HierarchyLeaf (object)
 + `description` (optional, string)
 + `code` (optional, string)
-
-## DEFC (object)
-+ `code` (required, string)
-+ `title` (required, string)
