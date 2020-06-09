@@ -127,7 +127,7 @@ This endpoint provides award spending data from emergency/disaster funding group
 + `total` (required, number)
 + `limit` (required, number)
 
-## DEFC (enum)
+## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
 
 ### Members
@@ -153,7 +153,7 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `T`
 + `9`
 
-## AwardTypeCodes (enum)
+## AwardTypeCodes (enum[string])
 List of procurement and assistance award type codes supported by USAspending.gov
 
 ### Members

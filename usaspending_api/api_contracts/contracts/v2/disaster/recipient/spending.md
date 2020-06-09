@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agencies Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
+# Recipient Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
 
-This endpoint provides insights on the Agencies which received disaster/emergency funding per the requested filters.
+This endpoint provides insights on the Recipients which received disaster/emergency funding per the requested filters.
 
 ## POST
 
-Returns spending details of Agencies receiving supplimental funding budgetary resources
+Returns spending details of Recipients receiving supplimental funding budgetary resources
 
 + Request (application/json)
     + Schema

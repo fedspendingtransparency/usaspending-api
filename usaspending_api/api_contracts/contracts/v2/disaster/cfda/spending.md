@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agencies Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
+# CFDA Programs Spending Disaster/Emergency Funding [/api/v2/disaster/cfda/spending/]
 
-This endpoint provides insights on the Agencies which received disaster/emergency funding per the requested filters.
+This endpoint provides insights on the CFDA Programs which received disaster/emergency funding per the requested filters.
 
 ## POST
 
-Returns spending details of Agencies receiving supplimental funding budgetary resources
+Returns spending details of CFDA receiving supplimental funding budgetary resources
 
 + Request (application/json)
     + Schema

@@ -95,7 +95,7 @@ This endpoint provides geographical spending information from emergency/disaster
 + `per_capita` (required, number, nullable)
 
 
-## DEFC (enum)
+## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
 
 ### Members
@@ -121,7 +121,7 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `T`
 + `9`
 
-## AwardTypeCodes (enum)
+## AwardTypeCodes (enum[string])
 List of procurement and assistance award type codes supported by USAspending.gov
 
 ### Members
