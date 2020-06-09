@@ -42,7 +42,11 @@ def get_or_create_program_activity(row, submission_attributes):
 
 
 def get_disaster_emergency_fund(row):
-    return DisasterEmergencyFundCode.objects.filter(code=row["disaster_emergency_fund_code"]).first()
+    """ ENABLE_CARES_ACT_FEATURES: Once disaster_emergency_fund_code goes live in Broker, remove this if statement. """
+    if "disaster_emergency_fund_code" in row:
+        return DisasterEmergencyFundCode.objects.filter(code=row["disaster_emergency_fund_code"]).first()
+    else:
+        return None
 
 
 def get_object_class_row(row):
