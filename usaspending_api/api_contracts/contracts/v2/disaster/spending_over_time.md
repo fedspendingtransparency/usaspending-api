@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Disaster Spending Over Time [/api/v2/disaster/spending_over_time/]
 
-This endpoint provides award spending data from emergency/disaster funding grouped by time period.
+This endpoint provides award spending data from emergency/disaster funding grouped by time period in ascending order (earliest to most recent).
 
 ## POST
 
@@ -32,6 +32,12 @@ This endpoint provides award spending data from emergency/disaster funding group
             + Members
                 + `obligations`
                 + `outlays`
+        + `page` (optional, number)
+            The page number that is currently returned.
+            + Default: 1
+        + `limit` (optional, number)
+            How many results are returned.
+            + Default: 10
 
     + Body
 
@@ -44,6 +50,8 @@ This endpoint provides award spending data from emergency/disaster funding group
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (array[TimeResult], fixed-type)
+        + `page_metadata` (required, PageMetadata, fixed-type)
+            Information used for pagination of results.
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
@@ -109,6 +117,14 @@ This endpoint provides award spending data from emergency/disaster funding group
 + `insurance` (required, number)
 + `other` (required, number)
 
+## PageMetadata (object)
++ `page` (required, number)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
++ `hasNext` (required, boolean)
++ `hasPrevious` (required, boolean)
++ `total` (required, number)
++ `limit` (required, number)
 
 ## AwardTypes (array)
 List of filterable award types
