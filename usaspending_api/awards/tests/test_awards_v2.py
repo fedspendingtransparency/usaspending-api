@@ -1073,7 +1073,7 @@ def test_file_c_data(client, awards_and_transactions):
         award_id=1,
         obligations_delivered_orders_unpaid_total_cpe=100,
         gross_outlay_amount_by_award_cpe=100,
-        disaster_emergency_fund_code="L",
+        disaster_emergency_fund="L",
     )
 
     resp = client.get("/api/v2/awards/1")
@@ -1081,12 +1081,8 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["file_c"] == {
         "total_account_outlay": 1.0,
         "total_account_obligation": 1.0,
-        "account_outlays_by_defc": {
-            "L": 100.0
-        },
-        "account_obligations_by_defc": {
-            "L": 100.0
-        }
+        "account_outlays_by_defc": {"L": 100.0},
+        "account_obligations_by_defc": {"L": 100.0},
     }
 
 
@@ -1199,8 +1195,8 @@ expected_response_asst = {
         "account_obligations_by_defc": {},
         "account_outlays_by_defc": {},
         "total_account_obligation": 0,
-        "total_account_outlay": 0
-    }
+        "total_account_outlay": 0,
+    },
 }
 
 
@@ -1388,8 +1384,8 @@ expected_response_cont = {
         "account_obligations_by_defc": {},
         "account_outlays_by_defc": {},
         "total_account_obligation": 0,
-        "total_account_outlay": 0
-    }
+        "total_account_outlay": 0,
+    },
 }
 
 expected_contract_award_parent = {
