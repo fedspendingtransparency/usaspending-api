@@ -1,126 +1,138 @@
 import logging
-import pytz
 
-from datetime import datetime
+from datetime import timedelta
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
-from django.db import connections, DEFAULT_DB_ALIAS
+from django.db import connection
+from django.db.models import Max
+from usaspending_api.submissions.models import SubmissionAttributes
 
-logger = logging.getLogger("console")
-exception_logger = logging.getLogger("exceptions")
+
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-
-    # Give it a fiscal year and a quarter. Will list missing subs/agencies and their recent certified dates.
     def add_arguments(self, parser):
-        parser.add_argument("fy", nargs=1, help="the fiscal year", type=int)
-        parser.add_argument("quarter", nargs=1, help="the fiscal quarter to load", type=int)
-        parser.add_argument("--safe", action="store_true", help="only list missing submissions from the FY/Quarter")
+        parser.add_argument(
+            "--submission-ids",
+            help=(
+                "Optionally supply one or more Broker submission_ids to be created or updated.  If this "
+                "parameter is omitted, an incremental load is performed."
+            ),
+            nargs="+",
+            type=int,
+        )
+        parser.add_argument(
+            "--list-ids-only",
+            action="store_true",
+            help="Only list submissions to be loaded.  Do not actually load them.",
+        )
 
     def handle(self, *args, **options):
 
-        try:
-            broker_conn = connections["data_broker"]
-            broker_cursor = broker_conn.cursor()
-            api_conn = connections[DEFAULT_DB_ALIAS]
-            api_cursor = api_conn.cursor()
-        except Exception as err:
-            logger.critical("Could not connect to database(s).")
-            logger.critical(err)
-            return
-
-        fy = options["fy"][0]
-        quarter = options["quarter"][0]
-
-        if not 1 <= quarter <= 4:
-            logger.critical("Acceptable values for fiscal quarter are 1-4 (was {}).".format(quarter))
-            return
-
-        # Convert fiscal quarter to starting month of calendar quarter
-        quarter = int(quarter) * 3
-
-        logger.info("Querying Broker DB for Submissions")
-
-        broker_cursor.execute(
-            "SELECT submission.submission_id, MAX(certify_history.created_at) AS certified_at, \
-                                  submission.cgac_code, submission.frec_code \
-                                  FROM submission \
-                                  JOIN certify_history ON certify_history.submission_id = submission.submission_id \
-                                  WHERE submission.d2_submission = FALSE \
-                                  AND submission.publish_status_id IN (2, 3) \
-                                  AND submission.reporting_fiscal_year = {} \
-                                  AND submission.reporting_fiscal_period = {} \
-                                  GROUP BY submission.submission_id;".format(
-                fy, quarter
-            )
-        )
-
-        broker_submission_data = broker_cursor.fetchall()
-
-        missing_submissions = []
-        failed_submissions = []
-        for next_broker_sub in broker_submission_data:
-            submission_id = next_broker_sub[0]
-            try:
-                certify_date = next_broker_sub[1].replace(tzinfo=pytz.UTC)
-                cgac = next_broker_sub[2]
-                frec = next_broker_sub[3]
-
-                api_cursor.execute(
-                    "SELECT update_date FROM submission_attributes WHERE submission_id = {}".format(submission_id)
-                )
-
-                if api_cursor.rowcount:
-                    most_recently_loaded_date = api_cursor.fetchone()[0].replace(tzinfo=pytz.UTC)
-                else:
-                    most_recently_loaded_date = datetime(2000, 1, 1).replace(tzinfo=pytz.UTC)
-
-                if frec:
-                    broker_cursor.execute("SELECT agency_name FROM frec WHERE frec_code = '{}'".format(frec))
-                else:
-                    broker_cursor.execute("SELECT agency_name FROM cgac WHERE cgac_code = '{}'".format(cgac))
-
-                agency_name = broker_cursor.fetchone()[0]
-
-                if certify_date > most_recently_loaded_date:
-                    missing_submissions.append((submission_id, agency_name, certify_date, most_recently_loaded_date))
-            except Exception:
-                logger.exception("Submission ID {} failed in pull from broker".format(submission_id))
-                failed_submissions.append(str(submission_id))
-
-        if len(missing_submissions):
-            logger.info("Total missing submissions: {}".format(len(missing_submissions)))
-            logger.info("-----------------------------------")
-            for submission in missing_submissions:
-                logger.info(
-                    "Submission ID {} ({})\tCertified: {}".format(submission[0], submission[1], submission[2].date())
-                )
-            logger.info("-----------------------------------")
+        if options["submission_ids"]:
+            submission_ids = options["submission_ids"]
         else:
-            logger.info("No DABS to load")
+            submission_ids = self.get_incremental_submission_ids()
 
-        # Data modification happens here, if you don't flag '--safe'
-        # The submission loader is atomic, so one of these failing will not affect subsequent submissions
-        if options["safe"]:
-            logger.info("Exiting script before data load occurs in accordance with the --safe flag.")
+        if submission_ids:
+            msg = f"{len(submission_ids):,} submissions will be created or updated"
+            if len(submission_ids) <= 1000:
+                logger.info(f"The following {msg}: {submission_ids}")
+            else:
+                logger.info(f"{msg}.")
+            if options["list_ids_only"]:
+                logger.info("Exiting script before data load occurs in accordance with the --list-ids-only flag.")
+                return
+        else:
+            logger.info("There are no new or updated submissions to load.")
             return
 
-        for submission in missing_submissions:
-            submission_id = submission[0]
+        failed_submissions = []
+        for submission_id in submission_ids:
             try:
                 call_command("load_submission", submission_id)
             except SystemExit:
-                logger.info("Submission failed to load: {}".format(submission_id))
-                failed_submissions.append(str(submission_id))
+                logger.info(f"Submission failed to load: {submission_id}")
+                failed_submissions.append(submission_id)
             except Exception:
-                logger.exception("Submission {} failed to load".format(submission_id))
-                failed_submissions.append(str(submission_id))
+                logger.exception(f"Submission {submission_id} failed to load")
+                failed_submissions.append(submission_id)
 
         if failed_submissions:
             logger.error(
-                "Script completed with the following submissions failures: {}".format(", ".join(failed_submissions))
+                f"Script completed with the following {len(failed_submissions):,} "
+                f"submission failures: {failed_submissions}"
             )
             raise SystemExit(3)
         else:
-            logger.info("Script completed with no failures")
+            logger.info("Script completed with no failures.")
+
+    @staticmethod
+    def calculate_since_datetime():
+        since = SubmissionAttributes.objects.all().aggregate(Max("update_date"))["update_date__max"]
+        if since is None:
+            logger.info("No records found in submission_attributes.  Performing a full load.")
+        else:
+            # In order to prevent skips, we're just always going to look back 7 days.  Since submission is a
+            # relatively low volume table, this should not cause any noticeable performance issues.
+            since -= timedelta(days=14)
+            logger.info(f"Performing incremental load starting from {since}.")
+        return since
+
+    def get_incremental_submission_ids(self):
+        since = self.calculate_since_datetime()
+        since = f"and s.updated_at >= ''{since}''::timestamp" if since else ""
+        # Note that this is designed to work with our conservative lookback period by filtering
+        # out rows that haven't changed.
+        sql = f"""
+            select
+                bs.submission_id
+            from
+                dblink(
+                    '{settings.DATA_BROKER_DBLINK_NAME}',
+                    '
+                        select
+                            s.submission_id,
+                            s.updated_at::date as certified_date,
+                            coalesce(s.cgac_code, s.frec_code) as toptier_code,
+                            s.reporting_start_date,
+                            s.reporting_end_date,
+                            s.reporting_fiscal_year,
+                            s.reporting_fiscal_period,
+                            s.is_quarter_format
+                        from
+                            submission as s
+                        where
+                            s.d2_submission is false and
+                            s.publish_status_id in (2, 3) and
+                            exists(select from certify_history where submission_id = s.submission_id)
+                            {since}
+                    '
+                ) as bs (
+                    submission_id integer,
+                    certified_date date,
+                    toptier_code text,
+                    reporting_start_date date,
+                    reporting_end_date date,
+                    reporting_fiscal_year integer,
+                    reporting_fiscal_period integer,
+                    is_quarter_format boolean
+                )
+                left outer join submission_attributes sa on
+                    sa.submission_id = bs.submission_id and
+                    sa.certified_date is not distinct from bs.certified_date and
+                    sa.toptier_code is not distinct from bs.toptier_code and
+                    sa.reporting_period_start is not distinct from bs.reporting_start_date and
+                    sa.reporting_period_end is not distinct from bs.reporting_end_date and
+                    sa.reporting_fiscal_period is not distinct from bs.reporting_fiscal_period and
+                    sa.quarter_format_flag is not distinct from bs.is_quarter_format
+            where
+                sa.submission_id is null
+            order by
+                bs.submission_id
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+            return [s[0] for s in cursor.fetchall()]
