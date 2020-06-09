@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of Loan Awards receiving the disaster/emergency spending [/api/v2/disaster/award/loan/count/]
+# Count of Awards receiving the disaster/emergency spending [/api/v2/disaster/award/count/]
 
-This endpoint provides the count of Loan Awards which received disaster/emergency spending per the requested filters.
+This endpoint provides the count of Awards which received disaster/emergency spending per the requested filters.
 
 ## POST
 
-This endpoint returns a count of Loan Awards
+This endpoint returns a count of Awards
 
 + Request (application/json)
     + Schema
