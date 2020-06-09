@@ -1684,11 +1684,7 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                #
-                #
-                # ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_fyb_to_period_end"),
-                #
-                #
+                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
                 ("award_type", "award_type"),  # Column is appended to in account_download.py
@@ -1783,11 +1779,7 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                # find out if this is the difference betweend fyb and cpe
-                #
-                # ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_fyb_to_period_end"),
-                #
-                #
+                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
                 ("award_type", "award_type"),  # Column is appended to in account_download.py
@@ -1871,8 +1863,8 @@ if settings.ENABLE_CARES_ACT_FEATURES is False:
     query_paths["award_financial"]["treasury_account"].pop("disaster_emergency_fund_name")
     query_paths["award_financial"]["federal_account"].pop("disaster_emergency_fund_name")
 
-    # query_paths["award_financial"]["treasury_account"].pop("gross_outlay_amount_fyb_to_period_end")
-    # query_paths["award_financial"]["federal_account"].pop("gross_outlay_amount_fyb_to_period_end")
+    query_paths["award_financial"]["treasury_account"].pop("gross_outlay_amount_fyb_to_period_end")
+    query_paths["award_financial"]["federal_account"].pop("gross_outlay_amount_fyb_to_period_end")
 
 
 # IDV Orders are nearly identical to awards but start from the Awards table
