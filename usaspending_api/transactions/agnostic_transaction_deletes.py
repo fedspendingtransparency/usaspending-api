@@ -63,7 +63,7 @@ class AgnosticDeletes:
             self.store_delete_records(removed_records)
 
     def delete_rows(self, removed_records: dict) -> None:
-        delete_template = "DELETE FROM {table} WHERE {key} IN {ids} AND updated_at < '{date}'::date"
+        delete_template = "DELETE FROM {table} WHERE {key} IN {ids}"
         connection = get_connection(read_only=False)
         with connection.cursor() as cursor:
             for date, ids in removed_records.items():
@@ -73,9 +73,7 @@ class AgnosticDeletes:
                 if len(ids) == 0:
                     logger.warning(f"No records to delete for '{date}'")
                 else:
-                    sql = delete_template.format(
-                        table=self.destination_table_name, key=self.shared_pk, ids=tuple(ids), date=date
-                    )
+                    sql = delete_template.format(table=self.destination_table_name, key=self.shared_pk, ids=tuple(ids))
                     cursor.execute(sql)
                     logger.info(f"Removed {cursor.rowcount} rows previous to '{date}'")
 

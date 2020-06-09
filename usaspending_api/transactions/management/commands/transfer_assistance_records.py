@@ -16,17 +16,14 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     working_file_prefix = "assistance_load_ids"
     broker_full_select_sql = 'SELECT "{id}" FROM "{table}" WHERE "is_active" IS TRUE'
     broker_incremental_select_sql = """
-SELECT "{id}"
-FROM   "{table}"
-WHERE
-  "is_active" IS TRUE
-  AND
-    "submission_id" IN (
-      SELECT "submission_id"
-      FROM   "submission"
-      WHERE
-        "d2_submission" IS TRUE
-        AND "publish_status_id" IN (2, 3)
-        {optional_predicate}
-  )
-"""
+        select  "{id}"
+        from    "{table}"
+        where   "is_active" is true and
+                "submission_id" in (
+                    select  "submission_id"
+                    from    "submission"
+                    where   "d2_submission" is true and
+                            "publish_status_id" in (2, 3)
+                            {optional_predicate}
+                )
+    """
