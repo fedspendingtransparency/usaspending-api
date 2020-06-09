@@ -100,7 +100,7 @@ def account_download_filter(account_type, download_table, filters, account_level
             ],
         }
 
-        # DEV-5180
+        # DEV-5180 check if cares act features are enabled in production yet
         if settings.ENABLE_CARES_ACT_FEATURES is True:
             unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund__code")
             unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund__title")
