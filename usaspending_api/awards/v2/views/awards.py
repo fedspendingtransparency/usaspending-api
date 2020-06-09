@@ -75,7 +75,7 @@ class AwardRetrieveViewSet(APIView):
         else:
             response_content = construct_assistance_response(request_dict)
 
-        response_content["disaster_emergency_fund_codes"] = (
+        response_content["disaster_emergency_fund_codes"] = list(
             FinancialAccountsByAwards.objects.filter(award=award, disaster_emergency_fund__isnull=False)
             .order_by("disaster_emergency_fund__code")
             .distinct()
