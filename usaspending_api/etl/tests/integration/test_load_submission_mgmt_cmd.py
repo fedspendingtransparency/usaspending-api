@@ -31,6 +31,7 @@ def data_fixture(db, broker_db_setup):
     broker_objects_to_insert = {
         "tas_lookup": {"broker_object": _assemble_broker_tas_lookup_records(), "conflict_column": "tas_id"},
         "submission": {"broker_object": _assemble_broker_submission_records(), "conflict_column": "submission_id"},
+        "certify_history": {"broker_object": _assemble_certify_history(), "conflict_column": "certify_history_id"},
         "certified_award_financial": {
             "broker_object": _assemble_certified_award_financial_records(),
             "conflict_column": "certified_award_financial_id",
@@ -293,7 +294,7 @@ def _assemble_broker_submission_records() -> list:
         "is_quarter_format": False,
         "number_of_errors": 0,
         "number_of_warnings": 0,
-        "publish_status_id": None,
+        "publish_status_id": 2,
         "publishable": False,
         "reporting_fiscal_period": 0,
         "reporting_fiscal_year": 0,
@@ -413,3 +414,14 @@ def _assemble_certified_award_financial_records() -> list:
         row_with_zero_transaction_obligated_amount,
         row_with_null_transaction_obligated_amount,
     ]
+
+
+def _assemble_certify_history():
+    base_record = {
+        "created_at": None,
+        "updated_at": None,
+        "certify_history_id": 1,
+        "submission_id": -9999,
+        "user_id": None,
+    }
+    return [base_record]

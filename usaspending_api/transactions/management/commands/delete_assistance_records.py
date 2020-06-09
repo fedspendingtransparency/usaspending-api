@@ -25,14 +25,14 @@ class Command(AgnosticDeletes, BaseCommand):
 
         sql = """
         select  published_award_financial_assistance_id
-        from    published_award_financial_assistance p
-        where   UPPER(correction_delete_indicatr) = 'D' and
-                not exists (
-                    select  *
+        from    published_award_financial_assistance
+        where   afa_generated_unique in (
+                    select  afa_generated_unique
                     from    published_award_financial_assistance
-                    where   afa_generated_unique = p.afa_generated_unique and is_active is true
-                )
-                and updated_at >= %s
+                    where   updated_at >= %s and
+                            upper(correction_delete_indicatr) = 'D'
+                ) and
+                is_active is not true
         """
         with connections["data_broker"].cursor() as cursor:
             cursor.execute(sql, [date_time])
