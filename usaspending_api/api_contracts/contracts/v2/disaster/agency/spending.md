@@ -84,7 +84,7 @@ This endpoint returns details of Agencies receiving supplimental spending budget
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, number)
++ `sort` (optional, string)
     Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
 
 
@@ -118,15 +118,11 @@ This endpoint returns details of Agencies receiving supplimental spending budget
 + `total_outlay`
     Total outlay amount captured by File C award data
 
-## DEFC (array)
-List of existing DEF Codes defined by legislation at the time of writing
 
-### Sample
-+ `L`
-+ `M`
-+ `N`
-+ `O`
-+ `P`
+# Data Structures
+
+## DEFC (enum)
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
 
 ### Members
 + `A`
@@ -151,35 +147,29 @@ List of existing DEF Codes defined by legislation at the time of writing
 + `T`
 + `9`
 
-## AwardTypeCodes (array)
-List of filterable award types
+## AwardTypeCodes (enum)
+List of procurement and assistance award type codes supported by USAspending.gov
 
-### Sample
-- `A`
-- `B`
-- `C`
-- `D`
-
-### Default
-- `02`
-- `03`
-- `04`
-- `05`
-- `06`
-- `07`
-- `08`
-- `09`
-- `10`
-- `11`
-- `A`
-- `B`
-- `C`
-- `D`
-- `IDV_A`
-- `IDV_B_A`
-- `IDV_B_B`
-- `IDV_B_C`
-- `IDV_B`
-- `IDV_C`
-- `IDV_D`
-- `IDV_E`
+### Members
++ `02`
++ `03`
++ `04`
++ `05`
++ `06`
++ `07`
++ `08`
++ `09`
++ `10`
++ `11`
++ `A`
++ `B`
++ `C`
++ `D`
++ `IDV_A`
++ `IDV_B_A`
++ `IDV_B_B`
++ `IDV_B_C`
++ `IDV_B`
++ `IDV_C`
++ `IDV_D`
++ `IDV_E`

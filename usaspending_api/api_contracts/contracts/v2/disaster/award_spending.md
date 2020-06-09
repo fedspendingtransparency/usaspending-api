@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of DEF Codes for the disaster/emergency funding [/api/v2/disaster/def_code/count/]
+# Aggregated Award Spending From Disaster/Emergency Funding [/api/v2/disaster/award_spending/]
 
-This endpoint provides the count of DEFC which received disaster/emergency funding per the requested filters.
+This endpoint provides account data obligation and outlay spending aggregations of all (File D) Awards which received disaster/emergency funding per the requested filters.
 
 ## POST
 
-This endpoint returns a count of DEFC
+This endpoint provides the Account obligation and outlay aggregations of Awards
 
 + Request (application/json)
     + Schema
@@ -20,20 +20,19 @@ This endpoint returns a count of DEFC
     + Attributes
         + `def_codes` (required, array[DEFC], fixed-type)
         + `fiscal_year` (required, number)
-        + `spending_type` (required, enum[string], fixed-type)
-            + Members
-                + `total`
-                + `award`
-        + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
+        + `award_type_codes` (required, array[AwardTypeCodes], fixed-type)
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `count` (required, number)
+        + `obligation` (required, number)
+        + `outlay` (required, number)
     + Body
 
             {
-                "count": 5
+                "obligation": 32984563875,
+                "outlay": 15484564321
             }
+
 
 # Data Structures
 

@@ -22,9 +22,9 @@ This endpoint provides award spending data from emergency/disaster funding group
                 + `period`
             + Default
                 + `period`
-        + `defc` (required, array[string])
+        + `defc` (required, array[DEFC], fixed-type)
             An array of Disaster / Emergency Funding Codes
-        + `award_type_codes` (optional, AwardTypes)
+        + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
             If not provided, defaults to all award types
         + `spending_type` (required, enum[string])
             + Default
@@ -126,35 +126,55 @@ This endpoint provides award spending data from emergency/disaster funding group
 + `total` (required, number)
 + `limit` (required, number)
 
-## AwardTypes (array)
-List of filterable award types
+## DEFC (enum)
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
 
-### Sample
-- `A`
-- `B`
-- `C`
-- `D`
+### Members
++ `A`
++ `B`
++ `C`
++ `D`
++ `E`
++ `F`
++ `G`
++ `H`
++ `I`
++ `J`
++ `K`
++ `L`
++ `M`
++ `N`
++ `O`
++ `P`
++ `Q`
++ `R`
++ `S`
++ `T`
++ `9`
 
-### Default
-- `02`
-- `03`
-- `04`
-- `05`
-- `06`
-- `07`
-- `08`
-- `09`
-- `10`
-- `11`
-- `A`
-- `B`
-- `C`
-- `D`
-- `IDV_A`
-- `IDV_B`
-- `IDV_B_A`
-- `IDV_B_B`
-- `IDV_B_C`
-- `IDV_C`
-- `IDV_D`
-- `IDV_E`
+## AwardTypeCodes (enum)
+List of procurement and assistance award type codes supported by USAspending.gov
+
+### Members
++ `02`
++ `03`
++ `04`
++ `05`
++ `06`
++ `07`
++ `08`
++ `09`
++ `10`
++ `11`
++ `A`
++ `B`
++ `C`
++ `D`
++ `IDV_A`
++ `IDV_B_A`
++ `IDV_B_B`
++ `IDV_B_C`
++ `IDV_B`
++ `IDV_C`
++ `IDV_D`
++ `IDV_E`

@@ -25,8 +25,11 @@ This endpoint provides funding and spending details from emergency/disaster supp
 # Data Structures
 ## Funding (object)
 + `code` (required, string)
+    DEF Code providing the funding
 + `title` (required, string)
+    DEF title from legislation
 + `amount` (required, number)
+    Aggregation amount under the DEFC
 
 ## Spending (object)
 + `award_obligations_not_outlayed` (required, number, nullable)
