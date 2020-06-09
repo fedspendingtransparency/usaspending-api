@@ -1067,13 +1067,13 @@ def test_zip4_switch(client, awards_and_transactions):
 
 
 def test_file_c_data(client, awards_and_transactions):
-    mommy.make("references.DisasterEmergencyFundCode", code="L")
+    defc = mommy.make("references.DisasterEmergencyFundCode", code="L")
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
         obligations_delivered_orders_unpaid_total_cpe=100,
         gross_outlay_amount_by_award_cpe=100,
-        disaster_emergency_fund="L",
+        disaster_emergency_fund=defc,
     )
 
     resp = client.get("/api/v2/awards/1")
