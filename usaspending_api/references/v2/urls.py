@@ -1,6 +1,13 @@
 from django.conf.urls import url
 
-from usaspending_api.references.v2.views import agency, toptier_agencies, data_dictionary, glossary, award_types, def_codes
+from usaspending_api.references.v2.views import (
+    agency,
+    toptier_agencies,
+    data_dictionary,
+    glossary,
+    award_types,
+    def_codes,
+)
 from usaspending_api.references.v2.views.filter_tree import naics, tas, psc
 
 urlpatterns = [
