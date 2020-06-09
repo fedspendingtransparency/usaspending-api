@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Disaster Spending Overview [/api/v2/disaster/overview/]
 
-This endpoint provides funding and spending details from emergency/disaster supplimental funding legislation.
+This endpoint provides funding and spending details from emergency/disaster supplemental funding legislation.
 
 ## GET
 
@@ -24,5 +24,15 @@ This endpoint provides funding and spending details from emergency/disaster supp
 
 # Data Structures
 ## Funding (object)
++ `code` (required, string)
++ `title` (required, string)
++ `amount` (required, number)
 
 ## Spending (object)
++ `award_obligations_not_outlayed` (required, number, nullable)
++ `award_obligations` (required, number, nullable)
++ `award_outlays` (required, number, nullable)
++ `other_obligations_not_outlayed` (required, number, nullable)
++ `other_obligations` (required, number, nullable)
++ `other_outlays` (required, number, nullable)
++ `remaining_balance` (required, number, nullable)
