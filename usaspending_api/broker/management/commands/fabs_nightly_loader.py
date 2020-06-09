@@ -7,7 +7,10 @@ from django.db.models import Max
 
 from usaspending_api.awards.models import TransactionFABS
 from usaspending_api.broker import lookups
-from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
+from usaspending_api.broker.helpers.delete_fabs_transactions import (
+    delete_fabs_transactions,
+    get_delete_pks_for_afa_keys,
+)
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
@@ -186,6 +189,7 @@ class Command(BaseCommand):
             with timer("obtaining delete records", logger.info):
                 delete_records = retrieve_deleted_fabs_transactions(start_datetime, end_datetime)
                 ids_to_delete = [item for sublist in delete_records.values() for item in sublist if item]
+                ids_to_delete = get_delete_pks_for_afa_keys(ids_to_delete)
             logger.info(f"{len(ids_to_delete):,} delete ids found in total")
 
         with timer("retrieving/diff-ing FABS Data", logger.info):
