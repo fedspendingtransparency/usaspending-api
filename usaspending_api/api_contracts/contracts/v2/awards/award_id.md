@@ -720,7 +720,7 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the idv has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
-+ `disaster_emergency_fund_codes` (required, array[DEFC], fixed-type)
++ `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## FinancialAssistanceResponse (object)
 + `category` (required, enum[string])
@@ -769,7 +769,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `place_of_performance` (required, Location, fixed-type)
 + `executive_details` (required, Executive, fixed-type)
 + `cfda_info` (required, array[CFDAInfo], fixed-type)
-+ `disaster_emergency_fund_codes` (required, array[DEFC], fixed-type)
++ `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## CFDAInfo (object)
 + `applicant_eligibility` (required, string, nullable)
