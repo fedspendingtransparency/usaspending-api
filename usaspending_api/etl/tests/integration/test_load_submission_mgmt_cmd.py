@@ -4,238 +4,239 @@ import pytest
 from django.core.management import call_command
 from django.db import connections
 from django.db.models import Q
+from django.test import TestCase
 from model_mommy import mommy
-
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
 
 
-@pytest.fixture
-def data_fixture(db, broker_db_setup):
-    # Setup default data in USAspending Test DB
-    mommy.make(
-        "accounts.TreasuryAppropriationAccount",
-        treasury_account_identifier=-99999,
-        allocation_transfer_agency_id="999",
-        agency_id="999",
-        beginning_period_of_availability="1700-01-01",
-        ending_period_of_availability="1700-12-31",
-        availability_type_code="000",
-        main_account_code="0000",
-        sub_account_code="0000",
-        tas_rendering_label="1004-1002-1003-1007-1008",
-    )
-    mommy.make("references.ObjectClass", id=0, major_object_class="00", object_class="000", direct_reimbursable=None)
+@pytest.mark.usefixtures("broker_db_setup")
+class TestWithMultipleDatabases(TestCase):
+    databases = "__all__"
 
-    # Setup default data in Broker Test DB
-    broker_objects_to_insert = {
-        "tas_lookup": {"broker_object": _assemble_broker_tas_lookup_records(), "conflict_column": "tas_id"},
-        "submission": {"broker_object": _assemble_broker_submission_records(), "conflict_column": "submission_id"},
-        "certify_history": {"broker_object": _assemble_certify_history(), "conflict_column": "certify_history_id"},
-        "certified_award_financial": {
-            "broker_object": _assemble_certified_award_financial_records(),
-            "conflict_column": "certified_award_financial_id",
-        },
-    }
-    connection = connections["data_broker"]
-    with connection.cursor() as cursor:
-        for broker_table_name, value in broker_objects_to_insert.items():
-            broker_object = value["broker_object"]
-            conflict_column = value["conflict_column"]
-            for load_object in [dict(**{broker_table_name: obj}) for obj in broker_object]:
-                columns, values, pairs = format_insert_or_update_column_sql(cursor, load_object, broker_table_name)
-                insert_sql = (
-                    f"INSERT INTO {broker_table_name} {columns} VALUES {values}"
-                    f" ON CONFLICT ({conflict_column}) DO UPDATE SET {pairs};"
+    @classmethod
+    def setUpTestData(cls):
+        mommy.make(
+            "accounts.TreasuryAppropriationAccount",
+            treasury_account_identifier=-99999,
+            allocation_transfer_agency_id="999",
+            agency_id="999",
+            beginning_period_of_availability="1700-01-01",
+            ending_period_of_availability="1700-12-31",
+            availability_type_code="000",
+            main_account_code="0000",
+            sub_account_code="0000",
+            tas_rendering_label="1004-1002-1003-1007-1008",
+        )
+        mommy.make(
+            "references.ObjectClass", id=0, major_object_class="00", object_class="000", direct_reimbursable=None
+        )
+
+        # Setup default data in Broker Test DB
+        broker_objects_to_insert = {
+            "tas_lookup": {"broker_object": _assemble_broker_tas_lookup_records(), "conflict_column": "tas_id"},
+            "submission": {"broker_object": _assemble_broker_submission_records(), "conflict_column": "submission_id"},
+            "certify_history": {"broker_object": _assemble_certify_history(), "conflict_column": "certify_history_id"},
+            "certified_award_financial": {
+                "broker_object": _assemble_certified_award_financial_records(),
+                "conflict_column": "certified_award_financial_id",
+            },
+        }
+        connection = connections["data_broker"]
+        with connection.cursor() as cursor:
+
+            for broker_table_name, value in broker_objects_to_insert.items():
+                broker_object = value["broker_object"]
+                conflict_column = value["conflict_column"]
+                for load_object in [dict(**{broker_table_name: obj}) for obj in broker_object]:
+                    columns, values, pairs = format_insert_or_update_column_sql(cursor, load_object, broker_table_name)
+                    insert_sql = (
+                        f"INSERT INTO {broker_table_name} {columns} VALUES {values}"
+                        f" ON CONFLICT ({conflict_column}) DO UPDATE SET {pairs};"
+                    )
+                    cursor.execute(insert_sql)
+
+    def test_load_submission_transaction_obligated_amount(self):
+        """ Test load submission management command for File C transaction_obligated_amount NaNs """
+        call_command("load_submission", "-9999")
+
+        expected_results = 0
+        actual_results = FinancialAccountsByAwards.objects.filter(
+            Q(transaction_obligated_amount="NaN") | Q(transaction_obligated_amount=None)
+        ).count()
+
+        assert expected_results == actual_results
+
+    def test_load_submission_file_c_fain_and_uri(self):
+        """
+        Test load submission management command for File C records with FAIN and URI
+        """
+        mommy.make(
+            "awards.Award",
+            id=-999,
+            uri="RANDOM_LOAD_SUB_URI_999",
+            fain="RANDOM_LOAD_SUB_FAIN_999",
+            latest_transaction_id=-999,
+        )
+        mommy.make(
+            "awards.Award",
+            id=-1999,
+            uri="RANDOM_LOAD_SUB_URI_1999",
+            fain="RANDOM_LOAD_SUB_FAIN_1999",
+            latest_transaction_id=-1999,
+        )
+        mommy.make("awards.TransactionNormalized", id=-999)
+        mommy.make("awards.TransactionNormalized", id=-1999)
+
+        call_command("load_submission", "-9999")
+
+        expected_results = {"award_ids": [-1999, -999]}
+        actual_results = {
+            "award_ids": sorted(
+                list(
+                    FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
                 )
-                cursor.execute(insert_sql)
+            )
+        }
 
+        assert expected_results == actual_results
 
-def test_load_submission_transaction_obligated_amount(data_fixture):
-    """ Test load submission management command for File C transaction_obligated_amount NaNs """
-    call_command("load_submission", "-9999")
+    def test_load_submission_file_c_uri(self):
+        """
+        Test load submission management command for File C records with only a URI
+        """
+        mommy.make("awards.Award", id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
+        mommy.make("awards.TransactionNormalized", id=-997)
 
-    expected_results = 0
-    actual_results = FinancialAccountsByAwards.objects.filter(
-        Q(transaction_obligated_amount="NaN") | Q(transaction_obligated_amount=None)
-    ).count()
+        call_command("load_submission", "-9999")
 
-    assert expected_results == actual_results
+        expected_results = {"award_ids": [-997]}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
 
+        assert expected_results == actual_results
 
-def test_load_submission_file_c_fain_and_uri(data_fixture):
-    """
-    Test load submission management command for File C records with FAIN and URI
-    """
-    mommy.make(
-        "awards.Award",
-        id=-999,
-        uri="RANDOM_LOAD_SUB_URI_999",
-        fain="RANDOM_LOAD_SUB_FAIN_999",
-        latest_transaction_id=-999,
-    )
-    mommy.make(
-        "awards.Award",
-        id=-1999,
-        uri="RANDOM_LOAD_SUB_URI_1999",
-        fain="RANDOM_LOAD_SUB_FAIN_1999",
-        latest_transaction_id=-1999,
-    )
-    mommy.make("awards.TransactionNormalized", id=-999)
-    mommy.make("awards.TransactionNormalized", id=-1999)
+    def test_load_submission_file_c_fain(self):
+        """
+        Test load submission management command for File C records with only a FAIN
+        """
+        mommy.make("awards.Award", id=-997, fain="RANDOM_LOAD_SUB_FAIN", latest_transaction_id=-997)
+        mommy.make("awards.TransactionNormalized", id=-997)
 
-    call_command("load_submission", "-9999")
+        call_command("load_submission", "-9999")
 
-    expected_results = {"award_ids": [-1999, -999]}
-    actual_results = {
-        "award_ids": sorted(
-            list(FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True))
+        expected_results = {"award_ids": [-997]}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
+
+        assert expected_results == actual_results
+
+    def test_load_submission_file_c_piid_with_parent_piid(self):
+        """
+        Test load submission management command for File C records with only a piid and parent piid
+        """
+        mommy.make(
+            "awards.Award",
+            id=-997,
+            piid="RANDOM_LOAD_SUB_PIID",
+            parent_award_piid="RANDOM_LOAD_SUB_PARENT_PIID",
+            latest_transaction_id=-997,
         )
-    }
+        mommy.make("awards.TransactionNormalized", id=-997)
 
-    assert expected_results == actual_results
+        call_command("load_submission", "-9999")
 
+        expected_results = {"award_ids": [-997, -997]}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
 
-def test_load_submission_file_c_uri(data_fixture):
-    """
-    Test load submission management command for File C records with only a URI
-    """
-    mommy.make("awards.Award", id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
-    mommy.make("awards.TransactionNormalized", id=-997)
+        assert expected_results == actual_results
 
-    call_command("load_submission", "-9999")
-
-    expected_results = {"award_ids": [-997]}
-    actual_results = {
-        "award_ids": list(
-            FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+    def test_load_submission_file_c_piid_with_no_parent_piid(self):
+        """
+        Test load submission management command for File C records with only a piid and no parent piid
+        """
+        mommy.make(
+            "awards.Award", id=-998, piid="RANDOM_LOAD_SUB_PIID", parent_award_piid=None, latest_transaction_id=-998
         )
-    }
+        mommy.make("awards.TransactionNormalized", id=-998)
 
-    assert expected_results == actual_results
+        call_command("load_submission", "-9999")
 
+        expected_results = {"award_ids": [-998]}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
 
-def test_load_submission_file_c_fain(data_fixture):
-    """
-    Test load submission management command for File C records with only a FAIN
-    """
-    mommy.make("awards.Award", id=-997, fain="RANDOM_LOAD_SUB_FAIN", latest_transaction_id=-997)
-    mommy.make("awards.TransactionNormalized", id=-997)
+        assert expected_results == actual_results
 
-    call_command("load_submission", "-9999")
-
-    expected_results = {"award_ids": [-997]}
-    actual_results = {
-        "award_ids": list(
-            FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+    def test_load_submission_file_c_piid_with_unmatched_parent_piid(self):
+        """
+        Test load submission management command for File C records that are not expected to be linked to Award data
+        """
+        mommy.make(
+            "awards.Award",
+            id=-1001,
+            piid="RANDOM_LOAD_SUB_PIID",
+            parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
+            latest_transaction_id=-1234,
         )
-    }
+        mommy.make("awards.TransactionNormalized", id=-1234)
 
-    assert expected_results == actual_results
+        call_command("load_submission", "-9999")
 
+        expected_results = {"award_ids": [-1001]}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
 
-def test_load_submission_file_c_piid_with_parent_piid(data_fixture):
-    """
-    Test load submission management command for File C records with only a piid and parent piid
-    """
-    mommy.make(
-        "awards.Award",
-        id=-997,
-        piid="RANDOM_LOAD_SUB_PIID",
-        parent_award_piid="RANDOM_LOAD_SUB_PARENT_PIID",
-        latest_transaction_id=-997,
-    )
-    mommy.make("awards.TransactionNormalized", id=-997)
+        assert expected_results == actual_results
 
-    call_command("load_submission", "-9999")
-
-    expected_results = {"award_ids": [-997, -997]}
-    actual_results = {
-        "award_ids": list(
-            FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+    def test_load_submission_file_c_no_d_linkage(self):
+        """
+        Test load submission management command for File C records that are not expected to be linked to Award data
+        """
+        mommy.make(
+            "awards.Award",
+            id=-999,
+            piid="RANDOM_LOAD_SUB_PIID_DNE",
+            parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
+            latest_transaction_id=-999,
         )
-    }
+        mommy.make("awards.TransactionNormalized", id=-999, award_id=-999)
 
-    assert expected_results == actual_results
+        call_command("load_submission", "-9999")
 
+        expected_results = {"award_ids": []}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
 
-def test_load_submission_file_c_piid_with_no_parent_piid(data_fixture):
-    """
-    Test load submission management command for File C records with only a piid and no parent piid
-    """
-    mommy.make("awards.Award", id=-998, piid="RANDOM_LOAD_SUB_PIID", parent_award_piid=None, latest_transaction_id=-998)
-    mommy.make("awards.TransactionNormalized", id=-998)
+        assert expected_results == actual_results
 
-    call_command("load_submission", "-9999")
+    def test_load_submission_file_c_zero_and_null_transaction_obligated_amount_ignored(self):
+        """
+        Test that the 'certified_award_financial` rows that have a 'transaction_obligated_amou'
+        of zero or null are not loaded from Broker.
+        """
+        call_command("load_submission", "-9999")
 
-    expected_results = {"award_ids": [-998]}
-    actual_results = {
-        "award_ids": list(
-            FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
-        )
-    }
-
-    assert expected_results == actual_results
-
-
-def test_load_submission_file_c_piid_with_unmatched_parent_piid(data_fixture):
-    """
-    Test load submission management command for File C records that are not expected to be linked to Award data
-    """
-    mommy.make(
-        "awards.Award",
-        id=-1001,
-        piid="RANDOM_LOAD_SUB_PIID",
-        parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
-        latest_transaction_id=-1234,
-    )
-    mommy.make("awards.TransactionNormalized", id=-1234)
-
-    call_command("load_submission", "-9999")
-
-    expected_results = {"award_ids": [-1001]}
-    actual_results = {
-        "award_ids": list(
-            FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
-        )
-    }
-
-    assert expected_results == actual_results
-
-
-def test_load_submission_file_c_no_d_linkage(data_fixture):
-    """
-    Test load submission management command for File C records that are not expected to be linked to Award data
-    """
-    mommy.make(
-        "awards.Award",
-        id=-999,
-        piid="RANDOM_LOAD_SUB_PIID_DNE",
-        parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
-        latest_transaction_id=-999,
-    )
-    mommy.make("awards.TransactionNormalized", id=-999, award_id=-999)
-
-    call_command("load_submission", "-9999")
-
-    expected_results = {"award_ids": []}
-    actual_results = {
-        "award_ids": list(
-            FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
-        )
-    }
-
-    assert expected_results == actual_results
-
-
-def test_load_submission_file_c_zero_and_null_transaction_obligated_amount_ignored(data_fixture):
-    """
-    Test that the 'certified_award_financial` rows that have a 'transaction_obligated_amou'
-    of zero or null are not loaded from Broker.
-    """
-    call_command("load_submission", "-9999")
-
-    assert FinancialAccountsByAwards.objects.all().count() == 6
+        assert FinancialAccountsByAwards.objects.all().count() == 6
 
 
 def _assemble_broker_tas_lookup_records() -> list:

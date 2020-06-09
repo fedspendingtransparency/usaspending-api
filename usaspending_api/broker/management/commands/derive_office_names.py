@@ -5,7 +5,7 @@ from django.db import connection, connections
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
 from usaspending_api.etl.management import load_base
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 class Command(load_base.Command):

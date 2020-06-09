@@ -1513,7 +1513,10 @@ query_paths = {
                 ("unobligated_balance", "unobligated_balance_cpe"),
                 ("gross_outlay_amount", "gross_outlay_amount_by_tas_cpe"),
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total_cpe"),
-                ("last_modified_date", "submission__certified_date"),
+                (
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                ),  # Column is annotated in account_download.py
             ]
         ),
         "federal_account": OrderedDict(
@@ -1599,7 +1602,10 @@ query_paths = {
                     "deobligations_recoveries_refund_pri_program_object_class_cpe",
                 ),
                 ("gross_outlay_amount", "gross_outlay_amount_by_program_object_class_cpe"),
-                ("last_modified_date", "submission__certified_date"),
+                (
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                ),  # Column is annotated in account_download.py
             ]
         ),
         "federal_account": OrderedDict(
@@ -1737,7 +1743,10 @@ query_paths = {
                 ("national_interest_action_code", "award__latest_transaction__contract_data__national_interest_action"),
                 ("national_interest_action", "award__latest_transaction__contract_data__national_interest_desc"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
-                ("last_modified_date", "submission__certified_date"),
+                (
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                ),  # Column is annotated in account_download.py
             ]
         ),
         "federal_account": OrderedDict(

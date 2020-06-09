@@ -2,9 +2,13 @@ import numpy as np
 import pandas as pd
 
 from collections import deque
+from datetime import timedelta
+from django.conf import settings
 from django.db import connections
+from django.db.models import Max
 from django.utils.functional import cached_property
-from usaspending_api.references.models import ObjectClass, RefProgramActivity
+from usaspending_api.references.models import ObjectClass, RefProgramActivity, DisasterEmergencyFundCode
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class Bunch:
@@ -35,6 +39,10 @@ def get_or_create_program_activity(row, submission_attributes):
         # logger.warning('Created missing program activity record for {}'.format(str(filters)))
 
     return prg_activity
+
+
+def get_disaster_emergency_fund(row):
+    return DisasterEmergencyFundCode.objects.filter(code=row["disaster_emergency_fund_code"]).first()
 
 
 def get_object_class_row(row):
@@ -113,8 +121,15 @@ class CertifiedAwardFinancialIterator:
             from    certified_award_financial
             where   submission_id = {self.submission_attributes.submission_id} and
                     {"" if self._last_id is None else f"certified_award_financial_id > {self._last_id} and"}
-                    transaction_obligated_amou is not null and
-                    transaction_obligated_amou != 0
+                    (
+                        (
+                            transaction_obligated_amou is not null and
+                            transaction_obligated_amou != 0
+                        ) or (
+                            gross_outlay_amount_by_awa_cpe is not null and
+                            gross_outlay_amount_by_awa_cpe != 0
+                        )
+                    )
             order   by certified_award_financial_id
             limit   {self.chunk_size}
         """
@@ -155,8 +170,15 @@ class CertifiedAwardFinancial:
             select  count(*)
             from    certified_award_financial
             where   submission_id = {self.submission_attributes.submission_id} and
-                    transaction_obligated_amou is not null and
-                    transaction_obligated_amou != 0
+                    (
+                        (
+                            transaction_obligated_amou is not null and
+                            transaction_obligated_amou != 0
+                        ) or (
+                            gross_outlay_amount_by_awa_cpe is not null and
+                            gross_outlay_amount_by_awa_cpe != 0
+                        )
+                    )
         """
         with connections["data_broker"].cursor() as cursor:
             cursor.execute(sql)
@@ -164,3 +186,76 @@ class CertifiedAwardFinancial:
 
     def __iter__(self):
         return CertifiedAwardFinancialIterator(self.submission_attributes)
+
+
+def calculate_load_submissions_since_datetime():
+    since = SubmissionAttributes.objects.all().aggregate(Max("update_date"))["update_date__max"]
+    if since:
+        # In order to prevent skips, we're just always going to look back 7 days.  Since submission is a
+        # relatively low volume table, this should not cause any noticeable performance issues.
+        since -= timedelta(days=7)
+    return since
+
+
+# ENABLE_CARES_ACT_FEATURES: This function is a stopgap measure to support an interim state of CARES
+# Act work.  disaster_emergency_fund_code is a new column that will eventually appear in several tables
+# in Broker.  Remove this once the disaster_emergency_fund_code columns exist in Broker (regardless
+# of whether or not they're actually in use).
+def defc_exists():
+    global _defc_exists
+    try:
+        return _defc_exists
+    except NameError:
+        with connections["data_broker"].cursor() as cursor:
+            cursor.execute(
+                """
+                select exists(
+                    select
+                    from    information_schema.columns
+                    where   table_schema = 'public' and
+                            table_name = 'certified_object_class_program_activity' and
+                            column_name = 'disaster_emergency_fund_code'
+                ) and exists(
+                    select
+                    from    information_schema.columns
+                    where   table_schema = 'public' and
+                            table_name = 'certified_award_financial' and
+                            column_name = 'disaster_emergency_fund_code'
+                )
+                """
+            )
+            _defc_exists = cursor.fetchone()[0]
+        return _defc_exists
+
+
+# ENABLE_CARES_ACT_FEATURES: This function is a stopgap measure to support an interim state of CARES
+# Act work.  See comment in _get_submission_sql_select_from for more details.  Remove this once the
+# the publish_history table exists in Broker (regardless of whether or not it's actually in use).
+def publish_history_exists():
+    global _publish_history_exists
+    try:
+        return _publish_history_exists
+    except NameError:
+        with connections["data_broker"].cursor() as cursor:
+            cursor.execute(
+                """
+                select exists(
+                    select
+                    from    information_schema.tables
+                    where   table_schema = 'public' and table_name = 'publish_history'
+                )
+                """
+            )
+            _publish_history_exists = cursor.fetchone()[0]
+        return _publish_history_exists
+
+
+def get_publish_history_table():
+    # publish_history is a new CARES Act table that is scheduled for development in Sprint 109 or 110.
+    # Until it is in place, we will continue to support the old behavior of certification and publication
+    # occurring at the same time.  Once publish_history is in place, remove the table check.  Once CARES
+    # Act features go live, remove the ENABLE_CARES_ACT_FEATURES check.
+    if settings.ENABLE_CARES_ACT_FEATURES and publish_history_exists():
+        return "publish_history"
+    else:
+        return "certify_history"

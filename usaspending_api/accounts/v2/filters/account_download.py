@@ -1,9 +1,8 @@
 import datetime
 
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, When, Func, F, Value
-from django.db.models.functions import Concat, Coalesce
-
+from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, When, Func, F, Value, DateField
+from django.db.models.functions import Concat, Coalesce, Cast
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
@@ -175,6 +174,10 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
             f"{tas_id}__federal_account__main_account_code",
         ),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
+        "last_modified_date"
+        + NAMING_CONFLICT_DISCRIMINATOR: Cast(
+            Max(Coalesce("submission__certified_date", "submission__published_date")), output_field=DateField()
+        ),
     }
 
     # Derive recipient_parent_name
@@ -199,7 +202,10 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         ),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
-        "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR: Max("submission__certified_date"),
+        "last_modified_date"
+        + NAMING_CONFLICT_DISCRIMINATOR: Cast(
+            Max(Coalesce("submission__certified_date", "submission__published_date")), output_field=DateField()
+        ),
     }
 
     # Derive recipient_parent_name for award_financial downloads

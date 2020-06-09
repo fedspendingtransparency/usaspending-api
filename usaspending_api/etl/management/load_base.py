@@ -1,15 +1,12 @@
 """
 Code for loaders in management/commands to inherit from or share.
 """
-
 import dateutil
 import logging
 
 from decimal import Decimal
-
 from django.core.management.base import BaseCommand
 from django.db import connections
-
 from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
@@ -18,7 +15,7 @@ from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 award_update_id_list = []
 award_contract_update_id_list = []
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
@@ -99,6 +96,14 @@ def load_data_into_model(model_instance, data, **kwargs):
         # Let's handle the data source field here for all objects
         if field == "data_source" and field not in value_map:
             store_value(mod, field, "DBR", reverse)
+
+        # ENABLE_CARES_ACT_FEATURES: disaster_emergency_fund_code is being added as part of the CARES
+        # Act initiative.  For backward compatibility, we will provide a default of None if the field
+        # does not exist in the source record.  Once CARES Act has fully rolled out in both Broker and
+        # USAspending, remove this hack.
+        if field == "disaster_emergency_fund_code" and "disaster_emergency_fund_code" not in data:
+            data["disaster_emergency_fund_code"] = None
+
         broker_field = field
         # If our field is the 'long form' field, we need to get what it maps to
         # in the broker so we can map the data properly
