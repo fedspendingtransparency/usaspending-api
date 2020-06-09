@@ -100,6 +100,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/recipient/state/](/api/v2/recipient/state/)|GET| Returns basic information about the specified state|
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency|
 |[/api/v2/references/data_dictionary/](/api/v2/references/data_dictionary/)|GET| Returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary|
+|[/api/v2/references/def_codes/](/api/v2/references/dec_codes/)|GET| Returns an object of Disaster Emergency Fund (DEF) Codes (DEFC) and titles|
 |[/api/v2/references/filter_tree/psc/](/api/v2/references/filter_tree/psc/)|GET| Returns a list of PSC groupings|
 |[/api/v2/references/filter_tree/psc/<GROUP\>/](/api/v2/references/filter_tree/psc/Product/)|GET| Returns a list of PSC under the provided path|
 |[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/](/api/v2/references/filter_tree/psc/Product/10/)|GET| Returns a list of PSC under the provided path|
