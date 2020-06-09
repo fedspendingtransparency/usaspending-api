@@ -35,7 +35,7 @@ class Command(BaseCommand):
         try:
             submission = SubmissionAttributes.objects.get(submission_id=submission_id)
         except ObjectDoesNotExist:
-            raise "Broker submission id {} does not exist".format(submission_id)
+            raise RuntimeError("Broker submission id {} does not exist".format(submission_id))
 
         deleted_stats = submission.delete()
 

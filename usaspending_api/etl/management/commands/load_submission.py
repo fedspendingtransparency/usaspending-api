@@ -68,6 +68,16 @@ class Command(load_base.Command):
             raise CommandError("Found multiple submissions with id " + str(submission_id))
 
         submission_data = submission_data[0].copy()
+
+        if submission_data["publish_status_id"] not in (2, 3):
+            raise RuntimeError(f"publish_status_id {submission_data['publish_status_id']} is not allowed")
+        if submission_data["d2_submission"] is not False:
+            raise RuntimeError(f"d2_submission {submission_data['d2_submission']} is not allowed")
+
+        db_cursor.execute(f"select exists(select from certify_history where submission_id = {submission_id})")
+        if db_cursor.fetchone()[0] is not True:
+            raise RuntimeError("Submission does not exist in certify_history")
+
         submission_attributes = get_submission_attributes(submission_id, submission_data)
 
         logger.info("Getting File A data")
