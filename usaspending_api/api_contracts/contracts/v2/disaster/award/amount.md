@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Aggregated Award Spending From Disaster/Emergency Funding [/api/v2/disaster/award_spending/]
+# Aggregated Award Spending From Disaster/Emergency Funding [/api/v2/disaster/award/amount/]
 
 This endpoint provides account data obligation and outlay spending aggregations of all (File D) Awards which received disaster/emergency funding per the requested filters.
 
