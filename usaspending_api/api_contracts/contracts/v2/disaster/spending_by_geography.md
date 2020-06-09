@@ -7,7 +7,6 @@ This endpoint provides geographical spending information from emergency/disaster
 
 ## POST
 
-
 + Request (application/json)
     + Schema
 
@@ -87,10 +86,9 @@ This endpoint provides geographical spending information from emergency/disaster
 
 # Data Structures
 
-## DisasterFilterObject (object)
-
 ## GeographyTypeResult (object)
 + `amount` (required, number)
+    Dollar obligated or outlayed amount (depending on the `spending_type` requested)
 + `display_name` (required, string)
 + `shape_code` (required, string)
 + `population` (required, number, nullable)
