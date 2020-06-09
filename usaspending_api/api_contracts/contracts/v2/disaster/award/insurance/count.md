@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of Object Classes for the disaster/emergency spending [/api/v2/disaster/object_class/count/]
+# Count of Insurance Awards receiving the disaster/emergency spending [/api/v2/disaster/award/insurance/count/]
 
-This endpoint provides the count of Object Classes which received disaster/emergency spending per the requested filters.
+This endpoint provides the count of Insurance Awards which received disaster/emergency spending per the requested filters.
 
 ## POST
 
-This endpoint returns a count of DEF Codes
+This endpoint returns a count of Insurance Awards
 
 + Request (application/json)
     + Schema

@@ -73,7 +73,7 @@ This endpoint returns a count of Object Classes
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `count` (required, number, fixed-type)
+        + `count` (required, number)
     + Body
 
             {

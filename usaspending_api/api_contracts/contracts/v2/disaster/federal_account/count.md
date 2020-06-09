@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of Object Classes for the disaster/emergency spending [/api/v2/disaster/object_class/count/]
+# Count of Federal Accounts for the disaster/emergency spending [/api/v2/disaster/federal_account/count/]
 
-This endpoint provides the count of Object Classes which received disaster/emergency spending per the requested filters.
+This endpoint provides the count of Federal Accounts and TAS which received disaster/emergency spending per the requested filters.
 
 ## POST
 
-This endpoint returns a count of DEF Codes
+This endpoint returns a count of Federal Account and TAS
 
 + Request (application/json)
     + Schema
@@ -73,9 +73,11 @@ This endpoint returns a count of DEF Codes
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `count` (required, number, fixed-type)
+        + `count` (required, number)
+        + `child_count` (required, number)
     + Body
 
             {
-                "count": 5
+                "count": 7,
+                "child_count": 32
             }

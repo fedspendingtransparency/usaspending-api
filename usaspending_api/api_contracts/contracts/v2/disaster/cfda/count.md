@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of Object Classes for the disaster/emergency spending [/api/v2/disaster/object_class/count/]
+# Count of Object Classes for the disaster/emergency spending [/api/v2/disaster/cfda/count/]
 
 This endpoint provides the count of Object Classes which received disaster/emergency spending per the requested filters.
 
@@ -73,9 +73,9 @@ This endpoint returns a count of DEF Codes
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `count` (required, number, fixed-type)
+        + `count` (required, number)
     + Body
 
             {
-                "count": 5
+                "count": 39
             }
