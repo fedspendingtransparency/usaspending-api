@@ -323,84 +323,84 @@ def get_file_b(submission_attributes, db_cursor):
         # file b contains at least one case of duplicate 4 digit object classes for the same program activity/tas,
         # so combine the records in question
         combine_dupe_oc = f"""
-                select
-                    submission_id,
-                    job_id,
-                    agency_identifier,
-                    allocation_transfer_agency,
-                    availability_type_code,
-                    beginning_period_of_availa,
-                    ending_period_of_availabil,
-                    main_account_code,
-                    right(object_class, 3) as object_class,
-                    case
-                        when length(object_class) = 4 and left(object_class, 1) = '1' then 'D'
-                        when length(object_class) = 4 and left(object_class, 1) = '2' then 'R'
-                        else by_direct_reimbursable_fun
-                    end as by_direct_reimbursable_fun,
-                    tas,
-                    tas_id,
-                    program_activity_code,
-                    program_activity_name,
-                    sub_account_code,
-                    sum(deobligations_recov_by_pro_cpe) as deobligations_recov_by_pro_cpe,
-                    sum(gross_outlay_amount_by_pro_cpe) as gross_outlay_amount_by_pro_cpe,
-                    sum(gross_outlay_amount_by_pro_fyb) as gross_outlay_amount_by_pro_fyb,
-                    sum(gross_outlays_delivered_or_cpe) as gross_outlays_delivered_or_cpe,
-                    sum(gross_outlays_delivered_or_fyb) as gross_outlays_delivered_or_fyb,
-                    sum(gross_outlays_undelivered_cpe) as gross_outlays_undelivered_cpe,
-                    sum(gross_outlays_undelivered_fyb) as gross_outlays_undelivered_fyb,
-                    sum(obligations_delivered_orde_cpe) as obligations_delivered_orde_cpe,
-                    sum(obligations_delivered_orde_fyb) as obligations_delivered_orde_fyb,
-                    sum(obligations_incurred_by_pr_cpe) as obligations_incurred_by_pr_cpe,
-                    sum(obligations_undelivered_or_cpe) as obligations_undelivered_or_cpe,
-                    sum(obligations_undelivered_or_fyb) as obligations_undelivered_or_fyb,
-                    sum(ussgl480100_undelivered_or_cpe) as ussgl480100_undelivered_or_cpe,
-                    sum(ussgl480100_undelivered_or_fyb) as ussgl480100_undelivered_or_fyb,
-                    sum(ussgl480200_undelivered_or_cpe) as ussgl480200_undelivered_or_cpe,
-                    sum(ussgl480200_undelivered_or_fyb) as ussgl480200_undelivered_or_fyb,
-                    sum(ussgl483100_undelivered_or_cpe) as ussgl483100_undelivered_or_cpe,
-                    sum(ussgl483200_undelivered_or_cpe) as ussgl483200_undelivered_or_cpe,
-                    sum(ussgl487100_downward_adjus_cpe) as ussgl487100_downward_adjus_cpe,
-                    sum(ussgl487200_downward_adjus_cpe) as ussgl487200_downward_adjus_cpe,
-                    sum(ussgl488100_upward_adjustm_cpe) as ussgl488100_upward_adjustm_cpe,
-                    sum(ussgl488200_upward_adjustm_cpe) as ussgl488200_upward_adjustm_cpe,
-                    sum(ussgl490100_delivered_orde_cpe) as ussgl490100_delivered_orde_cpe,
-                    sum(ussgl490100_delivered_orde_fyb) as ussgl490100_delivered_orde_fyb,
-                    sum(ussgl490200_delivered_orde_cpe) as ussgl490200_delivered_orde_cpe,
-                    sum(ussgl490800_authority_outl_cpe) as ussgl490800_authority_outl_cpe,
-                    sum(ussgl490800_authority_outl_fyb) as ussgl490800_authority_outl_fyb,
-                    sum(ussgl493100_delivered_orde_cpe) as ussgl493100_delivered_orde_cpe,
-                    sum(ussgl497100_downward_adjus_cpe) as ussgl497100_downward_adjus_cpe,
-                    sum(ussgl497200_downward_adjus_cpe) as ussgl497200_downward_adjus_cpe,
-                    sum(ussgl498100_upward_adjustm_cpe) as ussgl498100_upward_adjustm_cpe,
-                    sum(ussgl498200_upward_adjustm_cpe) as ussgl498200_upward_adjustm_cpe
-                    {defc_sql}
-                from
-                    certified_object_class_program_activity
-                where
-                    submission_id = %s
-                group by
-                    submission_id,
-                    job_id,
-                    agency_identifier,
-                    allocation_transfer_agency,
-                    availability_type_code,
-                    beginning_period_of_availa,
-                    ending_period_of_availabil,
-                    main_account_code,
-                    right(object_class, 3),
-                    case
-                        when length(object_class) = 4 and left(object_class, 1) = '1' then 'D'
-                        when length(object_class) = 4 and left(object_class, 1) = '2' then 'R'
-                        else by_direct_reimbursable_fun
-                    end,
-                    program_activity_code,
-                    program_activity_name,
-                    sub_account_code,
-                    tas,
-                    tas_id
-                    {defc_sql}
+            select
+                submission_id,
+                job_id,
+                agency_identifier,
+                allocation_transfer_agency,
+                availability_type_code,
+                beginning_period_of_availa,
+                ending_period_of_availabil,
+                main_account_code,
+                right(object_class, 3) as object_class,
+                case
+                    when length(object_class) = 4 and left(object_class, 1) = '1' then 'D'
+                    when length(object_class) = 4 and left(object_class, 1) = '2' then 'R'
+                    else by_direct_reimbursable_fun
+                end as by_direct_reimbursable_fun,
+                tas,
+                tas_id,
+                program_activity_code,
+                program_activity_name,
+                sub_account_code,
+                sum(deobligations_recov_by_pro_cpe) as deobligations_recov_by_pro_cpe,
+                sum(gross_outlay_amount_by_pro_cpe) as gross_outlay_amount_by_pro_cpe,
+                sum(gross_outlay_amount_by_pro_fyb) as gross_outlay_amount_by_pro_fyb,
+                sum(gross_outlays_delivered_or_cpe) as gross_outlays_delivered_or_cpe,
+                sum(gross_outlays_delivered_or_fyb) as gross_outlays_delivered_or_fyb,
+                sum(gross_outlays_undelivered_cpe) as gross_outlays_undelivered_cpe,
+                sum(gross_outlays_undelivered_fyb) as gross_outlays_undelivered_fyb,
+                sum(obligations_delivered_orde_cpe) as obligations_delivered_orde_cpe,
+                sum(obligations_delivered_orde_fyb) as obligations_delivered_orde_fyb,
+                sum(obligations_incurred_by_pr_cpe) as obligations_incurred_by_pr_cpe,
+                sum(obligations_undelivered_or_cpe) as obligations_undelivered_or_cpe,
+                sum(obligations_undelivered_or_fyb) as obligations_undelivered_or_fyb,
+                sum(ussgl480100_undelivered_or_cpe) as ussgl480100_undelivered_or_cpe,
+                sum(ussgl480100_undelivered_or_fyb) as ussgl480100_undelivered_or_fyb,
+                sum(ussgl480200_undelivered_or_cpe) as ussgl480200_undelivered_or_cpe,
+                sum(ussgl480200_undelivered_or_fyb) as ussgl480200_undelivered_or_fyb,
+                sum(ussgl483100_undelivered_or_cpe) as ussgl483100_undelivered_or_cpe,
+                sum(ussgl483200_undelivered_or_cpe) as ussgl483200_undelivered_or_cpe,
+                sum(ussgl487100_downward_adjus_cpe) as ussgl487100_downward_adjus_cpe,
+                sum(ussgl487200_downward_adjus_cpe) as ussgl487200_downward_adjus_cpe,
+                sum(ussgl488100_upward_adjustm_cpe) as ussgl488100_upward_adjustm_cpe,
+                sum(ussgl488200_upward_adjustm_cpe) as ussgl488200_upward_adjustm_cpe,
+                sum(ussgl490100_delivered_orde_cpe) as ussgl490100_delivered_orde_cpe,
+                sum(ussgl490100_delivered_orde_fyb) as ussgl490100_delivered_orde_fyb,
+                sum(ussgl490200_delivered_orde_cpe) as ussgl490200_delivered_orde_cpe,
+                sum(ussgl490800_authority_outl_cpe) as ussgl490800_authority_outl_cpe,
+                sum(ussgl490800_authority_outl_fyb) as ussgl490800_authority_outl_fyb,
+                sum(ussgl493100_delivered_orde_cpe) as ussgl493100_delivered_orde_cpe,
+                sum(ussgl497100_downward_adjus_cpe) as ussgl497100_downward_adjus_cpe,
+                sum(ussgl497200_downward_adjus_cpe) as ussgl497200_downward_adjus_cpe,
+                sum(ussgl498100_upward_adjustm_cpe) as ussgl498100_upward_adjustm_cpe,
+                sum(ussgl498200_upward_adjustm_cpe) as ussgl498200_upward_adjustm_cpe
+                {defc_sql}
+            from
+                certified_object_class_program_activity
+            where
+                submission_id = %s
+            group by
+                submission_id,
+                job_id,
+                agency_identifier,
+                allocation_transfer_agency,
+                availability_type_code,
+                beginning_period_of_availa,
+                ending_period_of_availabil,
+                main_account_code,
+                right(object_class, 3),
+                case
+                    when length(object_class) = 4 and left(object_class, 1) = '1' then 'D'
+                    when length(object_class) = 4 and left(object_class, 1) = '2' then 'R'
+                    else by_direct_reimbursable_fun
+                end,
+                program_activity_code,
+                program_activity_name,
+                sub_account_code,
+                tas,
+                tas_id
+                {defc_sql}
             """
         logger.info(
             f"Found {dupe_oc_count:,} duplicated File B 4 digit object codes in submission {submission_id}. "

@@ -202,52 +202,25 @@ def calculate_load_submissions_since_datetime():
 # in Broker.  Remove this once the disaster_emergency_fund_code columns exist in Broker (regardless
 # of whether or not they're actually in use).
 def defc_exists():
-    global _defc_exists
-    try:
-        return _defc_exists
-    except NameError:
-        with connections["data_broker"].cursor() as cursor:
-            cursor.execute(
-                """
-                select exists(
-                    select
-                    from    information_schema.columns
-                    where   table_schema = 'public' and
-                            table_name = 'certified_object_class_program_activity' and
-                            column_name = 'disaster_emergency_fund_code'
-                ) and exists(
-                    select
-                    from    information_schema.columns
-                    where   table_schema = 'public' and
-                            table_name = 'certified_award_financial' and
-                            column_name = 'disaster_emergency_fund_code'
-                )
-                """
+    with connections["data_broker"].cursor() as cursor:
+        cursor.execute(
+            """
+            select exists(
+                select
+                from    information_schema.columns
+                where   table_schema = 'public' and
+                        table_name = 'certified_object_class_program_activity' and
+                        column_name = 'disaster_emergency_fund_code'
+            ) and exists(
+                select
+                from    information_schema.columns
+                where   table_schema = 'public' and
+                        table_name = 'certified_award_financial' and
+                        column_name = 'disaster_emergency_fund_code'
             )
-            _defc_exists = cursor.fetchone()[0]
-        return _defc_exists
-
-
-# ENABLE_CARES_ACT_FEATURES: This function is a stopgap measure to support an interim state of CARES
-# Act work.  See comment in _get_submission_sql_select_from for more details.  Remove this once the
-# the publish_history table exists in Broker (regardless of whether or not it's actually in use).
-def publish_history_exists():
-    global _publish_history_exists
-    try:
-        return _publish_history_exists
-    except NameError:
-        with connections["data_broker"].cursor() as cursor:
-            cursor.execute(
-                """
-                select exists(
-                    select
-                    from    information_schema.tables
-                    where   table_schema = 'public' and table_name = 'publish_history'
-                )
-                """
-            )
-            _publish_history_exists = cursor.fetchone()[0]
-        return _publish_history_exists
+            """
+        )
+        return cursor.fetchone()[0]
 
 
 def get_publish_history_table():
@@ -255,7 +228,17 @@ def get_publish_history_table():
     # Until it is in place, we will continue to support the old behavior of certification and publication
     # occurring at the same time.  Once publish_history is in place, remove the table check.  Once CARES
     # Act features go live, remove the ENABLE_CARES_ACT_FEATURES check.
-    if settings.ENABLE_CARES_ACT_FEATURES and publish_history_exists():
-        return "publish_history"
-    else:
-        return "certify_history"
+    with connections["data_broker"].cursor() as cursor:
+        cursor.execute(
+            """
+            select exists(
+                select
+                from    information_schema.tables
+                where   table_schema = 'public' and table_name = 'publish_history'
+            )
+            """
+        )
+        if settings.ENABLE_CARES_ACT_FEATURES and cursor.fetchone()[0]:
+            return "publish_history"
+        else:
+            return "certify_history"
