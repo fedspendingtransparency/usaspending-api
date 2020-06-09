@@ -643,6 +643,7 @@ def fetch_account_details_idv(award_id: int) -> dict:
     award_ids = []
     award_ids.extend([x["award_id"] for x in children])
     award_ids.extend([x["award_id"] for x in grandchildren])
+    award_ids.append(award_id)
     queryset = (
         FinancialAccountsByAwards.objects.filter(award_id__in=award_ids)
         .values("disaster_emergency_fund")
