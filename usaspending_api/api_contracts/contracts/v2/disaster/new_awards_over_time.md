@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Disaster Spending Over Time [/api/v2/disaster/spending_over_time/]
+# New Disaster Awards Over Time [/api/v2/disaster/new_awards_over_time/]
 
-This endpoint provides award spending data from emergency/disaster funding grouped by time period in ascending order (earliest to most recent).
+This endpoint provides count of awards receiving emergency/disaster funding grouped by time period in ascending order (earliest to most recent).
 
 ## POST
 
@@ -27,12 +27,6 @@ This endpoint provides award spending data from emergency/disaster funding group
             An array of Disaster / Emergency Funding Codes
         + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
             If not provided, defaults to all award types
-        + `spending_type` (required, enum[string])
-            + Default
-                + `obligations`
-            + Members
-                + `obligations`
-                + `outlays`
         + `page` (optional, number)
             The page number that is currently returned.
             + Default: 1
@@ -44,13 +38,12 @@ This endpoint provides award spending data from emergency/disaster funding group
 
             {
                 "group": "period",
-                "defc": ["L", "M", "N", "O", "P"],
-                "spending_type": "obligations"
+                "defc": ["L", "M", "N", "O", "P"]
             }
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (array[TimeResult], fixed-type)
+        + `results` (array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `messages` (optional, array[string])
@@ -60,15 +53,15 @@ This endpoint provides award spending data from emergency/disaster funding group
             {
                 "results": [
                     {
-                        "amounts": {
+                        "counts": {
                             "total": 1000,
-                            "contracts": 100,
+                            "contracts": 300,
                             "idvs": 200,
                             "grants": 100,
-                            "loans": 300,
+                            "loans": 100,
                             "direct_payments": 100,
-                            "insurance": 200,
-                            "other": 0
+                            "insurance": 100,
+                            "other": 100
                         },
                         "time_period": {
                             "fiscal_year": 2020,
@@ -76,7 +69,7 @@ This endpoint provides award spending data from emergency/disaster funding group
                         }
                     },
                     {
-                        "amounts": {
+                        "counts": {
                             "total": 1000,
                             "contracts": 300,
                             "idvs": 200,
@@ -97,7 +90,7 @@ This endpoint provides award spending data from emergency/disaster funding group
 # Data Structures
 
 ## TimeResult (object)
-+ `amounts` (required, AmountsByType, fixed-type)
++ `counts` (required, CountsByType, fixed-type)
 + `time_period` (required, TimePeriodGroup, fixed-type)
 
 ## TimePeriodGroup (object)
@@ -107,9 +100,9 @@ This endpoint provides award spending data from emergency/disaster funding group
 + `period` (optional, number)
     Excluded when grouping by `fiscal_year` or `quarter`. A number 1 through 12 representing the fiscal period (month), where period 1 is October.
 
-## AmountsByType (object)
+## CountsByType (object)
 + `total` (required, number)
-    Dollar obligated or outlayed amount (depending on the `spending_type` requested) for all award types
+    Total number of all new awards in the time period across all award types
 + `contracts` (required, number)
 + `idvs` (required, number)
 + `grants` (required, number)
