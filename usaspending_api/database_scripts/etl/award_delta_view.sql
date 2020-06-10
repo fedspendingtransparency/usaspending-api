@@ -82,9 +82,9 @@ SELECT
   vw_award_search.naics_description,
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
-  DEFC.defc,
-  DEFC.total_obligations,
-  DEFC.total_outlay
+  DEFC.defc as disaster_emergency_fund_codes,
+  DEFC.total_covid_obligations,
+  DEFC.total_covid_outlays
 FROM vw_award_search
 INNER JOIN awards a ON (a.id = vw_award_search.award_id)
 LEFT JOIN (
@@ -99,12 +99,12 @@ LEFT JOIN (
  SELECT
     faba.award_id,
     ARRAY_AGG(disaster_emergency_fund_code) defc,
-    SUM(gross_outlay_amount_by_award_cpe) total_outlay,
-    SUM(transaction_obligated_amount) total_obligations
+    SUM(CASE WHEN disaster_emergency_fund_code in ('L', 'M', 'N', 'O', 'P') then gross_outlay_amount_by_award_cpe else 0 end) total_covid_outlays,
+    SUM(CASE WHEN disaster_emergency_fund_code in ('L', 'M', 'N', 'O', 'P') then transaction_obligated_amount else 0 end) total_covid_obligations
  FROM
    financial_accounts_by_awards faba
  WHERE
-   faba.award_id IS NOT NULL
+   faba.award_id IS NOT NULL and faba.disaster_emergency_fund_code is not null
  GROUP BY
    faba.award_id
 ) DEFC ON (DEFC.award_id = vw_award_search.award_id)
