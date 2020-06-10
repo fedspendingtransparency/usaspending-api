@@ -23,10 +23,6 @@ This endpoint provides award spending data from emergency/disaster funding group
                 + `period`
             + Default
                 + `period`
-        + `def_codes` (required, array[DEFC], fixed-type)
-            An array of Disaster / Emergency Funding Codes
-        + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-            If not provided, defaults to all award types
         + `spending_type` (required, enum[string])
             + Default
                 + `obligations`
@@ -50,6 +46,7 @@ This endpoint provides award spending data from emergency/disaster funding group
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `filter` (required, Filter, fixed-type)
         + `results` (array[TimeResult], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
@@ -104,6 +101,11 @@ This endpoint provides award spending data from emergency/disaster funding group
             }
 
 # Data Structures
+
+## Filter (object)
++ `def_codes` (required, array[DEFC], fixed-type)
++ `fiscal_year` (required, number)
++ `award_type_codes` (required, array[AwardTypeCodes], fixed-type)
 
 ## TimeResult (object)
 + `amounts` (required, AmountsByType, fixed-type)

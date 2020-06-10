@@ -15,12 +15,6 @@ This endpoint provides geographical spending information from emergency/disaster
                 "type": "string"
             }
     + Attributes (object)
-        + `fiscal_year` (optional, number)
-            If not provided, defaults to all-time
-        + `def_codes` (required, array[DEFC], fixed-type)
-            An array of Disaster / Emergency Funding Codes
-        + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-            If not provided, defaults to all award types
         + `geo_layer` (required, enum[string])
             Set the type of shape codes in the response
             + Members
@@ -47,6 +41,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `filter` (required, Filter, fixed-type)
         + `geo_layer` (required, enum[string])
             + Members
                 + `state`
@@ -85,6 +80,11 @@ This endpoint provides geographical spending information from emergency/disaster
             }
 
 # Data Structures
+
+## Filter (object)
++ `def_codes` (required, array[DEFC], fixed-type)
++ `fiscal_year` (required, number)
++ `award_type_codes` (required, array[AwardTypeCodes], fixed-type)
 
 ## GeographyTypeResult (object)
 + `amount` (required, number)
