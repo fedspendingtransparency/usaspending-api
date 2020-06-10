@@ -253,18 +253,17 @@ This endpoint returns a list of data that is associated with the award profile p
                         "description": "Medicinal and Botanical Manufacturing"
                     }
                 },
-                "file_c": {
-                    "total_account_outlay": 3.0,
-                    "total_account_obligation": 3.0,
-                    "account_outlays_by_defc": {
-                        "P": 2.0,
-                        "L": 1.0
-                    },
-                    "account_obligations_by_defc": {
-                        "P": 2.0,
-                        "L": 1.0
-                    }
+                "total_account_outlay": 3.0,
+                "total_account_obligation": 3.0,
+                "account_outlays_by_defc": {
+                    "P": 2.0,
+                    "L": 1.0
+                },
+                "account_obligations_by_defc": {
+                    "P": 2.0,
+                    "L": 1.0
                 }
+                "disaster_emergency_fund_codes": ["L", "M"]
             }
 
 + Request A request with a financial assistance id (application/json)
@@ -417,18 +416,17 @@ This endpoint returns a list of data that is associated with the award profile p
                     "foreign_province": null,
                     "foreign_postal_code": null
                 },
-                "file_c": {
-                    "total_account_outlay": 3.0,
-                    "total_account_obligation": 3.0,
-                    "account_outlays_by_defc": {
-                        "P": 2.0,
-                        "L": 1.0
-                    },
-                    "account_obligations_by_defc": {
-                        "P": 2.0,
-                        "L": 1.0
-                    }
+                "total_account_outlay": 3.0,
+                "total_account_obligation": 3.0,
+                "account_outlays_by_defc": {
+                    "P": 2.0,
+                    "L": 1.0
+                },
+                "account_obligations_by_defc": {
+                    "P": 2.0,
+                    "L": 1.0
                 }
+                "disaster_emergency_fund_codes": ["L", "M"]
             }
 
 + Request A request with an IDV id (application/json)
@@ -663,18 +661,17 @@ This endpoint returns a list of data that is associated with the award profile p
                         "description": "Freight Transportation Arrangement"
                     }
                 },
-                "file_c": {
-                    "total_account_outlay": 3.0,
-                    "total_account_obligation": 3.0,
-                    "account_outlays_by_defc": {
-                        "P": 2.0,
-                        "L": 1.0
-                    },
-                    "account_obligations_by_defc": {
-                        "P": 2.0,
-                        "L": 1.0
-                    }
+                "total_account_outlay": 3.0,
+                "total_account_obligation": 3.0,
+                "account_outlays_by_defc": {
+                    "P": 2.0,
+                    "L": 1.0
+                },
+                "account_obligations_by_defc": {
+                    "P": 2.0,
+                    "L": 1.0
                 }
+                "disaster_emergency_fund_codes": ["L", "M"]
             }
 
 # Data Structures
@@ -717,6 +714,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `total_account_obligation` (required, number)
 + `account_obligations_by_defc` (required, object, fixed-type)
 + `account_outlays_by_defc` (required, object, fixed-type)
++ `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## IDVResponse (object)
 + `category` (required, enum[string])
@@ -760,6 +758,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `total_account_obligation` (required, number)
 + `account_obligations_by_defc` (required, object, fixed-type)
 + `account_outlays_by_defc` (required, object, fixed-type)
++ `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## FinancialAssistanceResponse (object)
 + `category` (required, enum[string])
@@ -812,6 +811,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `total_account_obligation` (required, number)
 + `account_obligations_by_defc` (required, object, fixed-type)
 + `account_outlays_by_defc` (required, object, fixed-type)
++ `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## CFDAInfo (object)
 + `applicant_eligibility` (required, string, nullable)
