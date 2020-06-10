@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Location Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
+# Recipient Location Spending Disaster/Emergency Funding [/api/v2/disaster/recipient/location/spending/]
 
 This endpoint provides insights on the Recipient Locations which received disaster/emergency funding per the requested filters.
 
