@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Disaster Spending [/api/v2/disaster_spending/]
+# Disaster Spending [/api/v2/disaster/spending/]
 
 These endpoints are used to power USAspending.gov's Disaster Spending page. This data can be used to drill down into specific subsets of data by level of detail.
 
