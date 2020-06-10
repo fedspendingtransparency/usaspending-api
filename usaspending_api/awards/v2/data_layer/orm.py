@@ -602,8 +602,8 @@ def fetch_account_details_award(award_id: int) -> dict:
     total_outlay = 0
     total_obligations = 0
     for row in queryset:
-        total_outlay += row["gross_outlay_amount"]
-        total_obligations += row["obligated_amount"]
+        total_outlay += row["gross_outlay_amount"] if row["gross_outlay_amount"] is not None else 0
+        total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
         if row["disaster_emergency_fund"] is not None:
             outlay_by_code.update({row["disaster_emergency_fund"]: row["gross_outlay_amount"]})
             obligation_by_code.update({row["disaster_emergency_fund"]: row["obligated_amount"]})
@@ -661,8 +661,8 @@ def fetch_account_details_idv(award_id: int) -> dict:
     total_outlay = 0
     total_obligations = 0
     for row in queryset:
-        total_outlay += row["gross_outlay_amount"]
-        total_obligations += row["obligated_amount"]
+        total_outlay += row["gross_outlay_amount"] if row["gross_outlay_amount"] is not None else 0
+        total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
         if row["disaster_emergency_fund"] is not None:
             outlay_by_code.update({row["disaster_emergency_fund"]: row["gross_outlay_amount"]})
             obligation_by_code.update({row["disaster_emergency_fund"]: row["obligated_amount"]})
