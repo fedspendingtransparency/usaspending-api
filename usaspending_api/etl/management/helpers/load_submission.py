@@ -209,19 +209,19 @@ def defc_exists():
     with connections["data_broker"].cursor() as cursor:
         cursor.execute(
             """
-            select exists(
-                select
-                from    information_schema.columns
-                where   table_schema = 'public' and
-                        table_name = 'certified_object_class_program_activity' and
-                        column_name = 'disaster_emergency_fund_code'
-            ) and exists(
-                select
-                from    information_schema.columns
-                where   table_schema = 'public' and
-                        table_name = 'certified_award_financial' and
-                        column_name = 'disaster_emergency_fund_code'
-            )
+                select exists(
+                    select
+                    from    information_schema.columns
+                    where   table_schema = 'public' and
+                            table_name = 'certified_object_class_program_activity' and
+                            column_name = 'disaster_emergency_fund_code'
+                ) and exists(
+                    select
+                    from    information_schema.columns
+                    where   table_schema = 'public' and
+                            table_name = 'certified_award_financial' and
+                            column_name = 'disaster_emergency_fund_code'
+                )
             """
         )
         return cursor.fetchone()[0]
@@ -235,11 +235,11 @@ def get_publish_history_table():
     with connections["data_broker"].cursor() as cursor:
         cursor.execute(
             """
-            select exists(
-                select
-                from    information_schema.tables
-                where   table_schema = 'public' and table_name = 'publish_history'
-            )
+                select exists(
+                    select
+                    from    information_schema.tables
+                    where   table_schema = 'public' and table_name = 'publish_history'
+                )
             """
         )
         if settings.ENABLE_CARES_ACT_FEATURES and cursor.fetchone()[0]:

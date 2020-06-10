@@ -21,16 +21,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='submissionattributes',
             name='published_date',
-            field=models.DateTimeField(blank=True, null=True),
+            field=models.DateTimeField(blank=True, db_index=True, null=True),
         ),
         migrations.AlterField(
             model_name='submissionattributes',
             name='certified_date',
             field=models.DateTimeField(blank=True, null=True),
-        ),
-        migrations.AlterField(
-            model_name='submissionattributes',
-            name='update_date',
-            field=models.DateTimeField(auto_now=True, db_index=True, null=True),
         ),
     ]

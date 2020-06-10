@@ -68,12 +68,12 @@ class Command(load_base.Command):
                         select  max(updated_at)
                         from    {get_publish_history_table()}
                         where   submission_id = s.submission_id
-                    ) as published_date,
+                    )::timestamptz as published_date,
                     (
                         select  max(updated_at)
                         from    certify_history
                         where   submission_id = s.submission_id
-                    ) as certified_date,
+                    )::timestamptz as certified_date,
                     coalesce(s.cgac_code, s.frec_code) as toptier_code,
                     s.reporting_start_date,
                     s.reporting_end_date,
@@ -203,7 +203,6 @@ def get_submission_attributes(submission_id, submission_data):
         logger.info(f"Submission {submission_id} already exists. It will be deleted.")
         call_command("rm_submission", submission_id)
 
-    logger.info("Merging CGAC and FREC columns")
     submission_data["reporting_agency_name"] = retrive_agency_name_from_code(submission_data["toptier_code"])
 
     # Update and save submission attributes
@@ -224,9 +223,7 @@ def get_submission_attributes(submission_id, submission_data):
 
 
 def load_file_a(submission_attributes, appropriation_data, db_cursor):
-    """
-    Process and load file A broker data (aka TAS balances, aka appropriation account balances).
-    """
+    """ Process and load file A broker data (aka TAS balances, aka appropriation account balances). """
     reverse = re.compile("gross_outlay_amount_by_tas_cpe")
 
     # dictionary to capture TAS that were skipped and some metadata
@@ -305,12 +302,12 @@ def get_file_b(submission_attributes, db_cursor):
 
     # does this file B have the dupe object class edge case?
     check_dupe_oc = f"""
-            select      count(*)
-            from        certified_object_class_program_activity
-            where       submission_id = %s and length(object_class) = 4
-            group by    tas_id, program_activity_code, object_class{defc_sql}
-            having      count(*) > 1
-        """
+        select      count(*)
+        from        certified_object_class_program_activity
+        where       submission_id = %s and length(object_class) = 4
+        group by    tas_id, program_activity_code, object_class{defc_sql}
+        having      count(*) > 1
+    """
     db_cursor.execute(check_dupe_oc, [submission_id])
     dupe_oc_count = len(dictfetchall(db_cursor))
 
@@ -401,7 +398,7 @@ def get_file_b(submission_attributes, db_cursor):
                 tas,
                 tas_id
                 {defc_sql}
-            """
+        """
         logger.info(
             f"Found {dupe_oc_count:,} duplicated File B 4 digit object codes in submission {submission_id}. "
             f"Aggregating financial values."
@@ -414,9 +411,7 @@ def get_file_b(submission_attributes, db_cursor):
 
 
 def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
-    """
-    Process and load file B broker data (aka TAS balances by program activity and object class).
-    """
+    """ Process and load file B broker data (aka TAS balances by program activity and object class). """
     reverse = re.compile(r"(_(cpe|fyb)$)|^transaction_obligated_amount$")
 
     # dictionary to capture TAS that were skipped and some metadata

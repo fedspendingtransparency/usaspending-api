@@ -3,7 +3,7 @@ from django.db import models
 
 class SubmissionAttributes(models.Model):
     submission_id = models.AutoField(primary_key=True)
-    published_date = models.DateTimeField(blank=True, null=True)
+    published_date = models.DateTimeField(blank=True, null=True, db_index=True)
     certified_date = models.DateTimeField(blank=True, null=True)
     toptier_code = models.TextField(blank=True, null=True, db_index=True)
     reporting_agency_name = models.TextField(blank=True, null=True)
@@ -14,7 +14,7 @@ class SubmissionAttributes(models.Model):
     reporting_fiscal_period = models.IntegerField(blank=True, null=True)
     quarter_format_flag = models.BooleanField(default=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True, db_index=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         db_table = "submission_attributes"
