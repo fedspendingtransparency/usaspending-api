@@ -525,7 +525,7 @@ expected_response_idv = {
     },
     "account_obligations_by_defc": {},
     "account_outlays_by_defc": {},
-     "total_account_obligation": 0,
+    "total_account_obligation": 0,
     "total_account_outlay": 0,
     "disaster_emergency_fund_codes": [],
 }
