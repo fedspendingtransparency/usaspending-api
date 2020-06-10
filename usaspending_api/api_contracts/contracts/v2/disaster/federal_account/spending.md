@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Federal Account Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
+# Federal Account Spending Disaster/Emergency Funding [/api/v2/disaster/federal_account/spending/]
 
 This endpoint provides insights on the Federal Account and TAS which received disaster/emergency funding per the requested filters.
 

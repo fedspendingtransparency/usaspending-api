@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Program Activity Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
+# Program Activity Spending Disaster/Emergency Funding [/api/v2/disaster/program_activity/spending/]
 
 This endpoint provides insights on the Program Activities which received disaster/emergency funding per the requested filters.
 

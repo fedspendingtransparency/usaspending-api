@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# DEFC Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
+# DEFC Spending Disaster/Emergency Funding [/api/v2/disaster/def_code/spending/]
 
 This endpoint provides insights on the DEFC which received disaster/emergency funding per the requested filters.
 

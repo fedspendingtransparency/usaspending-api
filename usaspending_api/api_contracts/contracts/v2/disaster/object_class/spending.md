@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Object Classes Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
+# Object Classes Spending Disaster/Emergency Funding [/api/v2/disaster/object_class/spending/]
 
 This endpoint provides insights on the Object Classes which received disaster/emergency funding per the requested filters.
 
