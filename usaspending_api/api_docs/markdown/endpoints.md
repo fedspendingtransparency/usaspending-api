@@ -68,6 +68,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/bulk_download/list_agencies/](/api/v2/bulk_download/list_agencies/)|POST| Lists all the agencies and the subagencies or federal accounts associated under specific agencies.|
 |[/api/v2/bulk_download/list_monthly_files/](/api/v2/bulk_download/list_monthly_files/)|POST| Lists the monthly files associated with the requested params|
 |[/api/v2/bulk_download/status/](/api/v2/bulk_download/status/)|GET| Returns the current status of a download job that that has been requested with the `v2/bulk_download/awards/` or `v2/bulk_download/transaction/` endpoint that same day.|
+|[/api/v2/disaster_spending/](/api/v2/disaster_spending/)|POST| Returns spending data information with provided filters|
 |[/api/v2/download/accounts/](/api/v2/download/accounts/)|POST| Generates zip file for download of account data in CSV format|
 |[/api/v2/download/awards/](/api/v2/download/awards/)|POST| Generates zip file for download of award data in CSV format|
 |[/api/v2/download/count/](/api/v2/download/count/)|POST| Returns the number of transactions that would be included in a download request for the given filter set|
