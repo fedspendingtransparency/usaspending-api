@@ -68,9 +68,17 @@ class Command(load_base.Command):
             raise CommandError("Found multiple submissions with id " + str(submission_id))
 
         submission_data = submission_data[0].copy()
-        broker_submission_id = submission_data["submission_id"]
-        del submission_data["submission_id"]  # We use broker_submission_id, submission_id is our own PK
-        submission_attributes = get_submission_attributes(broker_submission_id, submission_data)
+
+        if submission_data["publish_status_id"] not in (2, 3):
+            raise RuntimeError(f"publish_status_id {submission_data['publish_status_id']} is not allowed")
+        if submission_data["d2_submission"] is not False:
+            raise RuntimeError(f"d2_submission {submission_data['d2_submission']} is not allowed")
+
+        db_cursor.execute(f"select exists(select from certify_history where submission_id = {submission_id})")
+        if db_cursor.fetchone()[0] is not True:
+            raise RuntimeError("Submission does not exist in certify_history")
+
+        submission_attributes = get_submission_attributes(submission_id, submission_data)
 
         logger.info("Getting File A data")
         db_cursor.execute("SELECT * FROM certified_appropriation WHERE submission_id = %s", [submission_id])
@@ -159,19 +167,17 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     return TAS_ID_TO_ACCOUNT[tas_lookup_id]
 
 
-def get_submission_attributes(broker_submission_id, submission_data):
+def get_submission_attributes(submission_id, submission_data):
     """
     For a specified broker submission, return the existing corresponding usaspending submission record or create and
     return a new one.
     """
     # check if we already have an entry for this broker submission id; if not, create one
-    submission_attributes, created = SubmissionAttributes.objects.get_or_create(
-        broker_submission_id=broker_submission_id
-    )
+    submission_attributes, created = SubmissionAttributes.objects.get_or_create(submission_id=submission_id)
 
     if created:
         # this is the first time we're loading this broker submission
-        logger.info("Creating broker submission id {}".format(broker_submission_id))
+        logger.info("Creating broker submission id {}".format(submission_id))
 
     else:
         # we've already loaded this broker submission, so delete it before reloading if there's another submission that
@@ -179,8 +185,8 @@ def get_submission_attributes(broker_submission_id, submission_data):
         # TODO: now that we're chaining submissions together, get clarification on what should happen when a submission
         # in the middle of the chain is deleted
 
-        logger.info("Broker submission id {} already exists. It will be deleted.".format(broker_submission_id))
-        call_command("rm_submission", broker_submission_id)
+        logger.info("Broker submission id {} already exists. It will be deleted.".format(submission_id))
+        call_command("rm_submission", submission_id)
 
     logger.info("Merging CGAC and FREC columns")
     submission_data["toptier_code"] = (
@@ -197,7 +203,6 @@ def get_submission_attributes(broker_submission_id, submission_data):
 
     # Create our value map - specific data to load
     value_map = {
-        "broker_submission_id": broker_submission_id,
         "reporting_fiscal_quarter": get_fiscal_quarter(submission_data["reporting_fiscal_period"]),
         # pull in broker's last update date to use as certified date
         "certified_date": submission_data["updated_at"].date()
@@ -287,7 +292,7 @@ def get_file_b(submission_attributes, db_cursor):
         submission_attributes: submission object currently being loaded
         db_cursor: db connection info
     """
-    submission_id = submission_attributes.broker_submission_id
+    submission_id = submission_attributes.submission_id
 
     # does this file B have the dupe object class edge case?
     check_dupe_oc = (
