@@ -81,7 +81,10 @@ SELECT
   vw_award_search.naics_code,
   vw_award_search.naics_description,
   TREASURY_ACCT.tas_paths,
-  TREASURY_ACCT.tas_components
+  TREASURY_ACCT.tas_components,
+  DEFC.defc,
+  DEFC.total_obligations,
+  DEFC.total_outlay
 FROM vw_award_search
 INNER JOIN awards a ON (a.id = vw_award_search.award_id)
 LEFT JOIN (
@@ -92,6 +95,19 @@ LEFT JOIN (
   FROM
     recipient_lookup AS rlv
 ) recipient_lookup ON (recipient_lookup.duns = vw_award_search.recipient_unique_id AND vw_award_search.recipient_unique_id IS NOT NULL)
+LEFT JOIN (
+ SELECT
+    faba.award_id,
+    ARRAY_AGG(disaster_emergency_fund_code) defc,
+    SUM(gross_outlay_amount_by_award_cpe) total_outlay,
+    SUM(transaction_obligated_amount) total_obligations
+ FROM
+   financial_accounts_by_awards faba
+ WHERE
+   faba.award_id IS NOT NULL
+ GROUP BY
+   faba.award_id
+) DEFC ON (DEFC.award_id = vw_award_search.award_id)
 LEFT JOIN (
   SELECT
     faba.award_id,
