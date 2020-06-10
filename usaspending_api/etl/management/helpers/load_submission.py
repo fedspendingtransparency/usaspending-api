@@ -193,7 +193,7 @@ class CertifiedAwardFinancial:
 
 
 def calculate_load_submissions_since_datetime():
-    since = SubmissionAttributes.objects.all().aggregate(Max("update_date"))["update_date__max"]
+    since = SubmissionAttributes.objects.all().aggregate(Max("published_date"))["published_date__max"]
     if since:
         # In order to prevent skips, we're just always going to look back 7 days.  Since submission is a
         # relatively low volume table, this should not cause any noticeable performance issues.

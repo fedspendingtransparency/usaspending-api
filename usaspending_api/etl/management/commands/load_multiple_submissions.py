@@ -1,6 +1,5 @@
 import logging
 
-from collections import deque
 from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -53,21 +52,10 @@ class Command(BaseCommand):
             return
 
         failed_submissions = []
-        submission_ids = deque(submission_ids)
-        while submission_ids:
-            submission_id = submission_ids.popleft()
+        for submission_id in submission_ids:
             try:
                 call_command("load_submission", submission_id)
-            except SystemExit:
-                logger.info(f"Submission {submission_id} failed to load")
-                failed_submissions.append(submission_id)
-                # This is a system exit so we really shouldn't be swallowing it.  Let's log a little additional
-                # information and re-raise the exception.
-                logger.info("Ending execution early due to SystemExit")
-                logger.info(f"{len(failed_submissions):,} submission failures occurred: {failed_submissions}")
-                logger.info(f"{len(submission_ids):,} submissions remain unprocessed: {list(submission_ids)}")
-                raise
-            except Exception:
+            except (Exception, SystemExit):
                 logger.exception(f"Submission {submission_id} failed to load")
                 failed_submissions.append(submission_id)
 
