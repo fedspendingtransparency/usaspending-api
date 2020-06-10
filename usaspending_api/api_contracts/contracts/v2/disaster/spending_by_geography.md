@@ -84,7 +84,7 @@ This endpoint provides geographical spending information from emergency/disaster
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
 + `fiscal_year` (required, number)
-+ `award_type_codes` (required, array[AwardTypeCodes], fixed-type)
++ `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
 
 ## GeographyTypeResult (object)
 + `amount` (required, number)

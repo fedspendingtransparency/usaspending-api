@@ -105,7 +105,7 @@ This endpoint provides award spending data from emergency/disaster funding group
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
 + `fiscal_year` (required, number)
-+ `award_type_codes` (required, array[AwardTypeCodes], fixed-type)
++ `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
 
 ## TimeResult (object)
 + `amounts` (required, AmountsByType, fixed-type)
