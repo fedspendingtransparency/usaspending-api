@@ -523,6 +523,7 @@ expected_response_idv = {
         "subtier_code": {},
         "base_code": {"description": "HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS", "code": "4730"},
     },
+    "disaster_emergency_fund_codes": [],
 }
 
 
