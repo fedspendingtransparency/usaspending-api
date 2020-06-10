@@ -16,6 +16,7 @@ This endpoint provides award spending data from emergency/disaster funding group
             }
 
     + Attributes (object)
+        + `filter` (required, Filter, fixed-type)
         + `group` (required, enum[string])
             + Members
                 + `fiscal_year`
@@ -46,7 +47,6 @@ This endpoint provides award spending data from emergency/disaster funding group
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `filter` (required, Filter, fixed-type)
         + `results` (array[TimeResult], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
