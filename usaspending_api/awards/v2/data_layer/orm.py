@@ -44,7 +44,7 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
     response.update(award)
 
     account_data = fetch_account_details_award(award["id"])
-    response["file_c"] = account_data
+    response.update(account_data)
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
     response["record_type"] = transaction["record_type"]
@@ -78,9 +78,10 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
     if not award:
         return None
 
-    account_data = fetch_account_details_award(award["id"])
-    response["file_c"] = account_data
     response.update(award)
+
+    account_data = fetch_account_details_award(award["id"])
+    response.update(account_data)
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
 
@@ -132,8 +133,10 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
     if not award:
         return None
     response.update(award)
-    account_data = fetch_account_details_idv(award["id"])
-    response["file_c"] = account_data
+
+    account_data = fetch_account_details_award(award["id"])
+    response.update(account_data)
+
     transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
 
     response["parent_award"] = fetch_idv_parent_award_details(award["generated_unique_award_id"])
@@ -601,8 +604,9 @@ def fetch_account_details_award(award_id: int) -> dict:
     for row in queryset:
         total_outlay += row["gross_outlay_amount"]
         total_obligations += row["obligated_amount"]
-        outlay_by_code.update({row["disaster_emergency_fund"]: row["gross_outlay_amount"]})
-        obligation_by_code.update({row["disaster_emergency_fund"]: row["obligated_amount"]})
+        if row["disaster_emergency_fund"] is not None:
+            outlay_by_code.update({row["disaster_emergency_fund"]: row["gross_outlay_amount"]})
+            obligation_by_code.update({row["disaster_emergency_fund"]: row["obligated_amount"]})
 
     results = {
         "total_account_outlay": total_outlay,
@@ -637,7 +641,7 @@ def fetch_account_details_idv(award_id: int) -> dict:
 
     where
         pap.award_id = {award_id}
-"""
+    """
     children = execute_sql_to_ordered_dictionary(child_award_sql.format(award_id=award_id))
     grandchildren = execute_sql_to_ordered_dictionary(grandchild_award_sql.format(award_id=award_id))
     award_ids = []
@@ -659,8 +663,9 @@ def fetch_account_details_idv(award_id: int) -> dict:
     for row in queryset:
         total_outlay += row["gross_outlay_amount"]
         total_obligations += row["obligated_amount"]
-        outlay_by_code.update(row["disaster_emergency_fund"], row["gross_outlay_amount"])
-        obligation_by_code.update(row["disaster_emergency_fund"], row["obligated_amount"])
+        if row["disaster_emergency_fund"] is not None:
+            outlay_by_code.update({row["disaster_emergency_fund"]: row["gross_outlay_amount"]})
+            obligation_by_code.update({row["disaster_emergency_fund"]: row["obligated_amount"]})
 
     results = {
         "total_account_outlay": total_outlay,

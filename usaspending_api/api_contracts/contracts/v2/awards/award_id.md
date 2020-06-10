@@ -713,6 +713,10 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the contract has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
++ `total_account_outlay` (required, number)
++ `total_account_obligation` (required, number)
++ `account_obligations_by_defc` (required, object, fixed-type)
++ `account_outlays_by_defc` (required, object, fixed-type)
 
 ## IDVResponse (object)
 + `category` (required, enum[string])
@@ -752,6 +756,10 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the idv has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
++ `total_account_outlay` (required, number)
++ `total_account_obligation` (required, number)
++ `account_obligations_by_defc` (required, object, fixed-type)
++ `account_outlays_by_defc` (required, object, fixed-type)
 
 ## FinancialAssistanceResponse (object)
 + `category` (required, enum[string])
@@ -800,6 +808,10 @@ This endpoint returns a list of data that is associated with the award profile p
 + `place_of_performance` (required, Location, fixed-type)
 + `executive_details` (required, Executive, fixed-type)
 + `cfda_info` (required, array[CFDAInfo], fixed-type)
++ `total_account_outlay` (required, number)
++ `total_account_obligation` (required, number)
++ `account_obligations_by_defc` (required, object, fixed-type)
++ `account_outlays_by_defc` (required, object, fixed-type)
 
 ## CFDAInfo (object)
 + `applicant_eligibility` (required, string, nullable)
@@ -979,9 +991,3 @@ This endpoint returns a list of data that is associated with the award profile p
 ## HierarchyLeaf (object)
 + `description` (optional, string)
 + `code` (optional, string)
-
-## FileC (object)
-+ `total_account_outlay` (required, number)
-+ `total_account_obligation` (required, number)
-+ `account_obligations_by_defc` (required, object, fixed-type)
-+ `account_outlays_by_defc` (required, object, fixed-type)
