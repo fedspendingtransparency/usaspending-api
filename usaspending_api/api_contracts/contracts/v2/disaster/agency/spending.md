@@ -35,7 +35,7 @@ Returns spending details of Agencies receiving supplimental funding budgetary re
                     {
                         "id": 43,
                         "code": "090",
-                        "description": "Description text of 090, for humans,
+                        "description": "Description text of 090, for humans",
                         "children": [],
                         "count": 54,
                         "award_obligation": 89.01,
@@ -44,7 +44,7 @@ Returns spending details of Agencies receiving supplimental funding budgetary re
                     {
                         "id": 41,
                         "code": "012",
-                        "description": "Description text of 012, for humans,
+                        "description": "Description text of 012, for humans",
                         "children": [],
                         "count": 2,
                         "award_obligation": 50,
