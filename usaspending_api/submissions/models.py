@@ -2,7 +2,7 @@ from django.db import models
 
 
 class SubmissionAttributes(models.Model):
-    submission_id = models.AutoField(primary_key=True)
+    submission_id = models.IntegerField(primary_key=True)
     published_date = models.DateTimeField(blank=True, null=True, db_index=True)
     certified_date = models.DateTimeField(blank=True, null=True)
     toptier_code = models.TextField(blank=True, null=True, db_index=True)
