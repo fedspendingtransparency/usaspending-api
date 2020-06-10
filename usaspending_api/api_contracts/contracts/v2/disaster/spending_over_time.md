@@ -91,7 +91,16 @@ This endpoint provides award spending data from emergency/disaster funding group
                             "period" 7
                         }
                     }
-                ]
+                ],
+                "page_metadata": {
+                    "page": 1,
+                    "next": null,
+                    "total": 2,
+                    "previous": null,
+                    "hasNext": false,
+                    "hasPrevious": false,
+                    "limit": 10
+                }
             }
 
 # Data Structures
