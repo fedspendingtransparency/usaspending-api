@@ -86,9 +86,10 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/disaster/overview/](/api/v2/disaster/overview/)|POST| Overview of Disaster/Emergency funding and spending|
 |[/api/v2/disaster/program_activity/count/](/api/v2/disaster/agency/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
 |[/api/v2/disaster/program_activity/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
-|[/api/v2/disaster/rcipient/type/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
 |[/api/v2/disaster/recipient/location/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
 |[/api/v2/disaster/recipient/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/recipient/type/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/spending/](/api/v2/disaster/spending/)|POST| EXPERIMENTAL Returns spending data information with provided filters|
 |[/api/v2/disaster/spending_by_geography/](/api/v2/disaster/spending_by_geography/)|POST| Geographic award spending of Disaster/Emergency funding|
 |[/api/v2/disaster/spending_over_time/](/api/v2/disaster/spending_over_time/)|POST| Award types in the time period spending Disaster/Emergency funding|
 |[/api/v2/download/accounts/](/api/v2/download/accounts/)|POST| Generates zip file for download of account data in CSV format|
@@ -124,7 +125,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency|
 |[/api/v2/references/award_types/](/api/v2/references/award_types/)|GET| Returns a map of award types by award grouping.|
 |[/api/v2/references/data_dictionary/](/api/v2/references/data_dictionary/)|GET| Returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary|
-|[/api/v2/references/def_codes/](/api/v2/references/dec_codes/)|GET| Returns an object of Disaster Emergency Fund (DEF) Codes (DEFC) and titles|
+|[/api/v2/references/def_codes/](/api/v2/references/def_codes/)|GET| Returns an object of Disaster Emergency Fund (DEF) Codes (DEFC) and titles|
 |[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/<PSC\>/](/api/v2/references/filter_tree/psc/Service/C/C1/)|GET| Returns a list of PSC under the provided path|
 |[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/](/api/v2/references/filter_tree/psc/Product/10/)|GET| Returns a list of PSC under the provided path|
 |[/api/v2/references/filter_tree/psc/<GROUP\>/](/api/v2/references/filter_tree/psc/Product/)|GET| Returns a list of PSC under the provided path|
