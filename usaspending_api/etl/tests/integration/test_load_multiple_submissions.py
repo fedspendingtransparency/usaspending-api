@@ -418,7 +418,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
 
         # Make it really old.
         with connections["data_broker"].cursor() as cursor:
-            cursor.execute("update submission set updated_at = '2000-01-01' where submission_id = 1")
+            cursor.execute("update submission set updated_at = '1999-01-01' where submission_id = 1")
 
         # Make sure it DOESN'T reload.
         call_command("load_multiple_submissions", "--incremental")
