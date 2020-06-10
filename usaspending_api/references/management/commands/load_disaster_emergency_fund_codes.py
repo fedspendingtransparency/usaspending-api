@@ -45,7 +45,10 @@ class Command(mixins.ETLMixin, BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument(
-            "--def-code-file", metavar="FILE", help="Path or URI of the raw DEF Code CSV file to be loaded.", default="https://files.usaspending.gov/reference_data/def_codes.csv"
+            "--def-code-file",
+            metavar="FILE",
+            help="Path or URI of the raw DEF Code CSV file to be loaded.",
+            default="https://files.usaspending.gov/reference_data/def_codes.csv",
         )
 
     def handle(self, *args, **options):
