@@ -12,12 +12,15 @@ logger = logging.getLogger("console")
 
 @transaction.atomic
 def delete_stale_fabs(ids_to_delete):
+    """ids_to_delete are published_award_financial_assistance_ids"""
     logger.info("Starting deletion of stale FABS data")
 
     if not ids_to_delete:
         return []
 
-    transactions = TransactionNormalized.objects.filter(assistance_data__afa_generated_unique__in=ids_to_delete)
+    transactions = TransactionNormalized.objects.filter(
+        assistance_data__published_award_financial_assistance_id__in=ids_to_delete
+    )
     update_award_ids, delete_award_ids = find_related_awards(transactions)
 
     delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list("id")]

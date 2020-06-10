@@ -39,7 +39,7 @@ To load certified submission data from the broker, you will need a read-only (or
 
 To load a submission from the data broker database:
 
-    python manage.py load_submission [broker_submission_id]
+    python manage.py load_submission [submission_id]
 
 This will load data into your USAspending database in the following order:
 - File A (Appropriation data)

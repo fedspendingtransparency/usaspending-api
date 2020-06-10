@@ -3,7 +3,6 @@ from django.db import models
 
 class SubmissionAttributes(models.Model):
     submission_id = models.AutoField(primary_key=True)
-    broker_submission_id = models.IntegerField(null=True)
     certified_date = models.DateField(blank=True, null=True)
     usaspending_update = models.DateField(blank=True, null=True)
     toptier_code = models.TextField(blank=True, null=True, db_index=True)
