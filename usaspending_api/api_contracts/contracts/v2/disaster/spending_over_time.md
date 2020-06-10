@@ -72,7 +72,7 @@ This endpoint provides award spending data from emergency/disaster funding group
                         },
                         "time_period": {
                             "fiscal_year": 2020,
-                            "period" 6
+                            "period": 6
                         }
                     },
                     {
@@ -88,7 +88,7 @@ This endpoint provides award spending data from emergency/disaster funding group
                         },
                         "time_period": {
                             "fiscal_year": 2020,
-                            "period" 7
+                            "period": 7
                         }
                     }
                 ],
