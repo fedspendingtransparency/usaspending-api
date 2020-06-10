@@ -7,123 +7,170 @@ This endpoint returns a JSON object describing all Disaster and Emergency Fundin
 
 ## GET
 + Response 200 (application/json)
-    + Schema
-
-            {
-                "$schema": "http://json-schema.org/draft-04/schema#",
-                "type": "string"
-            }
-
     + Attributes (object)
-        + `codes` (array[DEFC], fixed-type, required)
+        + `codes` (required, array[DEFC], fixed-type)
     + Body
 
             {
                 "codes": [
                     {
-                        "title" : "Supplemental Appropriations for Disaster Relief Requirements Act, 2017",
-                        "disaster" : null,
-                        "code" : "A"
+                        "code": "Q",
+                        "title": null,
+                        "urls": null,
+                        "disaster": null
                     },
                     {
-                        "title" : "Additional Supplemental Appropriations for Disaster Relief Requirements Act, 2017",
-                        "disaster" : null,
-                        "code" : "B"
+                        "code": "R",
+                        "title": "Future Disaster and P.L. To Be Determined",
+                        "urls": null,
+                        "disaster": null
                     },
                     {
-                        "title" : "Bipartisan Budget Act of 2018",
-                        "disaster" : null,
-                        "code" : "C"
+                        "code": "S",
+                        "title": "Future Disaster and P.L. To Be Determined",
+                        "urls": null,
+                        "disaster": null
                     },
                     {
-                        "title" : "FAA Reauthorization Act of 2018",
-                        "disaster" : null,
-                        "code" : "D"
+                        "code": "T",
+                        "title": "Future Disaster and P.L. To Be Determined",
+                        "urls": null,
+                        "disaster": null
                     },
                     {
-                        "title" : "Additional Supplemental Appropriations for Disaster Relief Act, 2019.",
-                        "disaster" : null,
-                        "code" : "E"
+                        "code": "9",
+                        "title": "DEFC of '9' Indicates that the data for this row is not related to a COVID-19 P.L. (not DEFC = L, M, N, O, or P), but that the agency has declined to specify which other DEFC (or combination of DEFCs, in the case that the money hasn't been split out like it would be with a specific DEFC value) applies.",
+                        "urls": null,
+                        "disaster": null
                     },
                     {
-                        "title" : "EMERGENCY SUPPLEMENTAL APPROPRIATIONS FOR HUMANITARIAN ASSISTANCE AND SECURITY AT THE SOUTHERN BORDER ACT, 2019",
-                        "disaster" : null,
-                        "code" : "F"
+                        "code": "A",
+                        "title": "Supplemental Appropriations for Disaster Relief Requirements Act, 2017",
+                        "urls": [
+                            "https://www.congress.gov/115/plaws/publ56/PLAW-115publ56.htm"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : "Consolidated Appropriations Act, 2020",
-                        "disaster" : null,
-                        "code" : "G"
+                        "code": "B",
+                        "title": "Additional Supplemental Appropriations for Disaster Relief Requirements Act, 2017",
+                        "urls": [
+                            "https://www.congress.gov/115/plaws/publ72/PLAW-115publ72.htm"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : "Consolidated Appropriations Act, 2020",
-                        "disaster" : null,
-                        "code" : "H"
+                        "code": "C",
+                        "title": "Bipartisan Budget Act of 2018",
+                        "urls": [
+                            "https://www.congress.gov/115/plaws/publ123/PLAW-115publ123.htm"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : "Further Consolidated Appropriations Act, 2020",
-                        "disaster" : null,
-                        "code" : "I"
+                        "code": "D",
+                        "title": "FAA Reauthorization Act of 2018",
+                        "urls": [
+                            "https://www.congress.gov/115/plaws/publ254/PLAW-115publ254.htm"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : "Further Consolidated Appropriations Act, 2020",
-                        "disaster" : null,
-                        "code" : "J"
+                        "code": "E",
+                        "title": "Additional Supplemental Appropriations for Disaster Relief Act, 2019.",
+                        "urls": [
+                            "https://www.congress.gov/116/plaws/publ20/PLAW-116publ20.pdf"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : "United States-Mexico-Canada Agreement Implementation Act",
-                        "disaster" : null,
-                        "code" : "K"
+                        "code": "F",
+                        "title": "EMERGENCY SUPPLEMENTAL APPROPRIATIONS FOR HUMANITARIAN ASSISTANCE AND SECURITY AT THE SOUTHERN BORDER ACT, 2019",
+                        "urls": [
+                            "https://www.congress.gov/116/plaws/publ26/PLAW-116publ26.htm"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : "Coronavirus Preparedness and Response Supplemental Appropriations Act, 2020",
-                        "disaster" : "covid_19",
-                        "code" : "L"
+                        "code": "G",
+                        "title": "Consolidated Appropriations Act, 2020",
+                        "urls": [
+                            "https://www.congress.gov/116/plaws/publ93/PLAW-116publ93.htm"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : "Families First Coronavirus Response Act",
-                        "disaster" : "covid_19",
-                        "code" : "M"
+                        "code": "H",
+                        "title": "Consolidated Appropriations Act, 2020",
+                        "urls": [
+                            "https://www.congress.gov/116/plaws/publ93/PLAW-116publ93.htm"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : "Coronavirus Aid, Relief, and Economic Security Act or the CARES Act",
-                        "disaster" : "covid_19",
-                        "code" : "N"
+                        "code": "I",
+                        "title": "Further Consolidated Appropriations Act, 2020",
+                        "urls": [
+                            "https://www.congress.gov/bill/116th-congress/house-bill/1865/tex"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : "Coronavirus Aid, Relief, and Economic Security Act or the CARES Act",
-                        "disaster" : "covid_19",
-                        "code" : "O"
+                        "code": "J",
+                        "title": "Further Consolidated Appropriations Act, 2020",
+                        "urls": [
+                            "https://www.congress.gov/bill/116th-congress/house-bill/1865/text"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : "Paycheck Protection Program and Health Care Enhancement Act)",
-                        "disaster" : "covid_19",
-                        "code" : "P"
+                        "code": "K",
+                        "title": "United States-Mexico-Canada Agreement Implementation Act",
+                        "urls": [
+                            "https://www.congress.gov/bill/116th-congress/house-bill/5430/text"
+                        ],
+                        "disaster": null
                     },
                     {
-                        "title" : null,
-                        "disaster" : null,
-                        "code" : "Q"
+                        "code": "L",
+                        "title": "Coronavirus Preparedness and Response Supplemental Appropriations Act, 2020",
+                        "urls": [
+                            "https://www.congress.gov/116/plaws/publ123/PLAW-116publ123.pdf"
+                        ],
+                        "disaster": "covid_19"
                     },
                     {
-                        "title" : "Future Disaster and P.L. To Be Determined",
-                        "disaster" : null,
-                        "code" : "R"
+                        "code": "M",
+                        "title": "Families First Coronavirus Response Act",
+                        "urls": [
+                            "https://www.congress.gov/116/plaws/publ127/PLAW-116publ127.pdf"
+                        ],
+                        "disaster": "covid_19"
                     },
                     {
-                        "title" : "Future Disaster and P.L. To Be Determined",
-                        "disaster" : null,
-                        "code" : "S"
+                        "code": "N",
+                        "title": "Coronavirus Aid, Relief, and Economic Security Act or the CARES Act",
+                        "urls": [
+                            "https://www.congress.gov/116/bills/hr748/BILLS-116hr748enr.pdf"
+                        ],
+                        "disaster": "covid_19"
                     },
                     {
-                        "title" : "Future Disaster and P.L. To Be Determined",
-                        "disaster" : null,
-                        "code" : "T"
+                        "code": "O",
+                        "title": "Coronavirus Aid, Relief, and Economic Security Act or the CARES Act",
+                        "urls": [
+                            "https://www.congress.gov/116/bills/hr748/BILLS-116hr748enr.pdf",
+                            "https://www.congress.gov/116/plaws/publ139/PLAW-116publ139.pdf"
+                        ],
+                        "disaster": "covid_19"
                     },
                     {
-                        "title" : "DEFC of '9' Indicates that the data for this row is not related to a COVID-19 P.L. (not DEFC = L, M, N, O, or P), but that the agency has declined to specify which other DEFC (or combination of DEFCs, in the case that the money hasn't been split out like it would be with a specific DEFC value) applies.",
-                        "disaster" : null,
-                        "code" : "9"
+                        "code": "P",
+                        "title": "Paycheck Protection Program and Health Care Enhancement Act)",
+                        "urls": [
+                            "https://www.congress.gov/116/plaws/publ139/PLAW-116publ139.pdf"
+                        ],
+                        "disaster": "covid_19"
                     }
                 ]
             }
@@ -131,5 +178,10 @@ This endpoint returns a JSON object describing all Disaster and Emergency Fundin
 ## Data Structures
 ### DEFC (object)
 + `code` (required, string)
-+ `title` (required, string)
+    Disaster Emergency Fund Code
 + `disaster` (required, string, nullable)
+    Internal field to group several DEFC together for correlated relief efforts
++ `title` (required, string, nullable)
+    Official title of the DEFC legislation or a description
++ `urls` (required, array[string], nullable, fixed-type)
+    Hyperlink(s) to official documentation on the DEFC legislation
