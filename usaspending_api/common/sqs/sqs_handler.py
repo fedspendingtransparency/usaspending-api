@@ -223,7 +223,7 @@ class FakeSQSMessage:
             _FakeUnitTestFileBackedSQSQueue.instance()._remove(self)
         else:
             raise ValueError(
-                f"Cannot locate queue instance with url = {self.queue_url}, from which to delete the " f"message"
+                f"Cannot locate queue instance with url = {self.queue_url}, from which to delete the message"
             )
 
     def change_visibility(self, VisibilityTimeout):  # noqa
