@@ -134,7 +134,7 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
         return None
     response.update(award)
 
-    account_data = fetch_account_details_award(award["id"])
+    account_data = fetch_account_details_idv(award["id"])
     response.update(account_data)
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
