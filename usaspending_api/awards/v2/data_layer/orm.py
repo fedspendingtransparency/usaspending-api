@@ -3,7 +3,7 @@ import logging
 
 from collections import OrderedDict
 from decimal import Decimal
-from django.db.models import Sum, F, Subquery
+from django.db.models import Sum, F, Subquery, Max, OuterRef
 from typing import Optional
 
 from usaspending_api.awards.models import (
@@ -24,7 +24,6 @@ from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict
 from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
 from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
-from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 from usaspending_api.references.models import Agency, Cfda, PSC, NAICS, SubtierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -134,7 +133,7 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
         return None
     response.update(award)
 
-    account_data = fetch_account_details_idv(award["id"])
+    account_data = fetch_account_details_award(award["id"])
     response.update(account_data)
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
@@ -589,88 +588,48 @@ def fetch_naics_hierarchy(naics: str) -> dict:
 
 
 def fetch_account_details_award(award_id: int) -> dict:
-    queryset = (
+    query = (
         FinancialAccountsByAwards.objects.filter(award_id=award_id)
-        .values("disaster_emergency_fund")
+        .values("disaster_emergency_fund", "submission__reporting_fiscal_year")
         .annotate(
-            obligated_amount=Sum("obligations_delivered_orders_unpaid_total_cpe"),
-            gross_outlay_amount=Sum("gross_outlay_amount_by_award_cpe"),
+            fiscal_period=Max("submission__reporting_fiscal_period"),
+            gross_outlay_amount_by_award_cpe=Max("gross_outlay_amount_by_award_cpe"),
+            obligated_amount=Sum("transaction_obligated_amount"),
         )
     )
-    outlay_by_code = []
-    obligation_by_code = []
     total_outlay = 0
     total_obligations = 0
-    for row in queryset:
-        total_outlay += row["gross_outlay_amount"] if row["gross_outlay_amount"] is not None else 0
-        total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
-        if row["disaster_emergency_fund"] is not None:
-            outlay_by_code.append({"code": row["disaster_emergency_fund"], "amount": row["gross_outlay_amount"]})
-            obligation_by_code.append({"code": row["disaster_emergency_fund"], "amount": row["obligated_amount"]})
-
+    outlay_results = {}
+    obligated_results = {}
+    for row in query:
+        total_outlay += row["gross_outlay_amount_by_award_cpe"]
+        total_obligations += row["obligated_amount"]
+        outlay_results.update(
+            {
+                row["disaster_emergency_fund"]: row["gross_outlay_amount_by_award_cpe"]
+                + (
+                    outlay_results.get(row["disaster_emergency_fund"])
+                    if outlay_results.get(row["disaster_emergency_fund"]) is not None
+                    else 0
+                )
+            }
+        )
+        obligated_results.update(
+            {
+                row["disaster_emergency_fund"]: row["obligated_amount"]
+                + (
+                    obligated_results.get(row["disaster_emergency_fund"])
+                    if obligated_results.get(row["disaster_emergency_fund"]) is not None
+                    else 0
+                )
+            }
+        )
+    outlay_by_code = [{"code": x, "amount": y} for x, y in outlay_results.items()]
+    obligation_by_code = [{"code": x, "amount": y} for x, y in obligated_results.items()]
     results = {
         "total_account_outlay": total_outlay,
         "total_account_obligation": total_obligations,
-        "account_outlays": outlay_by_code,
-        "account_obligations": obligation_by_code,
-    }
-    return results
-
-
-def fetch_account_details_idv(award_id: int) -> dict:
-
-    child_award_sql = """
-    select
-        ac.id as award_id
-    from
-        parent_award pap
-        inner join awards ap on ap.id = pap.award_id
-        inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid
-    where
-        pap.award_id = {award_id}
-    """
-    grandchild_award_sql = """
-    select
-        ac.id as award_id
-    from
-        parent_award pap
-        inner join parent_award pac on pac.parent_award_id = pap.award_id
-        inner join awards ap on ap.id = pac.award_id
-        inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
-            ac.type not like 'IDV%'
-
-    where
-        pap.award_id = {award_id}
-    """
-    children = execute_sql_to_ordered_dictionary(child_award_sql.format(award_id=award_id))
-    grandchildren = execute_sql_to_ordered_dictionary(grandchild_award_sql.format(award_id=award_id))
-    award_ids = []
-    award_ids.extend([x["award_id"] for x in children])
-    award_ids.extend([x["award_id"] for x in grandchildren])
-    award_ids.append(award_id)
-    queryset = (
-        FinancialAccountsByAwards.objects.filter(award_id__in=award_ids)
-        .values("disaster_emergency_fund")
-        .annotate(
-            obligated_amount=Sum("obligations_delivered_orders_unpaid_total_cpe"),
-            gross_outlay_amount=Sum("gross_outlay_amount_by_award_cpe"),
-        )
-    )
-    outlay_by_code = []
-    obligation_by_code = []
-    total_outlay = 0
-    total_obligations = 0
-    for row in queryset:
-        total_outlay += row["gross_outlay_amount"] if row["gross_outlay_amount"] is not None else 0
-        total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
-        if row["disaster_emergency_fund"] is not None:
-            outlay_by_code.append({"code": row["disaster_emergency_fund"], "amount": row["gross_outlay_amount"]})
-            obligation_by_code.append({"code": row["disaster_emergency_fund"], "amount": row["obligated_amount"]})
-
-    results = {
-        "total_account_outlay": total_outlay,
-        "total_account_obligation": total_obligations,
-        "account_outlays": outlay_by_code,
-        "account_obligations": obligation_by_code,
+        "account_outlays_by_defc": outlay_by_code,
+        "account_obligations_by_defc": obligation_by_code,
     }
     return results

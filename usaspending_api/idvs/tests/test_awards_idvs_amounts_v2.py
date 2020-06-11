@@ -16,10 +16,18 @@ EXPECTED_GOOD_OUTPUT = {
     "child_award_total_obligation": 5.01,
     "child_award_base_and_all_options_value": 6.02,
     "child_award_base_exercised_options_val": 7.03,
+    "child_total_account_outlay": 0,
+    "child_total_account_obligation": 0,
+    "child_account_outlays": [],
+    "child_account_obligations": [],
     "grandchild_award_count": 5,
     "grandchild_award_total_obligation": 5.03,
     "grandchild_award_base_and_all_options_value": 5.03,
     "grandchild_award_base_exercised_options_val": 5.03,
+    "grandchild_total_account_outlay": 0,
+    "grandchild_total_account_obligation": 0,
+    "grandchild_account_outlays": [],
+    "grandchild_account_obligations": [],
 }
 
 

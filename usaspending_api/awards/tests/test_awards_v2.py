@@ -1071,7 +1071,7 @@ def test_file_c_data(client, awards_and_transactions):
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
-        obligations_delivered_orders_unpaid_total_cpe=100,
+        transaction_obligated_amount=100,
         gross_outlay_amount_by_award_cpe=100,
         disaster_emergency_fund=defc,
     )
