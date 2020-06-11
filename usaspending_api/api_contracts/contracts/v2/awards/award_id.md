@@ -255,13 +255,25 @@ This endpoint returns a list of data that is associated with the award profile p
                 },
                 "total_account_outlay": 3.0,
                 "total_account_obligation": 3.0,
-                "account_outlays_by_defc": {
-                    "P": 2.0,
-                    "L": 1.0
+                "account_outlays": {
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
                 },
-                "account_obligations_by_defc": {
-                    "P": 2.0,
-                    "L": 1.0
+                "account_obligations": {
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
                 }
                 "disaster_emergency_fund_codes": ["L", "M"]
             }
@@ -418,13 +430,25 @@ This endpoint returns a list of data that is associated with the award profile p
                 },
                 "total_account_outlay": 3.0,
                 "total_account_obligation": 3.0,
-                "account_outlays_by_defc": {
-                    "P": 2.0,
-                    "L": 1.0
+                "account_outlays": {
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
                 },
-                "account_obligations_by_defc": {
-                    "P": 2.0,
-                    "L": 1.0
+                "account_obligations": {
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
                 }
                 "disaster_emergency_fund_codes": ["L", "M"]
             }
@@ -663,13 +687,25 @@ This endpoint returns a list of data that is associated with the award profile p
                 },
                 "total_account_outlay": 3.0,
                 "total_account_obligation": 3.0,
-                "account_outlays_by_defc": {
-                    "P": 2.0,
-                    "L": 1.0
+                "account_outlays": {
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
                 },
-                "account_obligations_by_defc": {
-                    "P": 2.0,
-                    "L": 1.0
+                "account_obligations": {
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
                 }
                 "disaster_emergency_fund_codes": ["L", "M"]
             }
@@ -712,8 +748,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
 + `total_account_outlay` (required, number)
 + `total_account_obligation` (required, number)
-+ `account_obligations_by_defc` (required, object, fixed-type)
-+ `account_outlays_by_defc` (required, object, fixed-type)
++ `account_obligations` (required, array[object], fixed-type)
++ `account_outlays` (required, array[object], fixed-type)
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## IDVResponse (object)
@@ -756,8 +792,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
 + `total_account_outlay` (required, number)
 + `total_account_obligation` (required, number)
-+ `account_obligations_by_defc` (required, object, fixed-type)
-+ `account_outlays_by_defc` (required, object, fixed-type)
++ `account_obligations` (required, array[object], fixed-type)
++ `account_outlays` (required, array[object], fixed-type)
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## FinancialAssistanceResponse (object)
@@ -809,8 +845,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `cfda_info` (required, array[CFDAInfo], fixed-type)
 + `total_account_outlay` (required, number)
 + `total_account_obligation` (required, number)
-+ `account_obligations_by_defc` (required, object, fixed-type)
-+ `account_outlays_by_defc` (required, object, fixed-type)
++ `account_obligations` (required, array[object], fixed-type)
++ `account_outlays` (required, array[object], fixed-type)
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## CFDAInfo (object)

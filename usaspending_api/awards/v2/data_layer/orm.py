@@ -597,22 +597,22 @@ def fetch_account_details_award(award_id: int) -> dict:
             gross_outlay_amount=Sum("gross_outlay_amount_by_award_cpe"),
         )
     )
-    outlay_by_code = {}
-    obligation_by_code = {}
+    outlay_by_code = []
+    obligation_by_code = []
     total_outlay = 0
     total_obligations = 0
     for row in queryset:
         total_outlay += row["gross_outlay_amount"] if row["gross_outlay_amount"] is not None else 0
         total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
         if row["disaster_emergency_fund"] is not None:
-            outlay_by_code.update({row["disaster_emergency_fund"]: row["gross_outlay_amount"]})
-            obligation_by_code.update({row["disaster_emergency_fund"]: row["obligated_amount"]})
+            outlay_by_code.append({"code": row["disaster_emergency_fund"], "amount": row["gross_outlay_amount"]})
+            obligation_by_code.append({"code": row["disaster_emergency_fund"], "amount": row["obligated_amount"]})
 
     results = {
         "total_account_outlay": total_outlay,
         "total_account_obligation": total_obligations,
-        "account_outlays_by_defc": outlay_by_code,
-        "account_obligations_by_defc": obligation_by_code,
+        "account_outlays": outlay_by_code,
+        "account_obligations": obligation_by_code,
     }
     return results
 
@@ -656,21 +656,21 @@ def fetch_account_details_idv(award_id: int) -> dict:
             gross_outlay_amount=Sum("gross_outlay_amount_by_award_cpe"),
         )
     )
-    outlay_by_code = {}
-    obligation_by_code = {}
+    outlay_by_code = []
+    obligation_by_code = []
     total_outlay = 0
     total_obligations = 0
     for row in queryset:
         total_outlay += row["gross_outlay_amount"] if row["gross_outlay_amount"] is not None else 0
         total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
         if row["disaster_emergency_fund"] is not None:
-            outlay_by_code.update({row["disaster_emergency_fund"]: row["gross_outlay_amount"]})
-            obligation_by_code.update({row["disaster_emergency_fund"]: row["obligated_amount"]})
+            outlay_by_code.append({"code": row["disaster_emergency_fund"], "amount": row["gross_outlay_amount"]})
+            obligation_by_code.append({"code": row["disaster_emergency_fund"], "amount": row["obligated_amount"]})
 
     results = {
         "total_account_outlay": total_outlay,
         "total_account_obligation": total_obligations,
-        "account_outlays_by_defc": outlay_by_code,
-        "account_obligations_by_defc": obligation_by_code,
+        "account_outlays": outlay_by_code,
+        "account_obligations": obligation_by_code,
     }
     return results
