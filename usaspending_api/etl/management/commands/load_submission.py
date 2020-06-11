@@ -85,8 +85,9 @@ class Command(load_base.Command):
                 from
                     submission as s
                 where
-                    s.submission_id = {submission_id}
-            """
+                    s.submission_id = %s
+            """,
+            [submission_id],
         )
 
         submission_data = dictfetchall(db_cursor)
@@ -107,7 +108,7 @@ class Command(load_base.Command):
         submission_attributes = get_submission_attributes(submission_id, submission_data)
 
         logger.info("Getting File A data")
-        db_cursor.execute(f"SELECT * FROM certified_appropriation WHERE submission_id = {submission_id}")
+        db_cursor.execute("SELECT * FROM certified_appropriation WHERE submission_id = %s", [submission_id])
         appropriation_data = dictfetchall(db_cursor)
         logger.info(
             f"Acquired File A (appropriation) data for {submission_id}, " f"there are {len(appropriation_data):,} rows."
