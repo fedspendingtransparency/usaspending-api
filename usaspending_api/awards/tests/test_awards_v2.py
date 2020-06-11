@@ -1080,8 +1080,8 @@ def test_file_c_data(client, awards_and_transactions):
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 100.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 100.0
-    assert json.loads(resp.content.decode("utf-8"))["account_outlays"] == {"code": "L", "amount": 100.0}
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations"] == {"code": "L", "amount": 100.0}
+    assert json.loads(resp.content.decode("utf-8"))["account_outlays"] == [{"code": "L", "amount": 100.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations"] == [{"code": "L", "amount": 100.0}]
 
 
 def test_defc(client, awards_and_transactions):
@@ -1219,8 +1219,8 @@ expected_response_asst = {
         "congressional_code": "-0-",
     },
     "date_signed": "2005-04-03",
-    "account_obligations": {},
-    "account_outlays": {},
+    "account_obligations": [],
+    "account_outlays": [],
     "total_account_obligation": 0,
     "total_account_outlay": 0,
     "disaster_emergency_fund_codes": [],
@@ -1407,8 +1407,8 @@ expected_response_cont = {
         "piid": None,
         "type_of_idc_description": None,
     },
-    "account_obligations": {},
-    "account_outlays": {},
+    "account_obligations": [],
+    "account_outlays": [],
     "total_account_obligation": 0,
     "total_account_outlay": 0,
     "disaster_emergency_fund_codes": [],

@@ -255,7 +255,7 @@ This endpoint returns a list of data that is associated with the award profile p
                 },
                 "total_account_outlay": 3.0,
                 "total_account_obligation": 3.0,
-                "account_outlays": {
+                "account_outlays": [
                     {
                         "code": "P",
                         "amount": 2.0
@@ -264,8 +264,8 @@ This endpoint returns a list of data that is associated with the award profile p
                         "code": "L",
                         "amount": 1.0
                     }
-                },
-                "account_obligations": {
+                ],
+                "account_obligations": [
                     {
                         "code": "P",
                         "amount": 2.0
@@ -274,7 +274,7 @@ This endpoint returns a list of data that is associated with the award profile p
                         "code": "L",
                         "amount": 1.0
                     }
-                }
+                ]
                 "disaster_emergency_fund_codes": ["L", "M"]
             }
 
@@ -430,7 +430,7 @@ This endpoint returns a list of data that is associated with the award profile p
                 },
                 "total_account_outlay": 3.0,
                 "total_account_obligation": 3.0,
-                "account_outlays": {
+                "account_outlays": [
                     {
                         "code": "P",
                         "amount": 2.0
@@ -439,8 +439,8 @@ This endpoint returns a list of data that is associated with the award profile p
                         "code": "L",
                         "amount": 1.0
                     }
-                },
-                "account_obligations": {
+                ],
+                "account_obligations": [
                     {
                         "code": "P",
                         "amount": 2.0
@@ -449,7 +449,7 @@ This endpoint returns a list of data that is associated with the award profile p
                         "code": "L",
                         "amount": 1.0
                     }
-                }
+                ]
                 "disaster_emergency_fund_codes": ["L", "M"]
             }
 
@@ -687,7 +687,7 @@ This endpoint returns a list of data that is associated with the award profile p
                 },
                 "total_account_outlay": 3.0,
                 "total_account_obligation": 3.0,
-                "account_outlays": {
+                "account_outlays": [
                     {
                         "code": "P",
                         "amount": 2.0
@@ -696,8 +696,8 @@ This endpoint returns a list of data that is associated with the award profile p
                         "code": "L",
                         "amount": 1.0
                     }
-                },
-                "account_obligations": {
+                ],
+                "account_obligations": [
                     {
                         "code": "P",
                         "amount": 2.0
@@ -706,7 +706,7 @@ This endpoint returns a list of data that is associated with the award profile p
                         "code": "L",
                         "amount": 1.0
                     }
-                }
+                ]
                 "disaster_emergency_fund_codes": ["L", "M"]
             }
 
