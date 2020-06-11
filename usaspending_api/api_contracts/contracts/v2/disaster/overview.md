@@ -8,7 +8,7 @@ This endpoint provides funding and spending details from emergency/disaster supp
 ## GET
 
 
-+ Request (application/json)
++ Request
     + Schema
 
             {
@@ -22,12 +22,37 @@ This endpoint provides funding and spending details from emergency/disaster supp
         + `total_budget_authority` (required, number)
         + `spending` (required, Spending, fixed-type)
 
+    + Body
+
+            {
+                "funding": [
+                    {
+                        "def_code": "L",
+                        "amount": 7410000000,
+                        "public_law": "Emergency Public Law 116-123"
+                    },
+                    {
+                        "def_code": "M",
+                        "amount": 11230000000,
+                        "public_law": "Emergency Public Law 116-127"
+                    }
+                ],
+                "total_budget_authority": 2300000000000,
+                "spending": {
+                    "award_obligations": 866700000000,
+                    "award_outlays": 413100000000,
+                    "total_obligations": 963000000000,
+                    "total_outlays": 459000000000
+                }
+            }
+
 # Data Structures
 ## Funding (object)
 + `def_code` (required, string)
     DEF Code providing the source funding
 + `amount` (required, number)
     Aggregation amount under the DEFC
++ `public_law` (required, string)
 
 ## Spending (object)
 + `award_obligations` (required, number, nullable)
