@@ -1,5 +1,6 @@
 import datetime
 
+from django.conf import settings
 from django.contrib.postgres.aggregates import StringAgg
 from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, When, Func, F, Value, DateField
 from django.db.models.functions import Concat, Coalesce, Cast
@@ -12,6 +13,7 @@ from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import CGAC, ToptierAgency
 from usaspending_api.settings import HOST
+
 
 AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
 
@@ -86,6 +88,7 @@ def account_download_filter(account_type, download_table, filters, account_level
             "account_balances": "appropriation_account_balances_id",
             "object_class_program_activity": "financial_accounts_by_program_activity_object_class_id",
         }
+
         unique_columns_mapping = {
             "account_balances": ["treasury_account_identifier__tas_rendering_label"],
             "object_class_program_activity": [
@@ -95,6 +98,12 @@ def account_download_filter(account_type, download_table, filters, account_level
                 "object_class__direct_reimbursable",
             ],
         }
+
+        # DEV-5180 check if cares act features are enabled in production yet
+        if settings.ENABLE_CARES_ACT_FEATURES is True:
+            unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund__code")
+            unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund__title")
+
         distinct_cols = unique_columns_mapping[account_type]
         order_by_cols = distinct_cols + ["-reporting_period_start", "-pk"]
         latest_ids_q = (
