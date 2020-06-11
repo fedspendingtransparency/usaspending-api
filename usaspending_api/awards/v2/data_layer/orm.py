@@ -3,7 +3,7 @@ import logging
 
 from collections import OrderedDict
 from decimal import Decimal
-from django.db.models import Sum, F, Subquery, Max, OuterRef
+from django.db.models import Sum, F, Subquery, Max
 from typing import Optional
 
 from usaspending_api.awards.models import (
