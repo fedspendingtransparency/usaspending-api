@@ -748,8 +748,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
 + `total_account_outlay` (required, number)
 + `total_account_obligation` (required, number)
-+ `account_obligations` (required, array[object], fixed-type)
-+ `account_outlays` (required, array[object], fixed-type)
++ `account_obligations` (required, array[DEFCAmount], fixed-type)
++ `account_outlays` (required, array[DEFCAmount], fixed-type)
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## IDVResponse (object)
@@ -792,8 +792,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
 + `total_account_outlay` (required, number)
 + `total_account_obligation` (required, number)
-+ `account_obligations` (required, array[object], fixed-type)
-+ `account_outlays` (required, array[object], fixed-type)
++ `account_obligations` (required, array[DEFCAmount], fixed-type)
++ `account_outlays` (required, array[DEFCAmount], fixed-type)
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## FinancialAssistanceResponse (object)
@@ -845,8 +845,8 @@ This endpoint returns a list of data that is associated with the award profile p
 + `cfda_info` (required, array[CFDAInfo], fixed-type)
 + `total_account_outlay` (required, number)
 + `total_account_obligation` (required, number)
-+ `account_obligations` (required, array[object], fixed-type)
-+ `account_outlays` (required, array[object], fixed-type)
++ `account_obligations` (required, array[DEFCAmount], fixed-type)
++ `account_outlays` (required, array[DEFCAmount], fixed-type)
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## CFDAInfo (object)
@@ -1027,3 +1027,7 @@ This endpoint returns a list of data that is associated with the award profile p
 ## HierarchyLeaf (object)
 + `description` (optional, string)
 + `code` (optional, string)
+
+## DEFCAmount (object)
++ `code` (required, string)
++ `amount` (required, number)
