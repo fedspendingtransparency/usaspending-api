@@ -11,7 +11,7 @@ class DEFCodesViewSet(APIView):
 
     def get(self, request, format=None):
         rows = DisasterEmergencyFundCode.objects.annotate(disaster=F("group_name")).values(
-            "code", "title", "disaster", "urls"
+            "code", "public_law", "title", "disaster", "urls"
         )
         for row in rows:
             row["urls"] = row["urls"].split("|") if row["urls"] else None
