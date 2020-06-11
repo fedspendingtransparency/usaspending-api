@@ -26,7 +26,7 @@ class Command(load_base.Command):
             except Exception as err:
                 logger.critical("Could not connect to database. Is DATA_BROKER_DATABASE_URL set?")
                 logger.critical(print(err))
-                return
+                raise
         else:
             db_cursor = PhonyCursor()
         ds_cursor = connection.cursor()

@@ -139,6 +139,7 @@ class Command(BaseCommand):
             where
                 sa.submission_id is null
             order by
+                bs.published_date,
                 bs.submission_id
         """
         with connection.cursor() as cursor:
