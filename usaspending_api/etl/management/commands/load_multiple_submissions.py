@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import connection
+from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.management.helpers.load_submission import (
     calculate_load_submissions_since_datetime,
     get_publish_history_table,
@@ -25,6 +26,14 @@ class Command(BaseCommand):
         mutually_exclusive_group.add_argument(
             "--incremental", action="store_true", help="Loads newly created or updated submissions.",
         )
+        mutually_exclusive_group.add_argument(
+            "--start-datetime",
+            type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
+            help=(
+                "Manually set the date from which to start loading submissions.  This was originally designed "
+                "to be used for testing, but there are definitely real world usages for it... just be careful."
+            ),
+        )
         parser.add_argument(
             "--list-ids-only",
             action="store_true",
@@ -36,7 +45,7 @@ class Command(BaseCommand):
         if options["submission_ids"]:
             submission_ids = options["submission_ids"]
         else:
-            submission_ids = self.get_incremental_submission_ids()
+            submission_ids = self.get_incremental_submission_ids(options.get("start_datetime"))
 
         if submission_ids:
             msg = f"{len(submission_ids):,} submissions will be created or updated"
@@ -69,8 +78,12 @@ class Command(BaseCommand):
             logger.info("Script completed with no failures.")
 
     @staticmethod
-    def get_since_sql():
-        since = calculate_load_submissions_since_datetime()
+    def get_since_sql(start_datetime=None):
+        """
+        For performance reasons, we intentionally use updated_at here even though we're comparing against
+        published_date later.  submission.updated_at should always be greater than or equal to published_date.
+        """
+        since = start_datetime or calculate_load_submissions_since_datetime()
         if since is None:
             logger.info("No records found in submission_attributes.  Performing a full load.")
             since = ""
@@ -80,7 +93,7 @@ class Command(BaseCommand):
         return since
 
     @classmethod
-    def get_incremental_submission_ids(cls):
+    def get_incremental_submission_ids(cls, start_datetime=None):
         # Note that this is designed to work with our conservative lookback period by filtering
         # out rows that haven't changed.  Look back as far as you want!
         sql = f"""
@@ -113,7 +126,7 @@ class Command(BaseCommand):
                         where
                             s.d2_submission is false and
                             s.publish_status_id in (2, 3)
-                            {cls.get_since_sql()}
+                            {cls.get_since_sql(start_datetime)}
                     '
                 ) as bs (
                     submission_id integer,
