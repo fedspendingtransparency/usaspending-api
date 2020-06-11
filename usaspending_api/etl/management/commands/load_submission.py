@@ -111,7 +111,7 @@ class Command(load_base.Command):
         db_cursor.execute("SELECT * FROM certified_appropriation WHERE submission_id = %s", [submission_id])
         appropriation_data = dictfetchall(db_cursor)
         logger.info(
-            f"Acquired File A (appropriation) data for {submission_id}, " f"there are {len(appropriation_data):,} rows."
+            f"Acquired File A (appropriation) data for {submission_id}, there are {len(appropriation_data):,} rows."
         )
         logger.info("Loading File A data")
         start_time = datetime.now()
