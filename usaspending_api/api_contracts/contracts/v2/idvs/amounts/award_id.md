@@ -50,6 +50,8 @@ Get aggregated award counts and funding amounts for IDV contracts
                 "grandchild_award_base_exercised_options_val": 311020.57
             }
 
+# Data Structures
+
 ## DEFCAmount (object)
 + `code` (required, string)
 + `amount` (required, number)

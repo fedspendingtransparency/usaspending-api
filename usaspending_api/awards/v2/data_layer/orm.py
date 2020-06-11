@@ -609,21 +609,17 @@ def fetch_account_details_award(award_id: int) -> dict:
         outlay_results.update(
             {
                 row["disaster_emergency_fund"]: row["gross_outlay_amount_by_award_cpe"]
-                + (
-                    outlay_results.get(row["disaster_emergency_fund"])
-                    if outlay_results.get(row["disaster_emergency_fund"]) is not None
-                    else 0
-                )
+                + outlay_results.get(row["disaster_emergency_fund"])
+                if outlay_results.get(row["disaster_emergency_fund"]) is not None
+                else 0
             }
         )
         obligated_results.update(
             {
                 row["disaster_emergency_fund"]: row["obligated_amount"]
-                + (
-                    obligated_results.get(row["disaster_emergency_fund"])
-                    if obligated_results.get(row["disaster_emergency_fund"]) is not None
-                    else 0
-                )
+                + obligated_results.get(row["disaster_emergency_fund"])
+                if obligated_results.get(row["disaster_emergency_fund"]) is not None
+                else 0
             }
         )
     outlay_by_code = [{"code": x, "amount": y} for x, y in outlay_results.items()]
