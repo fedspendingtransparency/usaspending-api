@@ -602,8 +602,10 @@ def fetch_account_details_award(award_id: int) -> dict:
     outlay_results = {}
     obligated_results = {}
     for row in query:
-        total_outlay += row["gross_outlay_amount_by_award_cpe"]
-        total_obligations += row["obligated_amount"]
+        total_outlay += (
+            row["gross_outlay_amount_by_award_cpe"] if row["gross_outlay_amount_by_award_cpe"] is not None else 0
+        )
+        total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
         outlay_results.update(
             {
                 row["disaster_emergency_fund"]: row["gross_outlay_amount_by_award_cpe"]

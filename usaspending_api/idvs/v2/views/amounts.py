@@ -77,8 +77,10 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     child_outlay_results = {}
     child_obligated_results = {}
     for row in child_queryset:
-        child_total_outlay += row["gross_outlay_amount_by_award_cpe"]
-        child_total_obligations += row["obligated_amount"]
+        child_total_outlay += (
+            row["gross_outlay_amount_by_award_cpe"] if row["gross_outlay_amount_by_award_cpe"] is not None else 0
+        )
+        child_total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
         child_outlay_results.update(
             {
                 row["disaster_emergency_fund"]: row["gross_outlay_amount_by_award_cpe"]
@@ -107,8 +109,10 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     grandchild_outlay_results = {}
     grandchild_obligated_results = {}
     for row in grandchild_queryset:
-        grandchild_total_outlay += row["gross_outlay_amount_by_award_cpe"]
-        grandchild_total_obligations += row["obligated_amount"]
+        grandchild_total_outlay += (
+            row["gross_outlay_amount_by_award_cpe"] if row["gross_outlay_amount_by_award_cpe"] is not None else 0
+        )
+        grandchild_total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
         grandchild_outlay_results.update(
             {
                 row["disaster_emergency_fund"]: row["gross_outlay_amount_by_award_cpe"]
@@ -134,12 +138,12 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     results = {
         "child_total_account_outlay": child_total_outlay,
         "child_total_account_obligation": child_total_obligations,
-        "child_account_outlays": child_outlay_by_code,
-        "child_account_obligations": child_obligation_by_code,
+        "child_account_outlays_by_defc": child_outlay_by_code,
+        "child_account_obligations_by_defc": child_obligation_by_code,
         "grandchild_total_account_outlay": grandchild_total_outlay,
         "grandchild_total_account_obligation": grandchild_total_obligations,
-        "grandchild_account_outlays": grandchild_outlay_by_code,
-        "grandchild_account_obligations": grandchild_obligation_by_code,
+        "grandchild_account_outlays_by_defc": grandchild_outlay_by_code,
+        "grandchild_account_obligations_by_defc": grandchild_obligation_by_code,
     }
     return results
 
@@ -177,8 +181,8 @@ class IDVAmountsViewSet(APIView):
                     ("child_award_base_exercised_options_val", parent_award.direct_base_exercised_options_val),
                     ("child_total_account_outlay", account_data["child_total_account_outlay"]),
                     ("child_total_account_obligation", account_data["child_total_account_obligation"]),
-                    ("child_account_outlays", account_data["child_account_outlays"]),
-                    ("child_account_obligations", account_data["child_account_obligations"]),
+                    ("child_account_outlays_by_defc", account_data["child_account_outlays_by_defc"]),
+                    ("child_account_obligations_by_defc", account_data["child_account_obligations_by_defc"]),
                     ("grandchild_award_count", parent_award.rollup_contract_count - parent_award.direct_contract_count),
                     (
                         "grandchild_award_total_obligation",
@@ -194,8 +198,8 @@ class IDVAmountsViewSet(APIView):
                     ),
                     ("grandchild_total_account_outlay", account_data["grandchild_total_account_outlay"]),
                     ("grandchild_total_account_obligation", account_data["grandchild_total_account_obligation"]),
-                    ("grandchild_account_outlays", account_data["grandchild_account_outlays"]),
-                    ("grandchild_account_obligations", account_data["grandchild_account_obligations"]),
+                    ("grandchild_account_outlays_by_defc", account_data["grandchild_account_outlays_by_defc"]),
+                    ("grandchild_account_obligations_by_defc", account_data["grandchild_account_obligations_by_defc"]),
                 )
             )
         except ParentAward.DoesNotExist:

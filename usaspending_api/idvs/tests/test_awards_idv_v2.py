@@ -524,9 +524,9 @@ expected_response_idv = {
         "base_code": {"description": "HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS", "code": "4730"},
     },
     "account_obligations": [],
-    "account_outlays": [],
+    "account_outlays_by_defc": [],
     "total_account_obligation": 0,
-    "total_account_outlay": 0,
+    "total_account_outlay_by_defc": 0,
     "disaster_emergency_fund_codes": [],
 }
 
