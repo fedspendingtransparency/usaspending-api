@@ -1392,7 +1392,7 @@ class SQSWorkDispatcherTests(TestCase):
         )
         self.assertTrue(
             ("Queue Message None or not provided" in str(err_ctx1.exception)),
-            f"QueueWorkerProcessError did not " f"mention '{no_queue_message}'.",
+            f"QueueWorkerProcessError did not mention '{no_queue_message}'.",
         )
         self.assertEqual(err_ctx1.exception.worker_process_name, unknown_worker)
         self.assertIsNone(err_ctx1.exception.queue_message)

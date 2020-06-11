@@ -14,8 +14,11 @@ from usaspending_api.etl.helpers import get_fiscal_quarter
 from usaspending_api.etl.management import load_base
 from usaspending_api.etl.management.helpers.load_submission import (
     CertifiedAwardFinancial,
+    defc_exists,
     get_object_class,
     get_or_create_program_activity,
+    get_publish_history_table,
+    get_disaster_emergency_fund,
 )
 from usaspending_api.etl.management.load_base import load_data_into_model
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
@@ -27,7 +30,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 # account data
 TAS_ID_TO_ACCOUNT = {}
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 class Command(load_base.Command):
@@ -42,7 +45,7 @@ class Command(load_base.Command):
     )
 
     def add_arguments(self, parser):
-        parser.add_argument("submission_id", nargs=1, help="the data broker submission id to load", type=int)
+        parser.add_argument("submission_id", help="Broker submission_id to load", type=int)
         super(Command, self).add_arguments(parser)
 
     @transaction.atomic
@@ -54,29 +57,53 @@ class Command(load_base.Command):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-        submission_id = options["submission_id"][0]
+        submission_id = options["submission_id"]
 
-        logger.info("Getting submission {} from broker...".format(submission_id))
-        db_cursor.execute("SELECT * FROM submission WHERE submission_id = %s", [submission_id])
+        logger.info(f"Getting submission {submission_id} from Broker...")
+        db_cursor.execute(
+            f"""
+                select
+                    s.submission_id,
+                    (
+                        select  max(updated_at)
+                        from    {get_publish_history_table()}
+                        where   submission_id = s.submission_id
+                    )::timestamptz as published_date,
+                    (
+                        select  max(updated_at)
+                        from    certify_history
+                        where   submission_id = s.submission_id
+                    )::timestamptz as certified_date,
+                    coalesce(s.cgac_code, s.frec_code) as toptier_code,
+                    s.reporting_start_date,
+                    s.reporting_end_date,
+                    s.reporting_fiscal_year,
+                    s.reporting_fiscal_period,
+                    s.is_quarter_format,
+                    s.d2_submission,
+                    s.publish_status_id
+                from
+                    submission as s
+                where
+                    s.submission_id = %s
+            """,
+            [submission_id],
+        )
 
         submission_data = dictfetchall(db_cursor)
-        logger.info("Finished getting submission {} from broker".format(submission_id))
+        logger.info(f"Finished getting submission {submission_id} from Broker")
 
         if len(submission_data) == 0:
-            raise CommandError("Could not find submission with id " + str(submission_id))
+            raise CommandError(f"Could not find submission with id {submission_id}")
         elif len(submission_data) > 1:
-            raise CommandError("Found multiple submissions with id " + str(submission_id))
+            raise CommandError(f"Found multiple submissions with id {submission_id}")
 
-        submission_data = submission_data[0].copy()
+        submission_data = submission_data[0]
 
         if submission_data["publish_status_id"] not in (2, 3):
             raise RuntimeError(f"publish_status_id {submission_data['publish_status_id']} is not allowed")
         if submission_data["d2_submission"] is not False:
             raise RuntimeError(f"d2_submission {submission_data['d2_submission']} is not allowed")
-
-        db_cursor.execute(f"select exists(select from certify_history where submission_id = {submission_id})")
-        if db_cursor.fetchone()[0] is not True:
-            raise RuntimeError("Submission does not exist in certify_history")
 
         submission_attributes = get_submission_attributes(submission_id, submission_data)
 
@@ -84,45 +111,38 @@ class Command(load_base.Command):
         db_cursor.execute("SELECT * FROM certified_appropriation WHERE submission_id = %s", [submission_id])
         appropriation_data = dictfetchall(db_cursor)
         logger.info(
-            "Acquired File A (appropriation) data for "
-            + str(submission_id)
-            + ", there are "
-            + str(len(appropriation_data))
-            + " rows."
+            f"Acquired File A (appropriation) data for {submission_id}, there are {len(appropriation_data):,} rows."
         )
         logger.info("Loading File A data")
         start_time = datetime.now()
         load_file_a(submission_attributes, appropriation_data, db_cursor)
-        logger.info("Finished loading File A data, took {}".format(datetime.now() - start_time))
+        logger.info(f"Finished loading File A data, took {datetime.now() - start_time}")
 
         logger.info("Getting File B data")
         prg_act_obj_cls_data = get_file_b(submission_attributes, db_cursor)
         logger.info(
-            "Acquired File B (program activity object class) data for "
-            + str(submission_id)
-            + ", there are "
-            + str(len(prg_act_obj_cls_data))
-            + " rows."
+            f"Acquired File B (program activity object class) data for {submission_id}, "
+            f"there are {len(prg_act_obj_cls_data):,} rows."
         )
         logger.info("Loading File B data")
         start_time = datetime.now()
         load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor)
-        logger.info("Finished loading File B data, took {}".format(datetime.now() - start_time))
+        logger.info(f"Finished loading File B data, took {datetime.now() - start_time}")
 
         logger.info("Getting File C data")
         certified_award_financial = CertifiedAwardFinancial(submission_attributes)
         logger.info(
             f"Acquired File C (award financial) data for {submission_id}, "
-            f"there are {certified_award_financial.count} rows."
+            f"there are {certified_award_financial.count:,} rows."
         )
         logger.info("Loading File C data")
         start_time = datetime.now()
         load_file_c(submission_attributes, db_cursor, certified_award_financial)
-        logger.info("Finished loading File C data, took {}".format(datetime.now() - start_time))
+        logger.info(f"Finished loading File C data, took {datetime.now() - start_time}")
 
         # Once all the files have been processed, run any global cleanup/post-load tasks.
         # Cleanup not specific to this submission is run in the `.handle` method
-        logger.info("Successfully loaded broker submission {}.".format(options["submission_id"][0]))
+        logger.info(f"Successfully loaded submission {submission_id}.")
 
 
 def update_skipped_tas(row, tas_rendering_label, skipped_tas):
@@ -148,7 +168,7 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
     tas_data = dictfetchall(db_cursor)
 
     if tas_data is None or len(tas_data) == 0:
-        return None, "Account number {} not found in Broker".format(tas_lookup_id)
+        return None, f"Account number {tas_lookup_id} not found in Broker"
 
     tas_rendering_label = TreasuryAppropriationAccount.generate_tas_rendering_label(
         ata=tas_data[0]["allocation_transfer_agency"],
@@ -169,29 +189,21 @@ def get_treasury_appropriation_account_tas_lookup(tas_lookup_id, db_cursor):
 
 def get_submission_attributes(submission_id, submission_data):
     """
-    For a specified broker submission, return the existing corresponding usaspending submission record or create and
-    return a new one.
+    For a specified broker submission, return the existing corresponding usaspending submission record or
+    create and return a new one.
     """
-    # check if we already have an entry for this broker submission id; if not, create one
+    # check if we already have an entry for this submission id; if not, create one
     submission_attributes, created = SubmissionAttributes.objects.get_or_create(submission_id=submission_id)
 
     if created:
-        # this is the first time we're loading this broker submission
-        logger.info("Creating broker submission id {}".format(submission_id))
+        # this is the first time we're loading this submission
+        logger.info(f"Creating submission {submission_id}")
 
     else:
-        # we've already loaded this broker submission, so delete it before reloading if there's another submission that
-        # references this one as a "previous submission" do not proceed.
-        # TODO: now that we're chaining submissions together, get clarification on what should happen when a submission
-        # in the middle of the chain is deleted
-
-        logger.info("Broker submission id {} already exists. It will be deleted.".format(submission_id))
+        # we've already loaded this submission, so delete it before reloading
+        logger.info(f"Submission {submission_id} already exists. It will be deleted.")
         call_command("rm_submission", submission_id)
 
-    logger.info("Merging CGAC and FREC columns")
-    submission_data["toptier_code"] = (
-        submission_data["cgac_code"] if submission_data["cgac_code"] else submission_data["frec_code"]
-    )
     submission_data["reporting_agency_name"] = retrive_agency_name_from_code(submission_data["toptier_code"])
 
     # Update and save submission attributes
@@ -202,13 +214,7 @@ def get_submission_attributes(submission_id, submission_data):
     }
 
     # Create our value map - specific data to load
-    value_map = {
-        "reporting_fiscal_quarter": get_fiscal_quarter(submission_data["reporting_fiscal_period"]),
-        # pull in broker's last update date to use as certified date
-        "certified_date": submission_data["updated_at"].date()
-        if type(submission_data["updated_at"]) == datetime
-        else None,
-    }
+    value_map = {"reporting_fiscal_quarter": get_fiscal_quarter(submission_data["reporting_fiscal_period"])}
 
     new_submission = load_data_into_model(
         submission_attributes, submission_data, field_map=field_map, value_map=value_map, save=True
@@ -218,9 +224,7 @@ def get_submission_attributes(submission_id, submission_data):
 
 
 def load_file_a(submission_attributes, appropriation_data, db_cursor):
-    """
-    Process and load file A broker data (aka TAS balances, aka appropriation account balances).
-    """
+    """ Process and load file A broker data (aka TAS balances, aka appropriation account balances). """
     reverse = re.compile("gross_outlay_amount_by_tas_cpe")
 
     # dictionary to capture TAS that were skipped and some metadata
@@ -262,13 +266,13 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
     AppropriationAccountBalances.populate_final_of_fy()
 
     for key in skipped_tas:
-        logger.info("Skipped %d rows due to missing TAS: %s", skipped_tas[key]["count"], key)
+        logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
 
     total_tas_skipped = 0
     for key in skipped_tas:
         total_tas_skipped += skipped_tas[key]["count"]
 
-    logger.info("Skipped a total of {} TAS rows for File A".format(total_tas_skipped))
+    logger.info(f"Skipped a total of {total_tas_skipped:,} TAS rows for File A")
 
 
 def get_file_b(submission_attributes, db_cursor):
@@ -294,101 +298,111 @@ def get_file_b(submission_attributes, db_cursor):
     """
     submission_id = submission_attributes.submission_id
 
+    # ENABLE_CARES_ACT_FEATURES: Remove this once disaster_emergency_fund_code columns go live in Broker.
+    defc_sql = ", disaster_emergency_fund_code" if defc_exists() else ""
+
     # does this file B have the dupe object class edge case?
-    check_dupe_oc = (
-        "SELECT count(*) "
-        "FROM certified_object_class_program_activity "
-        "WHERE submission_id = %s "
-        "AND length(object_class) = 4 "
-        "GROUP BY tas_id, program_activity_code, object_class "
-        "HAVING COUNT(*) > 1"
-    )
+    check_dupe_oc = f"""
+        select      count(*)
+        from        certified_object_class_program_activity
+        where       submission_id = %s and length(object_class) = 4
+        group by    tas_id, program_activity_code, object_class{defc_sql}
+        having      count(*) > 1
+    """
     db_cursor.execute(check_dupe_oc, [submission_id])
     dupe_oc_count = len(dictfetchall(db_cursor))
 
     if dupe_oc_count == 0:
         # there are no object class duplicates, so proceed as usual
         db_cursor.execute(
-            "SELECT * FROM certified_object_class_program_activity WHERE submission_id = %s", [submission_id]
+            "select * from certified_object_class_program_activity where submission_id = %s", [submission_id]
         )
     else:
         # file b contains at least one case of duplicate 4 digit object classes for the same program activity/tas,
         # so combine the records in question
-        combine_dupe_oc = (
-            "SELECT  "
-            "submission_id, "
-            "job_id, "
-            "agency_identifier, "
-            "allocation_transfer_agency, "
-            "availability_type_code, "
-            "beginning_period_of_availa, "
-            "ending_period_of_availabil, "
-            "main_account_code, "
-            "RIGHT(object_class, 3) AS object_class, "
-            "CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' "
-            "WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' "
-            "ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, "
-            "tas, "
-            "tas_id, "
-            "program_activity_code, "
-            "program_activity_name, "
-            "sub_account_code, "
-            "SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, "
-            "SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, "
-            "SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, "
-            "SUM(gross_outlays_delivered_or_cpe) AS gross_outlays_delivered_or_cpe, "
-            "SUM(gross_outlays_delivered_or_fyb) AS gross_outlays_delivered_or_fyb, "
-            "SUM(gross_outlays_undelivered_cpe) AS gross_outlays_undelivered_cpe, "
-            "SUM(gross_outlays_undelivered_fyb) AS gross_outlays_undelivered_fyb, "
-            "SUM(obligations_delivered_orde_cpe) AS obligations_delivered_orde_cpe, "
-            "SUM(obligations_delivered_orde_fyb) AS obligations_delivered_orde_fyb, "
-            "SUM(obligations_incurred_by_pr_cpe) AS obligations_incurred_by_pr_cpe, "
-            "SUM(obligations_undelivered_or_cpe) AS obligations_undelivered_or_cpe, "
-            "SUM(obligations_undelivered_or_fyb) AS obligations_undelivered_or_fyb, "
-            "SUM(ussgl480100_undelivered_or_cpe) AS ussgl480100_undelivered_or_cpe, "
-            "SUM(ussgl480100_undelivered_or_fyb) AS ussgl480100_undelivered_or_fyb, "
-            "SUM(ussgl480200_undelivered_or_cpe) AS ussgl480200_undelivered_or_cpe, "
-            "SUM(ussgl480200_undelivered_or_fyb) AS ussgl480200_undelivered_or_fyb, "
-            "SUM(ussgl483100_undelivered_or_cpe) AS ussgl483100_undelivered_or_cpe, "
-            "SUM(ussgl483200_undelivered_or_cpe) AS ussgl483200_undelivered_or_cpe, "
-            "SUM(ussgl487100_downward_adjus_cpe) AS ussgl487100_downward_adjus_cpe, "
-            "SUM(ussgl487200_downward_adjus_cpe) AS ussgl487200_downward_adjus_cpe, "
-            "SUM(ussgl488100_upward_adjustm_cpe) AS ussgl488100_upward_adjustm_cpe, "
-            "SUM(ussgl488200_upward_adjustm_cpe) AS ussgl488200_upward_adjustm_cpe, "
-            "SUM(ussgl490100_delivered_orde_cpe) AS ussgl490100_delivered_orde_cpe, "
-            "SUM(ussgl490100_delivered_orde_fyb) AS ussgl490100_delivered_orde_fyb, "
-            "SUM(ussgl490200_delivered_orde_cpe) AS ussgl490200_delivered_orde_cpe, "
-            "SUM(ussgl490800_authority_outl_cpe) AS ussgl490800_authority_outl_cpe, "
-            "SUM(ussgl490800_authority_outl_fyb) AS ussgl490800_authority_outl_fyb, "
-            "SUM(ussgl493100_delivered_orde_cpe) AS ussgl493100_delivered_orde_cpe, "
-            "SUM(ussgl497100_downward_adjus_cpe) AS ussgl497100_downward_adjus_cpe, "
-            "SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, "
-            "SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, "
-            "SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe "
-            "FROM certified_object_class_program_activity "
-            "WHERE submission_id = %s "
-            "GROUP BY  "
-            "submission_id, "
-            "job_id, "
-            "agency_identifier, "
-            "allocation_transfer_agency, "
-            "availability_type_code, "
-            "beginning_period_of_availa, "
-            "ending_period_of_availabil, "
-            "main_account_code, "
-            "RIGHT(object_class, 3), "
-            "CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' "
-            "WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' "
-            "ELSE by_direct_reimbursable_fun END, "
-            "program_activity_code, "
-            "program_activity_name, "
-            "sub_account_code, "
-            "tas, "
-            "tas_id"
-        )
+        combine_dupe_oc = f"""
+            select
+                submission_id,
+                job_id,
+                agency_identifier,
+                allocation_transfer_agency,
+                availability_type_code,
+                beginning_period_of_availa,
+                ending_period_of_availabil,
+                main_account_code,
+                right(object_class, 3) as object_class,
+                case
+                    when length(object_class) = 4 and left(object_class, 1) = '1' then 'D'
+                    when length(object_class) = 4 and left(object_class, 1) = '2' then 'R'
+                    else by_direct_reimbursable_fun
+                end as by_direct_reimbursable_fun,
+                tas,
+                tas_id,
+                program_activity_code,
+                program_activity_name,
+                sub_account_code,
+                sum(deobligations_recov_by_pro_cpe) as deobligations_recov_by_pro_cpe,
+                sum(gross_outlay_amount_by_pro_cpe) as gross_outlay_amount_by_pro_cpe,
+                sum(gross_outlay_amount_by_pro_fyb) as gross_outlay_amount_by_pro_fyb,
+                sum(gross_outlays_delivered_or_cpe) as gross_outlays_delivered_or_cpe,
+                sum(gross_outlays_delivered_or_fyb) as gross_outlays_delivered_or_fyb,
+                sum(gross_outlays_undelivered_cpe) as gross_outlays_undelivered_cpe,
+                sum(gross_outlays_undelivered_fyb) as gross_outlays_undelivered_fyb,
+                sum(obligations_delivered_orde_cpe) as obligations_delivered_orde_cpe,
+                sum(obligations_delivered_orde_fyb) as obligations_delivered_orde_fyb,
+                sum(obligations_incurred_by_pr_cpe) as obligations_incurred_by_pr_cpe,
+                sum(obligations_undelivered_or_cpe) as obligations_undelivered_or_cpe,
+                sum(obligations_undelivered_or_fyb) as obligations_undelivered_or_fyb,
+                sum(ussgl480100_undelivered_or_cpe) as ussgl480100_undelivered_or_cpe,
+                sum(ussgl480100_undelivered_or_fyb) as ussgl480100_undelivered_or_fyb,
+                sum(ussgl480200_undelivered_or_cpe) as ussgl480200_undelivered_or_cpe,
+                sum(ussgl480200_undelivered_or_fyb) as ussgl480200_undelivered_or_fyb,
+                sum(ussgl483100_undelivered_or_cpe) as ussgl483100_undelivered_or_cpe,
+                sum(ussgl483200_undelivered_or_cpe) as ussgl483200_undelivered_or_cpe,
+                sum(ussgl487100_downward_adjus_cpe) as ussgl487100_downward_adjus_cpe,
+                sum(ussgl487200_downward_adjus_cpe) as ussgl487200_downward_adjus_cpe,
+                sum(ussgl488100_upward_adjustm_cpe) as ussgl488100_upward_adjustm_cpe,
+                sum(ussgl488200_upward_adjustm_cpe) as ussgl488200_upward_adjustm_cpe,
+                sum(ussgl490100_delivered_orde_cpe) as ussgl490100_delivered_orde_cpe,
+                sum(ussgl490100_delivered_orde_fyb) as ussgl490100_delivered_orde_fyb,
+                sum(ussgl490200_delivered_orde_cpe) as ussgl490200_delivered_orde_cpe,
+                sum(ussgl490800_authority_outl_cpe) as ussgl490800_authority_outl_cpe,
+                sum(ussgl490800_authority_outl_fyb) as ussgl490800_authority_outl_fyb,
+                sum(ussgl493100_delivered_orde_cpe) as ussgl493100_delivered_orde_cpe,
+                sum(ussgl497100_downward_adjus_cpe) as ussgl497100_downward_adjus_cpe,
+                sum(ussgl497200_downward_adjus_cpe) as ussgl497200_downward_adjus_cpe,
+                sum(ussgl498100_upward_adjustm_cpe) as ussgl498100_upward_adjustm_cpe,
+                sum(ussgl498200_upward_adjustm_cpe) as ussgl498200_upward_adjustm_cpe
+                {defc_sql}
+            from
+                certified_object_class_program_activity
+            where
+                submission_id = %s
+            group by
+                submission_id,
+                job_id,
+                agency_identifier,
+                allocation_transfer_agency,
+                availability_type_code,
+                beginning_period_of_availa,
+                ending_period_of_availabil,
+                main_account_code,
+                right(object_class, 3),
+                case
+                    when length(object_class) = 4 and left(object_class, 1) = '1' then 'D'
+                    when length(object_class) = 4 and left(object_class, 1) = '2' then 'R'
+                    else by_direct_reimbursable_fun
+                end,
+                program_activity_code,
+                program_activity_name,
+                sub_account_code,
+                tas,
+                tas_id
+                {defc_sql}
+        """
         logger.info(
-            "Found {} duplicated File B 4 digit object codes in submission {}. "
-            "Aggregating financial values.".format(dupe_oc_count, submission_id)
+            f"Found {dupe_oc_count:,} duplicated File B 4 digit object codes in submission {submission_id}. "
+            f"Aggregating financial values."
         )
         # we have at least one instance of duplicated 4 digit object classes so aggregate the financial values together
         db_cursor.execute(combine_dupe_oc, [submission_id])
@@ -398,9 +412,7 @@ def get_file_b(submission_attributes, db_cursor):
 
 
 def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
-    """
-    Process and load file B broker data (aka TAS balances by program activity and object class).
-    """
+    """ Process and load file B broker data (aka TAS balances by program activity and object class). """
     reverse = re.compile(r"(_(cpe|fyb)$)|^transaction_obligated_amount$")
 
     # dictionary to capture TAS that were skipped and some metadata
@@ -412,7 +424,6 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     test_counter = 0
     for row in prg_act_obj_cls_data:
         test_counter += 1
-        account_balances = None
         try:
             # Check and see if there is an entry for this TAS
             treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(
@@ -439,20 +450,20 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             "appropriation_account_balances": account_balances,
             "object_class": get_object_class(row["object_class"], row["by_direct_reimbursable_fun"]),
             "program_activity": get_or_create_program_activity(row, submission_attributes),
+            "disaster_emergency_fund": get_disaster_emergency_fund(row),
         }
-
         load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=True, reverse=reverse)
 
     FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 
     for key in skipped_tas:
-        logger.info("Skipped %d rows due to missing TAS: %s", skipped_tas[key]["count"], key)
+        logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
 
     total_tas_skipped = 0
     for key in skipped_tas:
         total_tas_skipped += skipped_tas[key]["count"]
 
-    logger.info("Skipped a total of {} TAS rows for File B".format(total_tas_skipped))
+    logger.info(f"Skipped a total of {total_tas_skipped:,} TAS rows for File B")
 
 
 def find_matching_award(piid=None, parent_piid=None, fain=None, uri=None):
@@ -525,11 +536,7 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
 
     for index, row in enumerate(certified_award_financial, 1):
         if not (index % 100):
-            logger.info(
-                "C File Load: Loading row {} of {} ({})".format(
-                    str(index), str(total_rows), datetime.now() - start_time
-                )
-            )
+            logger.info(f"C File Load: Loading row {index:,} of {total_rows:,} ({datetime.now() - start_time})")
 
         upper_case_dict_values(row)
 
@@ -573,18 +580,19 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
             "treasury_account": treasury_account,
             "object_class": row.get("object_class"),
             "program_activity": row.get("program_activity"),
+            "disaster_emergency_fund": get_disaster_emergency_fund(row),
         }
 
         # Still using the cpe|fyb regex compiled above for reverse
         load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
 
     for key in skipped_tas:
-        logger.info("Skipped %d rows due to missing TAS: %s", skipped_tas[key]["count"], key)
+        logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
 
     total_tas_skipped = 0
     for key in skipped_tas:
         total_tas_skipped += skipped_tas[key]["count"]
 
-    logger.info("Skipped a total of {} TAS rows for File C".format(total_tas_skipped))
+    logger.info(f"Skipped a total of {total_tas_skipped:,} TAS rows for File C")
 
     return [award.id for award in awards_touched if award]
