@@ -242,9 +242,7 @@ SELECT
   TREASURY_ACCT.tas_components,
   FEDERAL_ACCT.federal_accounts,
   UTM.business_categories,
-  FEDERAL_ACCT.defc as disaster_emergency_fund_codes,
-  FEDERAL_ACCT.total_covid_obligations,
-  FEDERAL_ACCT.total_covid_outlays
+  FEDERAL_ACCT.defc as disaster_emergency_fund_codes
 
 FROM universal_transaction_matview UTM
 INNER JOIN transaction_normalized TN ON (UTM.transaction_id = TN.id)
@@ -355,9 +353,7 @@ LEFT JOIN (
         'federal_account_code', fa.federal_account_code
       )
     ) federal_accounts,
-    ARRAY_AGG(disaster_emergency_fund_code) defc,
-    SUM(CASE WHEN disaster_emergency_fund_code in ('L', 'M', 'N', 'O', 'P') then gross_outlay_amount_by_award_cpe else 0 end) total_covid_outlays,
-    SUM(CASE WHEN disaster_emergency_fund_code in ('L', 'M', 'N', 'O', 'P') then transaction_obligated_amount else 0 end) total_covid_obligations
+    ARRAY_AGG(disaster_emergency_fund_code) defc
   FROM
     federal_account fa
     INNER JOIN treasury_appropriation_account taa ON fa.id = taa.federal_account_id

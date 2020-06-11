@@ -111,9 +111,7 @@ VIEW_COLUMNS = [
     "tas_components",
     "federal_accounts",
     "business_categories",
-    "disaster_emergency_fund_codes",
-    "total_covid_obligations",
-    "total_covid_outlays"
+    "disaster_emergency_fund_codes"
 ]
 AWARD_VIEW_COLUMNS = [
     "award_id",
