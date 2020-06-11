@@ -8,6 +8,7 @@ class DisasterEmergencyFundCode(models.Model):
     public_law = models.TextField(null=False)
     title = models.TextField(null=True)
     group_name = models.TextField(null=True)
+    urls = models.TextField(null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
