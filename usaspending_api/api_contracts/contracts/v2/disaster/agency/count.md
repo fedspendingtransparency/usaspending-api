@@ -18,17 +18,20 @@ This endpoint returns a count of Agencies
             }
 
     + Attributes
-        + `def_codes` (required, array[DEFC], fixed-type)
-        + `fiscal_year` (required, number)
-        + `spending_type` (required, enum[string], fixed-type)
-            + Members
-                + `total`
-                + `award`
-        + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
+        + `filter` (required, Filter, fixed-type)
+
+    + Body
+
+            {
+                "filter": {
+                    "fiscal_year": 2020,
+                    "def_codes": ["L", "M", "N"]
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `count` (required, number, fixed-type)
+        + `count` (required, number)
     + Body
 
             {
@@ -36,6 +39,12 @@ This endpoint returns a count of Agencies
             }
 
 # Data Structures
+
+## Filter (object)
++ `def_codes` (required, array[DEFC], fixed-type)
++ `fiscal_year` (required, number)
++ `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
+    Defaults to all Award Type Codes. Applicable only when requested `award` spending.
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing

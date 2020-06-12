@@ -18,9 +18,7 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
             }
 
     + Attributes
-        + `def_codes` (required, array[DEFC], fixed-type)
-        + `fiscal_year` (required, number)
-        + `award_type_codes` (required, array[AwardTypeCodes], fixed-type)
+        + `filter` (required, Filter, fixed-type)
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -35,6 +33,13 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
 
 
 # Data Structures
+
+## Filter (object)
++ `def_codes` (required, array[DEFC], fixed-type)
++ `fiscal_year` (required, number)
++ `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
+    Defaults to all Award Type Codes. Applicable only when requested `award` spending.
+
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing

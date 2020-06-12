@@ -19,7 +19,6 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
-        + `spending_facets` (required, array[Spending], fixed-type)
         + `pagination` (optional, Pagination, fixed-type)
 
 + Response 200 (application/json)
@@ -68,6 +67,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 + `def_codes` (required, array[DEFC], fixed-type)
 + `fiscal_year` (required, number)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
+    Defaults to all Award Type Codes. Applicable only when requested `award` spending.
 + `query` (optional, string)
     A "keyword" or "search term" to filter down results based on this text snippet
 
@@ -87,17 +87,15 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 + `sort` (optional, string)
     Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
 
-
 ## Result (object)
-+ `id`
-+ `code`
-+ `description`
-+ `children` (optional, array[Result])
-+ `count` (required, number, fixed-type)
-+ `award_obligation` (optional, number, nullable)
-+ `award_outlay` (optional, number, nullable)
-+ `total_obligation` (optional, number, nullable)
-+ `total_outlay` (optional, number, nullable)
++ `id` (required, string)
++ `code` (required, string)
++ `description` (required, string)
++ `children` (optional, array[Result], fixed-type)
++ `count` (required, number)
++ `obligation` (required, number, nullable)
++ `outlay` (required, number, nullable)
++ `total_budgetary_resources` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)
@@ -107,19 +105,6 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 + `hasPrevious` (required, boolean)
 + `total` (required, number)
 + `limit` (required, number)
-
-## Spending (enum[string])
-+ `award_obligation`
-    Obligation amount captured by File D award data
-+ `award_outlay`
-    Outlay amount captured by File D award data
-+ `total_obligation`
-    Total obligation amount captured by File C award data
-+ `total_outlay`
-    Total outlay amount captured by File C award data
-
-
-# Data Structures
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
