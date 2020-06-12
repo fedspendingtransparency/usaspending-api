@@ -3,7 +3,7 @@ import logging
 
 from collections import OrderedDict
 from decimal import Decimal
-from django.db.models import Sum, F, Subquery, Max
+from django.db.models import Sum, F, Subquery
 from typing import Optional
 
 from usaspending_api.awards.models import (
@@ -24,6 +24,7 @@ from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict
 from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
 from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
+from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 from usaspending_api.references.models import Agency, Cfda, PSC, NAICS, SubtierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -588,42 +589,76 @@ def fetch_naics_hierarchy(naics: str) -> dict:
 
 
 def fetch_account_details_award(award_id: int) -> dict:
-    query = (
-        FinancialAccountsByAwards.objects.filter(award_id=award_id)
-        .values("disaster_emergency_fund", "submission__reporting_fiscal_year")
-        .annotate(
-            fiscal_period=Max("submission__reporting_fiscal_period"),
-            gross_outlay_amount_by_award_cpe=Max("gross_outlay_amount_by_award_cpe"),
-            obligated_amount=Sum("transaction_obligated_amount"),
+    defc_sql = """
+    with closed_covid_periods as (
+        select distinct concat(p.reporting_fiscal_year::text, lpad(p.reporting_fiscal_period::text, 2, '0')) as fyp, p.reporting_fiscal_year, p.reporting_fiscal_period
+        from submission_attributes p
+        order by p.reporting_fiscal_year desc, p.reporting_fiscal_period desc
+    ),
+    eligible_submissions as (
+        select *
+        from submission_attributes s
+        where concat(s.reporting_fiscal_year::text, lpad(s.reporting_fiscal_period::text, 2, '0')) in (
+            select fyp from closed_covid_periods
         )
+    ),
+    eligible_file_c_records as (
+        select
+            faba.award_id,
+            faba.gross_outlay_amount_by_award_cpe,
+            faba.transaction_obligated_amount,
+            faba.disaster_emergency_fund_code,
+            s.reporting_fiscal_year,
+            s.reporting_fiscal_period
+        from financial_accounts_by_awards faba
+        inner join eligible_submissions s on s.submission_id = faba.submission_id
+        and faba.award_id is not null
+    ),
+    fy_final_balances as (
+        -- Rule: If a balance is not zero at the end of the year, it must be reported in the
+        -- final period's submission (month or quarter), otherwise assume it to be zero
+        select faba.award_id, sum(faba.gross_outlay_amount_by_award_cpe) as prior_fys_outlay
+        from eligible_file_c_records faba
+        group by
+            faba.award_id,
+            faba.reporting_fiscal_period
+        having faba.reporting_fiscal_period = 12
+        and sum(faba.gross_outlay_amount_by_award_cpe) > 0
+    ),
+    current_fy_balance as (
+        select
+            faba.award_id,
+            faba.reporting_fiscal_year,
+            faba.reporting_fiscal_period,
+            sum(faba.gross_outlay_amount_by_award_cpe) as current_fy_outlay
+        from eligible_file_c_records faba
+        group by
+            faba.award_id,
+            faba.reporting_fiscal_year,
+            faba.reporting_fiscal_period
+        having concat(faba.reporting_fiscal_year::text, lpad(faba.reporting_fiscal_period::text, 2, '0')) in
+            (select max(fyp) from closed_covid_periods)
+        and sum(faba.gross_outlay_amount_by_award_cpe) > 0
     )
+    select faba.award_id, coalesce(ffy.prior_fys_outlay, 0) + coalesce(cfy.current_fy_outlay, 0) as total_outlay, sum(faba.transaction_obligated_amount) as obligated_amount, faba.disaster_emergency_fund_code
+    from eligible_file_c_records faba
+    left join fy_final_balances ffy on ffy.award_id = faba.award_id
+    left join current_fy_balance cfy
+        on cfy.reporting_fiscal_period != 12 -- don't duplicate the year-end period's value if in unclosed period 01
+        and cfy.award_id = faba.award_id
+    where faba.award_id = '{award_id}'
+    group by faba.disaster_emergency_fund_code, faba.award_id, total_outlay;
+    """
+    results = execute_sql_to_ordered_dictionary(defc_sql.format(award_id=award_id))
+    outlay_by_code = []
+    obligation_by_code = []
     total_outlay = 0
     total_obligations = 0
-    outlay_results = {}
-    obligated_results = {}
-    for row in query:
-        total_outlay += (
-            row["gross_outlay_amount_by_award_cpe"] if row["gross_outlay_amount_by_award_cpe"] is not None else 0
-        )
+    for row in results:
+        total_outlay += row["total_outlay"] if row["total_outlay"] is not None else 0
         total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
-        outlay_results.update(
-            {
-                row["disaster_emergency_fund"]: row["gross_outlay_amount_by_award_cpe"]
-                + outlay_results.get(row["disaster_emergency_fund"])
-                if outlay_results.get(row["disaster_emergency_fund"]) is not None
-                else 0
-            }
-        )
-        obligated_results.update(
-            {
-                row["disaster_emergency_fund"]: row["obligated_amount"]
-                + obligated_results.get(row["disaster_emergency_fund"])
-                if obligated_results.get(row["disaster_emergency_fund"]) is not None
-                else 0
-            }
-        )
-    outlay_by_code = [{"code": x, "amount": y} for x, y in outlay_results.items()]
-    obligation_by_code = [{"code": x, "amount": y} for x, y in obligated_results.items()]
+        outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
+        obligation_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]})
     results = {
         "total_account_outlay": total_outlay,
         "total_account_obligation": total_obligations,
