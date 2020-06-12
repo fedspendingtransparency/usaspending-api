@@ -10,6 +10,7 @@ from elasticsearch_dsl import A
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.models import UniversalTransactionView
@@ -258,17 +259,19 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
     if bucket_count == 0:
         return []
 
-    group_by_recipient = A("terms", field=group_by_field, size=bucket_count, shard_size=bucket_count)
+    # Not setting the shard_size since the number of child recipients under a
+    # parent recipient will not exceed 10k
+    group_by_recipient = A("terms", field=group_by_field, size=bucket_count)
+
     sum_obligation = get_scaled_sum_aggregations("generated_pragmatic_obligation")["sum_field"]
+
+    filter_loans = A("filter", terms={"type": list(loan_type_mapping.keys())})
     sum_face_value_loan = get_scaled_sum_aggregations("face_value_loan_guarantee")["sum_field"]
-    obligation_count = A("value_count", field="generated_pragmatic_obligation")
-    face_value_loan_count = A("value_count", field="face_value_loan_guarantee")
 
     search.aggs.bucket("group_by_recipient", group_by_recipient)
     search.aggs["group_by_recipient"].metric("sum_obligation", sum_obligation)
-    search.aggs["group_by_recipient"].metric("sum_face_value_loan", sum_face_value_loan)
-    search.aggs["group_by_recipient"].metric("obligation_count", obligation_count)
-    search.aggs["group_by_recipient"].metric("face_value_loan_count", face_value_loan_count)
+    search.aggs["group_by_recipient"].bucket("filter_loans", filter_loans)
+    search.aggs["group_by_recipient"]["filter_loans"].metric("sum_face_value_loan", sum_face_value_loan)
 
     response = search.handle_execute()
     response_as_dict = response.aggs.to_dict()
@@ -286,13 +289,14 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
                 "recipient_unique_id": recipient_info.get("unique_id") or None,
                 "recipient_name": recipient_info.get("name") or None,
             }
+        loan_info = bucket.get("filter_loans", {})
         result.update(
             {
                 "total_obligation_amount": int(bucket.get("sum_obligation", {"value": 0})["value"]) / Decimal("100"),
-                "total_obligation_count": bucket.get("obligation_count", {"value": 0})["value"],
-                "total_face_value_loan_amount": int(bucket.get("sum_face_value_loan", {"value": 0})["value"])
+                "total_obligation_count": bucket.get("doc_count", 0),
+                "total_face_value_loan_amount": int(loan_info.get("sum_face_value_loan", {"value": 0})["value"])
                 / Decimal("100"),
-                "total_face_value_loan_count": bucket.get("face_value_loan_count", {"value": 0})["value"],
+                "total_face_value_loan_count": loan_info.get("doc_count", 0),
             }
         )
         result_list.append(result)
