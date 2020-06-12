@@ -24,9 +24,7 @@ def _stage_table_mock(source, destination, staging):
     connection = get_connection(read_only=False)
     with connection.cursor() as cursor:
         cursor.execute("drop table if exists temp_load_subawards_broker_subaward")
-        cursor.execute(
-            "create table temp_load_subawards_broker_subaward as " "select * from broker_subaward where 0 = 1"
-        )
+        cursor.execute("create table temp_load_subawards_broker_subaward as select * from broker_subaward where 0 = 1")
         for record in SAMPLE_DATA:
             columns = record.keys()
             values = tuple(record[column] for column in columns)
