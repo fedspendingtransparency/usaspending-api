@@ -1,4 +1,5 @@
 import logging
+import re
 
 from collections import OrderedDict
 
@@ -105,6 +106,7 @@ grandchild_award_sql = """
 
 
 def fetch_account_details_idv(award_id, award_id_column) -> dict:
+    award_id = re.sub(r"[']", r"''", award_id)
     children = execute_sql_to_ordered_dictionary(
         child_award_sql.format(award_id=award_id, award_id_column=award_id_column)
     )
