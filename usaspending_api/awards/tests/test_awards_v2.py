@@ -1085,7 +1085,7 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 100.0}]
 
-    mommy.make("submissions.SubmissionAttributes", pk=3, reporting_fiscal_period=12, reporting_fiscal_year=2019)
+    mommy.make("submissions.SubmissionAttributes", pk=2, reporting_fiscal_period=12, reporting_fiscal_year=2019)
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
@@ -1100,7 +1100,7 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 200.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 200.0}]
 
-    mommy.make("submissions.SubmissionAttributes", pk=1, reporting_fiscal_period=9, reporting_fiscal_year=2019)
+    mommy.make("submissions.SubmissionAttributes", pk=3, reporting_fiscal_period=9, reporting_fiscal_year=2019)
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
