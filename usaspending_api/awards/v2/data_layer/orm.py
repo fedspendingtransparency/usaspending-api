@@ -587,8 +587,7 @@ def fetch_naics_hierarchy(naics: str) -> dict:
     return results
 
 
-def fetch_account_details_award(award_id: int) -> dict:
-    defc_sql = """
+defc_sql = """
     with closed_periods as (
         -- This is NOT right, since period dates are not the same as submission window close dates,
         -- but an approximation for illustration purposes until we have the reporting dates table up
@@ -648,24 +647,28 @@ def fetch_account_details_award(award_id: int) -> dict:
     select
         faba.disaster_emergency_fund_code,
         coalesce(ffy.prior_fys_outlay, 0) + coalesce(cfy.current_fy_outlay, 0) as total_outlay,
-        sum(faba.transaction_obligated_amount) as obligated_amount
+        coalesce(sum(faba.transaction_obligated_amount), 0) as obligated_amount
     from eligible_file_c_records faba
     left join fy_final_balances ffy on ffy.award_id = faba.award_id and ffy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code
     left join current_fy_balance cfy
         on cfy.reporting_fiscal_period != 12 -- don't duplicate the year-end period's value if in unclosed period 01
         and cfy.award_id = faba.award_id
         and cfy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code
-    where faba.award_id = '{award_id}'
+    where faba.disaster_emergency_fund_code is not null and {award_id_sql}
     group by faba.disaster_emergency_fund_code, total_outlay;
     """
-    results = execute_sql_to_ordered_dictionary(defc_sql.format(award_id=award_id))
+
+
+def fetch_account_details_award(award_id: int) -> dict:
+    award_id_sql = "faba.award_id = {award_id}".format(award_id=award_id)
+    results = execute_sql_to_ordered_dictionary(defc_sql.format(award_id_sql=award_id_sql))
     outlay_by_code = []
     obligation_by_code = []
     total_outlay = 0
     total_obligations = 0
     for row in results:
-        total_outlay += row["total_outlay"] if row["total_outlay"] is not None else 0
-        total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
+        total_outlay += row["total_outlay"]
+        total_obligations += row["obligated_amount"]
         outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
         obligation_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]})
     results = {
