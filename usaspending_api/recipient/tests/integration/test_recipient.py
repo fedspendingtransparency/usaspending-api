@@ -10,6 +10,8 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.recipient.v2.views import recipients
 
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
 TODAY = datetime.datetime.now()
 INSIDE_OF_LATEST = TODAY - datetime.timedelta(365 - 2)
 
@@ -156,9 +158,17 @@ TEST_RECIPIENT_PROFILES = {
     },
 }
 TEST_SUMMARY_TRANSACTION_NORMALIZED = {
-    "latest": {"action_date": INSIDE_OF_LATEST, "federal_action_obligation": 100},
-    "FY2016": {"action_date": datetime.datetime(2015, 10, 1), "federal_action_obligation": 50},
-    "FY2008": {"action_date": datetime.datetime(2007, 10, 1), "federal_action_obligation": 200},
+    "latest": {"action_date": INSIDE_OF_LATEST, "federal_action_obligation": 100, "face_value_loan_guarantee": 1000},
+    "FY2016": {
+        "action_date": datetime.datetime(2015, 10, 1),
+        "federal_action_obligation": 50,
+        "face_value_loan_guarantee": 500,
+    },
+    "FY2008": {
+        "action_date": datetime.datetime(2007, 10, 1),
+        "federal_action_obligation": 200,
+        "face_value_loan_guarantee": 2000,
+    },
 }
 
 TEST_SUMMARY_TRANSACTION_FPDS = {
@@ -386,7 +396,7 @@ def test_extract_business_categories_special():
 
 
 @pytest.mark.django_db
-def test_obtain_recipient_totals_year():
+def test_obtain_recipient_totals_year(monkeypatch, elasticsearch_transaction_index):
     """ Testing recipient totals with different year values """
     # Testing with specific child
     recipient_id = "392052ae-92ab-f3f4-d9fa-b57f45b7750b-C"
@@ -412,30 +422,32 @@ def test_obtain_recipient_totals_year():
     associated_recipient_profile["last_12_months_count"] = 1
     mommy.make("recipient.RecipientProfile", **associated_recipient_profile)
 
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     # Latest
-    expected_total = 100
-    expected_count = 1
-    results = recipients.obtain_recipient_totals(recipient_id, year="latest", subawards=False)
-    assert results[0]["total"] == expected_total
-    assert results[0]["count"] == expected_count
+    results = recipients.obtain_recipient_totals(recipient_id, year="latest")
+    assert results[0]["total_obligation_amount"] == 100
+    assert results[0]["total_obligation_count"] == 1
+    assert results[0]["total_face_value_loan_amount"] == 1000
+    assert results[0]["total_face_value_loan_count"] == 1
 
     # All
-    expected_total = 350
-    expected_count = 3
-    results = recipients.obtain_recipient_totals(recipient_id, year="all", subawards=False)
-    assert results[0]["total"] == expected_total
-    assert results[0]["count"] == expected_count
+    results = recipients.obtain_recipient_totals(recipient_id, year="all")
+    assert results[0]["total_obligation_amount"] == 350
+    assert results[0]["total_obligation_count"] == 3
+    assert results[0]["total_face_value_loan_amount"] == 3500
+    assert results[0]["total_face_value_loan_count"] == 3
 
     # FY2016
-    expected_total = 50
-    expected_count = 1
-    results = recipients.obtain_recipient_totals(recipient_id, year="2016", subawards=False)
-    assert results[0]["total"] == expected_total
-    assert results[0]["count"] == expected_count
+    results = recipients.obtain_recipient_totals(recipient_id, year="2016")
+    assert results[0]["total_obligation_amount"] == 50
+    assert results[0]["total_obligation_count"] == 1
+    assert results[0]["total_face_value_loan_amount"] == 500
+    assert results[0]["total_face_value_loan_count"] == 1
 
 
 @pytest.mark.django_db
-def test_obtain_recipient_totals_parent():
+def test_obtain_recipient_totals_parent(monkeypatch, elasticsearch_transaction_index):
     """ Testing recipient totals with parent child relationships """
     # Testing with specific parent/child ids
     parent_id = "00077a9a-5a70-8919-fd19-330762af6b84-P"
@@ -450,11 +462,13 @@ def test_obtain_recipient_totals_parent():
     # load recipient lookup
     create_recipient_lookup_test_data(*TEST_RECIPIENT_LOOKUPS.values())
 
-    expected_total = 150
-    expected_count = 2
-    results = recipients.obtain_recipient_totals(parent_id, year="all", subawards=False)
-    assert results[0]["total"] == expected_total
-    assert results[0]["count"] == expected_count
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    results = recipients.obtain_recipient_totals(parent_id, year="all")
+    assert results[0]["total_obligation_amount"] == 150
+    assert results[0]["total_obligation_count"] == 2
+    assert results[0]["total_face_value_loan_amount"] == 1500
+    assert results[0]["total_face_value_loan_count"] == 2
 
 
 def recipient_overview_endpoint(id, year="latest"):
@@ -465,7 +479,7 @@ def recipient_overview_endpoint(id, year="latest"):
 
 
 @pytest.mark.django_db
-def test_recipient_overview(client):
+def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index):
     """ Testing a simple example of the endpoint as a whole """
     r_id = "00077a9a-5a70-8919-fd19-330762af6b84-C"
 
@@ -489,6 +503,8 @@ def test_recipient_overview(client):
         country_code = test_duns_model["country_code"]
         mommy.make("recipient.DUNS", **test_duns_model)
         mommy.make("references.RefCountryCode", **TEST_REF_COUNTRY_CODE[country_code])
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.get(recipient_overview_endpoint(r_id))
     assert resp.status_code == status.HTTP_200_OK
@@ -526,6 +542,8 @@ def test_recipient_overview(client):
         },
         "total_transaction_amount": 100,
         "total_transactions": 1,
+        "total_face_value_loan_amount": 1000,
+        "total_face_value_loan_transactions": 1,
     }
     # testing for equality-only, order unnecessary
     resp.data["business_types"] = sorted(resp.data["business_types"])
@@ -553,7 +571,7 @@ def recipient_children_endpoint(duns, year="latest"):
 
 
 @pytest.mark.django_db
-def test_child_recipient_success(client):
+def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_index):
     """ Testing successful child recipient calls """
     child1_id = "00077a9a-5a70-8919-fd19-330762af6b84-C"
     parent_child1_duns = "000000001"
@@ -568,6 +586,8 @@ def test_child_recipient_success(client):
 
     # Mock Transactions
     create_transaction_test_data(TEST_SUMMARY_TRANSACTION_NORMALIZED.values(), TEST_SUMMARY_TRANSACTION_FPDS.values())
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     # Ignoring nonexistent child duns - 000000005
     child1_object = {

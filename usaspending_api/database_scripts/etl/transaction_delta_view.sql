@@ -78,9 +78,15 @@ SELECT
   AWD.fiscal_year AS award_fiscal_year,
   UTM.award_amount,
   UTM.federal_action_obligation AS transaction_amount,
-  UTM.face_value_loan_guarantee,
+  CASE
+    WHEN UTM.face_value_loan_guarantee = 0 THEN NULL
+    ELSE UTM.face_value_loan_guarantee
+  END AS face_value_loan_guarantee,
   UTM.original_loan_subsidy_cost,
-  UTM.generated_pragmatic_obligation,
+  CASE
+    WHEN UTM.generated_pragmatic_obligation = 0 THEN NULL
+    ELSE UTM.generated_pragmatic_obligation
+  END AS generated_pragmatic_obligation,
 
   UTM.awarding_agency_id,
   UTM.funding_agency_id,

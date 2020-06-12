@@ -1,12 +1,18 @@
+import json
 import logging
 import uuid
 
-from django.db.models import F, Sum
+from decimal import Decimal
+
+from django.db.models import F
 from django.conf import settings
+from elasticsearch_dsl import A
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.models import UniversalTransactionView
-from usaspending_api.awards.v2.filters.view_selector import recipient_totals
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -14,7 +20,7 @@ from usaspending_api.recipient.models import RecipientProfile, RecipientLookup, 
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters, get_duns_business_types_mapping
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode
-
+from usaspending_api.search.v2.elasticsearch_helper import get_scaled_sum_aggregations, get_number_of_unique_terms
 
 logger = logging.getLogger(__name__)
 
@@ -225,47 +231,73 @@ def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
     return sorted(business_categories)
 
 
-def obtain_recipient_totals(recipient_id, children=False, year="latest", subawards=False):
+def obtain_recipient_totals(recipient_id, children=False, year="latest"):
     """ Extract the total amount and transaction count for the recipient_hash given the timeframe
 
         Args:
             recipient_id: string of hash(duns, name)-[recipient-level]
             children: whether or not to group by children
             year: the year the totals/counts are based on
-            subawards: whether to total based on subawards
         Returns:
             list of dictionaries representing hashes and their totals/counts
     """
-    if year == "latest" and children is False:
-        # Simply pull the total and count from RecipientProfile
-        recipient_hash = recipient_id[:-2]
-        recipient_level = recipient_id[-1]
-        results = list(
-            RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level)
-            .annotate(total=F("last_12_months"), count=F("last_12_months_count"))
-            .values("recipient_hash", "recipient_unique_id", "recipient_name", "total", "count")
-        )
+    filters = reshape_filters(recipient_id=recipient_id, year=year)
+    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters)
 
+    search = TransactionSearch().filter(filter_query)
+
+    if children:
+        group_by_field = "recipient_agg_key"
+    elif recipient_id[-2:] == "-P":
+        group_by_field = "parent_recipient_hash"
     else:
-        filters = reshape_filters(recipient_id=recipient_id, year=year)
-        queryset, model = recipient_totals(filters)
+        group_by_field = "recipient_hash"
+
+    bucket_count = get_number_of_unique_terms(filter_query, f"{group_by_field}.hash")
+
+    if bucket_count == 0:
+        return []
+
+    group_by_recipient = A("terms", field=group_by_field, size=bucket_count, shard_size=bucket_count)
+    sum_obligation = get_scaled_sum_aggregations("generated_pragmatic_obligation")["sum_field"]
+    sum_face_value_loan = get_scaled_sum_aggregations("face_value_loan_guarantee")["sum_field"]
+    obligation_count = A("value_count", field="generated_pragmatic_obligation")
+    face_value_loan_count = A("value_count", field="face_value_loan_guarantee")
+
+    search.aggs.bucket("group_by_recipient", group_by_recipient)
+    search.aggs["group_by_recipient"].metric("sum_obligation", sum_obligation)
+    search.aggs["group_by_recipient"].metric("sum_face_value_loan", sum_face_value_loan)
+    search.aggs["group_by_recipient"].metric("obligation_count", obligation_count)
+    search.aggs["group_by_recipient"].metric("face_value_loan_count", face_value_loan_count)
+
+    response = search.handle_execute()
+    response_as_dict = response.aggs.to_dict()
+    recipient_info_buckets = response_as_dict.get("group_by_recipient", {}).get("buckets", [])
+
+    result_list = []
+
+    for bucket in recipient_info_buckets:
+        result = {}
         if children:
-            # Group by the child recipients
-            queryset = (
-                queryset.values("recipient_hash", "recipient_unique_id", "recipient_name")
-                .annotate(total=Sum("generated_pragmatic_obligation"), count=Sum("counts"))
-                .values("recipient_hash", "recipient_unique_id", "recipient_name", "total", "count")
-            )
-            results = list(queryset)
-        else:
-            # Calculate the overall totals
-            aggregates = queryset.aggregate(total=Sum("generated_pragmatic_obligation"), count=Sum("counts"))
-            aggregates.update({"recipient_hash": recipient_id[:-2]})
-            results = [aggregates]
-    for result in results:
-        result["count"] = result["count"] if result["count"] else 0
-        result["total"] = result["total"] if result["total"] else 0
-    return results
+            recipient_info = json.loads(bucket.get("key"))
+            hash_with_level = recipient_info.get("hash_with_level") or None
+            result = {
+                "recipient_hash": hash_with_level[:-2] if hash_with_level else None,
+                "recipient_unique_id": recipient_info.get("unique_id") or None,
+                "recipient_name": recipient_info.get("name") or None,
+            }
+        result.update(
+            {
+                "total_obligation_amount": int(bucket.get("sum_obligation", {"value": 0})["value"]) / Decimal("100"),
+                "total_obligation_count": bucket.get("obligation_count", {"value": 0})["value"],
+                "total_face_value_loan_amount": int(bucket.get("sum_face_value_loan", {"value": 0})["value"])
+                / Decimal("100"),
+                "total_face_value_loan_count": bucket.get("face_value_loan_count", {"value": 0})["value"],
+            }
+        )
+        result_list.append(result)
+
+    return result_list
 
 
 class RecipientOverView(APIView):
@@ -273,12 +305,11 @@ class RecipientOverView(APIView):
     This endpoint returns a high-level overview of a specific recipient, given its id.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns/recipient_id.md"
 
     @cache_response()
     def get(self, request, recipient_id):
-        get_request = request.query_params
-        year = validate_year(get_request.get("year", "latest"))
+        year = request.query_params.get("year", "latest")
         recipient_hash, recipient_level = validate_recipient_id(recipient_id)
         recipient_duns, recipient_name = extract_name_duns_from_hash(recipient_hash)
         if not (recipient_name or recipient_duns):
@@ -297,8 +328,8 @@ class RecipientOverView(APIView):
 
         location = extract_location(recipient_hash)
         business_types = extract_business_categories(recipient_name, recipient_duns, recipient_hash)
-        results = obtain_recipient_totals(recipient_id, year=year, subawards=False)
-        # subtotal, subcount = obtain_recipient_totals(recipient_hash, recipient_level, year=year, subawards=False)
+        results = obtain_recipient_totals(recipient_id, year=year)
+        recipient_totals = results[0] if results else {}
 
         parent_id, parent_name, parent_duns = None, None, None
         if parents:
@@ -318,10 +349,10 @@ class RecipientOverView(APIView):
             "parents": parents,
             "business_types": business_types,
             "location": location,
-            "total_transaction_amount": results[0]["total"] if results else 0,
-            "total_transactions": results[0]["count"] if results else 0,
-            # 'total_sub_transaction_amount': subtotal,
-            # 'total_sub_transaction_total': subcount
+            "total_transaction_amount": recipient_totals.get("total_obligation_amount", 0),
+            "total_transactions": recipient_totals.get("total_obligation_count", 0),
+            "total_face_value_loan_amount": recipient_totals.get("total_face_value_loan_amount", 0),
+            "total_face_value_loan_transactions": recipient_totals.get("total_face_value_loan_count", 0),
         }
         return Response(result)
 
@@ -357,7 +388,7 @@ class ChildRecipients(APIView):
         if not parent_hash:
             raise InvalidParameterException("DUNS not found: '{}'.".format(duns))
 
-        totals = list(obtain_recipient_totals("{}-P".format(parent_hash), children=True, year=year, subawards=False))
+        totals = obtain_recipient_totals("{}-P".format(parent_hash), children=True, year=year)
 
         # Get child info for each child DUNS
         results = []
@@ -367,7 +398,7 @@ class ChildRecipients(APIView):
                     "recipient_id": "{}-C".format(total["recipient_hash"]),
                     "name": total["recipient_name"],
                     "duns": total["recipient_unique_id"],
-                    "amount": total["total"],
+                    "amount": total["total_obligation_amount"],
                 }
             )
         # Add children recipients without totals in this time period (if we already got all, ignore)
