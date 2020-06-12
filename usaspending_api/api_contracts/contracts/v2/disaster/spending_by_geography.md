@@ -45,13 +45,13 @@ This endpoint provides geographical spending information from emergency/disaster
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `geo_layer` (required, enum[string])
+        + `geo_layer` (required, enum[string], fixed-type)
             + Members
                 + `state`
                 + `county`
                 + `district`
         + `results` (array[GeographyTypeResult], fixed-type)
-        + `messages` (optional, array[string])
+        + `messages` (optional, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 

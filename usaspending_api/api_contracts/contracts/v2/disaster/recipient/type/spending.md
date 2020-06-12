@@ -17,6 +17,11 @@ This endpoint provides insights on the Recipient Types which received disaster/e
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
+        + `geo_layer` (required, enum[string], fixed-type)
+            + Members
+                + `state`
+                + `county`
+                + `district`
         + `pagination` (optional, Pagination, fixed-type)
 
 + Response 200 (application/json)
@@ -31,21 +36,19 @@ This endpoint provides insights on the Recipient Types which received disaster/e
                 "results": [
                     {
                         "id": 43,
-                        "code": "090",
-                        "description": "Description text",
+                        "code": "ND-01",
+                        "description": "North Dakota Congressional District 1",
                         "count": 54,
                         "obligation": 89.01,
-                        "outlay": 70.98,
-                        "total_budgetary_resources": null
+                        "outlay": 76205
                     },
                     {
                         "id": 41,
-                        "code": "012",
-                        "description": "Description text",
+                        "code": "ND-02",
+                        "description": "North Dakota Congressional District 2",
                         "count": 2,
                         "obligation": 50,
-                        "outlay": 10,
-                        "total_budgetary_resources": null
+                        "outlay": 10
                     }
                 ],
                 "pagination_metadata": {
@@ -66,8 +69,6 @@ This endpoint provides insights on the Recipient Types which received disaster/e
 + `fiscal_year` (required, number)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
     Defaults to all Award Type Codes. Applicable only when requested `award` spending.
-+ `query` (optional, string)
-    A "keyword" or "search term" to filter down results based on this text snippet
 
 ## Pagination (object)
 + `page` (optional, number)
@@ -87,12 +88,15 @@ This endpoint provides insights on the Recipient Types which received disaster/e
 
 ## Result (object)
 + `id` (required, string)
+    Unique identifier which might be useful for links to resources
 + `code` (required, string)
+    Unique or non-unique value which is the technical name of the result
 + `description` (required, string)
+    Display Text for humans
 + `count` (required, number)
+    Number of Awards
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
-+ `total_budgetary_resources` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)
