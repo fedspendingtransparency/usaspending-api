@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# CFDA Programs Spending Disaster/Emergency Funding [/api/v2/disaster/cfda/spending/]
+# Agencies Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/agency/loans/]
 
-This endpoint provides insights on the CFDA Programs which received disaster/emergency funding per the requested filters.
+This endpoint provides insights on the Agencies awarding loans from disaster/emergency funding per the requested filters.
 
 ## POST
 
-Returns spending details of CFDA receiving supplemental funding budgetary resources
+Returns loan spending details of Agencies receiving supplemental funding budgetary resources
 
 + Request (application/json)
     + Schema
@@ -19,11 +19,6 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
-        + `spending_type` (required, enum[string], fixed-type)
-            Toggle if the outlay and obligation response values are total or only from awards
-            + Members
-                + `total`
-                + `award`
         + `pagination` (optional, Pagination, fixed-type)
 
 + Response 200 (application/json)
@@ -39,22 +34,18 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                     {
                         "id": 43,
                         "code": "090",
-                        "description": "Description text",
+                        "description": "Description text of 090, for humans",
                         "children": [],
                         "count": 54,
-                        "obligation": 89.01,
-                        "outlay": 70.98,
-                        "total_budgetary_resources": null
+                        "face_value_of_loan": 89.01
                     },
                     {
                         "id": 41,
                         "code": "012",
-                        "description": "Description text",
+                        "description": "Description text of 012, for humans",
                         "children": [],
                         "count": 2,
-                        "obligation": 50,
-                        "outlay": 10,
-                        "total_budgetary_resources": null
+                        "face_value_of_loan": 50
                     }
                 ],
                 "pagination_metadata": {
@@ -73,8 +64,6 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
 + `fiscal_year` (required, number)
-+ `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-    Defaults to all Award Type Codes. Applicable only when requested `award` spending.
 + `query` (optional, string)
     A "keyword" or "search term" to filter down results based on this text snippet
 
@@ -100,9 +89,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
-+ `obligation` (required, number, nullable)
-+ `outlay` (required, number, nullable)
-+ `total_budgetary_resources` (required, number, nullable)
++ `face_value_of_loan` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)
@@ -138,30 +125,3 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `S`
 + `T`
 + `9`
-
-## AwardTypeCodes (enum[string])
-List of procurement and assistance award type codes supported by USAspending.gov
-
-### Members
-+ `02`
-+ `03`
-+ `04`
-+ `05`
-+ `06`
-+ `07`
-+ `08`
-+ `09`
-+ `10`
-+ `11`
-+ `A`
-+ `B`
-+ `C`
-+ `D`
-+ `IDV_A`
-+ `IDV_B_A`
-+ `IDV_B_B`
-+ `IDV_B_C`
-+ `IDV_B`
-+ `IDV_C`
-+ `IDV_D`
-+ `IDV_E`

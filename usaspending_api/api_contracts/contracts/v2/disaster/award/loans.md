@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# CFDA Programs Spending Disaster/Emergency Funding [/api/v2/disaster/cfda/spending/]
+# Awards Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/award/loans/]
 
-This endpoint provides insights on the CFDA Programs which received disaster/emergency funding per the requested filters.
+This endpoint provides insights on the Agencies awarding loans from disaster/emergency funding per the requested filters.
 
 ## POST
 
-Returns spending details of CFDA receiving supplemental funding budgetary resources
+Returns loan spending details of Agencies receiving supplemental funding budgetary resources
 
 + Request (application/json)
     + Schema
@@ -19,11 +19,6 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
-        + `spending_type` (required, enum[string], fixed-type)
-            Toggle if the outlay and obligation response values are total or only from awards
-            + Members
-                + `total`
-                + `award`
         + `pagination` (optional, Pagination, fixed-type)
 
 + Response 200 (application/json)
@@ -39,22 +34,18 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                     {
                         "id": 43,
                         "code": "090",
-                        "description": "Description text",
+                        "description": "Description text of 090, for humans",
                         "children": [],
                         "count": 54,
-                        "obligation": 89.01,
-                        "outlay": 70.98,
-                        "total_budgetary_resources": null
+                        "face_value_of_loan": 89.01
                     },
                     {
                         "id": 41,
                         "code": "012",
-                        "description": "Description text",
+                        "description": "Description text of 012, for humans",
                         "children": [],
                         "count": 2,
-                        "obligation": 50,
-                        "outlay": 10,
-                        "total_budgetary_resources": null
+                        "face_value_of_loan": 50
                     }
                 ],
                 "pagination_metadata": {
@@ -100,9 +91,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
-+ `obligation` (required, number, nullable)
-+ `outlay` (required, number, nullable)
-+ `total_budgetary_resources` (required, number, nullable)
++ `face_value_of_loan` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)

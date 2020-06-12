@@ -39,20 +39,22 @@ Returns spending details of Object Classes receiving supplemental funding budget
                     {
                         "id": 43,
                         "code": "090",
-                        "description": "Description text of 090, for humans",
+                        "description": "Description text",
                         "children": [],
                         "count": 54,
-                        "award_obligation": 89.01,
-                        "award_outlay": 70.98
+                        "obligation": 89.01,
+                        "outlay": 70.98,
+                        "total_budgetary_resources": null
                     },
                     {
                         "id": 41,
                         "code": "012",
-                        "description": "Description text of 012, for humans",
+                        "description": "Description text",
                         "children": [],
                         "count": 2,
-                        "award_obligation": 50,
-                        "award_outlay": 10
+                        "obligation": 50,
+                        "outlay": 10,
+                        "total_budgetary_resources": null
                     }
                 ],
                 "pagination_metadata": {

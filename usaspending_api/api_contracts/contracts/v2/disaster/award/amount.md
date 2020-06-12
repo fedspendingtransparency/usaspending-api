@@ -40,7 +40,6 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
     Defaults to all Award Type Codes. Applicable only when requested `award` spending.
 
-
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
 

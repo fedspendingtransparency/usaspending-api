@@ -34,20 +34,20 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
                     {
                         "id": 43,
                         "code": "090",
-                        "description": "Description text of 090, for humans",
-                        "children": [],
+                        "description": "Description text",
                         "count": 54,
-                        "award_obligation": 89.01,
-                        "award_outlay": 70.98
+                        "obligation": 89.01,
+                        "outlay": 70.98,
+                        "total_budgetary_resources": null
                     },
                     {
                         "id": 41,
                         "code": "012",
-                        "description": "Description text of 012, for humans",
-                        "children": [],
+                        "description": "Description text",
                         "count": 2,
-                        "award_obligation": 50,
-                        "award_outlay": 10
+                        "obligation": 50,
+                        "outlay": 10,
+                        "total_budgetary_resources": null
                     }
                 ],
                 "pagination_metadata": {
@@ -91,7 +91,6 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 + `id` (required, string)
 + `code` (required, string)
 + `description` (required, string)
-+ `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
