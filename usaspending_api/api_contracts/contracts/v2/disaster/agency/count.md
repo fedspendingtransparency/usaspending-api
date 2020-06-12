@@ -44,7 +44,7 @@ This endpoint returns a count of Agencies
 + `def_codes` (required, array[DEFC], fixed-type)
 + `fiscal_year` (required, number)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-    Defaults to all Award Type Codes. Applicable only when requested `award` spending.
+    Defaults to all Award Type Codes.
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing

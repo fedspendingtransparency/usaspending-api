@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Business Caetegory Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/recipient/business_category/loans/]
+# Recipient Business Category Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/recipient/business_category/loans/]
 
 This endpoint provides insights on the recipient business category loans from disaster/emergency funding per the requested filters.
 
