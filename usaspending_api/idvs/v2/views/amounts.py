@@ -19,8 +19,68 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 logger = logging.getLogger("console")
 
 
-def fetch_account_details_idv(award_id, award_id_column) -> dict:
-    child_award_sql = """
+defc_sql = """
+    with closed_covid_periods as (
+        select distinct concat(p.reporting_fiscal_year::text, lpad(p.reporting_fiscal_period::text, 2, '0')) as fyp, p.reporting_fiscal_year, p.reporting_fiscal_period
+        from submission_attributes p
+        order by p.reporting_fiscal_year desc, p.reporting_fiscal_period desc
+    ),
+    eligible_submissions as (
+        select *
+        from submission_attributes s
+        where concat(s.reporting_fiscal_year::text, lpad(s.reporting_fiscal_period::text, 2, '0')) in (
+            select fyp from closed_covid_periods
+        )
+    ),
+    eligible_file_c_records as (
+        select
+            faba.award_id,
+            faba.gross_outlay_amount_by_award_cpe,
+            faba.transaction_obligated_amount,
+            faba.disaster_emergency_fund_code,
+            s.reporting_fiscal_year,
+            s.reporting_fiscal_period
+        from financial_accounts_by_awards faba
+        inner join eligible_submissions s on s.submission_id = faba.submission_id
+        and faba.award_id is not null
+    ),
+    fy_final_balances as (
+        -- Rule: If a balance is not zero at the end of the year, it must be reported in the
+        -- final period's submission (month or quarter), otherwise assume it to be zero
+        select faba.award_id, sum(faba.gross_outlay_amount_by_award_cpe) as prior_fys_outlay
+        from eligible_file_c_records faba
+        group by
+            faba.award_id,
+            faba.reporting_fiscal_period
+        having faba.reporting_fiscal_period = 12
+        and sum(faba.gross_outlay_amount_by_award_cpe) > 0
+    ),
+    current_fy_balance as (
+        select
+            faba.award_id,
+            faba.reporting_fiscal_year,
+            faba.reporting_fiscal_period,
+            sum(faba.gross_outlay_amount_by_award_cpe) as current_fy_outlay
+        from eligible_file_c_records faba
+        group by
+            faba.award_id,
+            faba.reporting_fiscal_year,
+            faba.reporting_fiscal_period
+        having concat(faba.reporting_fiscal_year::text, lpad(faba.reporting_fiscal_period::text, 2, '0')) in
+            (select max(fyp) from closed_covid_periods)
+        and sum(faba.gross_outlay_amount_by_award_cpe) > 0
+    )
+    select faba.award_id, coalesce(ffy.prior_fys_outlay, 0) + coalesce(cfy.current_fy_outlay, 0) as total_outlay, sum(faba.transaction_obligated_amount) as obligated_amount, faba.disaster_emergency_fund_code
+    from eligible_file_c_records faba
+    left join fy_final_balances ffy on ffy.award_id = faba.award_id
+    left join current_fy_balance cfy
+        on cfy.reporting_fiscal_period != 12 -- don't duplicate the year-end period's value if in unclosed period 01
+        and cfy.award_id = faba.award_id
+    where faba.award_id in {award_ids}
+    group by faba.disaster_emergency_fund_code, faba.award_id, total_outlay;
+    """
+
+child_award_sql = """
     select
         ac.id as award_id
     from
@@ -31,7 +91,7 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     where
         pap.{award_id_column} = '{award_id}'
     """
-    grandchild_award_sql = """
+grandchild_award_sql = """
     select
         ac.id as award_id
     from
@@ -44,97 +104,51 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     where
         pap.{award_id_column} = '{award_id}'
     """
+
+
+def fetch_account_details_idv(award_id, award_id_column) -> dict:
     children = execute_sql_to_ordered_dictionary(
         child_award_sql.format(award_id=award_id, award_id_column=award_id_column)
     )
     grandchildren = execute_sql_to_ordered_dictionary(
         grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column)
     )
+
     child_award_ids = []
     grandchild_award_ids = []
     child_award_ids.extend([x["award_id"] for x in children])
     grandchild_award_ids.extend([x["award_id"] for x in grandchildren])
-    child_queryset = (
-        FinancialAccountsByAwards.objects.filter(award_id__in=child_award_ids)
-        .values("disaster_emergency_fund", "submission__reporting_fiscal_year")
-        .annotate(
-            fiscal_period=Max("submission__reporting_fiscal_period"),
-            gross_outlay_amount_by_award_cpe=Max("gross_outlay_amount_by_award_cpe"),
-            obligated_amount=Sum("transaction_obligated_amount"),
-        )
+    child_results = (
+        execute_sql_to_ordered_dictionary(defc_sql.format(award_ids=child_award_ids)) if child_award_ids != [] else {}
     )
-    grandchild_queryset = (
-        FinancialAccountsByAwards.objects.filter(award_id__in=grandchild_award_ids)
-        .values("disaster_emergency_fund", "submission__reporting_fiscal_year")
-        .annotate(
-            fiscal_period=Max("submission__reporting_fiscal_period"),
-            gross_outlay_amount_by_award_cpe=Max("gross_outlay_amount_by_award_cpe"),
-            obligated_amount=Sum("transaction_obligated_amount"),
-        )
+    grandchild_results = (
+        execute_sql_to_ordered_dictionary(defc_sql.format(award_ids=grandchild_award_ids))
+        if grandchild_award_ids != []
+        else {}
     )
+    child_outlay_by_code = []
+    child_obligation_by_code = []
     child_total_outlay = 0
     child_total_obligations = 0
-    child_outlay_results = {}
-    child_obligated_results = {}
-    for row in child_queryset:
-        child_total_outlay += (
-            row["gross_outlay_amount_by_award_cpe"] if row["gross_outlay_amount_by_award_cpe"] is not None else 0
-        )
+    for row in child_results:
+        child_total_outlay += row["total_outlay"] if row["total_outlay"] is not None else 0
         child_total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
-        child_outlay_results.update(
-            {
-                row["disaster_emergency_fund"]: row["gross_outlay_amount_by_award_cpe"]
-                + (
-                    child_outlay_results.get(row["disaster_emergency_fund"])
-                    if child_outlay_results.get(row["disaster_emergency_fund"]) is not None
-                    else 0
-                )
-            }
+        child_outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
+        child_obligation_by_code.append(
+            {"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]}
         )
-        child_obligated_results.update(
-            {
-                row["disaster_emergency_fund"]: row["obligated_amount"]
-                + (
-                    child_obligated_results.get(row["disaster_emergency_fund"])
-                    if child_obligated_results.get(row["disaster_emergency_fund"]) is not None
-                    else 0
-                )
-            }
-        )
-    child_outlay_by_code = [{"code": x, "amount": y} for x, y in child_outlay_results.items()]
-    child_obligation_by_code = [{"code": x, "amount": y} for x, y in child_obligated_results.items()]
-
+    grandchild_outlay_by_code = []
+    grandchild_obligation_by_code = []
     grandchild_total_outlay = 0
     grandchild_total_obligations = 0
-    grandchild_outlay_results = {}
-    grandchild_obligated_results = {}
-    for row in grandchild_queryset:
-        grandchild_total_outlay += (
-            row["gross_outlay_amount_by_award_cpe"] if row["gross_outlay_amount_by_award_cpe"] is not None else 0
-        )
+    for row in grandchild_results:
+        grandchild_total_outlay += row["total_outlay"] if row["total_outlay"] is not None else 0
         grandchild_total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
-        grandchild_outlay_results.update(
-            {
-                row["disaster_emergency_fund"]: row["gross_outlay_amount_by_award_cpe"]
-                + (
-                    grandchild_outlay_results.get(row["disaster_emergency_fund"])
-                    if grandchild_outlay_results.get(row["disaster_emergency_fund"]) is not None
-                    else 0
-                )
-            }
+        grandchild_outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
+        grandchild_obligation_by_code.append(
+            {"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]}
         )
-        child_obligated_results.update(
-            {
-                row["disaster_emergency_fund"]: row["obligated_amount"]
-                + (
-                    grandchild_obligated_results.get(row["disaster_emergency_fund"])
-                    if grandchild_obligated_results.get(row["disaster_emergency_fund"]) is not None
-                    else 0
-                )
-            }
-        )
-    grandchild_outlay_by_code = [{"code": x, "amount": y} for x, y in child_outlay_results.items()]
-    grandchild_obligation_by_code = [{"code": x, "amount": y} for x, y in child_obligated_results.items()]
+
     results = {
         "child_total_account_outlay": child_total_outlay,
         "child_total_account_obligation": child_total_obligations,
