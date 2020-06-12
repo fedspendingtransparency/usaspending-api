@@ -309,7 +309,8 @@ class RecipientOverView(APIView):
 
     @cache_response()
     def get(self, request, recipient_id):
-        year = request.query_params.get("year", "latest")
+        get_request = request.query_params
+        year = validate_year(get_request.get("year", "latest"))
         recipient_hash, recipient_level = validate_recipient_id(recipient_id)
         recipient_duns, recipient_name = extract_name_duns_from_hash(recipient_hash)
         if not (recipient_name or recipient_duns):
