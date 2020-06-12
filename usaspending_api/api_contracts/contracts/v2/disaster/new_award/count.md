@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of New Awards for the disaster/emergency funding [/api/v2/disaster/new_award/count/]
+# Count of New Awards Receiving Disaster/Emergency Funding [/api/v2/disaster/new_award/count/]
 
 This endpoint provides the count of New Awards which received disaster/emergency funding per the requested filters.
 

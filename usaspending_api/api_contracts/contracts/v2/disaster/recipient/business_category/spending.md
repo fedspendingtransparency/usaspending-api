@@ -1,13 +1,11 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
+# Recipient Business Category Disaster/Emergency Funding [/api/v2/disaster/recipient/business_category/spending/]
 
-This endpoint provides insights on the Recipients which received disaster/emergency funding per the requested filters.
+This endpoint provides insights on the recipient business categories which received disaster/emergency funding per the requested filters.
 
 ## POST
-
-Returns spending details of Recipients receiving supplemental funding budgetary resources
 
 + Request (application/json)
     + Schema
@@ -19,6 +17,11 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
+        + `geo_layer` (required, enum[string], fixed-type)
+            + Members
+                + `state`
+                + `county`
+                + `district`
         + `pagination` (optional, Pagination, fixed-type)
 
 + Response 200 (application/json)
@@ -33,16 +36,16 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
                 "results": [
                     {
                         "id": 43,
-                        "code": "090",
-                        "description": "Description text",
+                        "code": "ND-01",
+                        "description": "North Dakota Congressional District 1",
                         "count": 54,
                         "obligation": 89.01,
-                        "outlay": 70.98
+                        "outlay": 76205
                     },
                     {
                         "id": 41,
-                        "code": "012",
-                        "description": "Description text",
+                        "code": "ND-02",
+                        "description": "North Dakota Congressional District 2",
                         "count": 2,
                         "obligation": 50,
                         "outlay": 10
@@ -66,8 +69,6 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 + `fiscal_year` (required, number)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
     Defaults to all Award Type Codes. Applicable only when requested `award` spending.
-+ `query` (optional, string)
-    A "keyword" or "search term" to filter down results based on this text snippet
 
 ## Pagination (object)
 + `page` (optional, number)
@@ -87,9 +88,13 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 
 ## Result (object)
 + `id` (required, string)
+    Unique identifier which might be useful for links to resources
 + `code` (required, string)
+    Unique or non-unique value which is the technical name of the result
 + `description` (required, string)
+    Display Text for humans
 + `count` (required, number)
+    Number of Awards
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 

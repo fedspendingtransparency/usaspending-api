@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of CFDA for the disaster/emergency funding [/api/v2/disaster/cfda/count/]
+# Count of CFDA Receiving Disaster/Emergency Funding [/api/v2/disaster/cfda/count/]
 
 This endpoint provides the count of CFDA programs which received disaster/emergency funding per the requested filters.
 

@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of Object Classes for the disaster/emergency funding [/api/v2/disaster/object_class/count/]
+# Count of Object Classes Receiving Disaster/Emergency Funding [/api/v2/disaster/object_class/count/]
 
 This endpoint provides the count of Object Classes which received disaster/emergency funding per the requested filters.
 

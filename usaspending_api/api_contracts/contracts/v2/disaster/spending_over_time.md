@@ -63,7 +63,7 @@ This endpoint provides award spending data from emergency/disaster funding group
                             "idvs": 200,
                             "grants": 100,
                             "loans": 300,
-                            "direct_payments": 100
+                            "direct_payments": 100,
                             "other": 0
                         },
                         "time_period": {

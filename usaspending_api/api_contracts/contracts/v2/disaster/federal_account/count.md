@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of Federal Accounts for the disaster/emergency funding [/api/v2/disaster/federal_account/count/]
+# Count of Federal Accounts Receiving Disaster/Emergency Funding [/api/v2/disaster/federal_account/count/]
 
 This endpoint provides the count of Federal Accounts and TAS which received disaster/emergency funding per the requested filters.
 

@@ -54,4 +54,4 @@ This endpoint provides funding and spending details from emergency/disaster supp
     Note: `total_budget_authority` - `total_obligations` = "Remaining Balance"
 + `total_outlays` (required, number, nullable)
     Total amount of Disaster Spending which has been obligated and outlayed.
-    Note: `total_obligations` - `total_outlays` = "Other Obligated But Not Yet Outlayed"
+    Note: (`total_obligations` - `award_obligations`) - (`total_outlays` - `award_outlays`) = "Other Obligated But Not Yet Outlayed"

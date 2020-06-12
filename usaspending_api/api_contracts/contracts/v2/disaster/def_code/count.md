@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of DEF Codes for the disaster/emergency funding [/api/v2/disaster/def_code/count/]
+# Count of DEF Codes Receiving Disaster/Emergency Funding [/api/v2/disaster/def_code/count/]
 
 This endpoint provides the count of DEFC which received disaster/emergency funding per the requested filters.
 

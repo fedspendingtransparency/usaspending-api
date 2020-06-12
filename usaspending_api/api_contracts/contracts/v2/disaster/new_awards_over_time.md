@@ -64,7 +64,7 @@ This endpoint provides count of awards receiving emergency/disaster funding grou
                         },
                         "time_period": {
                             "fiscal_year": 2020,
-                            "period" 6
+                            "period": 6
                         }
                     },
                     {
@@ -82,7 +82,16 @@ This endpoint provides count of awards receiving emergency/disaster funding grou
                             "period" 7
                         }
                     }
-                ]
+                ],
+                "page_metadata": {
+                    "page": 1,
+                    "next": null,
+                    "total": 2,
+                    "previous": null,
+                    "hasNext": false,
+                    "hasPrevious": false,
+                    "limit": 10
+                }
             }
 
 # Data Structures

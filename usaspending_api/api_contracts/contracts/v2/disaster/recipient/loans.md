@@ -1,11 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Type Disaster/Emergency Funding [/api/v2/disaster/recipient/type/spending/]
+# Recipient Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/recipient/loans/]
 
-This endpoint provides insights on the Recipient Types which received disaster/emergency funding per the requested filters.
+This endpoint provides insights on the recipient loans from disaster/emergency funding per the requested filters.
 
 ## POST
+
+Returns loan spending details of recipients receiving supplemental funding budgetary resources
 
 + Request (application/json)
     + Schema
@@ -17,11 +19,6 @@ This endpoint provides insights on the Recipient Types which received disaster/e
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
-        + `geo_layer` (required, enum[string], fixed-type)
-            + Members
-                + `state`
-                + `county`
-                + `district`
         + `pagination` (optional, Pagination, fixed-type)
 
 + Response 200 (application/json)
@@ -36,19 +33,19 @@ This endpoint provides insights on the Recipient Types which received disaster/e
                 "results": [
                     {
                         "id": 43,
-                        "code": "ND-01",
-                        "description": "North Dakota Congressional District 1",
+                        "code": "090",
+                        "description": "Description text of 090, for humans",
+                        "children": [],
                         "count": 54,
-                        "obligation": 89.01,
-                        "outlay": 76205
+                        "face_value_of_loan": 89.01
                     },
                     {
                         "id": 41,
-                        "code": "ND-02",
-                        "description": "North Dakota Congressional District 2",
+                        "code": "012",
+                        "description": "Description text of 012, for humans",
+                        "children": [],
                         "count": 2,
-                        "obligation": 50,
-                        "outlay": 10
+                        "face_value_of_loan": 50
                     }
                 ],
                 "pagination_metadata": {
@@ -67,8 +64,8 @@ This endpoint provides insights on the Recipient Types which received disaster/e
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
 + `fiscal_year` (required, number)
-+ `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-    Defaults to all Award Type Codes. Applicable only when requested `award` spending.
++ `query` (optional, string)
+    A "keyword" or "search term" to filter down results based on this text snippet
 
 ## Pagination (object)
 + `page` (optional, number)
@@ -88,15 +85,11 @@ This endpoint provides insights on the Recipient Types which received disaster/e
 
 ## Result (object)
 + `id` (required, string)
-    Unique identifier which might be useful for links to resources
 + `code` (required, string)
-    Unique or non-unique value which is the technical name of the result
 + `description` (required, string)
-    Display Text for humans
++ `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
-    Number of Awards
-+ `obligation` (required, number, nullable)
-+ `outlay` (required, number, nullable)
++ `face_value_of_loan` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)
@@ -132,30 +125,3 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `S`
 + `T`
 + `9`
-
-## AwardTypeCodes (enum[string])
-List of procurement and assistance award type codes supported by USAspending.gov
-
-### Members
-+ `02`
-+ `03`
-+ `04`
-+ `05`
-+ `06`
-+ `07`
-+ `08`
-+ `09`
-+ `10`
-+ `11`
-+ `A`
-+ `B`
-+ `C`
-+ `D`
-+ `IDV_A`
-+ `IDV_B_A`
-+ `IDV_B_B`
-+ `IDV_B_C`
-+ `IDV_B`
-+ `IDV_C`
-+ `IDV_D`
-+ `IDV_E`

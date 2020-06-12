@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of Agencies receiving disaster/emergency funding [/api/v2/disaster/agency/count/]
+# Count of Agencies Receiving Disaster/Emergency Funding [/api/v2/disaster/agency/count/]
 
 This endpoint provides the count of Agencies which received disaster/emergency funding per the requested filters.
 
