@@ -34,7 +34,10 @@ This endpoint provides geographical spending information from emergency/disaster
     + Body
 
             {
-                "defc": ["L", "M", "N", "O", "P"],
+                "filter": {
+                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "fiscal_year": 2020
+                },
                 "geo_layer": "state",
                 "geo_layer_filters": ["NE", "WY", "CO", "IA", "IL", "MI", "IN", "TX"],
                 "spending_type": "obligations"

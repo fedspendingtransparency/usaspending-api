@@ -29,12 +29,10 @@ This endpoint returns a count of Agencies
 + Response 200 (application/json)
     + Attributes (object)
         + `count` (required, number, fixed-type)
-        + `child_count` (optional, number, fixed-type)
     + Body
 
             {
-                "count": 5,
-                "child_count": 19
+                "count": 5
             }
 
 # Data Structures

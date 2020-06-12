@@ -29,12 +29,10 @@ This endpoint returns a count of Federal Account and TAS
 + Response 200 (application/json)
     + Attributes (object)
         + `count` (required, number)
-        + `child_count` (required, number)
     + Body
 
             {
-                "count": 7,
-                "child_count": 32
+                "count": 7
             }
 
 # Data Structures

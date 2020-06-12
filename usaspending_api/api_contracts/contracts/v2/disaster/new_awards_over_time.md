@@ -38,7 +38,7 @@ This endpoint provides count of awards receiving emergency/disaster funding grou
 
             {
                 "group": "period",
-                "defc": ["L", "M", "N", "O", "P"]
+                "def_codes": ["L", "M", "N", "O", "P"]
             }
 
 + Response 200 (application/json)
@@ -60,7 +60,6 @@ This endpoint provides count of awards receiving emergency/disaster funding grou
                             "grants": 100,
                             "loans": 100,
                             "direct_payments": 100,
-                            "insurance": 100,
                             "other": 100
                         },
                         "time_period": {
@@ -76,7 +75,6 @@ This endpoint provides count of awards receiving emergency/disaster funding grou
                             "grants": 100,
                             "loans": 100,
                             "direct_payments": 100,
-                            "insurance": 100,
                             "other": 100
                         },
                         "time_period": {
@@ -108,7 +106,6 @@ This endpoint provides count of awards receiving emergency/disaster funding grou
 + `grants` (required, number)
 + `loans` (required, number)
 + `direct_payments` (required, number)
-+ `insurance` (required, number)
 + `other` (required, number)
 
 ## PageMetadata (object)

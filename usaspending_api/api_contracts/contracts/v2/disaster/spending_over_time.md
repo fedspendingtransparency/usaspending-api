@@ -41,7 +41,7 @@ This endpoint provides award spending data from emergency/disaster funding group
 
             {
                 "group": "period",
-                "defc": ["L", "M", "N", "O", "P"],
+                "def_codes": ["L", "M", "N", "O", "P"],
                 "spending_type": "obligations"
             }
 
@@ -63,8 +63,7 @@ This endpoint provides award spending data from emergency/disaster funding group
                             "idvs": 200,
                             "grants": 100,
                             "loans": 300,
-                            "direct_payments": 100,
-                            "insurance": 200,
+                            "direct_payments": 100
                             "other": 0
                         },
                         "time_period": {
@@ -80,7 +79,6 @@ This endpoint provides award spending data from emergency/disaster funding group
                             "grants": 100,
                             "loans": 100,
                             "direct_payments": 100,
-                            "insurance": 100,
                             "other": 100
                         },
                         "time_period": {
@@ -126,7 +124,6 @@ This endpoint provides award spending data from emergency/disaster funding group
 + `grants` (required, number)
 + `loans` (required, number)
 + `direct_payments` (required, number)
-+ `insurance` (required, number)
 + `other` (required, number)
 
 ## PageMetadata (object)

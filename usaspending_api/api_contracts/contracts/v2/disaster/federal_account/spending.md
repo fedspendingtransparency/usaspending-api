@@ -7,7 +7,7 @@ This endpoint provides insights on the Federal Account and TAS which received di
 
 ## POST
 
-Returns spending details of Federal Account and TAS receiving supplimental funding budgetary resources
+Returns spending details of Federal Account and TAS receiving supplemental funding budgetary resources
 
 + Request (application/json)
     + Schema
@@ -19,7 +19,10 @@ Returns spending details of Federal Account and TAS receiving supplimental fundi
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
-        + `spending_facets` (required, array[Spending], fixed-type)
+        + `spending_type` (required, enum[string], fixed-type)
+            + Members
+                + `award`
+                + `total`
         + `pagination` (optional, Pagination, fixed-type)
 
 + Response 200 (application/json)
@@ -35,7 +38,7 @@ Returns spending details of Federal Account and TAS receiving supplimental fundi
                     {
                         "id": 43,
                         "code": "090",
-                        "description": "Description text of 090, for humans,
+                        "description": "Description text of 090, for humans",
                         "children": [],
                         "count": 54,
                         "award_obligation": 89.01,
@@ -44,7 +47,7 @@ Returns spending details of Federal Account and TAS receiving supplimental fundi
                     {
                         "id": 41,
                         "code": "012",
-                        "description": "Description text of 012, for humans,
+                        "description": "Description text of 012, for humans",
                         "children": [],
                         "count": 2,
                         "award_obligation": 50,

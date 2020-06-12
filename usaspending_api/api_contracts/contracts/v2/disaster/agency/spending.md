@@ -7,7 +7,7 @@ This endpoint provides insights on the Agencies which received disaster/emergenc
 
 ## POST
 
-Returns spending details of Agencies receiving supplimental funding budgetary resources
+Returns spending details of Agencies receiving supplemental funding budgetary resources
 
 + Request (application/json)
     + Schema
