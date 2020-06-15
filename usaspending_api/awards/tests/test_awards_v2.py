@@ -1118,7 +1118,7 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 220.0
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 110.0}]
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 110.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 220.0}]
 
 
 def test_defc(client, awards_and_transactions):
