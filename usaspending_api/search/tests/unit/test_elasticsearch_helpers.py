@@ -112,17 +112,16 @@ def test_es_sanitize():
     test_string = '+&|()[]{}*?:"<>\\'
     processed_string = es_sanitize(test_string)
     assert processed_string == ""
-    test_string = '!-^~/'
+    test_string = "!-^~/"
     processed_string = es_sanitize(test_string)
     assert processed_string == r"\!\-\^\~\/"
-
 
 
 def test_es_minimal_sanitize():
     test_string = "https://www.localhost:8000/"
     processed_string = es_minimal_sanitize(test_string)
     assert processed_string == r"https\/\/www.localhost8000\/"
-    test_string = '!-^~/'
+    test_string = "!-^~/"
     processed_string = es_minimal_sanitize(test_string)
     assert processed_string == r"\!\-\^\~\/"
 
