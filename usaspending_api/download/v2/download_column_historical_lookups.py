@@ -1,4 +1,6 @@
 from collections import OrderedDict
+
+from usaspending_api import settings
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 
 """
@@ -1513,7 +1515,10 @@ query_paths = {
                 ("unobligated_balance", "unobligated_balance_cpe"),
                 ("gross_outlay_amount", "gross_outlay_amount_by_tas_cpe"),
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total_cpe"),
-                ("last_modified_date", "submission__certified_date"),
+                (
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                ),  # Column is annotated in account_download.py
             ]
         ),
         "federal_account": OrderedDict(
@@ -1593,13 +1598,18 @@ query_paths = {
                 ("object_class_code", "object_class__object_class"),
                 ("object_class_name", "object_class__object_class_name"),
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
+                ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("obligations_incurred", "obligations_incurred_by_program_object_class_cpe"),
                 (
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                     "deobligations_recoveries_refund_pri_program_object_class_cpe",
                 ),
                 ("gross_outlay_amount", "gross_outlay_amount_by_program_object_class_cpe"),
-                ("last_modified_date", "submission__certified_date"),
+                (
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                ),  # Column is annotated in account_download.py
             ]
         ),
         "federal_account": OrderedDict(
@@ -1620,6 +1630,8 @@ query_paths = {
                 ("object_class_code", "object_class__object_class"),
                 ("object_class_name", "object_class__object_class_name"),
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
+                ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("obligations_incurred", "obligations_incurred"),
                 (
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
@@ -1663,6 +1675,8 @@ query_paths = {
                 ("object_class_code", "object_class__object_class"),
                 ("object_class_name", "object_class__object_class_name"),
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
+                ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("award_id_piid", "piid"),
                 ("parent_award_id_piid", "parent_award_id"),
                 ("award_id_fain", "fain"),
@@ -1676,6 +1690,7 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
+                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
                 ("award_type", "award_type"),  # Column is appended to in account_download.py
@@ -1737,7 +1752,10 @@ query_paths = {
                 ("national_interest_action_code", "award__latest_transaction__contract_data__national_interest_action"),
                 ("national_interest_action", "award__latest_transaction__contract_data__national_interest_desc"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
-                ("last_modified_date", "submission__certified_date"),
+                (
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                    "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
+                ),  # Column is annotated in account_download.py
             ]
         ),
         "federal_account": OrderedDict(
@@ -1755,6 +1773,8 @@ query_paths = {
                 ("object_class_code", "object_class__object_class"),
                 ("object_class_name", "object_class__object_class_name"),
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
+                ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("award_id_piid", "piid"),
                 ("parent_award_id_piid", "parent_award_id"),
                 ("award_id_fain", "fain"),
@@ -1768,6 +1788,7 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
+                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
                 ("award_type", "award_type"),  # Column is appended to in account_download.py
@@ -1837,6 +1858,23 @@ query_paths = {
         ),
     },
 }
+
+# check the ENABLE_CARES_ACT_FEATURES and delete keys if necessary DEV-5180
+if settings.ENABLE_CARES_ACT_FEATURES is False:
+    query_paths["object_class_program_activity"]["treasury_account"].pop("disaster_emergency_fund_code")
+    query_paths["object_class_program_activity"]["treasury_account"].pop("disaster_emergency_fund_name")
+
+    query_paths["object_class_program_activity"]["federal_account"].pop("disaster_emergency_fund_code")
+    query_paths["object_class_program_activity"]["federal_account"].pop("disaster_emergency_fund_name")
+
+    query_paths["award_financial"]["treasury_account"].pop("disaster_emergency_fund_code")
+    query_paths["award_financial"]["treasury_account"].pop("disaster_emergency_fund_name")
+    query_paths["award_financial"]["treasury_account"].pop("gross_outlay_amount_fyb_to_period_end")
+
+    query_paths["award_financial"]["federal_account"].pop("disaster_emergency_fund_code")
+    query_paths["award_financial"]["federal_account"].pop("disaster_emergency_fund_name")
+    query_paths["award_financial"]["federal_account"].pop("gross_outlay_amount_fyb_to_period_end")
+
 
 # IDV Orders are nearly identical to awards but start from the Awards table
 # instead of from UniversalAwardView materialized view so we need to lop off

@@ -23,25 +23,20 @@ CREATE_TEMP_TABLE = """
         code text,
         public_law text,
         title text,
-        group_name text
+        group_name text,
+        urls text
     );
 """
 
 logger = logging.getLogger("script")
 
 DisasterEmergencyFundCode = namedtuple(
-    "DisasterEmergencyFundCode", ["row_number", "code", "public_law", "title", "group_name"]
+    "DisasterEmergencyFundCode", ["row_number", "code", "public_law", "title", "group_name", "urls"]
 )
 
 
 class Command(mixins.ETLMixin, BaseCommand):
-    """
-    Used to load DEF Codes either from URI or a local def_code.csv file. There is a tas_list file inside
-    of the project that can be found at: "usaspending_api/data/def_codes.csv"
-
-    Command:
-        ./manage.py load_disaster_emergency_fund_codes
-    """
+    """Used to load DEF Codes either from URI or a local file."""
 
     help = "Load DEF Code CSV file.  If anything fails, nothing gets saved.  DOES NOT DELETE RECORDS."
     def_code_file = None
@@ -50,17 +45,15 @@ class Command(mixins.ETLMixin, BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument(
-            "--def_code_file", metavar="FILE", help="Path or URI of the raw DEF Code CSV file to be loaded."
+            "--def-code-file",
+            metavar="FILE",
+            help="Path or URI of the raw DEF Code CSV file to be loaded.",
+            default="https://files.usaspending.gov/reference_data/def_codes.csv",
         )
 
     def handle(self, *args, **options):
-
-        if options["def_code_file"]:
-            self.def_code_file = options["def_code_file"]
-        else:
-            self.def_code_file = "https://files.usaspending.gov/reference_data/def_codes.csv"
-
-        logger.info("DEF Code FILE: {}".format(self.def_code_file))
+        self.def_code_file = options["def_code_file"]
+        logger.info(f"Attempting to load from file: {self.def_code_file}")
 
         with Timer("Load DEF Code"):
 
@@ -84,7 +77,7 @@ class Command(mixins.ETLMixin, BaseCommand):
     def _prep(text):
         """
         A semi-common problem with CSV files that have been edited by third party tools is the
-        introduction of leading and/or trailing spaces.  Strip them.
+        introduction of leading and/or trailing spaces. Strip them.
         """
         if text and type(text) is str:
             return text.strip()
@@ -94,7 +87,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         raw_def_codes = read_csv_file_as_list_of_dictionaries(self.def_code_file)
         if len(raw_def_codes) < 1:
-            raise RuntimeError("Object class file '{}' appears to be empty".format(self.def_code_file))
+            raise RuntimeError(f"File '{self.def_code_file}' appears to be empty")
         self.def_codes = [
             DisasterEmergencyFundCode(
                 row_number=row_number,
@@ -102,6 +95,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 public_law=self._prep(def_code["Public Law"]),
                 title=self._prep(def_code["Public Law Short Title"]) or None,
                 group_name=self._prep(def_code["Group Name"]) or None,
+                urls=self._prep(def_code["URLs"]) or None,
             )
             for row_number, def_code in enumerate(raw_def_codes, start=1)
         ]
@@ -149,7 +143,8 @@ class Command(mixins.ETLMixin, BaseCommand):
                         code,
                         public_law,
                         title,
-                        group_name
+                        group_name,
+                        urls
                     ) values %s
                 """,
                 self.def_codes,
