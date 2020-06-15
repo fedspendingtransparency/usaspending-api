@@ -73,7 +73,9 @@ This endpoint returns a high-level overview of a specific recipient, given its i
                     "congressional_code": "03"
                 },
                 "total_transaction_amount": 0,
-                "total_transactions": 0
+                "total_transactions": 0,
+                "total_face_value_loan_amount": 0,
+                "total_face_value_loan_transactions": 0
             }
 
 # Data Structures
@@ -101,6 +103,10 @@ This endpoint returns a high-level overview of a specific recipient, given its i
     The aggregate monetary value of all transactions associated with this recipient for the given time period.
 + `total_transactions` (required, number)
     The number of transactions associated with this recipient for the given time period.
++ `total_face_value_loan_amount` (required, number)
+    The aggregate face value loan guarantee value of all transactions associated with this recipient for the given time period.
++ `total_face_value_loan_transactions` (required, number)
+    The number of transactions associated with this recipient for the given time period and face value loan guarantee.
 + `recipient_level` (required, enum[string])
     A letter representing the recipient level. `R` for neither parent nor child, `P` for Parent Recipient, or `C` for child recipient.
     + Members
