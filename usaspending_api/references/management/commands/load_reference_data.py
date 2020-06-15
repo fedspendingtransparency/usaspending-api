@@ -15,6 +15,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.logger.info("Beginning reference data loading. This may take a few minutes.")
 
+        self.logger.info("Loading DEF Codes")
+        call_command("load_disaster_emergency_fund_codes")
+
         self.logger.info("Loading reference_fixture.json")
         call_command("loaddata", "reference_fixture")
 

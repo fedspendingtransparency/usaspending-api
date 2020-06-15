@@ -1,7 +1,6 @@
 import warnings
 
 from django.core.cache import CacheKeyWarning
-from usaspending_api.submissions.models import SubmissionAttributes
 
 
 warnings.simplefilter("ignore", CacheKeyWarning)
@@ -21,21 +20,3 @@ def get_fiscal_quarter(fiscal_reporting_period):
         return 3
     elif fiscal_reporting_period in [10, 11, 12]:
         return 4
-
-
-def get_previous_submission(toptier_code, fiscal_year, fiscal_period):
-    """
-    For the specified CGAC/FREC (e.g., department/top-tier agency) and specified fiscal year and quarter, return
-    the previous submission within the same fiscal year.
-    """
-    previous_submission = (
-        SubmissionAttributes.objects.filter(
-            toptier_code=toptier_code,
-            reporting_fiscal_year=fiscal_year,
-            reporting_fiscal_period__lt=fiscal_period,
-            quarter_format_flag=True,
-        )
-        .order_by("-reporting_fiscal_period")
-        .first()
-    )
-    return previous_submission

@@ -14,13 +14,6 @@ class SubmissionAttributes(models.Model):
     reporting_fiscal_quarter = models.IntegerField(blank=True, null=True)
     reporting_fiscal_period = models.IntegerField(blank=True, null=True)
     quarter_format_flag = models.BooleanField(default=True)
-    previous_submission = models.OneToOneField(
-        "self",
-        on_delete=models.DO_NOTHING,
-        null=True,
-        blank=True,
-        help_text="A reference to the most recent submission for this CGAC within the same fiscal year",
-    )
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 

@@ -47,10 +47,9 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
 
         return results
 
-    def query_django(self, base_queryset: QuerySet) -> List[dict]:
-        if self.subawards:
-            if self.industry_code_type == IndustryCodeType.PSC or self.industry_code_type == IndustryCodeType.NAICS:
-                self._raise_not_implemented()
+    def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
+        if self.industry_code_type == IndustryCodeType.PSC or self.industry_code_type == IndustryCodeType.NAICS:
+            self._raise_not_implemented()
 
         django_filters = {f"{self.industry_code_type.value}__isnull": False}
         django_values = [self.industry_code_type.value]

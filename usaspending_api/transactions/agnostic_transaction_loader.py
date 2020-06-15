@@ -173,10 +173,10 @@ class AgnosticTransactionLoader:
             sql = self.broker_incremental_select_sql
             predicate = f"\"updated_at\" >= '{self.options['datetime']}'"
 
-            if "WHERE" in sql:
-                optional_predicate = f"AND {predicate}"
+            if "where" in sql.lower():
+                optional_predicate = f"and {predicate}"
             else:
-                optional_predicate = f"WHERE {predicate}"
+                optional_predicate = f"where {predicate}"
 
         return sql.format(id=self.shared_pk, table=self.broker_source_table_name, optional_predicate=optional_predicate)
 

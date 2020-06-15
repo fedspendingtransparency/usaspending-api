@@ -1,24 +1,24 @@
 import pytest
 
+from usaspending_api.awards.v2.lookups.lookups import contract_subaward_mapping
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.v2.views.spending_by_award import SpendingByAwardVisualizationViewSet, GLOBAL_MAP
 from usaspending_api.common.exceptions import UnprocessableEntityException, InvalidParameterException
-from usaspending_api.awards.v2.lookups.matview_lookups import award_contracts_mapping
 
 
 def instantiate_view_for_tests():
     view = SpendingByAwardVisualizationViewSet()
-    view.is_subaward = False
-    view.constants = GLOBAL_MAP["award"]
+    view.is_subaward = True
+    view.constants = GLOBAL_MAP["subaward"]
     view.filters = {"award_type_codes": ["A"]}
     view.original_filters = {"award_type_codes": ["A"]}
-    view.fields = ["Award ID", "Start Date", "End Date", "Award Amount", "Description"]
+    view.fields = ["Sub-Award Type", "Prime Award ID"]
     view.pagination = {
         "limit": 5,
         "lower_bound": 1,
         "page": 1,
-        "sort_key": "Description",
+        "sort_key": "Prime Award ID",
         "sort_order": "desc",
         "upper_bound": 6,
     }
@@ -117,8 +117,8 @@ def test_get_queryset():
 
     assert view.construct_queryset() is not None, "Failed to return a queryset object"
 
-    db_fields_from_api = set([award_contracts_mapping[field] for field in view.fields])
-    db_fields_from_api |= set(GLOBAL_MAP["award"]["minimum_db_fields"])
+    db_fields_from_api = set([contract_subaward_mapping[field] for field in view.fields])
+    db_fields_from_api |= set(GLOBAL_MAP["subaward"]["minimum_db_fields"])
 
     assert db_fields_from_api == set(view.get_database_fields())
 

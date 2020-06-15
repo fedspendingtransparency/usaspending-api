@@ -33,9 +33,10 @@ class _Keywords(_Filter):
             "description",
         ]
         for v in filter_values:
-            keyword_queries.append(
-                ES_Q("query_string", query=es_sanitize(v) + "*", default_operator="AND", fields=fields)
-            )
+            query = es_sanitize(v) + "*"
+            if "\\" in es_sanitize(v):
+                query = es_sanitize(v) + r"\*"
+            keyword_queries.append(ES_Q("query_string", query=query, default_operator="AND", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
 
@@ -170,9 +171,10 @@ class _RecipientSearchText(_Filter):
 
         for v in filter_values:
             upper_recipient_string = es_sanitize(v.upper())
-            recipient_name_query = ES_Q(
-                "query_string", query=upper_recipient_string + "*", default_operator="AND", fields=fields
-            )
+            query = es_sanitize(upper_recipient_string) + "*"
+            if "\\" in es_sanitize(upper_recipient_string):
+                query = es_sanitize(upper_recipient_string) + r"\*"
+            recipient_name_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields)
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                 recipient_duns_query = ES_Q("match", recipient_unique_id=upper_recipient_string)

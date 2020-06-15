@@ -1,15 +1,7 @@
 import logging
 
-from usaspending_api.search.models import AwardSummaryMatview
-from usaspending_api.search.models import SummaryCfdaNumbersView
-from usaspending_api.search.models import SummaryNaicsCodesView
-from usaspending_api.search.models import SummaryPscCodesView
-from usaspending_api.search.models import SummaryTransactionFedAcctView
-from usaspending_api.search.models import SummaryTransactionGeoView
 from usaspending_api.search.models import SummaryTransactionMonthView
-from usaspending_api.search.models import SummaryTransactionRecipientView
 from usaspending_api.search.models import SummaryTransactionView
-from usaspending_api.search.models import SummaryView
 from usaspending_api.search.models import UniversalTransactionView
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_month_aggregation
 from usaspending_api.awards.v2.filters.filter_helpers import can_use_total_obligation_enum
@@ -21,50 +13,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 logger = logging.getLogger(__name__)
 
 MATVIEW_SELECTOR = {
-    "AwardSummaryMatview": {
-        "allowed_filters": ["time_period", "award_type_codes", "agencies"],
-        "prevent_values": {},
-        "examine_values": {"time_period": [only_action_date_type]},
-        "model": AwardSummaryMatview,
-    },
-    "SummaryView": {
-        "allowed_filters": ["time_period", "award_type_codes", "agencies"],
-        "prevent_values": {},  # Example: 'agencies': {'type': 'list', 'key': 'tier', 'value': 'subtier'}
-        "examine_values": {"time_period": [only_action_date_type]},
-        "model": SummaryView,
-    },
-    "SummaryPscCodesView": {
-        "allowed_filters": ["time_period", "award_type_codes"],
-        "prevent_values": {},
-        "examine_values": {"time_period": [only_action_date_type]},
-        "model": SummaryPscCodesView,
-    },
-    "SummaryCfdaNumbersView": {
-        "allowed_filters": ["time_period", "award_type_codes"],
-        "prevent_values": {},
-        "examine_values": {"time_period": [only_action_date_type]},
-        "model": SummaryCfdaNumbersView,
-    },
-    "SummaryNaicsCodesView": {
-        "allowed_filters": ["time_period", "award_type_codes"],
-        "prevent_values": {},
-        "examine_values": {"time_period": [only_action_date_type]},
-        "model": SummaryNaicsCodesView,
-    },
-    "SummaryTransactionGeoView": {
-        "allowed_filters": [
-            "time_period",
-            "award_type_codes",
-            "agencies",
-            "recipient_scope",
-            "recipient_locations",
-            "place_of_performance_scope",
-            "place_of_performance_locations",
-        ],
-        "prevent_values": {},
-        "examine_values": {"time_period": [can_use_month_aggregation, only_action_date_type]},
-        "model": SummaryTransactionGeoView,
-    },
     "SummaryTransactionView": {
         "allowed_filters": [
             "time_period",
@@ -111,18 +59,6 @@ MATVIEW_SELECTOR = {
             "award_amounts": [can_use_total_obligation_enum],
         },
         "model": SummaryTransactionMonthView,
-    },
-    "SummaryTransactionRecipientView": {
-        "allowed_filters": ["time_period", "award_type_codes", "recipient_id"],
-        "prevent_values": {},
-        "examine_values": {"time_period": [only_action_date_type]},
-        "model": SummaryTransactionRecipientView,
-    },
-    "SummaryTransactionFedAcctView": {
-        "allowed_filters": ["time_period", "award_type_codes", "recipient_id"],
-        "prevent_values": {},
-        "examine_values": {"time_period": [only_action_date_type]},
-        "model": SummaryTransactionFedAcctView,
     },
     "UniversalTransactionView": {
         "allowed_filters": [
@@ -206,88 +142,6 @@ def can_use_view(filters, view_name):
     return True
 
 
-def spending_over_time(filters):
-    view_chain = [
-        "SummaryView",
-        "SummaryTransactionGeoView",
-        "SummaryTransactionMonthView",
-        "SummaryTransactionView",
-        "UniversalTransactionView",
-    ]
-    for view in view_chain:
-        if can_use_view(filters, view):
-            queryset = get_view_queryset(filters, view)
-            break
-    else:
-        raise InvalidParameterException
-
-    return queryset
-
-
-def spending_by_geography(filters):
-    view_chain = [
-        "SummaryTransactionGeoView",
-        "SummaryTransactionMonthView",
-        "SummaryTransactionView",
-        "UniversalTransactionView",
-    ]
-    for view in view_chain:
-        if can_use_view(filters, view):
-            queryset = get_view_queryset(filters, view)
-            model = view
-            break
-    else:
-        raise InvalidParameterException
-
-    return queryset, model
-
-
-def spending_by_award_count(filters):
-    if can_use_view(filters, "AwardSummaryMatview"):
-        queryset = get_view_queryset(filters, "AwardSummaryMatview")
-        return queryset, "AwardSummaryMatview"
-    else:
-        return None, None
-
-
-def download_transaction_count(filters):
-    view_chain = [
-        "SummaryView",
-        "SummaryTransactionGeoView",
-        "SummaryTransactionMonthView",
-        "SummaryTransactionView",
-        "UniversalTransactionView",
-    ]
-    for view in view_chain:
-        if can_use_view(filters, view):
-            queryset = get_view_queryset(filters, view)
-            model = view
-            break
-    else:
-        raise InvalidParameterException
-
-    return queryset, model
-
-
-def transaction_spending_summary(filters):
-    view_chain = [
-        "SummaryView",
-        "SummaryTransactionGeoView",
-        "SummaryTransactionMonthView",
-        "SummaryTransactionView",
-        "UniversalTransactionView",
-    ]
-    for view in view_chain:
-        if can_use_view(filters, view):
-            queryset = get_view_queryset(filters, view)
-            model = view
-            break
-    else:
-        raise InvalidParameterException
-
-    return queryset, model
-
-
 def recipient_totals(filters):
     view_chain = ["SummaryTransactionMonthView", "SummaryTransactionView", "UniversalTransactionView"]
     for view in view_chain:
@@ -299,35 +153,3 @@ def recipient_totals(filters):
         raise InvalidParameterException
 
     return queryset, model
-
-
-def spending_by_category_view_queryset(category, filters):
-    # category is a string of <category>.
-    view_chain = []
-    if category in ["awarding_agency", "funding_agency", "awarding_subagency", "funding_subagency"]:
-        view_chain = ["SummaryView"]
-    elif category == "psc":
-        view_chain = ["SummaryPscCodesView"]
-    elif category == "naics":
-        view_chain = ["SummaryNaicsCodesView"]
-    elif category == "cfda":
-        view_chain = ["SummaryCfdaNumbersView"]
-    elif category in ["county", "district", "state_territory", "country"]:
-        view_chain = ["SummaryTransactionGeoView"]
-    elif category in ["recipient_duns"]:
-        view_chain = ["SummaryTransactionRecipientView"]
-
-    # All of these category/scope combinations can use the following:
-    view_chain.extend(["SummaryTransactionMonthView", "SummaryTransactionView", "UniversalTransactionView"])
-
-    if category in ["federal_account"]:
-        view_chain = ["SummaryTransactionFedAcctView"]
-
-    for view in view_chain:
-        if can_use_view(filters, view):
-            queryset = get_view_queryset(filters, view)
-            break
-    else:
-        raise InvalidParameterException
-
-    return queryset
