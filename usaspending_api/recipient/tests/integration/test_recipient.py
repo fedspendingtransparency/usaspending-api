@@ -10,6 +10,8 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.recipient.v2.views import recipients
 
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
 TODAY = datetime.datetime.now()
 INSIDE_OF_LATEST = TODAY - datetime.timedelta(365 - 2)
 
@@ -155,13 +157,17 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_affiliations": [],
     },
 }
-TEST_SUMMARY_TRANSACTION_NORMALIZED = {
+TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS = {
     "latest": {"action_date": INSIDE_OF_LATEST, "federal_action_obligation": 100},
     "FY2016": {"action_date": datetime.datetime(2015, 10, 1), "federal_action_obligation": 50},
     "FY2008": {"action_date": datetime.datetime(2007, 10, 1), "federal_action_obligation": 200},
 }
-
-TEST_SUMMARY_TRANSACTION_FPDS = {
+TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FABS = {
+    "latest": {"action_date": INSIDE_OF_LATEST, "face_value_loan_guarantee": 1000, "type": "07"},
+    "FY2016": {"action_date": datetime.datetime(2015, 10, 1), "face_value_loan_guarantee": 500, "type": "08"},
+    "FY2008": {"action_date": datetime.datetime(2007, 10, 1), "face_value_loan_guarantee": 2000, "type": "08"},
+}
+TEST_SUMMARY_TRANSACTION_RECIPIENT = {
     "latest": {
         "awardee_or_recipient_legal": "PARENT RECIPIENT",
         "awardee_or_recipient_uniqu": "000000001",
@@ -181,8 +187,12 @@ TEST_SUMMARY_TRANSACTION_FPDS = {
 
 
 @pytest.mark.django_db
-def create_transaction_test_data(transaction_normalized_list, transaction_fpds_list):
-    for count, transaction_normalized in enumerate(transaction_normalized_list, 1):
+def create_transaction_test_data(transaction_recipient_list=None):
+
+    if transaction_recipient_list is None:
+        transaction_recipient_list = TEST_SUMMARY_TRANSACTION_RECIPIENT.values()
+
+    for count, transaction_normalized in enumerate(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS.values(), 1):
         base_transaction_normalized = {
             "id": count,
             "award_id": count,
@@ -193,10 +203,30 @@ def create_transaction_test_data(transaction_normalized_list, transaction_fpds_l
         mommy.make("awards.Award", id=count, latest_transaction_id=count)
         mommy.make("awards.TransactionNormalized", **base_transaction_normalized)
 
-    for count, transaction_fpds in enumerate(transaction_fpds_list, 1):
+    for count, transaction_fpds in enumerate(transaction_recipient_list, 1):
         base_transaction_fpds = {"transaction_id": count}
         base_transaction_fpds.update(transaction_fpds)
         mommy.make("awards.TransactionFPDS", **base_transaction_fpds)
+
+    for count, transaction_normalized in enumerate(
+        TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FABS.values(), len(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS) + 1
+    ):
+        base_transaction_normalized = {
+            "id": count,
+            "award_id": count,
+            "is_fpds": False,
+            "business_categories": ["expected", "business", "cat"],
+        }
+        base_transaction_normalized.update(transaction_normalized)
+        mommy.make("awards.Award", id=count, latest_transaction_id=count)
+        mommy.make("awards.TransactionNormalized", **base_transaction_normalized)
+
+    for count, transaction_fabs in enumerate(
+        transaction_recipient_list, len(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS) + 1
+    ):
+        base_transaction_fabs = {"transaction_id": count}
+        base_transaction_fabs.update(transaction_fabs)
+        mommy.make("awards.TransactionFABS", **base_transaction_fabs)
 
 
 @pytest.mark.django_db
@@ -386,22 +416,19 @@ def test_extract_business_categories_special():
 
 
 @pytest.mark.django_db
-def test_obtain_recipient_totals_year():
+def test_obtain_recipient_totals_year(monkeypatch, elasticsearch_transaction_index):
     """ Testing recipient totals with different year values """
     # Testing with specific child
     recipient_id = "392052ae-92ab-f3f4-d9fa-b57f45b7750b-C"
     recipient_hash = recipient_id[:-2]
 
     # load all of the transactions
-    transaction_fpds_recipient_data = {
+    transaction_recipient_data = {
         "awardee_or_recipient_legal": "CHILD RECIPIENT",
         "awardee_or_recipient_uniqu": "000000002",
         "ultimate_parent_unique_ide": "000000001",
     }
-    create_transaction_test_data(
-        TEST_SUMMARY_TRANSACTION_NORMALIZED.values(),
-        [transaction_fpds_recipient_data] * len(TEST_SUMMARY_TRANSACTION_NORMALIZED),
-    )
+    create_transaction_test_data([transaction_recipient_data] * len(TEST_SUMMARY_TRANSACTION_RECIPIENT),)
 
     # load recipient lookup
     create_recipient_lookup_test_data(TEST_RECIPIENT_LOOKUPS[recipient_hash])
@@ -412,30 +439,32 @@ def test_obtain_recipient_totals_year():
     associated_recipient_profile["last_12_months_count"] = 1
     mommy.make("recipient.RecipientProfile", **associated_recipient_profile)
 
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     # Latest
-    expected_total = 100
-    expected_count = 1
-    results = recipients.obtain_recipient_totals(recipient_id, year="latest", subawards=False)
-    assert results[0]["total"] == expected_total
-    assert results[0]["count"] == expected_count
+    results = recipients.obtain_recipient_totals(recipient_id, year="latest")
+    assert results[0]["total_obligation_amount"] == 100
+    assert results[0]["total_obligation_count"] == 2
+    assert results[0]["total_face_value_loan_amount"] == 1000
+    assert results[0]["total_face_value_loan_count"] == 1
 
     # All
-    expected_total = 350
-    expected_count = 3
-    results = recipients.obtain_recipient_totals(recipient_id, year="all", subawards=False)
-    assert results[0]["total"] == expected_total
-    assert results[0]["count"] == expected_count
+    results = recipients.obtain_recipient_totals(recipient_id, year="all")
+    assert results[0]["total_obligation_amount"] == 350
+    assert results[0]["total_obligation_count"] == 6
+    assert results[0]["total_face_value_loan_amount"] == 3500
+    assert results[0]["total_face_value_loan_count"] == 3
 
     # FY2016
-    expected_total = 50
-    expected_count = 1
-    results = recipients.obtain_recipient_totals(recipient_id, year="2016", subawards=False)
-    assert results[0]["total"] == expected_total
-    assert results[0]["count"] == expected_count
+    results = recipients.obtain_recipient_totals(recipient_id, year="2016")
+    assert results[0]["total_obligation_amount"] == 50
+    assert results[0]["total_obligation_count"] == 2
+    assert results[0]["total_face_value_loan_amount"] == 500
+    assert results[0]["total_face_value_loan_count"] == 1
 
 
 @pytest.mark.django_db
-def test_obtain_recipient_totals_parent():
+def test_obtain_recipient_totals_parent(monkeypatch, elasticsearch_transaction_index):
     """ Testing recipient totals with parent child relationships """
     # Testing with specific parent/child ids
     parent_id = "00077a9a-5a70-8919-fd19-330762af6b84-P"
@@ -445,16 +474,18 @@ def test_obtain_recipient_totals_parent():
         mommy.make("recipient.RecipientProfile", **recipient_profile)
 
     # load transactions for each child and parent (making sure it's excluded)
-    create_transaction_test_data(TEST_SUMMARY_TRANSACTION_NORMALIZED.values(), TEST_SUMMARY_TRANSACTION_FPDS.values())
+    create_transaction_test_data()
 
     # load recipient lookup
     create_recipient_lookup_test_data(*TEST_RECIPIENT_LOOKUPS.values())
 
-    expected_total = 150
-    expected_count = 2
-    results = recipients.obtain_recipient_totals(parent_id, year="all", subawards=False)
-    assert results[0]["total"] == expected_total
-    assert results[0]["count"] == expected_count
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    results = recipients.obtain_recipient_totals(parent_id, year="all")
+    assert results[0]["total_obligation_amount"] == 150
+    assert results[0]["total_obligation_count"] == 4
+    assert results[0]["total_face_value_loan_amount"] == 1500
+    assert results[0]["total_face_value_loan_count"] == 2
 
 
 def recipient_overview_endpoint(id, year="latest"):
@@ -465,12 +496,12 @@ def recipient_overview_endpoint(id, year="latest"):
 
 
 @pytest.mark.django_db
-def test_recipient_overview(client):
+def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index):
     """ Testing a simple example of the endpoint as a whole """
     r_id = "00077a9a-5a70-8919-fd19-330762af6b84-C"
 
     # Mock Transactions
-    create_transaction_test_data(TEST_SUMMARY_TRANSACTION_NORMALIZED.values(), TEST_SUMMARY_TRANSACTION_FPDS.values())
+    create_transaction_test_data()
 
     # Mock Recipient Profiles
     for recipient_id, recipient_profile in TEST_RECIPIENT_PROFILES.items():
@@ -489,6 +520,8 @@ def test_recipient_overview(client):
         country_code = test_duns_model["country_code"]
         mommy.make("recipient.DUNS", **test_duns_model)
         mommy.make("references.RefCountryCode", **TEST_REF_COUNTRY_CODE[country_code])
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.get(recipient_overview_endpoint(r_id))
     assert resp.status_code == status.HTTP_200_OK
@@ -525,7 +558,9 @@ def test_recipient_overview(client):
             "foreign_postal_code": None,
         },
         "total_transaction_amount": 100,
-        "total_transactions": 1,
+        "total_transactions": 2,
+        "total_face_value_loan_amount": 1000,
+        "total_face_value_loan_transactions": 1,
     }
     # testing for equality-only, order unnecessary
     resp.data["business_types"] = sorted(resp.data["business_types"])
@@ -553,7 +588,7 @@ def recipient_children_endpoint(duns, year="latest"):
 
 
 @pytest.mark.django_db
-def test_child_recipient_success(client):
+def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_index):
     """ Testing successful child recipient calls """
     child1_id = "00077a9a-5a70-8919-fd19-330762af6b84-C"
     parent_child1_duns = "000000001"
@@ -567,7 +602,9 @@ def test_child_recipient_success(client):
     create_recipient_lookup_test_data(*TEST_RECIPIENT_LOOKUPS.values())
 
     # Mock Transactions
-    create_transaction_test_data(TEST_SUMMARY_TRANSACTION_NORMALIZED.values(), TEST_SUMMARY_TRANSACTION_FPDS.values())
+    create_transaction_test_data()
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     # Ignoring nonexistent child duns - 000000005
     child1_object = {
@@ -601,7 +638,7 @@ def test_child_recipient_failures(client):
     create_recipient_lookup_test_data(*TEST_RECIPIENT_LOOKUPS.values())
 
     # Mock Transactions
-    create_transaction_test_data(TEST_SUMMARY_TRANSACTION_NORMALIZED.values(), TEST_SUMMARY_TRANSACTION_FPDS.values())
+    create_transaction_test_data()
 
     # Testing for non-existent DUNS
     non_existent_duns = "000000003"

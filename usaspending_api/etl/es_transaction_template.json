@@ -142,7 +142,12 @@
         }
       },
       "recipient_hash": {
-        "type": "keyword"
+        "type": "keyword",
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
       },
       "recipient_agg_key": {
         "type": "keyword",
@@ -171,7 +176,12 @@
         }
       },
       "parent_recipient_hash": {
-        "type": "keyword"
+        "type": "keyword",
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
       },
       "action_date": {
         "type": "date",
