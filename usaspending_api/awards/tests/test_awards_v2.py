@@ -1068,15 +1068,6 @@ def test_zip4_switch(client, awards_and_transactions):
 
 def test_file_c_data(client, awards_and_transactions):
     defc = mommy.make("references.DisasterEmergencyFundCode", code="L")
-    mommy.make("submissions.SubmissionAttributes", pk=1, reporting_fiscal_period=12, reporting_fiscal_year=2020)
-    mommy.make(
-        "awards.FinancialAccountsByAwards",
-        award_id=1,
-        transaction_obligated_amount=100,
-        gross_outlay_amount_by_award_cpe=100,
-        disaster_emergency_fund=defc,
-        submission_id=1,
-    )
     mommy.make("submissions.SubmissionAttributes", pk=2, reporting_fiscal_period=9, reporting_fiscal_year=2019)
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -1086,7 +1077,16 @@ def test_file_c_data(client, awards_and_transactions):
         disaster_emergency_fund=defc,
         submission_id=2,
     )
-    mommy.make("submissions.SubmissionAttributes", pk=3, reporting_fiscal_period=12, reporting_fiscal_year=2021)
+    mommy.make("submissions.SubmissionAttributes", pk=1, reporting_fiscal_period=12, reporting_fiscal_year=2020)
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=1,
+        transaction_obligated_amount=100,
+        gross_outlay_amount_by_award_cpe=100,
+        disaster_emergency_fund=defc,
+        submission_id=1,
+    )
+    mommy.make("submissions.SubmissionAttributes", pk=3, reporting_fiscal_period=10, reporting_fiscal_year=2018)
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
@@ -1095,7 +1095,7 @@ def test_file_c_data(client, awards_and_transactions):
         disaster_emergency_fund=defc,
         submission_id=3,
     )
-    mommy.make("submissions.SubmissionAttributes", pk=4, reporting_fiscal_period=10, reporting_fiscal_year=2021)
+    mommy.make("submissions.SubmissionAttributes", pk=4, reporting_fiscal_period=12, reporting_fiscal_year=2018)
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
@@ -1103,6 +1103,15 @@ def test_file_c_data(client, awards_and_transactions):
         gross_outlay_amount_by_award_cpe=10,
         disaster_emergency_fund=defc,
         submission_id=4,
+    )
+    mommy.make("submissions.SubmissionAttributes", pk=5, reporting_fiscal_period=12, reporting_fiscal_year=2019)
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=1,
+        transaction_obligated_amount=0,
+        gross_outlay_amount_by_award_cpe=0,
+        disaster_emergency_fund=defc,
+        submission_id=5,
     )
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
