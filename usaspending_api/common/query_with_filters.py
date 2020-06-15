@@ -174,9 +174,7 @@ class _RecipientSearchText(_Filter):
             query = es_sanitize(upper_recipient_string) + "*"
             if "\\" in es_sanitize(upper_recipient_string):
                 query = es_sanitize(upper_recipient_string) + r"\*"
-            recipient_name_query = ES_Q(
-                "query_string", query=query, default_operator="AND", fields=fields
-            )
+            recipient_name_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields)
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                 recipient_duns_query = ES_Q("match", recipient_unique_id=upper_recipient_string)
