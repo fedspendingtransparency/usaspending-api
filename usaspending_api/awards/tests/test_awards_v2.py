@@ -1085,14 +1085,14 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 100.0}]
 
-    mommy.make("submissions.SubmissionAttributes", pk=3, reporting_fiscal_period=9, reporting_fiscal_year=2019)
+    mommy.make("submissions.SubmissionAttributes", pk=2, reporting_fiscal_period=9, reporting_fiscal_year=2019)
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
         transaction_obligated_amount=100,
         gross_outlay_amount_by_award_cpe=100,
         disaster_emergency_fund=defc,
-        submission_id=3,
+        submission_id=2,
     )
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 100.0
@@ -1100,14 +1100,14 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 100.0}]
 
-    mommy.make("submissions.SubmissionAttributes", pk=2, reporting_fiscal_period=12, reporting_fiscal_year=2019)
+    mommy.make("submissions.SubmissionAttributes", pk=3, reporting_fiscal_period=12, reporting_fiscal_year=2021)
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
         transaction_obligated_amount=10,
         gross_outlay_amount_by_award_cpe=10,
         disaster_emergency_fund=defc,
-        submission_id=2,
+        submission_id=3,
     )
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
@@ -1115,7 +1115,7 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 110.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 110.0}]
 
-    mommy.make("submissions.SubmissionAttributes", pk=4, reporting_fiscal_period=10, reporting_fiscal_year=2018)
+    mommy.make("submissions.SubmissionAttributes", pk=4, reporting_fiscal_period=10, reporting_fiscal_year=2021)
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
