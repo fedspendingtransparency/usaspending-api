@@ -37,7 +37,7 @@ Returns spending details of DEFC receiving supplemental funding budgetary resour
             {
                 "results": [
                     {
-                        "id": 43,
+                        "id": "43",
                         "code": "090",
                         "description": "Description text",
                         "count": 54,
@@ -46,7 +46,7 @@ Returns spending details of DEFC receiving supplemental funding budgetary resour
                         "total_budgetary_resources": 23486324
                     },
                     {
-                        "id": 41,
+                        "id": "41",
                         "code": "012",
                         "description": "Description text",
                         "count": 2,

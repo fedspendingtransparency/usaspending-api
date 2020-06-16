@@ -37,7 +37,7 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
             {
                 "results": [
                     {
-                        "id": 43,
+                        "id": "43",
                         "code": "090",
                         "description": "Description text",
                         "children": [],
@@ -47,7 +47,7 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
                         "total_budgetary_resources": null
                     },
                     {
-                        "id": 41,
+                        "id": "41",
                         "code": "012",
                         "description": "Description text",
                         "children": [],

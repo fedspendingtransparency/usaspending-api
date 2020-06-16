@@ -35,7 +35,7 @@ This endpoint provides insights on the recipient business categories which recei
             {
                 "results": [
                     {
-                        "id": 43,
+                        "id": "43",
                         "code": "ND-01",
                         "description": "North Dakota Congressional District 1",
                         "count": 54,
@@ -43,7 +43,7 @@ This endpoint provides insights on the recipient business categories which recei
                         "outlay": 76205
                     },
                     {
-                        "id": 41,
+                        "id": "41",
                         "code": "ND-02",
                         "description": "North Dakota Congressional District 2",
                         "count": 2,

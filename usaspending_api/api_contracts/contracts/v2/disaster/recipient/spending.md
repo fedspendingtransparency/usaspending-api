@@ -32,7 +32,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
             {
                 "results": [
                     {
-                        "id": 43,
+                        "id": "43",
                         "code": "090",
                         "description": "Description text",
                         "count": 54,
@@ -40,7 +40,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
                         "outlay": 70.98
                     },
                     {
-                        "id": 41,
+                        "id": "41",
                         "code": "012",
                         "description": "Description text",
                         "count": 2,

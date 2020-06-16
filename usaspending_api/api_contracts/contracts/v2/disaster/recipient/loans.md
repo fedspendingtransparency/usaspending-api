@@ -32,7 +32,7 @@ Returns loan spending details of recipients receiving supplemental funding budge
             {
                 "results": [
                     {
-                        "id": 43,
+                        "id": "43",
                         "code": "090",
                         "description": "Description text of 090, for humans",
                         "children": [],
@@ -40,7 +40,7 @@ Returns loan spending details of recipients receiving supplemental funding budge
                         "face_value_of_loan": 89.01
                     },
                     {
-                        "id": 41,
+                        "id": "41",
                         "code": "012",
                         "description": "Description text of 012, for humans",
                         "children": [],
