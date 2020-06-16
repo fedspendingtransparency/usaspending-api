@@ -69,26 +69,32 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/bulk_download/list_monthly_files/](/api/v2/bulk_download/list_monthly_files/)|POST| Lists the monthly files associated with the requested params|
 |[/api/v2/bulk_download/status/](/api/v2/bulk_download/status/)|GET| Returns the current status of a download job that that has been requested with the `v2/bulk_download/awards/` or `v2/bulk_download/transaction/` endpoint that same day.|
 |[/api/v2/disaster/agency/count/](/api/v2/disaster/agency/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
+|[/api/v2/disaster/agency/loans/](/api/v2/disaster/agency/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension|
 |[/api/v2/disaster/agency/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
 |[/api/v2/disaster/award/amount/](/api/v2/disaster/award/amount/)|POST| Combined amount of Award spending Disaster/Emergency funding data|
-|[/api/v2/disaster/award/count/](/api/v2/disaster/agency/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
-|[/api/v2/disaster/award/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
-|[/api/v2/disaster/cfda/count/](/api/v2/disaster/agency/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
-|[/api/v2/disaster/cfda/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
-|[/api/v2/disaster/def_code/count/](/api/v2/disaster/agency/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
-|[/api/v2/disaster/def_code/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
-|[/api/v2/disaster/federal_account/count/](/api/v2/disaster/agency/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
-|[/api/v2/disaster/federal_account/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
-|[/api/v2/disaster/new_award/count/](/api/v2/disaster/agency/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
+|[/api/v2/disaster/award/count/](/api/v2/disaster/award/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
+|[/api/v2/disaster/award/loans/](/api/v2/disaster/award/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/award/spending/](/api/v2/disaster/award/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/cfda/count/](/api/v2/disaster/cfda/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
+|[/api/v2/disaster/cfda/spending/](/api/v2/disaster/cfda/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/def_code/count/](/api/v2/disaster/def_code/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
+|[/api/v2/disaster/def_code/loans/](/api/v2/disaster/def_code/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/def_code/spending/](/api/v2/disaster/def_code/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/federal_account/count/](/api/v2/disaster/federal_account/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
+|[/api/v2/disaster/federal_account/loans/](/api/v2/disaster/federal_account/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/federal_account/spending/](/api/v2/disaster/federal_account/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/new_award/count/](/api/v2/disaster/new_award/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
 |[/api/v2/disaster/new_awards_over_time/](/api/v2/disaster/new_awards_over_time/)|POST| New awards created in the time period spending Disaster/Emergency funding|
-|[/api/v2/disaster/object_class/count/](/api/v2/disaster/agency/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
-|[/api/v2/disaster/object_class/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/object_class/count/](/api/v2/disaster/object_class/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
+|[/api/v2/disaster/object_class/loans/](/api/v2/disaster/object_class/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/object_class/spending/](/api/v2/disaster/object_class/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
 |[/api/v2/disaster/overview/](/api/v2/disaster/overview/)|POST| Overview of Disaster/Emergency funding and spending|
-|[/api/v2/disaster/program_activity/count/](/api/v2/disaster/agency/count/)|POST| Dimensions Count of Disaster/Emergency funding data|
-|[/api/v2/disaster/program_activity/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
-|[/api/v2/disaster/recipient/location/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
-|[/api/v2/disaster/recipient/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
-|[/api/v2/disaster/recipient/type/spending/](/api/v2/disaster/agency/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/recipient/business_category/loans/](/api/v2/disaster/recipient/business_category/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/recipient/business_category/spending/](/api/v2/disaster/recipient/business_category/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/recipient/loans/](/api/v2/disaster/recipient/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/recipient/location/loans/](/api/v2/disaster/recipient/location/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/recipient/location/spending/](/api/v2/disaster/recipient/location/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
+|[/api/v2/disaster/recipient/spending/](/api/v2/disaster/recipient/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension|
 |[/api/v2/disaster/spending/](/api/v2/disaster/spending/)|POST| EXPERIMENTAL Returns spending data information with provided filters|
 |[/api/v2/disaster/spending_by_geography/](/api/v2/disaster/spending_by_geography/)|POST| Geographic award spending of Disaster/Emergency funding|
 |[/api/v2/disaster/spending_over_time/](/api/v2/disaster/spending_over_time/)|POST| Award types in the time period spending Disaster/Emergency funding|
