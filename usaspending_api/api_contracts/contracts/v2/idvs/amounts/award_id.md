@@ -32,8 +32,8 @@ Get aggregated award counts and funding amounts for IDV contracts
         * `grandchild_award_base_exercised_options_val`: 311020.57 (required, number)
         * `grandchild_total_account_outlay`: 0 (required, number)
         * `grandchild_total_account_obligation`: 0 (required, number)
-        * `grandchild_account_outlays_by_defc`: [] (required, array[DEFCAmount])
-        * `grandchild_account_obligations_by_defc`: [] (required, array[DEFCAmount])
+        * `grandchild_account_outlays_by_defc`: [] (required, array[DEFCAmount], fixed-type)
+        * `grandchild_account_obligations_by_defc`: [] (required, array[DEFCAmount], fixed-type)
     + Body
 
             {
