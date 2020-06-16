@@ -588,7 +588,20 @@ def fetch_naics_hierarchy(naics: str) -> dict:
 
 
 defc_sql = """
-    with closed_periods as (
+    with eligible_file_c_records as (
+        select
+            faba.award_id,
+            faba.gross_outlay_amount_by_award_cpe,
+            faba.transaction_obligated_amount,
+            faba.disaster_emergency_fund_code,
+            s.reporting_fiscal_year,
+            s.reporting_fiscal_period,
+            s.submission_id
+        from financial_accounts_by_awards faba
+        inner join submission_attributes s on faba.submission_id=s.submission_id
+        where {award_id_sql} and faba.disaster_emergency_fund_code is not null
+    ),
+    closed_periods as (
         -- This is NOT right, since period dates are not the same as submission window close dates,
         -- but an approximation for illustration purposes until we have the reporting dates table up
         select
@@ -596,27 +609,15 @@ defc_sql = """
             lpad(p.reporting_fiscal_period::text, 2, '0')) as fyp,
             p.reporting_fiscal_year, p.reporting_fiscal_period
         from submission_attributes p
-        where
-            now()::date > p.reporting_period_end -- change "period end" with "window close"
-            order by p.reporting_fiscal_year desc, p.reporting_fiscal_period desc
+        order by p.reporting_fiscal_year desc, p.reporting_fiscal_period desc
     ),
     eligible_submissions as (
         select *
         from submission_attributes s
+        inner join eligible_file_c_records faba on faba.submission_id = s.submission_id
         where concat(s.reporting_fiscal_year::text, lpad(s.reporting_fiscal_period::text, 2, '0')) in (
             select fyp from closed_periods
         )
-    ),
-    eligible_file_c_records as (
-        select
-            faba.award_id,
-            faba.gross_outlay_amount_by_award_cpe,
-            faba.transaction_obligated_amount,
-            faba.disaster_emergency_fund_code,
-            s.reporting_fiscal_year,
-            s.reporting_fiscal_period
-        from financial_accounts_by_awards faba
-        inner join eligible_submissions s on s.submission_id = faba.submission_id
     ),
     fy_final_balances as (
         -- Rule: If a balance is not zero at the end of the year, it must be reported in the
@@ -631,7 +632,7 @@ defc_sql = """
         having faba.reporting_fiscal_period = 12
         and sum(faba.gross_outlay_amount_by_award_cpe) > 0
     ),
-     current_fy_balance as (
+    current_fy_balance as (
         select
             faba.award_id,
             faba.reporting_fiscal_year,
@@ -646,7 +647,7 @@ defc_sql = """
             faba.disaster_emergency_fund_code
         having concat(faba.reporting_fiscal_year::text, lpad(faba.reporting_fiscal_period::text, 2, '0')) in
         (select max(fyp) from closed_periods) and sum(faba.gross_outlay_amount_by_award_cpe) > 0)
-    select
+        select
         faba.disaster_emergency_fund_code,
         coalesce(ffy.prior_fys_outlay, 0) + coalesce(cfy.current_fy_outlay, 0) as total_outlay,
         coalesce(sum(faba.transaction_obligated_amount), 0) as obligated_amount
@@ -656,7 +657,6 @@ defc_sql = """
         on cfy.reporting_fiscal_period != 12 -- don't duplicate the year-end period's value if in unclosed period 01
         and cfy.award_id = faba.award_id
         and cfy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code
-    where faba.disaster_emergency_fund_code is not null and {award_id_sql}
     group by faba.disaster_emergency_fund_code, total_outlay;
     """
 
