@@ -68,6 +68,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/bulk_download/list_agencies/](/api/v2/bulk_download/list_agencies/)|POST| Lists all the agencies and the subagencies or federal accounts associated under specific agencies.|
 |[/api/v2/bulk_download/list_monthly_files/](/api/v2/bulk_download/list_monthly_files/)|POST| Lists the monthly files associated with the requested params|
 |[/api/v2/bulk_download/status/](/api/v2/bulk_download/status/)|GET| Returns the current status of a download job that that has been requested with the `v2/bulk_download/awards/` or `v2/bulk_download/transaction/` endpoint that same day.|
+|[/api/v2/disaster_spending/](/api/v2/disaster_spending/)|POST| Returns spending data information with provided filters|
 |[/api/v2/download/accounts/](/api/v2/download/accounts/)|POST| Generates zip file for download of account data in CSV format|
 |[/api/v2/download/awards/](/api/v2/download/awards/)|POST| Generates zip file for download of award data in CSV format|
 |[/api/v2/download/count/](/api/v2/download/count/)|POST| Returns the number of transactions that would be included in a download request for the given filter set|
@@ -100,6 +101,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/recipient/state/](/api/v2/recipient/state/)|GET| Returns basic information about the specified state|
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency|
 |[/api/v2/references/data_dictionary/](/api/v2/references/data_dictionary/)|GET| Returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary|
+|[/api/v2/references/def_codes/](/api/v2/references/def_codes/)|GET| Returns an object of Disaster Emergency Fund (DEF) Codes (DEFC) and titles|
 |[/api/v2/references/filter_tree/psc/](/api/v2/references/filter_tree/psc/)|GET| Returns a list of PSC groupings|
 |[/api/v2/references/filter_tree/psc/<GROUP\>/](/api/v2/references/filter_tree/psc/Product/)|GET| Returns a list of PSC under the provided path|
 |[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/](/api/v2/references/filter_tree/psc/Product/10/)|GET| Returns a list of PSC under the provided path|

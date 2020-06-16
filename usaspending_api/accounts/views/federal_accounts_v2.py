@@ -86,7 +86,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
 
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
-        fy = int(fy) or SubmissionAttributes.last_certified_fy()
+        fy = int(fy) or SubmissionAttributes.latest_available_fy()
         queryset = AppropriationAccountBalances.final_objects.filter(
             treasury_account_identifier__federal_account_id=int(pk)
         ).filter(submission__reporting_fiscal_year=fy)
@@ -456,7 +456,7 @@ class FederalAccountsViewSet(APIView):
     def _parse_and_validate_request(self, request_dict):
         """ Validate the Request object includes the required fields """
         fy_range = [str(i) for i in range(2001, FiscalDateTime.today().year + 1)]
-        last_fy = str(SubmissionAttributes.last_certified_fy()) or str(FiscalDateTime.today().year)
+        last_fy = str(SubmissionAttributes.latest_available_fy()) or str(FiscalDateTime.today().year)
         request_settings = [
             {
                 "key": "sort",

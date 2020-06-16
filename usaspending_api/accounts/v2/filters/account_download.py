@@ -1,9 +1,9 @@
 import datetime
 
+from django.conf import settings
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, When, Func, F, Value
-from django.db.models.functions import Concat, Coalesce
-
+from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, When, Func, F, Value, DateField
+from django.db.models.functions import Concat, Coalesce, Cast
 from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
@@ -13,6 +13,7 @@ from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import CGAC, ToptierAgency
 from usaspending_api.settings import HOST
+
 
 AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
 
@@ -87,6 +88,7 @@ def account_download_filter(account_type, download_table, filters, account_level
             "account_balances": "appropriation_account_balances_id",
             "object_class_program_activity": "financial_accounts_by_program_activity_object_class_id",
         }
+
         unique_columns_mapping = {
             "account_balances": ["treasury_account_identifier__tas_rendering_label"],
             "object_class_program_activity": [
@@ -96,6 +98,12 @@ def account_download_filter(account_type, download_table, filters, account_level
                 "object_class__direct_reimbursable",
             ],
         }
+
+        # DEV-5180 check if cares act features are enabled in production yet
+        if settings.ENABLE_CARES_ACT_FEATURES is True:
+            unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund__code")
+            unique_columns_mapping["object_class_program_activity"].append("disaster_emergency_fund__title")
+
         distinct_cols = unique_columns_mapping[account_type]
         order_by_cols = distinct_cols + ["-reporting_period_start", "-pk"]
         latest_ids_q = (
@@ -175,6 +183,8 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
             f"{tas_id}__federal_account__main_account_code",
         ),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
+        "last_modified_date"
+        + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
     }
 
     # Derive recipient_parent_name
@@ -199,7 +209,8 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         ),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
-        "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR: Max("submission__certified_date"),
+        "last_modified_date"
+        + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
     }
 
     # Derive recipient_parent_name for award_financial downloads
