@@ -3,11 +3,11 @@ HOST: https://api.usaspending.gov
 
 # Awards Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/award/loans/]
 
-This endpoint provides insights on the Agencies awarding loans from disaster/emergency funding per the requested filters.
+This endpoint provides insights on Loans from disaster/emergency funding per the requested filters.
 
 ## POST
 
-Returns loan spending details of Agencies receiving supplemental funding budgetary resources
+Returns loan spending details which received supplemental funding budgetary resources
 
 + Request (application/json)
     + Schema
