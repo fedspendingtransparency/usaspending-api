@@ -42,14 +42,24 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        since_datetime = options.get("start_datetime") or calculate_load_submissions_since_datetime()
-        if since_datetime is None:
-            logger.info("No records found in submission_attributes.  Performing a full load.")
-        else:
-            logger.info(f"Performing incremental load starting from {since_datetime}.")
+        since_datetime = self.calculate_since_datetime(options.get("start_datetime"))
+        certified_only_submission_ids, load_submission_ids = self.get_submission_ids(
+            options.get("submission_ids"), since_datetime
+        )
 
-        if options["submission_ids"]:
-            certified_only_submission_ids, load_submission_ids = [], options["submission_ids"]
+        if not certified_only_submission_ids and not load_submission_ids:
+            logger.info("There are no new or updated submissions.")
+            return
+
+        if options["list_ids_only"]:
+            logger.info("Exiting script before data load occurs in accordance with the --list-ids-only flag.")
+            return
+
+        self.process_submissions(certified_only_submission_ids, load_submission_ids)
+
+    def get_submission_ids(self, submission_ids, since_datetime):
+        if submission_ids:
+            certified_only_submission_ids, load_submission_ids = [], submission_ids
         else:
             certified_only_submission_ids, load_submission_ids = self.get_incremental_submission_ids(since_datetime)
 
@@ -67,15 +77,16 @@ class Command(BaseCommand):
             else:
                 logger.info(f"{msg}.")
 
-        if not certified_only_submission_ids and not load_submission_ids:
-            logger.info("There are no new or updated submissions.")
-            return
+        return certified_only_submission_ids, load_submission_ids
 
-        if options["list_ids_only"]:
-            logger.info("Exiting script before data load occurs in accordance with the --list-ids-only flag.")
-            return
-
-        self.process_submissions(certified_only_submission_ids, load_submission_ids)
+    @staticmethod
+    def calculate_since_datetime(start_datetime):
+        since_datetime = start_datetime or calculate_load_submissions_since_datetime()
+        if since_datetime is None:
+            logger.info("No records found in submission_attributes.  Performing a full load.")
+        else:
+            logger.info(f"Performing incremental load starting from {since_datetime}.")
+        return since_datetime
 
     @staticmethod
     def process_submissions(certified_only_submission_ids, load_submission_ids):
