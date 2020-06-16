@@ -75,6 +75,10 @@ class Command(BaseCommand):
             logger.info("Exiting script before data load occurs in accordance with the --list-ids-only flag.")
             return
 
+        self.process_submissions(certified_only_submission_ids, load_submission_ids)
+
+    @staticmethod
+    def process_submissions(certified_only_submission_ids, load_submission_ids):
         failed_submissions = []
 
         for submission in certified_only_submission_ids:
