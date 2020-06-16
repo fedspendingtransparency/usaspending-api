@@ -1073,7 +1073,7 @@ def test_file_c_data(client, awards_and_transactions):
         pk=2,
         reporting_fiscal_period=9,
         reporting_fiscal_year=2019,
-        reporting_period_end="20120-06-30",
+        reporting_period_end="2019-06-30",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -1088,7 +1088,7 @@ def test_file_c_data(client, awards_and_transactions):
         pk=1,
         reporting_fiscal_period=12,
         reporting_fiscal_year=2020,
-        reporting_period_end="20120-06-30",
+        reporting_period_end="2019-06-30",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -1103,7 +1103,7 @@ def test_file_c_data(client, awards_and_transactions):
         pk=3,
         reporting_fiscal_period=10,
         reporting_fiscal_year=2018,
-        reporting_period_end="20120-06-30",
+        reporting_period_end="2019-06-30",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -1118,7 +1118,7 @@ def test_file_c_data(client, awards_and_transactions):
         pk=4,
         reporting_fiscal_period=12,
         reporting_fiscal_year=2018,
-        reporting_period_end="20120-06-30",
+        reporting_period_end="2019-06-30",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -1133,7 +1133,7 @@ def test_file_c_data(client, awards_and_transactions):
         pk=5,
         reporting_fiscal_period=12,
         reporting_fiscal_year=2019,
-        reporting_period_end="20120-06-30",
+        reporting_period_end="2019-06-30",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
