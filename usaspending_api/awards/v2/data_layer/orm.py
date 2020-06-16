@@ -596,7 +596,9 @@ defc_sql = """
             lpad(p.reporting_fiscal_period::text, 2, '0')) as fyp,
             p.reporting_fiscal_year, p.reporting_fiscal_period
         from submission_attributes p
-        order by p.reporting_fiscal_year desc, p.reporting_fiscal_period desc
+        where
+            now()::date > p.reporting_period_end -- change "period end" with "window close"
+            order by p.reporting_fiscal_year desc, p.reporting_fiscal_period desc
     ),
     eligible_submissions as (
         select *
