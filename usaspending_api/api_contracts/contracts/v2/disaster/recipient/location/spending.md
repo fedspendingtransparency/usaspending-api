@@ -68,7 +68,6 @@ Returns spending details of Recipient Locations receiving supplemental funding b
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `fiscal_year` (required, number)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
     Defaults to all Award Type Codes. Applicable only when requested `award` spending.
 

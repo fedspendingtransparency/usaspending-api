@@ -41,7 +41,9 @@ This endpoint provides award spending data from emergency/disaster funding group
 
             {
                 "group": "period",
-                "def_codes": ["L", "M", "N", "O", "P"],
+                "filter": {
+                    "def_codes": ["L", "M", "N", "O", "P"]
+                },
                 "spending_type": "obligations"
             }
 
@@ -102,7 +104,6 @@ This endpoint provides award spending data from emergency/disaster funding group
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `fiscal_year` (required, number)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
 
 ## TimeResult (object)

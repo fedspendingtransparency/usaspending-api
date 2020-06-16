@@ -24,7 +24,6 @@ This endpoint returns a count of Awards
 
             {
                 "filter": {
-                    "fiscal_year": 2020,
                     "def_codes": ["L", "M", "N"]
                 }
             }
@@ -42,7 +41,6 @@ This endpoint returns a count of Awards
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `fiscal_year` (required, number)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
     Defaults to all Award Type Codes.
 

@@ -63,7 +63,6 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `fiscal_year` (required, number)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
     Defaults to all Award Type Codes.
 

@@ -63,7 +63,6 @@ Returns loan spending details of recipient business categories receiving supplem
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `fiscal_year` (required, number)
 + `query` (optional, string)
     A "keyword" or "search term" to filter down results based on this text snippet
 

@@ -24,7 +24,6 @@ This endpoint returns a count of New Awards
 
             {
                 "filter": {
-                    "fiscal_year": 2020,
                     "def_codes": ["L", "M", "N"]
                 }
             }
@@ -42,7 +41,6 @@ This endpoint returns a count of New Awards
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `fiscal_year` (required, number)
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing

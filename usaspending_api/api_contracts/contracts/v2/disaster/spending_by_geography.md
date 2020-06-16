@@ -35,8 +35,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
             {
                 "filter": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
-                    "fiscal_year": 2020
+                    "def_codes": ["L", "M", "N", "O", "P"]
                 },
                 "geo_layer": "state",
                 "geo_layer_filters": ["NE", "WY", "CO", "IA", "IL", "MI", "IN", "TX"],
@@ -86,7 +85,6 @@ This endpoint provides geographical spending information from emergency/disaster
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `fiscal_year` (required, number)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
 
 ## GeographyTypeResult (object)
