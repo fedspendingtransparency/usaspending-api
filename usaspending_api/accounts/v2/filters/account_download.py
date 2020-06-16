@@ -184,9 +184,7 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
         ),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
         "last_modified_date"
-        + NAMING_CONFLICT_DISCRIMINATOR: Cast(
-            Max(Coalesce("submission__certified_date", "submission__published_date")), output_field=DateField()
-        ),
+        + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
     }
 
     # Derive recipient_parent_name
@@ -212,9 +210,7 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": FiscalYearAndQuarter("reporting_period_end"),
         "last_modified_date"
-        + NAMING_CONFLICT_DISCRIMINATOR: Cast(
-            Max(Coalesce("submission__certified_date", "submission__published_date")), output_field=DateField()
-        ),
+        + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
     }
 
     # Derive recipient_parent_name for award_financial downloads

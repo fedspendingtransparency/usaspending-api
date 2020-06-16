@@ -229,10 +229,10 @@ class TestWithMultipleDatabases(TestCase):
 
         assert expected_results == actual_results
 
-    def test_load_submission_file_c_zero_and_null_transaction_obligated_amount_ignored(self):
+    def test_load_submission_file_c_zero_and_null_amount_rows_ignored(self):
         """
-        Test that the 'certified_award_financial` rows that have a 'transaction_obligated_amou'
-        of zero or null are not loaded from Broker.
+        Test that 'certified_award_financial` rows that have a zero or null for both
+        'transaction_obligated_amou' and 'gross_outlay_amount_by_awa_cpe' are not loaded  from Broker.
         """
         call_command("load_submission", "-9999")
 
