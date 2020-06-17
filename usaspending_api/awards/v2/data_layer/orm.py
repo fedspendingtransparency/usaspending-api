@@ -609,15 +609,8 @@ defc_sql = """
             lpad(p.reporting_fiscal_period::text, 2, '0')) as fyp,
             p.reporting_fiscal_year, p.reporting_fiscal_period
         from submission_attributes p
+        where now()::date > p.reporting_period_end -- change "period end" with "window close"
         order by p.reporting_fiscal_year desc, p.reporting_fiscal_period desc
-    ),
-    eligible_submissions as (
-        select *
-        from submission_attributes s
-        inner join eligible_file_c_records faba on faba.submission_id = s.submission_id
-        where concat(s.reporting_fiscal_year::text, lpad(s.reporting_fiscal_period::text, 2, '0')) in (
-            select fyp from closed_periods
-        )
     ),
     fy_final_balances as (
         -- Rule: If a balance is not zero at the end of the year, it must be reported in the
@@ -647,7 +640,7 @@ defc_sql = """
             faba.disaster_emergency_fund_code
         having concat(faba.reporting_fiscal_year::text, lpad(faba.reporting_fiscal_period::text, 2, '0')) in
         (select max(fyp) from closed_periods) and sum(faba.gross_outlay_amount_by_award_cpe) > 0)
-        select
+    select
         faba.disaster_emergency_fund_code,
         coalesce(ffy.prior_fys_outlay, 0) + coalesce(cfy.current_fy_outlay, 0) as total_outlay,
         coalesce(sum(faba.transaction_obligated_amount), 0) as obligated_amount
