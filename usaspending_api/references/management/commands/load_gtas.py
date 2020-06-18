@@ -12,11 +12,12 @@ TOTAL_OBLIGATION_SQL = """
 SELECT
     fiscal_year,
      sf_133.period AS fiscal_period,
-    SUM(amount) AS total_obligation
+    SUM(amount) AS total_obligation,
+    sf_133.disaster_emergency_fund_code
 FROM sf_133
 WHERE
     line = 2190
-GROUP BY fiscal_year, fiscal_period
+GROUP BY fiscal_year, fiscal_period, disaster_emergency_fund_code
 ORDER BY fiscal_year, fiscal_period;
 """
 
