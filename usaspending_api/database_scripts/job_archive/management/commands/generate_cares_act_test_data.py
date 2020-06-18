@@ -1,11 +1,11 @@
 """
 Jira Ticket Number(s): DEV-5343
 
-    Generate test CARES Act monthly submissions and DEFC Files A, B, and C data.
+    Generate test CARES Act monthly submissions and DEFC Files B and C data.
 
 Expected CLI:
 
-    $ ./manage.py generate_cares_act_test_data
+    $ ./manage.py generate_cares_act_test_data 2020 2  # which are FY and FQ - use any FY and FQ you want
 
 Purpose:
 
