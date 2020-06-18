@@ -11,20 +11,13 @@ logger = logging.getLogger("console")
 TOTAL_OBLIGATION_SQL = """
 SELECT
     fiscal_year,
-    CASE
-        WHEN sf_133.period = 3 THEN 1
-        WHEN sf_133.period = 6 THEN 2
-        WHEN sf_133.period = 9 THEN 3
-        WHEN sf_133.period = 12 THEN 4
-    END AS fiscal_quarter,
+     sf_133.period AS fiscal_period,
     SUM(amount) AS total_obligation
 FROM sf_133
 WHERE
     line = 2190
-    AND
-    period in (3, 6, 9, 12)
-GROUP BY fiscal_year, fiscal_quarter
-ORDER BY fiscal_year, fiscal_quarter;
+GROUP BY fiscal_year, fiscal_period
+ORDER BY fiscal_year, fiscal_period;
 """
 
 
