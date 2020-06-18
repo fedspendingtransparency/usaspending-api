@@ -106,22 +106,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='SummaryTransactionMonthView',
-            fields=[],
-            options={
-                'db_table': 'summary_transaction_month_view',
-                'managed': False,
-            },
-        ),
-        migrations.CreateModel(
-            name='SummaryTransactionView',
-            fields=[],
-            options={
-                'db_table': 'summary_transaction_view',
-                'managed': False,
-            },
-        ),
-        migrations.CreateModel(
             name='TASAutocompleteMatview',
             fields=[],
             options={
