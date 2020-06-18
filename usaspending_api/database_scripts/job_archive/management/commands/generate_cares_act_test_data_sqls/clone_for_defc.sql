@@ -1,4 +1,4 @@
--- This script is all about cloning File A, B, and C records and applying DEF codes to them.
+-- This script is all about cloning File B and C records and applying DEF codes to them.
 
 
 -- LOG: Generate financial_accounts_by_program_activity_object_class for DEFC "{disaster_emergency_fund_code}"
