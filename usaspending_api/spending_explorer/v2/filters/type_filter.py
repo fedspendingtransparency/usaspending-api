@@ -46,10 +46,12 @@ def get_unreported_data_obj(
         result_set.append(condensed_entry)
 
     expected_total = (
-        GTASTotalObligation.objects.filter(fiscal_year=fiscal_year, fiscal_quarter=fiscal_quarter)
-        .values_list("total_obligation", flat=True)
-        .first()
-    )
+        GTASTotalObligation.objects.filter(
+            fiscal_year=fiscal_year,
+            fiscal_period__gt=((fiscal_quarter - 1) * 3),
+            fiscal_period__lte=(fiscal_quarter + 1) * 3,
+        ).aggregate(Sum("total_obligation"))
+    )["total_obligation__sum"]
 
     if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()) == set(VALID_UNREPORTED_FILTERS):
         unreported_obj = {"id": None, "code": None, "type": spending_type, "name": UNREPORTED_DATA_NAME, "amount": None}
