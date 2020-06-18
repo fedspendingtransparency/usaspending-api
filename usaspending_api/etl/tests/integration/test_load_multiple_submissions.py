@@ -9,6 +9,7 @@ from model_mommy import mommy
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
+from usaspending_api.etl.management.commands.load_multiple_submissions import Command as LoadMultipleCommand
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -334,8 +335,9 @@ class TestWithMultipleDatabases(TransactionTestCase):
         assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 5
         assert FinancialAccountsByAwards.objects.count() == 9
 
-        # We'll need this later.
+        # We'll need these later.
         update_date_sub_2 = SubmissionAttributes.objects.get(submission_id=2).update_date
+        create_date_sub_3 = SubmissionAttributes.objects.get(submission_id=3).create_date
 
         # Load remaining submissions.
         call_command("load_multiple_submissions", "--incremental")
@@ -427,11 +429,43 @@ class TestWithMultipleDatabases(TransactionTestCase):
         assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 4
         assert FinancialAccountsByAwards.objects.count() == 8
 
-        # Ok, after all the stuff we just did, let's make sure submission 2 never got touched.
+        # Ok, after all the stuff we just did, let's make sure submissions 2 and 3 never got touched.
         assert SubmissionAttributes.objects.get(submission_id=2).update_date == update_date_sub_2
+        assert SubmissionAttributes.objects.get(submission_id=3).create_date == create_date_sub_3
 
-        # Now let's make sure it does.
+        # Now let's make sure submission 2 gets touched.
         call_command("load_multiple_submissions", "--submission-ids", 2)
         assert SubmissionAttributes.objects.get(submission_id=2).update_date > update_date_sub_2
+
+        # Let's test the new certified_date change detection code.  But first, bring submission 1 back to the present.
+        with connections["data_broker"].cursor() as cursor:
+            cursor.execute("update submission set updated_at = now() where submission_id = 1")
+        call_command("load_multiple_submissions", "--submission-ids", 1)
+
+        # Everything is in sync.  Both lists should be empty.
+        certified_only_submission_ids, load_submission_ids = LoadMultipleCommand.get_incremental_submission_ids()
+        assert certified_only_submission_ids == []
+        assert load_submission_ids == []
+
+        # There should be only one certified_only difference.
+        SubmissionAttributes.objects.filter(submission_id=3).update(certified_date="1999-01-01")
+        certified_only_submission_ids, load_submission_ids = LoadMultipleCommand.get_incremental_submission_ids()
+        assert [tuple(c) for c in certified_only_submission_ids] == [(3, datetime(2000, 2, 3))]
+        assert load_submission_ids == []
+
+        # There should be one certified_only difference and one reload.
+        SubmissionAttributes.objects.filter(submission_id=1).update(published_date="1999-01-01")
+        certified_only_submission_ids, load_submission_ids = LoadMultipleCommand.get_incremental_submission_ids()
+        assert [tuple(c) for c in certified_only_submission_ids] == [(3, datetime(2000, 2, 3))]
+        assert load_submission_ids == [1]
+
+        # Fix everything.
+        call_command("load_multiple_submissions", "--incremental")
+        certified_only_submission_ids, load_submission_ids = LoadMultipleCommand.get_incremental_submission_ids()
+        assert certified_only_submission_ids == []
+        assert load_submission_ids == []
+
+        # Confirm that submission 3 only received a certified_date change, not a reload.
+        assert SubmissionAttributes.objects.get(submission_id=3).create_date == create_date_sub_3
 
         # Ok.  That's probably good enough for now.  Thanks for bearing with me.
