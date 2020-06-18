@@ -179,7 +179,9 @@ def validate_object(rule):
     for key, value in rule["object_keys"].items():
         if key not in provided_object:
             if "optional" in value and value["optional"] is False:
-                raise UnprocessableEntityException("Required object fields: {}".format(rule["object_keys"].keys()))
+                raise UnprocessableEntityException(
+                    "Required object fields: {}".format(list(rule["object_keys"].keys()))
+                )
             else:
                 continue
 
