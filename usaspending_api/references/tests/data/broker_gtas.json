@@ -1,19 +1,22 @@
 {
-  "SELECT fiscal_year, CASE WHEN sf_133.period = 3 THEN 1 WHEN sf_133.period = 6 THEN 2 WHEN sf_133.period = 9 THEN 3 WHEN sf_133.period = 12 THEN 4 END AS fiscal_quarter, SUM(amount) AS total_obligation FROM sf_133 WHERE line = 2190 AND period in (3, 6, 9, 12) GROUP BY fiscal_year, fiscal_quarter ORDER BY fiscal_year, fiscal_quarter;": [
+  "SELECT\n    fiscal_year,\n     sf_133.period AS fiscal_period,\n    SUM(amount) AS total_obligation,\n    sf_133.disaster_emergency_fund_code\nFROM sf_133\nWHERE\n    line = 2190\nGROUP BY fiscal_year, fiscal_period, disaster_emergency_fund_code\nORDER BY fiscal_year, fiscal_period;": [
     {
       "fiscal_year": 1600,
-      "fiscal_quarter": "-1",
-      "total_obligation": "-10"
+      "fiscal_period": "-1",
+      "total_obligation": "-10",
+      "disaster_emergency_fund_code": "A"
     },
     {
       "fiscal_year": 1600,
-      "fiscal_quarter": "-2",
-      "total_obligation": "-1"
+      "fiscal_period": "-2",
+      "total_obligation": "-1",
+      "disaster_emergency_fund_code": "A"
     },
     {
       "fiscal_year": 1601,
-      "fiscal_quarter": "-1",
-      "total_obligation": "-10"
+      "fiscal_period": "-1",
+      "total_obligation": "-10",
+      "disaster_emergency_fund_code": "A"
     }
   ]
 }

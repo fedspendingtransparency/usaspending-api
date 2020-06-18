@@ -28,9 +28,7 @@ def test_program_activity_fresh_load(monkeypatch):
 
     actual_results = {
         "count": GTASTotalObligation.objects.count(),
-        "row_tuples": list(
-            GTASTotalObligation.objects.values_list("fiscal_year", "fiscal_quarter", "total_obligation")
-        ),
+        "row_tuples": list(GTASTotalObligation.objects.values_list("fiscal_year", "fiscal_period", "total_obligation")),
     }
 
     assert expected_results == actual_results
