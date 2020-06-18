@@ -26,6 +26,7 @@ See [Tools for Testing and Mocking](tools-for-contracts.md)
 1. Include a properly-formatted and indented `Body` section for both a (Post) Request and Response
 1. Use `dredd` or `aglio` to check the syntax of the API Contract.
 1. Use `fixed-type` when defining list and object attributes
+1. For consistency, use the plus sign, `+`, instead of a dash, `-`, in lists and object definitions
 
 Follow these link to see example API Contracts:
 - [[GET] /api/v2/this/is/your/<param_for_endpoint>/ (Example)](template_for_get.md)
