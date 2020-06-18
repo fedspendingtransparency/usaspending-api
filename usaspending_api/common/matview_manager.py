@@ -94,22 +94,6 @@ MATERIALIZED_VIEWS = OrderedDict(
             },
         ),
         (
-            "summary_transaction_month_view",
-            {
-                "model": mv.SummaryTransactionMonthView,
-                "json_filepath": str(JSON_DIR / "summary_transaction_month_view.json"),
-                "sql_filename": "summary_transaction_month_view.sql",
-            },
-        ),
-        (
-            "summary_transaction_view",
-            {
-                "model": mv.SummaryTransactionView,
-                "json_filepath": str(JSON_DIR / "summary_transaction_view.json"),
-                "sql_filename": "summary_transaction_view.sql",
-            },
-        ),
-        (
             "tas_autocomplete_matview",
             {
                 "model": TASAutocompleteMatview,
