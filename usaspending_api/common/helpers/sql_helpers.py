@@ -271,6 +271,11 @@ def execute_sql_to_named_tuple(sql, model=Award, read_only=True):
     return execute_sql(sql, model=model, fetcher=named_tuple_fetcher, read_only=read_only)
 
 
+def execute_sql_return_single_value(sql, model=Award, read_only=True):
+    """ Convenience function to return execute_sql results as a list of named tuples. """
+    return execute_sql(sql, model=model, fetcher=single_value_fetcher, read_only=read_only)
+
+
 def get_connection(model=Award, read_only=True):
     """
     As of this writing, USAspending alternates database reads between multiple
