@@ -42,9 +42,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        since_datetime = self.calculate_since_datetime(options.get("start_datetime"))
         certified_only_submission_ids, load_submission_ids = self.get_submission_ids(
-            options.get("submission_ids"), since_datetime
+            options.get("submission_ids"), options.get("start_datetime")
         )
 
         if not certified_only_submission_ids and not load_submission_ids:
@@ -57,10 +56,11 @@ class Command(BaseCommand):
 
         self.process_submissions(certified_only_submission_ids, load_submission_ids)
 
-    def get_submission_ids(self, submission_ids, since_datetime):
+    def get_submission_ids(self, submission_ids, start_datetime):
         if submission_ids:
             certified_only_submission_ids, load_submission_ids = [], submission_ids
         else:
+            since_datetime = self.calculate_since_datetime(start_datetime)
             certified_only_submission_ids, load_submission_ids = self.get_incremental_submission_ids(since_datetime)
 
         if certified_only_submission_ids:
