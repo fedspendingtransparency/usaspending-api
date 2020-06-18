@@ -9,6 +9,7 @@ This endpoint returns a JSON object describing all Disaster and Emergency Fundin
 + Response 200 (application/json)
     + Attributes (object)
         + `codes` (required, array[DEFC], fixed-type)
+
     + Body
 
             {
@@ -196,8 +197,8 @@ This endpoint returns a JSON object describing all Disaster and Emergency Fundin
                 ]
             }
 
-## Data Structures
-### DEFC (object)
+# Data Structures
+## DEFC (object)
 + `code` (required, string)
     Disaster Emergency Fund Code
 + `public_law` (required, string)
