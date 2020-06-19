@@ -7,12 +7,12 @@ from usaspending_api.spending_explorer.v2.filters.type_filter import type_filter
 SPENDING_EXPLORER_LIMIT = 500
 
 
-class SpendingExplorerViewSet(APIView):
+class ExperimentalDisasterViewSet(APIView):
     """
     This route sends a request to the backend to retrieve spending data information through various types and filters.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster_spending.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/spending.md"
 
     @cache_response()
     def post(self, request):

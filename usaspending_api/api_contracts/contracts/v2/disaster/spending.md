@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Disaster Spending [/api/v2/disaster_spending/]
+# Disaster Spending [/api/v2/disaster/spending/]
 
 These endpoints are used to power USAspending.gov's Disaster Spending page. This data can be used to drill down into specific subsets of data by level of detail.
 
@@ -15,7 +15,7 @@ The Disaster Spending requires the top-level (or entry point) filter to be one o
 
 **General Disaster Spending Data**
 
-The general Disaster Spending response will contain only one filter (required), a fiscal year and quarter to limit the data to. The data will include _all_ quarters up to and including the specified quarter in the given fiscal year.
+The data will include _all_ quarters up to and including the specified quarter in the given fiscal year.
 
 This data represents all government spending in the specified time period, grouped by the data type of your choice.
 
@@ -52,8 +52,6 @@ Using the response from the general Disaster Spending, you can drill down to mor
             {
                 "type":"recipient",
                 "filters": {
-                    "fy":"2020",
-                    "quarter":"1",
                     "budget_function":"500",
                     "budget_subfunction":"501",
                     "federal_account":"5901"
@@ -154,16 +152,11 @@ Using the response from the general Disaster Spending, you can drill down to mor
                 + `budget_function`
                 + `agency`
                 + `object_class`
-        + `filters` (required, GeneralFilter, fixed-type)
 
     + Body
 
             {
-                "type": "federal_account",
-                "filters": {
-                    "fy": 2019,
-                    "quarter": "1"
-                }
+                "type": "federal_account"
             }
 
 + Response 200 (application/json)
@@ -206,23 +199,7 @@ Using the response from the general Disaster Spending, you can drill down to mor
 
 # Data Structures
 
-## GeneralFilter (object)
-+ `fy`: `2019` (required, string)
-+ `quarter` (required, enum[string])
-    + Members
-        + `1`
-        + `2`
-        + `3`
-        + `4`
-
 ## DetailedFilter (object)
-+ `fy`: `2019` (required, string)
-+ `quarter` (required, enum[string])
-    + Members
-        + `1`
-        + `2`
-        + `3`
-        + `4`
 + `agency` (optional, number)
     This value is the `id` returned in the general Disaster Spending response.
 + `federal_account` (optional, number)
