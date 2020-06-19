@@ -111,7 +111,7 @@ VIEW_COLUMNS = [
     "tas_components",
     "federal_accounts",
     "business_categories",
-    "disaster_emergency_fund_codes"
+    "disaster_emergency_fund_codes",
 ]
 AWARD_VIEW_COLUMNS = [
     "award_id",
@@ -183,7 +183,7 @@ AWARD_VIEW_COLUMNS = [
     "tas_components",
     "disaster_emergency_fund_codes",
     "total_covid_obligations",
-    "total_covid_outlays"
+    "total_covid_outlays",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"

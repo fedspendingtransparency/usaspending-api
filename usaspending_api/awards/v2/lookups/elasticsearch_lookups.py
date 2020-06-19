@@ -23,9 +23,9 @@ TRANSACTIONS_LOOKUP = {
     "internal_id": "award_id",
     "generated_internal_id": "generated_unique_award_id",
     "Last Date to Order": "ordering_period_end_date",
-    "disaster_emergency_fund_codes": "disaster_emergency_fund_codes",
+    "def_codes": "disaster_emergency_fund_codes",
     "COVID-19 Obligations": "total_covid_obligations",
-    "COVID-19 Outlays":"total_covid_outlays"
+    "COVID-19 Outlays": "total_covid_outlays",
 }
 
 base_mapping = {
@@ -52,7 +52,7 @@ base_mapping = {
     "generated_internal_id": "generated_unique_award_id",
     "disaster_emergency_fund_codes": "disaster_emergency_fund_codes",
     "COVID-19 Obligations": "total_covid_obligations",
-    "COVID-19 Outlays":"total_covid_outlays"
+    "COVID-19 Outlays": "total_covid_outlays",
 }
 contracts_mapping = {
     **base_mapping,

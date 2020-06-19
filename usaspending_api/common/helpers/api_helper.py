@@ -13,7 +13,13 @@ from usaspending_api.awards.v2.lookups.lookups import (
     procurement_type_mapping,
 )
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups, subaward_types_are_valid_groups
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import contracts_mapping, idv_mapping, loan_mapping, non_loan_assist_mapping
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
+    contracts_mapping,
+    idv_mapping,
+    loan_mapping,
+    non_loan_assist_mapping,
+)
+
 
 def alias_response(field_to_alias_dict, results):
     results_copy = results.copy()

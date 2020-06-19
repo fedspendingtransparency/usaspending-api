@@ -105,7 +105,7 @@ LEFT JOIN (
 	    FROM submission_attributes p
 	    WHERE
 	    -- For COVID, look only after a certain date (likely on/after 2020-04-01, or the start of FY2020 FYP07)
-	        p.reporting_period_start >= '2017-04-01' -- '2020-04-01' -- using older date to see data surface
+	        p.reporting_period_start >= '2020-04-01' -- using older date to see data surface
 	        AND now()::date > p.reporting_period_end -- change "period end" with "window close"
 	    ORDER BY p.reporting_fiscal_year DESC, p.reporting_fiscal_period DESC
     ),
@@ -119,13 +119,14 @@ LEFT JOIN (
     eligible_file_c_records AS (
         SELECT
             faba.award_id,
-            CASE WHEN faba.disaster_emergency_fund_code IN ('L','M','N','O','P') THEN faba.gross_outlay_amount_by_award_cpe else 0 END AS gross_outlay_amount_by_award_cpe,
-            CASE WHEN faba.disaster_emergency_fund_code IN ('L','M','N','O','P') THEN faba.transaction_obligated_amount else 0 END AS transaction_obligated_amount,
+            CASE WHEN defc.group_name = ('covid_19') THEN faba.gross_outlay_amount_by_award_cpe else 0 END AS gross_outlay_amount_by_award_cpe,
+            CASE WHEN defc.group_name = ('covid_19') THEN faba.transaction_obligated_amount else 0 END AS transaction_obligated_amount,
             faba.disaster_emergency_fund_code,
             s.reporting_fiscal_year,
             s.reporting_fiscal_period
         FROM financial_accounts_by_awards faba
         INNER JOIN eligible_submissions s ON s.submission_id = faba.submission_id
+        INNER JOIN disaster_emergency_fund_code defc on defc.code = faba.disaster_emergency_fund_code
         WHERE faba.disaster_emergency_fund_code IS NOT NULL
     ),
     fy_final_balances AS (
