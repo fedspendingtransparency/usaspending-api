@@ -23,7 +23,7 @@ TRANSACTIONS_LOOKUP = {
     "internal_id": "award_id",
     "generated_internal_id": "generated_unique_award_id",
     "Last Date to Order": "ordering_period_end_date",
-    "def_codes": "disaster_emergency_fund_codes"
+    "def_codes": "disaster_emergency_fund_codes",
 }
 
 base_mapping = {
