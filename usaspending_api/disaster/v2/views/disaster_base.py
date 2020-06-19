@@ -73,8 +73,8 @@ class SpendingMixin:
                 "optional": False,
             }
         ]
-        spending_type = TinyShield(model).block(self.request.data)
-        return spending_type
+
+        return TinyShield(model).block(self.request.data)["spending_type"]
 
 
 class LoansMixin:
