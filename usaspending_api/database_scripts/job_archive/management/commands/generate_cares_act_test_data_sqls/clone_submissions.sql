@@ -1,4 +1,31 @@
--- This script is all about cloning about 2/3 of quarterly submissions into monthly submissions.
+-- Jira Ticket Number(s): DEV-5343
+--
+--     This script clones about 2/3 of base quarterly submissions into monthly submissions for
+--     other periods in the quarter.
+--
+-- Expected CLI:
+--
+--     None.  Execution is controlled by a supporting Python script.
+--
+-- Purpose:
+--
+--     This script generates or participates in the generation of sample CARES Act data for testing
+--     and development purposes.  It generates these data from existing data by duplicating and
+--     modifying existing submissions and File A/B/C records.  Data points are adjusted in an attempt
+--     to make them seem realistic and true to their actual source submissions.
+--
+--     These data will not be perfect, obviously, but they should be sufficient for testing.
+--
+-- Life expectancy:
+--
+--     This file should live until CARES Act features have gone live.
+--
+--     Be sure to delete all files/directories associated with this ticket:
+--         - job_archive/management/commands/generate_cares_act_test_data_helpers.py
+--         - job_archive/management/commands/generate_cares_act_test_def_codes.py
+--         - job_archive/management/commands/generate_cares_act_test_monthly_submissions.py
+--         - job_archive/management/commands/generate_cares_act_test_data_sqls
+
 
 -- LOG: Generate monthly submission_attributes for FY{filter_fiscal_year}P{reporting_fiscal_period}
 insert into submission_attributes (
@@ -37,6 +64,7 @@ from
 where
     reporting_fiscal_year = {filter_fiscal_year} and
     reporting_fiscal_period = {filter_fiscal_period} and
+    quarter_format_flag is true and
     submission_id % 3 != 0;  -- only clone about half of the submissions
 
 -- SPLIT --
@@ -93,6 +121,7 @@ from
 where
     sa.reporting_fiscal_year = {filter_fiscal_year} and
     sa.reporting_fiscal_period = {filter_fiscal_period} and
+    quarter_format_flag is true and
     sa.submission_id % 3 != 0;  -- only clone file a records linked to submissions we cloned
 
 -- SPLIT --
@@ -191,6 +220,7 @@ from
 where
     sa.reporting_fiscal_year = {filter_fiscal_year} and
     sa.reporting_fiscal_period = {filter_fiscal_period} and
+    quarter_format_flag is true and
     sa.submission_id % 3 != 0;  -- only clone file a records linked to submissions we cloned
 
 -- SPLIT --
@@ -301,4 +331,5 @@ from
 where
     sa.reporting_fiscal_year = {filter_fiscal_year} and
     sa.reporting_fiscal_period = {filter_fiscal_period} and
+    quarter_format_flag is true and
     sa.submission_id % 3 != 0;  -- only clone file a records linked to submissions we cloned

@@ -1,25 +1,30 @@
 """
 Jira Ticket Number(s): DEV-5343
 
-    Generate test CARES Act monthly submissions and DEFC Files B and C data.
+    Helper functions/classes for CARES Act test data generation.
 
 Expected CLI:
 
-    $ ./manage.py generate_cares_act_test_data 2020 2  # which are FY and FQ - use any FY and FQ you want
+    None.  This is a helper file, silly.
 
 Purpose:
 
-    This script deterministically generates sample CARES Act data for testing and development
-    purposes.  It generates this data from existing data by duplicating and modifying existing
-    submissions and File A/B/C records.  Data points are adjusted in an attempt to make them
-    seem realistic and true to their actual source submissions.
+    This script generates or participates in the generation of sample CARES Act data for testing
+    and development purposes.  It generates these data from existing data by duplicating and
+    modifying existing submissions and File A/B/C records.  Data points are adjusted in an attempt
+    to make them seem realistic and true to their actual source submissions.
 
     These data will not be perfect, obviously, but they should be sufficient for testing.
 
 Life expectancy:
 
-    This file should live until CARES Act features have gone live.  Also delete the
-    generate_cares_act_test_data_sqls directory and supporting SQL files.
+    This file should live until CARES Act features have gone live.
+
+    Be sure to delete all files/directories associated with this ticket:
+        - job_archive/management/commands/generate_cares_act_test_data_helpers.py
+        - job_archive/management/commands/generate_cares_act_test_def_codes.py
+        - job_archive/management/commands/generate_cares_act_test_monthly_submissions.py
+        - job_archive/management/commands/generate_cares_act_test_data_sqls
 
 """
 import logging
@@ -27,14 +32,11 @@ import re
 
 from argparse import ArgumentTypeError
 from collections import namedtuple
-from datetime import timedelta, date
-from django.core.management.base import BaseCommand
-from django.db import transaction
 from pathlib import Path
 from usaspending_api.common.helpers.sql_helpers import execute_sql_return_single_value, execute_dml_sql
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer
-from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
+from datetime import timedelta, date
 
 
 logger = logging.getLogger("script")
@@ -48,18 +50,14 @@ class OneLineTimer(ScriptTimer):
         pass
 
 
-class Command(BaseCommand):
-    help = (
-        "This script generates test CARES Act submissions and File A/B/C data from existing "
-        "pre-CARES Act submissions."
-    )
+class DEV5343Mixin:
 
     fiscal_year = None
     fiscal_quarter = None
+    fiscal_period = None
     allow_rds = False
     vacuum = False
 
-    fiscal_period = None
     clone_periods = None
     period_ratios = None
     period_starts = None
@@ -69,10 +67,6 @@ class Command(BaseCommand):
 
         parser.add_argument(
             "fiscal year", type=self.validate_fiscal_year, help='Fiscal year to be "enhanced".',
-        )
-
-        parser.add_argument(
-            "fiscal quarter", type=self.validate_fiscal_quarter, help='Fiscal quarter to be "enhanced".',
         )
 
         parser.add_argument(
@@ -90,32 +84,20 @@ class Command(BaseCommand):
             "DATABASE!  DO NOT RUN ON PRODUCTION OR ANY DATABASE YOU CANNOT EASILY RESTORE!"
         )
 
-    def handle(self, *args, **options):
-        with ScriptTimer("CARES Act test data generation"):
-
-            self.set_state(options)
-            self.perform_validations()
-
-            with transaction.atomic():
-                self.record_base_submission_ids()
-                self.clone_submissions()
-                self.update_submissions()
-                self.clone_for_defc()
-
-                t = ScriptTimer("Commit transaction")
-            t.log_success_message()
-
-            if self.vacuum:
-                self.vacuum_tables()
-
     def set_state(self, options):
         self.fiscal_year = options["fiscal year"]
-        self.fiscal_quarter = options["fiscal quarter"]
+        self.fiscal_quarter = options.get("fiscal quarter")
+        self.fiscal_period = options.get("fiscal period")
         self.allow_rds = options["yes_i_know_its_rds"]
         self.vacuum = options["vacuum"]
 
-        # Some other nice-to-haves we'll be using in loops.
-        self.fiscal_period = {1: 3, 2: 6, 3: 9, 4: 12}[self.fiscal_quarter]
+        if self.fiscal_period is None:
+            self.fiscal_period = self.fiscal_quarter * 3
+
+        if self.fiscal_quarter is None:
+            self.fiscal_quarter = (self.fiscal_period + 2) // 3
+
+        # The following are all nice-to-haves for monthly submission cloning.
         self.clone_periods = {1: [2], 2: [4, 5], 3: [7, 8], 4: [10, 11]}[self.fiscal_quarter]
 
         # This adds some variability to clones.  Ratios for periods in the same quarter should add up to 1.
@@ -138,29 +120,6 @@ class Command(BaseCommand):
             raise RuntimeError(
                 "You appear to be running against an RDS instance.  Consider using the --yes-i-know-its-rds "
                 "switch if you no longer value your career."
-            )
-
-        if self.quarter_has_monthly_data():
-            raise RuntimeError(
-                f"There appears to be monthly data in FY{self.fiscal_year}Q{self.fiscal_quarter} which suggests "
-                f"that CARES Act test data for this quarter have already been generated.  Multiple generations "
-                f"for the same quarter is not currently supported.  Please choose another quarter."
-            )
-
-        if self.there_are_no_submissions():
-            raise RuntimeError(
-                f"Well congratulations.  You've managed to choose a fiscal quarter with no "
-                f"submissions.  Give 'select reporting_fiscal_year, reporting_fiscal_quarter, count(*) from "
-                f"submission_attributes where quarter_format_flag is true group by reporting_fiscal_year, "
-                f"reporting_fiscal_quarter order by reporting_fiscal_year, reporting_fiscal_quarter;' a whirl "
-                f"and try again."
-            )
-
-        if DisasterEmergencyFundCode.objects.count() == 0:
-            raise RuntimeError(
-                f"The {DisasterEmergencyFundCode._meta.db_table} table is empty.  This is a new table and is "
-                f"required for this script.  The loader probably just hasn't been run against this database "
-                f"yet.  Why don't you scurry along and deal with that right quick.  Thank you!"
             )
 
     @staticmethod
@@ -210,7 +169,7 @@ class Command(BaseCommand):
             )
             self.run_sqls(sqls)
 
-    def update_submissions(self):
+    def update_base_submissions(self):
         sql = self.read_sql_file("update_submissions.sql")
         sqls = self.split_sql(
             sql.format(
@@ -231,20 +190,12 @@ class Command(BaseCommand):
                 sql.format(
                     disaster_emergency_fund_code=p[0],
                     filter_fiscal_year=self.fiscal_year,
-                    filter_fiscal_quarter=self.fiscal_quarter,
+                    filter_fiscal_period=self.fiscal_period,
                     adjustment_ratio=p[1],
                     divisor=p[2],
                 )
             )
             self.run_sqls(sqls)
-
-    def there_are_no_submissions(self):
-        return (
-            SubmissionAttributes.objects.filter(
-                reporting_fiscal_year=self.fiscal_year, reporting_fiscal_quarter=self.fiscal_quarter,
-            ).count()
-            == 0
-        )
 
     def quarter_has_monthly_data(self):
         return (
@@ -252,6 +203,22 @@ class Command(BaseCommand):
                 reporting_fiscal_year=self.fiscal_year,
                 reporting_fiscal_quarter=self.fiscal_quarter,
                 quarter_format_flag=False,
+            ).count()
+            > 0
+        )
+
+    def quarter_has_submissions(self):
+        return (
+            SubmissionAttributes.objects.filter(
+                reporting_fiscal_year=self.fiscal_year, reporting_fiscal_quarter=self.fiscal_quarter
+            ).count()
+            > 0
+        )
+
+    def period_has_submissions(self):
+        return (
+            SubmissionAttributes.objects.filter(
+                reporting_fiscal_year=self.fiscal_year, reporting_fiscal_period=self.fiscal_period
             ).count()
             > 0
         )
@@ -277,21 +244,22 @@ class Command(BaseCommand):
     @staticmethod
     def validate_fiscal_year(input_string):
         if not re.fullmatch("[0-9]{4}", input_string):
-            raise ArgumentTypeError("fiscal_year must be in the form of YYYY")
-        fiscal_year = int(input_string)
-        if fiscal_year < 2017:
-            raise ArgumentTypeError("USASpending did not have account data prior to 2017")
-        if fiscal_year > 2021:
-            raise ArgumentTypeError("Oh man, if we're still working on CARES Act after 2021...")
-        return fiscal_year
+            raise ArgumentTypeError("Fiscal year must be a number in the form of YYYY.")
+        return int(input_string)
 
     @staticmethod
     def validate_fiscal_quarter(input_string):
-        if not re.fullmatch("[0-9]", input_string):
-            raise ArgumentTypeError("fiscal_quarter must be a single numeric digit between 1 and 4")
-        fiscal_quarter = int(input_string)
-        if fiscal_quarter < 1:
-            raise ArgumentTypeError("fiscal_quarter must be a single numeric digit between 1 and 4")
-        if fiscal_quarter > 4:
-            raise ArgumentTypeError("This script does not support quantum quarters")
-        return fiscal_quarter
+        msg = "Fiscal quarter must be a single numeric digit from 1 to 4."
+        if not re.fullmatch("[1-4]", input_string):
+            raise ArgumentTypeError(msg)
+        return int(input_string)
+
+    @staticmethod
+    def validate_fiscal_period(input_string):
+        msg = "Fiscal period must be a numeric value from 2 to 12.  Period 2 encompasses periods 1 and 2."
+        if not re.fullmatch("[0-9]{1,2}", input_string):
+            raise ArgumentTypeError(msg)
+        fiscal_period = int(input_string)
+        if fiscal_period < 2 or fiscal_period > 12:
+            raise ArgumentTypeError(msg)
+        return fiscal_period
