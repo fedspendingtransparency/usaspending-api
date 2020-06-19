@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 This endpoint returns a JSON object representing the grouping of award types.
 ​
-## GET    
+## GET
 + Response 200 (application/json)
     + Attributes (object)
         + `contracts` (required, ContractTypes, fixed-type)
@@ -53,18 +53,18 @@ This endpoint returns a JSON object representing the grouping of award types.
                 }
             }
 
-## Data Structures
-### ContractTypes (object)
+# Data Structures
+## ContractTypes (object)
 + `A` (required, string) - BPA Call
 + `B` (required, string) - Purchase Order
 + `C` (required, string) - Delivery Order
 + `D` (required, string) - Definitive Contract
 ​
-### LoanTypes (object)
+## LoanTypes (object)
 + `07` (required, string) - Direct Loan
 + `08` (required, string) - Guaranteed/Insured Loan
-​
-### IDVTypes (object)
+
+## IDVTypes (object)
 + `IDV_A` (required, string) - GWAC Government Wide Acquisition Contract
 + `IDV_B` (required, string) - IDC Multi-Agency Contract, Other Indefinite Delivery Contract
 + `IDV_B_A` (required, string) - IDC Indefinite Delivery Contract / Requirements
@@ -74,16 +74,16 @@ This endpoint returns a JSON object representing the grouping of award types.
 + `IDV_D` (required, string) - BOA Basic Ordering Agreement
 + `IDV_E` (required, string) - BPA Blanket Purchase Agreement
 
-### GrantTypes (object)
+## GrantTypes (object)
 + `02` (required, string) - Block Grant
 + `03` (required, string) - Formula Grant
 + `04` (required, string) - Project Grant
 + `05` (required, string) - Cooperative Agreement
 
-### OtherFinancialAssistanceTypes (object)
+## OtherFinancialAssistanceTypes (object)
 + `09` (required, string) - Insurance
 + `11` (required, string) - Other Financial Assistance
 ​
-### DirectPaymentTypes (object)
+## DirectPaymentTypes (object)
 + `06` (required, string) - Direct Payment for Specified Use
 + `10` (required, string) - Direct Payment with Unrestricted Use
