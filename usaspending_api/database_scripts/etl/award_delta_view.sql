@@ -119,13 +119,14 @@ LEFT JOIN (
     eligible_file_c_records AS (
         SELECT
             faba.award_id,
-            faba.gross_outlay_amount_by_award_cpe,
-            faba.transaction_obligated_amount,
+            CASE WHEN faba.disaster_emergency_fund_code IN ('L','M','N','O','P') THEN faba.gross_outlay_amount_by_award_cpe else 0 END AS gross_outlay_amount_by_award_cpe,
+            CASE WHEN faba.disaster_emergency_fund_code IN ('L','M','N','O','P') THEN faba.transaction_obligated_amount else 0 END AS transaction_obligated_amount,
             faba.disaster_emergency_fund_code,
             s.reporting_fiscal_year,
             s.reporting_fiscal_period
         FROM financial_accounts_by_awards faba
         INNER JOIN eligible_submissions s ON s.submission_id = faba.submission_id
+        WHERE faba.disaster_emergency_fund_code IS NOT NULL
     ),
     fy_final_balances AS (
         -- Rule: If a balance is not zero at the end of the year, it must be reported in the
@@ -158,7 +159,7 @@ LEFT JOIN (
     SELECT
         faba.award_id,
         coalesce(ffy.prior_fys_outlay, 0) + coalesce(cfy.current_fy_outlay, 0) AS total_covid_obligations,
-        sum(transaction_obligated_amount) AS total_covid_outlays,
+        sum(faba.transaction_obligated_amount) AS total_covid_outlays,
         ARRAY_AGG(DISTINCT faba.disaster_emergency_fund_code) AS defc
     FROM eligible_file_c_records faba
     LEFT JOIN fy_final_balances ffy ON ffy.award_id = faba.award_id
