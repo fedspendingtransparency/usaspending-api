@@ -52,7 +52,6 @@ class FederalAccountList(ListMixin, AgencyBase):
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         results = self.format_results(self.get_federal_account_list())
-        results = results
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
             {
