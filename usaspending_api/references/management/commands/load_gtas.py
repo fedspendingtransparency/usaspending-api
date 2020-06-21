@@ -8,18 +8,7 @@ from usaspending_api.references.models import GTASTotalObligation
 
 logger = logging.getLogger("console")
 
-TOTAL_OBLIGATION_SQL = """
-SELECT
-    fiscal_year,
-     sf_133.period AS fiscal_period,
-    SUM(amount) AS total_obligation,
-    sf_133.disaster_emergency_fund_code
-FROM sf_133
-WHERE
-    line = 2190
-GROUP BY fiscal_year, fiscal_period, disaster_emergency_fund_code
-ORDER BY fiscal_year, fiscal_period;
-"""
+DERIVED_COLUMNS = {"obligations_incurred_total_cpe": [2190]}
 
 
 class Command(BaseCommand):
@@ -30,8 +19,9 @@ class Command(BaseCommand):
         logger.info("Creating broker cursor")
         broker_cursor = connections["data_broker"].cursor()
 
+        print(self.generate_sql())
         logger.info("Running TOTAL_OBLIGATION_SQL")
-        broker_cursor.execute(TOTAL_OBLIGATION_SQL)
+        broker_cursor.execute(self.generate_sql())
 
         logger.info("Getting total obligation values from cursor")
         total_obligation_values = dictfetchall(broker_cursor)
@@ -44,3 +34,30 @@ class Command(BaseCommand):
         GTASTotalObligation.objects.bulk_create(total_obligation_objs)
 
         logger.info("GTAS loader finished successfully!")
+
+    def generate_sql(self):
+        inner_statements = "\n".join(
+            [
+                """(
+      SELECT
+      SUM(sf.amount) 
+      FROM sf_133 sf
+      WHERE sf.fiscal_year = outer_table.fiscal_year
+      AND sf.period = outer_table.period
+      AND (sf.disaster_emergency_fund_code is null AND outer_table.disaster_emergency_fund_code is null OR sf.disaster_emergency_fund_code = outer_table.disaster_emergency_fund_code)
+      AND line in (2190)
+    ) AS obligations_incurred_total_cpe,"""
+                for elem in DERIVED_COLUMNS
+            ]
+        )
+
+        return f"""
+SELECT
+    fiscal_year,
+    period as fiscal_period,
+    {inner_statements}
+    outer_table.disaster_emergency_fund_code
+FROM sf_133 outer_table
+GROUP BY fiscal_year, fiscal_period, disaster_emergency_fund_code
+ORDER BY fiscal_year, fiscal_period;
+"""
