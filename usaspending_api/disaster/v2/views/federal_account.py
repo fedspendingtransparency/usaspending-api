@@ -4,16 +4,46 @@ from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.data_classes import FedAcctResults, FederalAccount, TreasuryAccount
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
-    LoanPaginationMixin,
+    LoansPaginationMixin,
     LoansMixin,
     PaginationMixin,
     SpendingMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+
+
+def construct_response(
+    results: list, pagination: Pagination, for_total: bool = False,
+):
+    federal_accounts = FedAcctResults()
+    for row in results:
+        FA = FederalAccount(id=row["fa_id"], code=row["fa_code"], description=row["fa_description"],)
+        TAS = TreasuryAccount(
+            id=row["id"],
+            code=row["code"],
+            count=row["count"],
+            description=row["description"],
+            obligation=row["obligation"],
+            outlay=row["outlay"],
+            total_budgetary_resources=row["total_budgetary_resources"] if for_total else None,
+        )
+
+        federal_accounts.add_if_missing(FA)
+        federal_accounts[FA].include(TAS)
+
+    page_metadata = get_pagination_metadata(len(federal_accounts), pagination.limit, pagination.page)
+
+    return {
+        "results": federal_accounts.finalize(
+            pagination.sort_key, pagination.sort_order, pagination.lower_limit, pagination.upper_limit,
+        ),
+        "page_metadata": page_metadata,
+    }
 
 
 class Spending(PaginationMixin, SpendingMixin, DisasterBase):
@@ -28,38 +58,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             for_total = True
             results = list(self.get_total_queryset())
 
-        return self.construct_response(results, for_total)
-
-    def construct_response(self, results, for_total):
-        federal_accounts = FedAcctResults()
-        for row in results:
-            FA = FederalAccount(id=row["fa_id"], code=row["fa_code"], description=row["fa_description"],)
-            TAS = TreasuryAccount(
-                id=row["id"],
-                code=row["code"],
-                count=row["count"],
-                description=row["description"],
-                obligation=row["obligation"],
-                outlay=row["outlay"],
-                total_budgetary_resources=row["total_budgetary_resources"] if for_total else None,
-            )
-
-            federal_accounts.add_if_missing(FA)
-            federal_accounts[FA].include(TAS)
-
-        page_metadata = get_pagination_metadata(len(federal_accounts), self.pagination.limit, self.pagination.page)
-
-        return Response(
-            {
-                "results": federal_accounts.finalize(
-                    self.pagination.sort_key,
-                    self.pagination.sort_order,
-                    self.pagination.lower_limit,
-                    self.pagination.upper_limit,
-                ),
-                "page_metadata": page_metadata,
-            }
-        )
+        return Response(construct_response(results, self.pagination, for_total))
 
     def get_total_queryset(self):
         filters = [
@@ -141,14 +140,14 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
         )
 
 
-class Loans(LoansMixin, LoanPaginationMixin, DisasterBase):
+class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
 
     @cache_response()
     def post(self, request):
 
         results = list(self.get_queryset())
-        results = self.construct_response(results, False)
+        results = construct_response(results, self.pagination, False)
 
         for result in results["results"]:
             for child in result["children"]:
@@ -161,35 +160,6 @@ class Loans(LoansMixin, LoanPaginationMixin, DisasterBase):
 
         return Response(results)
 
-    def construct_response(self, results, for_total):
-        federal_accounts = FedAcctResults()
-        for row in results:
-            FA = FederalAccount(id=row["fa_id"], code=row["fa_code"], description=row["fa_description"],)
-            TAS = TreasuryAccount(
-                id=row["id"],
-                code=row["code"],
-                count=row["count"],
-                description=row["description"],
-                obligation=row["obligation"],
-                outlay=row["outlay"],
-                total_budgetary_resources=row["total_budgetary_resources"] if for_total else None,
-            )
-
-            federal_accounts.add_if_missing(FA)
-            federal_accounts[FA].include(TAS)
-
-        page_metadata = get_pagination_metadata(len(federal_accounts), self.pagination.limit, self.pagination.page)
-
-        return {
-            "results": federal_accounts.finalize(
-                self.pagination.sort_key,
-                self.pagination.sort_order,
-                self.pagination.lower_limit,
-                self.pagination.upper_limit,
-            ),
-            "page_metadata": page_metadata,
-        }
-
     def get_queryset(self):
         filters = [
             Q(
@@ -197,7 +167,7 @@ class Loans(LoansMixin, LoanPaginationMixin, DisasterBase):
                 | Q(submission__reporting_fiscal_year__gte=2021)
             ),
             Q(disaster_emergency_fund__in=self.def_codes),
-            Q(award_id__isnull=False)
+            Q(award_id__isnull=False),
         ]
         annotations = {
             "fa_code": Concat(

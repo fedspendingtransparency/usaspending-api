@@ -102,7 +102,7 @@ class PaginationMixin:
         )
 
 
-class LoanPaginationMixin:
+class LoansPaginationMixin:
     @cached_property
     def pagination(self):
         sortable_columns = ["id", "code", "description", "count", "face_value_of_loan"]
