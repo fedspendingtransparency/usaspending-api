@@ -182,8 +182,8 @@ AWARD_VIEW_COLUMNS = [
     "tas_paths",
     "tas_components",
     "disaster_emergency_fund_codes",
-    "total_covid_obligations",
-    "total_covid_outlays",
+    "total_covid_obligation",
+    "total_covid_outlay",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
