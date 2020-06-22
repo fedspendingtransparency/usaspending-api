@@ -51,6 +51,7 @@ def get_unreported_data_obj(
             fiscal_period__gt=((fiscal_quarter - 1) * 3),
             fiscal_period__lte=(fiscal_quarter + 1) * 3,
         )
+        .order_by("fiscal_period")
         .values_list("obligations_incurred_total_cpe", flat=True)
         .first()
     )
