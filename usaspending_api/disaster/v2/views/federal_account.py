@@ -1,5 +1,5 @@
 from django.db.models import Q, Sum, Count, F, Value, DecimalField
-from django.db.models.functions import Concat, Coalesce
+from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -78,9 +78,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             Q(treasury_account__federal_account__isnull=False),
         ]
         annotations = {
-            "fa_code": Concat(
-                F("treasury_account__main_account_code"), Value("-"), F("treasury_account__sub_account_code")
-            ),
+            "fa_code": F("treasury_account__federal_account__federal_account_code"),
             "count": Count("treasury_account__tas_rendering_label", distinct=True),
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
@@ -116,9 +114,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             Q(treasury_account__federal_account__isnull=False),
         ]
         annotations = {
-            "fa_code": Concat(
-                F("treasury_account__main_account_code"), Value("-"), F("treasury_account__sub_account_code")
-            ),
+            "fa_code": F("treasury_account__federal_account__federal_account_code"),
             "count": Count("treasury_account__tas_rendering_label", distinct=True),
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
@@ -176,9 +172,7 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             Q(treasury_account__federal_account__isnull=False),
         ]
         annotations = {
-            "fa_code": Concat(
-                F("treasury_account__main_account_code"), Value("-"), F("treasury_account__sub_account_code")
-            ),
+            "fa_code": F("treasury_account__federal_account__federal_account_code"),
             "count": Count("award_id", distinct=True),
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
