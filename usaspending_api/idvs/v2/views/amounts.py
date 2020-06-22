@@ -72,8 +72,8 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     child_total_outlay = 0
     child_total_obligations = 0
     for row in child_results:
-        child_total_outlay += row["total_outlay"] if row["total_outlay"] is not None else 0
-        child_total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
+        child_total_outlay += row["total_outlay"]
+        child_total_obligations += row["obligated_amount"]
         child_outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
         child_obligation_by_code.append(
             {"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]}
@@ -83,8 +83,8 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     grandchild_total_outlay = 0
     grandchild_total_obligations = 0
     for row in grandchild_results:
-        grandchild_total_outlay += row["total_outlay"] if row["total_outlay"] is not None else 0
-        grandchild_total_obligations += row["obligated_amount"] if row["obligated_amount"] is not None else 0
+        grandchild_total_outlay += row["total_outlay"]
+        grandchild_total_obligations += row["obligated_amount"]
         grandchild_outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
         grandchild_obligation_by_code.append(
             {"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]}
