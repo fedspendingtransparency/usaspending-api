@@ -41,28 +41,30 @@ class Command(BaseCommand):
         logger.info("GTAS loader finished successfully!")
 
     def generate_sql(self):
-        inner_statements = "\n".join(
+        return f"""
+            SELECT
+                fiscal_year,
+                period as fiscal_period,
+                {self.column_statements()}
+                outer_table.disaster_emergency_fund_code
+            FROM sf_133 outer_table
+            GROUP BY fiscal_year, fiscal_period, disaster_emergency_fund_code
+            ORDER BY fiscal_year, fiscal_period;
+        """
+
+    def column_statements(self):
+        return "\n".join(
             [
                 f"""(
-      SELECT
-      COALESCE(SUM(sf.amount), 0.0)
-      FROM sf_133 sf
-      WHERE sf.fiscal_year = outer_table.fiscal_year
-      AND sf.period = outer_table.period
-      AND (sf.disaster_emergency_fund_code is null AND outer_table.disaster_emergency_fund_code is null OR sf.disaster_emergency_fund_code = outer_table.disaster_emergency_fund_code)
-      AND line in ({','.join([str(elem) for elem in val])})
-    ) AS {key},"""
+          SELECT
+          COALESCE(SUM(sf.amount), 0.0)
+          FROM sf_133 sf
+          WHERE sf.fiscal_year = outer_table.fiscal_year
+          AND sf.period = outer_table.period
+          AND (sf.disaster_emergency_fund_code is null AND outer_table.disaster_emergency_fund_code is null
+             OR sf.disaster_emergency_fund_code = outer_table.disaster_emergency_fund_code)
+          AND line in ({','.join([str(elem) for elem in val])})
+        ) AS {key},"""
                 for key, val in DERIVED_COLUMNS.items()
             ]
         )
-
-        return f"""
-SELECT
-    fiscal_year,
-    period as fiscal_period,
-    {inner_statements}
-    outer_table.disaster_emergency_fund_code
-FROM sf_133 outer_table
-GROUP BY fiscal_year, fiscal_period, disaster_emergency_fund_code
-ORDER BY fiscal_year, fiscal_period;
-"""
