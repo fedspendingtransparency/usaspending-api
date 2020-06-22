@@ -1,21 +1,33 @@
 {
-  "SELECT\n    fiscal_year,\n     sf_133.period AS fiscal_period,\n    SUM(amount) AS total_obligation,\n    sf_133.disaster_emergency_fund_code\nFROM sf_133\nWHERE\n    line = 2190\nGROUP BY fiscal_year, fiscal_period, disaster_emergency_fund_code\nORDER BY fiscal_year, fiscal_period;": [
+  "SELECT\n                fiscal_year,\n                period as fiscal_period,\n                (\n          SELECT\n          COALESCE(SUM(sf.amount), 0.0)\n          FROM sf_133 sf\n          WHERE sf.fiscal_year = outer_table.fiscal_year\n          AND sf.period = outer_table.period\n          AND (sf.disaster_emergency_fund_code is null AND outer_table.disaster_emergency_fund_code is null\n             OR sf.disaster_emergency_fund_code = outer_table.disaster_emergency_fund_code)\n          AND line in (2190)\n        ) AS obligations_incurred_total_cpe,\n(\n          SELECT\n          COALESCE(SUM(sf.amount), 0.0)\n          FROM sf_133 sf\n          WHERE sf.fiscal_year = outer_table.fiscal_year\n          AND sf.period = outer_table.period\n          AND (sf.disaster_emergency_fund_code is null AND outer_table.disaster_emergency_fund_code is null\n             OR sf.disaster_emergency_fund_code = outer_table.disaster_emergency_fund_code)\n          AND line in (1160,1180,1260,1280)\n        ) AS budget_authority_appropriation_amount_cpe,\n(\n          SELECT\n          COALESCE(SUM(sf.amount), 0.0)\n          FROM sf_133 sf\n          WHERE sf.fiscal_year = outer_table.fiscal_year\n          AND sf.period = outer_table.period\n          AND (sf.disaster_emergency_fund_code is null AND outer_table.disaster_emergency_fund_code is null\n             OR sf.disaster_emergency_fund_code = outer_table.disaster_emergency_fund_code)\n          AND line in (1340,1440,1540,1640,1750,1850)\n        ) AS other_budgetary_resources_amount_cpe,\n(\n          SELECT\n          COALESCE(SUM(sf.amount), 0.0)\n          FROM sf_133 sf\n          WHERE sf.fiscal_year = outer_table.fiscal_year\n          AND sf.period = outer_table.period\n          AND (sf.disaster_emergency_fund_code is null AND outer_table.disaster_emergency_fund_code is null\n             OR sf.disaster_emergency_fund_code = outer_table.disaster_emergency_fund_code)\n          AND line in (3020)\n        ) AS gross_outlay_amount_by_tas_cpe,\n(\n          SELECT\n          COALESCE(SUM(sf.amount), 0.0)\n          FROM sf_133 sf\n          WHERE sf.fiscal_year = outer_table.fiscal_year\n          AND sf.period = outer_table.period\n          AND (sf.disaster_emergency_fund_code is null AND outer_table.disaster_emergency_fund_code is null\n             OR sf.disaster_emergency_fund_code = outer_table.disaster_emergency_fund_code)\n          AND line in (2490)\n        ) AS unobligated_balance_cpe,\n                outer_table.disaster_emergency_fund_code\n            FROM sf_133 outer_table\n            GROUP BY fiscal_year, fiscal_period, disaster_emergency_fund_code\n            ORDER BY fiscal_year, fiscal_period;": [
     {
       "fiscal_year": 1600,
       "fiscal_period": "-1",
-      "total_obligation": "-10",
+      "obligations_incurred_total_cpe": "-10",
+      "budget_authority_appropriation_amount_cpe": "-11",
+      "other_budgetary_resources_amount_cpe": "-11",
+      "gross_outlay_amount_by_tas_cpe": "-11",
+      "unobligated_balance_cpe": "-11",
       "disaster_emergency_fund_code": "A"
     },
     {
       "fiscal_year": 1600,
       "fiscal_period": "-2",
-      "total_obligation": "-1",
+      "obligations_incurred_total_cpe": "-9",
+      "budget_authority_appropriation_amount_cpe": "-12",
+      "other_budgetary_resources_amount_cpe": "-12",
+      "gross_outlay_amount_by_tas_cpe": "-12",
+      "unobligated_balance_cpe": "-12",
       "disaster_emergency_fund_code": "A"
     },
     {
       "fiscal_year": 1601,
       "fiscal_period": "-1",
-      "total_obligation": "-10",
+      "obligations_incurred_total_cpe": "-8",
+      "budget_authority_appropriation_amount_cpe": "-13",
+      "other_budgetary_resources_amount_cpe": "-13",
+      "gross_outlay_amount_by_tas_cpe": "-13",
+      "unobligated_balance_cpe": "-13",
       "disaster_emergency_fund_code": "A"
     }
   ]
