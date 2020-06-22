@@ -25,7 +25,6 @@ __all__ = [
     "Cfda",
     "CGAC",
     "CityCountyStateCode",
-    "DABSSubmissionWindowSchedule",
     "Definition",
     "DisasterEmergencyFundCode",
     "FilterHash",
