@@ -6,7 +6,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.data_classes import FedAcctResults, FederalAccount, TreasuryAccount
+from usaspending_api.disaster.v2.views.data_classes import FedAcctResults, Collation, Element
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansPaginationMixin,
@@ -22,8 +22,8 @@ def construct_response(
 ):
     federal_accounts = FedAcctResults()
     for row in results:
-        FA = FederalAccount(id=row["fa_id"], code=row["fa_code"], description=row["fa_description"],)
-        TAS = TreasuryAccount(
+        FA = Collation(id=row["fa_id"], code=row["fa_code"], description=row["fa_description"],)
+        TAS = Element(
             id=row["id"],
             code=row["code"],
             count=row["count"],
@@ -74,16 +74,18 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
                 | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
             ),
             Q(disaster_emergency_fund__in=self.def_codes),
+            Q(treasury_account__isnull=False),
+            Q(treasury_account__federal_account__isnull=False),
         ]
         annotations = {
             "fa_code": Concat(
                 F("treasury_account__main_account_code"), Value("-"), F("treasury_account__sub_account_code")
             ),
-            "count": Count("*"),
-            "description": F("treasury_account__tas_rendering_label"),
+            "count": Count("treasury_account__tas_rendering_label", distinct=True),
+            "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),
-            "fa_description": F("treasury_account__account_title"),
+            "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Sum("obligations_incurred_by_program_object_class_cpe"),
             "outlay": Sum("gross_outlay_amount_by_program_object_class_cpe"),
@@ -110,16 +112,18 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
                 | Q(submission__reporting_fiscal_year__gte=2021)
             ),
             Q(disaster_emergency_fund__in=self.def_codes),
+            Q(treasury_account__isnull=False),
+            Q(treasury_account__federal_account__isnull=False),
         ]
         annotations = {
             "fa_code": Concat(
                 F("treasury_account__main_account_code"), Value("-"), F("treasury_account__sub_account_code")
             ),
-            "count": Count("*"),
-            "description": F("treasury_account__tas_rendering_label"),
+            "count": Count("treasury_account__tas_rendering_label", distinct=True),
+            "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),
-            "fa_description": F("treasury_account__account_title"),
+            "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Sum("transaction_obligated_amount"),
             "outlay": Coalesce(Sum("gross_outlay_amount_by_award_cpe"), 0),
@@ -168,16 +172,18 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             ),
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(award_id__isnull=False),
+            Q(treasury_account__isnull=False),
+            Q(treasury_account__federal_account__isnull=False),
         ]
         annotations = {
             "fa_code": Concat(
                 F("treasury_account__main_account_code"), Value("-"), F("treasury_account__sub_account_code")
             ),
             "count": Count("award_id", distinct=True),
-            "description": F("treasury_account__tas_rendering_label"),
+            "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),
-            "fa_description": F("treasury_account__account_title"),
+            "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Value(0, DecimalField(max_digits=23, decimal_places=2)),
             "outlay": Coalesce(Sum("award__total_loan_value"), 0),

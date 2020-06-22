@@ -5,7 +5,7 @@ from typing import List, Dict
 
 @dataclass_json
 @dataclass
-class TreasuryAccount:
+class Element:
     id: int
     code: str
     description: str
@@ -17,8 +17,8 @@ class TreasuryAccount:
 
 @dataclass_json
 @dataclass
-class FederalAccount(TreasuryAccount):
-    children: List[TreasuryAccount] = field(default_factory=list)
+class Collation(Element):
+    children: List[Element] = field(default_factory=list)
 
     def __hash__(self):
         return hash(f"{self.id}-{self.code}")
@@ -38,7 +38,7 @@ class FederalAccount(TreasuryAccount):
 @dataclass_json
 @dataclass
 class FedAcctResults:
-    _federal_accounts: Dict[FederalAccount, FederalAccount] = field(default_factory=dict)
+    _federal_accounts: Dict[Collation, Collation] = field(default_factory=dict)
 
     def __getitem__(self, key):
         return self._federal_accounts[key]

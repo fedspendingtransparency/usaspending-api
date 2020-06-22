@@ -88,7 +88,7 @@ class LoansMixin:
 class PaginationMixin:
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "obligation", "outlay", "total_budgetary_resources"]
+        sortable_columns = ["id", "code", "description", "obligation", "outlay", "total_budgetary_resources", "count"]
         default_sort_column = "id"
         model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
         request_data = TinyShield(model).block(self.request.data.get("pagination", {}))
