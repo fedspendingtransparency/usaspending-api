@@ -25,6 +25,7 @@ class Command(BaseCommand):
         logger.info("Creating broker cursor")
         broker_cursor = connections["data_broker"].cursor()
 
+        print(self.generate_sql())
         logger.info("Running TOTAL_OBLIGATION_SQL")
         broker_cursor.execute(self.generate_sql())
 
