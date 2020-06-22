@@ -8,6 +8,7 @@ class DABSSubmissionWindowSchedule(models.Model):
     submission_start_date = models.DateTimeField()
     submission_due_date = models.DateTimeField()
     certification_due_date = models.DateTimeField()
+    submission_reveal_date = models.DateTimeField()
     submission_fiscal_year = models.IntegerField()
     submission_fiscal_quarter = models.IntegerField()
     submission_fiscal_month = models.IntegerField()
