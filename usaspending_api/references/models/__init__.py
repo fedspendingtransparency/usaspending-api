@@ -2,7 +2,7 @@ from usaspending_api.references.models.agency import Agency
 from usaspending_api.references.models.cfda import Cfda
 from usaspending_api.references.models.cgac import CGAC
 from usaspending_api.references.models.city_county_state_code import CityCountyStateCode
-from usaspending_api.references.models.dabs_submission_window import DABSSubmissionWindow
+from usaspending_api.references.models.dabs_submission_window_schedule import DABSSubmissionWindowSchedule
 from usaspending_api.references.models.definition import Definition
 from usaspending_api.references.models.disaster_emergency_fund_code import DisasterEmergencyFundCode
 from usaspending_api.references.models.filter_hash import FilterHash
@@ -26,7 +26,7 @@ __all__ = [
     "Cfda",
     "CGAC",
     "CityCountyStateCode",
-    "DABSSubmissionWindow",
+    "DABSSubmissionWindowSchedule",
     "Definition",
     "DisasterEmergencyFundCode",
     "FilterHash",

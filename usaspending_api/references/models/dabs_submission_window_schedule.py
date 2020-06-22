@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class DABSSubmissionWindow(models.Model):
+class DABSSubmissionWindowSchedule(models.Model):
     id = models.AutoField(primary_key=True)
     reporting_start = models.DateTimeField()
     reporting_end = models.DateTimeField()
@@ -15,7 +15,7 @@ class DABSSubmissionWindow(models.Model):
 
     class Meta:
         managed = True
-        db_table = "dabs_submission_window"
+        db_table = "dabs_submission_window_schedule"
         unique_together = (
             "submission_fiscal_year",
             "submission_fiscal_quarter",
