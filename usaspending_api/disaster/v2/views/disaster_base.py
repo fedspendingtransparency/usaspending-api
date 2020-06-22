@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.utils.functional import cached_property
 from rest_framework.views import APIView
 
@@ -9,6 +10,7 @@ from usaspending_api.references.models import DisasterEmergencyFundCode
 
 class DisasterBase(APIView):
     required_filters = ["def_codes"]
+    reporting_period_min = "2020-04-01"
 
     @cached_property
     def filters(self):
@@ -48,6 +50,10 @@ class DisasterBase(APIView):
     @property
     def def_codes(self):
         return self.filters["def_codes"]
+
+    @property
+    def reporting_period_max(self):
+        return datetime.now().date()
 
 
 class SpendingMixin:

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.db.models import OuterRef, Q, Exists
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -23,8 +21,14 @@ class FederalAccountCountViewSet(DisasterBase):
             Q(final_of_fy=True),
             Q(treasury_account__federal_account_id=OuterRef("pk")),
             Q(disaster_emergency_fund__code__in=self.def_codes),
-            Q(submission__reporting_period_start__gte="2020-04-01"),
-            Q(submission__reporting_period_end__lt=datetime.now().date()),
+            Q(submission__reporting_period_start__gte=self.reporting_period_min),
+            Q(submission__reporting_period_end__lt=self.reporting_period_max),
+            Q(
+                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
+                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
+            ),
         ]
         count = (
             FederalAccount.objects.annotate(

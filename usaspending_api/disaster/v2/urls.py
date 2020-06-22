@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from usaspending_api.disaster.v2.views.federal_account_count import FederalAccountCountViewSet
+from usaspending_api.disaster.v2.views.federal_account.count import FederalAccountCountViewSet
 from usaspending_api.disaster.v2.views.spending import ExperimentalDisasterViewSet
 
 urlpatterns = [
