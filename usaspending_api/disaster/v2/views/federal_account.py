@@ -62,11 +62,8 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
 
     def get_total_queryset(self):
         filters = [
-            Q(final_of_fy=True),  # TODO ASAP! Only include Account data from "closed periods" using lookup table
-            Q(
-                Q(Q(submission__reporting_fiscal_year=2020) & Q(submission__reporting_fiscal_period__gte=1))
-                | Q(submission__reporting_fiscal_year__gte=2021)
-            ),
+            Q(submission__reporting_period_start__gte="2020-04-01"),
+            Q(submission__reporting_period_end__lte=self.max_submission_date),
             Q(
                 Q(obligations_incurred_by_program_object_class_cpe__gt=0)
                 | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
@@ -105,10 +102,8 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
 
     def get_award_queryset(self):
         filters = [
-            Q(
-                Q(Q(submission__reporting_fiscal_year=2020) & Q(submission__reporting_fiscal_period__gte=1))
-                | Q(submission__reporting_fiscal_year__gte=2021)
-            ),
+            Q(submission__reporting_period_start__gte="2020-04-01"),
+            Q(submission__reporting_period_end__lte=self.max_submission_date),
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
@@ -162,10 +157,8 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
 
     def get_queryset(self):
         filters = [
-            Q(
-                Q(Q(submission__reporting_fiscal_year=2020) & Q(submission__reporting_fiscal_period__gte=1))
-                | Q(submission__reporting_fiscal_year__gte=2021)
-            ),
+            Q(submission__reporting_period_start__gte="2020-04-01"),
+            Q(submission__reporting_period_end__lte=self.max_submission_date),
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(award_id__isnull=False),
             Q(treasury_account__isnull=False),

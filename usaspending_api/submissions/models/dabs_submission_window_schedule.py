@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from django.db import models
 
 
@@ -22,4 +23,18 @@ class DABSSubmissionWindowSchedule(models.Model):
             "submission_fiscal_quarter",
             "submission_fiscal_month",
             "is_quarter",
+        )
+
+    @classmethod
+    def latest_monthly_to_display(cls):
+        return (
+            cls.objects.filter(is_quarter=False, submission_reveal_date__lte=datetime.now(timezone.utc))
+            .order_by("-submission_fiscal_year", "-submission_fiscal_month")
+            .values(
+                "submission_fiscal_year",
+                "submission_fiscal_quarter",
+                "submission_fiscal_month",
+                "submission_reveal_date",
+            )
+            .first()
         )

@@ -35,7 +35,7 @@ def account_data():
         account_title="ferns",
         treasury_account_identifier=24,
     )
-    sub1 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2020, reporting_fiscal_period=3)
+    sub1 = mommy.make("submissions.SubmissionAttributes", reporting_period_start="2020-05-15", reporting_period_end="2020-05-29")
     mommy.make(
         "awards.FinancialAccountsByAwards",
         submission=sub1,

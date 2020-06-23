@@ -5,10 +5,12 @@ from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
 class DisasterBase(APIView):
     required_filters = ["def_codes"]
+    max_submission_date = DABSSubmissionWindowSchedule.latest_monthly_to_display()["submission_reveal_date"]
 
     @cached_property
     def filters(self):
