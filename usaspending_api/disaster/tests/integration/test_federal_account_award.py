@@ -33,55 +33,50 @@ def account_data():
     )
     sub1 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2020, reporting_fiscal_period=3)
     mommy.make(
-        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        "awards.FinancialAccountsByAwards",
         submission=sub1,
-        final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=100,
-        gross_outlay_amount_by_program_object_class_cpe=111,
+        transaction_obligated_amount=100,
+        gross_outlay_amount_by_award_cpe=111,
         disaster_emergency_fund__code="M",
         treasury_account=tre_acct1,
     )
     mommy.make(
-        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        "awards.FinancialAccountsByAwards",
         submission=sub1,
-        final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=200,
-        gross_outlay_amount_by_program_object_class_cpe=222,
+        transaction_obligated_amount=200,
+        gross_outlay_amount_by_award_cpe=222,
         disaster_emergency_fund__code="L",
         treasury_account=tre_acct2,
     )
     mommy.make(
-        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        "awards.FinancialAccountsByAwards",
         submission=sub1,
-        final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=2,
-        gross_outlay_amount_by_program_object_class_cpe=2,
+        transaction_obligated_amount=2,
+        gross_outlay_amount_by_award_cpe=2,
         disaster_emergency_fund__code="9",
         treasury_account=tre_acct2,
     )
     mommy.make(
-        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        "awards.FinancialAccountsByAwards",
         submission=sub1,
-        final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=1,
-        gross_outlay_amount_by_program_object_class_cpe=1,
+        transaction_obligated_amount=1,
+        gross_outlay_amount_by_award_cpe=1,
         disaster_emergency_fund__code="O",
         treasury_account=tre_acct2,
     )
     mommy.make(
-        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        "awards.FinancialAccountsByAwards",
         submission=sub1,
-        final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=3,
-        gross_outlay_amount_by_program_object_class_cpe=333,
+        transaction_obligated_amount=3,
+        gross_outlay_amount_by_award_cpe=333,
         disaster_emergency_fund__code="N",
         treasury_account=tre_acct3,
     )
 
 
 @pytest.mark.django_db
-def test_federal_account_success(client, account_data):
-    body = {"filter": {"def_codes": ["M"]}, "spending_type": "total"}
+def test_federal_account_award_success(client, account_data):
+    body = {"filter": {"def_codes": ["M"]}, "spending_type": "award"}
     resp = client.post(url, content_type="application/json", data=json.dumps(body))
     expected_results = [
         {
@@ -108,7 +103,7 @@ def test_federal_account_success(client, account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    body = {"filter": {"def_codes": ["M", "L", "N", "O"]}, "spending_type": "total"}
+    body = {"filter": {"def_codes": ["M", "L", "N", "O"]}, "spending_type": "award"}
     resp = client.post(url, content_type="application/json", data=json.dumps(body))
     expected_results = [
         {
@@ -155,8 +150,8 @@ def test_federal_account_success(client, account_data):
 
 
 @pytest.mark.django_db
-def test_federal_account_empty(client, account_data):
-    body = {"filter": {"def_codes": ["A"]}, "spending_type": "total"}
+def test_federal_account_award_empty(client, account_data):
+    body = {"filter": {"def_codes": ["A"]}, "spending_type": "award"}
     resp = client.post(url, content_type="application/json", data=json.dumps(body))
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json()["results"]) == 0
