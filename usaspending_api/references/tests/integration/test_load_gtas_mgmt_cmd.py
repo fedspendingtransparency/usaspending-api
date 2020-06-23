@@ -4,7 +4,7 @@ from django.core.management import call_command
 from django.db import DEFAULT_DB_ALIAS
 from unittest.mock import MagicMock
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
-from usaspending_api.references.models import GTASTotalObligation
+from usaspending_api.references.models import GTASSF133Balances
 
 
 @pytest.mark.django_db
@@ -24,12 +24,26 @@ def test_program_activity_fresh_load(monkeypatch):
 
     call_command("load_gtas")
 
-    expected_results = {"count": 3, "row_tuples": [(1600, -1, -10), (1600, -2, -1), (1601, -1, -10)]}
+    expected_results = {
+        "count": 3,
+        "row_tuples": [
+            (1600, -1, -10.00, -11.00, -11.00, -11.00),
+            (1600, -2, -9.00, -12.00, -12.00, -12.00),
+            (1601, -1, -8.00, -13.00, -13.00, -13.00),
+        ],
+    }
 
     actual_results = {
-        "count": GTASTotalObligation.objects.count(),
+        "count": GTASSF133Balances.objects.count(),
         "row_tuples": list(
-            GTASTotalObligation.objects.values_list("fiscal_year", "fiscal_quarter", "total_obligation")
+            GTASSF133Balances.objects.values_list(
+                "fiscal_year",
+                "fiscal_period",
+                "obligations_incurred_total_cpe",
+                "budget_authority_appropriation_amount_cpe",
+                "other_budgetary_resources_amount_cpe",
+                "unobligated_balance_cpe",
+            )
         ),
     }
 

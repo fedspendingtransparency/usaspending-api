@@ -4,28 +4,17 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.references.models import GTASTotalObligation
+from usaspending_api.references.models import GTASSF133Balances
 
 logger = logging.getLogger("console")
 
-TOTAL_OBLIGATION_SQL = """
-SELECT
-    fiscal_year,
-    CASE
-        WHEN sf_133.period = 3 THEN 1
-        WHEN sf_133.period = 6 THEN 2
-        WHEN sf_133.period = 9 THEN 3
-        WHEN sf_133.period = 12 THEN 4
-    END AS fiscal_quarter,
-    SUM(amount) AS total_obligation
-FROM sf_133
-WHERE
-    line = 2190
-    AND
-    period in (3, 6, 9, 12)
-GROUP BY fiscal_year, fiscal_quarter
-ORDER BY fiscal_year, fiscal_quarter;
-"""
+DERIVED_COLUMNS = {
+    "obligations_incurred_total_cpe": [2190],
+    "budget_authority_appropriation_amount_cpe": [1160, 1180, 1260, 1280],
+    "other_budgetary_resources_amount_cpe": [1340, 1440, 1540, 1640, 1750, 1850],
+    "gross_outlay_amount_by_tas_cpe": [3020],
+    "unobligated_balance_cpe": [2490],
+}
 
 
 class Command(BaseCommand):
@@ -37,16 +26,42 @@ class Command(BaseCommand):
         broker_cursor = connections["data_broker"].cursor()
 
         logger.info("Running TOTAL_OBLIGATION_SQL")
-        broker_cursor.execute(TOTAL_OBLIGATION_SQL)
+        broker_cursor.execute(self.generate_sql())
 
         logger.info("Getting total obligation values from cursor")
         total_obligation_values = dictfetchall(broker_cursor)
 
         logger.info("Deleting all existing GTAS total obligation records in website")
-        GTASTotalObligation.objects.all().delete()
+        GTASSF133Balances.objects.all().delete()
 
         logger.info("Inserting GTAS total obligations records into website")
-        total_obligation_objs = [GTASTotalObligation(**values) for values in total_obligation_values]
-        GTASTotalObligation.objects.bulk_create(total_obligation_objs)
+        total_obligation_objs = [GTASSF133Balances(**values) for values in total_obligation_values]
+        GTASSF133Balances.objects.bulk_create(total_obligation_objs)
 
         logger.info("GTAS loader finished successfully!")
+
+    def generate_sql(self):
+        return f"""
+            SELECT
+                fiscal_year,
+                period as fiscal_period,
+                {self.column_statements()}
+            disaster_emergency_fund_code
+            FROM
+                sf_133 sf
+            GROUP BY
+                fiscal_year,
+                fiscal_period,
+                disaster_emergency_fund_code
+            ORDER BY
+                fiscal_year,
+                fiscal_period;
+        """
+
+    def column_statements(self):
+        return "\n".join(
+            [
+                f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount ELSE 0 END), 0.0) AS {key},"""
+                for key, val in DERIVED_COLUMNS.items()
+            ]
+        )
