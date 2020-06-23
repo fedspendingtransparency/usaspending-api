@@ -46,7 +46,8 @@ defc_sql = """
             faba.reporting_fiscal_period,
             faba.disaster_emergency_fund_code
         having concat(faba.reporting_fiscal_year::text, lpad(faba.reporting_fiscal_period::text, 2, '0')) in
-        (select max(fyp) from closed_periods) and sum(faba.gross_outlay_amount_by_award_cpe) > 0)
+        (select max(fyp) from closed_periods) and sum(faba.gross_outlay_amount_by_award_cpe) > 0
+    )
     select
         faba.disaster_emergency_fund_code,
         coalesce(ffy.prior_fys_outlay, 0) + coalesce(cfy.current_fy_outlay, 0) as total_outlay,
