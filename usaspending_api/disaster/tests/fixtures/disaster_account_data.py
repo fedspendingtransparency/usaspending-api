@@ -1,10 +1,6 @@
 import pytest
 
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
 from model_mommy import mommy
-
-from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 
 
 @pytest.fixture
@@ -13,36 +9,43 @@ def disaster_account_data():
     ta2 = mommy.make("references.ToptierAgency", toptier_code="008")
     ta3 = mommy.make("references.ToptierAgency", toptier_code="009")
     ta4 = mommy.make("references.ToptierAgency", toptier_code="010")
+
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=current_fiscal_year(),
+        reporting_fiscal_year=2020,
+        reporting_fiscal_period=7,
+        quarter_format_flag=False,
         reporting_period_start="2020-04-01",
-        reporting_period_end="2020-04-20",
     )
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=current_fiscal_year(),
+        reporting_fiscal_year=2020,
+        reporting_fiscal_period=8,
+        quarter_format_flag=False,
         reporting_period_start="2020-05-01",
-        reporting_period_end="2020-04-20",
     )
     sub3 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=current_fiscal_year(),
-        reporting_period_start="2020-06-01",
-        reporting_period_end="2020-04-20",
+        reporting_fiscal_year=2020,
+        reporting_fiscal_period=7,
+        quarter_format_flag=False,
+        reporting_period_start="2020-04-01",
     )
     sub4 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=current_fiscal_year(),
-        reporting_period_start="2020-04-01",
-        reporting_period_end=datetime.strftime(datetime.now() - relativedelta(years=1), "%Y-%m-%d"),
+        reporting_fiscal_year=2020,
+        reporting_fiscal_period=8,
+        quarter_format_flag=False,
+        reporting_period_start="2020-05-01",
     )
     sub5 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2019,
+        reporting_fiscal_period=7,
+        quarter_format_flag=False,
         reporting_period_start="2019-04-01",
-        reporting_period_end="2019-04-20",
     )
+
     fa1 = mommy.make("accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1")
     fa2 = mommy.make("accounts.FederalAccount", federal_account_code="002-0000", account_title="FA 2")
     fa3 = mommy.make("accounts.FederalAccount", federal_account_code="003-0000", account_title="FA 3")

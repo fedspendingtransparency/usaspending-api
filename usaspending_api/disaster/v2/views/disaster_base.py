@@ -1,4 +1,3 @@
-from datetime import datetime
 from django.utils.functional import cached_property
 from rest_framework.views import APIView
 
@@ -6,6 +5,7 @@ from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
 
 
 class DisasterBase(APIView):
@@ -51,9 +51,13 @@ class DisasterBase(APIView):
     def def_codes(self):
         return self.filters["def_codes"]
 
-    @property
-    def reporting_period_max(self):
-        return datetime.now().date()
+    @cached_property
+    def last_closed_monthly_submission_dates(self):
+        return get_last_closed_submission_date(is_quarter=False)
+
+    @cached_property
+    def last_closed_quarterly_submission_dates(self):
+        return get_last_closed_submission_date(is_quarter=True)
 
 
 class SpendingMixin:

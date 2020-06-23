@@ -18,11 +18,29 @@ class FederalAccountCountViewSet(DisasterBase):
     @cache_response()
     def post(self, request: Request) -> Response:
         filters = [
-            Q(final_of_fy=True),
             Q(treasury_account__federal_account_id=OuterRef("pk")),
             Q(disaster_emergency_fund__code__in=self.def_codes),
             Q(submission__reporting_period_start__gte=self.reporting_period_min),
-            Q(submission__reporting_period_end__lt=self.reporting_period_max),
+            Q(
+                Q(
+                    submission__quarter_format_flag=True,
+                    submission__reporting_fiscal_year__lte=self.last_closed_quarterly_submission_dates[
+                        "submission_fiscal_year"
+                    ],
+                    submission__reporting_fiscal_quarter__lte=self.last_closed_quarterly_submission_dates[
+                        "submission_fiscal_quarter"
+                    ],
+                )
+                | Q(
+                    submission__quarter_format_flag=False,
+                    submission__reporting_fiscal_year__lte=self.last_closed_monthly_submission_dates[
+                        "submission_fiscal_year"
+                    ],
+                    submission__reporting_fiscal_period__lte=self.last_closed_monthly_submission_dates[
+                        "submission_fiscal_month"
+                    ],
+                )
+            ),
             Q(
                 Q(obligations_incurred_by_program_object_class_cpe__gt=0)
                 | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
