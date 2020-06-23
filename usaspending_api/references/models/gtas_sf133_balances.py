@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class GTASTotalObligation(models.Model):
+class GTASSF133Balances(models.Model):
     fiscal_year = models.IntegerField()
     fiscal_period = models.IntegerField()
     obligations_incurred_total_cpe = models.DecimalField(max_digits=23, decimal_places=2)
@@ -15,5 +15,5 @@ class GTASTotalObligation(models.Model):
 
     class Meta:
         managed = True
-        db_table = "gtas_total_obligation"
+        db_table = "gtas_sf133_balances"
         unique_together = ("fiscal_year", "fiscal_period", "disaster_emergency_fund_code")

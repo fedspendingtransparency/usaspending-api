@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.references.models import GTASTotalObligation
+from usaspending_api.references.models import GTASSF133Balances
 
 logger = logging.getLogger("console")
 
@@ -32,11 +32,11 @@ class Command(BaseCommand):
         total_obligation_values = dictfetchall(broker_cursor)
 
         logger.info("Deleting all existing GTAS total obligation records in website")
-        GTASTotalObligation.objects.all().delete()
+        GTASSF133Balances.objects.all().delete()
 
         logger.info("Inserting GTAS total obligations records into website")
-        total_obligation_objs = [GTASTotalObligation(**values) for values in total_obligation_values]
-        GTASTotalObligation.objects.bulk_create(total_obligation_objs)
+        total_obligation_objs = [GTASSF133Balances(**values) for values in total_obligation_values]
+        GTASSF133Balances.objects.bulk_create(total_obligation_objs)
 
         logger.info("GTAS loader finished successfully!")
 

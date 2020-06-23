@@ -12,13 +12,13 @@ from usaspending_api.financial_activities.models import (
     TreasuryAppropriationAccount,
 )
 from usaspending_api.accounts.models import FederalAccount
-from usaspending_api.references.models import Agency, GTASTotalObligation, ToptierAgency, ObjectClass
+from usaspending_api.references.models import Agency, GTASSF133Balances, ToptierAgency, ObjectClass
 
 ENDPOINT_URL = "/api/v2/spending/"
 CONTENT_TYPE = "application/json"
 GLOBAL_MOCK_DICT = [
     {"model": ObjectClass, "id": 1},
-    {"model": GTASTotalObligation, "fiscal_year": 1600, "fiscal_period": 1, "obligations_incurred_total_cpe": -10},
+    {"model": GTASSF133Balances, "fiscal_year": 1600, "fiscal_period": 1, "obligations_incurred_total_cpe": -10},
     {"model": SubmissionAttributes, "submission_id": -1, "reporting_fiscal_year": 1600, "reporting_fiscal_quarter": 1},
     {
         "model": ToptierAgency,
@@ -112,7 +112,7 @@ def test_unreported_data_actual_value_file_b(client):
 @pytest.mark.django_db
 def test_unreported_data_actual_value_file_c(client):
     models_to_mock = [
-        {"model": GTASTotalObligation, "fiscal_year": 1600, "fiscal_period": 3, "obligations_incurred_total_cpe": -10},
+        {"model": GTASSF133Balances, "fiscal_year": 1600, "fiscal_period": 3, "obligations_incurred_total_cpe": -10},
         {
             "model": SubmissionAttributes,
             "submission_id": -1,
