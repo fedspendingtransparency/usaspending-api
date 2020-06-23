@@ -1,3 +1,4 @@
+import datetime
 import json
 import pytest
 
@@ -11,6 +12,15 @@ class Helpers:
             request_body = json.dumps({"filter": {}})
         resp = client.post(url, content_type="application/json", data=request_body)
         return resp
+
+    @staticmethod
+    def patch_date_today(monkeypatch, date_as_string):
+        class PatchedDate(datetime.date):
+            @classmethod
+            def today(cls):
+                return date_as_string
+
+        monkeypatch.setattr(datetime, "date", PatchedDate)
 
 
 @pytest.fixture

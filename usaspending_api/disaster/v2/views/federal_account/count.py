@@ -24,21 +24,21 @@ class FederalAccountCountViewSet(DisasterBase):
             Q(
                 Q(
                     submission__quarter_format_flag=True,
-                    submission__reporting_fiscal_year__lte=self.last_closed_quarterly_submission_dates[
+                    submission__reporting_fiscal_year__lte=self.last_closed_quarterly_submission_dates.get(
                         "submission_fiscal_year"
-                    ],
-                    submission__reporting_fiscal_quarter__lte=self.last_closed_quarterly_submission_dates[
+                    ),
+                    submission__reporting_fiscal_quarter__lte=self.last_closed_quarterly_submission_dates.get(
                         "submission_fiscal_quarter"
-                    ],
+                    ),
                 )
                 | Q(
                     submission__quarter_format_flag=False,
-                    submission__reporting_fiscal_year__lte=self.last_closed_monthly_submission_dates[
+                    submission__reporting_fiscal_year__lte=self.last_closed_monthly_submission_dates.get(
                         "submission_fiscal_year"
-                    ],
-                    submission__reporting_fiscal_period__lte=self.last_closed_monthly_submission_dates[
+                    ),
+                    submission__reporting_fiscal_period__lte=self.last_closed_monthly_submission_dates.get(
                         "submission_fiscal_month"
-                    ],
+                    ),
                 )
             ),
             Q(

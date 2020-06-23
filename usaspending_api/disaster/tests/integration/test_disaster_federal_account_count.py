@@ -6,7 +6,9 @@ url = "/api/v2/disaster/federal_account/count/"
 
 
 @pytest.mark.django_db
-def test_federal_account_count_success(client, disaster_account_data, helpers):
+def test_federal_account_count_success(client, monkeypatch, disaster_account_data, helpers):
+    helpers.patch_date_today(monkeypatch, "2022-12-31")
+
     resp = helpers.post_for_count_endpoint(client, url, ["L", "M", "N", "O", "P"])
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["count"] == 3
