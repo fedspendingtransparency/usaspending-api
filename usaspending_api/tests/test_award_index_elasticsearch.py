@@ -67,8 +67,8 @@ def award_data_fixture(db):
         submission_id=1,
         reporting_fiscal_year=2020,
         reporting_fiscal_period=12,
-        reporting_period_start="2020-07-21",
-        reporting_period_end="2020-08-30",
+        reporting_period_start="2020-04-21",
+        reporting_period_end="2020-04-30",
     )
     code = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
     mommy.make(
@@ -337,8 +337,15 @@ def test_award_keyword(award_data_fixture, elasticsearch_award_index):
 
 def test_covid_data(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
-    should = {"match": {"disaster_emergency_fund_codes": "L"}}
-    query = create_query(should)
+    query = {
+        "query": {
+            "bool": {
+                "filter": {
+                    "bool": {"should": {"match": {"disaster_emergency_fund_codes": "L"}}, "minimum_should_match": 1}
+                }
+            }
+        }
+    }
     client = elasticsearch_award_index.client
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
     assert response["hits"]["total"]["value"] == 1
