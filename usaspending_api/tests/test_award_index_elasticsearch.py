@@ -342,4 +342,4 @@ def test_covid_data(award_data_fixture, elasticsearch_award_index):
     client = elasticsearch_award_index.client
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
     assert response["hits"]["total"]["value"] == 1
-    assert response["hits"]["hits"][0]["_source"]["disaster_emergency_fund_codes"] == "{L}"
+    assert response["hits"]["hits"][0]["_source"]["disaster_emergency_fund_codes"] == ["L"]

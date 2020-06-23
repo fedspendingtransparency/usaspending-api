@@ -409,6 +409,7 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
         "tas_paths": convert_postgres_array_as_string_to_list,
         "tas_components": convert_postgres_array_as_string_to_list,
         "federal_accounts": convert_postgres_json_array_as_string_to_list,
+        "disaster_emergency_fund_codes": convert_postgres_array_as_string_to_list,
     }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
     dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
