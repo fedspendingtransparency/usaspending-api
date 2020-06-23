@@ -43,19 +43,19 @@ class Command(BaseCommand):
     def generate_sql(self):
         return f"""
             SELECT
-        fiscal_year,
-        period as fiscal_period,
+                fiscal_year,
+                period as fiscal_period,
                 {self.column_statements()}
+            disaster_emergency_fund_code
+            FROM
+                sf_133 sf
+            GROUP BY
+                fiscal_year,
+                fiscal_period,
                 disaster_emergency_fund_code
-    FROM
-        sf_133 sf
-    GROUP BY
-        fiscal_year,
-        fiscal_period,
-        disaster_emergency_fund_code
-    ORDER BY
-        fiscal_year,
-        fiscal_period;
+            ORDER BY
+                fiscal_year,
+                fiscal_period;
         """
 
     def column_statements(self):
