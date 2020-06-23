@@ -79,7 +79,7 @@ Returns spending details of DEFC receiving supplemental funding budgetary resour
 + `page` (optional, number)
     Requested page of results
     + Default: 1
-+ `size` (optional, number)
++ `limit` (optional, number)
     Page Size of results
     + Default: 10
 + `order` (optional, enum[string])
