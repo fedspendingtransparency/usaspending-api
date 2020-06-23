@@ -41,6 +41,8 @@ This endpoint returns a count of CFDA programs
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
++ `award_type_codes` (optional, array[AssistanceAwardTypeCodes], fixed-type)
+    Defaults to all Assistance Award Type Codes.
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
@@ -67,3 +69,18 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `S`
 + `T`
 + `9`
+
+## AssistanceAwardTypeCodes (enum[string])
+List of assistance award type codes supported by USAspending.gov
+
+### Members
++ `02`
++ `03`
++ `04`
++ `05`
++ `06`
++ `07`
++ `08`
++ `09`
++ `10`
++ `11`
