@@ -6,10 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     # Empties table
-    TRUNCATE_SQL = "truncate table dabs_submission_window_schedule"
-
-    # Resets the sequence used for the primary key of the table
-    SEQUENCE_RESTART_SQL = "ALTER SEQUENCE dabs_submission_window_schedule_id_seq RESTART WITH 1"
+    TRUNCATE_SQL = "truncate table dabs_submission_window_schedule restart identity"
 
     # WARNING - The dates for 2020 month periods 7,8,9 have been modified for the sake of testing.
     # This should be modified before being run in prod. The nightly job will overwrite the data
@@ -49,6 +46,6 @@ values ('2016-10-01 00:00:00', '2016-12-31 00:00:00', '2017-01-19 00:00:00', '20
 
     operations = [
         migrations.RunSQL(
-            sql=[TRUNCATE_SQL, SEQUENCE_RESTART_SQL, INSERT_SQL], reverse_sql=[TRUNCATE_SQL, SEQUENCE_RESTART_SQL]
+            sql=[TRUNCATE_SQL, INSERT_SQL], reverse_sql=[TRUNCATE_SQL]
         )
     ]
