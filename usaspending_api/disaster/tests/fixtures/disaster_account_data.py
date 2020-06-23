@@ -12,36 +12,36 @@ def disaster_account_data():
 
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2022,
-        reporting_fiscal_period=7,
+        reporting_fiscal_year="2022",
+        reporting_fiscal_period="7",
         quarter_format_flag=False,
         reporting_period_start="2022-04-01",
     )
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2022,
-        reporting_fiscal_period=8,
+        reporting_fiscal_year="2022",
+        reporting_fiscal_period="8",
         quarter_format_flag=False,
         reporting_period_start="2022-05-01",
     )
     sub3 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2022,
-        reporting_fiscal_period=7,
+        reporting_fiscal_year="2022",
+        reporting_fiscal_period="7",
         quarter_format_flag=False,
         reporting_period_start="2022-04-01",
     )
     sub4 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2022,
-        reporting_fiscal_period=8,
+        reporting_fiscal_year="2022",
+        reporting_fiscal_period="8",
         quarter_format_flag=False,
         reporting_period_start="2022-05-01",
     )
     sub5 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2019,
-        reporting_fiscal_period=7,
+        reporting_fiscal_year="2019",
+        reporting_fiscal_period="7",
         quarter_format_flag=False,
         reporting_period_start="2019-04-01",
     )

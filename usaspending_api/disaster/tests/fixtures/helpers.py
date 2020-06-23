@@ -14,11 +14,11 @@ class Helpers:
         return resp
 
     @staticmethod
-    def patch_date_today(monkeypatch, date_as_string):
+    def patch_date_today(monkeypatch, year, month, day):
         class PatchedDate(datetime.date):
             @classmethod
             def today(cls):
-                return date_as_string
+                return datetime.date(year, month, day)
 
         monkeypatch.setattr(datetime, "date", PatchedDate)
 
