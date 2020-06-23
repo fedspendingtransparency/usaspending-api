@@ -13,7 +13,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.awards.v2.data_layer.orm import defc_sql
+from usaspending_api.awards.v2.data_layer.sql import defc_sql
 
 logger = logging.getLogger("console")
 
