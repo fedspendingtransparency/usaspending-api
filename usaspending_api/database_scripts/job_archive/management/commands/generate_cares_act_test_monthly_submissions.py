@@ -1,9 +1,9 @@
 """
 Jira Ticket Number(s): DEV-5343
 
-    This management command deterministically converts about 2/3 of submissions in the FYQ provided
-    into monthly submissions.  Monthly submissions are new to USAspending and are not yet being
-    provided by Broker.
+    This management command deterministically converts about 2/3 of submissions in the fiscal quarter
+    provided into monthly submissions.  Monthly submissions are new to USAspending and are not yet
+    being provided by Broker.
 
 Expected CLI:
 
@@ -25,8 +25,9 @@ Life expectancy:
     This file should live until CARES Act features have gone live.
 
     Be sure to delete all files/directories associated with this ticket:
-        - job_archive/management/commands/generate_cares_act_test_data_helpers.py
+        - job_archive/management/commands/generate_cares_act_test_copy_submissions.py
         - job_archive/management/commands/generate_cares_act_test_def_codes.py
+        - job_archive/management/commands/generate_cares_act_test_helpers.py
         - job_archive/management/commands/generate_cares_act_test_monthly_submissions.py
         - job_archive/management/commands/generate_cares_act_test_data_sqls
 
@@ -34,30 +35,31 @@ Life expectancy:
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer
-from usaspending_api.database_scripts.job_archive.management.commands.generate_cares_act_test_data_helpers import (
-    DEV5343Mixin,
-)
+from usaspending_api.database_scripts.job_archive.management.commands import generate_cares_act_test_helpers as helper
 
 
-class Command(DEV5343Mixin, BaseCommand):
+class Command(BaseCommand):
     help = (
         "Deterministically convert about 2/3 of submissions in the fiscal year and quarter "
         "provided into monthly submissions."
     )
 
+    fiscal_year = None
+    fiscal_quarter = None
+    allow_rds = False
+    vacuum = False
+
     fiscal_period = None
-    clone_periods = None
     period_ratios = None
-    period_starts = None
-    period_ends = None
+    period_start = None
+    period_end = None
 
     def add_arguments(self, parser):
-
-        super().add_arguments(parser)
-
-        parser.add_argument(
-            "fiscal quarter", type=self.validate_fiscal_quarter, help='Fiscal quarter to be "enhanced".',
-        )
+        helper.add_argument_fiscal_year(parser)
+        helper.add_argument_fiscal_quarter(parser)
+        helper.add_argument_rds(parser)
+        helper.add_argument_vacuum(parser)
+        helper.add_argument_warning_epilog(parser)
 
     def handle(self, *args, **options):
         self.set_state(options)
@@ -66,7 +68,7 @@ class Command(DEV5343Mixin, BaseCommand):
         with ScriptTimer(f"Convert FY{self.fiscal_year}Q{self.fiscal_quarter} submissions into monthly submissions"):
 
             with transaction.atomic():
-                self.record_base_submission_ids()
+                helper.record_base_submission_ids()
                 self.clone_submissions()
                 self.update_base_submissions()
 
@@ -74,16 +76,49 @@ class Command(DEV5343Mixin, BaseCommand):
             t.log_success_message()
 
             if self.vacuum:
-                self.vacuum_tables()
+                helper.vacuum_tables()
+
+    def set_state(self, options):
+        self.fiscal_year = options["fiscal year"]
+        self.fiscal_quarter = options["fiscal quarter"]
+        self.allow_rds = options["yes_i_know_its_rds"]
+        self.vacuum = options["vacuum"]
+
+        self.fiscal_period = helper.get_fiscal_quarter_final_period(self.fiscal_quarter)
+        self.period_ratios = {2: 0.3, 3: 0.7, 4: 0.1, 5: 0.2, 6: 0.7, 7: 0.1, 8: 0.2, 9: 0.7, 10: 0.1, 11: 0.2, 12: 0.7}
+        self.period_start, self.period_end = helper.get_period_start_end_dates(self.fiscal_year, self.fiscal_period)
 
     def perform_validations(self):
-        super().perform_validations()
+        helper.validate_not_rds(self.allow_rds)
+        helper.validate_quarter_has_submissions(self.fiscal_year, self.fiscal_quarter)
 
-        if not self.quarter_has_submissions():
-            raise RuntimeError(
-                f"Well congratulations.  You've managed to choose a fiscal quarter with no "
-                f"submissions.  Give 'select reporting_fiscal_year, reporting_fiscal_quarter, "
-                f"count(*) from submission_attributes group by reporting_fiscal_year, "
-                f"reporting_fiscal_quarter order by reporting_fiscal_year,"
-                f"reporting_fiscal_quarter;' a whirl and try again."
+    def clone_submissions(self):
+        sql = helper.read_sql_file("clone_submissions.sql")
+        for fiscal_period in helper.get_clone_periods(self.fiscal_quarter):
+            helper.run_sqls(
+                helper.split_sql(
+                    sql.format(
+                        submission_id_shift=helper.shift_id(self.fiscal_year, fiscal_period),
+                        reporting_period_start=self.period_start,
+                        reporting_period_end=self.period_end,
+                        reporting_fiscal_period=fiscal_period,
+                        filter_fiscal_year=self.fiscal_year,
+                        filter_fiscal_period=self.fiscal_period,
+                        adjustment_ratio=self.period_ratios[fiscal_period],
+                    )
+                )
             )
+
+    def update_base_submissions(self):
+        sql = helper.read_sql_file("update_submissions.sql")
+        helper.run_sqls(
+            helper.split_sql(
+                sql.format(
+                    reporting_period_start=self.period_start,
+                    reporting_period_end=self.period_end,
+                    filter_fiscal_year=self.fiscal_year,
+                    filter_fiscal_period=self.fiscal_period,
+                    adjustment_ratio=self.period_ratios[self.fiscal_period],
+                )
+            )
+        )

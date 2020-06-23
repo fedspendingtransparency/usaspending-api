@@ -20,8 +20,9 @@
 --     This file should live until CARES Act features have gone live.
 --
 --     Be sure to delete all files/directories associated with this ticket:
---         - job_archive/management/commands/generate_cares_act_test_data_helpers.py
+--         - job_archive/management/commands/generate_cares_act_test_copy_submissions.py
 --         - job_archive/management/commands/generate_cares_act_test_def_codes.py
+--         - job_archive/management/commands/generate_cares_act_test_helpers.py
 --         - job_archive/management/commands/generate_cares_act_test_monthly_submissions.py
 --         - job_archive/management/commands/generate_cares_act_test_data_sqls
 
@@ -122,8 +123,7 @@ where
     f.disaster_emergency_fund_code is null and
     sa.reporting_fiscal_year = {filter_fiscal_year} and
     sa.reporting_fiscal_period = {filter_fiscal_period} and
-    sa._base_submission_id % 24 != 0;  -- Safety valve to ensure some submission data remain untouched.
-                                       -- This should be a multiple of the value used to clone monthly submissions.
+    sa._base_submission_id % 24 != 0;  -- Make sure a few submissions receive no DEF codes.
 
 -- SPLIT --
 
@@ -235,8 +235,7 @@ where
     f.disaster_emergency_fund_code is null and
     sa.reporting_fiscal_year = {filter_fiscal_year} and
     sa.reporting_fiscal_period = {filter_fiscal_period} and
-    sa._base_submission_id % 24 != 0;  -- Safety valve to ensure some submission data remain untouched.
-                                       -- This should be a multiple of the value used to clone monthly submissions.
+    sa._base_submission_id % 24 != 0;  -- Make sure a few submissions receive no DEF codes.
 
 -- SPLIT --
 
@@ -284,8 +283,7 @@ where
     sa.submission_id = f.submission_id and
     sa.reporting_fiscal_year = {filter_fiscal_year} and
     sa.reporting_fiscal_period = {filter_fiscal_period} and
-    sa._base_submission_id % 24 != 0;  -- Safety valve to ensure some submission data remain untouched.
-                                       -- This should be a multiple of the value used to clone monthly submissions.
+    sa._base_submission_id % 24 != 0;  -- Make sure a few submissions receive no DEF codes.
 
 -- SPLIT --
 
@@ -334,5 +332,4 @@ where
     sa.submission_id = f.submission_id and
     sa.reporting_fiscal_year = {filter_fiscal_year} and
     sa.reporting_fiscal_period = {filter_fiscal_period} and
-    sa._base_submission_id % 24 != 0;  -- Safety valve to ensure some submission data remain untouched.
-                                       -- This should be a multiple of the value used to clone monthly submissions.
+    sa._base_submission_id % 24 != 0;  -- Make sure a few submissions receive no DEF codes.

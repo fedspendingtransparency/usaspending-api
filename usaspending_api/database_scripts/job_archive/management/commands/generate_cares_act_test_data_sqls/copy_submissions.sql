@@ -1,7 +1,7 @@
 -- Jira Ticket Number(s): DEV-5343
 --
---     This script clones about 2/3 of base quarterly submissions into monthly submissions for
---     other periods in the quarter.
+--     This script copies submissions and their matching File A/B/C records from a source fiscal
+--     period into a destination fiscal period.
 --
 -- Expected CLI:
 --
@@ -28,7 +28,7 @@
 --         - job_archive/management/commands/generate_cares_act_test_data_sqls
 
 
--- LOG: Generate monthly submission_attributes for FY{filter_fiscal_year}P{reporting_fiscal_period}
+-- LOG: Copy submission_attributes from FY{source_fiscal_year}P{source_fiscal_period} to FY{destination_fiscal_year}P{destination_fiscal_period}
 insert into submission_attributes (
     submission_id,
     certified_date,
@@ -46,31 +46,38 @@ insert into submission_attributes (
     _base_submission_id
 )
 select
-    submission_id + {submission_id_shift},  -- to prevent id collisions
-    certified_date,
+    _base_submission_id + {submission_id_shift},  -- to prevent id collisions
+    null,  --certified_date - I'm not going to try to guess at certified dates and I don't think anything's using them right now
     toptier_code,
-    '{reporting_period_start}'::date,
+    case
+        when toptier_code::int % 3 != 0 then '{reporting_period_start}'::date
+        else '{quarter_reporting_period_start}'::date
+    end,  -- reporting_period_start
     '{reporting_period_end}'::date,
-    reporting_fiscal_year,
-    reporting_fiscal_quarter,
-    {reporting_fiscal_period},
-    false,  -- quarter_format_flag
-    create_date,
-    update_date,
+    {destination_fiscal_year},
+    {destination_fiscal_quarter},
+    {destination_fiscal_period},
+    case
+        when toptier_code::int % 3 != 0 then False
+        else True
+    end,  -- quarter_format_flag
+    '{reporting_period_end}'::date + interval '1 days',  -- create_date
+    '{reporting_period_end}'::date + interval '1 days',  -- update_date
     reporting_agency_name,
-    '{reporting_period_end}'::date - interval '5 days',  -- published_date
-    submission_id  -- _base_submission_id
+    '{reporting_period_end}'::date,   -- published_date
+    _base_submission_id
 from
     submission_attributes
 where
-    reporting_fiscal_year = {filter_fiscal_year} and
-    reporting_fiscal_period = {filter_fiscal_period} and
-    quarter_format_flag is true and
-    toptier_code::int % 3 != 0;  -- only clone about half of the submissions
+    reporting_fiscal_year = {source_fiscal_year} and
+    reporting_fiscal_period = {source_fiscal_period} and (
+        {destination_fiscal_period} % 3 = 0 or  -- we're copying to a quarterly period or
+        toptier_code::int % 3 != 0              -- we're copying a monthly
+    );
 
 -- SPLIT --
 
--- LOG: Generate monthly appropriation_account_balances for FY{filter_fiscal_year}P{reporting_fiscal_period}
+-- LOG: Copy appropriation_account_balances from FY{source_fiscal_year}P{source_fiscal_period} to FY{destination_fiscal_year}P{destination_fiscal_period}
 insert into appropriation_account_balances (
     data_source,
     budget_authority_unobligated_balance_brought_forward_fyb,
@@ -111,23 +118,24 @@ select
     abb.obligations_incurred_total_by_tas_cpe,
     '{reporting_period_start}'::date,
     '{reporting_period_end}'::date,
-    abb.create_date,
-    abb.update_date,
+    '{reporting_period_end}'::date + interval '1 days',  -- create_date
+    '{reporting_period_end}'::date + interval '1 days',  -- update_date
     false,  -- final_of_fy,
-    abb.submission_id + {submission_id_shift},  -- to match submission shift
+    sa._base_submission_id + {submission_id_shift},  -- to match submission shift
     abb.treasury_account_identifier
 from
     appropriation_account_balances as abb
     inner join submission_attributes as sa on sa.submission_id = abb.submission_id
 where
-    sa.reporting_fiscal_year = {filter_fiscal_year} and
-    sa.reporting_fiscal_period = {filter_fiscal_period} and
-    sa.quarter_format_flag is true and
-    sa.toptier_code::int % 3 != 0;  -- only clone file a records linked to submissions we cloned
+    sa.reporting_fiscal_year = {source_fiscal_year} and
+    sa.reporting_fiscal_period = {source_fiscal_period} and (
+        {destination_fiscal_period} % 3 = 0 or  -- we're copying to a quarterly period or
+        sa.toptier_code::int % 3 != 0           -- we're copying a monthly
+    );
 
 -- SPLIT --
 
--- LOG: Generate monthly financial_accounts_by_program_activity_object_class for FY{filter_fiscal_year}P{reporting_fiscal_period}
+-- LOG: Copy financial_accounts_by_program_activity_object_class from FY{source_fiscal_year}P{source_fiscal_period} to FY{destination_fiscal_year}P{destination_fiscal_period}
 insert into financial_accounts_by_program_activity_object_class (
     ussgl480100_undelivered_orders_obligations_unpaid_fyb,
     ussgl480100_undelivered_orders_obligations_unpaid_cpe,
@@ -207,26 +215,27 @@ select
     f.deobligations_recoveries_refund_pri_program_object_class_cpe,
     '{reporting_period_start}'::date,
     '{reporting_period_end}'::date,
-    f.create_date,
-    f.update_date,
+    '{reporting_period_end}'::date + interval '1 days',  -- create_date
+    '{reporting_period_end}'::date + interval '1 days',  -- update_date
     false,  -- f.final_of_fy
     f.object_class_id,
     f.program_activity_id,
-    f.submission_id + {submission_id_shift},  -- to match submission shift
+    sa._base_submission_id + {submission_id_shift},  -- to match submission shift
     f.treasury_account_id,
     f.disaster_emergency_fund_code
 from
     financial_accounts_by_program_activity_object_class as f
     inner join submission_attributes as sa on sa.submission_id = f.submission_id
 where
-    sa.reporting_fiscal_year = {filter_fiscal_year} and
-    sa.reporting_fiscal_period = {filter_fiscal_period} and
-    sa.quarter_format_flag is true and
-    sa.toptier_code::int % 3 != 0;  -- only clone file a records linked to submissions we cloned
+    sa.reporting_fiscal_year = {source_fiscal_year} and
+    sa.reporting_fiscal_period = {source_fiscal_period} and (
+        {destination_fiscal_period} % 3 = 0 or  -- we're copying to a quarterly period or
+        sa.toptier_code::int % 3 != 0           -- we're copying a monthly
+    );
 
 -- SPLIT --
 
--- LOG: Generate monthly financial_accounts_by_awards for FY{filter_fiscal_year}P{reporting_fiscal_period}
+-- LOG: Copy financial_accounts_by_awards from FY{source_fiscal_year}P{source_fiscal_period} to FY{destination_fiscal_year}P{destination_fiscal_period}
 insert into financial_accounts_by_awards (
     data_source,
     piid,
@@ -315,22 +324,89 @@ select
     f.deobligations_recoveries_refunds_of_prior_year_by_award_cpe,
     f.obligations_undelivered_orders_unpaid_total_fyb,
     f.gross_outlays_delivered_orders_paid_total_cpe,
-    f.transaction_obligated_amount * {adjustment_ratio},
+    f.transaction_obligated_amount,
     '{reporting_period_start}'::date,
     '{reporting_period_end}'::date,
-    f.create_date,
-    f.update_date,
+    '{reporting_period_end}'::date + interval '1 days',  -- create_date
+    '{reporting_period_end}'::date + interval '1 days',  -- update_date
     f.award_id,
     f.object_class_id,
     f.program_activity_id,
-    f.submission_id + {submission_id_shift},  -- to match submission shift
+    sa._base_submission_id + {submission_id_shift},  -- to match submission shift
     f.treasury_account_id,
     f.disaster_emergency_fund_code
 from
     financial_accounts_by_awards as f
     inner join submission_attributes as sa on sa.submission_id = f.submission_id
 where
-    sa.reporting_fiscal_year = {filter_fiscal_year} and
-    sa.reporting_fiscal_period = {filter_fiscal_period} and
-    sa.quarter_format_flag is true and
-    sa.toptier_code::int % 3 != 0;  -- only clone file a records linked to submissions we cloned
+    sa.reporting_fiscal_year = {source_fiscal_year} and
+    sa.reporting_fiscal_period = {source_fiscal_period} and (
+        {destination_fiscal_period} % 3 = 0 or  -- we're copying to a quarterly period or
+        sa.toptier_code::int % 3 != 0           -- we're copying a monthly
+    );
+
+-- SPLIT --
+
+-- LOG: Recalculate final_of_fy for appropriation_account_balances
+with cte as (
+    select distinct on (aab.treasury_account_identifier)
+        aab.treasury_account_identifier,
+        sa.submission_id
+    from
+        submission_attributes as sa
+        inner join appropriation_account_balances aab on aab.submission_id = sa.submission_id
+    where
+        sa.reporting_fiscal_year = {destination_fiscal_year}
+    order by
+        aab.treasury_account_identifier,
+        sa.reporting_period_start desc
+)
+update  appropriation_account_balances as aab
+set     final_of_fy = exists(
+            select
+            from    cte
+            where   cte.submission_id = aab.submission_id and
+                    cte.treasury_account_identifier = aab.treasury_account_identifier
+        )
+from    submission_attributes as sa
+where   aab.submission_id = sa.submission_id and
+        sa.reporting_fiscal_year = {destination_fiscal_year} and
+        aab.final_of_fy is distinct from exists(
+            select
+            from    cte
+            where   cte.submission_id = aab.submission_id and
+                    cte.treasury_account_identifier = aab.treasury_account_identifier
+        );
+
+-- SPLIT --
+
+-- LOG: Recalculate final_of_fy for financial_accounts_by_program_activity_object_class
+with cte as (
+    select distinct on (f.treasury_account_id)
+        f.treasury_account_id,
+        sa.submission_id
+    from
+        submission_attributes as sa
+        inner join financial_accounts_by_program_activity_object_class f on f.submission_id = sa.submission_id
+    where
+        sa.reporting_fiscal_year = {destination_fiscal_year}
+    order by
+        f.treasury_account_id,
+        sa.reporting_period_start desc
+)
+update  financial_accounts_by_program_activity_object_class as f
+set     final_of_fy = exists(
+            select
+            from    cte
+            where   cte.submission_id = f.submission_id and
+                    cte.treasury_account_id = f.treasury_account_id
+        )
+from    submission_attributes as sa
+where   f.submission_id = sa.submission_id and
+        sa.reporting_fiscal_year = {destination_fiscal_year} and
+        f.final_of_fy is distinct from exists(
+            select
+            from    cte
+            where   cte.submission_id = f.submission_id and
+                    cte.treasury_account_id = f.treasury_account_id
+        );

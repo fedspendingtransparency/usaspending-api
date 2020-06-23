@@ -20,8 +20,9 @@
 --     This file should live until CARES Act features have gone live.
 --
 --     Be sure to delete all files/directories associated with this ticket:
---         - job_archive/management/commands/generate_cares_act_test_data_helpers.py
+--         - job_archive/management/commands/generate_cares_act_test_copy_submissions.py
 --         - job_archive/management/commands/generate_cares_act_test_def_codes.py
+--         - job_archive/management/commands/generate_cares_act_test_helpers.py
 --         - job_archive/management/commands/generate_cares_act_test_monthly_submissions.py
 --         - job_archive/management/commands/generate_cares_act_test_data_sqls
 
@@ -38,8 +39,8 @@ where
     sa.submission_id = aab.submission_id and
     sa.reporting_fiscal_year = {filter_fiscal_year} and
     sa.reporting_fiscal_period = {filter_fiscal_period} and
-    quarter_format_flag is true and
-    sa.submission_id % 3 != 0;  -- only update base a records linked to base submissions
+    sa.quarter_format_flag is true and
+    sa.toptier_code::int % 3 != 0;  -- only update base a records linked to base submissions
 
 -- SPLIT --
 
@@ -55,8 +56,8 @@ where
     sa.submission_id = f.submission_id and
     sa.reporting_fiscal_year = {filter_fiscal_year} and
     sa.reporting_fiscal_period = {filter_fiscal_period} and
-    quarter_format_flag is true and
-    sa.submission_id % 3 != 0;  -- only update base b records linked to base submissions
+    sa.quarter_format_flag is true and
+    sa.toptier_code::int % 3 != 0;  -- only update base b records linked to base submissions
 
 -- SPLIT --
 
@@ -73,8 +74,8 @@ where
     sa.submission_id = f.submission_id and
     sa.reporting_fiscal_year = {filter_fiscal_year} and
     sa.reporting_fiscal_period = {filter_fiscal_period} and
-    quarter_format_flag is true and
-    sa.submission_id % 3 != 0;  -- only update base c records linked to base submissions
+    sa.quarter_format_flag is true and
+    sa.toptier_code::int % 3 != 0;  -- only update base c records linked to base submissions
 
 -- SPLIT --
 
@@ -89,4 +90,4 @@ where
     reporting_fiscal_year = {filter_fiscal_year} and
     reporting_fiscal_period = {filter_fiscal_period} and
     quarter_format_flag is true and
-    submission_id % 3 != 0;  -- only update the submissions we cloned
+    toptier_code::int % 3 != 0;  -- only update the submissions we cloned
