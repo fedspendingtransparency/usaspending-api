@@ -83,7 +83,7 @@ Generate files and return metadata using filters on custom account
 
 ## AdvancedFilterObject (object)
 + `agency` (optional, string)
-    The agency to filter by. This field is an internal id.
+    The agency on which to filter.  This field expects an internal toptier agency identifier also known as the `toptier_agency_id`.
     + Default: `all`
 + `federal_account`(optional, string)
     This field is an internal id.
