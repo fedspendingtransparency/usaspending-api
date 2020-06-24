@@ -45,7 +45,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                         "obligation": 89.01,
                         "outlay": 70.98,
                         "total_budgetary_resources": null,
-                        "sam_website": "https://beta.sam.gov/fal/25b529f3b5f94b6c939bc0ae8424ae6c/view"
+                        "resource_link": "https://beta.sam.gov/fal/25b529f3b5f94b6c939bc0ae8424ae6c/view"
                     },
                     {
                         "id": "41",
@@ -56,7 +56,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                         "obligation": 50,
                         "outlay": 10,
                         "total_budgetary_resources": null,
-                        "sam_website": null
+                        "resource_link": null
                     }
                 ],
                 "page_metadata": {
@@ -104,7 +104,8 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 + `total_budgetary_resources` (required, number, nullable)
-+ `sam_website` (required, string, nullable)
++ `resource_link` (required, string, nullable)
+    Link to an external website with more information about this result.
 
 ## PageMetadata (object)
 + `page` (required, number)
