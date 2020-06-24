@@ -6,7 +6,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.data_classes import FedAcctResults, Collation, Element
+from usaspending_api.disaster.v2.views.federal_account.federal_account_result import FedAcctResults, FedAccount, TAS
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansPaginationMixin,
@@ -22,8 +22,8 @@ def construct_response(
 ):
     federal_accounts = FedAcctResults()
     for row in results:
-        FA = Collation(id=row["fa_id"], code=row["fa_code"], description=row["fa_description"],)
-        TAS = Element(
+        FA = FedAccount(id=row["fa_id"], code=row["fa_code"], description=row["fa_description"],)
+        Tas = TAS(
             id=row["id"],
             code=row["code"],
             count=row["count"],
@@ -34,7 +34,7 @@ def construct_response(
         )
 
         federal_accounts.add_if_missing(FA)
-        federal_accounts[FA].include(TAS)
+        federal_accounts[FA].include(Tas)
 
     page_metadata = get_pagination_metadata(len(federal_accounts), pagination.limit, pagination.page)
 
@@ -72,8 +72,17 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
 
     def get_total_queryset(self):
         filters = [
-            Q(submission__reporting_period_start__gte="2020-04-01"),
-            Q(submission__reporting_period_end__lte=self.max_submission_date),
+            Q(submission__reporting_period_start__gte=self.reporting_period_min),
+            Q(
+                Q(
+                    Q(submission__reporting_period_end__lte=self.recent_monthly_submission["submission_reveal_date"])
+                    & Q(submission__quarter_format_flag=False)
+                )
+                | Q(
+                    Q(submission__reporting_period_end__lte=self.recent_quarterly_submission["submission_reveal_date"])
+                    & Q(submission__quarter_format_flag=True)
+                )
+            ),
             Q(
                 Q(obligations_incurred_by_program_object_class_cpe__gt=0)
                 | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
@@ -94,7 +103,10 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Sum("obligations_incurred_by_program_object_class_cpe"),
             "outlay": Sum("gross_outlay_amount_by_program_object_class_cpe"),
-            "total_budgetary_resources": Value(None, DecimalField(max_digits=23, decimal_places=2)),  # Temporary: GTAS
+            "total_budgetary_resources": Sum(
+                F("obligations_incurred_by_program_object_class_cpe")
+                + F("gross_outlay_amount_by_program_object_class_cpe"),
+            ),
         }
 
         # Assuming it is more performant to fetch all rows once rather than
@@ -112,8 +124,17 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
 
     def get_award_queryset(self):
         filters = [
-            Q(submission__reporting_period_start__gte="2020-04-01"),
-            Q(submission__reporting_period_end__lte=self.recent_monthly_submission["submission_reveal_date"]),
+            Q(submission__reporting_period_start__gte=self.reporting_period_min),
+            Q(
+                Q(
+                    Q(submission__reporting_period_end__lte=self.recent_monthly_submission["submission_reveal_date"])
+                    & Q(submission__quarter_format_flag=False)
+                )
+                | Q(
+                    Q(submission__reporting_period_end__lte=self.recent_quarterly_submission["submission_reveal_date"])
+                    & Q(submission__quarter_format_flag=True)
+                )
+            ),
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
@@ -156,7 +177,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
                 ),
                 0,
             ),
-            "total_budgetary_resources": Value(None, DecimalField(max_digits=23, decimal_places=2)),  # Temporary: GTAS
+            "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
         }
 
         # Assuming it is more performant to fetch all rows once rather than
@@ -195,8 +216,17 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
 
     def get_queryset(self):
         filters = [
-            Q(submission__reporting_period_start__gte="2020-04-01"),
-            Q(submission__reporting_period_end__lte=self.recent_monthly_submission["submission_reveal_date"]),
+            Q(submission__reporting_period_start__gte=self.reporting_period_min),
+            Q(
+                Q(
+                    Q(submission__reporting_period_end__lte=self.recent_monthly_submission["submission_reveal_date"])
+                    & Q(submission__quarter_format_flag=False)
+                )
+                | Q(
+                    Q(submission__reporting_period_end__lte=self.recent_quarterly_submission["submission_reveal_date"])
+                    & Q(submission__quarter_format_flag=True)
+                )
+            ),
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(award_id__isnull=False),
             Q(treasury_account__isnull=False),
@@ -212,7 +242,7 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Value(0, DecimalField(max_digits=23, decimal_places=2)),
             "outlay": Coalesce(Sum("award__total_loan_value"), 0),
-            "total_budgetary_resources": Value(None, DecimalField(max_digits=23, decimal_places=2)),  # Temporary: GTAS
+            "total_budgetary_resources": Value(None, DecimalField(max_digits=23, decimal_places=2)),  # Throw-away field
         }
 
         # Assuming it is more performant to fetch all rows once rather than

@@ -32,7 +32,13 @@ def account_data():
         treasury_account_identifier=24,
     )
     sub1 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_period_start="2020-05-15", reporting_period_end="2020-05-29"
+        "submissions.SubmissionAttributes",
+        reporting_period_start="2020-05-15",
+        reporting_period_end="2020-05-29",
+        reporting_fiscal_year=2020,
+        reporting_fiscal_quarter=3,
+        reporting_fiscal_period=7,
+        quarter_format_flag=False,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -77,7 +83,9 @@ def account_data():
 
 
 @pytest.mark.django_db
-def test_federal_account_award_success(client, account_data):
+def test_federal_account_award_success(client, account_data, monkeypatch, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2020, 6, 20)
+
     body = {"filter": {"def_codes": ["M"]}, "spending_type": "award"}
     resp = client.post(url, content_type="application/json", data=json.dumps(body))
     expected_results = [

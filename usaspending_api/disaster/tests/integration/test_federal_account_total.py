@@ -32,7 +32,13 @@ def account_data():
         treasury_account_identifier=24,
     )
     sub1 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_period_start="2020-05-15", reporting_period_end="2020-05-29"
+        "submissions.SubmissionAttributes",
+        reporting_period_start="2020-05-15",
+        reporting_period_end="2020-05-29",
+        reporting_fiscal_year=2020,
+        reporting_fiscal_quarter=3,
+        reporting_fiscal_period=7,
+        quarter_format_flag=False,
     )
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -82,7 +88,8 @@ def account_data():
 
 
 @pytest.mark.django_db
-def test_federal_account_success(client, account_data):
+def test_federal_account_success(client, account_data, monkeypatch, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2020, 6, 20)
     body = {"filter": {"def_codes": ["M"]}, "spending_type": "total"}
     resp = client.post(url, content_type="application/json", data=json.dumps(body))
     expected_results = [
@@ -95,7 +102,7 @@ def test_federal_account_success(client, account_data):
                     "id": 22,
                     "obligation": 100.0,
                     "outlay": 111.0,
-                    "total_budgetary_resources": None,
+                    "total_budgetary_resources": 211.0,
                 }
             ],
             "code": "000-0000",
@@ -104,7 +111,7 @@ def test_federal_account_success(client, account_data):
             "id": 21,
             "obligation": 100.0,
             "outlay": 111.0,
-            "total_budgetary_resources": None,
+            "total_budgetary_resources": 211.0,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -122,7 +129,7 @@ def test_federal_account_success(client, account_data):
                     "id": 24,
                     "obligation": 3.0,
                     "outlay": 333.0,
-                    "total_budgetary_resources": None,
+                    "total_budgetary_resources": 336.0,
                 },
                 {
                     "code": "2020/98",
@@ -131,7 +138,7 @@ def test_federal_account_success(client, account_data):
                     "id": 23,
                     "obligation": 201.0,
                     "outlay": 223.0,
-                    "total_budgetary_resources": None,
+                    "total_budgetary_resources": 424.0,
                 },
                 {
                     "code": "2020/99",
@@ -140,7 +147,7 @@ def test_federal_account_success(client, account_data):
                     "id": 22,
                     "obligation": 100.0,
                     "outlay": 111.0,
-                    "total_budgetary_resources": None,
+                    "total_budgetary_resources": 211.0,
                 },
             ],
             "code": "000-0000",
@@ -149,7 +156,7 @@ def test_federal_account_success(client, account_data):
             "id": 21,
             "obligation": 304.0,
             "outlay": 667.0,
-            "total_budgetary_resources": None,
+            "total_budgetary_resources": 971.0,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
