@@ -70,7 +70,7 @@ Returns loan spending details of Federal Accounts receiving supplemental funding
 + `page` (optional, number)
     Requested page of results
     + Default: 1
-+ `size` (optional, number)
++ `limit` (optional, number)
     Page Size of results
     + Default: 10
 + `order` (optional, enum[string])

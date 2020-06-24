@@ -81,7 +81,7 @@ Returns spending details of Object Classes receiving supplemental funding budget
 + `page` (optional, number)
     Requested page of results
     + Default: 1
-+ `size` (optional, number)
++ `limit` (optional, number)
     Page Size of results
     + Default: 10
 + `order` (optional, enum[string])
