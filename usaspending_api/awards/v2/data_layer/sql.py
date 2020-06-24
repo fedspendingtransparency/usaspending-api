@@ -13,12 +13,12 @@ defc_sql = """
     ),
     closed_periods as (
         select
-            distinct concat(p.submission_fiscal_year::text,
-            lpad(p.submission_fiscal_month::text, 2, '0')) as fyp,
-            p.submission_fiscal_year, p.submission_fiscal_month
-        from dabs_submission_window_schedule p
-        where now()::date > p.submission_due_date
-        order by p.submission_fiscal_year desc, p.submission_fiscal_month desc
+            distinct concat(w.submission_fiscal_year::text, lpad(w.submission_fiscal_month::text, 2, '0')) AS fyp,
+            w.submission_fiscal_year,
+            w.submission_fiscal_month
+        from dabs_submission_window_schedule w
+        where w.submission_reveal_date <= now() -- change "period end" with "window close"
+        order by w.submission_fiscal_year desc, w.submission_fiscal_month desc
     ),
     fy_final_outlay_balances as (
         -- Rule: If a balance is not zero at the end of the year, it must be reported in the
