@@ -27,23 +27,17 @@ class DABSSubmissionWindowSchedule(models.Model):
 
     @classmethod
     def latest_monthly_to_display(cls):
-        return (
-            cls.objects.filter(is_quarter=False, submission_reveal_date__lte=datetime.now(timezone.utc))
-            .order_by("-submission_fiscal_year", "-submission_fiscal_month")
-            .values(
-                "submission_fiscal_year",
-                "submission_fiscal_quarter",
-                "submission_fiscal_month",
-                "submission_reveal_date",
-            )
-            .first()
-        )
+        return cls.get_latest_submission(is_quarter=False)
 
     @classmethod
     def latest_quarterly_to_display(cls):
+        return cls.get_latest_submission(is_quarter=True)
+
+    @classmethod
+    def get_latest_submission(cls, is_quarter):
         return (
-            cls.objects.filter(is_quarter=True, submission_reveal_date__lte=datetime.now(timezone.utc))
-            .order_by("-submission_fiscal_year", "-submission_fiscal_month")
+            cls.objects.filter(is_quarter=is_quarter, submission_reveal_date__lte=datetime.now(timezone.utc))
+            .order_by("-submission_fiscal_year", "-submission_fiscal_quarter", "-submission_fiscal_month")
             .values(
                 "submission_fiscal_year",
                 "submission_fiscal_quarter",

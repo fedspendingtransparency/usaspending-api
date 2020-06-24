@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
 from typing import Dict
 
+from usaspending_api.common.data_classes import Pagination
 from usaspending_api.disaster.v2.views.data_classes import Collation, Element
 
 
@@ -53,10 +54,10 @@ class FedAcctResults:
                 results.append(fa)
         return results
 
-    def finalize(self, sort_key, sort_order, start, end):
+    def finalize(self, pagination: Pagination):
         self.rollup()
-        self.sort(sort_key, sort_order)
-        return list(fa.to_dict() for fa in self.slice(start, end))
+        self.sort(pagination.sort_key, pagination.sort_order)
+        return list(fa.to_dict() for fa in self.slice(pagination.lower_limit, pagination.upper_limit))
 
     @staticmethod
     def sort_results(items, field, direction="desc"):

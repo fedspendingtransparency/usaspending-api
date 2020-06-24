@@ -36,13 +36,9 @@ def construct_response(
         federal_accounts.add_if_missing(FA)
         federal_accounts[FA].include(Tas)
 
-    page_metadata = get_pagination_metadata(len(federal_accounts), pagination.limit, pagination.page)
-
     return {
-        "results": federal_accounts.finalize(
-            pagination.sort_key, pagination.sort_order, pagination.lower_limit, pagination.upper_limit,
-        ),
-        "page_metadata": page_metadata,
+        "results": federal_accounts.finalize(pagination),
+        "page_metadata": get_pagination_metadata(len(federal_accounts), pagination.limit, pagination.page),
     }
 
 
@@ -53,20 +49,10 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
     def post(self, request):
         if self.spending_type == "award":
             for_total = False
-            # results = list(self.get_award_queryset())
-            queryset = self.get_award_queryset()
-            from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
-
-            print(f"=======================================\nQueryset: {generate_raw_quoted_query(queryset)}")
-            results = list(queryset)
+            results = list(self.get_award_queryset())
         else:
             for_total = True
-            # results = list(self.get_total_queryset())
-            queryset = self.get_total_queryset()
-            from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
-
-            print(f"=======================================\nQueryset: {generate_raw_quoted_query(queryset)}")
-            results = list(queryset)
+            results = list(self.get_total_queryset())
 
         return Response(construct_response(results, self.pagination, for_total))
 
@@ -201,6 +187,8 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
     def post(self, request):
 
         results = list(self.get_queryset())
+        if self.pagination.sort_key == "face_value_of_loan":
+            self.pagination.sort_key = "outlay"
         results = construct_response(results, self.pagination, False)
 
         for result in results["results"]:
@@ -240,7 +228,7 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             "id": F("treasury_account__treasury_account_identifier"),
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
-            "obligation": Value(0, DecimalField(max_digits=23, decimal_places=2)),
+            "obligation": Value(0, DecimalField(max_digits=23, decimal_places=2)),  # Throw-away field
             "outlay": Coalesce(Sum("award__total_loan_value"), 0),
             "total_budgetary_resources": Value(None, DecimalField(max_digits=23, decimal_places=2)),  # Throw-away field
         }
