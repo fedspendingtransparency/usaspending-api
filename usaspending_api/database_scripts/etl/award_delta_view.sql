@@ -1,17 +1,15 @@
 DROP VIEW IF EXISTS award_delta_view;
 CREATE VIEW award_delta_view AS
 WITH closed_periods AS (
-	    -- This is NOT right, since period dates are not the same as submission window close dates,
-	    -- but an approximation for illustration purposes until we have the reporting dates table up
-	    SELECT DISTINCT concat(p.reporting_fiscal_year::text,
-	        lpad(p.reporting_fiscal_period::text, 2, '0')) AS fyp,
-	        p.reporting_fiscal_year, p.reporting_fiscal_period
-	    FROM submission_attributes p
+	    SELECT DISTINCT concat(p.submission_fiscal_year::text,
+            lpad(p.submission_fiscal_month::text, 2, '0')) as fyp,
+            p.submission_fiscal_year, p.submission_fiscal_month
+        FROM dabs_submission_window_schedule p
 	    WHERE
 	    -- For COVID, look only after a certain date (likely on/after 2020-04-01, or the start of FY2020 FYP07)
-	        p.reporting_period_start >= '2020-04-01' -- using older date to see data surface
-	        AND now()::date > p.reporting_period_end -- change "period end" with "window close"
-	    ORDER BY p.reporting_fiscal_year DESC, p.reporting_fiscal_period DESC
+	        p.submission_reveal_date >= '2020-04-01'
+	        AND now()::date > p.submission_reveal_date
+	    ORDER BY p.submission_fiscal_year DESC, p.submission_fiscal_month DESC
     ),
     eligible_submissions AS (
         SELECT *
