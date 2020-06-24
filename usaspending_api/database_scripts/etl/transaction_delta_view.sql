@@ -353,7 +353,7 @@ LEFT JOIN (
         'federal_account_code', fa.federal_account_code
       )
     ) federal_accounts,
-    ARRAY_AGG(disaster_emergency_fund_code) defc
+    ARRAY_AGG(DISTINCT disaster_emergency_fund_code) FILTER (WHERE disaster_emergency_fund_code IS NOT NULL) defc
   FROM
     federal_account fa
     INNER JOIN treasury_appropriation_account taa ON fa.id = taa.federal_account_id
