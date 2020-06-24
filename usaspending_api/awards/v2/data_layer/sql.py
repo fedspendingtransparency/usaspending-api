@@ -12,15 +12,13 @@ defc_sql = """
         where {award_id_sql} and faba.disaster_emergency_fund_code is not null
     ),
     closed_periods as (
-        -- This is NOT right, since period dates are not the same as submission window close dates,
-        -- but an approximation for illustration purposes until we have the reporting dates table up
         select
-            distinct concat(p.reporting_fiscal_year::text,
-            lpad(p.reporting_fiscal_period::text, 2, '0')) as fyp,
-            p.reporting_fiscal_year, p.reporting_fiscal_period
-        from submission_attributes p
-        where now()::date > p.reporting_period_end -- change "period end" with "window close"
-        order by p.reporting_fiscal_year desc, p.reporting_fiscal_period desc
+            distinct concat(p.submission_fiscal_year::text,
+            lpad(p.submission_fiscal_month::text, 2, '0')) as fyp,
+            p.submission_fiscal_year, p.submission_fiscal_month
+        from dabs_submission_window_schedule p
+        where now()::date > p.submission_due_date
+        order by p.submission_fiscal_year desc, p.submission_fiscal_month desc
     ),
     fy_final_outlay_balances as (
         -- Rule: If a balance is not zero at the end of the year, it must be reported in the
