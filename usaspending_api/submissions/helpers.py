@@ -1,10 +1,10 @@
-from datetime import date
+from datetime import datetime, timezone
 
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
 def get_last_closed_submission_date(is_quarter: bool) -> dict:
-    current_date = date.today()
+    current_date = datetime.now(timezone.utc).date()
     values = ["submission_fiscal_year"]
     order_by = ["-submission_fiscal_year"]
     if is_quarter:

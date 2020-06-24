@@ -12,36 +12,36 @@ def disaster_account_data():
 
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year="2022",
-        reporting_fiscal_period="7",
+        reporting_fiscal_year=2022,
+        reporting_fiscal_period=7,
         quarter_format_flag=False,
         reporting_period_start="2022-04-01",
     )
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year="2022",
-        reporting_fiscal_period="8",
+        reporting_fiscal_year=2022,
+        reporting_fiscal_period=8,
         quarter_format_flag=False,
         reporting_period_start="2022-05-01",
     )
     sub3 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year="2022",
-        reporting_fiscal_period="7",
+        reporting_fiscal_year=2022,
+        reporting_fiscal_period=7,
         quarter_format_flag=False,
         reporting_period_start="2022-04-01",
     )
     sub4 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year="2022",
-        reporting_fiscal_period="8",
+        reporting_fiscal_year=2022,
+        reporting_fiscal_period=8,
         quarter_format_flag=False,
         reporting_period_start="2022-05-01",
     )
     sub5 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year="2019",
-        reporting_fiscal_period="7",
+        reporting_fiscal_year=2019,
+        reporting_fiscal_period=7,
         quarter_format_flag=False,
         reporting_period_start="2019-04-01",
     )
@@ -49,17 +49,17 @@ def disaster_account_data():
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         is_quarter=False,
-        submission_fiscal_year="2022",
-        submission_fiscal_quarter="3",
-        submission_fiscal_month="8",
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=8,
         submission_reveal_date="2022-5-15",
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         is_quarter=True,
-        submission_fiscal_year="2022",
-        submission_fiscal_quarter="3",
-        submission_fiscal_month="8",
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=8,
         submission_reveal_date="2022-5-15",
     )
 
