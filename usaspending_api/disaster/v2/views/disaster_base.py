@@ -5,10 +5,12 @@ from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
 
 
 class DisasterBase(APIView):
     required_filters = ["def_codes"]
+    reporting_period_min = "2020-04-01"
 
     @cached_property
     def filters(self):
@@ -48,6 +50,14 @@ class DisasterBase(APIView):
     @property
     def def_codes(self):
         return self.filters["def_codes"]
+
+    @cached_property
+    def last_closed_monthly_submission_dates(self):
+        return get_last_closed_submission_date(is_quarter=False)
+
+    @cached_property
+    def last_closed_quarterly_submission_dates(self):
+        return get_last_closed_submission_date(is_quarter=True)
 
 
 class SpendingMixin:
