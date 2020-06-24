@@ -10,7 +10,8 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 class DisasterBase(APIView):
     required_filters = ["def_codes"]
-    max_submission_date = DABSSubmissionWindowSchedule.latest_monthly_to_display()["submission_reveal_date"]
+    recent_monthly_submission = DABSSubmissionWindowSchedule.latest_monthly_to_display()
+    recent_quarterly_submission = DABSSubmissionWindowSchedule.latest_quarterly_to_display()
 
     @cached_property
     def filters(self):

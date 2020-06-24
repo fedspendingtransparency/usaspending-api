@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, DecimalField
+from django.db.models import Q, Sum, Count, F, Value, DecimalField, Case, When
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -53,10 +53,20 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
     def post(self, request):
         if self.spending_type == "award":
             for_total = False
-            results = list(self.get_award_queryset())
+            # results = list(self.get_award_queryset())
+            queryset = self.get_award_queryset()
+            from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
+
+            print(f"=======================================\nQueryset: {generate_raw_quoted_query(queryset)}")
+            results = list(queryset)
         else:
             for_total = True
-            results = list(self.get_total_queryset())
+            # results = list(self.get_total_queryset())
+            queryset = self.get_total_queryset()
+            from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
+
+            print(f"=======================================\nQueryset: {generate_raw_quoted_query(queryset)}")
+            results = list(queryset)
 
         return Response(construct_response(results, self.pagination, for_total))
 
@@ -103,7 +113,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
     def get_award_queryset(self):
         filters = [
             Q(submission__reporting_period_start__gte="2020-04-01"),
-            Q(submission__reporting_period_end__lte=self.max_submission_date),
+            Q(submission__reporting_period_end__lte=self.recent_monthly_submission["submission_reveal_date"]),
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
@@ -116,8 +126,36 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             "id": F("treasury_account__treasury_account_identifier"),
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
-            "obligation": Sum("transaction_obligated_amount"),
-            "outlay": Coalesce(Sum("gross_outlay_amount_by_award_cpe"), 0),
+            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
+            "outlay": Coalesce(
+                Sum(
+                    Case(
+                        When(
+                            Q(
+                                submission__reporting_fiscal_year=self.recent_monthly_submission[
+                                    "submission_fiscal_year"
+                                ],
+                                submission__reporting_fiscal_period=self.recent_monthly_submission[
+                                    "submission_fiscal_month"
+                                ],
+                                submission__quarter_format_flag=False,
+                            )
+                            | Q(
+                                submission__reporting_fiscal_year=self.recent_quarterly_submission[
+                                    "submission_fiscal_year"
+                                ],
+                                submission__reporting_fiscal_quarter=self.recent_quarterly_submission[
+                                    "submission_fiscal_quarter"
+                                ],
+                                submission__quarter_format_flag=True,
+                            ),
+                            then=F("gross_outlay_amount_by_award_cpe"),
+                        ),
+                        default=Value(0),
+                    )
+                ),
+                0,
+            ),
             "total_budgetary_resources": Value(None, DecimalField(max_digits=23, decimal_places=2)),  # Temporary: GTAS
         }
 
@@ -158,7 +196,7 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
     def get_queryset(self):
         filters = [
             Q(submission__reporting_period_start__gte="2020-04-01"),
-            Q(submission__reporting_period_end__lte=self.max_submission_date),
+            Q(submission__reporting_period_end__lte=self.recent_monthly_submission["submission_reveal_date"]),
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(award_id__isnull=False),
             Q(treasury_account__isnull=False),
