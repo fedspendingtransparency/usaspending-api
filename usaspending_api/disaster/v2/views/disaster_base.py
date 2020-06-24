@@ -7,6 +7,10 @@ from usaspending_api.common.validator import customize_pagination_with_sort_colu
 from usaspending_api.references.models import DisasterEmergencyFundCode
 
 
+def covid_def_codes():
+    return DisasterEmergencyFundCode.objects.filter(group_name="covid_19")
+
+
 class DisasterBase(APIView):
     required_filters = ["def_codes"]
 
