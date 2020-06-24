@@ -171,7 +171,7 @@ LEFT JOIN (
         faba.award_id,
         coalesce(sum(faba.transaction_obligated_amount), 0) as total_covid_obligation,
         coalesce(sum(ffy.prior_fys_outlay), 0) + coalesce(sum(cfy.current_fy_outlay), 0) as total_covid_outlay,
-        ARRAY_AGG(faba.disaster_emergency_fund_code) AS disaster_emergency_fund_codes
+        ARRAY_AGG(DISTINCT faba.disaster_emergency_fund_code) AS disaster_emergency_fund_codes
         from eligible_file_c_records faba
         left join fy_final_outlay_balances_by_dim ffy on ffy.award_id = faba.award_id
         left join current_fy_outlay_balance_by_dim cfy on cfy.award_id = faba.award_id
