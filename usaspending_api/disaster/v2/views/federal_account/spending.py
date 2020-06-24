@@ -17,28 +17,15 @@ from usaspending_api.disaster.v2.views.disaster_base import (
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
-def construct_response(
-    results: list, pagination: Pagination, for_total: bool = False,
-):
-    federal_accounts = FedAcctResults()
+def construct_response(results: list, pagination: Pagination):
+    FederalAccounts = FedAcctResults()
     for row in results:
-        FA = FedAccount(id=row["fa_id"], code=row["fa_code"], description=row["fa_description"],)
-        Tas = TAS(
-            id=row["id"],
-            code=row["code"],
-            count=row["count"],
-            description=row["description"],
-            obligation=row["obligation"],
-            outlay=row["outlay"],
-            total_budgetary_resources=row["total_budgetary_resources"] if for_total else None,
-        )
-
-        federal_accounts.add_if_missing(FA)
-        federal_accounts[FA].include(Tas)
+        FA = FedAccount(id=row.pop("fa_id"), code=row.pop("fa_code"), description=row.pop("fa_description"))
+        FederalAccounts[FA].include(TAS(**row))
 
     return {
-        "results": federal_accounts.finalize(pagination),
-        "page_metadata": get_pagination_metadata(len(federal_accounts), pagination.limit, pagination.page),
+        "results": FederalAccounts.finalize(pagination),
+        "page_metadata": get_pagination_metadata(len(FederalAccounts), pagination.limit, pagination.page),
     }
 
 
@@ -48,15 +35,14 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            for_total = False
-            results = list(self.get_award_queryset())
+            results = list(self.award_queryset)
         else:
-            for_total = True
-            results = list(self.get_total_queryset())
+            results = list(self.total_queryset)
 
-        return Response(construct_response(results, self.pagination, for_total))
+        return Response(construct_response(results, self.pagination))
 
-    def get_total_queryset(self):
+    @property
+    def total_queryset(self):
         filters = [
             Q(submission__reporting_period_start__gte=self.reporting_period_min),
             Q(
@@ -108,7 +94,8 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             .values(*annotations.keys())
         )
 
-    def get_award_queryset(self):
+    @property
+    def award_queryset(self):
         filters = [
             Q(submission__reporting_period_start__gte=self.reporting_period_min),
             Q(
@@ -185,11 +172,9 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
 
     @cache_response()
     def post(self, request):
-
-        results = list(self.get_queryset())
         if self.pagination.sort_key == "face_value_of_loan":
-            self.pagination.sort_key = "outlay"
-        results = construct_response(results, self.pagination, False)
+            self.pagination.sort_key = "outlay"  # hack to re-use the Dataclasses
+        results = construct_response(list(self.queryset), self.pagination)
 
         for result in results["results"]:
             for child in result["children"]:
@@ -202,7 +187,8 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
 
         return Response(results)
 
-    def get_queryset(self):
+    @property
+    def queryset(self):
         filters = [
             Q(submission__reporting_period_start__gte=self.reporting_period_min),
             Q(

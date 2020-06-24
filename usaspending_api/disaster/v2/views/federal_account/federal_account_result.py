@@ -20,7 +20,12 @@ class FedAcctResults:
     _federal_accounts: Dict[FedAccount, FedAccount] = field(default_factory=dict)
 
     def __getitem__(self, key):
-        return self._federal_accounts[key]
+        try:
+            return self._federal_accounts[key]
+        except KeyError:
+            # If the dictionary key doesn't exist, populate with the key like a DefaultDict
+            self._federal_accounts[key] = key
+            return self._federal_accounts[key]
 
     def __len__(self):
         return len(self._federal_accounts)
@@ -36,10 +41,6 @@ class FedAcctResults:
                     else None
                 )
                 row.count += child.count
-
-    def add_if_missing(self, val):
-        if val not in self._federal_accounts:
-            self._federal_accounts[val] = val
 
     def sort(self, field, direction):
         for row in self._federal_accounts:
