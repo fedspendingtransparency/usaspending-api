@@ -15,12 +15,14 @@ class Helpers:
 
     @staticmethod
     def patch_date_today(monkeypatch, year, month, day):
-        class PatchedDate(datetime.date):
+        patched_today = datetime.date(year, month, day)
+
+        class PatchedDate:
             @classmethod
             def today(cls):
-                return datetime.date(year, month, day)
+                return patched_today
 
-        monkeypatch.setattr(datetime, "date", PatchedDate)
+        monkeypatch.setattr("usaspending_api.submissions.helpers.date", PatchedDate)
 
 
 @pytest.fixture
