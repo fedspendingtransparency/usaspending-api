@@ -102,7 +102,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
                     "id": 22,
                     "obligation": 100.0,
                     "outlay": 111.0,
-                    "total_budgetary_resources": 211.0,
+                    "total_budgetary_resources": None,
                 }
             ],
             "code": "000-0000",
@@ -111,7 +111,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
             "id": 21,
             "obligation": 100.0,
             "outlay": 111.0,
-            "total_budgetary_resources": 211.0,
+            "total_budgetary_resources": None,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -129,7 +129,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
                     "id": 24,
                     "obligation": 3.0,
                     "outlay": 333.0,
-                    "total_budgetary_resources": 336.0,
+                    "total_budgetary_resources": None,
                 },
                 {
                     "code": "2020/98",
@@ -138,7 +138,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
                     "id": 23,
                     "obligation": 201.0,
                     "outlay": 223.0,
-                    "total_budgetary_resources": 424.0,
+                    "total_budgetary_resources": None,
                 },
                 {
                     "code": "2020/99",
@@ -147,7 +147,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
                     "id": 22,
                     "obligation": 100.0,
                     "outlay": 111.0,
-                    "total_budgetary_resources": 211.0,
+                    "total_budgetary_resources": None,
                 },
             ],
             "code": "000-0000",
@@ -156,7 +156,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
             "id": 21,
             "obligation": 304.0,
             "outlay": 667.0,
-            "total_budgetary_resources": 971.0,
+            "total_budgetary_resources": None,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK

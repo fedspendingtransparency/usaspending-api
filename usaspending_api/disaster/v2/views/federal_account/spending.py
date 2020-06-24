@@ -73,12 +73,65 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             "id": F("treasury_account__treasury_account_identifier"),
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
-            "obligation": Sum("obligations_incurred_by_program_object_class_cpe"),
-            "outlay": Sum("gross_outlay_amount_by_program_object_class_cpe"),
-            "total_budgetary_resources": Sum(
-                F("obligations_incurred_by_program_object_class_cpe")
-                + F("gross_outlay_amount_by_program_object_class_cpe"),
+            "obligation": Coalesce(
+                Sum(
+                    Case(
+                        When(
+                            Q(
+                                submission__reporting_fiscal_year=self.recent_monthly_submission[
+                                    "submission_fiscal_year"
+                                ],
+                                submission__reporting_fiscal_period=self.recent_monthly_submission[
+                                    "submission_fiscal_month"
+                                ],
+                                submission__quarter_format_flag=False,
+                            )
+                            | Q(
+                                submission__reporting_fiscal_year=self.recent_quarterly_submission[
+                                    "submission_fiscal_year"
+                                ],
+                                submission__reporting_fiscal_quarter=self.recent_quarterly_submission[
+                                    "submission_fiscal_quarter"
+                                ],
+                                submission__quarter_format_flag=True,
+                            ),
+                            then=F("obligations_incurred_by_program_object_class_cpe"),
+                        ),
+                        default=Value(0),
+                    )
+                ),
+                0,
             ),
+            "outlay": Coalesce(
+                Sum(
+                    Case(
+                        When(
+                            Q(
+                                submission__reporting_fiscal_year=self.recent_monthly_submission[
+                                    "submission_fiscal_year"
+                                ],
+                                submission__reporting_fiscal_period=self.recent_monthly_submission[
+                                    "submission_fiscal_month"
+                                ],
+                                submission__quarter_format_flag=False,
+                            )
+                            | Q(
+                                submission__reporting_fiscal_year=self.recent_quarterly_submission[
+                                    "submission_fiscal_year"
+                                ],
+                                submission__reporting_fiscal_quarter=self.recent_quarterly_submission[
+                                    "submission_fiscal_quarter"
+                                ],
+                                submission__quarter_format_flag=True,
+                            ),
+                            then=F("gross_outlay_amount_by_program_object_class_cpe"),
+                        ),
+                        default=Value(0),
+                    )
+                ),
+                0,
+            ),
+            "total_budgetary_resources": Value(None, DecimalField()),  # TEMP UNTIL GTAS HAS TAS
         }
 
         # Assuming it is more performant to fetch all rows once rather than
