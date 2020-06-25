@@ -124,29 +124,20 @@ def type_filter(_type, filters, limit=None):
         submission_reveal_date__lte=datetime.now(timezone.utc),
     ).first()
     if submission_window is None:
-        raise InvalidParameterException(f"No submission data available for FY{fiscal_year}Q{fiscal_quarter}.")
+        return {"total": None}
 
     fiscal_date = submission_window.period_end_date
     fiscal_period = submission_window.submission_fiscal_month
 
     # transaction_obligated_amount is summed across all periods in the year up to and including the requested quarter.
-    alt_set = (
-        FinancialAccountsByAwards.objects.exclude(transaction_obligated_amount__isnull=True)
-        .exclude(transaction_obligated_amount="NaN")
-        .filter(submission__reporting_fiscal_quarter__lte=fiscal_quarter)
-        .filter(submission__reporting_fiscal_year=fiscal_year)
-        .annotate(amount=Sum("transaction_obligated_amount"))
-    )
+    alt_set = FinancialAccountsByAwards.objects.filter(
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_quarter__lte=fiscal_quarter,
+    ).annotate(amount=Sum("transaction_obligated_amount"))
 
     # obligations_incurred_by_program_object_class_cpe is picked from the final period of the quarter.
-    queryset = (
-        FinancialAccountsByProgramActivityObjectClass.objects.exclude(
-            obligations_incurred_by_program_object_class_cpe__isnull=True
-        )
-        .filter(submission__reporting_fiscal_period=fiscal_period)
-        .filter(submission__reporting_fiscal_year=fiscal_year)
-        .annotate(amount=Sum("obligations_incurred_by_program_object_class_cpe"))
-    )
+    queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period=fiscal_period,
+    ).annotate(amount=Sum("obligations_incurred_by_program_object_class_cpe"))
 
     # Apply filters to queryset results
     alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
