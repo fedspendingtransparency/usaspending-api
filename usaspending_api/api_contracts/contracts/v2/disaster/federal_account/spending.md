@@ -29,7 +29,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[Result], fixed-type)
-        + `pagination_metadata` (required, PageMetadata, fixed-type)
+        + `page_metadata` (required, PageMetadata, fixed-type)
 
 
     + Body
@@ -57,7 +57,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                         "total_budgetary_resources": null
                     }
                 ],
-                "pagination_metadata": {
+                "page_metadata": {
                     "page": 1,
                     "next": 2,
                     "previous": null,

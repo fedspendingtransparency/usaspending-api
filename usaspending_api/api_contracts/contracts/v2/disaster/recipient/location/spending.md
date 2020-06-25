@@ -29,7 +29,7 @@ Returns spending details of Recipient Locations receiving supplemental funding b
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[Result], fixed-type)
-        + `pagination_metadata` (required, PageMetadata, fixed-type)
+        + `page_metadata` (required, PageMetadata, fixed-type)
 
 
     + Body
@@ -53,7 +53,7 @@ Returns spending details of Recipient Locations receiving supplemental funding b
                         "outlay": 10
                     }
                 ],
-                "pagination_metadata": {
+                "page_metadata": {
                     "page": 1,
                     "next": 2,
                     "previous": null,
