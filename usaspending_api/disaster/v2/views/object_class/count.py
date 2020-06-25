@@ -53,7 +53,7 @@ class ObjectClassCountViewSet(DisasterBase):
                 include=Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters).values("pk"))
             )
             .filter(include=True)
-            .distinct("major_object_class")
+            .values("pk")
             .count()
         )
         return Response({"count": count})
