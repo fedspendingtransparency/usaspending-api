@@ -8,6 +8,7 @@ from usaspending_api.common.validator import customize_pagination_with_sort_colu
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
 
 
 def covid_def_codes():
@@ -52,6 +53,7 @@ def latest_faba_of_each_year():
 
 class DisasterBase(APIView):
     required_filters = ["def_codes"]
+    reporting_period_min = "2020-04-01"
 
     @cached_property
     def filters(self):
@@ -91,6 +93,14 @@ class DisasterBase(APIView):
     @property
     def def_codes(self):
         return self.filters["def_codes"]
+
+    @cached_property
+    def last_closed_monthly_submission_dates(self):
+        return get_last_closed_submission_date(is_quarter=False)
+
+    @cached_property
+    def last_closed_quarterly_submission_dates(self):
+        return get_last_closed_submission_date(is_quarter=True)
 
 
 class SpendingMixin:

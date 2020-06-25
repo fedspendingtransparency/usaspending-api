@@ -24,7 +24,7 @@ Returns loan spending details of Object Classes receiving supplemental funding b
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[Result], fixed-type)
-        + `pagination_metadata` (required, PageMetadata, fixed-type)
+        + `page_metadata` (required, PageMetadata, fixed-type)
 
 
     + Body
@@ -48,7 +48,7 @@ Returns loan spending details of Object Classes receiving supplemental funding b
                         "face_value_of_loan": 50
                     }
                 ],
-                "pagination_metadata": {
+                "page_metadata": {
                     "page": 1,
                     "next": 2,
                     "previous": null,
