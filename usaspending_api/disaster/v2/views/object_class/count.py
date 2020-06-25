@@ -10,7 +10,7 @@ from usaspending_api.references.models import ObjectClass
 
 class ObjectClassCountViewSet(DisasterBase):
     """
-    Obtain the count of Major Object Class related to supplied DEFC filter.
+    Obtain the count of Object Class related to supplied DEFC filter.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/count.md"
