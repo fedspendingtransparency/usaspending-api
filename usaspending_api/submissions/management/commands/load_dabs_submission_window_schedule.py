@@ -27,6 +27,7 @@ from
     submission_window_schedule
 where
     period_start >= '2020-07-17'
+    and period != 1
 """
 
 # SQL to create Quarter Period Schedules using broker table
