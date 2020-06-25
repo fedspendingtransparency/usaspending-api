@@ -52,17 +52,16 @@ class Command(mixins.ETLMixin, BaseCommand):
                 disaster_emergency_fund_code,
                 CASE WHEN tas.main_account_code is not null THEN
                     CONCAT(
-                        CASE WHEN tas.allocation_transfer_agency is not null THEN CONCAT(tas.allocation_transfer_agency, '-') ELSE null END,
-                        tas.agency_identifier, '-',
-                        CASE WHEN tas.beginning_period_of_availa is not null THEN CONCAT(tas.beginning_period_of_availa, '/', tas.ending_period_of_availabil) ELSE tas.availability_type_code END,
-                        '-', tas.main_account_code, '-', tas.sub_account_code)
+                        CASE WHEN sf.allocation_transfer_agency is not null THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END,
+                        sf.agency_identifier, '-',
+                        CASE WHEN sf.beginning_period_of_availa is not null THEN CONCAT(sf.beginning_period_of_availa, '/', sf.ending_period_of_availabil) ELSE sf.availability_type_code END,
+                        '-', sf.main_account_code, '-', sf.sub_account_code)
                     ELSE
                         null
                     END
                 as tas_rendering_label
             FROM
                 sf_133 sf
-            LEFT JOIN tas_lookup tas ON sf.tas_id = tas.tas_id
             GROUP BY
                 fiscal_year,
                 fiscal_period,
