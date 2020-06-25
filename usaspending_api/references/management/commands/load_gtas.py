@@ -1,8 +1,9 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from django.db import connection, connections, transaction
+from django.db import connections, transaction
 
+from usaspending_api.common.etl import mixins
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models import GTASSF133Balances
 
@@ -17,7 +18,7 @@ DERIVED_COLUMNS = {
 }
 
 
-class Command(BaseCommand):
+class Command(mixins.ETLMixin, BaseCommand):
     help = "Update GTAS aggregations used as domain data"
 
     @transaction.atomic()
@@ -38,9 +39,7 @@ class Command(BaseCommand):
         total_obligation_objs = [GTASSF133Balances(**values) for values in total_obligation_values]
         GTASSF133Balances.objects.bulk_create(total_obligation_objs)
 
-        with connection.cursor() as cursor:
-            logger.info("Populating TAS foreign keys")
-            cursor.execute(self.tas_fk_sql())
+        self._execute_dml_sql(self.tas_fk_sql(), "Populating TAS foreign keys")
 
         logger.info("GTAS loader finished successfully!")
 
