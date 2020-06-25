@@ -98,35 +98,33 @@ class LoansMixin:
         return self.filters.get("query")
 
 
-class PaginationMixin:
+class _BasePaginationMixin:
+    def pagination(self):
+        """pass"""
+
+    def run_models(self, columns):
+        default_sort_column = "id"
+        model = customize_pagination_with_sort_columns(columns, default_sort_column)
+        request_data = TinyShield(model).block(self.request.data.get("pagination", {}))
+        return Pagination(
+            page=request_data["page"],
+            limit=request_data["limit"],
+            lower_limit=(request_data["page"] - 1) * request_data["limit"],
+            upper_limit=(request_data["page"] * request_data["limit"]),
+            sort_key=request_data.get("sort", "obligated_amount"),
+            sort_order=request_data["order"],
+        )
+
+
+class PaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
         sortable_columns = ["id", "code", "description", "obligation", "outlay", "total_budgetary_resources", "count"]
-        default_sort_column = "id"
-        model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
-        request_data = TinyShield(model).block(self.request.data.get("pagination", {}))
-        return Pagination(
-            page=request_data["page"],
-            limit=request_data["limit"],
-            lower_limit=(request_data["page"] - 1) * request_data["limit"],
-            upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", "obligated_amount"),
-            sort_order=request_data["order"],
-        )
+        return self.run_models(sortable_columns)
 
 
-class LoansPaginationMixin:
+class LoansPaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
         sortable_columns = ["id", "code", "description", "count", "face_value_of_loan"]
-        default_sort_column = "id"
-        model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
-        request_data = TinyShield(model).block(self.request.data.get("pagination", {}))
-        return Pagination(
-            page=request_data["page"],
-            limit=request_data["limit"],
-            lower_limit=(request_data["page"] - 1) * request_data["limit"],
-            upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", "obligated_amount"),
-            sort_order=request_data["order"],
-        )
+        return self.run_models(sortable_columns)

@@ -5,7 +5,8 @@ from usaspending_api.disaster.v2.views.def_code.count import DefCodeCountViewSet
 from usaspending_api.disaster.v2.views.federal_account.count import FederalAccountCountViewSet
 from usaspending_api.disaster.v2.views.object_class.count import ObjectClassCountViewSet
 from usaspending_api.disaster.v2.views.spending import ExperimentalDisasterViewSet
-from usaspending_api.disaster.v2.views.federal_account.spending import Spending, Loans
+from usaspending_api.disaster.v2.views.federal_account.spending import Spending
+from usaspending_api.disaster.v2.views.federal_account.loans import Loans
 
 urlpatterns = [
     url(r"^agency/count/$", AgencyCountViewSet.as_view()),
