@@ -10,10 +10,14 @@ class GTASSF133Balances(models.Model):
     gross_outlay_amount_by_tas_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     unobligated_balance_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     disaster_emergency_fund_code = models.TextField(null=True)
+    treasury_account_identifier = models.ForeignKey(
+        "accounts.TreasuryAppropriationAccount", models.DO_NOTHING, null=True, db_column="treasury_account_identifier"
+    )
+    tas_rendering_label = models.TextField(null=True)
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
 
     class Meta:
         managed = True
         db_table = "gtas_sf133_balances"
-        unique_together = ("fiscal_year", "fiscal_period", "disaster_emergency_fund_code")
+        unique_together = ("fiscal_year", "fiscal_period", "disaster_emergency_fund_code", "tas_rendering_label")
