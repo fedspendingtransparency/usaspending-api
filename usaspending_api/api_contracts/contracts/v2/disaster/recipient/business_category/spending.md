@@ -27,7 +27,7 @@ This endpoint provides insights on the recipient business categories which recei
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[Result], fixed-type)
-        + `pagination_metadata` (required, PageMetadata, fixed-type)
+        + `page_metadata` (required, PageMetadata, fixed-type)
 
 
     + Body
@@ -51,7 +51,7 @@ This endpoint provides insights on the recipient business categories which recei
                         "outlay": 10
                     }
                 ],
-                "pagination_metadata": {
+                "page_metadata": {
                     "page": 1,
                     "next": 2,
                     "previous": null,
