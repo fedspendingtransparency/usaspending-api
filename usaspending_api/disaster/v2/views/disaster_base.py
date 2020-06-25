@@ -25,7 +25,10 @@ def latest_gtas_of_each_year():
             .annotate(fiscal_period_max=Max("fiscal_period"))
             .values("fiscal_year", "fiscal_period_max")
             .filter(
-                fiscal_year=OuterRef("fiscal_year"), fiscal_year__gte=2020, fiscal_period_max=OuterRef("fiscal_period"),
+                fiscal_year=OuterRef("fiscal_year"),
+                fiscal_year__gte=2020,
+                fiscal_period_max=OuterRef("fiscal_period"),
+                disaster_emergency_fund_code__in=covid_def_code_strings(),
             )
         )
     ).filter(include=True)
@@ -38,7 +41,10 @@ def latest_faba_of_each_year():
             .annotate(fiscal_period_max=Max("fiscal_period"))
             .values("fiscal_year", "fiscal_period_max")
             .filter(
-                fiscal_year=OuterRef("fiscal_year"), fiscal_year__gte=2020, fiscal_period_max=OuterRef("fiscal_period"),
+                fiscal_year=OuterRef("fiscal_year"),
+                fiscal_year__gte=2020,
+                fiscal_period_max=OuterRef("fiscal_period"),
+                disaster_emergency_fund__in=covid_def_codes(),
             )
         )
     ).filter(include=True)
