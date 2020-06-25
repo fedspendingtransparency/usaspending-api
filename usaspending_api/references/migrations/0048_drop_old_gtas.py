@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0046_sf_balances_table'),
+        ('references', '0047_add_tas'),
     ]
 
     operations = [

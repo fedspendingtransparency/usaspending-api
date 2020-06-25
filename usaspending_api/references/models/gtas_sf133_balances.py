@@ -13,7 +13,7 @@ class GTASSF133Balances(models.Model):
     treasury_account_identifier = models.ForeignKey(
         "accounts.TreasuryAppropriationAccount", models.DO_NOTHING, null=True, db_column="treasury_account_identifier"
     )
-    tas_rendering_label = models.TextField(null=True)
+    tas_rendering_label = models.TextField(null=True, db_index=True)
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
 
