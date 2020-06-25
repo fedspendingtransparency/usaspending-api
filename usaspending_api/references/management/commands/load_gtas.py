@@ -26,7 +26,6 @@ class Command(mixins.ETLMixin, BaseCommand):
         logger.info("Creating broker cursor")
         broker_cursor = connections["data_broker"].cursor()
 
-        print(self.broker_fetch_sql())
         logger.info("Running TOTAL_OBLIGATION_SQL")
         broker_cursor.execute(self.broker_fetch_sql())
 
