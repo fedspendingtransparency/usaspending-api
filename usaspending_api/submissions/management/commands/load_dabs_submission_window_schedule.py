@@ -6,7 +6,7 @@ from django.db import connections, transaction
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 # SQL to create Month Period Schedules using broker table
 # Use all periods after Period 9, Year 2020 from table
@@ -50,35 +50,6 @@ where
     period % 3 = 0
 """
 
-# Manually creating some month period records because they are
-# not represented in the broker table
-EXTRA_MONTH_SCHEDULES = [
-    DABSSubmissionWindowSchedule(
-        period_start_date="2020-04-01 00:00:00",
-        period_end_date="2020-04-30 00:00:00",
-        submission_start_date="2020-07-17 00:00:00",
-        submission_due_date="2020-07-30 00:00:00",
-        certification_due_date="2020-08-14 00:00:00",
-        submission_reveal_date="2020-07-31 00:00:00",
-        submission_fiscal_year=2020,
-        submission_fiscal_quarter=3,
-        submission_fiscal_month=7,
-        is_quarter=False,
-    ),
-    DABSSubmissionWindowSchedule(
-        period_start_date="2020-05-01 00:00:00",
-        period_end_date="2020-05-31 00:00:00",
-        submission_start_date="2020-07-17 00:00:00",
-        submission_due_date="2020-07-30 00:00:00",
-        certification_due_date="2020-08-14 00:00:00",
-        submission_reveal_date="2020-07-31 00:00:00",
-        submission_fiscal_year=2020,
-        submission_fiscal_quarter=3,
-        submission_fiscal_month=8,
-        is_quarter=False,
-    ),
-]
-
 
 class Command(BaseCommand):
     help = "Update DABS Submission Window Schedule table based on Broker"
@@ -104,8 +75,7 @@ class Command(BaseCommand):
         DABSSubmissionWindowSchedule.objects.all().delete()
 
         logger.info("Inserting DABS Submission Window Schedule into website")
-        submission_schedule_objs = EXTRA_MONTH_SCHEDULES
-        submission_schedule_objs += [DABSSubmissionWindowSchedule(**values) for values in month_schedule_values]
+        submission_schedule_objs = [DABSSubmissionWindowSchedule(**values) for values in month_schedule_values]
         submission_schedule_objs += [DABSSubmissionWindowSchedule(**values) for values in quarter_schedule_values]
         DABSSubmissionWindowSchedule.objects.bulk_create(submission_schedule_objs)
 
