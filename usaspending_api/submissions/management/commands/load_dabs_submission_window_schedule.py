@@ -13,6 +13,7 @@ logger = logging.getLogger("script")
 # Submission Due Date comes from 'publish_deadline' column
 MONTH_SCHEDULE_SQL = """
 select
+    year * 1000 + period * 10 + 0 as id,
     make_date(year, period, 1) - interval '3 months' as period_start_date,
     make_date(year, period, 1) - interval '2 months' - interval '1 day' as period_end_date,
     period_start as submission_start_date,
@@ -35,6 +36,7 @@ where
 # Submission Due Date comes from 'certification_deadline' column
 QUARTER_SCHEDULE_SQL = """
 select
+    year * 1000 + period * 10 + 1 as id,
     make_date(year, period, 1) - interval '5 months' as period_start_date,
     make_date(year, period, 1) - interval '2 months' - interval '1 day' as period_end_date,
     period_start as submission_start_date,
