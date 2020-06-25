@@ -1,9 +1,10 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Exists, OuterRef, Max
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
-from usaspending_api.disaster.v2.views.disaster_base import covid_def_codes
+from usaspending_api.disaster.v2.views.disaster_base import covid_def_code_strings, latest_gtas_of_each_year
+from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
+from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
+from django.db.models.functions import Coalesce
 
 # Limits the amount of results the spending explorer returns
 SPENDING_EXPLORER_LIMIT = 500
@@ -24,36 +25,19 @@ class OverviewViewSet(APIView):
             {
                 "funding": funding,
                 "total_budget_authority": sum([elem["amount"] for elem in funding]),
-                "spending": self.spending(),
+                "spending": self.spending(funding),
             }
         )
 
     def funding(self):
-        raw_values = (
-            GTASSF133Balances.objects.annotate(
-                include=Exists(
-                    GTASSF133Balances.objects.values("fiscal_year")
-                    .annotate(fiscal_period_max=Max("fiscal_period"))
-                    .values("fiscal_year", "fiscal_period_max")
-                    .filter(
-                        fiscal_year=OuterRef("fiscal_year"),
-                        fiscal_year__gte=2020,
-                        fiscal_period_max=OuterRef("fiscal_period"),
-                    )
-                )
-            )
-            .filter(include=True)
-            .values(
-                "budget_authority_appropriation_amount_cpe",
-                "other_budgetary_resources_amount_cpe",
-                "disaster_emergency_fund_code",
-            )
+        raw_values = latest_gtas_of_each_year().values(
+            "budget_authority_appropriation_amount_cpe",
+            "other_budgetary_resources_amount_cpe",
+            "disaster_emergency_fund_code",
         )
 
         filtered_values = [
-            elem
-            for elem in raw_values
-            if elem["disaster_emergency_fund_code"] in [code["code"] for code in covid_def_codes().values("code")]
+            elem for elem in raw_values if elem["disaster_emergency_fund_code"] in covid_def_code_strings()
         ]
 
         return [
@@ -65,10 +49,47 @@ class OverviewViewSet(APIView):
             for elem in filtered_values
         ]
 
-    def spending(self):
+    def spending(self, funding):
         return {
-            "award_obligations": 866700000000,
-            "award_outlays": 413100000000,
-            "total_obligations": 963000000000,
-            "total_outlays": 459000000000,
+            "award_obligations": self.award_obligations(),
+            "award_outlays": self.award_outlays(),
+            "total_obligations": self.total_obligations(funding),
+            "total_outlays": self.total_outlays(),
         }
+
+    def award_obligations(self):
+        return sum(
+            [
+                elem["transaction_obligated_amount"]
+                for elem in FinancialAccountsByAwards.objects.filter(
+                    disaster_emergency_fund__in=covid_def_code_strings()
+                ).values("transaction_obligated_amount")
+            ]
+        )
+
+    def award_outlays(self):
+        return sum(
+            [
+                elem["amount"]
+                for elem in FinancialAccountsByAwards.objects.filter(
+                    disaster_emergency_fund__in=covid_def_code_strings()
+                )
+                .annotate(amount=Coalesce("gross_outlay_amount_by_award_cpe", 0))
+                .values("amount")
+            ]
+        )
+
+    def total_obligations(self, funding):
+        return (
+            sum([elem["amount"] for elem in funding])
+            - latest_gtas_of_each_year()
+            .filter(fiscal_year=current_fiscal_year())
+            .values("unobligated_balance_cpe")
+            .first()["unobligated_balance_cpe"]
+        )
+
+    def total_outlays(self):
+        return sum(
+            elem["gross_outlay_amount_by_tas_cpe"]
+            for elem in latest_gtas_of_each_year().values("gross_outlay_amount_by_tas_cpe")
+        )

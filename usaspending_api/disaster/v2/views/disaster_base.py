@@ -1,14 +1,47 @@
 from django.utils.functional import cached_property
 from rest_framework.views import APIView
 
+from django.db.models import Exists, OuterRef, Max
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
+from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 
 
 def covid_def_codes():
     return DisasterEmergencyFundCode.objects.filter(group_name="covid_19")
+
+
+def covid_def_code_strings():
+    return [code["code"] for code in covid_def_codes().values("code")]
+
+
+def latest_gtas_of_each_year():
+    return GTASSF133Balances.objects.annotate(
+        include=Exists(
+            GTASSF133Balances.objects.values("fiscal_year")
+            .annotate(fiscal_period_max=Max("fiscal_period"))
+            .values("fiscal_year", "fiscal_period_max")
+            .filter(
+                fiscal_year=OuterRef("fiscal_year"), fiscal_year__gte=2020, fiscal_period_max=OuterRef("fiscal_period"),
+            )
+        )
+    ).filter(include=True)
+
+
+def latest_faba_of_each_year():
+    return FinancialAccountsByAwards.objects.annotate(
+        include=Exists(
+            FinancialAccountsByAwards.objects.values("fiscal_year")
+            .annotate(fiscal_period_max=Max("fiscal_period"))
+            .values("fiscal_year", "fiscal_period_max")
+            .filter(
+                fiscal_year=OuterRef("fiscal_year"), fiscal_year__gte=2020, fiscal_period_max=OuterRef("fiscal_period"),
+            )
+        )
+    ).filter(include=True)
 
 
 class DisasterBase(APIView):
