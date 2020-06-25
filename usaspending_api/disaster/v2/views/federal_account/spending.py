@@ -47,12 +47,22 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             Q(submission__reporting_period_start__gte=self.reporting_period_min),
             Q(
                 Q(
-                    Q(submission__reporting_period_end__lte=self.recent_monthly_submission["submission_reveal_date"])
-                    & Q(submission__quarter_format_flag=False)
+                    Q(submission__quarter_format_flag=False)
+                    & Q(submission__reporting_period_end__lte=self.recent_monthly_submission["submission_reveal_date"])
+                    & Q(
+                        submission__reporting_fiscal_year__lte=self.recent_monthly_submission["submission_fiscal_year"]
+                    ),
                 )
                 | Q(
-                    Q(submission__reporting_period_end__lte=self.recent_quarterly_submission["submission_reveal_date"])
-                    & Q(submission__quarter_format_flag=True)
+                    Q(submission__quarter_format_flag=True)
+                    & Q(
+                        submission__reporting_period_end__lte=self.recent_quarterly_submission["submission_reveal_date"]
+                    )
+                    & Q(
+                        submission__reporting_fiscal_year__lte=self.recent_quarterly_submission[
+                            "submission_fiscal_year"
+                        ]
+                    ),
                 )
             ),
             Q(
@@ -131,7 +141,9 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
                 ),
                 0,
             ),
-            "total_budgetary_resources": Value(None, DecimalField()),  # TEMP UNTIL GTAS HAS TAS
+            "total_budgetary_resources": Coalesce(Sum(
+                "treasury_account__gtas__budget_authority_appropriation_amount_cpe"), 0
+            ),
         }
 
         # Assuming it is more performant to fetch all rows once rather than

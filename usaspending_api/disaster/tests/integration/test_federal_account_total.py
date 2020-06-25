@@ -16,6 +16,7 @@ def account_data():
         tas_rendering_label="2020/99",
         account_title="flowers",
         treasury_account_identifier=22,
+        gtas__budget_authority_appropriation_amount_cpe=4358,
     )
     tre_acct2 = mommy.make(
         "accounts.TreasuryAppropriationAccount",
@@ -23,6 +24,7 @@ def account_data():
         tas_rendering_label="2020/98",
         account_title="evergreens",
         treasury_account_identifier=23,
+        gtas__budget_authority_appropriation_amount_cpe=109237,
     )
     tre_acct3 = mommy.make(
         "accounts.TreasuryAppropriationAccount",
@@ -30,6 +32,7 @@ def account_data():
         tas_rendering_label="2020/52",
         account_title="ferns",
         treasury_account_identifier=24,
+        gtas__budget_authority_appropriation_amount_cpe=39248,
     )
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -102,7 +105,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
                     "id": 22,
                     "obligation": 100.0,
                     "outlay": 111.0,
-                    "total_budgetary_resources": None,
+                    "total_budgetary_resources": 4358.0,
                 }
             ],
             "code": "000-0000",
@@ -111,7 +114,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
             "id": 21,
             "obligation": 100.0,
             "outlay": 111.0,
-            "total_budgetary_resources": None,
+            "total_budgetary_resources": 4358.0,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -129,7 +132,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
                     "id": 24,
                     "obligation": 3.0,
                     "outlay": 333.0,
-                    "total_budgetary_resources": None,
+                    "total_budgetary_resources": 39248.0,
                 },
                 {
                     "code": "2020/98",
@@ -138,7 +141,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
                     "id": 23,
                     "obligation": 201.0,
                     "outlay": 223.0,
-                    "total_budgetary_resources": None,
+                    "total_budgetary_resources": 218474.0,
                 },
                 {
                     "code": "2020/99",
@@ -147,7 +150,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
                     "id": 22,
                     "obligation": 100.0,
                     "outlay": 111.0,
-                    "total_budgetary_resources": None,
+                    "total_budgetary_resources": 4358.0,
                 },
             ],
             "code": "000-0000",
@@ -156,7 +159,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
             "id": 21,
             "obligation": 304.0,
             "outlay": 667.0,
-            "total_budgetary_resources": None,
+            "total_budgetary_resources": 262080.0,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK

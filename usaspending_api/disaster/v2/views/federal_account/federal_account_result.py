@@ -37,7 +37,7 @@ class FedAcctResults:
                 row.obligation += child.obligation
                 row.total_budgetary_resources = (
                     row.total_budgetary_resources + child.total_budgetary_resources
-                    if child.total_budgetary_resources
+                    if child.total_budgetary_resources is not None
                     else None
                 )
                 row.count += child.count
