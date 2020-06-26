@@ -21,6 +21,7 @@ CONTENT_TYPE = "application/json"
 GLOBAL_MOCK_DICT = [
     {
         "model": DABSSubmissionWindowSchedule,
+        "id": 1600031,
         "period_end_date": datetime(1599, 12, 31, tzinfo=timezone.utc),
         "submission_fiscal_year": 1600,
         "submission_fiscal_quarter": 1,
@@ -131,6 +132,7 @@ def test_unreported_data_actual_value_file_c(client):
     models_to_mock = [
         {
             "model": DABSSubmissionWindowSchedule,
+            "id": 1600031,
             "period_end_date": datetime(1599, 12, 31, tzinfo=timezone.utc),
             "submission_fiscal_year": 1600,
             "submission_fiscal_quarter": 1,
