@@ -8,7 +8,7 @@ from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter, FiscalYear
+from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter, FiscalYear, FiscalYearAndPeriod
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import CGAC, ToptierAgency
@@ -181,7 +181,11 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
             Value("-"),
             f"{tas_id}__federal_account__main_account_code",
         ),
-        "submission_period": FiscalYearAndQuarter("reporting_period_end"),
+        "submission_period": Case(
+            When(**{f"submission__quarter_format_flag": False, "then": FiscalYearAndPeriod("reporting_period_end")}),
+            default=FiscalYearAndQuarter("reporting_period_end"),
+            output_field=CharField(),
+        ),
         "last_modified_date"
         + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
     }
@@ -206,7 +210,11 @@ def generate_federal_account_query(queryset, account_type, tas_id):
             f"{tas_id}__federal_account__main_account_code",
         ),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
-        "submission_period": FiscalYearAndQuarter("reporting_period_end"),
+        "submission_period": Case(
+            When(**{f"submission__quarter_format_flag": False, "then": FiscalYearAndPeriod("reporting_period_end")}),
+            default=FiscalYearAndQuarter("reporting_period_end"),
+            output_field=CharField(),
+        ),
         "last_modified_date"
         + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
     }
