@@ -48,6 +48,7 @@ def disaster_account_data():
 
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id="2022081",
         is_quarter=False,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
@@ -56,6 +57,7 @@ def disaster_account_data():
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id="2022080",
         is_quarter=True,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
@@ -147,19 +149,19 @@ def disaster_account_data():
 
     oc = "references.ObjectClass"
     oc1 = mommy.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=100, object_class_name="equipment"
+        oc, major_object_class=10, major_object_class_name="Name 10", object_class=100, object_class_name="equipment"
     )
     oc2 = mommy.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=110, object_class_name="hvac"
+        oc, major_object_class=20, major_object_class_name="Name 20", object_class=110, object_class_name="hvac"
     )
     oc3 = mommy.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=120, object_class_name="supplies"
+        oc, major_object_class=30, major_object_class_name="Name 30", object_class=120, object_class_name="supplies"
     )
     oc4 = mommy.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=130, object_class_name="interest"
+        oc, major_object_class=40, major_object_class_name="Name 40", object_class=130, object_class_name="interest"
     )
     oc5 = mommy.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=140, object_class_name="interest"
+        oc, major_object_class=40, major_object_class_name="Name 40", object_class=140, object_class_name="interest"
     )
 
     defc = "references.DisasterEmergencyFundCode"

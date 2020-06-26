@@ -29,7 +29,7 @@ Returns spending details of DEFC receiving supplemental funding budgetary resour
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[Result], fixed-type)
-        + `pagination_metadata` (required, PageMetadata, fixed-type)
+        + `page_metadata` (required, PageMetadata, fixed-type)
 
 
     + Body
@@ -55,7 +55,7 @@ Returns spending details of DEFC receiving supplemental funding budgetary resour
                         "total_budgetary_resources": 324896234
                     }
                 ],
-                "pagination_metadata": {
+                "page_metadata": {
                     "page": 1,
                     "next": 2,
                     "previous": null,

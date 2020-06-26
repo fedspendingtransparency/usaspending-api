@@ -1,8 +1,7 @@
 import logging
 
 from dateutil.relativedelta import relativedelta
-from fiscalyear import FiscalDate, FiscalQuarter, FiscalDateTime, datetime
-from usaspending_api.common.exceptions import InvalidParameterException
+from fiscalyear import FiscalDate, FiscalDateTime, datetime
 from usaspending_api.common.helpers.generic_helper import validate_date, min_and_max_from_date_ranges
 
 
@@ -162,62 +161,16 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
     return results
 
 
-def generate_last_completed_fiscal_quarter(fiscal_year, fiscal_quarter=None):
-    """ Generate the most recently completed fiscal quarter """
-
-    # Get the current fiscal year so that it can be compared against the FY in the request
-    day_difference = current_fiscal_date() - datetime.timedelta(days=SUBMISSION_WINDOW_DAYS)
-    current_fiscal_date_adjusted = FiscalDateTime(day_difference.year, day_difference.month, day_difference.day)
-
-    # Attempting to get data for current fiscal year (minus SUBMISSION_WINDOW_DAYS days)
-    if fiscal_year == current_fiscal_date_adjusted.fiscal_year:
-        current_fiscal_quarter = current_fiscal_date_adjusted.quarter
-        # If a fiscal quarter has been requested
-        if fiscal_quarter:
-            # If the fiscal quarter requested is not yet completed (or within SUBMISSION_WINDOW_DAYS
-            # days of being completed), error out
-            if current_fiscal_quarter <= fiscal_quarter:
-                raise InvalidParameterException(
-                    f"Requested fiscal year and quarter must have been completed over {SUBMISSION_WINDOW_DAYS} "
-                    f"days prior to the current date."
-                )
-        # If no fiscal quarter has been requested
-        else:
-            # If it's currently the first quarter (or within SUBMISSION_WINDOW_DAYS days of the
-            # first quarter), throw an error
-            if current_fiscal_quarter == 1:
-                raise InvalidParameterException(
-                    f"Cannot obtain data for current fiscal year. At least one quarter must "
-                    f"be completed for over {SUBMISSION_WINDOW_DAYS} days."
-                )
-            # roll back to the last completed fiscal quarter if it's any other quarter
-            else:
-                fiscal_quarter = current_fiscal_quarter - 1
-    # Attempting to get data for any fiscal year before the current one (minus SUBMISSION_WINDOW_DAYS days)
-    elif fiscal_year < current_fiscal_date_adjusted.fiscal_year:
-        # If no fiscal quarter has been requested, give the fourth quarter of the year requested
-        if not fiscal_quarter:
-            fiscal_quarter = 4
-    else:
-        raise InvalidParameterException(
-            f"Cannot obtain data for future fiscal years or fiscal years that have "
-            f"not been active for over {SUBMISSION_WINDOW_DAYS} days."
-        )
-
-    # get the fiscal date
-    fiscal_date = FiscalQuarter(fiscal_year, fiscal_quarter).end
-    fiscal_date = datetime.datetime.strftime(fiscal_date, "%Y-%m-%d")
-
-    return fiscal_date, fiscal_quarter
-
-
 def calculate_last_completed_fiscal_quarter(fiscal_year, as_of_date=current_fiscal_date()):
     """
-    Effectively a minimalistic implementation of generate_last_completed_fiscal_quarter.  Returns either
-    the most recently completed fiscal quarter or None if it's too early in the fiscal year for the first
-    quarter to be considered "completed".  Should always return None for future fiscal years.  as_of_date
-    was intended for unit testing purposes, but who knows, maybe you'll find another use for it being the
-    unquestionable genius that you are.
+    ENABLE_CARES_ACT_FEATURES TECH DEBT:  Make this work with new standardized, yet-to-be-named
+    function.  There are currently several flavors flying around.  Waiting for one to land rather
+    than creating another.
+
+    Returns either the most recently completed fiscal quarter or None if it's too early in the
+    fiscal year for the first quarter to be considered "completed".  Should always return None for
+    future fiscal years.  as_of_date was intended for unit testing purposes, but who knows, maybe
+    you'll find another use for it being the unquestionable genius that you are.
     """
 
     # Get the current fiscal year so that it can be compared against the FY in the request.
