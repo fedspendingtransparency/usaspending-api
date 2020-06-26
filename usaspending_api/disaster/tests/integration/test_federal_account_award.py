@@ -1,5 +1,4 @@
 import pytest
-import json
 from model_mommy import mommy
 from rest_framework import status
 
@@ -8,6 +7,22 @@ url = "/api/v2/disaster/federal_account/spending/"
 
 @pytest.fixture
 def account_data():
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        is_quarter=False,
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="2022-6-15",
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        is_quarter=True,
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="2022-6-15",
+    )
     mommy.make("references.DisasterEmergencyFundCode", code="A")
     fed_acct1 = mommy.make("accounts.FederalAccount", account_title="gifts", federal_account_code="000-0000", id=21)
     tre_acct1 = mommy.make(
@@ -33,9 +48,9 @@ def account_data():
     )
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_period_start="2020-05-15",
-        reporting_period_end="2020-05-29",
-        reporting_fiscal_year=2020,
+        reporting_period_start="2022-05-15",
+        reporting_period_end="2022-05-29",
+        reporting_fiscal_year=2022,
         reporting_fiscal_quarter=3,
         reporting_fiscal_period=7,
         quarter_format_flag=False,
@@ -84,10 +99,9 @@ def account_data():
 
 @pytest.mark.django_db
 def test_federal_account_award_success(client, account_data, monkeypatch, helpers):
-    helpers.patch_datetime_now(monkeypatch, 2020, 6, 20)
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
-    body = {"filter": {"def_codes": ["M"]}, "spending_type": "award"}
-    resp = client.post(url, content_type="application/json", data=json.dumps(body))
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="award")
     expected_results = [
         {
             "children": [
@@ -113,8 +127,7 @@ def test_federal_account_award_success(client, account_data, monkeypatch, helper
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    body = {"filter": {"def_codes": ["M", "L", "N", "O"]}, "spending_type": "award"}
-    resp = client.post(url, content_type="application/json", data=json.dumps(body))
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "L", "N", "O"], spending_type="award")
     expected_results = [
         {
             "children": [
@@ -160,8 +173,8 @@ def test_federal_account_award_success(client, account_data, monkeypatch, helper
 
 
 @pytest.mark.django_db
-def test_federal_account_award_empty(client, account_data):
-    body = {"filter": {"def_codes": ["A"]}, "spending_type": "award"}
-    resp = client.post(url, content_type="application/json", data=json.dumps(body))
+def test_federal_account_award_empty(client, monkeypatch, helpers, account_data):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"], spending_type="award")
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json()["results"]) == 0

@@ -1,5 +1,4 @@
 import pytest
-import json
 from model_mommy import mommy
 from rest_framework import status
 
@@ -8,6 +7,22 @@ url = "/api/v2/disaster/federal_account/loans/"
 
 @pytest.fixture
 def account_data():
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        is_quarter=False,
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="2022-6-15",
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        is_quarter=True,
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="2022-6-15",
+    )
     mommy.make("references.DisasterEmergencyFundCode", code="A")
     award1 = mommy.make("awards.Award", id=111, total_loan_value=1111)
     award2 = mommy.make("awards.Award", id=222, total_loan_value=2222)
@@ -84,16 +99,13 @@ def account_data():
 
 @pytest.mark.django_db
 def test_federal_account_loans_success(client, account_data, monkeypatch, helpers):
-    helpers.patch_datetime_now(monkeypatch, 2020, 6, 20)
-    body = {"filter": {"def_codes": ["M"]}}
-    resp = client.post(url, content_type="application/json", data=json.dumps(body))
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
     expected_results = []
     assert resp.status_code == status.HTTP_200_OK
-    print(json.dumps(resp.json()))
     assert resp.json()["results"] == expected_results
 
-    body = {"filter": {"def_codes": ["M", "L", "N", "O"]}}
-    resp = client.post(url, content_type="application/json", data=json.dumps(body))
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "L", "N", "O"])
     expected_results = [
         {
             "children": [
@@ -112,8 +124,29 @@ def test_federal_account_loans_success(client, account_data, monkeypatch, helper
 
 
 @pytest.mark.django_db
-def test_federal_account_loans_empty(client, account_data):
-    body = {"filter": {"def_codes": ["A"]}}
-    resp = client.post(url, content_type="application/json", data=json.dumps(body))
+def test_federal_account_loans_empty(client, monkeypatch, helpers, account_data):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"])
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json()["results"]) == 0
+
+
+@pytest.mark.django_db
+def test_federal_account_loans_invalid_defc(client, account_data, helpers):
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["ZZ"])
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.data["detail"] == "Field 'filter|def_codes' is outside valid values ['9', 'A', 'L', 'M', 'N', 'O']"
+
+
+@pytest.mark.django_db
+def test_federal_account_loans_invalid_defc_type(client, account_data, helpers):
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes="100")
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.data["detail"] == "Invalid value in 'filter|def_codes'. '100' is not a valid type (array)"
+
+
+@pytest.mark.django_db
+def test_federal_account_loans_missing_defc(client, account_data, helpers):
+    resp = helpers.post_for_spending_endpoint(client, url)
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.data["detail"] == "Missing value: 'filter|def_codes' is a required field"

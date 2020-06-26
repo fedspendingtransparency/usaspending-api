@@ -1,5 +1,4 @@
 import pytest
-import json
 from model_mommy import mommy
 from rest_framework import status
 
@@ -8,6 +7,22 @@ url = "/api/v2/disaster/federal_account/spending/"
 
 @pytest.fixture
 def account_data():
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        is_quarter=False,
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="2022-6-15",
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        is_quarter=True,
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="2022-6-15",
+    )
     mommy.make("references.DisasterEmergencyFundCode", code="A")
     fed_acct1 = mommy.make("accounts.FederalAccount", account_title="gifts", federal_account_code="000-0000", id=21)
     tre_acct1 = mommy.make(
@@ -36,9 +51,9 @@ def account_data():
     )
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_period_start="2020-05-15",
-        reporting_period_end="2020-05-29",
-        reporting_fiscal_year=2020,
+        reporting_period_start="2022-05-15",
+        reporting_period_end="2022-05-29",
+        reporting_fiscal_year=2022,
         reporting_fiscal_quarter=3,
         reporting_fiscal_period=7,
         quarter_format_flag=False,
@@ -92,9 +107,8 @@ def account_data():
 
 @pytest.mark.django_db
 def test_federal_account_success(client, account_data, monkeypatch, helpers):
-    helpers.patch_datetime_now(monkeypatch, 2020, 6, 20)
-    body = {"filter": {"def_codes": ["M"]}, "spending_type": "total"}
-    resp = client.post(url, content_type="application/json", data=json.dumps(body))
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="total")
     expected_results = [
         {
             "children": [
@@ -120,8 +134,7 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    body = {"filter": {"def_codes": ["M", "L", "N", "O"]}, "spending_type": "total"}
-    resp = client.post(url, content_type="application/json", data=json.dumps(body))
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "L", "N", "O"], spending_type="total")
     expected_results = [
         {
             "children": [
@@ -167,8 +180,53 @@ def test_federal_account_success(client, account_data, monkeypatch, helpers):
 
 
 @pytest.mark.django_db
-def test_federal_account_empty(client, account_data):
-    body = {"filter": {"def_codes": ["A"]}, "spending_type": "total"}
-    resp = client.post(url, content_type="application/json", data=json.dumps(body))
+def test_federal_account_empty(client, monkeypatch, helpers, account_data):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"], spending_type="total")
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json()["results"]) == 0
+
+
+@pytest.mark.django_db
+def test_federal_account_invalid_defc(client, account_data, helpers):
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["ZZ"], spending_type="total")
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.data["detail"] == "Field 'filter|def_codes' is outside valid values ['9', 'A', 'L', 'M', 'N', 'O']"
+
+
+@pytest.mark.django_db
+def test_federal_account_invalid_defc_type(client, account_data, helpers):
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes="100", spending_type="total")
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.data["detail"] == "Invalid value in 'filter|def_codes'. '100' is not a valid type (array)"
+
+
+@pytest.mark.django_db
+def test_federal_account_missing_defc(client, account_data, helpers):
+    resp = helpers.post_for_spending_endpoint(client, url, spending_type="total")
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.data["detail"] == "Missing value: 'filter|def_codes' is a required field"
+
+
+@pytest.mark.django_db
+def test_federal_account_invalid_spending_type(client, monkeypatch, account_data, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"], spending_type="total")
+    assert resp.status_code == status.HTTP_200_OK
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"], spending_type="award")
+    assert resp.status_code == status.HTTP_200_OK
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"], spending_type="gibberish")
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.data["detail"] == "Field 'spending_type' is outside valid values ['total', 'award']"
+
+
+@pytest.mark.django_db
+def test_federal_account_missing_spending_type(client, monkeypatch, account_data, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"])
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.data["detail"] == "Missing value: 'spending_type' is a required field"

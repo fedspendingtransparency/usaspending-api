@@ -14,7 +14,7 @@ class DisasterBase(APIView):
 
     @cached_property
     def filters(self):
-        all_def_codes = list(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
+        all_def_codes = sorted(list(DisasterEmergencyFundCode.objects.values_list("code", flat=True)))
         object_keys_lookup = {
             "def_codes": {
                 "key": "filter|def_codes",
@@ -61,11 +61,7 @@ class DisasterBase(APIView):
 
 
 class SpendingMixin:
-    required_filters = ["def_codes", "award_type_codes", "query"]
-
-    @property
-    def award_type_codes(self):
-        return self.filters.get("award_type_codes")
+    required_filters = ["def_codes", "query"]
 
     @property
     def query(self):
