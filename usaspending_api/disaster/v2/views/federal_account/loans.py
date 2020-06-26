@@ -9,7 +9,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     LoansPaginationMixin,
     LoansMixin,
 )
-from usaspending_api.disaster.v2.views.federal_account.spending import construct_response
+from usaspending_api.disaster.v2.views.federal_account.spending import construct_response, submission_window_cutoff
 
 
 class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
@@ -19,6 +19,7 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
     def post(self, request):
         if self.pagination.sort_key == "face_value_of_loan":
             self.pagination.sort_key = "outlay"  # hack to re-use the Dataclasses
+
         results = construct_response(list(self.queryset), self.pagination)
 
         for result in results["results"]:
@@ -35,40 +36,19 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
     @property
     def queryset(self):
         filters = [
-            Q(submission__reporting_period_start__gte=self.reporting_period_min),
-            Q(
-                Q(
-                    Q(submission__quarter_format_flag=False)
-                    & Q(
-                        submission__reporting_period_end__lte=self.last_closed_monthly_submission_dates[
-                            "submission_reveal_date"
-                        ]
-                    )
-                    & Q(
-                        submission__reporting_fiscal_year__lte=self.last_closed_monthly_submission_dates[
-                            "submission_fiscal_year"
-                        ]
-                    ),
-                )
-                | Q(
-                    Q(submission__quarter_format_flag=True)
-                    & Q(
-                        submission__reporting_period_end__lte=self.last_closed_quarterly_submission_dates[
-                            "submission_reveal_date"
-                        ]
-                    )
-                    & Q(
-                        submission__reporting_fiscal_year__lte=self.last_closed_quarterly_submission_dates[
-                            "submission_fiscal_year"
-                        ]
-                    ),
-                )
-            ),
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(award_id__isnull=False),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
         ]
+        filters.extend(
+            submission_window_cutoff(
+                self.reporting_period_min,
+                self.last_closed_monthly_submission_dates,
+                self.last_closed_quarterly_submission_dates,
+            )
+        )
+
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
             "count": Count("award_id", distinct=True),
