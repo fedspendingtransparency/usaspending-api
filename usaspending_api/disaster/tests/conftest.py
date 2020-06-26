@@ -1,6 +1,26 @@
 from usaspending_api.disaster.tests.fixtures.disaster_account_data import disaster_account_data
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
-from usaspending_api.disaster.tests.fixtures.overview_data import basic_gtas, defc_codes, basic_faba
+from usaspending_api.disaster.tests.fixtures.overview_data import (
+    basic_ref_data,
+    late_gtas,
+    early_gtas,
+    year_2_gtas_covid,
+    year_2_gtas_covid_2,
+    year_2_gtas_non_covid,
+    defc_codes,
+    basic_faba,
+)
 
 
-__all__ = ["disaster_account_data", "helpers", "defc_codes", "basic_gtas", "basic_faba"]
+__all__ = [
+    "basic_ref_data",
+    "disaster_account_data",
+    "helpers",
+    "defc_codes",
+    "late_gtas",
+    "early_gtas",
+    "year_2_gtas_covid",
+    "year_2_gtas_covid_2",
+    "year_2_gtas_non_covid",
+    "basic_faba",
+]
