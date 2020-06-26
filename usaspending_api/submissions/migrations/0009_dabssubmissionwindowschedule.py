@@ -13,7 +13,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='DABSSubmissionWindowSchedule',
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
+                # This field was originally an Auto Incremented ID 
+                ('id', models.IntegerField(primary_key=True)),
                 ('period_start_date', models.DateTimeField()),
                 ('period_end_date', models.DateTimeField()),
                 ('submission_start_date', models.DateTimeField()),
