@@ -12,7 +12,7 @@ defc_sql = """
         where {award_id_sql} and faba.disaster_emergency_fund_code is not null
     ),
     closed_periods as (
-    select 
+    select
         w.submission_fiscal_year,
         w.submission_fiscal_month,
         w.is_quarter
@@ -44,7 +44,7 @@ defc_sql = """
             faba.reporting_fiscal_period != 12 -- don't duplicate the year-end period's value if in unclosed period 01 or 02 (since there is no P01 submission)
             and (faba.reporting_fiscal_year, faba.reporting_fiscal_period) in (
             -- Most recent closed period
-                select c.submission_fiscal_year, c.submission_fiscal_month 
+                select c.submission_fiscal_year, c.submission_fiscal_month
                 from closed_periods c
                 order by c.submission_fiscal_year desc, c.submission_fiscal_month desc
                 limit 1
