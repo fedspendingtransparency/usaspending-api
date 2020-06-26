@@ -4,11 +4,15 @@ from usaspending_api.disaster.tests.fixtures.overview_data import (
     basic_ref_data,
     late_gtas,
     early_gtas,
+    non_covid_gtas,
+    other_budget_authority_gtas,
     year_2_gtas_covid,
     year_2_gtas_covid_2,
     year_2_gtas_non_covid,
     defc_codes,
     basic_faba,
+    faba_with_values,
+    faba_with_non_covid_values,
 )
 
 
@@ -19,8 +23,12 @@ __all__ = [
     "defc_codes",
     "late_gtas",
     "early_gtas",
+    "non_covid_gtas",
+    "other_budget_authority_gtas",
     "year_2_gtas_covid",
     "year_2_gtas_covid_2",
     "year_2_gtas_non_covid",
     "basic_faba",
+    "faba_with_values",
+    "faba_with_non_covid_values",
 ]

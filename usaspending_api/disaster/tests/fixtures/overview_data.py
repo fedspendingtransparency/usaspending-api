@@ -2,14 +2,17 @@ import pytest
 
 from model_mommy import mommy
 from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.disaster.v2.views.disaster_base import COVID_19_GROUP_NAME
+
+NOT_COVID_NAME = "not_covid_19"
 
 
 @pytest.fixture
 def defc_codes():
     return [
-        mommy.make("references.DisasterEmergencyFundCode", code="A", group_name="not_covid_19"),
-        mommy.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19"),
-        mommy.make("references.DisasterEmergencyFundCode", code="N", group_name="covid_19"),
+        mommy.make("references.DisasterEmergencyFundCode", code="A", group_name=NOT_COVID_NAME),
+        mommy.make("references.DisasterEmergencyFundCode", code="M", group_name=COVID_19_GROUP_NAME),
+        mommy.make("references.DisasterEmergencyFundCode", code="N", group_name=COVID_19_GROUP_NAME),
     ]
 
 
@@ -29,7 +32,7 @@ def late_gtas(defc_codes):
         disaster_emergency_fund_code="M",
         budget_authority_appropriation_amount_cpe=0.3,
         other_budgetary_resources_amount_cpe=0.0,
-        gross_outlay_amount_by_tas_cpe=0.0,
+        gross_outlay_amount_by_tas_cpe=0.03,
     )
 
 
@@ -43,7 +46,35 @@ def early_gtas(defc_codes):
         disaster_emergency_fund_code="M",
         budget_authority_appropriation_amount_cpe=0.2,
         other_budgetary_resources_amount_cpe=0.0,
-        gross_outlay_amount_by_tas_cpe=0.0,
+        gross_outlay_amount_by_tas_cpe=0.02,
+    )
+
+
+@pytest.fixture
+def non_covid_gtas(defc_codes):
+    mommy.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2021,
+        fiscal_period=12,
+        unobligated_balance_cpe=0,
+        disaster_emergency_fund_code="A",
+        budget_authority_appropriation_amount_cpe=0.32,
+        other_budgetary_resources_amount_cpe=0.0,
+        gross_outlay_amount_by_tas_cpe=0.13,
+    )
+
+
+@pytest.fixture
+def other_budget_authority_gtas(defc_codes):
+    mommy.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2021,
+        fiscal_period=1,
+        unobligated_balance_cpe=0,
+        disaster_emergency_fund_code="M",
+        budget_authority_appropriation_amount_cpe=0.7,
+        other_budgetary_resources_amount_cpe=0.15,
+        gross_outlay_amount_by_tas_cpe=0.02,
     )
 
 
@@ -71,7 +102,7 @@ def _year_2_gtas(code):
         disaster_emergency_fund_code=code,
         budget_authority_appropriation_amount_cpe=0.22,
         other_budgetary_resources_amount_cpe=0.0,
-        gross_outlay_amount_by_tas_cpe=0.0,
+        gross_outlay_amount_by_tas_cpe=0.07,
     )
 
 
@@ -81,6 +112,36 @@ def basic_faba(defc_codes):
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.all().first(),
         transaction_obligated_amount=0.0,
+    )
+
+
+@pytest.fixture
+def faba_with_values(defc_codes):
+    _covid_faba_with_value(1.6)
+    _covid_faba_with_value(0.7)
+
+
+@pytest.fixture
+def faba_with_non_covid_values(defc_codes):
+    _covid_faba_with_value(1.6)
+    _non_covid_faba_with_value(0.7)
+
+
+def _covid_faba_with_value(value):
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
+        transaction_obligated_amount=value,
+        gross_outlay_amount_by_award_cpe=value / 2.0,
+    )
+
+
+def _non_covid_faba_with_value(value):
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=NOT_COVID_NAME).first(),
+        transaction_obligated_amount=value,
+        gross_outlay_amount_by_award_cpe=value / 2.0,
     )
 
 

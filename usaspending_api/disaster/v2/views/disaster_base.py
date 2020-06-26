@@ -10,9 +10,11 @@ from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balan
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
 
+COVID_19_GROUP_NAME = "covid_19"
+
 
 def covid_def_codes():
-    return DisasterEmergencyFundCode.objects.filter(group_name="covid_19")
+    return DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME)
 
 
 def covid_def_code_strings():
