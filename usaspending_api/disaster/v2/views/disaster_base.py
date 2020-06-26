@@ -5,14 +5,11 @@ from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
-from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
 
 
 class DisasterBase(APIView):
     required_filters = ["def_codes"]
-    recent_monthly_submission = DABSSubmissionWindowSchedule.latest_monthly_to_display()
-    recent_quarterly_submission = DABSSubmissionWindowSchedule.latest_quarterly_to_display()
     reporting_period_min = "2020-04-01"
 
     @cached_property

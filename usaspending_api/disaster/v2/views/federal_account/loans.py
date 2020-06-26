@@ -38,12 +38,30 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             Q(submission__reporting_period_start__gte=self.reporting_period_min),
             Q(
                 Q(
-                    Q(submission__reporting_period_end__lte=self.recent_monthly_submission["submission_reveal_date"])
-                    & Q(submission__quarter_format_flag=False)
+                    Q(submission__quarter_format_flag=False)
+                    & Q(
+                        submission__reporting_period_end__lte=self.last_closed_monthly_submission_dates[
+                            "submission_reveal_date"
+                        ]
+                    )
+                    & Q(
+                        submission__reporting_fiscal_year__lte=self.last_closed_monthly_submission_dates[
+                            "submission_fiscal_year"
+                        ]
+                    ),
                 )
                 | Q(
-                    Q(submission__reporting_period_end__lte=self.recent_quarterly_submission["submission_reveal_date"])
-                    & Q(submission__quarter_format_flag=True)
+                    Q(submission__quarter_format_flag=True)
+                    & Q(
+                        submission__reporting_period_end__lte=self.last_closed_quarterly_submission_dates[
+                            "submission_reveal_date"
+                        ]
+                    )
+                    & Q(
+                        submission__reporting_fiscal_year__lte=self.last_closed_quarterly_submission_dates[
+                            "submission_fiscal_year"
+                        ]
+                    ),
                 )
             ),
             Q(disaster_emergency_fund__in=self.def_codes),
@@ -60,7 +78,7 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Value(0, DecimalField(max_digits=23, decimal_places=2)),  # Throw-away field
-            "outlay": Coalesce(Sum("award__total_loan_value"), 0),
+            "outlay": Coalesce(Sum("award__total_loan_value"), 0),  # Values are renamed at the end of the view
             "total_budgetary_resources": Value(None, DecimalField(max_digits=23, decimal_places=2)),  # Throw-away field
         }
 

@@ -20,12 +20,7 @@ class FedAcctResults:
     _federal_accounts: Dict[FedAccount, FedAccount] = field(default_factory=dict)
 
     def __getitem__(self, key):
-        try:
-            return self._federal_accounts[key]
-        except KeyError:
-            # If the dictionary key doesn't exist, populate with the key like a DefaultDict
-            self._federal_accounts[key] = key
-            return self._federal_accounts[key]
+        return self._federal_accounts.setdefault(key, key)
 
     def __len__(self):
         return len(self._federal_accounts)
@@ -65,4 +60,8 @@ class FedAcctResults:
         reverse = True
         if direction == "asc":
             reverse = False
-        return sorted(items, key=lambda x: getattr(x, field), reverse=reverse)
+
+        if isinstance(items, list):
+            return sorted(items, key=lambda x: getattr(x, field), reverse=reverse)
+        else:
+            return {k: items[k] for k in sorted(items, key=lambda x: getattr(x, field), reverse=reverse)}
