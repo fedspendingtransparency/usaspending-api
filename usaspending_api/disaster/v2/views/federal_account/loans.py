@@ -13,6 +13,8 @@ from usaspending_api.disaster.v2.views.federal_account.spending import construct
 
 
 class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
+    """View to implement the API"""
+
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
 
     @cache_response()
