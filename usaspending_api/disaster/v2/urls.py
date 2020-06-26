@@ -8,7 +8,6 @@ from usaspending_api.disaster.v2.views.spending import ExperimentalDisasterViewS
 from usaspending_api.disaster.v2.views.overview import OverviewViewSet
 
 urlpatterns = [
-    url(r"^spending/$", ExperimentalDisasterViewSet.as_view()),
     url(r"^overview/$", OverviewViewSet.as_view()),
     url(r"^agency/count/$", AgencyCountViewSet.as_view()),
     url(r"^def_code/count/$", DefCodeCountViewSet.as_view()),

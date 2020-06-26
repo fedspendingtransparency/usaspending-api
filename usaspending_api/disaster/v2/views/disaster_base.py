@@ -21,7 +21,7 @@ def covid_def_code_strings():
     return [code["code"] for code in covid_def_codes().values("code")]
 
 
-def latest_gtas_of_each_year():
+def latest_gtas_of_each_year_queryset():
     return GTASSF133Balances.objects.annotate(
         include=Exists(
             GTASSF133Balances.objects.values("fiscal_year")
@@ -37,7 +37,7 @@ def latest_gtas_of_each_year():
     ).filter(include=True)
 
 
-def latest_faba_of_each_year():
+def latest_faba_of_each_year_queryset():
     return FinancialAccountsByAwards.objects.annotate(
         include=Exists(
             FinancialAccountsByAwards.objects.values("fiscal_year")
