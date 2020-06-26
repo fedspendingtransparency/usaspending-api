@@ -13,6 +13,8 @@ from usaspending_api.disaster.tests.fixtures.overview_data import (
     basic_faba,
     faba_with_values,
     faba_with_non_covid_values,
+    multi_year_faba,
+    multi_period_faba,
 )
 
 
@@ -31,4 +33,6 @@ __all__ = [
     "basic_faba",
     "faba_with_values",
     "faba_with_non_covid_values",
+    "multi_year_faba",
+    "multi_period_faba",
 ]

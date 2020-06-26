@@ -1,7 +1,11 @@
 from rest_framework.response import Response
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.disaster.v2.views.disaster_base import covid_def_code_strings, latest_gtas_of_each_year_queryset
+from usaspending_api.disaster.v2.views.disaster_base import (
+    covid_def_code_strings,
+    latest_gtas_of_each_year_queryset,
+    latest_faba_of_each_year_queryset,
+)
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from django.db.models.functions import Coalesce
 from django.db.models import Sum
@@ -67,9 +71,7 @@ class OverviewViewSet(DisasterBase):
         return sum(
             [
                 elem["amount"]
-                for elem in FinancialAccountsByAwards.objects.filter(
-                    disaster_emergency_fund__in=covid_def_code_strings()
-                )
+                for elem in latest_faba_of_each_year_queryset()
                 .annotate(amount=Coalesce("gross_outlay_amount_by_award_cpe", 0))
                 .values("amount")
             ]

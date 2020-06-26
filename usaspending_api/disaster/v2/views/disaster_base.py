@@ -40,13 +40,13 @@ def latest_gtas_of_each_year_queryset():
 def latest_faba_of_each_year_queryset():
     return FinancialAccountsByAwards.objects.annotate(
         include=Exists(
-            FinancialAccountsByAwards.objects.values("fiscal_year")
-            .annotate(fiscal_period_max=Max("fiscal_period"))
-            .values("fiscal_year", "fiscal_period_max")
+            FinancialAccountsByAwards.objects.values("submission__reporting_fiscal_year")
+            .annotate(fiscal_period_max=Max("submission__reporting_fiscal_period"))
+            .values("submission__reporting_fiscal_year", "fiscal_period_max")
             .filter(
-                fiscal_year=OuterRef("fiscal_year"),
-                fiscal_year__gte=2020,
-                fiscal_period_max=OuterRef("fiscal_period"),
+                submission__reporting_fiscal_year=OuterRef("submission__reporting_fiscal_year"),
+                submission__reporting_fiscal_year__gte=2020,
+                fiscal_period_max=OuterRef("submission__reporting_fiscal_period"),
                 disaster_emergency_fund__in=covid_def_codes(),
             )
         )

@@ -127,21 +127,63 @@ def faba_with_non_covid_values(defc_codes):
     _non_covid_faba_with_value(0.7)
 
 
+@pytest.fixture
+def multi_year_faba(defc_codes):
+    _covid_faba_with_value(1.6)
+    _year_2_faba_with_value(0.7)
+
+
+@pytest.fixture
+def multi_period_faba(defc_codes):
+    _year_2_late_faba_with_value(1.6)
+    _year_2_faba_with_value(0.7)
+
+
 def _covid_faba_with_value(value):
+    submission = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=1)
+
     mommy.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
         transaction_obligated_amount=value,
         gross_outlay_amount_by_award_cpe=value / 2.0,
+        submission=submission,
     )
 
 
 def _non_covid_faba_with_value(value):
+    submission = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=1)
+
     mommy.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=NOT_COVID_NAME).first(),
         transaction_obligated_amount=value,
         gross_outlay_amount_by_award_cpe=value / 2.0,
+        submission=submission,
+    )
+
+
+def _year_2_faba_with_value(value):
+    submission = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2022, reporting_fiscal_period=1)
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
+        transaction_obligated_amount=value,
+        gross_outlay_amount_by_award_cpe=value / 2.0,
+        submission=submission,
+    )
+
+
+def _year_2_late_faba_with_value(value):
+    submission = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2022, reporting_fiscal_period=8)
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
+        transaction_obligated_amount=value,
+        gross_outlay_amount_by_award_cpe=value / 2.0,
+        submission=submission,
     )
 
 
