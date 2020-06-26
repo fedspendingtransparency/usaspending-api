@@ -1,12 +1,13 @@
+from datetime import datetime, timezone
 from django.db.models import Sum
-
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.fiscal_year_helpers import generate_last_completed_fiscal_quarter
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.spending_explorer.v2.filters.explorer import Explorer
 from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
+
 
 UNREPORTED_DATA_NAME = "Unreported Data"
 VALID_UNREPORTED_DATA_TYPES = ["agency", "budget_function", "object_class"]
@@ -14,7 +15,7 @@ VALID_UNREPORTED_FILTERS = ["fy", "quarter"]
 
 
 def get_unreported_data_obj(
-    queryset, filters, limit, spending_type, actual_total, fiscal_year, fiscal_quarter
+    queryset, filters, limit, spending_type, actual_total, fiscal_year, fiscal_period
 ) -> (list, float):
     """ Returns the modified list of result objects including the object corresponding to the unreported amount, only
         if applicable. If the unreported amount does not fit within the limit of results provided, it will not be added.
@@ -26,7 +27,7 @@ def get_unreported_data_obj(
             spending_type: spending explorer category
             actual_total: total calculated based on results in `queryset`
             fiscal_year: fiscal year from request
-            fiscal_quarter: fiscal quarter from request
+            fiscal_period: final fiscal period for fiscal quarter requested
 
         Returns:
             result_set: modified (if applicable) result set as a list
@@ -46,13 +47,10 @@ def get_unreported_data_obj(
         result_set.append(condensed_entry)
 
     expected_total = (
-        GTASSF133Balances.objects.filter(
-            fiscal_year=fiscal_year,
-            fiscal_period__gt=((fiscal_quarter - 1) * 3),
-            fiscal_period__lte=fiscal_quarter * 3,
-        )
-        .order_by("fiscal_period")
-        .values_list("obligations_incurred_total_cpe", flat=True)
+        GTASSF133Balances.objects.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
+        .values("fiscal_year", "fiscal_period")
+        .annotate(Sum("obligations_incurred_total_cpe"))
+        .values_list("obligations_incurred_total_cpe__sum", flat=True)
         .first()
     )
 
@@ -74,10 +72,6 @@ def get_unreported_data_obj(
 
 
 def type_filter(_type, filters, limit=None):
-    fiscal_year = None
-    fiscal_quarter = None
-    fiscal_date = None
-
     _types = [
         "budget_function",
         "budget_subfunction",
@@ -106,46 +100,44 @@ def type_filter(_type, filters, limit=None):
     if filters is None:
         raise InvalidParameterException('Missing Required Request Parameter, "filters": { "filter_options" }')
 
-    # Get fiscal_date and fiscal_quarter
-    for key, value in filters.items():
-        if key == "fy":
-            try:
-                fiscal_year = int(value)
-                if fiscal_year < 1000 or fiscal_year > 9999:
-                    raise InvalidParameterException('Incorrect Fiscal Year Parameter, "fy": "YYYY"')
-            except ValueError:
-                raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
-        elif key == "quarter":
-            if value in ("1", "2", "3", "4"):
-                fiscal_quarter = int(value)
-            else:
-                raise InvalidParameterException(
-                    "Incorrect value provided for quarter parameter. Must be a string between 1 and 4"
-                )
+    if "fy" not in filters:
+        raise InvalidParameterException('Missing required parameter "fy".')
 
-    if fiscal_year:
-        fiscal_date, fiscal_quarter = generate_last_completed_fiscal_quarter(
-            fiscal_year=fiscal_year, fiscal_quarter=fiscal_quarter
-        )
+    if "quarter" not in filters:
+        raise InvalidParameterException('Missing required parameter "quarter".')
 
-    # Recipient, Award Queryset
-    alt_set = (
-        FinancialAccountsByAwards.objects.all()
-        .exclude(transaction_obligated_amount__isnull=True)
-        .exclude(transaction_obligated_amount="NaN")
-        .filter(submission__reporting_fiscal_quarter=fiscal_quarter)
-        .filter(submission__reporting_fiscal_year=fiscal_year)
-        .annotate(amount=Sum("transaction_obligated_amount"))
-    )
+    try:
+        fiscal_year = int(filters["fy"])
+        if fiscal_year < 1000 or fiscal_year > 9999:
+            raise InvalidParameterException('Incorrect Fiscal Year Parameter, "fy": "YYYY"')
+    except ValueError:
+        raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
 
-    # Base Queryset
-    queryset = (
-        FinancialAccountsByProgramActivityObjectClass.objects.all()
-        .exclude(obligations_incurred_by_program_object_class_cpe__isnull=True)
-        .filter(submission__reporting_fiscal_quarter=fiscal_quarter)
-        .filter(submission__reporting_fiscal_year=fiscal_year)
-        .annotate(amount=Sum("obligations_incurred_by_program_object_class_cpe"))
-    )
+    if filters["quarter"] not in ("1", "2", "3", "4", 1, 2, 3, 4):
+        raise InvalidParameterException("Incorrect value provided for quarter parameter. Must be between 1 and 4")
+    fiscal_quarter = int(filters["quarter"])
+
+    submission_window = DABSSubmissionWindowSchedule.objects.filter(
+        submission_fiscal_year=fiscal_year,
+        submission_fiscal_quarter=fiscal_quarter,
+        is_quarter=True,
+        submission_reveal_date__lte=datetime.now(timezone.utc),
+    ).first()
+    if submission_window is None:
+        return {"total": None}
+
+    fiscal_date = submission_window.period_end_date
+    fiscal_period = submission_window.submission_fiscal_month
+
+    # transaction_obligated_amount is summed across all periods in the year up to and including the requested quarter.
+    alt_set = FinancialAccountsByAwards.objects.filter(
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_quarter__lte=fiscal_quarter,
+    ).annotate(amount=Sum("transaction_obligated_amount"))
+
+    # obligations_incurred_by_program_object_class_cpe is picked from the final period of the quarter.
+    queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period=fiscal_period,
+    ).annotate(amount=Sum("obligations_incurred_by_program_object_class_cpe"))
 
     # Apply filters to queryset results
     alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
@@ -210,7 +202,7 @@ def type_filter(_type, filters, limit=None):
             spending_type=_type,
             actual_total=actual_total,
             fiscal_year=fiscal_year,
-            fiscal_quarter=fiscal_quarter,
+            fiscal_period=fiscal_period,
         )
 
         results = {"total": expected_total, "end_date": fiscal_date, "results": result_set}
