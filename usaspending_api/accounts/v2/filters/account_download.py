@@ -142,7 +142,6 @@ def get_agency_name_annotation(relation_name: str, cgac_column_name: str) -> Sub
 def generate_treasury_account_query(queryset, account_type, tas_id):
     """ Derive necessary fields for a treasury account-grouped query """
     derived_fields = {
-        "last_reported_submission_period": FiscalYearAndQuarter("reporting_period_end"),
         # treasury_account_symbol: [ATA-]AID-BPOA/EPOA-MAC-SAC or [ATA-]AID-"X"-MAC-SAC
         "treasury_account_symbol": Concat(
             Case(
@@ -200,7 +199,6 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         "reporting_agency_name": StringAgg("submission__reporting_agency_name", "; ", distinct=True),
         "budget_function": StringAgg(f"{tas_id}__budget_function_title", "; ", distinct=True),
         "budget_subfunction": StringAgg(f"{tas_id}__budget_subfunction_title", "; ", distinct=True),
-        "last_reported_submission_period": Max(FiscalYearAndQuarter("reporting_period_end")),
         # federal_account_symbol: fed_acct_AID-fed_acct_MAC
         "federal_account_symbol": Concat(
             f"{tas_id}__federal_account__agency_identifier",
