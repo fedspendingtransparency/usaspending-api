@@ -76,8 +76,8 @@ def award_data_fixture(db):
         submission_fiscal_year=2020,
         submission_fiscal_month=12,
         is_quarter=True,
-        period_start_date='2020-04-21',
-        submission_reveal_date='2020-04-30'
+        period_start_date="2020-04-21",
+        submission_reveal_date="2020-04-30",
     )
     code = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
     mommy.make(
