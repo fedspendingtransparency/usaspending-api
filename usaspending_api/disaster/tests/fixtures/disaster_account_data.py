@@ -48,6 +48,7 @@ def disaster_account_data():
 
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id="2022081",
         is_quarter=False,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
@@ -56,6 +57,7 @@ def disaster_account_data():
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id="2022080",
         is_quarter=True,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
