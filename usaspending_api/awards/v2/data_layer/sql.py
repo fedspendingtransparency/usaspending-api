@@ -60,8 +60,8 @@ defc_sql = """
         coalesce(sum(faba.transaction_obligated_amount), 0) as obligated_amount,
         coalesce(sum(ffy.prior_fys_outlay), 0) + coalesce(sum(cfy.current_fy_outlay), 0) as total_outlay
     from eligible_file_c_records faba
-    left join fy_final_outlay_balances ffy on ffy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code
-    left join current_fy_outlay_balance cfy on cfy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code
+    left join fy_final_outlay_balances ffy on ffy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code and faba.rownum = 1
+    left join current_fy_outlay_balance cfy on cfy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code and faba.rownum = 1
     where faba.rownum = 1
     group by faba.disaster_emergency_fund_code
     order by obligated_amount desc
