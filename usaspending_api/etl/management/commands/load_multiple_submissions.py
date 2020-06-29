@@ -1,128 +1,227 @@
 import logging
-import pytz
 
-from datetime import datetime
+from collections import namedtuple
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
-from django.db import connections, DEFAULT_DB_ALIAS
+from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+from usaspending_api.common.helpers.sql_helpers import execute_sql_to_named_tuple
+from usaspending_api.etl.management.helpers.load_submission import (
+    calculate_load_submissions_since_datetime,
+    get_publish_history_table,
+)
+from usaspending_api.submissions.models import SubmissionAttributes
 
-logger = logging.getLogger("console")
-exception_logger = logging.getLogger("exceptions")
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-
-    # Give it a fiscal year and a quarter. Will list missing subs/agencies and their recent certified dates.
     def add_arguments(self, parser):
-        parser.add_argument("fy", nargs=1, help="the fiscal year", type=int)
-        parser.add_argument("quarter", nargs=1, help="the fiscal quarter to load", type=int)
-        parser.add_argument("--safe", action="store_true", help="only list missing submissions from the FY/Quarter")
-
-    def handle(self, *args, **options):
-
-        try:
-            broker_conn = connections["data_broker"]
-            broker_cursor = broker_conn.cursor()
-            api_conn = connections[DEFAULT_DB_ALIAS]
-            api_cursor = api_conn.cursor()
-        except Exception as err:
-            logger.critical("Could not connect to database(s).")
-            logger.critical(err)
-            return
-
-        fy = options["fy"][0]
-        quarter = options["quarter"][0]
-
-        if not 1 <= quarter <= 4:
-            logger.critical("Acceptable values for fiscal quarter are 1-4 (was {}).".format(quarter))
-            return
-
-        # Convert fiscal quarter to starting month of calendar quarter
-        quarter = int(quarter) * 3
-
-        logger.info("Querying Broker DB for Submissions")
-
-        broker_cursor.execute(
-            "SELECT submission.submission_id, MAX(certify_history.created_at) AS certified_at, \
-                                  submission.cgac_code, submission.frec_code \
-                                  FROM submission \
-                                  JOIN certify_history ON certify_history.submission_id = submission.submission_id \
-                                  WHERE submission.d2_submission = FALSE \
-                                  AND submission.publish_status_id IN (2, 3) \
-                                  AND submission.reporting_fiscal_year = {} \
-                                  AND submission.reporting_fiscal_period = {} \
-                                  GROUP BY submission.submission_id;".format(
-                fy, quarter
-            )
+        mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
+        mutually_exclusive_group.add_argument(
+            "--submission-ids",
+            help=("Optionally supply one or more Broker submission_ids to be created or updated."),
+            nargs="+",
+            type=int,
+        )
+        mutually_exclusive_group.add_argument(
+            "--incremental", action="store_true", help="Loads newly created or updated submissions.",
+        )
+        mutually_exclusive_group.add_argument(
+            "--start-datetime",
+            type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
+            help=(
+                "Manually set the date from which to start loading submissions.  This was originally designed "
+                "to be used for testing, but there are definitely real world usages for it... just be careful."
+            ),
+        )
+        parser.add_argument(
+            "--list-ids-only",
+            action="store_true",
+            help="Only list submissions to be loaded.  Do not actually load them.",
         )
 
-        broker_submission_data = broker_cursor.fetchall()
+    def handle(self, *args, **options):
+        certified_only_submission_ids, load_submission_ids = self.get_submission_ids(
+            options.get("submission_ids"), options.get("start_datetime")
+        )
 
-        missing_submissions = []
-        failed_submissions = []
-        for next_broker_sub in broker_submission_data:
-            submission_id = next_broker_sub[0]
-            try:
-                certify_date = next_broker_sub[1].replace(tzinfo=pytz.UTC)
-                cgac = next_broker_sub[2]
-                frec = next_broker_sub[3]
-
-                api_cursor.execute(
-                    "SELECT update_date FROM submission_attributes WHERE broker_submission_id = {}".format(
-                        submission_id
-                    )
-                )
-
-                if api_cursor.rowcount:
-                    most_recently_loaded_date = api_cursor.fetchone()[0].replace(tzinfo=pytz.UTC)
-                else:
-                    most_recently_loaded_date = datetime(2000, 1, 1).replace(tzinfo=pytz.UTC)
-
-                if frec:
-                    broker_cursor.execute("SELECT agency_name FROM frec WHERE frec_code = '{}'".format(frec))
-                else:
-                    broker_cursor.execute("SELECT agency_name FROM cgac WHERE cgac_code = '{}'".format(cgac))
-
-                agency_name = broker_cursor.fetchone()[0]
-
-                if certify_date > most_recently_loaded_date:
-                    missing_submissions.append((submission_id, agency_name, certify_date, most_recently_loaded_date))
-            except Exception:
-                logger.exception("Submission ID {} failed in pull from broker".format(submission_id))
-                failed_submissions.append(str(submission_id))
-
-        if len(missing_submissions):
-            logger.info("Total missing submissions: {}".format(len(missing_submissions)))
-            logger.info("-----------------------------------")
-            for submission in missing_submissions:
-                logger.info(
-                    "Submission ID {} ({})\tCertified: {}".format(submission[0], submission[1], submission[2].date())
-                )
-            logger.info("-----------------------------------")
-        else:
-            logger.info("No DABS to load")
-
-        # Data modification happens here, if you don't flag '--safe'
-        # The submission loader is atomic, so one of these failing will not affect subsequent submissions
-        if options["safe"]:
-            logger.info("Exiting script before data load occurs in accordance with the --safe flag.")
+        if not certified_only_submission_ids and not load_submission_ids:
+            logger.info("There are no new or updated submissions.")
             return
 
-        for submission in missing_submissions:
-            submission_id = submission[0]
+        if options["list_ids_only"]:
+            logger.info("Exiting script before data load occurs in accordance with the --list-ids-only flag.")
+            return
+
+        self.process_submissions(certified_only_submission_ids, load_submission_ids)
+
+    def get_submission_ids(self, submission_ids, start_datetime):
+        if submission_ids:
+            certified_only_submission_ids, load_submission_ids = [], submission_ids
+        else:
+            since_datetime = self.calculate_since_datetime(start_datetime)
+            certified_only_submission_ids, load_submission_ids = self.get_incremental_submission_ids(since_datetime)
+
+        if certified_only_submission_ids:
+            msg = f"{len(certified_only_submission_ids):,} submissions will only receive certified_date updates"
+            if len(certified_only_submission_ids) <= 1000:
+                logger.info(f"The following {msg}: {[c.submission_id for c in certified_only_submission_ids]}")
+            else:
+                logger.info(f"{msg}.")
+
+        if load_submission_ids:
+            msg = f"{len(load_submission_ids):,} submissions will be created or updated"
+            if len(load_submission_ids) <= 1000:
+                logger.info(f"The following {msg}: {load_submission_ids}")
+            else:
+                logger.info(f"{msg}.")
+
+        return certified_only_submission_ids, load_submission_ids
+
+    @staticmethod
+    def calculate_since_datetime(start_datetime):
+        since_datetime = start_datetime or calculate_load_submissions_since_datetime()
+        if since_datetime is None:
+            logger.info("No records found in submission_attributes.  Performing a full load.")
+        else:
+            logger.info(f"Performing incremental load starting from {since_datetime}.")
+        return since_datetime
+
+    @staticmethod
+    def process_submissions(certified_only_submission_ids, load_submission_ids):
+        failed_submissions = []
+
+        for submission in certified_only_submission_ids:
+            try:
+                rows_affected = SubmissionAttributes.objects.filter(submission_id=submission.submission_id).update(
+                    certified_date=submission.new_certified_date
+                )
+                if rows_affected < 1:
+                    raise RuntimeError(f"No rows affected for {submission.submission_id} when update was executed.")
+            except (Exception, SystemExit):
+                logger.exception(f"Submission {submission.submission_id} failed to update")
+                failed_submissions.append(submission.submission_id)
+
+        for submission_id in load_submission_ids:
             try:
                 call_command("load_submission", submission_id)
-            except SystemExit:
-                logger.info("Submission failed to load: {}".format(submission_id))
-                failed_submissions.append(str(submission_id))
-            except Exception:
-                logger.exception("Submission {} failed to load".format(submission_id))
-                failed_submissions.append(str(submission_id))
+            except (Exception, SystemExit):
+                logger.exception(f"Submission {submission_id} failed to load")
+                failed_submissions.append(submission_id)
 
         if failed_submissions:
             logger.error(
-                "Script completed with the following submissions failures: {}".format(", ".join(failed_submissions))
+                f"Script completed with the following {len(failed_submissions):,} "
+                f"submission failures: {failed_submissions}"
             )
             raise SystemExit(3)
         else:
-            logger.info("Script completed with no failures")
+            logger.info("Script completed with no failures.")
+
+    @staticmethod
+    def get_since_sql(since_datetime=None):
+        """
+        For performance reasons, we intentionally use updated_at here even though we're comparing against
+        published_date later.  submission.updated_at should always be greater than or equal to published_date.
+        """
+        if since_datetime is None:
+            return ""
+        return f"and s.updated_at >= ''{since_datetime}''::timestamp"
+
+    @classmethod
+    def get_incremental_submission_ids(cls, since_datetime=None):
+        """
+        Identifies Broker submissions that need to be created or updated in USAspending.  If supplied a
+        start_datetime, limits Broker rows to that date range.  If not, compares ALL Broker submissions.
+        Operates in two modes simultaneously:
+            MODE 1:  Detect when there are only changes in certification date.
+            MODE 2:  Detect when there are changes in any field other than certification date.
+        Certified-date-only changes do not require a full reload and thus provide us with a shortcut.
+        Note that this is designed to work with our conservative lookback period by filtering out rows
+        that haven't changed.  Look back as far as you want!
+
+        Returns two lists:
+            LIST 1:  Tuple of submission ids and new certified_date when only the certified_date has changed.
+            LIST 2:  Submission ids when anything other than just the certified_date has changed.
+        """
+        sql = f"""
+            select
+                submission_id, new_certified_date, anything_other_than_certified_date_has_changed
+            from (
+                    select
+                        bs.submission_id,
+                        bs.published_date,
+                        case
+                            when sa.certified_date::timestamp is distinct from bs.certified_date then bs.certified_date
+                        end as new_certified_date,
+                        (
+                            sa.published_date::timestamp is distinct from bs.published_date or
+                            sa.toptier_code is distinct from bs.toptier_code or
+                            sa.reporting_period_start is distinct from bs.reporting_start_date or
+                            sa.reporting_period_end is distinct from bs.reporting_end_date or
+                            sa.reporting_fiscal_year is distinct from bs.reporting_fiscal_year or
+                            sa.reporting_fiscal_period is distinct from bs.reporting_fiscal_period or
+                            sa.quarter_format_flag is distinct from bs.is_quarter_format
+                        ) as anything_other_than_certified_date_has_changed
+                    from
+                        dblink(
+                            '{settings.DATA_BROKER_DBLINK_NAME}',
+                            '
+                                select
+                                    s.submission_id,
+                                    (
+                                        select  max(updated_at)
+                                        from    {get_publish_history_table()}
+                                        where   submission_id = s.submission_id
+                                    ) as published_date,
+                                    (
+                                        select  max(updated_at)
+                                        from    certify_history
+                                        where   submission_id = s.submission_id
+                                    ) as certified_date,
+                                    coalesce(s.cgac_code, s.frec_code) as toptier_code,
+                                    s.reporting_start_date,
+                                    s.reporting_end_date,
+                                    s.reporting_fiscal_year,
+                                    s.reporting_fiscal_period,
+                                    s.is_quarter_format
+                                from
+                                    submission as s
+                                where
+                                    s.d2_submission is false and
+                                    s.publish_status_id in (2, 3)
+                                    {cls.get_since_sql(since_datetime)}
+                            '
+                        ) as bs (
+                            submission_id integer,
+                            published_date timestamp,
+                            certified_date timestamp,
+                            toptier_code text,
+                            reporting_start_date date,
+                            reporting_end_date date,
+                            reporting_fiscal_year integer,
+                            reporting_fiscal_period integer,
+                            is_quarter_format boolean
+                        )
+                        left outer join submission_attributes sa on
+                            sa.submission_id = bs.submission_id
+                ) t
+            where
+                new_certified_date is not null or
+                anything_other_than_certified_date_has_changed
+            order by
+                published_date,
+                submission_id
+        """
+
+        Submission = namedtuple("Submission", ["submission_id", "new_certified_date"])
+        rows = execute_sql_to_named_tuple(sql)
+        return (
+            [
+                Submission(r.submission_id, r.new_certified_date)
+                for r in rows
+                if r.new_certified_date and not r.anything_other_than_certified_date_has_changed
+            ],
+            [r.submission_id for r in rows if r.anything_other_than_certified_date_has_changed],
+        )

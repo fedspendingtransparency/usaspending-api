@@ -17,8 +17,8 @@ SUBMISSION_MODELS = [
 
 @pytest.fixture
 def submission_data():
-    submission_123 = mommy.make("submissions.SubmissionAttributes", broker_submission_id=123)
-    submission_456 = mommy.make("submissions.SubmissionAttributes", broker_submission_id=456)
+    submission_123 = mommy.make("submissions.SubmissionAttributes", submission_id=123)
+    submission_456 = mommy.make("submissions.SubmissionAttributes", submission_id=456)
 
     mommy.make("accounts.AppropriationAccountBalances", submission=submission_123, _quantity=10)
     mommy.make("awards.FinancialAccountsByAwards", submission=submission_123, _quantity=10)
@@ -69,9 +69,8 @@ def test_rm_submission(client, submission_data):
 
 def verify_zero_count(models, submission_id, field="submission", eq_zero=True):
     q_kwargs = {}
-    q_kwargs[field + "__broker_submission_id"] = submission_id
+    q_kwargs[field + "__submission_id"] = submission_id
     q_obj = Q(**q_kwargs)
-    print(q_obj)
     for model in models:
         if eq_zero:
             assert model.objects.filter(q_obj).count() == 0

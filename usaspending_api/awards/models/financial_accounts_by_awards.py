@@ -14,8 +14,13 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     parent_award_id = models.TextField(blank=True, null=True)
     fain = models.TextField(blank=True, null=True)
     uri = models.TextField(blank=True, null=True)
-    disaster_emergency_fund_code = models.ForeignKey(
-        "references.DisasterEmergencyFundCode", models.DO_NOTHING, null=True, db_index=True
+    disaster_emergency_fund = models.ForeignKey(
+        "references.DisasterEmergencyFundCode",
+        models.DO_NOTHING,
+        blank=True,
+        null=True,
+        db_index=True,
+        db_column="disaster_emergency_fund_code",
     )
     ussgl480100_undelivered_orders_obligations_unpaid_fyb = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
