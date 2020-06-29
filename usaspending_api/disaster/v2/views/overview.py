@@ -75,10 +75,7 @@ class OverviewViewSet(DisasterBase):
     def total_obligations(self, funding):
         return (
             sum([elem["amount"] for elem in funding])
-            - latest_gtas_of_each_year_queryset()
-            .filter(fiscal_year=self.last_closed_monthly_submission_dates.get("submission_fiscal_year"))
-            .values("unobligated_balance_cpe")
-            .first()["unobligated_balance_cpe"]
+            - latest_gtas_of_each_year_queryset().values("unobligated_balance_cpe").first()["unobligated_balance_cpe"]
         )
 
     def total_outlays(self):

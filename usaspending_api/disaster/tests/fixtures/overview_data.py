@@ -27,7 +27,7 @@ def late_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
         fiscal_year=2021,
-        fiscal_period=12,
+        fiscal_period=9,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
         budget_authority_appropriation_amount_cpe=0.3,
@@ -55,7 +55,7 @@ def non_covid_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
         fiscal_year=2021,
-        fiscal_period=12,
+        fiscal_period=9,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="A",
         budget_authority_appropriation_amount_cpe=0.32,
@@ -94,6 +94,7 @@ def year_2_gtas_non_covid(defc_codes):
 
 
 def _year_2_gtas(code):
+
     mommy.make(
         "references.GTASSF133Balances",
         fiscal_year=2022,
@@ -191,70 +192,20 @@ def _year_2_late_faba_with_value(value):
 
 
 def _fy_2021_schedule():
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        is_quarter=False,
-        submission_fiscal_year=2021,
-        submission_fiscal_quarter=1,
-        submission_fiscal_month=3,
-        submission_reveal_date="2021-12-15",
-    )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        is_quarter=False,
-        submission_fiscal_year=2021,
-        submission_fiscal_quarter=2,
-        submission_fiscal_month=6,
-        submission_reveal_date="2022-3-15",
-    )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        is_quarter=False,
-        submission_fiscal_year=2021,
-        submission_fiscal_quarter=3,
-        submission_fiscal_month=9,
-        submission_reveal_date="2022-6-15",
-    )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        is_quarter=False,
-        submission_fiscal_year=2021,
-        submission_fiscal_quarter=4,
-        submission_fiscal_month=12,
-        submission_reveal_date="2022-9-15",
-    )
+    _full_schedule_for_year(2021)
 
 
 def _fy_2022_schedule():
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        is_quarter=False,
-        submission_fiscal_year=2022,
-        submission_fiscal_quarter=1,
-        submission_fiscal_month=3,
-        submission_reveal_date="2022-12-15",
-    )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        is_quarter=False,
-        submission_fiscal_year=2022,
-        submission_fiscal_quarter=2,
-        submission_fiscal_month=6,
-        submission_reveal_date="2023-3-15",
-    )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        is_quarter=False,
-        submission_fiscal_year=2022,
-        submission_fiscal_quarter=3,
-        submission_fiscal_month=9,
-        submission_reveal_date="2023-6-15",
-    )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        is_quarter=False,
-        submission_fiscal_year=2022,
-        submission_fiscal_quarter=4,
-        submission_fiscal_month=12,
-        submission_reveal_date="2023-9-15",
-    )
+    _full_schedule_for_year(2022)
+
+
+def _full_schedule_for_year(year):
+    for month in range(1, 12):
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            is_quarter=False,
+            submission_fiscal_year=year,
+            submission_fiscal_quarter=(month / 3) + 1,
+            submission_fiscal_month=month,
+            submission_reveal_date="2021-12-15",
+        )

@@ -4,16 +4,16 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
 def get_last_closed_submission_date(is_quarter: bool) -> dict:
-    submission = _DABS_objects(is_quarter).first()
+    submission = _dabs_objects(is_quarter).first()
     return {k: submission[k] for k in values(is_quarter)}
 
 
 def get_last_closed_submissions_of_each_FY(is_quarter: bool):
-    submissions = _DABS_objects(is_quarter)
+    submissions = _dabs_objects(is_quarter)
     return [{k: submission[k] for k in values(is_quarter)} for submission in submissions]
 
 
-def _DABS_objects(is_quarter: bool):
+def _dabs_objects(is_quarter: bool):
     current_date = datetime.now(timezone.utc).date()
     return (
         DABSSubmissionWindowSchedule.objects.filter(is_quarter=is_quarter, submission_reveal_date__lte=current_date)

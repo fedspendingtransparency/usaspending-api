@@ -25,26 +25,29 @@ def covid_def_code_strings():
 
 
 def latest_gtas_of_each_year_queryset():
-    return GTASSF133Balances.objects.annotate(
-        include=Exists(
-            GTASSF133Balances.objects.values("fiscal_year")
-            .annotate(fiscal_period_max=Max("fiscal_period"))
-            .annotate(
-                fiscal_period_and_year=Concat("fiscal_year", Value("/"), "fiscal_period", output_field=CharField())
-            )
-            .values("fiscal_year", "fiscal_period_max", "fiscal_period_and_year")
-            .filter(
-                fiscal_year=OuterRef("fiscal_year"),
-                fiscal_year__gte=2020,
-                fiscal_period_max=OuterRef("fiscal_period"),
-                fiscal_period_and_year__in=[
-                    f"{elem['submission_fiscal_year']}/{elem['submission_fiscal_month']}"
-                    for elem in get_last_closed_submissions_of_each_FY(False)
-                ],
-                disaster_emergency_fund_code__in=covid_def_code_strings(),
+    return (
+        GTASSF133Balances.objects.annotate(
+            is_highest_period=Exists(
+                GTASSF133Balances.objects.values("fiscal_year")
+                .annotate(fiscal_period_max=Max("fiscal_period"))
+                .values("fiscal_year", "fiscal_period_max")
+                .filter(
+                    fiscal_year=OuterRef("fiscal_year"),
+                    fiscal_year__gte=2020,
+                    fiscal_period_max=OuterRef("fiscal_period"),
+                    disaster_emergency_fund_code__in=covid_def_code_strings(),
+                )
             )
         )
-    ).filter(include=True)
+        .annotate(fiscal_period_and_year=Concat("fiscal_year", Value("/"), "fiscal_period", output_field=CharField()))
+        .filter(
+            is_highest_period=True,
+            fiscal_period_and_year__in=[
+                f"{elem['submission_fiscal_year']}/{elem['submission_fiscal_month']}"
+                for elem in get_last_closed_submissions_of_each_FY(False)
+            ],
+        )
+    )
 
 
 def latest_faba_of_each_year_queryset():
