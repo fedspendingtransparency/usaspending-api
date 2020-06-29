@@ -13,7 +13,7 @@ from django.db.models import Sum
 
 class OverviewViewSet(DisasterBase):
     """
-    This route sends a request to the backend to retrieve spending data information through various types and filters.
+    This route gathers aggregate data about Disaster spending
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/overview.md"
