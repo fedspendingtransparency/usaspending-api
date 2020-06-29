@@ -71,51 +71,7 @@ def account_download_filter(account_type, download_table, filters, account_level
     if filters.get("fy"):
         query_filters["submission__reporting_fiscal_year"] = filters["fy"]
 
-    period_and_quarter = Q()
-
-    if account_type in ["account_balances", "object_class_program_activity"]:
-
-        # For Files A and B, we only care about the specific period or quarter requested; e.g. "get
-        # me Period 4 monthly submissions OR Quarter 1 quarterly submissions".  This is because
-        # monthly and quarterly submissions are on different tracks but both need to be included in
-        # the download file.
-        if filters.get("period"):
-            period_and_quarter |= Q(
-                Q(submission__reporting_fiscal_period=filters["period"]) & Q(submission__quarter_format_flag=False)
-            )
-        if filters.get("quarter"):
-            period_and_quarter |= Q(
-                Q(submission__reporting_fiscal_quarter=filters["quarter"]) & Q(submission__quarter_format_flag=True)
-            )
-
-    else:
-
-        # For File C, we include rows in the specific period or quarter requested AND rows from
-        # previous periods or quarters where the transaction_obligated_amount is non-zero.
-        if filters.get("period"):
-            period_and_quarter |= Q(
-                Q(submission__quarter_format_flag=False)
-                & Q(
-                    Q(submission__reporting_fiscal_period=filters["period"])
-                    | Q(
-                        Q(submission__reporting_fiscal_period__lt=filters["period"])
-                        # Yes, this quirky syntax is due to a Django bug involving != 0 in aggregations.
-                        & (Q(transaction_obligated_amount__gt=0) | Q(transaction_obligated_amount__lt=0))
-                    )
-                )
-            )
-        if filters.get("quarter"):
-            period_and_quarter |= Q(
-                Q(submission__quarter_format_flag=True)
-                & Q(
-                    Q(submission__reporting_fiscal_quarter=filters["quarter"])
-                    | Q(
-                        Q(submission__reporting_fiscal_quarter__lt=filters["quarter"])
-                        # Yes, this quirky syntax is due to a Django bug involving != 0 in aggregations.
-                        & (Q(transaction_obligated_amount__gt=0) | Q(transaction_obligated_amount__lt=0))
-                    )
-                )
-            )
+    period_and_quarter_filter = get_period_and_quarter_filter(account_type, filters)
 
     # Make derivations based on the account level
     if account_level == "treasury_account":
@@ -128,7 +84,58 @@ def account_download_filter(account_type, download_table, filters, account_level
         )
 
     # Apply filter and return
-    return queryset.filter(period_and_quarter, **query_filters)
+    return queryset.filter(period_and_quarter_filter, **query_filters)
+
+
+def get_period_and_quarter_filter(account_type, filters):
+
+    period_and_quarter_filter = Q()
+
+    if account_type in ["account_balances", "object_class_program_activity"]:
+
+        # For Files A and B, we only care about the specific period or quarter requested; e.g. "get
+        # me Period 4 monthly submissions OR Quarter 1 quarterly submissions".  This is because
+        # monthly and quarterly submissions are on different tracks but both need to be included in
+        # the download file.
+        if filters.get("period"):
+            period_and_quarter_filter |= Q(
+                Q(submission__reporting_fiscal_period=filters["period"]) & Q(submission__quarter_format_flag=False)
+            )
+        if filters.get("quarter"):
+            period_and_quarter_filter |= Q(
+                Q(submission__reporting_fiscal_quarter=filters["quarter"]) & Q(submission__quarter_format_flag=True)
+            )
+
+    else:
+
+        # For File C, we include rows in the specific period or quarter requested AND rows from
+        # previous periods or quarters where the transaction_obligated_amount is non-zero.
+        if filters.get("period"):
+            period_and_quarter_filter |= Q(
+                Q(submission__quarter_format_flag=False)
+                & Q(
+                    Q(submission__reporting_fiscal_period=filters["period"])
+                    | Q(
+                        Q(submission__reporting_fiscal_period__lt=filters["period"])
+                        # Yes, this quirky syntax is due to a Django bug involving != 0 in aggregations.
+                        & (Q(transaction_obligated_amount__gt=0) | Q(transaction_obligated_amount__lt=0))
+                    )
+                )
+            )
+        if filters.get("quarter"):
+            period_and_quarter_filter |= Q(
+                Q(submission__quarter_format_flag=True)
+                & Q(
+                    Q(submission__reporting_fiscal_quarter=filters["quarter"])
+                    | Q(
+                        Q(submission__reporting_fiscal_quarter__lt=filters["quarter"])
+                        # Yes, this quirky syntax is due to a Django bug involving != 0 in aggregations.
+                        & (Q(transaction_obligated_amount__gt=0) | Q(transaction_obligated_amount__lt=0))
+                    )
+                )
+            )
+
+    return period_and_quarter_filter
 
 
 def generate_treasury_account_query(queryset, account_type, tas_id):
