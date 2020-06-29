@@ -8,8 +8,10 @@ from usaspending_api.common.validator import customize_pagination_with_sort_colu
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
-from usaspending_api.submissions.helpers import get_last_closed_submission_date
+from usaspending_api.submissions.helpers import get_last_closed_submission_date, get_last_closed_submissions_of_each_FY
 from usaspending_api.submissions.models import SubmissionAttributes
+from django.db.models.functions import Concat
+from django.db.models import Value, CharField
 
 COVID_19_GROUP_NAME = "covid_19"
 
@@ -27,11 +29,18 @@ def latest_gtas_of_each_year_queryset():
         include=Exists(
             GTASSF133Balances.objects.values("fiscal_year")
             .annotate(fiscal_period_max=Max("fiscal_period"))
-            .values("fiscal_year", "fiscal_period_max")
+            .annotate(
+                fiscal_period_and_year=Concat("fiscal_year", Value("/"), "fiscal_period", output_field=CharField())
+            )
+            .values("fiscal_year", "fiscal_period_max", "fiscal_period_and_year")
             .filter(
                 fiscal_year=OuterRef("fiscal_year"),
                 fiscal_year__gte=2020,
                 fiscal_period_max=OuterRef("fiscal_period"),
+                fiscal_period_and_year__in=[
+                    f"{elem['submission_fiscal_year']}/{elem['submission_fiscal_month']}"
+                    for elem in get_last_closed_submissions_of_each_FY(False)
+                ],
                 disaster_emergency_fund_code__in=covid_def_code_strings(),
             )
         )
