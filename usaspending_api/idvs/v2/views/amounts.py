@@ -14,6 +14,7 @@ from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_di
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.awards.v2.data_layer.sql import defc_sql
+from usaspending_api.references.models import DisasterEmergencyFundCode
 
 logger = logging.getLogger("console")
 
@@ -52,6 +53,7 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     grandchildren = execute_sql_to_ordered_dictionary(
         grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column)
     )
+    covid_defcs = DisasterEmergencyFundCode.objects().filter("group_name = 'covid_19'").values_list('code', flat=True)
 
     child_award_ids = []
     grandchild_award_ids = []
@@ -72,8 +74,9 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     child_total_outlay = 0
     child_total_obligations = 0
     for row in child_results:
-        child_total_outlay += row["total_outlay"]
-        child_total_obligations += row["obligated_amount"]
+        if row["disaster_emergency_fund_code"] in covid_defcs:
+            child_total_outlay += row["total_outlay"]
+            child_total_obligations += row["obligated_amount"]
         child_outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
         child_obligation_by_code.append(
             {"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]}
@@ -83,8 +86,9 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     grandchild_total_outlay = 0
     grandchild_total_obligations = 0
     for row in grandchild_results:
-        grandchild_total_outlay += row["total_outlay"]
-        grandchild_total_obligations += row["obligated_amount"]
+        if row["disaster_emergency_fund_code"] in covid_defcs:
+            grandchild_total_outlay += row["total_outlay"]
+            grandchild_total_obligations += row["obligated_amount"]
         grandchild_outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
         grandchild_obligation_by_code.append(
             {"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]}

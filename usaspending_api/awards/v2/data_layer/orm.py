@@ -26,7 +26,7 @@ from usaspending_api.common.helpers.data_constants import state_code_from_name, 
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, Cfda, PSC, NAICS, SubtierAgency
+from usaspending_api.references.models import Agency, Cfda, PSC, NAICS, SubtierAgency, DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.awards.v2.data_layer.sql import defc_sql
 
@@ -595,9 +595,11 @@ def fetch_account_details_award(award_id: int) -> dict:
     obligation_by_code = []
     total_outlay = 0
     total_obligations = 0
+    covid_defcs = DisasterEmergencyFundCode.objects().filter("group_name = 'covid_19'").values_list('code', flat=True)
     for row in results:
-        total_outlay += row["total_outlay"]
-        total_obligations += row["obligated_amount"]
+        if row["disaster_emergency_fund_code"] in covid_defcs:
+            total_outlay += row["total_outlay"]
+            total_obligations += row["obligated_amount"]
         outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
         obligation_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]})
     results = {
