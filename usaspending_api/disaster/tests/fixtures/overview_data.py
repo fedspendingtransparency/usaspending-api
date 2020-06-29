@@ -108,10 +108,13 @@ def _year_2_gtas(code):
 
 @pytest.fixture
 def basic_faba(defc_codes):
+    submission = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=1)
+
     mommy.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.all().first(),
         transaction_obligated_amount=0.0,
+        submission=submission,
     )
 
 
