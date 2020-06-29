@@ -6,7 +6,8 @@ defc_sql = """
             faba.disaster_emergency_fund_code,
             s.reporting_fiscal_year,
             s.reporting_fiscal_period,
-            s.submission_id
+            s.submission_id,
+            row_number() over(partition by disaster_emergency_fund_code) AS rownum
         from financial_accounts_by_awards faba
         inner join submission_attributes s on faba.submission_id=s.submission_id
         where {award_id_sql} and faba.disaster_emergency_fund_code is not null
@@ -27,11 +28,10 @@ defc_sql = """
         select sum(faba.gross_outlay_amount_by_award_cpe) as prior_fys_outlay,
             faba.disaster_emergency_fund_code
         from eligible_file_c_records faba
+        where faba.reporting_fiscal_period = 12
         group by
             faba.disaster_emergency_fund_code,
             faba.reporting_fiscal_period
-        having faba.reporting_fiscal_period = 12
-        and sum(faba.gross_outlay_amount_by_award_cpe) > 0
     ),
     current_fy_outlay_balance as (
         select
@@ -62,6 +62,7 @@ defc_sql = """
     from eligible_file_c_records faba
     left join fy_final_outlay_balances ffy on ffy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code
     left join current_fy_outlay_balance cfy on cfy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code
+    where faba.rownum = 1
     group by faba.disaster_emergency_fund_code
     order by obligated_amount desc
     """
