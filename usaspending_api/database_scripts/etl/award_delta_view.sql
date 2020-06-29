@@ -1,73 +1,5 @@
 DROP VIEW IF EXISTS award_delta_view;
 CREATE VIEW award_delta_view AS
-WITH closed_periods AS (
-    SELECT
-        w.submission_fiscal_year,
-        w.submission_fiscal_month,
-        w.is_quarter
-    FROM dabs_submission_window_schedule w
-    WHERE
-    	-- For COVID, look only after a certain date (likely on/after 2020-04-01, or the start of FY2020 FYP07)
-        w.period_start_date >= '2020-04-01' -- using older date to see data surface
-        AND w.submission_reveal_date <= now() -- change "period end" with "window close"
-    ORDER BY w.submission_fiscal_year DESC, w.submission_fiscal_month DESC
-),
-eligible_submissions AS (
-	SELECT s.reporting_fiscal_year, s.reporting_fiscal_period, s.submission_id
-    FROM submission_attributes s
-    INNER JOIN closed_periods c
-    	ON c.submission_fiscal_year = s.reporting_fiscal_year
-    	AND c.submission_fiscal_month = s.reporting_fiscal_period
-    	AND c.is_quarter = s.quarter_format_flag
-),
-eligible_file_c_records AS (
-    SELECT
-        faba.award_id,
-        CASE WHEN defc.group_name = ('covid_19') THEN faba.gross_outlay_amount_by_award_cpe else 0 END AS gross_outlay_amount_by_award_cpe,
-        CASE WHEN defc.group_name = ('covid_19') THEN faba.transaction_obligated_amount else 0 END AS transaction_obligated_amount,
-        faba.disaster_emergency_fund_code,
-        s.reporting_fiscal_year,
-        s.reporting_fiscal_period
-    FROM financial_accounts_by_awards faba
-    INNER JOIN eligible_submissions s ON s.submission_id = faba.submission_id
-    INNER JOIN disaster_emergency_fund_code defc on defc.code = faba.disaster_emergency_fund_code
-    WHERE faba.disaster_emergency_fund_code IS NOT NULL
-),
-fy_final_outlay_balances_by_dim AS (
-   -- Rule: If a balance is not zero at the end of the year, it must be reported in the
-   -- final period's submission (month or quarter), otherwise assume it to be zero
-   SELECT
-   	faba.award_id,
-   	sum(faba.gross_outlay_amount_by_award_cpe) AS prior_fys_outlay
-   FROM eligible_file_c_records faba
-   WHERE faba.reporting_fiscal_period = 12
-   AND (faba.gross_outlay_amount_by_award_cpe IS NOT NULL AND faba.gross_outlay_amount_by_award_cpe != 0) -- negative or positive balance
-   GROUP BY
-       faba.award_id,
-       faba.reporting_fiscal_period
-),
-current_fy_outlay_balance_by_dim AS (
-   SELECT
-       faba.award_id,
-       faba.reporting_fiscal_year,
-       faba.reporting_fiscal_period,
-       sum(faba.gross_outlay_amount_by_award_cpe) AS current_fy_outlay
-   FROM eligible_file_c_records faba
-   WHERE
-   	faba.reporting_fiscal_period != 12 -- don't duplicate the year-end period's value if in unclosed period 01 or 02 (since there is no P01 submission)
-   	AND (faba.reporting_fiscal_year, faba.reporting_fiscal_period) IN (
-   		-- Most recent closed period
-	    	SELECT c.submission_fiscal_year, c.submission_fiscal_month
-	    	FROM closed_periods c
-	    	ORDER BY c.submission_fiscal_year DESC, c.submission_fiscal_month DESC
-	    	LIMIT 1
-   	)
-   	AND (faba.gross_outlay_amount_by_award_cpe IS NOT NULL AND faba.gross_outlay_amount_by_award_cpe != 0) -- negative or positive balance
-   GROUP BY
-       faba.award_id,
-       faba.reporting_fiscal_year,
-       faba.reporting_fiscal_period
-)
 SELECT
   vw_award_search.award_id,
   a.generated_unique_award_id,
@@ -150,8 +82,8 @@ SELECT
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
   DEFC.disaster_emergency_fund_codes as disaster_emergency_fund_codes,
-  DEFC.total_covid_obligation,
-  DEFC.total_covid_outlay
+  DEFC.gross_outlay_amount_by_award_cpe as total_covid_obligation,
+  DEFC.transaction_obligated_amount as total_covid_outlay
 FROM vw_award_search
 INNER JOIN awards a ON (a.id = vw_award_search.award_id)
 LEFT JOIN (
@@ -165,13 +97,30 @@ LEFT JOIN (
 LEFT JOIN (
     SELECT
         faba.award_id,
-        coalesce(sum(faba.transaction_obligated_amount), 0) AS total_covid_obligation,
-        coalesce(sum(ffy.prior_fys_outlay), 0) + coalesce(sum(cfy.current_fy_outlay), 0) AS total_covid_outlay,
-        ARRAY_AGG(DISTINCT faba.disaster_emergency_fund_code) AS disaster_emergency_fund_codes
-        FROM eligible_file_c_records faba
-        LEFT JOIN fy_final_outlay_balances_by_dim ffy ON ffy.award_id = faba.award_id
-        LEFT JOIN current_fy_outlay_balance_by_dim cfy ON cfy.award_id = faba.award_id
-        GROUP BY faba.award_id
+        ARRAY_AGG(DISTINCT disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
+        COALESCE(sum(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(sum(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
+    FROM
+        financial_accounts_by_awards faba
+    INNER JOIN disaster_emergency_fund_code defc
+        ON defc.code = faba.disaster_emergency_fund_code
+        AND defc.group_name = 'covid_19'
+    INNER JOIN submission_attributes sa
+        ON faba.submission_id = sa.submission_id
+    INNER JOIN (
+        SELECT   submission_fiscal_year, is_quarter, max(submission_fiscal_month) AS submission_fiscal_month
+        FROM     dabs_submission_window_schedule
+        WHERE    submission_reveal_date < now() AND period_start_date >= '2020-04-01'
+        GROUP BY submission_fiscal_year, is_quarter
+    ) AS latest_closed_period_per_fy
+        ON latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year
+        AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period
+        AND latest_closed_period_per_fy.is_quarter = sa.quarter_format_flag
+GROUP BY
+    faba.award_id
+HAVING
+    COALESCE(sum(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
+    OR COALESCE(sum(faba.transaction_obligated_amount), 0) != 0
 ) DEFC ON (DEFC.award_id = vw_award_search.award_id)
 LEFT JOIN (
   SELECT
