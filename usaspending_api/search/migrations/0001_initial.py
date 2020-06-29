@@ -26,6 +26,14 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name='AwardSearchMatView',
+            fields=[],
+            options={
+                'db_table': 'mv_award_search',
+                'managed': False,
+            },
+        ),
+        migrations.CreateModel(
             name='AwardSearchView',
             fields=[],
             options={
