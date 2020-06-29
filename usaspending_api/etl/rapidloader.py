@@ -2,7 +2,7 @@ from multiprocessing import Process, Queue
 from pathlib import Path
 from time import sleep
 
-from usaspending_api import settings
+from django.conf import settings
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.etl.es_etl_helpers import (
     DataJob,

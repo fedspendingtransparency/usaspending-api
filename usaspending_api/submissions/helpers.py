@@ -1,22 +1,44 @@
 from datetime import datetime, timezone
-
+from typing import Optional
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
-def get_last_closed_submission_date(is_quarter: bool) -> dict:
-    current_date = datetime.now(timezone.utc).date()
-    values = ["submission_fiscal_year"]
-    order_by = ["-submission_fiscal_year"]
-    if is_quarter:
-        values.append("submission_fiscal_quarter")
-        order_by.append("-submission_fiscal_quarter")
-    else:
-        values.append("submission_fiscal_month")
-        order_by.append("-submission_fiscal_month")
-    last_closed_submission = (
-        DABSSubmissionWindowSchedule.objects.filter(is_quarter=is_quarter, submission_reveal_date__lte=current_date)
-        .values(*values)
-        .order_by(*order_by)
+def get_last_closed_submission_date(is_quarter: bool) -> Optional[dict]:
+    return (
+        DABSSubmissionWindowSchedule.objects.filter(
+            is_quarter=is_quarter, submission_reveal_date__lte=datetime.now(timezone.utc)
+        )
+        .order_by("-submission_fiscal_year", "-submission_fiscal_quarter", "-submission_fiscal_month")
+        .values()
         .first()
     )
-    return {k: last_closed_submission[k] for k in values}
+
+
+def get_last_closed_quarter_relative_to_period(fiscal_year: int, fiscal_period: int) -> Optional[dict]:
+    """ Returns the mostly recently closed quarter in the fiscal year less than or equal to the period provided. """
+    return (
+        DABSSubmissionWindowSchedule.objects.filter(
+            is_quarter=True,
+            submission_fiscal_year=fiscal_year,
+            submission_fiscal_month__lte=fiscal_period,
+            submission_reveal_date__lte=datetime.now(timezone.utc),
+        )
+        .order_by("-submission_fiscal_quarter")
+        .values_list("submission_fiscal_quarter", flat=True)
+        .first()
+    )
+
+
+def get_last_closed_period_relative_to_quarter(fiscal_year: int, fiscal_quarter: int) -> Optional[dict]:
+    """ Returns the mostly recently closed period in the fiscal year less than or equal to the quarter provided. """
+    return (
+        DABSSubmissionWindowSchedule.objects.filter(
+            is_quarter=False,
+            submission_fiscal_year=fiscal_year,
+            submission_fiscal_quarter__lte=fiscal_quarter,
+            submission_reveal_date__lte=datetime.now(timezone.utc),
+        )
+        .order_by("-submission_fiscal_month")
+        .values_list("submission_fiscal_month", flat=True)
+        .first()
+    )
