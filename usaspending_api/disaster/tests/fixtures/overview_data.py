@@ -23,6 +23,11 @@ def basic_ref_data():
 
 
 @pytest.fixture
+def partially_completed_year():
+    _incomplete_schedule_for_year(2021)
+
+
+@pytest.fixture
 def late_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
@@ -201,6 +206,18 @@ def _fy_2022_schedule():
 
 def _full_schedule_for_year(year):
     for month in range(1, 12):
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            is_quarter=False,
+            submission_fiscal_year=year,
+            submission_fiscal_quarter=(month / 3) + 1,
+            submission_fiscal_month=month,
+            submission_reveal_date="2021-12-15",
+        )
+
+
+def _incomplete_schedule_for_year(year):
+    for month in range(1, 4):
         mommy.make(
             "submissions.DABSSubmissionWindowSchedule",
             is_quarter=False,

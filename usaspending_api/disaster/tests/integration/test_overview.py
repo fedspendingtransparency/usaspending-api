@@ -36,6 +36,18 @@ def test_using_only_latest_gtas(
 
 
 @pytest.mark.django_db
+def test_exclude_gtas_for_incompleted_period(
+    client, monkeypatch, helpers, defc_codes, partially_completed_year, late_gtas, early_gtas, basic_faba
+):
+    helpers.patch_datetime_now(monkeypatch, 2021, 12, 25)
+    resp = client.get(OVERVIEW_URL)
+    assert resp.data["funding"] == [{"amount": Decimal("0.2"), "def_code": "M"}]
+    assert resp.data["total_budget_authority"] == Decimal("0.2")
+    assert resp.data["spending"]["total_obligations"] == Decimal("0.2")
+    assert resp.data["spending"]["total_outlays"] == Decimal("0.02")
+
+
+@pytest.mark.django_db
 def test_exclude_non_covid_gtas(
     client, monkeypatch, helpers, defc_codes, basic_ref_data, non_covid_gtas, early_gtas, basic_faba
 ):

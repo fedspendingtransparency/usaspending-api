@@ -6,6 +6,7 @@ from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.submissions.helpers import get_last_closed_submission_date, get_last_closed_submissions_of_each_FY
@@ -29,14 +30,23 @@ def latest_gtas_of_each_year_queryset():
         GTASSF133Balances.objects.annotate(
             is_highest_period=Exists(
                 GTASSF133Balances.objects.values("fiscal_year")
-                .annotate(fiscal_period_max=Max("fiscal_period"))
-                .values("fiscal_year", "fiscal_period_max")
+                .annotate(
+                    fiscal_period_max=Max("fiscal_period"),
+                    include=Exists(
+                        DABSSubmissionWindowSchedule.objects.filter(
+                            is_quarter=False,
+                            submission_fiscal_year=OuterRef("fiscal_year"),
+                            submission_fiscal_month=OuterRef("fiscal_period"),
+                        )
+                    ),
+                )
                 .filter(
+                    include=True,
                     fiscal_year=OuterRef("fiscal_year"),
-                    fiscal_year__gte=2020,
                     fiscal_period_max=OuterRef("fiscal_period"),
                     disaster_emergency_fund_code__in=covid_def_code_strings(),
                 )
+                .values("fiscal_year", "fiscal_period_max")
             )
         )
         .annotate(fiscal_period_and_year=Concat("fiscal_year", Value("/"), "fiscal_period", output_field=CharField()))

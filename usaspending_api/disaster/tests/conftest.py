@@ -2,6 +2,7 @@ from usaspending_api.disaster.tests.fixtures.disaster_account_data import disast
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
 from usaspending_api.disaster.tests.fixtures.overview_data import (
     basic_ref_data,
+    partially_completed_year,
     late_gtas,
     early_gtas,
     non_covid_gtas,
@@ -20,6 +21,7 @@ from usaspending_api.disaster.tests.fixtures.overview_data import (
 
 __all__ = [
     "basic_ref_data",
+    "partially_completed_year",
     "disaster_account_data",
     "helpers",
     "defc_codes",
