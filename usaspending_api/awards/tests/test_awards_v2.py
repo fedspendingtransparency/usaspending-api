@@ -1151,9 +1151,9 @@ def test_file_c_data(client, awards_and_transactions):
     # again, period is not 12, no data reported
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 110.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 210.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
-    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 110.0
+    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 210.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 100.0
     mommy.make(
         "submissions.SubmissionAttributes",
