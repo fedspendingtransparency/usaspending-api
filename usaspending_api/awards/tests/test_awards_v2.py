@@ -1073,20 +1073,22 @@ def test_file_c_data(client, awards_and_transactions):
         submission_fiscal_year=2019,
         submission_fiscal_month=12,
         is_quarter=True,
+        submission_reveal_date="2020-04-01",
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2018,
         submission_fiscal_month=12,
         is_quarter=True,
+        submission_reveal_date="2020-04-01",
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2020,
         submission_fiscal_month=12,
         is_quarter=True,
+        submission_reveal_date="2020-04-01",
     )
-    # dabs_submission_window_schedule
     mommy.make(
         "submissions.SubmissionAttributes",
         pk=2,
@@ -1164,8 +1166,8 @@ def test_file_c_data(client, awards_and_transactions):
     )
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 220.0
+    assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 110.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 220.0}]
 
