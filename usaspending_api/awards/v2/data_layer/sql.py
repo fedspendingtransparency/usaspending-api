@@ -62,7 +62,6 @@ defc_sql = """
     from eligible_file_c_records faba
     left join fy_final_outlay_balances ffy on ffy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code and faba.rownum = 1
     left join current_fy_outlay_balance cfy on cfy.disaster_emergency_fund_code = faba.disaster_emergency_fund_code and faba.rownum = 1
-    where faba.rownum = 1
     group by faba.disaster_emergency_fund_code
     order by obligated_amount desc
     """
