@@ -58,13 +58,11 @@ class OverviewViewSet(DisasterBase):
         }
 
     def award_obligations(self):
-        return sum(
-            [
-                elem["transaction_obligated_amount"]
-                for elem in FinancialAccountsByAwards.objects.filter(
-                    disaster_emergency_fund__in=covid_def_code_strings()
-                ).values("transaction_obligated_amount")
-            ]
+        return (
+            FinancialAccountsByAwards.objects.filter(disaster_emergency_fund__in=covid_def_code_strings())
+            .values("transaction_obligated_amount")
+            .aggregate(total=Sum("transaction_obligated_amount"))["total"]
+            or 0.0
         )
 
     def award_outlays(self):
@@ -72,7 +70,7 @@ class OverviewViewSet(DisasterBase):
             latest_faba_of_each_year_queryset()
             .annotate(amount=Coalesce("gross_outlay_amount_by_award_cpe", 0))
             .aggregate(total=Sum("amount"))["total"]
-        )
+        ) or 0.0
 
     def total_obligations(self, funding):
         return (
@@ -84,7 +82,9 @@ class OverviewViewSet(DisasterBase):
         )
 
     def total_outlays(self):
-        return sum(
-            elem["gross_outlay_amount_by_tas_cpe"]
-            for elem in latest_gtas_of_each_year_queryset().values("gross_outlay_amount_by_tas_cpe")
+        return (
+            latest_gtas_of_each_year_queryset()
+            .values("gross_outlay_amount_by_tas_cpe")
+            .aggregate(total=Sum("gross_outlay_amount_by_tas_cpe"))["total"]
+            or 0.0
         )
