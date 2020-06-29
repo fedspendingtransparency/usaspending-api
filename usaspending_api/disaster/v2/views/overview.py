@@ -68,13 +68,10 @@ class OverviewViewSet(DisasterBase):
         )
 
     def award_outlays(self):
-        return sum(
-            [
-                elem["amount"]
-                for elem in latest_faba_of_each_year_queryset()
-                .annotate(amount=Coalesce("gross_outlay_amount_by_award_cpe", 0))
-                .values("amount")
-            ]
+        return (
+            latest_faba_of_each_year_queryset()
+            .annotate(amount=Coalesce("gross_outlay_amount_by_award_cpe", 0))
+            .aggregate(total=Sum("amount"))["total"]
         )
 
     def total_obligations(self, funding):

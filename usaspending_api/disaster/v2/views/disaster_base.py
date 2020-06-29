@@ -9,6 +9,7 @@ from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
+from usaspending_api.submissions.models import SubmissionAttributes
 
 COVID_19_GROUP_NAME = "covid_19"
 
@@ -38,16 +39,19 @@ def latest_gtas_of_each_year_queryset():
 
 
 def latest_faba_of_each_year_queryset():
-    return FinancialAccountsByAwards.objects.annotate(
+    return FinancialAccountsByAwards.objects.filter(submission__in=latest_submission_of_each_year_queryset())
+
+
+def latest_submission_of_each_year_queryset():
+    return SubmissionAttributes.objects.annotate(
         include=Exists(
-            FinancialAccountsByAwards.objects.values("submission__reporting_fiscal_year")
-            .annotate(fiscal_period_max=Max("submission__reporting_fiscal_period"))
-            .values("submission__reporting_fiscal_year", "fiscal_period_max")
+            SubmissionAttributes.objects.values("reporting_fiscal_year")
+            .annotate(fiscal_period_max=Max("reporting_fiscal_period"))
+            .values("reporting_fiscal_year", "fiscal_period_max")
             .filter(
-                submission__reporting_fiscal_year=OuterRef("submission__reporting_fiscal_year"),
-                submission__reporting_fiscal_year__gte=2020,
-                fiscal_period_max=OuterRef("submission__reporting_fiscal_period"),
-                disaster_emergency_fund__in=covid_def_codes(),
+                reporting_fiscal_year=OuterRef("reporting_fiscal_year"),
+                reporting_fiscal_year__gte=2020,
+                fiscal_period_max=OuterRef("reporting_fiscal_period"),
             )
         )
     ).filter(include=True)
