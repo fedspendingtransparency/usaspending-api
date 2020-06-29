@@ -1069,6 +1069,25 @@ def test_zip4_switch(client, awards_and_transactions):
 def test_file_c_data(client, awards_and_transactions):
     defc = mommy.make("references.DisasterEmergencyFundCode", code="L")
     mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2019,
+        submission_fiscal_month=12,
+        is_quarter=True,
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2018,
+        submission_fiscal_month=12,
+        is_quarter=True,
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2020,
+        submission_fiscal_month=12,
+        is_quarter=True,
+    )
+    # dabs_submission_window_schedule
+    mommy.make(
         "submissions.SubmissionAttributes",
         pk=2,
         reporting_fiscal_period=9,
