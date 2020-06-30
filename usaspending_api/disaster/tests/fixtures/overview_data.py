@@ -6,6 +6,9 @@ from usaspending_api.disaster.v2.views.disaster_base import COVID_19_GROUP_NAME
 
 NOT_COVID_NAME = "not_covid_19"
 
+EARLY_MONTH = 3
+LATE_MONTH = 12
+
 
 @pytest.fixture
 def defc_codes():
@@ -32,7 +35,7 @@ def late_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
         fiscal_year=2021,
-        fiscal_period=9,
+        fiscal_period=LATE_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
         budget_authority_appropriation_amount_cpe=0.3,
@@ -46,7 +49,7 @@ def early_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
         fiscal_year=2021,
-        fiscal_period=1,
+        fiscal_period=EARLY_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
         budget_authority_appropriation_amount_cpe=0.2,
@@ -60,7 +63,7 @@ def non_covid_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
         fiscal_year=2021,
-        fiscal_period=9,
+        fiscal_period=LATE_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="A",
         budget_authority_appropriation_amount_cpe=0.32,
@@ -74,7 +77,7 @@ def other_budget_authority_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
         fiscal_year=2021,
-        fiscal_period=1,
+        fiscal_period=EARLY_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
         budget_authority_appropriation_amount_cpe=0.7,
@@ -103,7 +106,7 @@ def _year_2_gtas(code):
     mommy.make(
         "references.GTASSF133Balances",
         fiscal_year=2022,
-        fiscal_period=1,
+        fiscal_period=EARLY_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code=code,
         budget_authority_appropriation_amount_cpe=0.22,
@@ -114,7 +117,9 @@ def _year_2_gtas(code):
 
 @pytest.fixture
 def basic_faba(defc_codes):
-    submission = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=1)
+    submission = mommy.make(
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=EARLY_MONTH
+    )
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -149,7 +154,9 @@ def multi_period_faba(defc_codes):
 
 
 def _covid_faba_with_value(value):
-    submission = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=1)
+    submission = mommy.make(
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=LATE_MONTH
+    )
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -161,7 +168,9 @@ def _covid_faba_with_value(value):
 
 
 def _non_covid_faba_with_value(value):
-    submission = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=1)
+    submission = mommy.make(
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=EARLY_MONTH
+    )
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -173,7 +182,9 @@ def _non_covid_faba_with_value(value):
 
 
 def _year_2_faba_with_value(value):
-    submission = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2022, reporting_fiscal_period=1)
+    submission = mommy.make(
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2022, reporting_fiscal_period=EARLY_MONTH
+    )
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -185,7 +196,9 @@ def _year_2_faba_with_value(value):
 
 
 def _year_2_late_faba_with_value(value):
-    submission = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2022, reporting_fiscal_period=8)
+    submission = mommy.make(
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2022, reporting_fiscal_period=LATE_MONTH
+    )
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -205,24 +218,24 @@ def _fy_2022_schedule():
 
 
 def _full_schedule_for_year(year):
-    for month in range(1, 12):
+    for month in range(1, LATE_MONTH + 1):
         mommy.make(
             "submissions.DABSSubmissionWindowSchedule",
             is_quarter=False,
             submission_fiscal_year=year,
             submission_fiscal_quarter=(month / 3) + 1,
             submission_fiscal_month=month,
-            submission_reveal_date=f"{year}-12-15",
+            submission_reveal_date=f"{year}-{month}-15",
         )
 
 
 def _incomplete_schedule_for_year(year):
-    for month in range(1, 4):
+    for month in range(1, EARLY_MONTH + 1):
         mommy.make(
             "submissions.DABSSubmissionWindowSchedule",
             is_quarter=False,
             submission_fiscal_year=year,
             submission_fiscal_quarter=(month / 3) + 1,
             submission_fiscal_month=month,
-            submission_reveal_date=f"{year}-12-15",
+            submission_reveal_date=f"{year}-{month}-15",
         )
