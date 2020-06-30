@@ -87,6 +87,8 @@ def award_data_fixture(db):
         treasury_account_id=1,
         submission_id=1,
         disaster_emergency_fund=code,
+        gross_outlay_amount_by_award_cpe=100,
+        transaction_obligated_amount=100
     )
     mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
