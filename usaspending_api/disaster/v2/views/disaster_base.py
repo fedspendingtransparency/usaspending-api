@@ -1,5 +1,6 @@
 from django.utils.functional import cached_property
 from rest_framework.views import APIView
+from datetime import datetime, timezone
 
 from django.db.models import Exists, OuterRef, Max
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
@@ -37,6 +38,7 @@ def latest_gtas_of_each_year_queryset():
                             is_quarter=False,
                             submission_fiscal_year=OuterRef("fiscal_year"),
                             submission_fiscal_month=OuterRef("fiscal_period"),
+                            submission_reveal_date__lte=datetime.now(timezone.utc),
                         )
                     ),
                 )

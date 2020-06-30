@@ -212,7 +212,7 @@ def _full_schedule_for_year(year):
             submission_fiscal_year=year,
             submission_fiscal_quarter=(month / 3) + 1,
             submission_fiscal_month=month,
-            submission_reveal_date="2021-12-15",
+            submission_reveal_date=f"{year}-12-15",
         )
 
 
@@ -224,5 +224,5 @@ def _incomplete_schedule_for_year(year):
             submission_fiscal_year=year,
             submission_fiscal_quarter=(month / 3) + 1,
             submission_fiscal_month=month,
-            submission_reveal_date="2021-12-15",
+            submission_reveal_date=f"{year}-12-15",
         )

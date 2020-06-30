@@ -53,6 +53,7 @@ class Helpers:
                 return patched_datetime
 
         monkeypatch.setattr("usaspending_api.submissions.helpers.datetime", PatchedDatetime)
+        monkeypatch.setattr("usaspending_api.disaster.v2.views.disaster_base.datetime", PatchedDatetime)
 
 
 @pytest.fixture
