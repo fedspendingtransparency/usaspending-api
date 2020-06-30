@@ -11,7 +11,11 @@ class GTASSF133Balances(models.Model):
     unobligated_balance_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     disaster_emergency_fund_code = models.TextField(null=True)
     treasury_account_identifier = models.ForeignKey(
-        "accounts.TreasuryAppropriationAccount", models.DO_NOTHING, null=True, db_column="treasury_account_identifier"
+        "accounts.TreasuryAppropriationAccount",
+        models.DO_NOTHING,
+        null=True,
+        db_column="treasury_account_identifier",
+        related_name="gtas",
     )
     tas_rendering_label = models.TextField(null=True, db_index=True)
     create_date = models.DateTimeField(auto_now_add=True)
