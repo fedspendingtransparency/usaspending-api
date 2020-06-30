@@ -1,11 +1,64 @@
 from django.utils.functional import cached_property
 from rest_framework.views import APIView
+from datetime import datetime, timezone
 
+from django.db.models import Max
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
+from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
+from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
+from django.db.models import Q
+
+COVID_19_GROUP_NAME = "covid_19"
+
+
+def covid_def_codes():
+    return DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME)
+
+
+def covid_def_code_strings():
+    return [code["code"] for code in covid_def_codes().values("code")]
+
+
+def latest_gtas_of_each_year_queryset():
+    q = Q()
+    for final_for_fy in finals_for_fy(False):
+        q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[1])
+    for final_for_fy in finals_for_fy(True):
+        q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[1])
+    if not q:
+        return GTASSF133Balances.objects.none()
+    return GTASSF133Balances.objects.filter(q)
+
+
+def latest_faba_of_each_year_queryset():
+    q = Q()
+    for final_for_fy in finals_for_fy(False):
+        q |= Q(submission__reporting_fiscal_year=final_for_fy[0]) & Q(
+            submission__reporting_fiscal_period=final_for_fy[1]
+        )
+    for final_for_fy in finals_for_fy(True):
+        q |= Q(submission__reporting_fiscal_year=final_for_fy[0]) & Q(
+            submission__reporting_fiscal_period=final_for_fy[1]
+        )
+    if not q:
+        return FinancialAccountsByAwards.objects.none()
+    return FinancialAccountsByAwards.objects.filter(q)
+
+
+def finals_for_fy(is_quarter):
+    return (
+        DABSSubmissionWindowSchedule.objects.filter(
+            submission_reveal_date__lte=datetime.now(timezone.utc), is_quarter=is_quarter
+        )
+        .values("submission_fiscal_year")
+        .annotate(max_submission_fiscal_month=Max("submission_fiscal_month"))
+        .values_list("submission_fiscal_year", "max_submission_fiscal_month")
+    )
 
 
 class DisasterBase(APIView):
