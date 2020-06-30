@@ -91,6 +91,16 @@ def test_summing_multiple_years(
 
 
 @pytest.mark.django_db
+def test_summing_period_and_quarterly_in_same_year(
+    client, monkeypatch, helpers, defc_codes, basic_ref_data, late_gtas, quarterly_gtas, basic_faba
+):
+    helpers.patch_datetime_now(monkeypatch, 2021, LATE_MONTH, 25)
+    resp = client.get(OVERVIEW_URL)
+    assert resp.data["funding"] == [{"amount": Decimal("0.56"), "def_code": "M"}]
+    assert resp.data["total_budget_authority"] == Decimal("0.56")
+
+
+@pytest.mark.django_db
 def test_ignore_gtas_not_yet_revealed(
     client, monkeypatch, helpers, defc_codes, basic_ref_data, late_gtas, early_gtas, year_2_gtas_covid, basic_faba
 ):

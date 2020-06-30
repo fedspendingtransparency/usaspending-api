@@ -45,6 +45,21 @@ def late_gtas(defc_codes):
 
 
 @pytest.fixture
+def quarterly_gtas(defc_codes):
+    _partial_quarterly_schedule_for_year(2021)
+    mommy.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2021,
+        fiscal_period=9,
+        unobligated_balance_cpe=0,
+        disaster_emergency_fund_code="M",
+        budget_authority_appropriation_amount_cpe=0.26,
+        other_budgetary_resources_amount_cpe=0.0,
+        gross_outlay_amount_by_tas_cpe=0.02,
+    )
+
+
+@pytest.fixture
 def early_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
@@ -240,6 +255,18 @@ def _full_schedule_for_year(year):
             submission_fiscal_quarter=(month / 3) + 1,
             submission_fiscal_month=month,
             submission_reveal_date=f"{year}-{month}-15",
+        )
+
+
+def _partial_quarterly_schedule_for_year(year):
+    for quarter in range(1, 4):
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            is_quarter=True,
+            submission_fiscal_year=year,
+            submission_fiscal_quarter=quarter,
+            submission_fiscal_month=quarter * 3,
+            submission_reveal_date=f"{year}-{quarter * 3}-15",
         )
 
 
