@@ -87,7 +87,7 @@ class DisasterBase(APIView):
 
     @cached_property
     def filters(self):
-        all_def_codes = list(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
+        all_def_codes = sorted(list(DisasterEmergencyFundCode.objects.values_list("code", flat=True)))
         object_keys_lookup = {
             "def_codes": {
                 "key": "filter|def_codes",
@@ -134,11 +134,7 @@ class DisasterBase(APIView):
 
 
 class SpendingMixin:
-    required_filters = ["def_codes", "award_type_codes", "query"]
-
-    @property
-    def award_type_codes(self):
-        return self.filters.get("award_type_codes")
+    required_filters = ["def_codes", "query"]
 
     @property
     def query(self):
@@ -156,8 +152,8 @@ class SpendingMixin:
                 "optional": False,
             }
         ]
-        spending_type = TinyShield(model).block(self.request.data)
-        return spending_type
+
+        return TinyShield(model).block(self.request.data)["spending_type"]
 
 
 class LoansMixin:
@@ -168,12 +164,13 @@ class LoansMixin:
         return self.filters.get("query")
 
 
-class PaginationMixin:
-    @cached_property
+class _BasePaginationMixin:
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "obligation", "outlay", "total_budgetary_resources"]
+        """pass"""
+
+    def run_models(self, columns):
         default_sort_column = "id"
-        model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
+        model = customize_pagination_with_sort_columns(columns, default_sort_column)
         request_data = TinyShield(model).block(self.request.data.get("pagination", {}))
         return Pagination(
             page=request_data["page"],
@@ -183,3 +180,17 @@ class PaginationMixin:
             sort_key=request_data.get("sort", "obligated_amount"),
             sort_order=request_data["order"],
         )
+
+
+class PaginationMixin(_BasePaginationMixin):
+    @cached_property
+    def pagination(self):
+        sortable_columns = ["id", "code", "description", "obligation", "outlay", "total_budgetary_resources", "count"]
+        return self.run_models(sortable_columns)
+
+
+class LoansPaginationMixin(_BasePaginationMixin):
+    @cached_property
+    def pagination(self):
+        sortable_columns = ["id", "code", "description", "count", "face_value_of_loan"]
+        return self.run_models(sortable_columns)
