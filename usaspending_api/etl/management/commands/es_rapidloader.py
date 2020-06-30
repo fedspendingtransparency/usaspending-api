@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from pathlib import Path
 from time import perf_counter
 
-from usaspending_api import settings
+from django.conf import settings
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
