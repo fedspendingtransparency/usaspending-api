@@ -2,7 +2,7 @@ from django.db import models
 
 
 class DABSSubmissionWindowSchedule(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     period_start_date = models.DateTimeField()
     period_end_date = models.DateTimeField()
     submission_start_date = models.DateTimeField()

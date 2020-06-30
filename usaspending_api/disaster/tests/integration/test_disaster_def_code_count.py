@@ -30,7 +30,7 @@ def test_def_code_count_success(client, monkeypatch, disaster_account_data, help
 def test_def_code_count_invalid_defc(client, disaster_account_data, helpers):
     resp = helpers.post_for_count_endpoint(client, url, ["ZZ"])
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp.data["detail"] == "Field 'filter|def_codes' is outside valid values ['L', 'M', 'N', 'O', 'P', '9']"
+    assert resp.data["detail"] == "Field 'filter|def_codes' is outside valid values ['9', 'L', 'M', 'N', 'O', 'P']"
 
 
 @pytest.mark.django_db
