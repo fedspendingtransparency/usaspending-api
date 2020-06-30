@@ -94,9 +94,24 @@ Generate files and return metadata using filters on custom account
         + `award_financial`
 + `fy` (required, string)
     The fiscal year to filter by in the format `YYYY`
-+ `quarter` (required, enum[string])
++ `quarter` (optional, enum[string])
+    Either `quarter` or `period` is required.  Do not supply both.   Note that both monthly and quarterly submissions will be included in the resulting download file even if only `quarter` is provided.
     + Members
         + `1`
         + `2`
         + `3`
         + `4`
++ `period` (optional, enum[string])
+    Either `quarter` or `period` is required.  Do not supply both.  Agencies cannot submit data for period 1 so it is disallowed as a query filter.   Note that both monthly and quarterly submissions will be included in the resulting download file even if only `period` is provided.
+    + Members
+        + `2`
+        + `3`
+        + `4`
+        + `5`
+        + `6`
+        + `7`
+        + `8`
+        + `9`
+        + `10`
+        + `11`
+        + `12`

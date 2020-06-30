@@ -1,7 +1,7 @@
-from fiscalyear import FiscalDate
-from datetime import date
-
 import usaspending_api.common.helpers.fiscal_year_helpers as fyh
+
+from fiscalyear import FiscalDate
+from datetime import date, MINYEAR, MAXYEAR
 
 
 def test_all_fiscal_years():
@@ -106,10 +106,113 @@ def test_calculate_last_completed_fiscal_quarter():
     assert fyh.calculate_last_completed_fiscal_quarter(2000) == 4
 
 
-def test_convert_fiscal_quarter_to_fiscal_period():
-    assert fyh.convert_fiscal_quarter_to_fiscal_period(1) == 3
-    assert fyh.convert_fiscal_quarter_to_fiscal_period(2) == 6
-    assert fyh.convert_fiscal_quarter_to_fiscal_period(3) == 9
-    assert fyh.convert_fiscal_quarter_to_fiscal_period(4) == 12
-    assert fyh.convert_fiscal_quarter_to_fiscal_period(None) is None
-    assert fyh.convert_fiscal_quarter_to_fiscal_period("1") is None
+def test_is_valid_period():
+    assert fyh.is_valid_period(2) is True
+    assert fyh.is_valid_period(3) is True
+    assert fyh.is_valid_period(4) is True
+    assert fyh.is_valid_period(5) is True
+    assert fyh.is_valid_period(6) is True
+    assert fyh.is_valid_period(7) is True
+    assert fyh.is_valid_period(8) is True
+    assert fyh.is_valid_period(9) is True
+    assert fyh.is_valid_period(10) is True
+    assert fyh.is_valid_period(11) is True
+    assert fyh.is_valid_period(12) is True
+
+    assert fyh.is_valid_period(1) is False
+    assert fyh.is_valid_period(13) is False
+    assert fyh.is_valid_period(None) is False
+    assert fyh.is_valid_period("1") is False
+    assert fyh.is_valid_period("a") is False
+    assert fyh.is_valid_period({"hello": "there"}) is False
+
+
+def test_is_valid_quarter():
+    assert fyh.is_valid_quarter(1) is True
+    assert fyh.is_valid_quarter(2) is True
+    assert fyh.is_valid_quarter(3) is True
+    assert fyh.is_valid_quarter(4) is True
+
+    assert fyh.is_valid_quarter(0) is False
+    assert fyh.is_valid_quarter(5) is False
+    assert fyh.is_valid_quarter(None) is False
+    assert fyh.is_valid_quarter("1") is False
+    assert fyh.is_valid_quarter("a") is False
+    assert fyh.is_valid_quarter({"hello": "there"}) is False
+
+
+def test_is_valid_year():
+    assert fyh.is_valid_year(MINYEAR) is True
+    assert fyh.is_valid_year(MINYEAR + 1) is True
+    assert fyh.is_valid_year(MAXYEAR) is True
+    assert fyh.is_valid_year(MAXYEAR - 1) is True
+    assert fyh.is_valid_year(1999) is True
+
+    assert fyh.is_valid_year(MINYEAR - 1) is False
+    assert fyh.is_valid_year(MAXYEAR + 1) is False
+    assert fyh.is_valid_year(None) is False
+    assert fyh.is_valid_year("1") is False
+    assert fyh.is_valid_year("a") is False
+    assert fyh.is_valid_year({"hello": "there"}) is False
+
+
+def test_is_final_period_of_quarter():
+    assert fyh.is_final_period_of_quarter(3, 1) is True
+    assert fyh.is_final_period_of_quarter(6, 2) is True
+    assert fyh.is_final_period_of_quarter(9, 3) is True
+    assert fyh.is_final_period_of_quarter(12, 4) is True
+
+    assert fyh.is_final_period_of_quarter(1, 1) is False
+    assert fyh.is_final_period_of_quarter(2, 1) is False
+    assert fyh.is_final_period_of_quarter(11, 4) is False
+    assert fyh.is_final_period_of_quarter(0, 1) is False
+    assert fyh.is_final_period_of_quarter(3, 0) is False
+    assert fyh.is_final_period_of_quarter(None, 1) is False
+    assert fyh.is_final_period_of_quarter(3, None) is False
+    assert fyh.is_final_period_of_quarter("a", "b") is False
+    assert fyh.is_final_period_of_quarter([1], {2: 3}) is False
+
+
+def test_get_final_period_of_quarter():
+    assert fyh.get_final_period_of_quarter(1) == 3
+    assert fyh.get_final_period_of_quarter(2) == 6
+    assert fyh.get_final_period_of_quarter(3) == 9
+    assert fyh.get_final_period_of_quarter(4) == 12
+
+    assert fyh.get_final_period_of_quarter(None) is None
+    assert fyh.get_final_period_of_quarter("1") is None
+    assert fyh.get_final_period_of_quarter("a") is None
+    assert fyh.get_final_period_of_quarter({"hello": "there"}) is None
+
+
+def test_get_periods_in_quarter():
+    assert fyh.get_periods_in_quarter(1) == (2, 3)
+    assert fyh.get_periods_in_quarter(2) == (4, 5, 6)
+    assert fyh.get_periods_in_quarter(3) == (7, 8, 9)
+    assert fyh.get_periods_in_quarter(4) == (10, 11, 12)
+
+    assert fyh.get_periods_in_quarter(None) is None
+    assert fyh.get_periods_in_quarter("1") is None
+    assert fyh.get_periods_in_quarter("a") is None
+    assert fyh.get_periods_in_quarter({"hello": "there"}) is None
+
+
+def test_get_quarter_from_period():
+    assert fyh.get_quarter_from_period(2) == 1
+    assert fyh.get_quarter_from_period(3) == 1
+    assert fyh.get_quarter_from_period(4) == 2
+    assert fyh.get_quarter_from_period(5) == 2
+    assert fyh.get_quarter_from_period(6) == 2
+    assert fyh.get_quarter_from_period(7) == 3
+    assert fyh.get_quarter_from_period(8) == 3
+    assert fyh.get_quarter_from_period(9) == 3
+    assert fyh.get_quarter_from_period(10) == 4
+    assert fyh.get_quarter_from_period(11) == 4
+    assert fyh.get_quarter_from_period(12) == 4
+
+    assert fyh.get_quarter_from_period(1) is None
+    assert fyh.get_quarter_from_period(13) is None
+    assert fyh.get_quarter_from_period(None) is None
+    assert fyh.get_quarter_from_period("1") is None
+    assert fyh.get_quarter_from_period("a") is None
+    assert fyh.get_quarter_from_period({"hello": "there"}) is None
