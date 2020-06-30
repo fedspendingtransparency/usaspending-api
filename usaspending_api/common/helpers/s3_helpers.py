@@ -3,7 +3,7 @@ import io
 import logging
 
 from typing import List
-from usaspending_api import settings
+from django.conf import settings
 
 
 logger = logging.getLogger("script")
