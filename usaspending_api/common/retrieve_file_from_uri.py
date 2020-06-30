@@ -4,7 +4,7 @@ import tempfile
 import urllib
 
 from shutil import copyfile
-from usaspending_api import settings
+from django.conf import settings
 
 
 VALID_SCHEMES = ("http", "https", "s3", "file", "")
