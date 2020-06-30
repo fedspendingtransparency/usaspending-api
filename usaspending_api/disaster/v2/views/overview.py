@@ -9,7 +9,6 @@ from usaspending_api.disaster.v2.views.disaster_base import (
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from django.db.models.functions import Coalesce
 from django.db.models import Sum
-from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 from decimal import Decimal
 
 
@@ -75,7 +74,7 @@ class OverviewViewSet(DisasterBase):
         ) or 0.0
 
     def total_obligations(self, funding):
-        remaining_balance = latest_gtas_of_each_year_queryset().filter(fiscal_year=current_fiscal_year()).first()
+        remaining_balance = latest_gtas_of_each_year_queryset().order_by("-fiscal_year").first()
         if remaining_balance:
             remaining_balance = remaining_balance.unobligated_balance_cpe
         else:

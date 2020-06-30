@@ -73,6 +73,20 @@ def non_covid_gtas(defc_codes):
 
 
 @pytest.fixture
+def unobligated_balance_gtas(defc_codes):
+    mommy.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2021,
+        fiscal_period=LATE_MONTH,
+        unobligated_balance_cpe=1.5,
+        disaster_emergency_fund_code="A",
+        budget_authority_appropriation_amount_cpe=0.75,
+        other_budgetary_resources_amount_cpe=0.75,
+        gross_outlay_amount_by_tas_cpe=0.0,
+    )
+
+
+@pytest.fixture
 def other_budget_authority_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",

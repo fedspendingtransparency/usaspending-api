@@ -37,6 +37,24 @@ def test_using_only_latest_gtas(
 
 
 @pytest.mark.django_db
+def test_total_obligations(
+    client, monkeypatch, helpers, defc_codes, basic_ref_data, unobligated_balance_gtas, basic_faba
+):
+    helpers.patch_datetime_now(monkeypatch, 2021, LATE_MONTH, 25)
+    resp = client.get(OVERVIEW_URL)
+    assert resp.data["spending"]["total_obligations"] == Decimal("0.0")
+
+
+@pytest.mark.django_db
+def test_total_obligation_only_uses_current_year(
+    client, monkeypatch, helpers, defc_codes, basic_ref_data, unobligated_balance_gtas, year_2_gtas_covid, basic_faba
+):
+    helpers.patch_datetime_now(monkeypatch, 2022, EARLY_MONTH, 25)
+    resp = client.get(OVERVIEW_URL)
+    assert resp.data["spending"]["total_obligations"] == Decimal("1.72")
+
+
+@pytest.mark.django_db
 def test_exclude_gtas_for_incompleted_period(
     client, monkeypatch, helpers, defc_codes, partially_completed_year, late_gtas, early_gtas, basic_faba
 ):
