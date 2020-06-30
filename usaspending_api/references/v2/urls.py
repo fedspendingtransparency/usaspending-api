@@ -26,5 +26,6 @@ urlpatterns = [
     url(r"^glossary/$", glossary.GlossaryViewSet.as_view()),
     url(r"^naics/$", naics.NAICSViewSet.as_view()),
     url(r"^naics/(?P<requested_naics>[0-9]+)/$", naics.NAICSViewSet.as_view()),
+    url(r"^submission_periods", periods.DEFCodesViewSet.as_view()),
     url(r"^toptier_agencies/$", toptier_agencies.ToptierAgenciesViewSet.as_view()),
 ]
