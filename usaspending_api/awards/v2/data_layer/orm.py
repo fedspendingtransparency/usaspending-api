@@ -24,10 +24,11 @@ from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict
 from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
 from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
+from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, Cfda, PSC, NAICS, SubtierAgency
+from usaspending_api.references.models import Agency, Cfda, PSC, NAICS, SubtierAgency, DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
-
+from usaspending_api.awards.v2.data_layer.sql import defc_sql
 
 logger = logging.getLogger("console")
 
@@ -42,6 +43,8 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
 
     response.update(award)
 
+    account_data = fetch_account_details_award(award["id"])
+    response.update(account_data)
     transaction = fetch_fabs_details_by_pk(award["_trx"], FABS_ASSISTANCE_FIELDS)
 
     response["record_type"] = transaction["record_type"]
@@ -76,6 +79,9 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
         return None
 
     response.update(award)
+
+    account_data = fetch_account_details_award(award["id"])
+    response.update(account_data)
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], FPDS_CONTRACT_FIELDS)
 
@@ -127,6 +133,9 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
     if not award:
         return None
     response.update(award)
+
+    account_data = fetch_account_details_award(award["id"])
+    response.update(account_data)
 
     transaction = fetch_fpds_details_by_pk(award["_trx"], mapper)
 
@@ -576,4 +585,27 @@ def fetch_naics_hierarchy(naics: str) -> dict:
     except NAICS.DoesNotExist:
         pass
     results = {"toptier_code": toptier_code, "midtier_code": midtier_code, "base_code": base_code}
+    return results
+
+
+def fetch_account_details_award(award_id: int) -> dict:
+    award_id_sql = "faba.award_id = {award_id}".format(award_id=award_id)
+    results = execute_sql_to_ordered_dictionary(defc_sql.format(award_id_sql=award_id_sql))
+    outlay_by_code = []
+    obligation_by_code = []
+    total_outlay = 0
+    total_obligations = 0
+    covid_defcs = DisasterEmergencyFundCode.objects.filter(group_name="covid_19").values_list("code", flat=True)
+    for row in results:
+        if row["disaster_emergency_fund_code"] in covid_defcs:
+            total_outlay += row["total_outlay"]
+            total_obligations += row["obligated_amount"]
+        outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
+        obligation_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]})
+    results = {
+        "total_account_outlay": total_outlay,
+        "total_account_obligation": total_obligations,
+        "account_outlays_by_defc": outlay_by_code,
+        "account_obligations_by_defc": obligation_by_code,
+    }
     return results
