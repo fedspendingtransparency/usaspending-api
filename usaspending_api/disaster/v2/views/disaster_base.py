@@ -12,8 +12,7 @@ from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balan
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from usaspending_api.submissions.models import SubmissionAttributes
-from django.db.models.functions import Concat
-from django.db.models import Value, CharField
+from django.db.models import Q
 
 COVID_19_GROUP_NAME = "covid_19"
 
@@ -27,41 +26,27 @@ def covid_def_code_strings():
 
 
 def latest_gtas_of_each_year_queryset():
-    return (
-        GTASSF133Balances.objects.annotate(
-            is_highest_period=Exists(
-                GTASSF133Balances.objects.values("fiscal_year")
-                .annotate(
-                    fiscal_period_max=Max("fiscal_period"),
-                    include=Exists(
-                        DABSSubmissionWindowSchedule.objects.filter(
-                            is_quarter=False,
-                            submission_fiscal_year=OuterRef("fiscal_year"),
-                            submission_fiscal_month=OuterRef("fiscal_period"),
-                            submission_reveal_date__lte=datetime.now(timezone.utc),
-                        )
-                    ),
-                )
-                .filter(
-                    include=True,
-                    fiscal_year=OuterRef("fiscal_year"),
-                    fiscal_period_max=OuterRef("fiscal_period"),
+    finals_for_fy = (
+        DABSSubmissionWindowSchedule.objects.annotate(
+            has_gtas=Exists(
+                GTASSF133Balances.objects.filter(
+                    fiscal_year=OuterRef("submission_fiscal_year"),
+                    fiscal_period=OuterRef("submission_fiscal_month"),
                     disaster_emergency_fund_code__in=covid_def_code_strings(),
-                )
-                .values("fiscal_year", "fiscal_period_max")
+                ).values("pk")
             )
         )
-        .annotate(fiscal_period_and_year=Concat("fiscal_year", Value("/"), "fiscal_period", output_field=CharField()))
-        .filter(
-            is_highest_period=True,
-            fiscal_period_and_year__in=[
-                f"{elem['submission_fiscal_year']}/{elem['submission_fiscal_month']}"
-                for elem in DABSSubmissionWindowSchedule.objects.filter(is_quarter=False)
-                .order_by("-submission_fiscal_year", "-submission_fiscal_quarter", "-submission_fiscal_month")
-                .values()
-            ],
-        )
+        .filter(is_quarter=False, submission_reveal_date__lte=datetime.now(timezone.utc), has_gtas=True)
+        .values("submission_fiscal_year")
+        .annotate(max_submission_fiscal_month=Max("submission_fiscal_month"))
+        .values_list("submission_fiscal_year", "max_submission_fiscal_month")
     )
+    q = Q()
+    for final_for_fy in finals_for_fy:
+        q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[1])
+    if not q:
+        return GTASSF133Balances.objects.none()
+    return GTASSF133Balances.objects.filter(q)
 
 
 def latest_faba_of_each_year_queryset():
