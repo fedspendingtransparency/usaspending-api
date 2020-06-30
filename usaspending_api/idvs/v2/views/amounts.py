@@ -53,7 +53,7 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     grandchildren = execute_sql_to_ordered_dictionary(
         grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column)
     )
-    covid_defcs = DisasterEmergencyFundCode.objects().filter("group_name = 'covid_19'").values_list('code', flat=True)
+    covid_defcs = DisasterEmergencyFundCode.objects.filter(group_name="covid_19").values_list("code", flat=True)
 
     child_award_ids = []
     grandchild_award_ids = []
