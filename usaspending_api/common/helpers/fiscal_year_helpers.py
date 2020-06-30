@@ -48,7 +48,7 @@ def generate_fiscal_year(date):
     return year
 
 
-def generate_fiscal_period(date):
+def generate_fiscal_month(date):
     """ Generate fiscal period based on the date provided """
     validate_date(date)
 
@@ -99,7 +99,7 @@ def generate_fiscal_date_range(min_date: datetime, max_date: datetime, frequency
             {
                 "fiscal_year": generate_fiscal_year(current_date),
                 "fiscal_quarter": generate_fiscal_quarter(current_date),
-                "fiscal_month": generate_fiscal_period(current_date),
+                "fiscal_month": generate_fiscal_month(current_date),
             }
         )
         current_date = current_date + relativedelta(months=interval)
@@ -114,8 +114,8 @@ def create_full_time_periods(min_date, max_date, group, columns):
         return [{**cols, **{"time_period": {"fy": str(fy)}}} for fy in fiscal_years]
 
     if group == "month":
-        period = generate_fiscal_period(min_date)
-        ending = generate_fiscal_period(max_date)
+        period = generate_fiscal_month(min_date)
+        ending = generate_fiscal_month(max_date)
         rollover = 12
     else:  # quarter
         period = generate_fiscal_quarter(min_date)

@@ -21,7 +21,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     bolster_missing_time_periods,
     generate_fiscal_date_range,
-    generate_fiscal_period,
+    generate_fiscal_month,
     generate_fiscal_year,
 )
 from usaspending_api.common.helpers.generic_helper import (
@@ -190,7 +190,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if self.group == "fiscal_year":
             end_date = "{}-09-30".format(current_fy)
         else:
-            current_fiscal_month = generate_fiscal_period(datetime.now(timezone.utc))
+            current_fiscal_month = generate_fiscal_month(datetime.now(timezone.utc))
             days_in_month = monthrange(current_fy, current_fiscal_month)[1]
             end_date = f"{current_fy}-{current_fiscal_month}-{days_in_month}"
 

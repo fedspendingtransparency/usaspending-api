@@ -31,11 +31,11 @@ def test_calculate_fiscal_years():
 
 
 def test_generate_fiscal_month():
-    assert fyh.generate_fiscal_period(date(2000, 9, 30)) == 12
-    assert fyh.generate_fiscal_period(date(2001, 10, 1)) == 1
-    assert fyh.generate_fiscal_period(date(2020, 3, 2)) == 6
-    assert fyh.generate_fiscal_period(date(2017, 5, 30)) == 8
-    assert fyh.generate_fiscal_period(date(2019, 10, 30)) == 1
+    assert fyh.generate_fiscal_month(date(2000, 9, 30)) == 12
+    assert fyh.generate_fiscal_month(date(2001, 10, 1)) == 1
+    assert fyh.generate_fiscal_month(date(2020, 3, 2)) == 6
+    assert fyh.generate_fiscal_month(date(2017, 5, 30)) == 8
+    assert fyh.generate_fiscal_month(date(2019, 10, 30)) == 1
 
 
 def test_generate_fiscal_quarter():
