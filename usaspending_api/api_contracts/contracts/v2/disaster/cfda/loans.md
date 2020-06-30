@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# DEFC Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/def_code/loans/]
+# CFDA Programs Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/cfda/loans/]
 
-This endpoint provides insights on the DEFC loans from disaster/emergency funding per the requested filters.
+This endpoint provides insights on the CFDA Programs' loans from disaster/emergency funding per the requested filters.
 
 ## POST
 
-Returns loan spending details of DEFC receiving supplemental funding budgetary resources
+Returns loan spending details of CFDA Programs receiving supplemental funding budgetary resources
 
 + Request (application/json)
     + Schema
@@ -37,7 +37,8 @@ Returns loan spending details of DEFC receiving supplemental funding budgetary r
                         "description": "Description text of 090, for humans",
                         "children": [],
                         "count": 54,
-                        "face_value_of_loan": 89.01
+                        "face_value_of_loan": 89.01,
+                        "award_obligation": 9834
                     },
                     {
                         "id": "41",
@@ -45,7 +46,8 @@ Returns loan spending details of DEFC receiving supplemental funding budgetary r
                         "description": "Description text of 012, for humans",
                         "children": [],
                         "count": 2,
-                        "face_value_of_loan": 50
+                        "face_value_of_loan": 50,
+                        "award_obligation": 327864
                     }
                 ],
                 "page_metadata": {
@@ -89,6 +91,7 @@ Returns loan spending details of DEFC receiving supplemental funding budgetary r
 + `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
++ `award_obligation` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)

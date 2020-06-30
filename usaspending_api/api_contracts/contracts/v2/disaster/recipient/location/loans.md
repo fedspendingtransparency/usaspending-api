@@ -37,7 +37,8 @@ Returns loan spending details of recipients' location receiving supplemental fun
                         "description": "Description text of 090, for humans",
                         "children": [],
                         "count": 54,
-                        "face_value_of_loan": 89.01
+                        "face_value_of_loan": 89.01,
+                        "award_obligation": 3243
                     },
                     {
                         "id": "41",
@@ -45,7 +46,8 @@ Returns loan spending details of recipients' location receiving supplemental fun
                         "description": "Description text of 012, for humans",
                         "children": [],
                         "count": 2,
-                        "face_value_of_loan": 50
+                        "face_value_of_loan": 50,
+                        "award_obligation": 3243
                     }
                 ],
                 "page_metadata": {
@@ -89,6 +91,7 @@ Returns loan spending details of recipients' location receiving supplemental fun
 + `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
++ `award_obligation` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)
