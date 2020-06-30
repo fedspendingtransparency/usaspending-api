@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='gtassf133balances',
             name='treasury_account_identifier',
-            field=models.ForeignKey(db_column='treasury_account_identifier', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='accounts.TreasuryAppropriationAccount'),
+            field=models.ForeignKey(db_column='treasury_account_identifier', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='gtas', to='accounts.TreasuryAppropriationAccount'),
         ),
         migrations.AlterUniqueTogether(
             name='gtassf133balances',
