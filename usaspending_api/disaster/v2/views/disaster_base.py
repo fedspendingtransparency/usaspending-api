@@ -9,7 +9,7 @@ from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
-from usaspending_api.submissions.helpers import get_last_closed_submission_date, get_last_closed_submissions_of_each_FY
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from usaspending_api.submissions.models import SubmissionAttributes
 from django.db.models.functions import Concat
 from django.db.models import Value, CharField
@@ -54,7 +54,9 @@ def latest_gtas_of_each_year_queryset():
             is_highest_period=True,
             fiscal_period_and_year__in=[
                 f"{elem['submission_fiscal_year']}/{elem['submission_fiscal_month']}"
-                for elem in get_last_closed_submissions_of_each_FY(False)
+                for elem in DABSSubmissionWindowSchedule.objects.filter(is_quarter=False)
+                .order_by("-submission_fiscal_year", "-submission_fiscal_quarter", "-submission_fiscal_month")
+                .values()
             ],
         )
     )
