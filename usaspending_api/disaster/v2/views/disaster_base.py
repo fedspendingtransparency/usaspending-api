@@ -25,16 +25,8 @@ def covid_def_code_strings():
 
 
 def latest_gtas_of_each_year_queryset():
-    finals_for_fy = (
-        DABSSubmissionWindowSchedule.objects.filter(
-            is_quarter=False, submission_reveal_date__lte=datetime.now(timezone.utc)
-        )
-        .values("submission_fiscal_year")
-        .annotate(max_submission_fiscal_month=Max("submission_fiscal_month"))
-        .values_list("submission_fiscal_year", "max_submission_fiscal_month")
-    )
     q = Q()
-    for final_for_fy in finals_for_fy:
+    for final_for_fy in finals_for_fy():
         q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[1])
     if not q:
         return GTASSF133Balances.objects.none()
@@ -42,22 +34,23 @@ def latest_gtas_of_each_year_queryset():
 
 
 def latest_faba_of_each_year_queryset():
-    finals_for_fy = (
-        DABSSubmissionWindowSchedule.objects.filter(
-            is_quarter=False, submission_reveal_date__lte=datetime.now(timezone.utc)
-        )
-        .values("submission_fiscal_year")
-        .annotate(max_submission_fiscal_month=Max("submission_fiscal_month"))
-        .values_list("submission_fiscal_year", "max_submission_fiscal_month")
-    )
     q = Q()
-    for final_for_fy in finals_for_fy:
+    for final_for_fy in finals_for_fy():
         q |= Q(submission__reporting_fiscal_year=final_for_fy[0]) & Q(
             submission__reporting_fiscal_period=final_for_fy[1]
         )
     if not q:
         return FinancialAccountsByAwards.objects.none()
     return FinancialAccountsByAwards.objects.filter(q)
+
+
+def finals_for_fy():
+    return (
+        DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=datetime.now(timezone.utc))
+        .values("submission_fiscal_year")
+        .annotate(max_submission_fiscal_month=Max("submission_fiscal_month"))
+        .values_list("submission_fiscal_year", "max_submission_fiscal_month")
+    )
 
 
 class DisasterBase(APIView):
