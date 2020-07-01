@@ -82,8 +82,8 @@ SELECT
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
   DEFC.disaster_emergency_fund_codes as disaster_emergency_fund_codes,
-  DEFC.gross_outlay_amount_by_award_cpe as total_covid_obligation,
-  DEFC.transaction_obligated_amount as total_covid_outlay
+  DEFC.gross_outlay_amount_by_award_cpe as total_covid_outlay,
+  DEFC.transaction_obligated_amount as total_covid_obligation
 FROM vw_award_search
 INNER JOIN awards a ON (a.id = vw_award_search.award_id)
 LEFT JOIN (
