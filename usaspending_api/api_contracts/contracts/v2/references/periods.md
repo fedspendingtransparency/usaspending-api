@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Custom Account Data [/api/v2/download/accounts/periods]
+# Custom Account Data [/api/v2/download/accounts/submission_periods]
 
 This endpoint returns a JSON Object containing an array of tuples consisting of fiscal year and period number for all valid periods. 
 
