@@ -49,9 +49,7 @@ def get_unreported_data_obj(
     expected_total = (
         GTASSF133Balances.objects.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
         .values("fiscal_year", "fiscal_period")
-        .annotate(Sum("obligations_incurred_total_cpe"))
-        .values_list("obligations_incurred_total_cpe__sum", flat=True)
-        .first()
+        .annotate(Sum("obligations_incurred_total_cpe"))[0]["obligations_incurred_total_cpe__sum"]
     )
 
     if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()) == set(VALID_UNREPORTED_FILTERS):
