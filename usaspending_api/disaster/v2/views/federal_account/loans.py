@@ -12,7 +12,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
 from usaspending_api.disaster.v2.views.federal_account.spending import construct_response, submission_window_cutoff
 
 
-class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
+class LoansViewSet(LoansMixin, LoansPaginationMixin, DisasterBase):
     """View to implement the API"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"

@@ -24,11 +24,13 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
     + Attributes (object)
         + `obligation` (required, number)
         + `outlay` (required, number)
+        + `count` (required, number)
     + Body
 
             {
                 "obligation": 32984563875,
-                "outlay": 15484564321
+                "outlay": 15484564321,
+                "count": 42
             }
 
 

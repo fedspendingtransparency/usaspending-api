@@ -113,6 +113,14 @@ class DisasterBase(APIView):
         return get_last_closed_submission_date(is_quarter=True)
 
 
+class AwardTypeMixin:
+    required_filters = ["def_codes", "award_type_codes"]
+
+    @property
+    def award_type_codes(self):
+        return self.filters.get("award_type_codes")
+
+
 class SpendingMixin:
     required_filters = ["def_codes", "query"]
 

@@ -54,7 +54,7 @@ def submission_window_cutoff(min_date, monthly_sub, quarterly_sub):
     ]
 
 
-class Spending(PaginationMixin, SpendingMixin, DisasterBase):
+class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     """View to implement the API"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
