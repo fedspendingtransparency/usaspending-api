@@ -107,7 +107,8 @@ LEFT JOIN (
         AND defc.group_name = 'covid_19'
     INNER JOIN submission_attributes sa
         ON faba.submission_id = sa.submission_id
-    INNER JOIN (
+        AND sa.reporting_period_start >= '2020-04-01'
+    LEFT JOIN (
         SELECT   submission_fiscal_year, is_quarter, max(submission_fiscal_month) AS submission_fiscal_month
         FROM     dabs_submission_window_schedule
         WHERE    submission_reveal_date < now() AND period_start_date >= '2020-04-01'
@@ -116,6 +117,7 @@ LEFT JOIN (
         ON latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year
         AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period
         AND latest_closed_period_per_fy.is_quarter = sa.quarter_format_flag
+    WHERE faba.award_id IS NOT NULL
 GROUP BY
     faba.award_id
 HAVING
