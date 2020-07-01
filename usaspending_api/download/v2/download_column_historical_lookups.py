@@ -1,8 +1,3 @@
-from collections import OrderedDict
-
-from usaspending_api import settings
-from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
-
 """
 Sets up mappings from column names used in downloads to the query paths used to get the data from django.
 
@@ -11,14 +6,15 @@ historical tables TransactionFPDS and TransactionFABS, import download_column_lo
 
 NOTE: To allow for annotations to be used on download a pair of ("<alias>", None) is used so that a placeholder
 for the column is made, but it can be removed to avoid being used as a query path.
-"""
-"""
+
 Code to generate these from spreadsheets:
 
 tail -n +3 'usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D2-Award (Financial Assistance)-Table 1.csv' >
 d2_columns.csv
-
 """
+from collections import OrderedDict
+from django.conf import settings
+from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 
 
 query_paths = {
@@ -1468,9 +1464,9 @@ query_paths = {
                 (
                     "last_reported_submission_period",
                     "last_reported_submission_period",
-                ),  # Column is appended to in account_download.py
+                ),  # Column is annotated in account_download.py
                 (
-                    "allocation_transfer_agency_identifer_code",
+                    "allocation_transfer_agency_identifier_code",
                     "treasury_account_identifier__allocation_transfer_agency_id",
                 ),
                 ("agency_identifier_code", "treasury_account_identifier__agency_id"),
@@ -1479,16 +1475,16 @@ query_paths = {
                 ("availability_type_code", "treasury_account_identifier__availability_type_code"),
                 ("main_account_code", "treasury_account_identifier__main_account_code"),
                 ("sub_account_code", "treasury_account_identifier__sub_account_code"),
-                ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("treasury_account_symbol", "treasury_account_identifier__tas_rendering_label"),
                 ("treasury_account_name", "treasury_account_identifier__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is appended to in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
                 (
-                    "allocation_transfer_agency_identifer_name",
-                    "allocation_transfer_agency_identifer_name",
-                ),  # Column is appended to in account_download.py
+                    "allocation_transfer_agency_identifier_name",
+                    "allocation_transfer_agency_identifier_name",
+                ),  # Column is annotated in account_download.py
                 ("budget_function", "treasury_account_identifier__budget_function_title"),
                 ("budget_subfunction", "treasury_account_identifier__budget_subfunction_title"),
-                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
+                ("federal_account_symbol", "treasury_account_identifier__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
                 (
                     "budget_authority_unobligated_balance_brought_forward",
@@ -1524,16 +1520,16 @@ query_paths = {
         "federal_account": OrderedDict(
             [
                 ("owning_agency_name", "treasury_account_identifier__federal_account__parent_toptier_agency__name"),
-                ("reporting_agency_name", "reporting_agency_name"),  # Column is appended to in account_download.py
+                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
                 (
                     "last_reported_submission_period",
                     "last_reported_submission_period",
-                ),  # Column is appended to in account_download.py
-                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
+                ),  # Column is annotated in account_download.py
+                ("federal_account_symbol", "treasury_account_identifier__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is appended to in account_download.py
-                ("budget_function", "budget_function"),  # Column is appended to in account_download.py
-                ("budget_subfunction", "budget_subfunction"),  # Column is appended to in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
+                ("budget_function", "budget_function"),  # Column is annotated in account_download.py
+                ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
                 (
                     "budget_authority_unobligated_balance_brought_forward",
                     "budget_authority_unobligated_balance_brought_forward",
@@ -1574,24 +1570,24 @@ query_paths = {
                 (
                     "last_reported_submission_period",
                     "last_reported_submission_period",
-                ),  # Column is appended to in account_download.py
-                ("allocation_transfer_agency_identifer_code", "treasury_account__allocation_transfer_agency_id"),
+                ),  # Column is annotated in account_download.py
+                ("allocation_transfer_agency_identifier_code", "treasury_account__allocation_transfer_agency_id"),
                 ("agency_identifier_code", "treasury_account__agency_id"),
                 ("beginning_period_of_availability", "treasury_account__beginning_period_of_availability"),
                 ("ending_period_of_availability", "treasury_account__ending_period_of_availability"),
                 ("availability_type_code", "treasury_account__availability_type_code"),
                 ("main_account_code", "treasury_account__main_account_code"),
                 ("sub_account_code", "treasury_account__sub_account_code"),
-                ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("treasury_account_symbol", "treasury_account__tas_rendering_label"),
                 ("treasury_account_name", "treasury_account__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is appended to in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
                 (
-                    "allocation_transfer_agency_identifer_name",
-                    "allocation_transfer_agency_identifer_name",
-                ),  # Column is appended to in account_download.py
+                    "allocation_transfer_agency_identifier_name",
+                    "allocation_transfer_agency_identifier_name",
+                ),  # Column is annotated in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
-                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
+                ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
                 ("program_activity_name", "program_activity__program_activity_name"),
@@ -1615,16 +1611,16 @@ query_paths = {
         "federal_account": OrderedDict(
             [
                 ("owning_agency_name", "treasury_account__federal_account__parent_toptier_agency__name"),
-                ("reporting_agency_name", "reporting_agency_name"),  # Column is appended to in account_download.py
+                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
                 (
                     "last_reported_submission_period",
                     "last_reported_submission_period",
-                ),  # Column is appended to in account_download.py
-                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
+                ),  # Column is annotated in account_download.py
+                ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is appended to in account_download.py
-                ("budget_function", "budget_function"),  # Column is appended to in account_download.py
-                ("budget_subfunction", "budget_subfunction"),  # Column is appended to in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
+                ("budget_function", "budget_function"),  # Column is annotated in account_download.py
+                ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
                 ("program_activity_code", "program_activity__program_activity_code"),
                 ("program_activity_name", "program_activity__program_activity_name"),
                 ("object_class_code", "object_class__object_class"),
@@ -1651,24 +1647,24 @@ query_paths = {
             [
                 ("owning_agency_name", "treasury_account__funding_toptier_agency__name"),
                 ("reporting_agency_name", "submission__reporting_agency_name"),
-                ("submission_period", "submission_period"),  # Column is appended to in account_download.py
-                ("allocation_transfer_agency_identifer_code", "treasury_account__allocation_transfer_agency_id"),
+                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                ("allocation_transfer_agency_identifier_code", "treasury_account__allocation_transfer_agency_id"),
                 ("agency_identifier_code", "treasury_account__agency_id"),
                 ("beginning_period_of_availability", "treasury_account__beginning_period_of_availability"),
                 ("ending_period_of_availability", "treasury_account__ending_period_of_availability"),
                 ("availability_type_code", "treasury_account__availability_type_code"),
                 ("main_account_code", "treasury_account__main_account_code"),
                 ("sub_account_code", "treasury_account__sub_account_code"),
-                ("treasury_account_symbol", "treasury_account_symbol"),  # Column is appended to in account_download.py
+                ("treasury_account_symbol", "treasury_account__tas_rendering_label"),
                 ("treasury_account_name", "treasury_account__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is appended to in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
                 (
-                    "allocation_transfer_agency_identifer_name",
-                    "allocation_transfer_agency_identifer_name",
-                ),  # Column is appended to in account_download.py
+                    "allocation_transfer_agency_identifier_name",
+                    "allocation_transfer_agency_identifier_name",
+                ),  # Column is annotated in account_download.py
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
-                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
+                ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
                 ("program_activity_name", "program_activity__program_activity_name"),
@@ -1692,8 +1688,8 @@ query_paths = {
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
                 ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
                 ("award_unique_key", "award__generated_unique_award_id"),
-                ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
-                ("award_type", "award_type"),  # Column is appended to in account_download.py
+                ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
+                ("award_type", "award_type"),  # Column is annotated in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 ("award_description", "award__description"),
@@ -1761,13 +1757,13 @@ query_paths = {
         "federal_account": OrderedDict(
             [
                 ("owning_agency_name", "treasury_account__federal_account__parent_toptier_agency__name"),
-                ("reporting_agency_name", "reporting_agency_name"),  # Column is appended to in account_download.py
-                ("submission_period", "submission_period"),  # Column is appended to in account_download.py
-                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
+                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
+                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is appended to in account_download.py
-                ("budget_function", "budget_function"),  # Column is appended to in account_download.py
-                ("budget_subfunction", "budget_subfunction"),  # Column is appended to in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
+                ("budget_function", "budget_function"),  # Column is annotated in account_download.py
+                ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
                 ("program_activity_code", "program_activity__program_activity_code"),
                 ("program_activity_name", "program_activity__program_activity_name"),
                 ("object_class_code", "object_class__object_class"),
@@ -1783,15 +1779,15 @@ query_paths = {
                 (
                     "award_base_action_date_fiscal_year",
                     "award_base_action_date_fiscal_year",
-                ),  # Column is appended to in account_download.py
+                ),  # Column is annotated in account_download.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
                 ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
                 ("award_unique_key", "award__generated_unique_award_id"),
-                ("award_type_code", "award_type_code"),  # Column is appended to in account_download.py
-                ("award_type", "award_type"),  # Column is appended to in account_download.py
+                ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
+                ("award_type", "award_type"),  # Column is annotated in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
                 ("award_description", "award__description"),

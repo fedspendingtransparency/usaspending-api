@@ -10,7 +10,7 @@ import pickle
 from typing import List
 import uuid
 
-from usaspending_api import settings
+from django.conf import settings
 
 LOCAL_FAKE_QUEUE_NAME = "local-fake-queue"
 UNITTEST_FAKE_QUEUE_NAME = "unittest-fake-queue"

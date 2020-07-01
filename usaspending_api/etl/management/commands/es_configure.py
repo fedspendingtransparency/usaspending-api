@@ -3,7 +3,7 @@ import subprocess
 
 from django.core.management.base import BaseCommand
 
-from usaspending_api import settings
+from django.conf import settings
 from usaspending_api.etl.es_etl_helpers import VIEW_COLUMNS, AWARD_VIEW_COLUMNS
 
 CURL_STATEMENT = 'curl -XPUT "{url}" -H "Content-Type: application/json" -d \'{data}\''
