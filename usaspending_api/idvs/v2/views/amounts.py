@@ -59,11 +59,11 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     grandchild_award_ids = []
     child_award_ids.extend([x["award_id"] for x in children])
     grandchild_award_ids.extend([x["award_id"] for x in grandchildren])
-    award_id_sql = "faba.award_id in {award_id}".format(award_id=child_award_ids)
+    award_id_sql = "faba.award_id in {award_id}".format(award_id="(" + str(child_award_ids).strip("[]") + ")")
     child_results = (
         execute_sql_to_ordered_dictionary(defc_sql.format(award_id_sql=award_id_sql)) if child_award_ids != [] else {}
     )
-    award_id_sql = "faba.award_id in {award_id}".format(award_id=grandchild_award_ids)
+    award_id_sql = "faba.award_id in {award_id}".format(award_id="(" + str(grandchild_award_ids).strip("[]") + ")")
     grandchild_results = (
         execute_sql_to_ordered_dictionary(defc_sql.format(award_id_sql=award_id_sql))
         if grandchild_award_ids != []
