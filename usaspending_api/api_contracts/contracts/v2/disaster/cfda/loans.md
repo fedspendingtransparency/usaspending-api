@@ -38,7 +38,8 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                         "children": [],
                         "count": 54,
                         "face_value_of_loan": 89.01,
-                        "award_obligation": 9834
+                        "obligation": 45,
+                        "outlay": 3244
                     },
                     {
                         "id": "41",
@@ -47,7 +48,8 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                         "children": [],
                         "count": 2,
                         "face_value_of_loan": 50,
-                        "award_obligation": 327864
+                        "obligation": 123,
+                        "outlay": 3249
                     }
                 ],
                 "page_metadata": {
@@ -91,7 +93,8 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
 + `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
-+ `award_obligation` (required, number, nullable)
++ `obligation` (required, number, nullable)
++ `outlay` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)

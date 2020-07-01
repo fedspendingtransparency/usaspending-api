@@ -38,7 +38,8 @@ Returns loan spending details of recipients' location receiving supplemental fun
                         "children": [],
                         "count": 54,
                         "face_value_of_loan": 89.01,
-                        "award_obligation": 3243
+                        "obligation": 655555,
+                        "outlay": 345
                     },
                     {
                         "id": "41",
@@ -47,7 +48,8 @@ Returns loan spending details of recipients' location receiving supplemental fun
                         "children": [],
                         "count": 2,
                         "face_value_of_loan": 50,
-                        "award_obligation": 3243
+                        "obligation": 5345,
+                        "outlay": 345
                     }
                 ],
                 "page_metadata": {
@@ -91,7 +93,8 @@ Returns loan spending details of recipients' location receiving supplemental fun
 + `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
-+ `award_obligation` (required, number, nullable)
++ `obligation` (required, number, nullable)
++ `outlay` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)

@@ -37,7 +37,9 @@ Returns loan spending details of Federal Accounts receiving supplemental funding
                         "description": "Description text of 090, for humans",
                         "children": [],
                         "count": 54,
-                        "face_value_of_loan": 89.01
+                        "face_value_of_loan": 89.01,
+                        "obligation": 23,
+                        "outlay": 5
                     },
                     {
                         "id": "41",
@@ -45,7 +47,9 @@ Returns loan spending details of Federal Accounts receiving supplemental funding
                         "description": "Description text of 012, for humans",
                         "children": [],
                         "count": 2,
-                        "face_value_of_loan": 50
+                        "face_value_of_loan": 50,
+                        "obligation": 12,
+                        "outlay": 4
                     }
                 ],
                 "page_metadata": {
@@ -89,6 +93,8 @@ Returns loan spending details of Federal Accounts receiving supplemental funding
 + `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
++ `obligation` (required, number, nullable)
++ `outlay` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)

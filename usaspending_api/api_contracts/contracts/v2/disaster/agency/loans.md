@@ -37,7 +37,9 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
                         "description": "Description text of 090, for humans",
                         "children": [],
                         "count": 54,
-                        "face_value_of_loan": 89.01
+                        "face_value_of_loan": 89.01,
+                        "obligation": 1234,
+                        "outlay": 908324
                     },
                     {
                         "id": "41",
@@ -46,7 +48,8 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
                         "children": [],
                         "count": 2,
                         "face_value_of_loan": 50,
-                        "award_obligation": 982
+                        "obligation": 643,
+                        "outlay": 1345
                     }
                 ],
                 "page_metadata": {
@@ -90,7 +93,8 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 + `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
-+ `award_obligation` (required, number, nullable)
++ `obligation` (required, number, nullable)
++ `outlay` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)
