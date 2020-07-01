@@ -83,8 +83,17 @@ Returns loan spending details of Object Classes receiving supplemental funding b
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `count`
+        + `face_value_of_loan`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
 + `id` (required, string)
