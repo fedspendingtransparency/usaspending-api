@@ -172,5 +172,5 @@ class PaginationMixin(_BasePaginationMixin):
 class LoansPaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "count", "face_value_of_loan"]
+        sortable_columns = ["id", "code", "description", "count", "face_value_of_loan", "obligation", "outlay"]
         return self.run_models(sortable_columns)
