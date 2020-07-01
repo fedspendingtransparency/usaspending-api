@@ -1,6 +1,7 @@
 import datetime
 import json
 import pytest
+import usaspending_api.common.helpers.fiscal_year_helpers
 
 
 class Helpers:
@@ -53,6 +54,8 @@ class Helpers:
                 return patched_datetime
 
         monkeypatch.setattr("usaspending_api.submissions.helpers.datetime", PatchedDatetime)
+        monkeypatch.setattr("usaspending_api.disaster.v2.views.disaster_base.datetime", PatchedDatetime)
+        usaspending_api.common.helpers.fiscal_year_helpers.current_fiscal_year = lambda: year
 
 
 @pytest.fixture

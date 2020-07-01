@@ -46,13 +46,13 @@ def get_unreported_data_obj(
             condensed_entry[key] = entry[key] if key != "id" else str(entry[key])
         result_set.append(condensed_entry)
 
-    expected_total = (
+    gtas = (
         GTASSF133Balances.objects.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
         .values("fiscal_year", "fiscal_period")
         .annotate(Sum("obligations_incurred_total_cpe"))
-        .values_list("obligations_incurred_total_cpe__sum", flat=True)
-        .first()
+        .values("obligations_incurred_total_cpe__sum")
     )
+    expected_total = gtas[0]["obligations_incurred_total_cpe__sum"] if gtas else None
 
     if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()) == set(VALID_UNREPORTED_FILTERS):
         unreported_obj = {"id": None, "code": None, "type": spending_type, "name": UNREPORTED_DATA_NAME, "amount": None}

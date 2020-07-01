@@ -1,29 +1,32 @@
 from copy import deepcopy
+from datetime import MINYEAR, MAXYEAR
 from django.conf import settings
-
+from typing import Optional
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.filters.location_filter_geocode import location_error_handling
 from usaspending_api.awards.v2.lookups.lookups import (
+    all_subaward_types,
+    assistance_type_mapping,
     award_type_mapping,
     contract_type_mapping,
     idv_type_mapping,
-    assistance_type_mapping,
-    all_subaward_types,
 )
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers import fiscal_year_helpers as fy_helpers
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.utils import get_model_by_name
 from usaspending_api.download.helpers import check_types_and_assign_defaults, parse_limit, validate_time_periods
 from usaspending_api.download.lookups import (
-    VALUE_MAPPINGS,
-    SHARED_AWARD_FILTER_DEFAULTS,
-    YEAR_CONSTRAINT_FILTER_DEFAULTS,
-    ROW_CONSTRAINT_FILTER_DEFAULTS,
     ACCOUNT_FILTER_DEFAULTS,
     FILE_FORMATS,
+    ROW_CONSTRAINT_FILTER_DEFAULTS,
+    SHARED_AWARD_FILTER_DEFAULTS,
     VALID_ACCOUNT_SUBMISSION_TYPES,
+    VALUE_MAPPINGS,
+    YEAR_CONSTRAINT_FILTER_DEFAULTS,
 )
+from usaspending_api.submissions import helpers as sub_helpers
 
 
 def validate_award_request(request_data: dict):
@@ -176,22 +179,18 @@ def validate_account_request(request_data):
     filters = _validate_filters(request_data)
 
     json_request["file_format"] = str(request_data.get("file_format", "csv")).lower()
+
     _validate_file_format(json_request)
 
-    # Validate required filters
-    for required_filter in ["fy", "quarter"]:
-        if required_filter not in filters:
-            raise InvalidParameterException("Missing one or more required filters: {}".format(required_filter))
-        else:
-            try:
-                filters[required_filter] = int(filters[required_filter])
-            except (TypeError, ValueError):
-                raise InvalidParameterException("{} filter not provided as an integer".format(required_filter))
-        json_request["filters"][required_filter] = filters[required_filter]
+    fy = _validate_fiscal_year(filters)
+    quarter = _validate_fiscal_quarter(filters)
+    period = _validate_fiscal_period(filters)
 
-    # Validate fiscal_quarter
-    if json_request["filters"]["quarter"] not in [1, 2, 3, 4]:
-        raise InvalidParameterException("quarter filter must be a valid fiscal quarter (1, 2, 3, or 4)")
+    fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
+
+    json_request["filters"]["fy"] = fy
+    json_request["filters"]["quarter"] = quarter
+    json_request["filters"]["period"] = period
 
     _validate_submission_type(filters)
 
@@ -308,7 +307,8 @@ def _validate_location_scope(filters: dict, json_request: dict) -> None:
         if filters.get(location_scope_filter):
             if filters[location_scope_filter] not in ["domestic", "foreign"]:
                 raise InvalidParameterException(
-                    f"Invalid value for {location_scope_filter}: {filters[location_scope_filter]}. Only allows 'domestic' and 'foreign'."
+                    f"Invalid value for {location_scope_filter}: {filters[location_scope_filter]}. Only "
+                    f"allows 'domestic' and 'foreign'."
                 )
             json_request["filters"][location_scope_filter] = filters[location_scope_filter]
 
@@ -333,6 +333,90 @@ def _validate_file_format(json_request: dict) -> None:
     if val not in FILE_FORMATS:
         msg = f"'{val}' is not an acceptable value for 'file_format'. Valid options: {tuple(FILE_FORMATS.keys())}"
         raise InvalidParameterException(msg)
+
+
+def _validate_fiscal_year(filters: dict) -> int:
+    if "fy" not in filters:
+        raise InvalidParameterException("Missing required filter 'fy'.")
+
+    try:
+        fy = int(filters["fy"])
+    except (TypeError, ValueError):
+        raise InvalidParameterException("'fy' filter not provided as an integer.")
+
+    if not fy_helpers.is_valid_year(fy):
+        raise InvalidParameterException(f"'fy' must be a valid year from {MINYEAR} to {MAXYEAR}.")
+
+    return fy
+
+
+def _validate_fiscal_quarter(filters: dict) -> Optional[int]:
+
+    if "quarter" not in filters:
+        return None
+
+    try:
+        quarter = int(filters["quarter"])
+    except (TypeError, ValueError):
+        raise InvalidParameterException(f"'quarter' filter not provided as an integer.")
+
+    if not fy_helpers.is_valid_quarter(quarter):
+        raise InvalidParameterException("'quarter' filter must be a valid fiscal quarter from 1 to 4.")
+
+    return quarter
+
+
+def _validate_fiscal_period(filters: dict) -> Optional[int]:
+
+    if "period" not in filters:
+        return None
+
+    try:
+        period = int(filters["period"])
+    except (TypeError, ValueError):
+        raise InvalidParameterException(f"'period' filter not provided as an integer.")
+
+    if not fy_helpers.is_valid_period(period):
+        raise InvalidParameterException(
+            "'period' filter must be a valid fiscal period from 2 to 12.  Agencies may not submit for period 1."
+        )
+
+    return period
+
+
+def _validate_and_bolster_requested_submission_window(
+    fy: int, quarter: Optional[int], period: Optional[int]
+) -> (int, Optional[int], Optional[int]):
+    """
+    The assumption here is that each of the provided values has been validated independently already.
+    Now it's time to validate them as a pair.  We also need to bolster period or quarter since they
+    are mutually exclusive in the filter.
+    """
+    if quarter is None and period is None:
+        raise InvalidParameterException("Either 'period' or 'quarter' is required in filters.")
+
+    if quarter is not None and period is not None:
+        raise InvalidParameterException("Supply either 'period' or 'quarter' in filters but not both.")
+
+    if period is not None:
+        # If period is provided, then we are going to grab the most recently closed quarter in the
+        # same fiscal year equal to or less than the period requested.  If there are no closed
+        # quarters in the fiscal year matching this criteria then no quarterly submissions will be
+        # returned.  So, by way of example, if the user requests P7 and Q2 is closed then we will
+        # return P7 monthly and Q2 quarterly submissions.  If Q2 is not closed yet, we will return
+        # P7 monthly and Q1 quarterly submissions.  If P2 is requested then we will only return P2
+        # monthly submissions since there can be no closed quarter prior to P2 in the same year.
+        # Finally, if P3 is requested and Q1 is closed then we will return P3 monthly and Q1 quarterly
+        # submissions.  Man I hope that all made sense.
+        quarter = sub_helpers.get_last_closed_quarter_relative_to_period(fy, period)
+
+    else:
+        # This is the same idea as above, the big difference being that we do not have monthly
+        # submissions for earlier years so really this will either return the final period of
+        # the quarter or None.
+        period = sub_helpers.get_last_closed_period_relative_to_quarter(fy, quarter)
+
+    return fy, quarter, period
 
 
 def _validate_submission_type(filters: dict) -> None:
