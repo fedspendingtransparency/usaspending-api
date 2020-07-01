@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, DecimalField
+from django.db.models import Q, Sum, Count, F, Value, When, Case
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -20,18 +20,14 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
     @cache_response()
     def post(self, request):
         if self.pagination.sort_key == "face_value_of_loan":
-            self.pagination.sort_key = "outlay"  # hack to re-use the Dataclasses
+            self.pagination.sort_key = "total_budgetary_resources"  # hack to re-use the Dataclasses
 
         results = construct_response(list(self.queryset), self.pagination)
 
         for result in results["results"]:
             for child in result["children"]:
-                child.pop("obligation")
-                child.pop("total_budgetary_resources")
-                child["face_value_of_loan"] = child.pop("outlay")
-            result.pop("obligation")
-            result.pop("total_budgetary_resources")
-            result["face_value_of_loan"] = result.pop("outlay")
+                child["face_value_of_loan"] = child.pop("total_budgetary_resources")
+            result["face_value_of_loan"] = result.pop("total_budgetary_resources")
 
         return Response(results)
 
@@ -51,6 +47,34 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             )
         )
 
+        case_when_queries = []
+        if self.last_closed_monthly_submission_dates:
+            case_when_queries.append(
+                Q(
+                    submission__reporting_fiscal_year=self.last_closed_monthly_submission_dates[
+                        "submission_fiscal_year"
+                    ],
+                    submission__reporting_fiscal_period=self.last_closed_monthly_submission_dates[
+                        "submission_fiscal_month"
+                    ],
+                    submission__quarter_format_flag=False,
+                )
+            )
+
+        case_when_queries.append(
+            Q(
+                submission__reporting_fiscal_year=self.last_closed_quarterly_submission_dates["submission_fiscal_year"],
+                submission__reporting_fiscal_quarter=self.last_closed_quarterly_submission_dates[
+                    "submission_fiscal_quarter"
+                ],
+                submission__quarter_format_flag=True,
+            )
+        )
+
+        case_when_query = case_when_queries.pop()
+        for query in case_when_queries:
+            case_when_query |= query
+
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
             "count": Count("award_id", distinct=True),
@@ -59,9 +83,11 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             "id": F("treasury_account__treasury_account_identifier"),
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
-            "obligation": Value(0, DecimalField(max_digits=23, decimal_places=2)),  # Throw-away field
-            "outlay": Coalesce(Sum("award__total_loan_value"), 0),  # Values are renamed at the end of the view
-            "total_budgetary_resources": Value(None, DecimalField(max_digits=23, decimal_places=2)),  # Throw-away field
+            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
+            "outlay": Coalesce(
+                Sum(Case(When(case_when_query, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0),)), 0,
+            ),
+            "total_budgetary_resources": Coalesce(Sum("award__total_loan_value"), 0),  # "face_value_of_loan"
         }
 
         # Assuming it is more performant to fetch all rows once rather than

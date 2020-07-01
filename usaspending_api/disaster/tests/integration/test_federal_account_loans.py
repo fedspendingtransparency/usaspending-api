@@ -52,9 +52,9 @@ def account_data():
     )
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_period_start="2020-05-15",
-        reporting_period_end="2020-05-29",
-        reporting_fiscal_year=2020,
+        reporting_period_start="2022-05-15",
+        reporting_period_end="2022-05-29",
+        reporting_fiscal_year=2022,
         reporting_fiscal_quarter=3,
         reporting_fiscal_period=7,
         quarter_format_flag=False,
@@ -63,7 +63,7 @@ def account_data():
         "awards.FinancialAccountsByAwards",
         submission=sub1,
         transaction_obligated_amount=100,
-        gross_outlay_amount_by_award_cpe=111,
+        gross_outlay_amount_by_award_cpe=205,
         disaster_emergency_fund__code="M",
         treasury_account=tre_acct1,
     )
@@ -71,6 +71,8 @@ def account_data():
         "awards.FinancialAccountsByAwards",
         submission=sub1,
         award=award1,
+        transaction_obligated_amount=101,
+        gross_outlay_amount_by_award_cpe=206,
         disaster_emergency_fund__code="L",
         treasury_account=tre_acct2,
     )
@@ -79,6 +81,8 @@ def account_data():
         submission=sub1,
         award=award2,
         disaster_emergency_fund__code="9",
+        transaction_obligated_amount=102,
+        gross_outlay_amount_by_award_cpe=207,
         treasury_account=tre_acct2,
     )
     mommy.make(
@@ -86,12 +90,16 @@ def account_data():
         submission=sub1,
         award=award3,
         disaster_emergency_fund__code="O",
+        transaction_obligated_amount=103,
+        gross_outlay_amount_by_award_cpe=208,
         treasury_account=tre_acct2,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
         submission=sub1,
         award=award4,
+        transaction_obligated_amount=104,
+        gross_outlay_amount_by_award_cpe=209,
         disaster_emergency_fund__code="N",
         treasury_account=tre_acct3,
     )
@@ -109,13 +117,31 @@ def test_federal_account_loans_success(client, account_data, monkeypatch, helper
     expected_results = [
         {
             "children": [
-                {"code": "2020/52", "count": 1, "description": "ferns", "face_value_of_loan": 4444.0, "id": 24},
-                {"code": "2020/98", "count": 2, "description": "evergreens", "face_value_of_loan": 4444.0, "id": 23},
+                {
+                    "code": "2020/52",
+                    "count": 1,
+                    "description": "ferns",
+                    "face_value_of_loan": 4444.0,
+                    "id": 24,
+                    "outlay": 209,
+                    "obligation": 104,
+                },
+                {
+                    "code": "2020/98",
+                    "count": 2,
+                    "description": "evergreens",
+                    "face_value_of_loan": 4444.0,
+                    "id": 23,
+                    "outlay": 414,
+                    "obligation": 204,
+                },
             ],
             "code": "000-0000",
             "count": 3,
             "description": "gifts",
             "face_value_of_loan": 8888.0,
+            "outlay": 623,
+            "obligation": 308,
             "id": 21,
         }
     ]
