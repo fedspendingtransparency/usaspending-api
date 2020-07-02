@@ -44,7 +44,6 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                         "count": 54,
                         "obligation": 89.01,
                         "outlay": 70.98,
-                        "total_budgetary_resources": null,
                         "resource_link": "https://beta.sam.gov/fal/25b529f3b5f94b6c939bc0ae8424ae6c/view"
                     },
                     {
@@ -55,7 +54,6 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                         "count": 2,
                         "obligation": 50,
                         "outlay": 10,
-                        "total_budgetary_resources": null,
                         "resource_link": null
                     }
                 ],
@@ -92,8 +90,16 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `count`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
 + `id` (required, string)
@@ -103,7 +109,6 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 + `count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
-+ `total_budgetary_resources` (required, number, nullable)
 + `resource_link` (required, string, nullable)
     Link to an external website with more information about this result.
 
