@@ -62,7 +62,34 @@ def award_data_fixture(db):
         main_account_code="4930",
         federal_account_id=1,
     )
-    mommy.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        submission_id=1,
+        reporting_fiscal_year=2020,
+        reporting_fiscal_period=12,
+        reporting_period_start="2020-04-21",
+        reporting_period_end="2020-04-30",
+        quarter_format_flag=True,
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2020,
+        submission_fiscal_month=12,
+        is_quarter=True,
+        period_start_date="2020-04-21",
+        submission_reveal_date="2020-04-30",
+    )
+    code = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        financial_accounts_by_awards_id=1,
+        award_id=1,
+        treasury_account_id=1,
+        submission_id=1,
+        disaster_emergency_fund=code,
+        gross_outlay_amount_by_award_cpe=100,
+        transaction_obligated_amount=100,
+    )
     mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
@@ -317,3 +344,20 @@ def test_award_keyword(award_data_fixture, elasticsearch_award_index):
     }
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
     assert response["hits"]["total"]["value"] == 0
+
+
+def test_covid_data(award_data_fixture, elasticsearch_award_index):
+    elasticsearch_award_index.update_index()
+    query = {
+        "query": {
+            "bool": {
+                "filter": {
+                    "bool": {"should": {"match": {"disaster_emergency_fund_codes": "L"}}, "minimum_should_match": 1}
+                }
+            }
+        }
+    }
+    client = elasticsearch_award_index.client
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
+    assert response["hits"]["hits"][0]["_source"]["disaster_emergency_fund_codes"] == ["L"]
