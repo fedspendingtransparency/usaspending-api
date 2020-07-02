@@ -1,22 +1,24 @@
 import datetime
 
+from django.db.models import Max
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
-
 class SubmissionPeriodsViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/periods.md"
 
+    # this will return the max_submission_date given the fiscal year. used for the account download monthly picker
     def get(self, request):
-        first_supported_period_date = datetime.datetime(2020, 4, 1)
 
-        response_obj = {"available_periods": []}
+        # set max date to low number
+        max_submission_date = datetime.datetime(1776, 7, 4)
 
-        for record in DABSSubmissionWindowSchedule.objects.all().values():
-            if first_supported_period_date <= record["submission_reveal_date"].replace(tzinfo=None) < datetime.datetime.now():
-                response_obj["available_periods"].append({"fy": record["submission_fiscal_year"], "period": record["submission_fiscal_month"], "date": record["submission_reveal_date"]})
+        # iterate through values for given fiscal year to find max submission date
+        for record in DABSSubmissionWindowSchedule.objects.filter(submission_fiscal_year=2020).values():
+            if max_submission_date.replace(tzinfo=None) < record['submission_reveal_date'].replace(tzinfo=None) < datetime.datetime.now().replace(tzinfo=None):
+                max_submission_date = record['submission_reveal_date']
 
-        return Response(response_obj)
+        return Response({"max_submission_date": max_submission_date})
