@@ -1,5 +1,12 @@
 from usaspending_api.disaster.tests.fixtures.disaster_account_data import disaster_account_data
-from usaspending_api.disaster.tests.fixtures.award_count_data import basic_award
+from usaspending_api.disaster.tests.fixtures.award_count_data import (
+    basic_award,
+    award_count_sub_schedule,
+    award_count_submission,
+    obligations_incurred_award,
+    non_matching_defc_award,
+    not_last_submission_award,
+)
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
 from usaspending_api.disaster.tests.fixtures.overview_data import (
     basic_ref_data,
@@ -43,4 +50,9 @@ __all__ = [
     "multi_year_faba",
     "multi_period_faba",
     "basic_award",
+    "award_count_sub_schedule",
+    "award_count_submission",
+    "obligations_incurred_award",
+    "non_matching_defc_award",
+    "not_last_submission_award",
 ]

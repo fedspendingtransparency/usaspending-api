@@ -3,14 +3,85 @@ import pytest
 from model_mommy import mommy
 
 from usaspending_api.references.models import DisasterEmergencyFundCode
-from usaspending_api.disaster.v2.views.disaster_base import COVID_19_GROUP_NAME
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 @pytest.fixture
-def basic_award(defc_codes):
+def basic_award(award_count_sub_schedule, award_count_submission, defc_codes):
+    award = mommy.make("awards.Award")
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award=award,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        gross_outlays_delivered_orders_paid_total_cpe=8,
+    )
+
+
+@pytest.fixture
+def obligations_incurred_award(award_count_sub_schedule, award_count_submission, defc_codes):
+    award = mommy.make("awards.Award")
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award=award,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        obligations_incurred_total_by_award_cpe=8,
+    )
+
+
+@pytest.fixture
+def non_matching_defc_award(award_count_sub_schedule, award_count_submission, defc_codes):
+    award = mommy.make("awards.Award")
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award=award,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="A").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        obligations_incurred_total_by_award_cpe=8,
+    )
+
+
+@pytest.fixture
+def not_last_submission_award(award_count_sub_schedule, award_count_submission, defc_codes):
+    award = mommy.make("awards.Award")
+
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
-        id="2022081",
+        is_quarter=False,
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=10,
+        submission_reveal_date="2022-5-15",
+    )
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award=award,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="A").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        obligations_incurred_total_by_award_cpe=8,
+    )
+
+
+@pytest.fixture
+def award_count_submission():
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2022,
+        reporting_fiscal_period=7,
+        quarter_format_flag=False,
+        reporting_period_start="2022-04-01",
+    )
+
+
+@pytest.fixture
+def award_count_sub_schedule():
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
         is_quarter=False,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
@@ -19,28 +90,9 @@ def basic_award(defc_codes):
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
-        id="2022080",
         is_quarter=True,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
         submission_fiscal_month=8,
         submission_reveal_date="2022-5-15",
-    )
-
-    award = mommy.make("awards.Award")
-
-    sub1 = mommy.make(
-        "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2022,
-        reporting_fiscal_period=7,
-        quarter_format_flag=False,
-        reporting_period_start="2022-04-01",
-    )
-
-    mommy.make(
-        "awards.FinancialAccountsByAwards",
-        award=award,
-        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
-        submission=sub1,
-        gross_outlay_amount_by_award_cpe=8,
     )

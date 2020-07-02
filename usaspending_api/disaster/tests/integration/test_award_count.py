@@ -13,6 +13,27 @@ def test_award_count_basic(client, monkeypatch, basic_award, helpers):
 
 
 @pytest.mark.django_db
+def test_award_count_obligations_incurred(client, monkeypatch, basic_award, obligations_incurred_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_count_endpoint(client, url, ["M"])
+    assert resp.data["count"] == 2
+
+
+@pytest.mark.django_db
+def test_award_count_non_matching_defc(client, monkeypatch, non_matching_defc_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_count_endpoint(client, url, ["M"])
+    assert resp.data["count"] == 0
+
+
+@pytest.mark.django_db
+def test_award_count_not_last_submission(client, monkeypatch, not_last_submission_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_count_endpoint(client, url, ["M"])
+    assert resp.data["count"] == 0
+
+
+@pytest.mark.django_db
 def test_award_count_invalid_defc(client, monkeypatch, basic_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_count_endpoint(client, url, ["ZZ"])

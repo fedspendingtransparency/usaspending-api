@@ -26,8 +26,9 @@ class AwardCountViewSet(CountBase):
         ]
         count = (
             Award.objects.annotate(include=Exists(FinancialAccountsByAwards.objects.filter(*filters).values("pk")))
-            # .filter(include=True)
-            .values("pk").count()
+            .filter(include=True)
+            .values("pk")
+            .count()
         )
 
         return Response({"count": count})
