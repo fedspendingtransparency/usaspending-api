@@ -12,13 +12,13 @@ from usaspending_api.awards.v2.lookups.lookups import (
     other_type_mapping,
     procurement_type_mapping,
 )
-from usaspending_api.awards.v2.lookups.matview_lookups import (
-    award_contracts_mapping,
-    award_idv_mapping,
-    loan_award_mapping,
-    non_loan_assistance_award_mapping,
-)
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups, subaward_types_are_valid_groups
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
+    contracts_mapping,
+    idv_mapping,
+    loan_mapping,
+    non_loan_assist_mapping,
+)
 
 
 def alias_response(field_to_alias_dict, results):
@@ -83,10 +83,10 @@ def raise_if_sort_key_not_valid(sort_key, field_list, is_subaward=False):
         field_external_name_list = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
     else:
         field_external_name_list = (
-            list(award_contracts_mapping.keys())
-            + list(loan_award_mapping.keys())
-            + list(non_loan_assistance_award_mapping.keys())
-            + list(award_idv_mapping.keys())
+            list(contracts_mapping.keys())
+            + list(loan_mapping.keys())
+            + list(non_loan_assist_mapping.keys())
+            + list(idv_mapping.keys())
         )
 
     if sort_key not in field_external_name_list:
