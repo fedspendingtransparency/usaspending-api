@@ -25,7 +25,6 @@ class OverviewViewSet(DisasterBase):
 
         request_values = self._parse_and_validate(request.GET)
         defc = request_values["def_codes"].split(",")
-        print(defc)
 
         funding = self.funding(defc)
         return Response(
