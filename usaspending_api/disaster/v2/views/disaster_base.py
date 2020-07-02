@@ -26,38 +26,37 @@ def covid_def_code_strings():
 
 def latest_gtas_of_each_year_queryset():
     q = Q()
-    for final_for_fy in finals_for_fy(False):
-        q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[1])
-    for final_for_fy in finals_for_fy(True):
-        q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[1])
+    for final_for_fy in finals_for_all_fy():
+        q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[2])
     if not q:
         return GTASSF133Balances.objects.none()
     return GTASSF133Balances.objects.filter(q)
 
 
 def latest_faba_of_each_year_queryset():
-    q = Q()
-    for final_for_fy in finals_for_fy(False):
-        q |= Q(submission__reporting_fiscal_year=final_for_fy[0]) & Q(
-            submission__reporting_fiscal_period=final_for_fy[1]
-        )
-    for final_for_fy in finals_for_fy(True):
-        q |= Q(submission__reporting_fiscal_year=final_for_fy[0]) & Q(
-            submission__reporting_fiscal_period=final_for_fy[1]
-        )
+    q = filter_by_latest_submissions()
     if not q:
         return FinancialAccountsByAwards.objects.none()
     return FinancialAccountsByAwards.objects.filter(q)
 
 
-def finals_for_fy(is_quarter):
-    return (
-        DABSSubmissionWindowSchedule.objects.filter(
-            submission_reveal_date__lte=datetime.now(timezone.utc), is_quarter=is_quarter
+def filter_by_latest_submissions():
+    q = Q()
+    for final_for_fy in finals_for_all_fy():
+        q |= (
+            Q(submission__reporting_fiscal_year=final_for_fy[0])
+            & Q(submission__quarter_format_flag=final_for_fy[1])
+            & Q(submission__reporting_fiscal_period=final_for_fy[2])
         )
-        .values("submission_fiscal_year")
+    return q
+
+
+def finals_for_all_fy():
+    return (
+        DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=datetime.now(timezone.utc))
+        .values("submission_fiscal_year", "is_quarter")
         .annotate(max_submission_fiscal_month=Max("submission_fiscal_month"))
-        .values_list("submission_fiscal_year", "max_submission_fiscal_month")
+        .values_list("submission_fiscal_year", "is_quarter", "max_submission_fiscal_month")
     )
 
 
@@ -102,6 +101,22 @@ class DisasterBase(APIView):
     @cached_property
     def last_closed_quarterly_submission_dates(self):
         return get_last_closed_submission_date(is_quarter=True)
+
+    @cached_property
+    def final_submissions_query_filters(self):
+        return filter_by_latest_submissions()
+
+    @cached_property
+    def all_closed_defc_submissions(self):
+        q = Q()
+        for final_for_fy in finals_for_all_fy():
+            if (final_for_fy[0] == 2020 and final_for_fy[2] >= 7) or final_for_fy[0] > 2021:
+                q |= (
+                    Q(submission__reporting_fiscal_year=final_for_fy[0])
+                    & Q(submission__quarter_format_flag=final_for_fy[1])
+                    & Q(submission__reporting_fiscal_period__lte=final_for_fy[2])
+                )
+        return q & Q(submission__reporting_period_start__gte=self.reporting_period_min)
 
 
 class AwardTypeMixin:
@@ -182,5 +197,5 @@ class PaginationMixin(_BasePaginationMixin):
 class LoansPaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "count", "face_value_of_loan"]
+        sortable_columns = ["id", "code", "description", "count", "face_value_of_loan", "obligation", "outlay"]
         return self.run_models(sortable_columns)

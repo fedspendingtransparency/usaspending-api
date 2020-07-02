@@ -16,13 +16,31 @@ def test_federal_account_loans_success(client, account_data, monkeypatch, helper
     expected_results = [
         {
             "children": [
-                {"code": "2020/52", "count": 1, "description": "ferns", "face_value_of_loan": 4444.0, "id": 24},
-                {"code": "2020/98", "count": 2, "description": "evergreens", "face_value_of_loan": 4444.0, "id": 23},
+                {
+                    "code": "2020/52",
+                    "count": 1,
+                    "description": "ferns",
+                    "face_value_of_loan": 4444.0,
+                    "id": 24,
+                    "outlay": 333.0,
+                    "obligation": 3.0,
+                },
+                {
+                    "code": "2020/98",
+                    "count": 2,
+                    "description": "evergreens",
+                    "face_value_of_loan": 4444.0,
+                    "id": 23,
+                    "outlay": 223.0,
+                    "obligation": 201.0,
+                },
             ],
             "code": "000-0000",
             "count": 3,
             "description": "gifts",
             "face_value_of_loan": 8888.0,
+            "outlay": 556.0,
+            "obligation": 204.0,
             "id": 21,
         }
     ]
