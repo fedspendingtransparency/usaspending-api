@@ -33,7 +33,7 @@ def award_with_quarterly_submission(award_count_sub_schedule, award_count_quarte
 
 
 @pytest.fixture
-def award_with_early_submission(award_count_sub_schedule, defc_codes):
+def award_with_early_submission(defc_codes):
     award = _normal_award()
     _award_count_early_submission()
 
@@ -106,15 +106,6 @@ def award_count_submission():
 
 
 def _award_count_early_submission():
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        is_quarter=False,
-        submission_fiscal_year=2020,
-        submission_fiscal_quarter=3,
-        submission_fiscal_month=7,
-        submission_reveal_date="2020-5-15",
-    )
-
     mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2020,
