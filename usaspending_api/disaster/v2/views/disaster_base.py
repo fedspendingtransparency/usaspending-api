@@ -34,6 +34,13 @@ def latest_gtas_of_each_year_queryset():
 
 
 def latest_faba_of_each_year_queryset():
+    q = filter_by_latest_submissions()
+    if not q:
+        return FinancialAccountsByAwards.objects.none()
+    return FinancialAccountsByAwards.objects.filter(q)
+
+
+def filter_by_latest_submissions():
     q = Q()
     for final_for_fy in finals_for_all_fy():
         q |= (
@@ -41,9 +48,7 @@ def latest_faba_of_each_year_queryset():
             & Q(submission__quarter_format_flag=final_for_fy[1])
             & Q(submission__reporting_fiscal_period=final_for_fy[2])
         )
-    if not q:
-        return FinancialAccountsByAwards.objects.none()
-    return FinancialAccountsByAwards.objects.filter(q)
+    return q
 
 
 def finals_for_all_fy():
@@ -108,14 +113,7 @@ class DisasterBase(APIView):
 
     @cached_property
     def final_submissions_query_filters(self):
-        q = Q()
-        for final_for_fy in finals_for_all_fy():
-            q |= (
-                Q(submission__reporting_fiscal_year=final_for_fy[0])
-                & Q(submission__quarter_format_flag=final_for_fy[1])
-                & Q(submission__reporting_fiscal_period=final_for_fy[2])
-            )
-        return q
+        return filter_by_latest_submissions()
 
 
 class SpendingMixin:
