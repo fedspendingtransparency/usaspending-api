@@ -17,11 +17,6 @@ This endpoint provides insights on the recipient business categories which recei
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
-        + `geo_layer` (required, enum[string], fixed-type)
-            + Members
-                + `state`
-                + `county`
-                + `district`
         + `pagination` (optional, Pagination, fixed-type)
 
 + Response 200 (application/json)
