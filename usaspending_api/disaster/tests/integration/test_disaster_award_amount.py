@@ -6,7 +6,7 @@ url = "/api/v2/disaster/award/amount/"
 
 
 @pytest.mark.django_db
-def test_agency_count_success(client, monkeypatch, account_data, helpers):
+def test_award_amount_success(client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_amount_endpoint(client, url, ["L"], ["A", "09", "10"])
@@ -29,7 +29,24 @@ def test_agency_count_success(client, monkeypatch, account_data, helpers):
 
 
 @pytest.mark.django_db
-def test_agency_count_invalid_defc(client, monkeypatch, account_data, helpers):
+def test_award_amount_all_success(client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+
+    resp = helpers.post_for_amount_endpoint(client, url, ["N"], None)
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["count"] == 1
+    assert resp.data["outlay"] == 10889220.0
+    assert resp.data["obligation"] == 1088890.0
+
+    resp = helpers.post_for_amount_endpoint(client, url, ["L", "M", "N", "O", "P"], None)
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["count"] == 1
+    assert resp.data["outlay"] == 10889554.00
+    assert resp.data["obligation"] == 1089191.00
+
+
+@pytest.mark.django_db
+def test_award_amount_invalid_defc(client, monkeypatch, generic_account_data, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_amount_endpoint(client, url, ["ZZ"], ["A", "09", "10"])
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

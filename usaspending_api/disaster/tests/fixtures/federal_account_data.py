@@ -4,7 +4,7 @@ from model_mommy import mommy
 
 
 @pytest.fixture
-def account_data():
+def generic_account_data():
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         is_quarter=False,
@@ -149,4 +149,42 @@ def account_data():
         gross_outlay_amount_by_award_cpe=333,
         disaster_emergency_fund__code="N",
         treasury_account=tre_acct3,
+    )
+
+
+@pytest.fixture
+def unlinked_faba_account_data():
+    fed_acct = mommy.make("accounts.FederalAccount", account_title="soap", federal_account_code="999-0000", id=99)
+    tre_acct = mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        federal_account=fed_acct,
+        tas_rendering_label="2020/99",
+        account_title="dove",
+        treasury_account_identifier=99,
+        gtas__budget_authority_appropriation_amount_cpe=9939248,
+    )
+    sub = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_period_start="2022-05-15",
+        reporting_period_end="2022-05-29",
+        reporting_fiscal_year=2022,
+        reporting_fiscal_quarter=3,
+        reporting_fiscal_period=7,
+        quarter_format_flag=False,
+    )
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        submission=sub,
+        transaction_obligated_amount=999999,
+        gross_outlay_amount_by_award_cpe=9999999,
+        disaster_emergency_fund__code="N",
+        treasury_account=tre_acct,
+    )
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        submission=sub,
+        transaction_obligated_amount=88888,
+        gross_outlay_amount_by_award_cpe=888888,
+        disaster_emergency_fund__code="N",
+        treasury_account=tre_acct,
     )

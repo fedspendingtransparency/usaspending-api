@@ -6,7 +6,7 @@ url = "/api/v2/disaster/federal_account/spending/"
 
 
 @pytest.mark.django_db
-def test_federal_account_award_success(client, account_data, monkeypatch, helpers):
+def test_federal_account_award_success(client, generic_account_data, monkeypatch, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="award")
@@ -81,7 +81,7 @@ def test_federal_account_award_success(client, account_data, monkeypatch, helper
 
 
 @pytest.mark.django_db
-def test_federal_account_award_empty(client, monkeypatch, helpers, account_data):
+def test_federal_account_award_empty(client, monkeypatch, helpers, generic_account_data):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"], spending_type="award")
     assert resp.status_code == status.HTTP_200_OK

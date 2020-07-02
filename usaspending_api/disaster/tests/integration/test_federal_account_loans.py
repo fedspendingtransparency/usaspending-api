@@ -5,7 +5,7 @@ url = "/api/v2/disaster/federal_account/loans/"
 
 
 @pytest.mark.django_db
-def test_federal_account_loans_success(client, account_data, monkeypatch, helpers):
+def test_federal_account_loans_success(client, generic_account_data, monkeypatch, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
     expected_results = []
@@ -49,7 +49,7 @@ def test_federal_account_loans_success(client, account_data, monkeypatch, helper
 
 
 @pytest.mark.django_db
-def test_federal_account_loans_empty(client, monkeypatch, helpers, account_data):
+def test_federal_account_loans_empty(client, monkeypatch, helpers, generic_account_data):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"])
     assert resp.status_code == status.HTTP_200_OK
@@ -57,21 +57,21 @@ def test_federal_account_loans_empty(client, monkeypatch, helpers, account_data)
 
 
 @pytest.mark.django_db
-def test_federal_account_loans_invalid_defc(client, account_data, helpers):
+def test_federal_account_loans_invalid_defc(client, generic_account_data, helpers):
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["ZZ"])
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.data["detail"] == "Field 'filter|def_codes' is outside valid values ['9', 'A', 'L', 'M', 'N', 'O', 'P']"
 
 
 @pytest.mark.django_db
-def test_federal_account_loans_invalid_defc_type(client, account_data, helpers):
+def test_federal_account_loans_invalid_defc_type(client, generic_account_data, helpers):
     resp = helpers.post_for_spending_endpoint(client, url, def_codes="100")
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.data["detail"] == "Invalid value in 'filter|def_codes'. '100' is not a valid type (array)"
 
 
 @pytest.mark.django_db
-def test_federal_account_loans_missing_defc(client, account_data, helpers):
+def test_federal_account_loans_missing_defc(client, generic_account_data, helpers):
     resp = helpers.post_for_spending_endpoint(client, url)
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert resp.data["detail"] == "Missing value: 'filter|def_codes' is a required field"
