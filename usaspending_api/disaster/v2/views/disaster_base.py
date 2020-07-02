@@ -27,7 +27,8 @@ def covid_def_code_strings():
 def latest_gtas_of_each_year_queryset():
     q = Q()
     for final_for_fy in finals_for_all_fy():
-        q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[2])
+        if not final_for_fy[1]:
+            q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[2])
     if not q:
         return GTASSF133Balances.objects.none()
     return GTASSF133Balances.objects.filter(q)
