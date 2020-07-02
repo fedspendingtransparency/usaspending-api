@@ -47,34 +47,6 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             )
         )
 
-        case_when_queries = []
-        if self.last_closed_monthly_submission_dates:
-            case_when_queries.append(
-                Q(
-                    submission__reporting_fiscal_year=self.last_closed_monthly_submission_dates[
-                        "submission_fiscal_year"
-                    ],
-                    submission__reporting_fiscal_period=self.last_closed_monthly_submission_dates[
-                        "submission_fiscal_month"
-                    ],
-                    submission__quarter_format_flag=False,
-                )
-            )
-
-        case_when_queries.append(
-            Q(
-                submission__reporting_fiscal_year=self.last_closed_quarterly_submission_dates["submission_fiscal_year"],
-                submission__reporting_fiscal_quarter=self.last_closed_quarterly_submission_dates[
-                    "submission_fiscal_quarter"
-                ],
-                submission__quarter_format_flag=True,
-            )
-        )
-
-        case_when_query = case_when_queries.pop()
-        for query in case_when_queries:
-            case_when_query |= query
-
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
             "count": Count("award_id", distinct=True),
@@ -85,7 +57,7 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
-                Sum(Case(When(case_when_query, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0),)), 0,
+                Sum(Case(When(self.final_submissions_query_filters, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0),)), 0,
             ),
             "total_budgetary_resources": Coalesce(Sum("award__total_loan_value"), 0),  # "face_value_of_loan"
         }
