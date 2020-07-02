@@ -68,7 +68,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
                 Sum(
                     Case(
                         When(
-                            self.final_submissions_query_filters,
+                            self.final_period_submission_query_filters,
                             then=F("obligations_incurred_by_program_object_class_cpe"),
                         ),
                         default=Value(0),
@@ -80,7 +80,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
                 Sum(
                     Case(
                         When(
-                            self.final_submissions_query_filters,
+                            self.final_period_submission_query_filters,
                             then=F("gross_outlay_amount_by_program_object_class_cpe"),
                         ),
                         default=Value(0),
@@ -127,7 +127,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             "outlay": Coalesce(
                 Sum(
                     Case(
-                        When(self.final_submissions_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
+                        When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
                         default=Value(0),
                     )
                 ),

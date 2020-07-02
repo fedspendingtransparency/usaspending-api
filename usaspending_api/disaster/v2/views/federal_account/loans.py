@@ -19,11 +19,13 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
 
     @cache_response()
     def post(self, request):
+        # rename hack to use the Dataclasses, setting to Dataclass attribute name
         if self.pagination.sort_key == "face_value_of_loan":
-            self.pagination.sort_key = "total_budgetary_resources"  # hack to re-use the Dataclasses
+            self.pagination.sort_key = "total_budgetary_resources"
 
         results = construct_response(list(self.queryset), self.pagination)
 
+        # rename hack to use the Dataclasses, swapping back in desired loan field name
         for result in results["results"]:
             for child in result["children"]:
                 child["face_value_of_loan"] = child.pop("total_budgetary_resources")
@@ -53,13 +55,14 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             "outlay": Coalesce(
                 Sum(
                     Case(
-                        When(self.final_submissions_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
+                        When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
                         default=Value(0),
                     )
                 ),
                 0,
             ),
-            "total_budgetary_resources": Coalesce(Sum("award__total_loan_value"), 0),  # "face_value_of_loan"
+            # hack to use the Dataclasses, will be renamed later
+            "total_budgetary_resources": Coalesce(Sum("award__total_loan_value"), 0),
         }
 
         # Assuming it is more performant to fetch all rows once rather than
