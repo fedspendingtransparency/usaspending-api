@@ -20,6 +20,33 @@ def basic_award(award_count_sub_schedule, award_count_submission, defc_codes):
 
 
 @pytest.fixture
+def award_with_quarterly_submission(award_count_sub_schedule, award_count_quarterly_submission, defc_codes):
+    award = _normal_award()
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award=award,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        gross_outlays_delivered_orders_paid_total_cpe=8,
+    )
+
+
+@pytest.fixture
+def award_with_early_submission(award_count_sub_schedule, defc_codes):
+    award = _normal_award()
+    _award_count_early_submission()
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award=award,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        gross_outlays_delivered_orders_paid_total_cpe=8,
+    )
+
+
+@pytest.fixture
 def obligations_incurred_award(award_count_sub_schedule, award_count_submission, defc_codes):
     award = _normal_award()
 
@@ -74,6 +101,37 @@ def award_count_submission():
         reporting_fiscal_year=2022,
         reporting_fiscal_period=7,
         quarter_format_flag=False,
+        reporting_period_start="2022-04-01",
+    )
+
+
+def _award_count_early_submission():
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        is_quarter=False,
+        submission_fiscal_year=2020,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="2020-5-15",
+    )
+
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2020,
+        reporting_fiscal_period=7,
+        quarter_format_flag=False,
+        reporting_period_start="2020-04-01",
+    )
+
+
+@pytest.fixture
+def award_count_quarterly_submission():
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2022,
+        reporting_fiscal_quarter=3,
+        reporting_fiscal_period=8,
+        quarter_format_flag=True,
         reporting_period_start="2022-04-01",
     )
 

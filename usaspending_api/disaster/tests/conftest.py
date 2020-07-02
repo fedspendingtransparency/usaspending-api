@@ -6,6 +6,9 @@ from usaspending_api.disaster.tests.fixtures.award_count_data import (
     obligations_incurred_award,
     non_matching_defc_award,
     not_last_submission_award,
+    award_count_quarterly_submission,
+    award_with_quarterly_submission,
+    award_with_early_submission,
 )
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
 from usaspending_api.disaster.tests.fixtures.overview_data import (
@@ -55,4 +58,7 @@ __all__ = [
     "obligations_incurred_award",
     "non_matching_defc_award",
     "not_last_submission_award",
+    "award_count_quarterly_submission",
+    "award_with_quarterly_submission",
+    "award_with_early_submission",
 ]
