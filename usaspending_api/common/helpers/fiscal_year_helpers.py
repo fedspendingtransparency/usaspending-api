@@ -63,6 +63,13 @@ def generate_fiscal_quarter(date):
     return FiscalDate(date.year, date.month, date.day).quarter
 
 
+def generate_fiscal_year_and_month(date):
+    validate_date(date)
+    year = generate_fiscal_year(date)
+    month = generate_fiscal_month(date)
+    return year, month
+
+
 def generate_fiscal_year_and_quarter(date):
     validate_date(date)
     quarter = FiscalDate(date.year, date.month, date.day).quarter
