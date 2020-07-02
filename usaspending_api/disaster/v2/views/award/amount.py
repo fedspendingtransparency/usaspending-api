@@ -20,12 +20,10 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
     def queryset(self):
         filters = [
             Q(disaster_emergency_fund__in=self.def_codes),
-            Q(treasury_account__federal_account__isnull=False),
-            Q(treasury_account__isnull=False),
             self.all_closed_defc_submissions,
         ]
 
-        count_field = Concat("piid", "fain", "uri")
+        count_field = Concat("piid", "parent_award_id", "fain", "uri")
         if self.award_type_codes:
             filters.extend([Q(award__type__in=self.award_type_codes), Q(award__isnull=False)])
             count_field = "award_id"

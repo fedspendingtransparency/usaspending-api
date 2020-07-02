@@ -34,13 +34,13 @@ def test_award_amount_all_success(client, monkeypatch, generic_account_data, unl
 
     resp = helpers.post_for_amount_endpoint(client, url, ["N"], None)
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["count"] == 1
+    assert resp.data["count"] == 3
     assert resp.data["outlay"] == 10889220.0
     assert resp.data["obligation"] == 1088890.0
 
     resp = helpers.post_for_amount_endpoint(client, url, ["L", "M", "N", "O", "P"], None)
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["count"] == 1
+    assert resp.data["count"] == 5
     assert resp.data["outlay"] == 10889554.00
     assert resp.data["obligation"] == 1089191.00
 
