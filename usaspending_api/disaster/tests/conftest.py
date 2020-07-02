@@ -1,4 +1,5 @@
 from usaspending_api.disaster.tests.fixtures.disaster_account_data import disaster_account_data
+from usaspending_api.disaster.tests.fixtures.award_count_data import basic_award
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
 from usaspending_api.disaster.tests.fixtures.overview_data import (
     basic_ref_data,
@@ -41,4 +42,5 @@ __all__ = [
     "faba_with_non_covid_values",
     "multi_year_faba",
     "multi_period_faba",
+    "basic_award",
 ]
