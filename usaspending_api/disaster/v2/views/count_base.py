@@ -55,3 +55,6 @@ class CountBase(DisasterBase):
         for query in sub_queries:
             sub_queryset |= query
         return sub_queryset
+
+    def is_provided_award_type(self):
+        return Q(type__in=self.award_type_codes)

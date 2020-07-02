@@ -8,7 +8,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 @pytest.fixture
 def basic_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = mommy.make("awards.Award")
+    award = _normal_award()
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -21,7 +21,7 @@ def basic_award(award_count_sub_schedule, award_count_submission, defc_codes):
 
 @pytest.fixture
 def obligations_incurred_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = mommy.make("awards.Award")
+    award = _normal_award()
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -34,7 +34,7 @@ def obligations_incurred_award(award_count_sub_schedule, award_count_submission,
 
 @pytest.fixture
 def non_matching_defc_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = mommy.make("awards.Award")
+    award = _normal_award()
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -47,7 +47,7 @@ def non_matching_defc_award(award_count_sub_schedule, award_count_submission, de
 
 @pytest.fixture
 def not_last_submission_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = mommy.make("awards.Award")
+    award = _normal_award()
 
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -96,3 +96,7 @@ def award_count_sub_schedule():
         submission_fiscal_month=8,
         submission_reveal_date="2022-5-15",
     )
+
+
+def _normal_award():
+    return mommy.make("awards.Award", type="A")

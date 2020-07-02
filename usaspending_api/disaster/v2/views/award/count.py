@@ -15,6 +15,8 @@ class AwardCountViewSet(CountBase):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/award/count.md"
 
+    required_filters = ["def_codes", "award_type_codes"]
+
     @cache_response()
     def post(self, request: Request) -> Response:
         filters = [
@@ -27,6 +29,7 @@ class AwardCountViewSet(CountBase):
         count = (
             Award.objects.annotate(include=Exists(FinancialAccountsByAwards.objects.filter(*filters).values("pk")))
             .filter(include=True)
+            .filter(self.is_provided_award_type())
             .values("pk")
             .count()
         )

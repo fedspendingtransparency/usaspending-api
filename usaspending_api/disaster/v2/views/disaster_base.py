@@ -104,6 +104,10 @@ class DisasterBase(APIView):
     def def_codes(self):
         return self.filters["def_codes"]
 
+    @property
+    def award_type_codes(self):
+        return self.filters["award_type_codes"]
+
     @cached_property
     def last_closed_monthly_submission_dates(self):
         return get_last_closed_submission_date(is_quarter=False)
