@@ -2,12 +2,12 @@ from decimal import Decimal
 from enum import Enum
 from rest_framework.request import Request
 from rest_framework.response import Response
-from typing import Optional, List, Dict
+from typing import List
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator import TinyShield
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
-from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
+from usaspending_api.references.abbreviations import code_to_state, pad_codes
 from usaspending_api.references.models import PopCounty, PopCongressionalDistrict
 
 
@@ -15,28 +15,6 @@ class GeoLayer(Enum):
     COUNTY = "county"
     DISTRICT = "district"
     STATE = "state"
-
-
-# class LoanQuery:
-#     @property
-#     def queryset(self):
-#         pass
-
-
-# class StateResults:
-
-#     def queryset(self):
-#         pass
-
-#     def finalize_response(self):
-#         pass
-
-
-# class GeographyView:
-#     def __init__(self, type: GeoLayer):
-#         if self.type == GeoLayer.STATE:
-#             pass
-
 
 
 class SpendingByGeographyViewSet(DisasterBase):

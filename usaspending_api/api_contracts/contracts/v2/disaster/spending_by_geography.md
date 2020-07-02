@@ -26,11 +26,10 @@ This endpoint provides geographical spending information from emergency/disaster
             Allows us to only request data for what is currently in view in the map
         + `spending_type` (required, enum[string])
             + Default
-                + `obligation`
+                + `obligations`
             + Members
-                + `obligation`
-                + `outlay`
-                + `loan`
+                + `obligations`
+                + `outlays`
 
     + Body
 
