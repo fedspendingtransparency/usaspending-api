@@ -1,13 +1,13 @@
-from django.db.models import Q, Sum, Count, F, Value, Case, When
+from django.db.models import Q, Sum, Count
 from django.db.models.functions import Coalesce, Concat
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, AwardTypeMixin
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, AwardTypeMixin, FabaOutlayMixin
 
 
-class AmountViewSet(AwardTypeMixin, DisasterBase):
+class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
     """View to implement the API"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/award/amount.md"
@@ -33,15 +33,7 @@ class AmountViewSet(AwardTypeMixin, DisasterBase):
         fields = {
             "count": Count(count_field, distinct=True),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
-            "outlay": Coalesce(
-                Sum(
-                    Case(
-                        When(self.final_submissions_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
-                        default=Value(0),
-                    )
-                ),
-                0,
-            ),
+            "outlay": self.outlay_field_annotation,
         }
 
         return FinancialAccountsByAwards.objects.filter(*filters).aggregate(**fields)

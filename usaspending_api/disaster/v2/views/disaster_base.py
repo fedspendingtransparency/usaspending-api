@@ -1,5 +1,6 @@
 from datetime import datetime, timezone, date
-from django.db.models import Max, Q, F
+from django.db.models import Max, Q, F, Value, Case, When, Sum
+from django.db.models.functions import Coalesce
 from django.utils.functional import cached_property
 from rest_framework.views import APIView
 from typing import List
@@ -142,6 +143,20 @@ class AwardTypeMixin:
     def award_type_codes(self):
 
         return self.filters.get("award_type_codes")
+
+
+class FabaOutlayMixin:
+    @property
+    def outlay_field_annotation(self):
+        return Coalesce(
+            Sum(
+                Case(
+                    When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
+                    default=Value(0),
+                )
+            ),
+            0,
+        )
 
 
 class SpendingMixin:
