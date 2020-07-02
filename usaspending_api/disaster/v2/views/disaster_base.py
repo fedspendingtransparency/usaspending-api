@@ -115,6 +115,18 @@ class DisasterBase(APIView):
     def final_submissions_query_filters(self):
         return filter_by_latest_submissions()
 
+    @cached_property
+    def all_covid_closed_submissions(self):
+        q = Q()
+        for final_for_fy in finals_for_all_fy():
+            if (final_for_fy[0] == 2020 and final_for_fy[2] >= 7) or final_for_fy[0] > 2021:
+                q |= (
+                    Q(submission__reporting_fiscal_year=final_for_fy[0])
+                    & Q(submission__quarter_format_flag=final_for_fy[1])
+                    & Q(submission__reporting_fiscal_period__lte=final_for_fy[2])
+                )
+        return q & Q(submission__reporting_period_start__gte=self.reporting_period_min)
+
 
 class SpendingMixin:
     required_filters = ["def_codes", "query"]

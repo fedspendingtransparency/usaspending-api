@@ -27,33 +27,6 @@ def construct_response(results: list, pagination: Pagination):
     }
 
 
-def submission_window_cutoff(min_date, monthly_sub, quarterly_sub):
-    sub_queries = []
-    if monthly_sub:
-        sub_queries.append(
-            Q(
-                Q(submission__quarter_format_flag=False)
-                & Q(submission__reporting_period_end__lte=monthly_sub["submission_reveal_date"])
-            )
-        )
-
-    sub_queries.append(
-        Q(
-            Q(submission__quarter_format_flag=True)
-            & Q(submission__reporting_period_end__lte=quarterly_sub["submission_reveal_date"])
-        )
-    )
-
-    sub_queryset = sub_queries.pop()
-    for query in sub_queries:
-        sub_queryset |= query
-
-    return [
-        Q(submission__reporting_period_start__gte=min_date),
-        Q(sub_queryset),
-    ]
-
-
 class Spending(PaginationMixin, SpendingMixin, DisasterBase):
     """View to implement the API"""
 
@@ -80,14 +53,8 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
+            self.all_covid_closed_submissions,
         ]
-        filters.extend(
-            submission_window_cutoff(
-                self.reporting_period_min,
-                self.last_closed_monthly_submission_dates,
-                self.last_closed_quarterly_submission_dates,
-            )
-        )
 
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
@@ -145,14 +112,8 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
+            self.all_covid_closed_submissions,
         ]
-        filters.extend(
-            submission_window_cutoff(
-                self.reporting_period_min,
-                self.last_closed_monthly_submission_dates,
-                self.last_closed_quarterly_submission_dates,
-            )
-        )
 
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),

@@ -9,7 +9,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     LoansPaginationMixin,
     LoansMixin,
 )
-from usaspending_api.disaster.v2.views.federal_account.spending import construct_response, submission_window_cutoff
+from usaspending_api.disaster.v2.views.federal_account.spending import construct_response
 
 
 class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
@@ -38,14 +38,8 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             Q(award_id__isnull=False),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
+            self.all_covid_closed_submissions,
         ]
-        filters.extend(
-            submission_window_cutoff(
-                self.reporting_period_min,
-                self.last_closed_monthly_submission_dates,
-                self.last_closed_quarterly_submission_dates,
-            )
-        )
 
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
