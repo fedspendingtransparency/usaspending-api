@@ -67,15 +67,20 @@ def test_exclude_gtas_for_incompleted_period(
 
 
 @pytest.mark.django_db
-def test_exclude_non_covid_gtas(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, non_covid_gtas, early_gtas, basic_faba
+def test_exclude_non_selected_defc_for_gtas(
+    client, monkeypatch, helpers, defc_codes, basic_ref_data, non_covid_gtas, late_gtas, basic_faba
 ):
-    helpers.patch_datetime_now(monkeypatch, 2021, EARLY_MONTH, 25)
-    resp = client.get(OVERVIEW_URL)
-    assert resp.data["funding"] == [{"amount": Decimal("0.2"), "def_code": "M"}]
-    assert resp.data["total_budget_authority"] == Decimal("0.2")
-    assert resp.data["spending"]["total_obligations"] == Decimal("0.2")
-    assert resp.data["spending"]["total_outlays"] == Decimal("0.02")
+    helpers.patch_datetime_now(monkeypatch, 2021, LATE_MONTH, 25)
+    resp = client.get(OVERVIEW_URL + "?def_codes=M,N")
+    assert resp.data["funding"] == [{"amount": Decimal("0.3"), "def_code": "M"}]
+    assert resp.data["total_budget_authority"] == Decimal("0.3")
+    assert resp.data["spending"]["total_obligations"] == Decimal("0.3")
+    assert resp.data["spending"]["total_outlays"] == Decimal("0.03")
+
+    resp = client.get(OVERVIEW_URL + "?def_codes=M,A")
+    assert resp.data["total_budget_authority"] == Decimal("0.62")
+    assert resp.data["spending"]["total_obligations"] == Decimal("0.62")
+    assert resp.data["spending"]["total_outlays"] == Decimal("0.16")
 
 
 @pytest.mark.django_db
@@ -149,7 +154,7 @@ def test_award_obligation_excludes_non_covid_values(
     client, monkeypatch, helpers, defc_codes, basic_ref_data, early_gtas, faba_with_non_covid_values
 ):
     helpers.patch_datetime_now(monkeypatch, 2021, LATE_MONTH, 25)
-    resp = client.get(OVERVIEW_URL)
+    resp = client.get(OVERVIEW_URL + "?def_codes=M,N")
     assert resp.data["spending"]["award_obligations"] == Decimal("1.6")
 
 
