@@ -57,7 +57,13 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
-                Sum(Case(When(self.final_submissions_query_filters, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0),)), 0,
+                Sum(
+                    Case(
+                        When(self.final_submissions_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
+                        default=Value(0),
+                    )
+                ),
+                0,
             ),
             "total_budgetary_resources": Coalesce(Sum("award__total_loan_value"), 0),  # "face_value_of_loan"
         }

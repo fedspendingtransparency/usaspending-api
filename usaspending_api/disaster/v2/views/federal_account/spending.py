@@ -100,7 +100,10 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             "obligation": Coalesce(
                 Sum(
                     Case(
-                        When(self.final_submissions_query_filters, then=F("obligations_incurred_by_program_object_class_cpe")),
+                        When(
+                            self.final_submissions_query_filters,
+                            then=F("obligations_incurred_by_program_object_class_cpe"),
+                        ),
                         default=Value(0),
                     )
                 ),
@@ -109,7 +112,10 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             "outlay": Coalesce(
                 Sum(
                     Case(
-                        When(self.final_submissions_query_filters, then=F("gross_outlay_amount_by_program_object_class_cpe"),),
+                        When(
+                            self.final_submissions_query_filters,
+                            then=F("gross_outlay_amount_by_program_object_class_cpe"),
+                        ),
                         default=Value(0),
                     )
                 ),
@@ -158,7 +164,13 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
-                Sum(Case(When(self.final_submissions_query_filters, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0),)), 0,
+                Sum(
+                    Case(
+                        When(self.final_submissions_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
+                        default=Value(0),
+                    )
+                ),
+                0,
             ),
             "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
         }
