@@ -1,11 +1,16 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Disaster Spending Overview [/api/v2/disaster/overview/]
+# Disaster Spending Overview [/api/v2/disaster/overview/{?def_codes}]
 
 This endpoint provides funding and spending details from emergency/disaster supplemental funding legislation.
 
 ## GET
+
++ Request (application/json)
+    + Parameters
+        + `def_codes` (optional, string) 
+           Comma-delimited list of DEF codes to limit results to.
 
 + Response 200 (application/json)
     + Attributes (object)
