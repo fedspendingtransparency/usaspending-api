@@ -16,14 +16,6 @@ from django.db.models import Q
 COVID_19_GROUP_NAME = "covid_19"
 
 
-def covid_def_codes():
-    return DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME)
-
-
-def covid_def_code_strings():
-    return [code["code"] for code in covid_def_codes().values("code")]
-
-
 def latest_gtas_of_each_year_queryset():
     q = Q()
     for final_for_fy in finals_for_fy(False):
