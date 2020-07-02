@@ -4,6 +4,7 @@ from model_mommy import mommy
 
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.submissions.models.dabs_submission_window_schedule import DABSSubmissionWindowSchedule
 
 
 @pytest.fixture
@@ -106,6 +107,18 @@ def award_count_submission():
 
 
 def _award_count_early_submission():
+    if not DABSSubmissionWindowSchedule.objects.filter(
+        submission_fiscal_year=2020
+    ):  # hack since in some environments these auto-populate
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            is_quarter=False,
+            submission_fiscal_year=2020,
+            submission_fiscal_quarter=3,
+            submission_fiscal_month=7,
+            submission_reveal_date="2020-5-15",
+        )
+
     mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2020,
