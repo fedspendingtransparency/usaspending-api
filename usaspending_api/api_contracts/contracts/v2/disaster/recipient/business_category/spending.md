@@ -17,11 +17,6 @@ This endpoint provides insights on the recipient business categories which recei
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
-        + `geo_layer` (required, enum[string], fixed-type)
-            + Members
-                + `state`
-                + `county`
-                + `district`
         + `pagination` (optional, Pagination, fixed-type)
 
 + Response 200 (application/json)
@@ -82,8 +77,16 @@ This endpoint provides insights on the recipient business categories which recei
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `count`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
 + `id` (required, string)

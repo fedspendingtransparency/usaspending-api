@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
+# Recipient Spending Disaster/Emergency Funding [/api/v2/disaster/recipient/spending/]
 
 This endpoint provides insights on the Recipients which received disaster/emergency funding per the requested filters.
 
@@ -79,8 +79,16 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `count`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
 + `id` (required, string)
