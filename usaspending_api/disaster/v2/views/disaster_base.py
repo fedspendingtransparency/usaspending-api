@@ -116,7 +116,7 @@ class DisasterBase(APIView):
         return filter_by_latest_submissions()
 
     @cached_property
-    def all_covid_closed_submissions(self):
+    def all_closed_defc_submissions(self):
         q = Q()
         for final_for_fy in finals_for_all_fy():
             if (final_for_fy[0] == 2020 and final_for_fy[2] >= 7) or final_for_fy[0] > 2021:

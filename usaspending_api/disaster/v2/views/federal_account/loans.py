@@ -38,7 +38,7 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             Q(award_id__isnull=False),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
-            self.all_covid_closed_submissions,
+            self.all_closed_defc_submissions,
         ]
 
         annotations = {
