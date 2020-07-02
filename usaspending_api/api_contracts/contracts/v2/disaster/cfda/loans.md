@@ -39,7 +39,8 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                         "count": 54,
                         "face_value_of_loan": 89.01,
                         "obligation": 45,
-                        "outlay": 3244
+                        "outlay": 3244,
+                        "resource_link": "https://beta.sam.gov/fal/25b529f3b5f94b6c939bc0ae8424ae6c/view"
                     },
                     {
                         "id": "41",
@@ -49,7 +50,8 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                         "count": 2,
                         "face_value_of_loan": 50,
                         "obligation": 123,
-                        "outlay": 3249
+                        "outlay": 3249,
+                        "resource_link": null
                     }
                 ],
                 "page_metadata": {
@@ -104,6 +106,9 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
 + `face_value_of_loan` (required, number, nullable)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
++ `resource_link` (required, string, nullable)
+    Link to an external website with more information about this result.
+
 
 ## PageMetadata (object)
 + `page` (required, number)
