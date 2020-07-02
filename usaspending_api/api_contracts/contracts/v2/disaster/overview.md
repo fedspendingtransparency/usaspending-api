@@ -9,7 +9,7 @@ This endpoint provides funding and spending details from emergency/disaster supp
 
 + Request (application/json)
     + Parameters
-        + `def_codes` (optional, string) 
+        + `def_codes` (optional, array[DEFC], fixed-type) 
            Comma-delimited list of DEF codes to limit results to.
 
 + Response 200 (application/json)
@@ -60,3 +60,29 @@ This endpoint provides funding and spending details from emergency/disaster supp
 + `total_outlays` (required, number, nullable)
     Total amount of Disaster Spending which has been obligated and outlayed.
     Note: (`total_obligations` - `award_obligations`) - (`total_outlays` - `award_outlays`) = "Other Obligated But Not Yet Outlayed"
+
+## DEFC (enum[string])
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
+
+### Members
++ `A`
++ `B`
++ `C`
++ `D`
++ `E`
++ `F`
++ `G`
++ `H`
++ `I`
++ `J`
++ `K`
++ `L`
++ `M`
++ `N`
++ `O`
++ `P`
++ `Q`
++ `R`
++ `S`
++ `T`
++ `9`
