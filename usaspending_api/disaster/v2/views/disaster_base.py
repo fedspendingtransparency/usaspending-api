@@ -86,15 +86,6 @@ class DisasterBase(APIView):
                 "allow_nulls": True,
                 "optional": True,
             },
-            "award_type_codes": {
-                "key": "filter|award_type_codes",
-                "name": "award_type_codes",
-                "type": "array",
-                "array_type": "enum",
-                "enum_values": list(award_type_mapping.keys()),
-                "allow_nulls": True,
-                "optional": True,
-            },
         }
         model = [object_keys_lookup[key] for key in self.required_filters]
         json_request = TinyShield(model).block(self.request.data)
@@ -114,11 +105,22 @@ class DisasterBase(APIView):
 
 
 class AwardTypeMixin:
-    required_filters = ["def_codes", "award_type_codes"]
+    required_filters = ["def_codes"]
 
-    @property
+    @cached_property
     def award_type_codes(self):
-        return self.filters.get("award_type_codes")
+        model = [
+            {
+                "key": "filter|award_type_codes",
+                "name": "award_type_codes",
+                "type": "array",
+                "array_type": "enum",
+                "enum_values": list(award_type_mapping.keys()),
+                "allow_nulls": True,
+                "optional": False,
+            }
+        ]
+        return TinyShield(model).block(self.request.data)["filter"]["award_type_codes"]
 
 
 class SpendingMixin:
