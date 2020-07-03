@@ -63,7 +63,7 @@ services:
         - bootstrap.memory_lock=true
         - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
       # Inject plugin install, then resume with orignial entrypoint command
-      command: /bin/sh -c "./bin/elasticsearch-plugin install mapper-murmur3 && /usr/local/bin/docker-entrypoint.sh"
+      command: /bin/sh -c "if [ ! -d /usr/share/elasticsearch/plugins/mapper-murmur3 ]; then ./bin/elasticsearch-plugin install mapper-murmur3; fi && /usr/local/bin/docker-entrypoint.sh"
       ulimits:
         memlock:
           soft: -1
