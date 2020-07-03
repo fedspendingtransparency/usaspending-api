@@ -7,7 +7,7 @@ logger = logging.getLogger("console")
 
 class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of award data in CSV form for download.
+    This route sends a request to the backend to begin generating a zipfile of award data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/awards.md"
@@ -20,7 +20,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
 
 class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of IDV data in CSV form for download.
+    This route sends a request to the backend to begin generating a zipfile of IDV data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/idv.md"
@@ -32,7 +32,7 @@ class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
 
 class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of Contract data in CSV form for download.
+    This route sends a request to the backend to begin generating a zipfile of Contract data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/contract.md"
@@ -44,7 +44,7 @@ class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
 
 class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of Assistance data in CSV form for download.
+    This route sends a request to the backend to begin generating a zipfile of Assistance data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/assistance.md"
@@ -56,7 +56,7 @@ class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of transaction data in CSV form for
+    This route sends a request to the backend to begin generating a zipfile of transaction data
     download.
     """
 
@@ -70,7 +70,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
 
 class AccountDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to begin generating a zipfile of account data in CSV form for download.
+    This route sends a request to begin generating a zipfile of account data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/accounts.md"
@@ -79,3 +79,16 @@ class AccountDownloadViewSet(BaseDownloadViewSet):
         """Push a message to SQS with the validated request JSON"""
 
         return BaseDownloadViewSet.post(self, request, "account")
+
+
+class DisasterDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to begin generating a zipfile of account data
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/disaster.md"
+
+    def post(self, request):
+        """Push a message to SQS with the validated request JSON"""
+
+        return BaseDownloadViewSet.post(self, request, "disaster")
