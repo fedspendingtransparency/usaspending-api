@@ -27,7 +27,7 @@ def construct_response(results: list, pagination: Pagination):
     }
 
 
-class Spending(PaginationMixin, SpendingMixin, DisasterBase):
+class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     """View to implement the API"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
