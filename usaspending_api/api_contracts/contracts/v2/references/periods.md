@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Custom Account Data [/api/v2/download/accounts/submission_periods]
 
-This endpoint returns a JSON Object containing an array of tuples consisting of fiscal year and period number for all valid periods. 
+This endpoint returns a JSON Object containing an array of tuples consisting of fiscal year and period number for the last available period for each fiscal year. 
 
 ## GET
 
@@ -13,9 +13,26 @@ This endpoint returns a JSON Object containing an array of tuples consisting of 
     + Body
 
             {
-                "available_periods": [{"fy": 2020, "period": 10}, {"fy": 2020, "period": 11}, {"fy": 2020, "period": 12}, {"fy": 2021, "period": 1}, {"fy": 2021, "period": 2}]
+                "available_periods": [
+                    {
+                        "fy": 2017,
+                        "period": 12
+                    },
+                    {
+                        "fy": 2018,
+                        "period": 12
+                    },
+                    {
+                        "fy": 2019,
+                        "period": 12
+                    },
+                    {
+                        "fy": 2020,
+                        "period": 8
+                    }
+                ]
             }
-            
+                        
 # Data Structures
 
 ## AdvancedFilterObject (object)
