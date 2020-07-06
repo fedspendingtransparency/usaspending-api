@@ -26,4 +26,4 @@ class CountBase(DisasterBase):
         )
 
     def is_provided_award_type(self):
-        return Q(type__in=self.award_type_codes)
+        return Q(type__in=self.filters.get("award_type_codes"))

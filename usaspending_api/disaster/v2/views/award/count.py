@@ -6,10 +6,10 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.disaster.v2.views.count_base import CountBase
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models import Award
-from usaspending_api.disaster.v2.views.disaster_base import FabaOutlayMixin
+from usaspending_api.disaster.v2.views.disaster_base import FabaOutlayMixin, AwardTypeMixin
 
 
-class AwardCountViewSet(CountBase, FabaOutlayMixin):
+class AwardCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
     """
     Obtain the count of Agencies related to supplied DEFC filter.
     """
