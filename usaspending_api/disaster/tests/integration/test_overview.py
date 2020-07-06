@@ -98,8 +98,8 @@ def test_summing_period_and_quarterly_in_same_year(
 ):
     helpers.patch_datetime_now(monkeypatch, 2021, LATE_MONTH, 25)
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["funding"] == [{"amount": Decimal("0.56"), "def_code": "M"}]
-    assert resp.data["total_budget_authority"] == Decimal("0.56")
+    assert resp.data["funding"] == [{"amount": Decimal("0.30"), "def_code": "M"}]
+    assert resp.data["total_budget_authority"] == Decimal("0.30")
 
 
 @pytest.mark.django_db

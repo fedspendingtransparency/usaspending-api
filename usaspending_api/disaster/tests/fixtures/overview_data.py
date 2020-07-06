@@ -184,7 +184,10 @@ def multi_period_faba(defc_codes):
 
 def _year_1_faba(value, code):
     submission = mommy.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=LATE_MONTH
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2021,
+        reporting_fiscal_period=LATE_MONTH,
+        quarter_format_flag=False,
     )
 
     mommy.make(
@@ -198,7 +201,10 @@ def _year_1_faba(value, code):
 
 def _year_2_faba_with_value(value):
     submission = mommy.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=2022, reporting_fiscal_period=EARLY_MONTH
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2022,
+        reporting_fiscal_period=EARLY_MONTH,
+        quarter_format_flag=False,
     )
 
     mommy.make(
@@ -212,7 +218,10 @@ def _year_2_faba_with_value(value):
 
 def _year_2_late_faba_with_value(value):
     submission = mommy.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=2022, reporting_fiscal_period=LATE_MONTH
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2022,
+        reporting_fiscal_period=LATE_MONTH,
+        quarter_format_flag=False,
     )
 
     mommy.make(

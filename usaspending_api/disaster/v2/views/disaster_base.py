@@ -1,61 +1,68 @@
+from datetime import datetime, timezone, date
+from django.db.models import Max, Q, F, Value, Case, When, Sum
+from django.db.models.functions import Coalesce
 from django.utils.functional import cached_property
 from rest_framework.views import APIView
-from datetime import datetime, timezone
+from typing import List
 
-from django.db.models import Max
+from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.data_classes import Pagination
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_month
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
-from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
-from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
-from usaspending_api.submissions.helpers import get_last_closed_submission_date
-from django.db.models import Q
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 COVID_19_GROUP_NAME = "covid_19"
 
 
 def latest_gtas_of_each_year_queryset():
     q = Q()
-    for final_for_fy in finals_for_fy(False):
-        q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[1])
-    for final_for_fy in finals_for_fy(True):
-        q |= Q(fiscal_year=final_for_fy[0]) & Q(fiscal_period=final_for_fy[1])
+    for sub in final_submissions_for_all_fy():
+        if not sub.is_quarter:
+            q |= Q(fiscal_year=sub.fiscal_year) & Q(fiscal_period=sub.fiscal_period)
     if not q:
         return GTASSF133Balances.objects.none()
     return GTASSF133Balances.objects.filter(q)
 
 
-def latest_faba_of_each_year_queryset():
-    q = Q()
-    for final_for_fy in finals_for_fy(False):
-        q |= Q(submission__reporting_fiscal_year=final_for_fy[0]) & Q(
-            submission__reporting_fiscal_period=final_for_fy[1]
-        )
-    for final_for_fy in finals_for_fy(True):
-        q |= Q(submission__reporting_fiscal_year=final_for_fy[0]) & Q(
-            submission__reporting_fiscal_period=final_for_fy[1]
-        )
+def latest_faba_of_each_year_queryset() -> FinancialAccountsByAwards:
+    q = filter_by_latest_closed_periods()
     if not q:
         return FinancialAccountsByAwards.objects.none()
     return FinancialAccountsByAwards.objects.filter(q)
 
 
-def finals_for_fy(is_quarter):
-    return (
-        DABSSubmissionWindowSchedule.objects.filter(
-            submission_reveal_date__lte=datetime.now(timezone.utc), is_quarter=is_quarter
+def filter_by_latest_closed_periods() -> Q:
+    """Return Django Q for all latest closed submissions (quarterly and monthly)"""
+    q = Q()
+    for sub in final_submissions_for_all_fy():
+        q |= (
+            Q(submission__reporting_fiscal_year=sub.fiscal_year)
+            & Q(submission__quarter_format_flag=sub.is_quarter)
+            & Q(submission__reporting_fiscal_period=sub.fiscal_period)
         )
-        .values("submission_fiscal_year")
-        .annotate(max_submission_fiscal_month=Max("submission_fiscal_month"))
-        .values_list("submission_fiscal_year", "max_submission_fiscal_month")
+    return q
+
+
+def final_submissions_for_all_fy() -> List[tuple]:
+    """
+        Returns a list the latest monthly and quarterly submission for each
+        fiscal year IF it is "closed" aka ready for display on USAspending.gov
+    """
+    return (
+        DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=datetime.now(timezone.utc))
+        .values("submission_fiscal_year", "is_quarter")
+        .annotate(fiscal_year=F("submission_fiscal_year"), fiscal_period=Max("submission_fiscal_month"))
+        .values_list("fiscal_year", "is_quarter", "fiscal_period", named=True)
     )
 
 
 class DisasterBase(APIView):
     required_filters = ["def_codes"]
-    reporting_period_min = "2020-04-01"
+    reporting_period_min_date = date(2020, 4, 1)
+    reporting_period_min_year, reporting_period_min_month = generate_fiscal_year_and_month(reporting_period_min_date)
 
     @cached_property
     def filters(self):
@@ -97,12 +104,51 @@ class DisasterBase(APIView):
         return self.filters["def_codes"]
 
     @cached_property
-    def last_closed_monthly_submission_dates(self):
-        return get_last_closed_submission_date(is_quarter=False)
+    def final_period_submission_query_filters(self):
+        return filter_by_latest_closed_periods()
 
     @cached_property
-    def last_closed_quarterly_submission_dates(self):
-        return get_last_closed_submission_date(is_quarter=True)
+    def all_closed_defc_submissions(self):
+        """
+            These filters should only be used when looking at submission data
+            that includes DEF Codes, which only started appearing in submission
+            for FY2020 P07 (Apr 1, 2020) and after
+        """
+        q = Q()
+        for sub in final_submissions_for_all_fy():
+            if (
+                sub.fiscal_year == self.reporting_period_min_year
+                and sub.fiscal_period >= self.reporting_period_min_month
+            ) or sub.fiscal_year > self.reporting_period_min_year:
+                q |= (
+                    Q(submission__reporting_fiscal_year=sub.fiscal_year)
+                    & Q(submission__quarter_format_flag=sub.is_quarter)
+                    & Q(submission__reporting_fiscal_period__lte=sub.fiscal_period)
+                )
+        return q & Q(submission__reporting_period_start__gte=str(self.reporting_period_min_date))
+
+
+class AwardTypeMixin:
+    required_filters = ["def_codes", "award_type_codes"]
+
+    @cached_property
+    def award_type_codes(self):
+
+        return self.filters.get("award_type_codes")
+
+
+class FabaOutlayMixin:
+    @property
+    def outlay_field_annotation(self):
+        return Coalesce(
+            Sum(
+                Case(
+                    When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
+                    default=Value(0),
+                )
+            ),
+            0,
+        )
 
 
 class SpendingMixin:
@@ -164,5 +210,5 @@ class PaginationMixin(_BasePaginationMixin):
 class LoansPaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "count", "face_value_of_loan"]
+        sortable_columns = ["id", "code", "description", "count", "face_value_of_loan", "obligation", "outlay"]
         return self.run_models(sortable_columns)
