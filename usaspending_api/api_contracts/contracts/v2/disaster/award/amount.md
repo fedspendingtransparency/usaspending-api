@@ -39,7 +39,7 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-    When Award Type Codes are provided, results are only returned if the awards are linked between Financial Account by Awards and Awards (aka C-D Linkage).
+    When Award Type Codes are provided, results are only returned if the awards are linked between Financial Account by Awards and Awards (File C to File D linkage).
     If this filter isn't provided then the results are File C (Financial Account by Awards) only
 
 ## DEFC (enum[string])
