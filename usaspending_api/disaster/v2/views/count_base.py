@@ -25,36 +25,5 @@ class CountBase(DisasterBase):
             | Q(gross_outlays_delivered_orders_paid_total_cpe__lt=0)
         )
 
-    def is_last_closed_submission_window(self):
-        sub_queries = []
-        if self.last_closed_monthly_submission_dates:
-            sub_queries.append(
-                Q(
-                    submission__quarter_format_flag=False,
-                    submission__reporting_fiscal_year__lte=self.last_closed_monthly_submission_dates.get(
-                        "submission_fiscal_year"
-                    ),
-                    submission__reporting_fiscal_period__lte=self.last_closed_monthly_submission_dates.get(
-                        "submission_fiscal_month"
-                    ),
-                )
-            )
-
-        sub_queries.append(
-            Q(
-                submission__quarter_format_flag=True,
-                submission__reporting_fiscal_year__lte=self.last_closed_quarterly_submission_dates.get(
-                    "submission_fiscal_year"
-                ),
-                submission__reporting_fiscal_quarter__lte=self.last_closed_quarterly_submission_dates.get(
-                    "submission_fiscal_quarter"
-                ),
-            )
-        )
-        sub_queryset = sub_queries.pop()
-        for query in sub_queries:
-            sub_queryset |= query
-        return sub_queryset
-
     def is_provided_award_type(self):
         return Q(type__in=self.award_type_codes)
