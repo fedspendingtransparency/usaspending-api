@@ -79,10 +79,3 @@ class AccountDownloadViewSet(BaseDownloadViewSet):
         """Push a message to SQS with the validated request JSON"""
 
         return BaseDownloadViewSet.post(self, request, "account")
-
- # dev-5507
-class AccountDownloadPeriodViewSet():
-    #TODO : endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/periods.md"
-
-    def get(self, request):
-        return
