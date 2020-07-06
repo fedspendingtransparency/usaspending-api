@@ -25,4 +25,4 @@ class SubmissionPeriodsViewSet(APIView):
 
         response_object["available_periods"] = subs
 
-        return Response(response_object)
+        return Response({"available_periods": subs})
