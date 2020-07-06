@@ -29,8 +29,7 @@ class AwardCountViewSet(CountBase, FabaOutlayMixin):
             ]
             count = (
                 Award.objects.annotate(include=Exists(FinancialAccountsByAwards.objects.filter(*filters).values("pk")))
-                .filter(include=True)
-                .filter(self.is_provided_award_type())
+                .filter(self.is_provided_award_type(), include=True)
                 .values("pk")
                 .count()
             )
