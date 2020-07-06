@@ -17,15 +17,7 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 COVID_19_GROUP_NAME = "covid_19"
 
 
-def covid_def_codes():
-    return DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME)
-
-
-def covid_def_code_strings():
-    return [code["code"] for code in covid_def_codes().values("code")]
-
-
-def latest_gtas_of_each_year_queryset() -> GTASSF133Balances:
+def latest_gtas_of_each_year_queryset():
     q = Q()
     for sub in final_submissions_for_all_fy():
         if not sub.is_quarter:
