@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, date
 from django.db.models import Max, Q, F, Value, Case, When, Sum
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Concat
 from django.utils.functional import cached_property
 from rest_framework.views import APIView
 from typing import List
@@ -161,6 +161,10 @@ class FabaOutlayMixin:
             ),
             0,
         )
+
+    @property
+    def unique_file_c(self):
+        return Concat("piid", "parent_award_id", "fain", "uri")
 
 
 class SpendingMixin:

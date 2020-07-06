@@ -9,7 +9,7 @@ from usaspending_api.disaster.tests.fixtures.award_count_data import (
     award_count_quarterly_submission,
     award_with_quarterly_submission,
     award_with_early_submission,
-    submission_with_no_award,
+    file_c_with_no_award,
 )
 from usaspending_api.disaster.tests.fixtures.federal_account_data import (
     generic_account_data,
@@ -63,7 +63,7 @@ __all__ = [
     "other_budget_authority_gtas",
     "partially_completed_year",
     "quarterly_gtas",
-    "submission_with_no_award",
+    "file_c_with_no_award",
     "unlinked_faba_account_data",
     "unobligated_balance_gtas",
     "year_2_gtas_covid",

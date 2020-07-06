@@ -1,4 +1,4 @@
-from django.db.models import OuterRef, Q, Exists
+from django.db.models import OuterRef, Q, Exists, Count
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -6,9 +6,10 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.disaster.v2.views.count_base import CountBase
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models import Award
+from usaspending_api.disaster.v2.views.disaster_base import FabaOutlayMixin
 
 
-class AwardCountViewSet(CountBase):
+class AwardCountViewSet(CountBase, FabaOutlayMixin):
     """
     Obtain the count of Agencies related to supplied DEFC filter.
     """
@@ -39,6 +40,8 @@ class AwardCountViewSet(CountBase):
                 self.all_closed_defc_submissions,
                 self.is_non_zero_award_cpe(),
             ]
-            count = FinancialAccountsByAwards.objects.filter(*filters).values("award").count()
+            count = FinancialAccountsByAwards.objects.filter(*filters).aggregate(
+                count=Count(self.unique_file_c, distinct=True)
+            )["count"]
 
         return Response({"count": count})

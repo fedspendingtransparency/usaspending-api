@@ -48,11 +48,28 @@ def award_with_early_submission(defc_codes):
 
 
 @pytest.fixture
-def submission_with_no_award(defc_codes):
+def file_c_with_no_award(defc_codes):
     _award_count_early_submission()
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
+        piid="piid 1",
+        parent_award_id="same parent award",
+        fain="fain 1",
+        uri="uri 1",
+        award=None,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        gross_outlays_delivered_orders_paid_total_cpe=7,
+    )
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        piid="piid 2",
+        parent_award_id="same parent award",
+        fain="fain 2",
+        uri="uri 2",
+        award=None,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
         gross_outlays_delivered_orders_paid_total_cpe=8,
