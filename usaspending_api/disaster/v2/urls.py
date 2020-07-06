@@ -12,8 +12,8 @@ from usaspending_api.disaster.v2.views.federal_account.loans import Loans
 
 urlpatterns = [
     url(r"^overview/$", OverviewViewSet.as_view()),
-    url(r"^award/count/$", AwardCountViewSet.as_view()),
     url(r"^agency/count/$", AgencyCountViewSet.as_view()),
+    url(r"^award/count/$", AwardCountViewSet.as_view()),
     url(r"^def_code/count/$", DefCodeCountViewSet.as_view()),
     url(r"^federal_account/count/$", FederalAccountCountViewSet.as_view()),
     url(r"^federal_account/loans/$", Loans.as_view()),
