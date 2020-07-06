@@ -25,7 +25,7 @@ services:
     command: python3 -u manage.py shell
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
-      ES_HOSTNAME: ${ES_HOSTNAME}
+      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
 
   usaspending-api:
@@ -40,7 +40,7 @@ services:
       DB_SOURCE: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       DB_R1: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
-      ES_HOSTNAME: ${ES_HOSTNAME}
+      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
 
   usaspending-bulk-download:
     build: .
