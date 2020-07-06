@@ -112,7 +112,7 @@ class SpendingByGeographyViewSet(DisasterBase):
             self.metric_field = "total_covid_obligation"
         elif self.filters["spending_type"] == "outlay":
             self.metric_field = "total_covid_outlay"
-        elif self.filters["spending_type"] == "loan":
+        elif self.filters["spending_type"] == "face_value_of_loan":
             self.metric_field = "total_loan_value"
         else:
             raise UnprocessableEntityException(
