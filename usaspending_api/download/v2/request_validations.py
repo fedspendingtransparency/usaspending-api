@@ -471,13 +471,15 @@ def validate_disaster_request(request_data):
     json_request["filters"]["quarter"] = sub["submission_fiscal_quarter"]
     json_request["filters"]["period"] = sub["submission_fiscal_month"]
 
-    json_request["filters"]["def_codes"] = filters.get("def_codes") or list(
-        DisasterEmergencyFundCode.objects.values_list("code", flat=True)
-    )
+    json_request["filters"]["def_codes"] = filters.get("def_codes")
 
-    _validate_submission_type(filters)
-
-    json_request["download_types"] = request_data["filters"]["submission_types"]
+    json_request["download_types"] = [
+        "account_balances",
+        "object_class_program_activity",
+        "award_financial",
+        "awards",
+        "sub_awards",
+    ]
     json_request["agency"] = "all"
 
     # Validate the rest of the filters
