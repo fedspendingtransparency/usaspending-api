@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Custom Account Data [/api/v2/download/accounts/submission_periods]
+# DABS Submission Window Dates [/api/v2/references/submission_periods/]
 
 This endpoint returns a JSON Object containing an array of most data in the "dabs_submission_window_schedule" table . 
 
