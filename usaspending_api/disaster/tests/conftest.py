@@ -9,6 +9,7 @@ from usaspending_api.disaster.tests.fixtures.award_count_data import (
     award_count_quarterly_submission,
     award_with_quarterly_submission,
     award_with_early_submission,
+    submission_with_no_award,
 )
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
 from usaspending_api.disaster.tests.fixtures.overview_data import (
@@ -61,4 +62,5 @@ __all__ = [
     "award_count_quarterly_submission",
     "award_with_quarterly_submission",
     "award_with_early_submission",
+    "submission_with_no_award",
 ]

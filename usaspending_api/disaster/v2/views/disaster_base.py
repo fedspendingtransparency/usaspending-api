@@ -112,7 +112,7 @@ class DisasterBase(APIView):
 
     @property
     def award_type_codes(self):
-        return self.filters["award_type_codes"]
+        return self.filters.get("award_type_codes")
 
     @cached_property
     def final_period_submission_query_filters(self):

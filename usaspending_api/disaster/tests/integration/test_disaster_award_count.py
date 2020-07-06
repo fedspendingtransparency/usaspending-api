@@ -55,6 +55,20 @@ def test_award_count_not_last_submission(client, monkeypatch, not_last_submissio
 
 
 @pytest.mark.django_db
+def test_no_award_with_award_types_provided(client, monkeypatch, submission_with_no_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = _default_post(client, helpers)
+    assert resp.data["count"] == 0
+
+
+@pytest.mark.django_db
+def test_no_award_with_award_types_not_provided(client, monkeypatch, submission_with_no_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_count_endpoint(client, url, ["M"])
+    assert resp.data["count"] == 1
+
+
+@pytest.mark.django_db
 def test_award_count_invalid_defc(client, monkeypatch, basic_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_count_endpoint(client, url, ["ZZ"])

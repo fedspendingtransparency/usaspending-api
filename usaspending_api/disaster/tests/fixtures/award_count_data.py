@@ -48,6 +48,18 @@ def award_with_early_submission(defc_codes):
 
 
 @pytest.fixture
+def submission_with_no_award(defc_codes):
+    _award_count_early_submission()
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        gross_outlays_delivered_orders_paid_total_cpe=8,
+    )
+
+
+@pytest.fixture
 def obligations_incurred_award(award_count_sub_schedule, award_count_submission, defc_codes):
     award = _normal_award()
 

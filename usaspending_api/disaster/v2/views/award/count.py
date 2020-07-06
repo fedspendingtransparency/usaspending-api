@@ -19,18 +19,26 @@ class AwardCountViewSet(CountBase):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-        filters = [
-            Q(award=OuterRef("pk")),
-            self.is_in_provided_def_codes(),
-            self.all_closed_defc_submissions,
-            self.is_non_zero_award_cpe(),
-        ]
-        count = (
-            Award.objects.annotate(include=Exists(FinancialAccountsByAwards.objects.filter(*filters).values("pk")))
-            .filter(include=True)
-            .filter(self.is_provided_award_type())
-            .values("pk")
-            .count()
-        )
+        if self.award_type_codes:
+            filters = [
+                Q(award=OuterRef("pk")),
+                self.is_in_provided_def_codes(),
+                self.all_closed_defc_submissions,
+                self.is_non_zero_award_cpe(),
+            ]
+            count = (
+                Award.objects.annotate(include=Exists(FinancialAccountsByAwards.objects.filter(*filters).values("pk")))
+                .filter(include=True)
+                .filter(self.is_provided_award_type())
+                .values("pk")
+                .count()
+            )
+        else:
+            filters = [
+                self.is_in_provided_def_codes(),
+                self.all_closed_defc_submissions,
+                self.is_non_zero_award_cpe(),
+            ]
+            count = FinancialAccountsByAwards.objects.filter(*filters).values("award").count()
 
         return Response({"count": count})
