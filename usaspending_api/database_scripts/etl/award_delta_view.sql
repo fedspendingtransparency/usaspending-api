@@ -25,6 +25,12 @@ SELECT
   vw_award_search.recipient_name,
   vw_award_search.recipient_unique_id,
   recipient_lookup.recipient_hash,
+  -- NOTE: Not messing with recipient "level" here (Parent, Child, Recipient)
+  --       For frontend to Link to proper leveled-recipient-profile page, will need to lookup recipient again
+  CONCAT(
+    '{"name":"', vw_award_search.recipient_name,
+    '","unique_id":"', vw_award_search.recipient_unique_id, '"}'
+  ) AS recipient_agg_key,
   vw_award_search.parent_recipient_unique_id,
   vw_award_search.business_categories,
 
