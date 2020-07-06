@@ -22,8 +22,7 @@ class AwardCountViewSet(CountBase):
         filters = [
             Q(award=OuterRef("pk")),
             self.is_in_provided_def_codes(),
-            self.is_after_min_date(),
-            self.is_last_closed_submission_window(),
+            self.all_closed_defc_submissions,
             self.is_non_zero_award_cpe(),
         ]
         count = (
