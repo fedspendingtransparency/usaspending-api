@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, When, Case
+from django.db.models import Q, Sum, Count, F
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -8,11 +8,12 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansPaginationMixin,
     LoansMixin,
+    FabaOutlayMixin,
 )
 from usaspending_api.disaster.v2.views.federal_account.spending import construct_response
 
 
-class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
+class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBase):
     """View to implement the API"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
@@ -52,15 +53,7 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
-            "outlay": Coalesce(
-                Sum(
-                    Case(
-                        When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
-                        default=Value(0),
-                    )
-                ),
-                0,
-            ),
+            "outlay": self.outlay_field_annotation,
             # hack to use the Dataclasses, will be renamed later
             "total_budgetary_resources": Coalesce(Sum("award__total_loan_value"), 0),
         }

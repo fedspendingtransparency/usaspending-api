@@ -47,6 +47,16 @@ class Helpers:
         return resp
 
     @staticmethod
+    def post_for_amount_endpoint(client, url, def_codes, award_type_codes):
+        filters = {}
+        if def_codes:
+            filters["def_codes"] = def_codes
+        if award_type_codes:
+            filters["award_type_codes"] = award_type_codes
+        resp = client.post(url, content_type="application/json", data=json.dumps({"filter": filters}))
+        return resp
+
+    @staticmethod
     def patch_datetime_now(monkeypatch, year, month, day):
         patched_datetime = datetime.datetime(year, month, day, tzinfo=datetime.timezone.utc)
 
