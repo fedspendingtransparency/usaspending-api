@@ -20,8 +20,7 @@ class DefCodeCountViewSet(CountBase):
         filters = [
             Q(disaster_emergency_fund_id=OuterRef("pk")),
             self.is_in_provided_def_codes(),
-            self.is_after_min_date(),
-            self.is_last_closed_submission_window(),
+            self.all_closed_defc_submissions,
             self.is_non_zero_object_class_cpe(),
         ]
         count = (
