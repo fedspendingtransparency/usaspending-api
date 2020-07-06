@@ -16,23 +16,13 @@ class SubmissionPeriodsViewSet(APIView):
         # set max date to low number
         response_object = {"available_periods": []}
 
-        max_submission_date = datetime.datetime(1776, 7, 4)
-        max_period = 0
-        previous_record = None
+        # filter out records with submission window date after now
+        subs = DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=datetime.datetime.now()).values()
 
-        for record in DABSSubmissionWindowSchedule.objects.filter().values():
+        # remove id from the records
+        for sub in subs:
+            del sub["id"]
 
-            if previous_record:
-                if previous_record['submission_fiscal_year'] != record['submission_fiscal_year']:
-                    response_object["available_periods"].append(
-                        {'fy': previous_record['submission_fiscal_year'], 'period': max_period})
-
-            if max_submission_date.replace(tzinfo=None) < record['submission_reveal_date'].replace(tzinfo=None) < datetime.datetime.now().replace(tzinfo=None):
-                max_submission_date = record['submission_reveal_date']
-                max_period = record['submission_fiscal_month']
-
-            previous_record = record
-
-        response_object["available_periods"].append({'fy': record['submission_fiscal_year'], 'period': max_period})
+        response_object["available_periods"] = subs
 
         return Response(response_object)

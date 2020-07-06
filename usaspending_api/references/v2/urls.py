@@ -7,7 +7,7 @@ from usaspending_api.references.v2.views import (
     glossary,
     award_types,
     def_codes,
-    submission_periods
+    submission_periods,
 )
 from usaspending_api.references.v2.views.filter_tree import naics, tas, psc
 
