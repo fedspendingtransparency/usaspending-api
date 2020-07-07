@@ -29,7 +29,7 @@ Returns spending details of Awards receiving supplemental funding budgetary reso
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[Result], fixed-type)
-        + `pagination_metadata` (required, PageMetadata, fixed-type)
+        + `page_metadata` (required, PageMetadata, fixed-type)
 
 
     + Body
@@ -57,7 +57,7 @@ Returns spending details of Awards receiving supplemental funding budgetary reso
                         "total_budgetary_resources": null
                     }
                 ],
-                "pagination_metadata": {
+                "page_metadata": {
                     "page": 1,
                     "next": 2,
                     "previous": null,
@@ -90,8 +90,17 @@ Returns spending details of Awards receiving supplemental funding budgetary reso
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `count`
+        + `total_budgetary_resources`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
 + `id` (required, string)

@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# DEFC Spending Disaster/Emergency Funding [/api/v2/disaster/def_code/spending/]
+# CFDA Programs Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/cfda/loans/]
 
-This endpoint provides insights on the DEFC which received disaster/emergency funding per the requested filters.
+This endpoint provides insights on the CFDA Programs' loans from disaster/emergency funding per the requested filters.
 
 ## POST
 
-Returns spending details of DEFC receiving supplemental funding budgetary resources
+Returns loan spending details of CFDA Programs receiving supplemental funding budgetary resources
 
 + Request (application/json)
     + Schema
@@ -19,17 +19,12 @@ Returns spending details of DEFC receiving supplemental funding budgetary resour
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
-        + `spending_type` (required, enum[string], fixed-type)
-            Toggle if the outlay and obligation response values are total or only from awards
-            + Members
-                + `total`
-                + `award`
         + `pagination` (optional, Pagination, fixed-type)
 
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[Result], fixed-type)
-        + `pagination_metadata` (required, PageMetadata, fixed-type)
+        + `page_metadata` (required, PageMetadata, fixed-type)
 
 
     + Body
@@ -39,23 +34,27 @@ Returns spending details of DEFC receiving supplemental funding budgetary resour
                     {
                         "id": "43",
                         "code": "090",
-                        "description": "Description text",
+                        "description": "Description text of 090, for humans",
+                        "children": [],
                         "count": 54,
-                        "obligation": 89.01,
-                        "outlay": 70.98,
-                        "total_budgetary_resources": 23486324
+                        "face_value_of_loan": 89.01,
+                        "obligation": 45,
+                        "outlay": 3244,
+                        "resource_link": "https://beta.sam.gov/fal/25b529f3b5f94b6c939bc0ae8424ae6c/view"
                     },
                     {
                         "id": "41",
                         "code": "012",
-                        "description": "Description text",
+                        "description": "Description text of 012, for humans",
+                        "children": [],
                         "count": 2,
-                        "obligation": 50,
-                        "outlay": 10,
-                        "total_budgetary_resources": 324896234
+                        "face_value_of_loan": 50,
+                        "obligation": 123,
+                        "outlay": 3249,
+                        "resource_link": null
                     }
                 ],
-                "pagination_metadata": {
+                "page_metadata": {
                     "page": 1,
                     "next": 2,
                     "previous": null,
@@ -70,8 +69,6 @@ Returns spending details of DEFC receiving supplemental funding budgetary resour
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-    Defaults to all Award Type Codes. Applicable only when requested `award` spending.
 + `query` (optional, string)
     A "keyword" or "search term" to filter down results based on this text snippet
 
@@ -88,17 +85,30 @@ Returns spending details of DEFC receiving supplemental funding budgetary resour
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `count`
+        + `face_value_of_loan`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
 + `id` (required, string)
 + `code` (required, string)
 + `description` (required, string)
++ `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
++ `face_value_of_loan` (required, number, nullable)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
-+ `total_budgetary_resources` (required, number, nullable)
++ `resource_link` (required, string, nullable)
+    Link to an external website with more information about this result.
+
 
 ## PageMetadata (object)
 + `page` (required, number)
@@ -134,30 +144,3 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `S`
 + `T`
 + `9`
-
-## AwardTypeCodes (enum[string])
-List of procurement and assistance award type codes supported by USAspending.gov
-
-### Members
-+ `02`
-+ `03`
-+ `04`
-+ `05`
-+ `06`
-+ `07`
-+ `08`
-+ `09`
-+ `10`
-+ `11`
-+ `A`
-+ `B`
-+ `C`
-+ `D`
-+ `IDV_A`
-+ `IDV_B_A`
-+ `IDV_B_B`
-+ `IDV_B_C`
-+ `IDV_B`
-+ `IDV_C`
-+ `IDV_D`
-+ `IDV_E`

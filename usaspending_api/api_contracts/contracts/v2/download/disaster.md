@@ -21,8 +21,7 @@ Creates a new download job for the requested account and award. Returns a link t
 
             {
                 "filters": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
-                    "fiscal_year": "2020"
+                    "def_codes": ["L", "M", "N", "O", "P"]
                 }
             }
 
@@ -53,8 +52,7 @@ Creates a new download job for the requested account and award. Returns a link t
                     ],
                     "file_format": "csv",
                     "filters": {
-                        "def_codes": ["L", "M", "N", "O", "P"],
-                        "fiscal_year": "2020"
+                        "def_codes": ["L", "M", "N", "O", "P"]
                     },
                     "is_for_assistance": true,
                     "is_for_contract": true,
@@ -68,7 +66,6 @@ Creates a new download job for the requested account and award. Returns a link t
 
 ## Filters (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `fiscal_year` (required, number)
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing

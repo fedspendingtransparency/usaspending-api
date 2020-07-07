@@ -5,7 +5,7 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     calculate_last_completed_fiscal_quarter,
-    convert_fiscal_quarter_to_fiscal_period,
+    get_final_period_of_quarter,
 )
 
 
@@ -63,7 +63,7 @@ class BudgetaryResources(AgencyBase):
         even though we're in FY2000 Q1.
         """
         prior_fiscal_year = self.fiscal_year - 1
-        prior_fiscal_year_last_completed_fiscal_period = convert_fiscal_quarter_to_fiscal_period(
+        prior_fiscal_year_last_completed_fiscal_period = get_final_period_of_quarter(
             calculate_last_completed_fiscal_quarter(prior_fiscal_year)
         )
         return AppropriationAccountBalances.objects.filter(

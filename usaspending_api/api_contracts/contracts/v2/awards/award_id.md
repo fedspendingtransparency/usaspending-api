@@ -253,6 +253,28 @@ This endpoint returns a list of data that is associated with the award profile p
                         "description": "Medicinal and Botanical Manufacturing"
                     }
                 },
+                "total_account_outlay": 3.0,
+                "total_account_obligation": 3.0,
+                "account_outlays_by_defc": [
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
+                ],
+                "account_obligations_by_defc": [
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
+                ]
                 "disaster_emergency_fund_codes": ["L", "M"]
             }
 
@@ -406,6 +428,28 @@ This endpoint returns a list of data that is associated with the award profile p
                     "foreign_province": null,
                     "foreign_postal_code": null
                 },
+                "total_account_outlay": 3.0,
+                "total_account_obligation": 3.0,
+                "account_outlays_by_defc": [
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
+                ],
+                "account_obligations_by_defc": [
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
+                ]
                 "disaster_emergency_fund_codes": ["L", "M"]
             }
 
@@ -641,6 +685,28 @@ This endpoint returns a list of data that is associated with the award profile p
                         "description": "Freight Transportation Arrangement"
                     }
                 },
+                "total_account_outlay": 3.0,
+                "total_account_obligation": 3.0,
+                "account_outlays_by_defc": [
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
+                ],
+                "account_obligations_by_defc": [
+                    {
+                        "code": "P",
+                        "amount": 2.0
+                    },
+                    {
+                        "code": "L",
+                        "amount": 1.0
+                    }
+                ]
                 "disaster_emergency_fund_codes": ["L", "M"]
             }
 
@@ -680,6 +746,10 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the contract has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
++ `total_account_outlay` (required, number)
++ `total_account_obligation` (required, number)
++ `account_obligations_by_defc` (required, array[DEFCAmount], fixed-type)
++ `account_outlays_by_defc` (required, array[DEFCAmount], fixed-type)
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## IDVResponse (object)
@@ -720,6 +790,10 @@ This endpoint returns a list of data that is associated with the award profile p
     `null` if the idv has no parent
 + `naics_hierarchy` (required, NAICSHierarchy, fixed-type)
 + `psc_hierarchy` (required, PSCHierarchy, fixed-type)
++ `total_account_outlay` (required, number)
++ `total_account_obligation` (required, number)
++ `account_obligations_by_defc` (required, array[DEFCAmount], fixed-type)
++ `account_outlays_by_defc` (required, array[DEFCAmount], fixed-type)
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## FinancialAssistanceResponse (object)
@@ -769,6 +843,10 @@ This endpoint returns a list of data that is associated with the award profile p
 + `place_of_performance` (required, Location, fixed-type)
 + `executive_details` (required, Executive, fixed-type)
 + `cfda_info` (required, array[CFDAInfo], fixed-type)
++ `total_account_outlay` (required, number)
++ `total_account_obligation` (required, number)
++ `account_obligations_by_defc` (required, array[DEFCAmount], fixed-type)
++ `account_outlays_by_defc` (required, array[DEFCAmount], fixed-type)
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## CFDAInfo (object)
@@ -949,3 +1027,7 @@ This endpoint returns a list of data that is associated with the award profile p
 ## HierarchyLeaf (object)
 + `description` (optional, string)
 + `code` (optional, string)
+
+## DEFCAmount (object)
++ `code` (required, string)
++ `amount` (required, number)

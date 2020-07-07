@@ -1,7 +1,9 @@
 from datetime import date
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, CharField, Func, IntegerField
-from usaspending_api.common.helpers.sql_helpers import get_connection
+from django.db.models import Aggregate, CharField, Func, IntegerField, Case, When, Value, Subquery, OuterRef
+from django.db.models.functions import Concat, LPad, Cast
+from usaspending_api.references.models import CGAC
+
 from usaspending_api.search.models import (
     ContractAwardSearchMatview,
     DirectPaymentAwardSearchMatview,
@@ -87,6 +89,56 @@ class BoolOr(Aggregate):
     name = "BoolOr"
 
 
+def get_agency_name_annotation(relation_name: str, cgac_column_name: str) -> Subquery:
+    """
+    Accepts the Django foreign key relation name for the outer queryset to TreasuryAppropriationAccount
+    or FederalAccount join and the CGAC column name and returns an annotation ready Subquery object that
+    retrieves the CGAC agency name.
+    """
+    outer_ref = f"{relation_name}__{cgac_column_name}"
+    return Subquery(CGAC.objects.filter(cgac_code=OuterRef(outer_ref)).values("agency_name"))
+
+
+def get_fyp_notation(relation_name=None):
+    """
+    Generates FYyyyyPpp syntax from submission table.  relation_name is the Django ORM
+    relation name from the foreign key table to the submission table.
+    """
+    relation_prefix = f"{relation_name}__" if relation_name else ""
+    return Concat(
+        Value("FY"),
+        Cast(f"{relation_prefix}reporting_fiscal_year", output_field=CharField()),
+        Value("P"),
+        LPad(Cast(f"{relation_prefix}reporting_fiscal_period", output_field=CharField()), 2, Value("0")),
+    )
+
+
+def get_fyq_notation(relation_name=None):
+    """
+    Generates FYyyyyPpp syntax from submission table.  relation_name is the Django ORM
+    relation name from the foreign key table to the submission table.
+    """
+    relation_prefix = f"{relation_name}__" if relation_name else ""
+    return Concat(
+        Value("FY"),
+        Cast(f"{relation_prefix}reporting_fiscal_year", output_field=CharField()),
+        Value("Q"),
+        Cast(f"{relation_prefix}reporting_fiscal_quarter", output_field=CharField()),
+    )
+
+
+def get_fyp_or_q_notation(relation_name=None):
+    """
+    Generates FYyyyyQq or FYyyyyPpp syntax from submission table.  relation_name is the Django ORM
+    relation name from the foreign key table to the submission table.
+    """
+    relation_prefix = f"{relation_name}__" if relation_name else ""
+    return Case(
+        When(**{f"{relation_prefix}quarter_format_flag": True}, then=get_fyq_notation(relation_name)),
+        default=get_fyp_notation(relation_name),
+    )
+
+
 def generate_raw_quoted_query(queryset):
     """Generates the raw sql from a queryset with quotable types quoted.
 
@@ -110,12 +162,6 @@ def generate_raw_quoted_query(queryset):
             str_fix_param = param
         str_fix_params.append(str_fix_param)
     return sql % tuple(str_fix_params)
-
-
-def generate_where_clause(queryset):
-    """Returns the SQL and params from a queryset all ready to be plugged into an extra method."""
-    compiler = queryset.query.get_compiler(get_connection().alias)
-    return queryset.query.where.as_sql(compiler, compiler.connection)
 
 
 def obtain_view_from_award_group(type_list):
@@ -156,7 +202,3 @@ def subaward_types_are_valid_groups(type_list):
     is_procurement = set(type_list).difference(set(procurement_type_mapping.keys()))
     is_assistance = set(type_list).difference(set(assistance_type_mapping.keys()))
     return bool(is_procurement) != bool(is_assistance)  # clever XOR logic
-
-
-def category_to_award_materialized_views():
-    return {category: values["model"] for category, values in CATEGORY_TO_MODEL.items()}
