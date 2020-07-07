@@ -19,12 +19,13 @@ class AwardCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
 
     @cache_response()
     def post(self, request: Request) -> Response:
+
+        filters = [
+            self.is_in_provided_def_codes(),
+            self.all_closed_defc_submissions,
+            self.is_non_zero_award_cpe(),
+        ]
         if self.award_type_codes:
-            filters = [
-                self.is_in_provided_def_codes(),
-                self.all_closed_defc_submissions,
-                self.is_non_zero_award_cpe(),
-            ]
             count = (
                 FinancialAccountsByAwards.objects.filter(*filters)
                 .values("award_id")
@@ -32,11 +33,6 @@ class AwardCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
                 .count()
             )
         else:
-            filters = [
-                self.is_in_provided_def_codes(),
-                self.all_closed_defc_submissions,
-                self.is_non_zero_award_cpe(),
-            ]
             count = FinancialAccountsByAwards.objects.filter(*filters).aggregate(
                 count=Count(self.unique_file_c, distinct=True)
             )["count"]
