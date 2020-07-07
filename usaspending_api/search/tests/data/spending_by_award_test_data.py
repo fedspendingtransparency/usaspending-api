@@ -123,7 +123,31 @@ def spending_by_award_test_data():
         main_account_code="4930",
         federal_account_id=1,
     )
-    mommy.make("awards.FinancialAccountsByAwards", award_id=1, treasury_account_id=1)
+    defc = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2019,
+        submission_fiscal_month=12,
+        is_quarter=True,
+        submission_reveal_date="2020-04-01",
+    )
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        pk=1,
+        reporting_fiscal_period=9,
+        reporting_fiscal_year=2019,
+        reporting_period_end="2019-06-30",
+    )
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=1,
+        treasury_account_id=1,
+        transaction_obligated_amount=100,
+        gross_outlay_amount_by_award_cpe=100,
+        disaster_emergency_fund=defc,
+        submission_id=1,
+    )
 
     # Subtier Agency
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
