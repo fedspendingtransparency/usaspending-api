@@ -3,11 +3,22 @@ HOST: https://api.usaspending.gov
 
 # Custom Account Data [/api/v2/download/accounts/submission_periods]
 
-This endpoint returns a JSON Object containing an array of most data in the "dabs_submission_window_schedule" table . 
+This endpoint provides a list of all fields in the "dabs_submission_window_schedule" table except 'id'.   
 
 ## GET
 
 + Response 200 (application/json)
+    + Attributes (object)
+        + `period_start_date` (required, string)
+        + `period_end_date` (required, string)
+        + `submission_start_date` (required, string)
+        + `submission_due_date` (required, string)
+        + `certification_due_date` (required, string)
+        + `submission_reveal_date` (required, string)
+        + `submission_fiscal_year` (required, number)
+        + `submission_fiscal_quarter` (required, number)
+        + `submission_fiscal_month` (required, number)
+        + `is_quarter` (required, boolean)
     + Body
 
             {
@@ -38,12 +49,7 @@ This endpoint returns a JSON Object containing an array of most data in the "dab
                     }
                 ]
             }
-                        
+          
 # Data Structures
 
-## AdvancedFilterObject (object)
-+ `available_periods` (required, array)
-    + this is the list of tuples of valid periods
-+ `fy`(required, number)
-+ `period`(required, number)
        
