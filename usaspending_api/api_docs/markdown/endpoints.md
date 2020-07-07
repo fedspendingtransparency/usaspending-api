@@ -99,7 +99,6 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/disaster/spending_by_geography/](/api/v2/disaster/spending_by_geography/)|POST| Geographic award spending of Disaster/Emergency funding|
 |[/api/v2/disaster/spending_over_time/](/api/v2/disaster/spending_over_time/)|POST| Award types in the time period spending Disaster/Emergency funding|
 |[/api/v2/download/accounts/](/api/v2/download/accounts/)|POST| Generates zip file for download of account data in CSV format|
-|[api/v2/download/account/submission_periods](/api/v2/references/submission_periods/)
 |[/api/v2/download/assistance/](/api/v2/download/assistance/)|POST| Returns a zipped file containing Assistance data|
 |[/api/v2/download/awards/](/api/v2/download/awards/)|POST| Generates zip file for download of award data in CSV format|
 |[/api/v2/download/contract/](/api/v2/download/contract/)|POST| Returns a zipped file containing Contract data|
@@ -144,6 +143,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/references/glossary/](/api/v2/references/glossary/)|GET| Returns a list of glossary terms and definitions|
 |[/api/v2/references/naics/<NAICS_CODE\>/](/api/v2/references/naics/11/)|GET|  Returns the requested NAICS and immediate children, as well as related, relevant data.|
 |[/api/v2/references/naics/](/api/v2/references/naics/)|GET|  Returns all Tier 1 (2-digit) NAICS and related, relevant data.|
+|[/api/v2/references/submission_periods/](/api/v2/references/submission_periods/)
 |[/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/)|GET|  Returns all toptier agencies and related, relevant data.|
 |[/api/v2/search/new_awards_over_time/](/api/v2/search/new_awards_over_time/)|POST| Returns a list of time periods with the new awards in the appropriate period within the provided time range|
 |[/api/v2/search/spending_by_award/](/api/v2/search/spending_by_award/)|POST| Returns the fields of the filtered awards|
