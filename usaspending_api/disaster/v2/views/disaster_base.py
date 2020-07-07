@@ -127,7 +127,7 @@ class DisasterBase(APIView):
                         reporting_fiscal_period__lte=sub.fiscal_period,
                     )
                 )
-        return q & ~Q(submission__toptier_code="nonsensical string")
+        return q & Q(submission__reporting_period_start__gte=str(self.reporting_period_min_date))
 
 
 class AwardTypeMixin:
