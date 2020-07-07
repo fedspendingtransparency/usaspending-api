@@ -307,19 +307,17 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
             file_path=source_path, delimiter=delim, row_limit=EXCEL_ROW_LIMIT, output_name_template=output_template
         )
 
-        if download_job:
-            msg = f"Partitioning data into {len(list_of_files)} files took {time.perf_counter() - log_time:.4f}s"
-            write_to_log(message=msg, download_job=download_job)
+        msg = f"Partitioning data into {len(list_of_files)} files took {time.perf_counter() - log_time:.4f}s"
+        write_to_log(message=msg, download_job=download_job)
 
         # Zip the split files into one zipfile
         write_to_log(message="Beginning zipping and compression", download_job=download_job)
         log_time = time.perf_counter()
         append_files_to_zip_file(list_of_files, zip_file_path)
 
-        if download_job:
-            write_to_log(
-                message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s", download_job=download_job
-            )
+        write_to_log(
+            message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s", download_job=download_job
+        )
 
     except Exception as e:
         message = "Exception while partitioning text file"
