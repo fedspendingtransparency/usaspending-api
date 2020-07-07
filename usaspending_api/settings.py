@@ -102,6 +102,7 @@ DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/Data_Dictio
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
 ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "AssistanceSummary_download_readme.txt")
 CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_download_readme.txt")
+COVID19_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "COVID-19_download_readme.txt")
 AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_codes.csv".format(
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
