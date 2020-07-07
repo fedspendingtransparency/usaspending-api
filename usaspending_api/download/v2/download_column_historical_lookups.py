@@ -1517,9 +1517,9 @@ query_paths = {
         "federal_account": OrderedDict(
             [
                 ("owning_agency_name", "treasury_account_identifier__federal_account__parent_toptier_agency__name"),
-                ("reporting_agency_name", "reporting_agency_name"),  # Column is appended to in account_download.py
-                ("submission_period", "submission_period",),  # Column is appended to in account_download.py
-                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
+                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
+                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                ("federal_account_symbol", "treasury_account_identifier__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
                 ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
                 ("budget_function", "budget_function"),  # Column is annotated in account_download.py
@@ -1561,7 +1561,7 @@ query_paths = {
             [
                 ("owning_agency_name", "treasury_account__funding_toptier_agency__name"),
                 ("reporting_agency_name", "submission__reporting_agency_name"),
-                ("submission_period", "submission_period",),  # Column is appended to in account_download.py
+                ("submission_period", "submission_period",),  # Column is annotated in account_download.py
                 ("allocation_transfer_agency_identifer_code", "treasury_account__allocation_transfer_agency_id"),
                 ("agency_identifier_code", "treasury_account__agency_id"),
                 ("beginning_period_of_availability", "treasury_account__beginning_period_of_availability"),
@@ -1602,9 +1602,9 @@ query_paths = {
         "federal_account": OrderedDict(
             [
                 ("owning_agency_name", "treasury_account__federal_account__parent_toptier_agency__name"),
-                ("reporting_agency_name", "reporting_agency_name"),  # Column is appended to in account_download.py
-                ("submission_period", "submission_period",),  # Column is appended to in account_download.py
-                ("federal_account_symbol", "federal_account_symbol"),  # Column is appended to in account_download.py
+                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
+                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
                 ("budget_function", "budget_function"),  # Column is annotated in account_download.py
