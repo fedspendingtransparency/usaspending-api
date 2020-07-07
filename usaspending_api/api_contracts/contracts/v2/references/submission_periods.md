@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Custom Account Data [/api/v2/download/accounts/submission_periods]
+# DABS Submission Window Dates [/api/v2/references/submission_periods/]
 
 This endpoint provides a list of all fields in the "dabs_submission_window_schedule" table except 'id'.   
 
@@ -52,4 +52,3 @@ This endpoint provides a list of all fields in the "dabs_submission_window_sched
           
 # Data Structures
 
-       
