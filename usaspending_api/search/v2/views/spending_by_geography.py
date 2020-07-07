@@ -22,12 +22,14 @@ from usaspending_api.common.elasticsearch.search_wrappers import TransactionSear
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
-from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import PopCounty, PopCongressionalDistrict
 from usaspending_api.search.models import SubawardView
-from usaspending_api.search.v2.elasticsearch_helper import get_scaled_sum_aggregations, get_number_of_unique_terms_for_transactions
+from usaspending_api.search.v2.elasticsearch_helper import (
+    get_scaled_sum_aggregations,
+    get_number_of_unique_terms_for_transactions,
+)
 
 logger = logging.getLogger(__name__)
 API_VERSION = settings.API_VERSION
@@ -86,7 +88,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
-        models.extend(copy.deepcopy(PAGINATION))
         original_filters = request.data.get("filters")
         json_request = TinyShield(models).block(request.data)
 

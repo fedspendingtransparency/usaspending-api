@@ -174,3 +174,11 @@ class LoansPaginationMixin(_BasePaginationMixin):
     def pagination(self):
         sortable_columns = ["id", "code", "description", "count", "face_value_of_loan"]
         return self.run_models(sortable_columns)
+
+
+class RecipientMixin:
+    required_filters = ["def_codes", "award_type_codes"]
+
+    @property
+    def award_type_codes(self):
+        return self.filters.get("award_type_codes")

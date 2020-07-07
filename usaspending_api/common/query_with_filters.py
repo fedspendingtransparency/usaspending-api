@@ -345,6 +345,7 @@ class _ProgramNumbers(_Filter):
 
 class _DisasterEmergencyFundCodes(_Filter):
     """Disaster and Emergency Fund Code filters"""
+
     underscore_name = "def_codes"
 
     @classmethod

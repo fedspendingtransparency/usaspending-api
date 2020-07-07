@@ -21,7 +21,10 @@ from usaspending_api.recipient.models import RecipientProfile, RecipientLookup, 
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters, get_duns_business_types_mapping
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode
-from usaspending_api.search.v2.elasticsearch_helper import get_scaled_sum_aggregations, get_number_of_unique_terms_for_transactions
+from usaspending_api.search.v2.elasticsearch_helper import (
+    get_scaled_sum_aggregations,
+    get_number_of_unique_terms_for_transactions,
+)
 
 logger = logging.getLogger(__name__)
 

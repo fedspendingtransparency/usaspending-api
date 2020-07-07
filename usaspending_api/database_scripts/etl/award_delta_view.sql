@@ -82,8 +82,8 @@ SELECT
 
   CASE
     WHEN
-    	vw_award_search.recipient_location_state_code IS NOT NULL
-    	AND vw_award_search.recipient_location_county_code IS NOT NULL
+        vw_award_search.recipient_location_state_code IS NOT NULL
+        AND vw_award_search.recipient_location_county_code IS NOT NULL
       THEN CONCAT(
         '{"country_code":"', vw_award_search.recipient_location_country_code,
         '","state_code":"', vw_award_search.recipient_location_state_code,
@@ -96,8 +96,8 @@ SELECT
   END AS recipient_location_county_agg_key,
   CASE
     WHEN
-    	vw_award_search.recipient_location_state_code IS NOT NULL
-    	AND vw_award_search.recipient_location_congressional_code IS NOT NULL
+        vw_award_search.recipient_location_state_code IS NOT NULL
+        AND vw_award_search.recipient_location_congressional_code IS NOT NULL
       THEN CONCAT(
         '{"country_code":"', vw_award_search.recipient_location_country_code,
         '","state_code":"', vw_award_search.recipient_location_state_code,

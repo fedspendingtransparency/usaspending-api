@@ -1,3 +1,4 @@
+from usaspending_api.disaster.tests.fixtures.recipient_location_data import awards_and_transactions
 from usaspending_api.disaster.tests.fixtures.disaster_account_data import disaster_account_data
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
 from usaspending_api.disaster.tests.fixtures.overview_data import (
@@ -22,6 +23,7 @@ from usaspending_api.disaster.tests.fixtures.overview_data import (
 
 
 __all__ = [
+    "awards_and_transactions",
     "basic_ref_data",
     "partially_completed_year",
     "disaster_account_data",
