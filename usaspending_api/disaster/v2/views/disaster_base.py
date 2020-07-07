@@ -12,7 +12,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_y
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
-from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 COVID_19_GROUP_NAME = "covid_19"
 
@@ -120,13 +120,12 @@ class DisasterBase(APIView):
                 sub.fiscal_year == self.reporting_period_min_year
                 and sub.fiscal_period >= self.reporting_period_min_month
             ) or sub.fiscal_year > self.reporting_period_min_year:
-                q |= Q(
-                    submission__in=SubmissionAttributes.objects.filter(
-                        reporting_fiscal_year=sub.fiscal_year,
-                        quarter_format_flag=sub.is_quarter,
-                        reporting_fiscal_period__lte=sub.fiscal_period,
-                    )
+                q |= (
+                    Q(submission__reporting_fiscal_year=sub.fiscal_year)
+                    & Q(submission__quarter_format_flag=sub.is_quarter)
+                    & Q(submission__reporting_fiscal_period__lte=sub.fiscal_period)
                 )
+
         return q & Q(submission__reporting_period_start__gte=str(self.reporting_period_min_date))
 
 
