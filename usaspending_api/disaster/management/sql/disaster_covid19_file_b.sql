@@ -1,15 +1,3 @@
--- WITH latest_submissions AS (
---     SELECT
---         "dabs_submission_window_schedule"."submission_fiscal_year",
---         "dabs_submission_window_schedule"."is_quarter",
---         MAX("dabs_submission_window_schedule"."submission_fiscal_month") AS "submission_fiscal_month"
---     FROM "dabs_submission_window_schedule"
---     WHERE
---         "dabs_submission_window_schedule"."submission_reveal_date" <= now()
---     GROUP BY
---         "dabs_submission_window_schedule"."submission_fiscal_year",
---         "dabs_submission_window_schedule"."is_quarter"
--- )
 WITH recent_submission AS (
     SELECT
         "dabs_submission_window_schedule"."submission_fiscal_year",

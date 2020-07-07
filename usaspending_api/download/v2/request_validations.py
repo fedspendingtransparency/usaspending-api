@@ -26,7 +26,6 @@ from usaspending_api.download.lookups import (
     VALUE_MAPPINGS,
     YEAR_CONSTRAINT_FILTER_DEFAULTS,
 )
-from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions import helpers as sub_helpers
 
 
@@ -451,38 +450,3 @@ def _validate_submission_type(filters: dict) -> None:
         raise InvalidParameterException(msg)
 
     filters["submission_types"] = list(set(submission_types))
-
-
-def validate_disaster_request(request_data):
-    json_request = {"filters": {}}
-
-    _validate_required_parameters(request_data, ["filters"])
-    json_request["account_level"] = "treasury_account"
-
-    filters = _validate_filters(request_data)
-
-    json_request["file_format"] = str(request_data.get("file_format", "csv")).lower()
-
-    _validate_file_format(json_request)
-
-    # Obtain the latest closed submission
-    sub = sub_helpers.get_last_closed_submission_date(is_quarter=False)
-    json_request["filters"]["fy"] = sub["submission_fiscal_year"]
-    json_request["filters"]["quarter"] = sub["submission_fiscal_quarter"]
-    json_request["filters"]["period"] = sub["submission_fiscal_month"]
-
-    json_request["filters"]["def_codes"] = filters.get("def_codes")
-
-    json_request["download_types"] = [
-        "account_balances",
-        "object_class_program_activity",
-        "award_financial",
-        "awards",
-        "sub_awards",
-    ]
-    json_request["agency"] = "all"
-
-    # Validate the rest of the filters
-    check_types_and_assign_defaults(filters, json_request["filters"], ACCOUNT_FILTER_DEFAULTS)
-
-    return json_request

@@ -24,7 +24,6 @@ from usaspending_api.download.v2.request_validations import (
     validate_account_request,
     validate_contract_request,
     validate_assistance_request,
-    validate_disaster_request,
 )
 
 
@@ -39,8 +38,6 @@ class BaseDownloadViewSet(APIView):
             json_request = validate_contract_request(request.data)
         elif request_type == "assistance":
             json_request = validate_assistance_request(request.data)
-        elif request_type == "disaster":
-            json_request = validate_disaster_request(request.data)
         else:
             json_request = validate_account_request(request.data)
 

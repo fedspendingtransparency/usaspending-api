@@ -79,16 +79,3 @@ class AccountDownloadViewSet(BaseDownloadViewSet):
         """Push a message to SQS with the validated request JSON"""
 
         return BaseDownloadViewSet.post(self, request, "account")
-
-
-class DisasterDownloadViewSet(BaseDownloadViewSet):
-    """
-    This route sends a request to begin generating a zipfile of account data
-    """
-
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/disaster.md"
-
-    def post(self, request):
-        """Push a message to SQS with the validated request JSON"""
-
-        return BaseDownloadViewSet.post(self, request, "disaster")

@@ -323,8 +323,9 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
 
     except Exception as e:
         message = "Exception while partitioning text file"
-        fail_download(download_job, e, message)
-        write_to_log(message=message, download_job=download_job, is_error=True)
+        if download_job:
+            fail_download(download_job, e, message)
+            write_to_log(message=message, download_job=download_job, is_error=True)
         logger.error(e)
         raise e
 
@@ -358,7 +359,11 @@ def wait_for_process(process, start_time, download_job):
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
     while process.is_alive():
-        if not download_job.monthly_download and (time.perf_counter() - start_time) > MAX_VISIBILITY_TIMEOUT:
+        if (
+            download_job
+            and not download_job.monthly_download
+            and (time.perf_counter() - start_time) > MAX_VISIBILITY_TIMEOUT
+        ):
             break
         if sleep_count < 10:
             time.sleep(WAIT_FOR_PROCESS_SLEEP / 5)
@@ -367,7 +372,7 @@ def wait_for_process(process, start_time, download_job):
         sleep_count += 1
 
     over_time = (time.perf_counter() - start_time) >= MAX_VISIBILITY_TIMEOUT
-    if (not download_job.monthly_download and over_time) or process.exitcode != 0:
+    if download_job and (not download_job.monthly_download and over_time) or process.exitcode != 0:
         if process.is_alive():
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
             write_to_log(

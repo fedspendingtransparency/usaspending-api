@@ -26,8 +26,6 @@ def create_unique_filename(json_request, origination=None):
         download_name = file_name_template.format(
             agency=agency, data_quarters=data_quarters, level=level, timestamp=timestamp,
         )
-    elif json_request["request_type"] == "disaster":
-        download_name = f"SupplementalFunding_{''.join(sorted(json_request['filters']['def_codes']))}_{timestamp}.zip"
     else:  # "award" downloads
         agency = ""
 
