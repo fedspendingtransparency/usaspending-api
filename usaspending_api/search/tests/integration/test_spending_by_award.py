@@ -1156,7 +1156,7 @@ def _test_correct_response_for_def_codes(client):
         data=json.dumps(
             {
                 "filters": {
-                    "award_type_codes": ["02", "03", "04", "05"],
+                    "award_type_codes": ["A", "B", "C", "D"],
                     "def_codes": ["L"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
