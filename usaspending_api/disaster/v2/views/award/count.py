@@ -10,7 +10,7 @@ from usaspending_api.disaster.v2.views.disaster_base import FabaOutlayMixin, Awa
 
 class AwardCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
     """
-    Obtain the count of Agencies related to supplied DEFC filter.
+    Obtain the count of Awards related to supplied DEFC filter.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/award/count.md"
@@ -25,16 +25,9 @@ class AwardCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
             self.all_closed_defc_submissions,
             self.is_non_zero_award_cpe(),
         ]
+        count = FinancialAccountsByAwards.objects.filter(*filters)
         if self.award_type_codes:
-            count = (
-                FinancialAccountsByAwards.objects.filter(*filters)
-                .values("award_id")
-                .filter(award__type__in=self.filters.get("award_type_codes"))
-                .count()
-            )
-        else:
-            count = FinancialAccountsByAwards.objects.filter(*filters).aggregate(
-                count=Count(self.unique_file_c, distinct=True)
-            )["count"]
+            count = count.values("award_id").filter(award__type__in=self.filters.get("award_type_codes"))
+        count = count.aggregate(count=Count(self.unique_file_c, distinct=True))["count"]
 
         return Response({"count": count})

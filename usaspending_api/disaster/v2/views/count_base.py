@@ -3,9 +3,6 @@ from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 
 
 class CountBase(DisasterBase):
-    def is_after_min_date(self):
-        return Q(submission__reporting_period_start__gte=self.reporting_period_min)
-
     def is_in_provided_def_codes(self):
         return Q(disaster_emergency_fund__code__in=self.def_codes)
 

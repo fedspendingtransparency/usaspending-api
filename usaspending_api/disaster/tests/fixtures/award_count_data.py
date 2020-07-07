@@ -14,6 +14,7 @@ def basic_award(award_count_sub_schedule, award_count_submission, defc_codes):
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award=award,
+        parent_award_id="basic award",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
         gross_outlays_delivered_orders_paid_total_cpe=8,
@@ -77,12 +78,42 @@ def file_c_with_no_award(defc_codes):
 
 
 @pytest.fixture
+def multiple_file_c_to_same_award(award_count_sub_schedule, award_count_submission, defc_codes):
+    award = _normal_award()
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award=award,
+        piid="piid 1",
+        parent_award_id="same parent award",
+        fain="fain 1",
+        uri="uri 1",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        gross_outlays_delivered_orders_paid_total_cpe=8,
+    )
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award=award,
+        piid="piid 1",
+        parent_award_id="same parent award",
+        fain="fain 1",
+        uri="uri 1",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        gross_outlays_delivered_orders_paid_total_cpe=8,
+    )
+
+
+@pytest.fixture
 def obligations_incurred_award(award_count_sub_schedule, award_count_submission, defc_codes):
     award = _normal_award()
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award=award,
+        parent_award_id="obligations award",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
         obligations_incurred_total_by_award_cpe=8,
