@@ -1,22 +1,3 @@
-import datetime
-
-from django.conf import settings
-from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Case, CharField, Max, OuterRef, Subquery, Sum, When, Func, F, Value, DateField
-from django.db.models.functions import Concat, Coalesce, Cast
-from usaspending_api.accounts.helpers import start_and_end_dates_from_fyq
-from usaspending_api.accounts.models import FederalAccount
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.orm_helpers import FiscalYearAndQuarter, FiscalYear, FiscalYearAndPeriod
-from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
-from usaspending_api.download.v2.download_column_historical_lookups import query_paths
-from usaspending_api.references.models import CGAC, ToptierAgency
-from usaspending_api.settings import HOST
-
-
-AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
-
 """
 Account Download Logic
 
@@ -50,7 +31,12 @@ from django.db.models import Case, CharField, DateField, F, Func, Max, Sum, Valu
 from django.db.models.functions import Cast, Coalesce, Concat
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.orm_helpers import FiscalYear, FiscalYearAndQuarter, get_agency_name_annotation
+from usaspending_api.common.helpers.orm_helpers import (
+    FiscalYear,
+    FiscalYearAndQuarter,
+    get_agency_name_annotation,
+    FiscalYearAndPeriod,
+)
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import ToptierAgency
@@ -160,44 +146,10 @@ def get_period_and_quarter_filter(account_type, filters):
 def generate_treasury_account_query(queryset, account_type, tas_id):
     """ Derive necessary fields for a treasury account-grouped query """
     derived_fields = {
-        "treasury_account_symbol": Concat(
-            Case(
-                When(
-                    **{
-                        f"{tas_id}__allocation_transfer_agency_id__isnull": False,
-                        "then": Concat(f"{tas_id}__allocation_transfer_agency_id", Value("-")),
-                    }
-                ),
-                default=Value(""),
-                output_field=CharField(),
-            ),
-            f"{tas_id}__agency_id",
-            Value("-"),
-            Case(
-                When(**{f"{tas_id}__availability_type_code": "X", "then": Value("X")}),
-                default=Concat(
-                    f"{tas_id}__beginning_period_of_availability",
-                    Value("/"),
-                    f"{tas_id}__ending_period_of_availability",
-                ),
-                output_field=CharField(),
-            ),
-            Value("-"),
-            f"{tas_id}__main_account_code",
-            Value("-"),
-            f"{tas_id}__sub_account_code",
-            output_field=CharField(),
-        ),
-        "allocation_transfer_agency_identifer_name": get_agency_name_annotation(
+        "allocation_transfer_agency_identifier_name": get_agency_name_annotation(
             tas_id, "allocation_transfer_agency_id"
         ),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
-        # federal_account_symbol: fed_acct_AID-fed_acct_MAC
-        "federal_account_symbol": Concat(
-            f"{tas_id}__federal_account__agency_identifier",
-            Value("-"),
-            f"{tas_id}__federal_account__main_account_code",
-        ),
         "submission_period": Case(
             When(**{f"submission__quarter_format_flag": False, "then": FiscalYearAndPeriod("reporting_period_end")}),
             default=FiscalYearAndQuarter("reporting_period_end"),
@@ -219,17 +171,12 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         "reporting_agency_name": StringAgg("submission__reporting_agency_name", "; ", distinct=True),
         "budget_function": StringAgg(f"{tas_id}__budget_function_title", "; ", distinct=True),
         "budget_subfunction": StringAgg(f"{tas_id}__budget_subfunction_title", "; ", distinct=True),
-        "federal_account_symbol": Concat(
-            f"{tas_id}__federal_account__agency_identifier",
-            Value("-"),
-            f"{tas_id}__federal_account__main_account_code",
-        ),
-        "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": Case(
             When(**{f"submission__quarter_format_flag": False, "then": FiscalYearAndPeriod("reporting_period_end")}),
             default=FiscalYearAndQuarter("reporting_period_end"),
             output_field=CharField(),
         ),
+        "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "last_modified_date"
         + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
     }
