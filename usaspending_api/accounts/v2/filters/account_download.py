@@ -146,10 +146,43 @@ def get_period_and_quarter_filter(account_type, filters):
 def generate_treasury_account_query(queryset, account_type, tas_id):
     """ Derive necessary fields for a treasury account-grouped query """
     derived_fields = {
+        "treasury_account_symbol": Concat(
+            Case(
+                When(
+                    **{
+                        f"{tas_id}__allocation_transfer_agency_id__isnull": False,
+                        "then": Concat(f"{tas_id}__allocation_transfer_agency_id", Value("-")),
+                    }
+                ),
+                default=Value(""),
+                output_field=CharField(),
+            ),
+            f"{tas_id}__agency_id",
+            Value("-"),
+            Case(
+                When(**{f"{tas_id}__availability_type_code": "X", "then": Value("X")}),
+                default=Concat(
+                    f"{tas_id}__beginning_period_of_availability",
+                    Value("/"),
+                    f"{tas_id}__ending_period_of_availability",
+                ),
+                output_field=CharField(),
+            ),
+            Value("-"),
+            f"{tas_id}__main_account_code",
+            Value("-"),
+            f"{tas_id}__sub_account_code",
+            output_field=CharField(),
+        ),
         "allocation_transfer_agency_identifier_name": get_agency_name_annotation(
             tas_id, "allocation_transfer_agency_id"
         ),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
+        "federal_account_symbol": Concat(
+            f"{tas_id}__federal_account__agency_identifier",
+            Value("-"),
+            f"{tas_id}__federal_account__main_account_code",
+        ),
         "submission_period": Case(
             When(**{f"submission__quarter_format_flag": False, "then": FiscalYearAndPeriod("reporting_period_end")}),
             default=FiscalYearAndQuarter("reporting_period_end"),
@@ -175,6 +208,11 @@ def generate_federal_account_query(queryset, account_type, tas_id):
             When(**{f"submission__quarter_format_flag": False, "then": FiscalYearAndPeriod("reporting_period_end")}),
             default=FiscalYearAndQuarter("reporting_period_end"),
             output_field=CharField(),
+        ),
+        "federal_account_symbol": Concat(
+            f"{tas_id}__federal_account__agency_identifier",
+            Value("-"),
+            f"{tas_id}__federal_account__main_account_code",
         ),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "last_modified_date"
