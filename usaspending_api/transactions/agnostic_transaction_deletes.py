@@ -1,6 +1,5 @@
 import logging
 
-from datetime import datetime
 from django.conf import settings
 from typing import Optional
 
@@ -12,13 +11,21 @@ logger = logging.getLogger("script")
 
 class AgnosticDeletes:
     def add_arguments(self, parser):
-        parser.add_argument(
+        mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
+
+        mutually_exclusive_group.add_argument(
+            "--ids",
+            nargs="+",
+            type=int,
+            help=f"Delete transactions using this {self.shared_pk} list (space-separated)",
+        )
+        mutually_exclusive_group.add_argument(
             "--date",
             dest="datetime",
-            required=True,
             type=datetime_command_line_argument_type(naive=True),  # Broker and S3 date/times are naive.
             help="Load/Reload records from the provided datetime to the script execution start time.",
         )
+
         parser.add_argument(
             "--dry-run", action="store_true", help="Obtain the list of removed transactions, but skip the delete step.",
         )
@@ -31,25 +38,32 @@ class AgnosticDeletes:
     def handle(self, *args, **options):
         self.dry_run = options["dry_run"]
         self.skip_upload = self.dry_run or options["skip_upload"]
+        self.datetime = options["datetime"]
+        self.ids = options["ids"]
 
         if not self.skip_upload and not (
             settings.USASPENDING_AWS_REGION and settings.DELETED_TRANSACTION_JOURNAL_FILES
         ):
             raise Exception(
-                "Missing one or more environment variables: 'USASPENDING_AWS_REGION', 'DELETED_TRANSACTION_JOURNAL_FILES'"
+                "Missing one or more environment variables: 'USASPENDING_AWS_REGION', "
+                "'DELETED_TRANSACTION_JOURNAL_FILES'"
             )
 
-        logger.info(f"Processing deletes from '{options['datetime']}' - present")
+        if self.datetime:
+            logger.info(f"Processing deletes from '{self.datetime}' - present")
+        else:
+            logger.info(f"Processing {len(self.ids):,} delete ids specified on the command line")
+
         try:
-            self.execute_script(options)
+            self.execute_script()
         except Exception:
             logger.exception("Fatal error when processing deletes")
             raise SystemExit(1)
 
         return 0
 
-    def execute_script(self, options: dict) -> None:
-        removed_records = self.fetch_deleted_transactions(options["datetime"])
+    def execute_script(self) -> None:
+        removed_records = self.fetch_deleted_transactions()
         if removed_records is None:
             logger.warning("Nothing to delete")
             return
@@ -77,7 +91,7 @@ class AgnosticDeletes:
                     cursor.execute(sql)
                     logger.info(f"Removed {cursor.rowcount} rows previous to '{date}'")
 
-    def fetch_deleted_transactions(self, date_time: datetime) -> Optional[dict]:
+    def fetch_deleted_transactions(self) -> Optional[dict]:
         raise NotImplementedError
 
     def store_delete_records(self, deleted_dict: dict) -> None:

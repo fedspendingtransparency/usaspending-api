@@ -1,6 +1,6 @@
 import logging
 
-from datetime import datetime
+from datetime import date
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections
@@ -18,9 +18,14 @@ class Command(AgnosticDeletes, BaseCommand):
     destination_table_name = SourceAssistanceTransaction().table_name
     shared_pk = "published_award_financial_assistance_id"
 
-    def fetch_deleted_transactions(self, date_time: datetime) -> Optional[dict]:
+    def fetch_deleted_transactions(self) -> Optional[dict]:
+        if self.ids is not None:
+            return {date.today().strftime("%Y-%m-%d"): self.ids}
+
+        date_time = self.datetime
+
         if settings.IS_LOCAL:
-            logger.info("Local mode does not handle deleted records")
+            logger.info("Local mode does not handle datetime based deleted records")
             return None
 
         sql = """
