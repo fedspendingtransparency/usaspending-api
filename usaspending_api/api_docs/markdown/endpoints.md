@@ -99,7 +99,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/disaster/spending_by_geography/](/api/v2/disaster/spending_by_geography/)|POST| Geographic award spending of Disaster/Emergency funding|
 |[/api/v2/disaster/spending_over_time/](/api/v2/disaster/spending_over_time/)|POST| Award types in the time period spending Disaster/Emergency funding|
 |[/api/v2/download/accounts/](/api/v2/download/accounts/)|POST| Generates zip file for download of account data in CSV format|
-|[api/v2/download/account/submission_periods](api/v2/download/account/submission_periods)
+|[api/v2/download/account/submission_periods](/api/v2/references/submission_periods/)
 |[/api/v2/download/assistance/](/api/v2/download/assistance/)|POST| Returns a zipped file containing Assistance data|
 |[/api/v2/download/awards/](/api/v2/download/awards/)|POST| Generates zip file for download of award data in CSV format|
 |[/api/v2/download/contract/](/api/v2/download/contract/)|POST| Returns a zipped file containing Contract data|

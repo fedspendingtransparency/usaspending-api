@@ -9,16 +9,7 @@ This endpoint provides a list of all fields in the "dabs_submission_window_sched
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `period_start_date` (required, string)
-        + `period_end_date` (required, string)
-        + `submission_start_date` (required, string)
-        + `submission_due_date` (required, string)
-        + `certification_due_date` (required, string)
-        + `submission_reveal_date` (required, string)
-        + `submission_fiscal_year` (required, number)
-        + `submission_fiscal_quarter` (required, number)
-        + `submission_fiscal_month` (required, number)
-        + `is_quarter` (required, boolean)
+        + `available_periods` (required, array[AvailablePeriod], fixed-type) 
     + Body
 
             {
@@ -52,3 +43,14 @@ This endpoint provides a list of all fields in the "dabs_submission_window_sched
           
 # Data Structures
 
+## AvailablePeriod (object)
++ `period_start_date` (required, string) - Period start date for submission
++ `period_end_date` (required, string) - Period end date for submission
++ `submission_start_date` (required, string) - Submission window start date
++ `submission_due_date` (required, string) - Submission window due/end date
++ `certification_due_date` (required, string) - Certification due date
++ `submission_reveal_date` (required, string) - Submission reveal date, submission data must be revealed after this date 
++ `submission_fiscal_year` (required, number) - Fiscal year for submission
++ `submission_fiscal_quarter` (required, number) - Fiscal quarter for submission
++ `submission_fiscal_month` (required, number) - Fiscal month/period for submission
++ `is_quarter` (required, boolean) - Boolean to identify if record is a monthly or quarterly submission
