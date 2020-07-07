@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, DecimalField
+from django.db.models import Q, Sum, Count, F
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -8,30 +8,29 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansPaginationMixin,
     LoansMixin,
+    FabaOutlayMixin,
 )
-from usaspending_api.disaster.v2.views.federal_account.spending import construct_response, submission_window_cutoff
+from usaspending_api.disaster.v2.views.federal_account.spending import construct_response
 
 
-class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
+class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBase):
     """View to implement the API"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
 
     @cache_response()
     def post(self, request):
+        # rename hack to use the Dataclasses, setting to Dataclass attribute name
         if self.pagination.sort_key == "face_value_of_loan":
-            self.pagination.sort_key = "outlay"  # hack to re-use the Dataclasses
+            self.pagination.sort_key = "total_budgetary_resources"
 
         results = construct_response(list(self.queryset), self.pagination)
 
+        # rename hack to use the Dataclasses, swapping back in desired loan field name
         for result in results["results"]:
             for child in result["children"]:
-                child.pop("obligation")
-                child.pop("total_budgetary_resources")
-                child["face_value_of_loan"] = child.pop("outlay")
-            result.pop("obligation")
-            result.pop("total_budgetary_resources")
-            result["face_value_of_loan"] = result.pop("outlay")
+                child["face_value_of_loan"] = child.pop("total_budgetary_resources")
+            result["face_value_of_loan"] = result.pop("total_budgetary_resources")
 
         return Response(results)
 
@@ -42,14 +41,8 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             Q(award_id__isnull=False),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
+            self.all_closed_defc_submissions,
         ]
-        filters.extend(
-            submission_window_cutoff(
-                self.reporting_period_min,
-                self.last_closed_monthly_submission_dates,
-                self.last_closed_quarterly_submission_dates,
-            )
-        )
 
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
@@ -59,9 +52,10 @@ class Loans(LoansMixin, LoansPaginationMixin, DisasterBase):
             "id": F("treasury_account__treasury_account_identifier"),
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
-            "obligation": Value(0, DecimalField(max_digits=23, decimal_places=2)),  # Throw-away field
-            "outlay": Coalesce(Sum("award__total_loan_value"), 0),  # Values are renamed at the end of the view
-            "total_budgetary_resources": Value(None, DecimalField(max_digits=23, decimal_places=2)),  # Throw-away field
+            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
+            "outlay": self.outlay_field_annotation,
+            # hack to use the Dataclasses, will be renamed later
+            "total_budgetary_resources": Coalesce(Sum("award__total_loan_value"), 0),
         }
 
         # Assuming it is more performant to fetch all rows once rather than
