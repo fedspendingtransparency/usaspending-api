@@ -40,7 +40,7 @@ This endpoint provides geographical spending information from emergency/disaster
                 },
                 "geo_layer": "state",
                 "geo_layer_filters": ["NE", "WY", "CO", "IA", "IL", "MI", "IN", "TX"],
-                "spending_type": "obligations"
+                "spending_type": "obligation"
             }
 
 + Response 200 (application/json)

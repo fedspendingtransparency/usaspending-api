@@ -11,12 +11,13 @@ from elasticsearch_dsl import A, Q as ES_Q
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator import TinyShield, PAGINATION
-from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
-from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms, get_scaled_sum_aggregations
+from usaspending_api.search.v2.elasticsearch_helper import (
+    get_scaled_sum_aggregations,
+    get_number_of_unique_terms_for_awards,
+)
 
 
 class GeoLayer(Enum):
@@ -29,12 +30,11 @@ class SpendingByGeographyViewSet(DisasterBase):
     """Spending by Recipient Location"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/spending_by_geography.md"
-    # TODO: Are contracts under https://github.com/fedspendingtransparency/usaspending-api/tree/dev/usaspending_api/api_contracts/contracts/v2/disaster/recipient/location needed anymore??
 
     agg_key: Optional[str]  # name of ES index field whose term value will be used for grouping the agg
-    filters: dict  # API request filters to manipulate query
     geo_layer: GeoLayer
     geo_layer_filters: Optional[List[str]]
+    spending_type: str  # which type of disaster spending to get data for (obligation, outlay, face_value_of_loan)
     loc_field_name: str
     loc_lookup: str
     metric_field: str  # field in ES index whose value will be summed across matching docs
@@ -42,17 +42,6 @@ class SpendingByGeographyViewSet(DisasterBase):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-
-        # ======================================================================
-        # Advanced Search's Spending By Geography
-        #     usaspending-api/usaspending_api/search/v2/views/spending_by_geography.py
-        # Elasticsearch helpers
-        #     usaspending-api/usaspending_api/common/query_with_filters.py
-
-        # self.source_fields contains which ES document fields are necessary for the API response
-
-        # ======================================================================
-
         models = [
             {
                 "key": "geo_layer",
@@ -88,9 +77,8 @@ class SpendingByGeographyViewSet(DisasterBase):
         # TODO: This really then becomes an endpoint only usable for the COVID-19 disaster, and not arbitrary
         #       disasters (as it is setup right now)
 
-        models.extend(copy.deepcopy([f for f in AWARD_FILTER if f["name"] == "award_type_codes"]))
+        # NOTE: filter object in request handled in base class: see self.filters
         models.extend(copy.deepcopy(PAGINATION))
-        original_filters = request.data.get("filters")
         json_request = TinyShield(models).block(request.data)
 
         agg_key_dict = {
@@ -99,46 +87,36 @@ class SpendingByGeographyViewSet(DisasterBase):
             "state": "state_agg_key",
         }
         location_dict = {"county": "county_code", "district": "congressional_code", "state": "state_code"}
-
         self.agg_key = f"{self.scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
-        self.filters = json_request.get("filters")
         self.geo_layer = GeoLayer(json_request["geo_layer"])
         self.geo_layer_filters = json_request.get("geo_layer_filters")
+        self.spending_type = json_request.get("spending_type")
         self.loc_field_name = location_dict[self.geo_layer.value]
         self.loc_lookup = f"{self.scope_field_name}_{self.loc_field_name}"
 
         # Set which field will be the aggregation amount
-        if self.filters["spending_type"] == "obligation":
+        if self.spending_type == "obligation":
             self.metric_field = "total_covid_obligation"
-        elif self.filters["spending_type"] == "outlay":
+        elif self.spending_type == "outlay":
             self.metric_field = "total_covid_outlay"
-        elif self.filters["spending_type"] == "face_value_of_loan":
+        elif self.spending_type == "face_value_of_loan":
             self.metric_field = "total_loan_value"
         else:
             raise UnprocessableEntityException(
-                f"Unrecognized value '{self.filters['spending_type']}' for field " f"'spending_type'"
+                f"Unrecognized value '{self.spending_type}' for field " f"'spending_type'"
             )
 
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         result = self.query_elasticsearch(filter_query)
 
-        return Response(
-            {
-                "scope": json_request["scope"],
-                "geo_layer": self.geo_layer.value,
-                "results": result,
-                "messages": get_generic_filters_message(
-                    original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
-                ),
-            }
-        )
+        return Response({"geo_layer": self.geo_layer.value, "results": result,})
 
     def build_elasticsearch_search_with_aggregation(self, filter_query: ES_Q) -> Optional[AwardSearch]:
         # Create the initial search using filters
         search = AwardSearch().filter(filter_query)
 
         # Check number of unique terms (buckets) for performance and restrictions on maximum buckets allowed
-        bucket_count = get_number_of_unique_terms(filter_query, f"{self.agg_key}.hash")
+        bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{self.agg_key}.hash")
 
         if bucket_count == 0:
             return None
@@ -172,14 +150,14 @@ class SpendingByGeographyViewSet(DisasterBase):
                 shape_code = f"{geo_info['state_fips']}{geo_info['congressional_code']}"
 
             per_capita = None
-            aggregated_amount = int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100")
+            amount = int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100")
             population = int(geo_info["population"]) if geo_info["population"] else None
             if population:
-                per_capita = (Decimal(aggregated_amount) / Decimal(population)).quantize(Decimal(".01"))
+                per_capita = (Decimal(amount) / Decimal(population)).quantize(Decimal(".01"))
 
             results[shape_code] = {
                 "shape_code": shape_code or None,
-                "aggregated_amount": aggregated_amount,
+                "amount": amount,
                 "display_name": display_name or None,
                 "population": population,
                 "per_capita": per_capita,
