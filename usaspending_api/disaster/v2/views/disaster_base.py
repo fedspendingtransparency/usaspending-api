@@ -125,7 +125,6 @@ class DisasterBase(APIView):
                     & Q(submission__quarter_format_flag=sub.is_quarter)
                     & Q(submission__reporting_fiscal_period__lte=sub.fiscal_period)
                 )
-
         return q & Q(submission__reporting_period_start__gte=str(self.reporting_period_min_date))
 
 
