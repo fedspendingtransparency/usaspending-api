@@ -7,6 +7,9 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
 class SubmissionPeriodsViewSet(APIView):
+    """
+    This route sends a request to the backend to retrieve all relevant data regarding submission periods.
+    """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/submission_periods.md"
 
