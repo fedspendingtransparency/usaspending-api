@@ -3,7 +3,9 @@ SELECT
     "awards"."fain" AS "award_id_fain",
     "awards"."uri" AS "award_id_uri",
     "transaction_fabs"."sai_number" AS "sai_number",
-    (SELECT STRING_AGG(DISTINCT U1."disaster_emergency_fund_code", ';' order by U1."disaster_emergency_fund_code") AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0."id" = U1."award_id") WHERE U0."id" = ("awards"."id") GROUP BY U0."id") AS "disaster_emergency_fund_codes",
+    DEFC."disaster_emergency_fund_codes",
+    DEFC."gross_outlay_amount_by_award_cpe" AS "outlayed_amount_funded_by_COVID-19_supplementals",
+    DEFC."transaction_obligated_amount" AS "obligated_amount_funded_by_COVID-19_supplementals",
     "awards"."total_obligation" AS "total_obligated_amount",
     "awards"."non_federal_funding_amount" AS "total_non_federal_funding_amount",
     "awards"."total_funding_amount" AS "total_funding_amount",
@@ -11,6 +13,8 @@ SELECT
     "awards"."total_subsidy_cost" AS "total_loan_subsidy_cost",
     "awards"."date_signed" AS "award_base_action_date",
     EXTRACT (YEAR FROM ("awards"."date_signed") + INTERVAL '3 months') AS "award_base_action_date_fiscal_year",
+    "transaction_fabs"."action_date" AS "award_latest_action_date",
+    EXTRACT (YEAR FROM ("transaction_fabs"."action_date"::DATE) + INTERVAL '3 months') AS "award_latest_action_date_fiscal_year",
     "awards"."period_of_performance_start_date" AS "period_of_performance_start_date",
     "awards"."period_of_performance_current_end_date" AS "period_of_performance_current_end_date",
     "transaction_fabs"."awarding_agency_code" AS "awarding_agency_code",
@@ -25,8 +29,8 @@ SELECT
     "transaction_fabs"."funding_sub_tier_agency_na" AS "funding_sub_agency_name",
     "transaction_fabs"."funding_office_code" AS "funding_office_code",
     "transaction_fabs"."funding_office_name" AS "funding_office_name",
-    (SELECT STRING_AGG (DISTINCT U2. "tas_rendering_label", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1. "treasury_account_id" = U2. "treasury_account_identifier") WHERE U0. "id" = ("awards"."award_id") GROUP BY U0. "id") AS "treasury_accounts_funding_this_award",
-    (SELECT STRING_AGG (DISTINCT U3. "federal_account_code", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1. "treasury_account_id" = U2. "treasury_account_identifier") LEFT OUTER JOIN "federal_account" U3 ON (U2. "federal_account_id" = U3. "id") WHERE U0. "id" = ("awards"."award_id") GROUP BY U0. "id") AS "federal_accounts_funding_this_award",
+    (SELECT STRING_AGG (DISTINCT U2. "tas_rendering_label", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1. "treasury_account_id" = U2. "treasury_account_identifier") WHERE U0. "id" = ("awards"."id") GROUP BY U0. "id") AS "treasury_accounts_funding_this_award",
+    (SELECT STRING_AGG (DISTINCT U3. "federal_account_code", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1. "treasury_account_id" = U2. "treasury_account_identifier") LEFT OUTER JOIN "federal_account" U3 ON (U2. "federal_account_id" = U3. "id") WHERE U0. "id" = ("awards"."id") GROUP BY U0. "id") AS "federal_accounts_funding_this_award",
     "transaction_fabs"."awardee_or_recipient_uniqu" AS "recipient_duns",
     "transaction_fabs"."awardee_or_recipient_legal" AS "recipient_name",
     "transaction_fabs"."ultimate_parent_unique_ide" AS "recipient_parent_duns",
@@ -83,8 +87,33 @@ SELECT
     "transaction_fabs"."modified_at" AS "last_modified_date"
 FROM "awards"
 INNER JOIN "transaction_fabs" ON ("awards"."latest_transaction_id" = "transaction_fabs"."transaction_id")
-INNER JOIN "financial_accounts_by_awards" ON ("awards"."id" = "financial_accounts_by_awards"."award_id")
-INNER JOIN "disaster_emergency_fund_code" ON ("financial_accounts_by_awards"."disaster_emergency_fund_code" = "disaster_emergency_fund_code"."code")
-WHERE (
-    "disaster_emergency_fund_code"."group_name" = 'covid_19'
-)
+INNER JOIN (
+    SELECT
+        faba.award_id,
+        STRING_AGG(DISTINCT disaster_emergency_fund_code, ';' ORDER BY disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
+        COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
+    FROM
+        financial_accounts_by_awards faba
+    INNER JOIN disaster_emergency_fund_code defc
+        ON defc.code = faba.disaster_emergency_fund_code
+        AND defc.group_name = 'covid_19'
+    INNER JOIN submission_attributes sa
+        ON faba.submission_id = sa.submission_id
+        AND sa.reporting_period_start >= '2020-04-01'
+    LEFT JOIN (
+        SELECT   submission_fiscal_year, is_quarter, max(submission_fiscal_month) AS submission_fiscal_month
+        FROM     dabs_submission_window_schedule
+        WHERE    submission_reveal_date < now() AND period_start_date >= '2020-04-01'
+        GROUP BY submission_fiscal_year, is_quarter
+    ) AS latest_closed_period_per_fy
+        ON latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year
+        AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period
+        AND latest_closed_period_per_fy.is_quarter = sa.quarter_format_flag
+    WHERE faba.award_id IS NOT NULL
+GROUP BY
+    faba.award_id
+HAVING
+    COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
+    OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
+) DEFC ON (DEFC.award_id = awards.id)

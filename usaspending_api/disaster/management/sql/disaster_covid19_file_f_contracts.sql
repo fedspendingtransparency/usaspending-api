@@ -3,7 +3,9 @@ SELECT
     "broker_subaward"."award_id" AS "prime_award_piid",
     "broker_subaward"."parent_award_id" AS "prime_award_parent_piid",
     "broker_subaward"."award_amount" AS "prime_award_amount",
-    (SELECT STRING_AGG(DISTINCT U1."disaster_emergency_fund_code", ';' order by U1."disaster_emergency_fund_code") AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0."id" = U1."award_id") WHERE U0."id" = ("subaward_view"."award_id") GROUP BY U0."id") AS "prime_award_disaster_emergency_fund_codes",
+    DEFC."disaster_emergency_fund_codes" AS "prime_award_disaster_emergency_fund_codes,
+    DEFC."gross_outlay_amount_by_award_cpe" AS "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
+    DEFC."transaction_obligated_amount" AS "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
     "broker_subaward"."action_date" AS "prime_award_base_action_date",
     EXTRACT (YEAR FROM ("awards"."date_signed") + INTERVAL '3 months') AS "prime_award_base_action_date_fiscal_year",
     "awards"."period_of_performance_start_date" AS "prime_award_period_of_performance_start_date",
@@ -100,10 +102,37 @@ INNER JOIN "awards" ON ("subaward_view"."award_id" = "awards"."id")
 INNER JOIN "transaction_fpds" ON ("awards"."latest_transaction_id" = "transaction_fpds"."transaction_id")
 INNER JOIN "subaward" ON ("subaward_view"."subaward_id" = "subaward"."id")
 INNER JOIN "broker_subaward" ON ("subaward_view"."broker_subaward_id" = "broker_subaward"."id")
-INNER JOIN "financial_accounts_by_awards" ON ("awards"."id" = "financial_accounts_by_awards"."award_id")
-INNER JOIN "disaster_emergency_fund_code" ON ("financial_accounts_by_awards"."disaster_emergency_fund_code" = "disaster_emergency_fund_code"."code")
+INNER JOIN (
+    SELECT
+        faba.award_id,
+        STRING_AGG(DISTINCT disaster_emergency_fund_code, ';' ORDER BY disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
+        COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
+    FROM
+        financial_accounts_by_awards faba
+    INNER JOIN disaster_emergency_fund_code defc
+        ON defc.code = faba.disaster_emergency_fund_code
+        AND defc.group_name = 'covid_19'
+    INNER JOIN submission_attributes sa
+        ON faba.submission_id = sa.submission_id
+        AND sa.reporting_period_start >= '2020-04-01'
+    LEFT JOIN (
+        SELECT   submission_fiscal_year, is_quarter, max(submission_fiscal_month) AS submission_fiscal_month
+        FROM     dabs_submission_window_schedule
+        WHERE    submission_reveal_date < now() AND period_start_date >= '2020-04-01'
+        GROUP BY submission_fiscal_year, is_quarter
+    ) AS latest_closed_period_per_fy
+        ON latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year
+        AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period
+        AND latest_closed_period_per_fy.is_quarter = sa.quarter_format_flag
+    WHERE faba.award_id IS NOT NULL
+GROUP BY
+    faba.award_id
+HAVING
+    COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
+    OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
+) DEFC ON (DEFC.award_id = awards.id)
 WHERE (
     "subaward_view"."award_type" IN ('procurement')
     AND "subaward_view"."action_date" >= '2020-04-01'
-    AND "disaster_emergency_fund_code"."group_name" = 'covid_19'
 )
