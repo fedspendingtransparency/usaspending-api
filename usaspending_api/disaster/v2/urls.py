@@ -11,6 +11,7 @@ from usaspending_api.disaster.v2.views.object_class.count import ObjectClassCoun
 from usaspending_api.disaster.v2.views.overview import OverviewViewSet
 from usaspending_api.disaster.v2.views.recipient.count import RecipientCountViewSet
 from usaspending_api.disaster.v2.views.spending import ExperimentalDisasterViewSet
+from usaspending_api.disaster.v2.views.spending_by_geography import SpendingByGeographyViewSet
 
 urlpatterns = [
     url(r"^agency/count/$", AgencyCountViewSet.as_view()),
@@ -24,4 +25,5 @@ urlpatterns = [
     url(r"^overview/$", OverviewViewSet.as_view()),
     url(r"^recipient/count/$", RecipientCountViewSet.as_view()),
     url(r"^spending/$", ExperimentalDisasterViewSet.as_view()),
+    url(r"^spending_by_geography/$", SpendingByGeographyViewSet.as_view()),
 ]

@@ -1,3 +1,4 @@
+from usaspending_api.disaster.tests.fixtures.recipient_location_data import awards_and_transactions
 from usaspending_api.disaster.tests.fixtures.disaster_account_data import disaster_account_data
 from usaspending_api.disaster.tests.fixtures.award_count_data import (
     basic_award,
@@ -49,6 +50,7 @@ from usaspending_api.disaster.tests.fixtures.overview_data import (
 
 
 __all__ = [
+    "awards_and_transactions",
     "basic_award",
     "award_count_sub_schedule",
     "award_count_submission",
