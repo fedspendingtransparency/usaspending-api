@@ -20,6 +20,48 @@ def test_award_count_basic_fpds(client, monkeypatch, basic_fpds_award, helpers):
 
 
 @pytest.mark.django_db
+def test_two_transactions_two_awards(client, monkeypatch, basic_fabs_award, basic_fpds_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = _default_post(client, helpers)
+    assert resp.data["count"] == 2
+
+
+@pytest.mark.django_db
+def test_two_transactions_one_award(client, monkeypatch, double_fpds_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = _default_post(client, helpers)
+    assert resp.data["count"] == 2
+
+
+@pytest.mark.django_db
+def test_zero_transactions_one_award(client, monkeypatch, award_with_no_outlays, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = _default_post(client, helpers)
+    assert resp.data["count"] == 0
+
+
+@pytest.mark.django_db
+def test_fabs_quarterly(client, monkeypatch, fabs_award_with_quarterly_submission, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = _default_post(client, helpers)
+    assert resp.data["count"] == 1
+
+
+@pytest.mark.django_db
+def test_fabs_old_submission(client, monkeypatch, fabs_award_with_old_submission, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = _default_post(client, helpers)
+    assert resp.data["count"] == 1
+
+
+@pytest.mark.django_db
+def test_fabs_unclosed_submission(client, monkeypatch, fabs_award_with_unclosed_submission, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = _default_post(client, helpers)
+    assert resp.data["count"] == 0
+
+
+@pytest.mark.django_db
 def test_award_count_invalid_defc(client, monkeypatch, basic_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_count_endpoint(client, url, ["ZZ"])
