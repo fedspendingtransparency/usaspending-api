@@ -22,11 +22,11 @@ class Command(AgnosticDeletes, BaseCommand):
         if self.ids is not None:
             return {date.today().strftime("%Y-%m-%d"): self.ids}
 
-        date_time = self.datetime
-
         if settings.IS_LOCAL:
             logger.info("Local mode does not handle datetime based deleted records")
             return None
+
+        date_time = self.datetime
 
         sql = """
         select  published_award_financial_assistance_id
@@ -45,10 +45,12 @@ class Command(AgnosticDeletes, BaseCommand):
 
         if results is None:
             logger.info("No new inactive records found")
-            return None
+            r = None
         else:
             logger.info(f"Found {len(results)} inactive transactions to remove")
-            return {date_time: [row[0] for row in results]}
+            r = {date_time: [row[0] for row in results]}
+
+        return r
 
     def store_delete_records(self, deleted_dict: dict) -> None:
         """FABS needs to store IDs for downline ETL, run that here"""

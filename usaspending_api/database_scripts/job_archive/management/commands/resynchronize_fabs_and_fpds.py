@@ -320,7 +320,7 @@ class Command(BaseCommand):
         run_sql(f"Drop {destination_table}", f"drop table if exists {destination_table}")
 
         return run_sql(
-            f"Insert {key_column}s in {minuend_table} that are not in {subtrahend_table} into {destination_table}",
+            f"Create {destination_table}",
             f"""
                 create
                 table   {destination_table} as
@@ -337,31 +337,34 @@ class Command(BaseCommand):
         This is probably unnecessary, but let's double check our deletions just in case a record
         didn't get copied over for whatever reason.  It shouldn't take very long.
         """
-        ids = tuple(
-            row[0]
-            for row in execute_sql(
-                f"""
-                select {key_column} from {source_temp_table}
-                union
-                select {key_column} from {transaction_temp_table}
-            """
+        with Timer(f"Validate {key_column}s deletions") as t:
+            ids = tuple(
+                row[0]
+                for row in execute_sql(
+                    f"""
+                    select {key_column} from {source_temp_table}
+                    union
+                    select {key_column} from {transaction_temp_table}
+                """
+                )
             )
-        )
-        if not ids:
-            return
-        sql = broker_sql % (str(ids) if len(ids) > 1 else f"({ids[0]})")
+            if not ids:
+                return
+            sql = broker_sql % (str(ids) if len(ids) > 1 else f"({ids[0]})")
 
-        connection = connections["data_broker"]
-        with connection.cursor() as cursor:
-            cursor.execute(sql)
-            results = cursor.fetchall()
+            connection = connections["data_broker"]
+            with connection.cursor() as cursor:
+                cursor.execute(sql)
+                results = cursor.fetchall()
 
-        ids = tuple(row[0] for row in results)
-        if ids:
-            raise RuntimeError(
-                f"ERROR!  Somehow we managed to identify {key_column}s that should not be "
-                f"deleted!  {ids if len(ids) < 1000 else 'There are too many to list.'}"
-            )
+            ids = tuple(row[0] for row in results)
+            if ids:
+                raise RuntimeError(
+                    f"ERROR!  Somehow we managed to identify {key_column}s that should not be "
+                    f"deleted!  {ids if len(ids) < 1000 else 'There are too many to list.'}"
+                )
+
+        t.log_message()
 
     @staticmethod
     def document_artifacts():

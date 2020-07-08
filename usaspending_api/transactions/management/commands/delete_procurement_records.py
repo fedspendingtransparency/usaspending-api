@@ -22,13 +22,12 @@ class Command(AgnosticDeletes, BaseCommand):
         if self.ids is not None:
             return {date.today().strftime("%Y-%m-%d"): self.ids}
 
-        date_time = self.datetime
-
-        ids_to_delete = defaultdict(list)
-
         if settings.IS_LOCAL:
             logger.info("Local mode does not handle datetime based deleted records")
             return None
+
+        date_time = self.datetime
+        ids_to_delete = defaultdict(list)
 
         full_key_list = retrieve_deleted_fpds_transactions(start_datetime=date_time)
 
