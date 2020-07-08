@@ -12,6 +12,7 @@ from usaspending_api.disaster.tests.fixtures.award_count_data import (
     award_with_early_submission,
     file_c_with_no_award,
 )
+from usaspending_api.disaster.tests.fixtures.recipient_count_data import basic_fabs_award, basic_fpds_award
 from usaspending_api.disaster.tests.fixtures.federal_account_data import (
     generic_account_data,
     unlinked_faba_account_data,
@@ -49,6 +50,8 @@ __all__ = [
     "award_with_quarterly_submission",
     "award_with_early_submission",
     "basic_faba",
+    "basic_fabs_award",
+    "basic_fpds_award",
     "basic_ref_data",
     "defc_codes",
     "disaster_account_data",

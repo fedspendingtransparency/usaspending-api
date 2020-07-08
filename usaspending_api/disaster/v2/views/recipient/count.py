@@ -26,6 +26,7 @@ class RecipientCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
             self.is_non_zero_award_cpe(),
         ]
         award_ids = FinancialAccountsByAwards.objects.filter(*filters).values("award")
+        print(award_ids)
         fabs_count = TransactionFABS.objects.annotate(award=F("transaction__award__id")).filter(award__in=award_ids)
         if self.award_type_codes:
             fabs_count = fabs_count.filter(transaction__award__type__in=self.filters.get("award_type_codes"))
