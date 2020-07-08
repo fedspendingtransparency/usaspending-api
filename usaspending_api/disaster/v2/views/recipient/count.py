@@ -24,6 +24,7 @@ class RecipientCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
             self.is_in_provided_def_codes(),
             self.all_closed_defc_submissions,
             self.is_non_zero_award_cpe(),
+            self.has_award_of_provided_type(),
         ]
         award_ids = FinancialAccountsByAwards.objects.filter(*filters).values("award")
         fabs_count = TransactionFABS.objects.annotate(award=F("transaction__award__id")).filter(award__in=award_ids)

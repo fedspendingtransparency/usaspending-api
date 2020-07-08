@@ -20,6 +20,13 @@ def test_award_count_basic_fpds(client, monkeypatch, basic_fpds_award, helpers):
 
 
 @pytest.mark.django_db
+def test_wrong_award_type(client, monkeypatch, basic_fabs_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_count_endpoint(client, url, ["M"], ["B"])
+    assert resp.data["count"] == 0
+
+
+@pytest.mark.django_db
 def test_two_transactions_two_awards(client, monkeypatch, basic_fabs_award, basic_fpds_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = _default_post(client, helpers)
