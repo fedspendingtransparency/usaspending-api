@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Count of Awards Receiving Disaster/Emergency Funding [/api/v2/disaster/award/count/]
+# Count of Recipients Receiving Disaster/Emergency Funding [/api/v2/disaster/recipient/count/]
 
-This endpoint provides the count of Awards which received disaster/emergency funding per the requested filters.
+This endpoint provides the count of Recipients which received disaster/emergency funding per the requested filters.
 
 ## POST
 
-This endpoint returns a count of Awards
+This endpoint returns a count of Recipients
 
 + Request (application/json)
     + Schema
@@ -42,8 +42,7 @@ This endpoint returns a count of Awards
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-    When Award Type Codes are provided, results are only counted if the awards are linked between Financial Account by Awards and Awards (File C to File D linkage).
-    If this filter isn't provided then the results are File C (Financial Account by Awards) only
+    Defaults to all Award Type Codes.
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing

@@ -27,23 +27,7 @@ def construct_response(results: list, pagination: Pagination):
     }
 
 
-def submission_window_cutoff(min_date, monthly_sub, quarterly_sub):
-    return [
-        Q(submission__reporting_period_start__gte=min_date),
-        Q(
-            Q(
-                Q(submission__quarter_format_flag=False)
-                & Q(submission__reporting_period_end__lte=monthly_sub["submission_reveal_date"])
-            )
-            | Q(
-                Q(submission__quarter_format_flag=True)
-                & Q(submission__reporting_period_end__lte=quarterly_sub["submission_reveal_date"])
-            )
-        ),
-    ]
-
-
-class Spending(PaginationMixin, SpendingMixin, DisasterBase):
+class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     """View to implement the API"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
@@ -69,14 +53,9 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
+            self.all_closed_defc_submissions,
         ]
-        filters.extend(
-            submission_window_cutoff(
-                self.reporting_period_min,
-                self.last_closed_monthly_submission_dates,
-                self.last_closed_quarterly_submission_dates,
-            )
-        )
+
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
             "count": Count("treasury_account__tas_rendering_label", distinct=True),
@@ -89,38 +68,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
                 Sum(
                     Case(
                         When(
-                            Q(
-                                submission__reporting_fiscal_year=self.last_closed_monthly_submission_dates[
-                                    "submission_fiscal_year"
-                                ],
-                                submission__reporting_fiscal_period=self.last_closed_monthly_submission_dates[
-                                    "submission_fiscal_month"
-                                ],
-                                submission__quarter_format_flag=False,
-                            )
-                            | Q(
-                                submission__reporting_fiscal_year__lte=self.last_closed_monthly_submission_dates[
-                                    "submission_fiscal_year"
-                                ],
-                                submission__reporting_fiscal_period=12,
-                                submission__quarter_format_flag=False,
-                            )
-                            | Q(
-                                submission__reporting_fiscal_year=self.last_closed_quarterly_submission_dates[
-                                    "submission_fiscal_year"
-                                ],
-                                submission__reporting_fiscal_quarter=self.last_closed_quarterly_submission_dates[
-                                    "submission_fiscal_quarter"
-                                ],
-                                submission__quarter_format_flag=True,
-                            )
-                            | Q(
-                                submission__reporting_fiscal_year__lte=self.last_closed_quarterly_submission_dates[
-                                    "submission_fiscal_year"
-                                ],
-                                submission__reporting_fiscal_period=12,
-                                submission__quarter_format_flag=True,
-                            ),
+                            self.final_period_submission_query_filters,
                             then=F("obligations_incurred_by_program_object_class_cpe"),
                         ),
                         default=Value(0),
@@ -132,38 +80,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
                 Sum(
                     Case(
                         When(
-                            Q(
-                                submission__reporting_fiscal_year=self.last_closed_monthly_submission_dates[
-                                    "submission_fiscal_year"
-                                ],
-                                submission__reporting_fiscal_period=self.last_closed_monthly_submission_dates[
-                                    "submission_fiscal_month"
-                                ],
-                                submission__quarter_format_flag=False,
-                            )
-                            | Q(
-                                submission__reporting_fiscal_year__lte=self.last_closed_monthly_submission_dates[
-                                    "submission_fiscal_year"
-                                ],
-                                submission__reporting_fiscal_period=12,
-                                submission__quarter_format_flag=False,
-                            )
-                            | Q(
-                                submission__reporting_fiscal_year=self.last_closed_quarterly_submission_dates[
-                                    "submission_fiscal_year"
-                                ],
-                                submission__reporting_fiscal_quarter=self.last_closed_quarterly_submission_dates[
-                                    "submission_fiscal_quarter"
-                                ],
-                                submission__quarter_format_flag=True,
-                            )
-                            | Q(
-                                submission__reporting_fiscal_year__lte=self.last_closed_quarterly_submission_dates[
-                                    "submission_fiscal_year"
-                                ],
-                                submission__reporting_fiscal_period=12,
-                                submission__quarter_format_flag=True,
-                            ),
+                            self.final_period_submission_query_filters,
                             then=F("gross_outlay_amount_by_program_object_class_cpe"),
                         ),
                         default=Value(0),
@@ -195,14 +112,9 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
+            self.all_closed_defc_submissions,
         ]
-        filters.extend(
-            submission_window_cutoff(
-                self.reporting_period_min,
-                self.last_closed_monthly_submission_dates,
-                self.last_closed_quarterly_submission_dates,
-            )
-        )
+
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
             "count": Count("treasury_account__tas_rendering_label", distinct=True),
@@ -215,27 +127,7 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             "outlay": Coalesce(
                 Sum(
                     Case(
-                        When(
-                            Q(
-                                submission__reporting_fiscal_year=self.last_closed_monthly_submission_dates[
-                                    "submission_fiscal_year"
-                                ],
-                                submission__reporting_fiscal_period=self.last_closed_monthly_submission_dates[
-                                    "submission_fiscal_month"
-                                ],
-                                submission__quarter_format_flag=False,
-                            )
-                            | Q(
-                                submission__reporting_fiscal_year=self.last_closed_quarterly_submission_dates[
-                                    "submission_fiscal_year"
-                                ],
-                                submission__reporting_fiscal_quarter=self.last_closed_quarterly_submission_dates[
-                                    "submission_fiscal_quarter"
-                                ],
-                                submission__quarter_format_flag=True,
-                            ),
-                            then=F("gross_outlay_amount_by_award_cpe"),
-                        ),
+                        When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
                         default=Value(0),
                     )
                 ),
