@@ -19,6 +19,7 @@ from usaspending_api.download.filestreaming.file_description import build_file_d
 from usaspending_api.download.lookups import FILE_FORMATS
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
+from usaspending_api.download.helpers import multipart_upload
 
 logger = logging.getLogger("script")
 
@@ -58,23 +59,35 @@ class Command(BaseCommand):
 
         """
         timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
-        self.zip_file_path = Path(settings.CSV_LOCAL_PATH) / f"COVID-19_Profile_{timestamp}.zip"
+        self.zip_file_path = (
+            Path(settings.CSV_LOCAL_PATH) / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{timestamp}.zip"
+        )
+        sql_dir = Path("usaspending_api/disaster/management/sql")
+        working_dir = Path(settings.CSV_LOCAL_PATH)
         sql_file_list = [
             (
-                Path(".").joinpath("usaspending_api/disaster/management/sql/disaster_covid19_file_b.sql"),
-                Path(settings.CSV_LOCAL_PATH) / f"FY20P07-Present_All_TAS_AccountBreakdownByPA-OC_{timestamp[:-6]}",
+                sql_dir / "disaster_covid19_file_b.sql",
+                working_dir / f"FY20P07-Present_All_TAS_AccountBreakdownByPA-OC_{timestamp[:-6]}",
             )
         ]
 
         self.prep_filesystem()
         for sql_file, final_name in sql_file_list:
-            data_file, count = self.download_to_csv(sql_file, final_name)
+            intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")
+            data_file, count = self.download_to_csv(sql_file, final_name, str(intermediate_data_file_path))
             if count <= 0:
                 raise Exception(f"Missing Data for {final_name}!!!!")
 
+            self.filepaths_to_delete.extend(working_dir.glob(f"{final_name.stem}*"))
+
         self.finalize_zip_contents()
-        if not options["skip_upload"]:
-            logger.warn("Not uploading to S3")
+        if options["skip_upload"]:
+            logger.warn("Not uploading Zip package to S3. Leaving file locally")
+        else:
+            logger.info("Upload final Zip package to S3")
+            self.upload_to_s3(self.zip_file_path)
+            logger.info("Marking zip file for deletion in cleanup")
+            self.filepaths_to_delete.add(self.zip_file_path)
 
         self.cleanup()
 
@@ -103,9 +116,7 @@ class Command(BaseCommand):
         if not self.zip_file_path.parent.exists():
             self.zip_file_path.parent.mkdir()
 
-    def download_to_csv(self, sql_filepath, destination_path):
-        temp_data_filename = str(destination_path)[:-10]
-
+    def download_to_csv(self, sql_filepath, destination_path, intermediate_data_filename):
         start_time = time.perf_counter()
         logger.info(f"Downloading data to {destination_path}")
         options = FILE_FORMATS[self.file_format]["options"]
@@ -114,7 +125,7 @@ class Command(BaseCommand):
             temp_file, temp_file_path = generate_export_query_temp_file(export_query, None)
             # Create a separate process to run the PSQL command; wait
             psql_process = multiprocessing.Process(
-                target=execute_psql, args=(temp_file_path, temp_data_filename, None)
+                target=execute_psql, args=(temp_file_path, intermediate_data_filename, None)
             )
             psql_process.start()
             wait_for_process(psql_process, start_time, None)
@@ -122,9 +133,11 @@ class Command(BaseCommand):
             delim = FILE_FORMATS[self.file_format]["delimiter"]
 
             # Log how many rows we have
-            logger.info(f"Counting rows in delimited text file {temp_data_filename}")
+            logger.info(f"Counting rows in delimited text file {intermediate_data_filename}")
             try:
-                count = count_rows_in_delimited_file(filename=temp_data_filename, has_header=True, delimiter=delim)
+                count = count_rows_in_delimited_file(
+                    filename=intermediate_data_filename, has_header=True, delimiter=delim
+                )
                 logger.info(f"{destination_path} contains {count:,} rows of data")
             except Exception:
                 logger.exception("Unable to obtain delimited text file line count")
@@ -132,11 +145,16 @@ class Command(BaseCommand):
             start_time = time.perf_counter()
             zip_process = multiprocessing.Process(
                 target=split_and_zip_data_files,
-                args=(str(self.zip_file_path), temp_data_filename, str(destination_path), self.file_format, None),
+                args=(
+                    str(self.zip_file_path),
+                    intermediate_data_filename,
+                    str(destination_path),
+                    self.file_format,
+                    None,
+                ),
             )
             zip_process.start()
             wait_for_process(zip_process, start_time, None)
-            self.filepaths_to_delete.extend(Path(settings.CSV_LOCAL_PATH).glob(f"{temp_data_filename.split('/')[-1]}*"))
         except Exception as e:
             raise e
         finally:
@@ -152,3 +170,14 @@ class Command(BaseCommand):
     #     )
     #     zip_process.start()
     #     wait_for_process(zip_process, start_time, None)
+
+    def upload_to_s3(self, zip_file_path):
+        try:
+            # push file to S3 bucket, if not local
+            bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+            region = settings.USASPENDING_AWS_REGION
+            start_uploading = time.perf_counter()
+            multipart_upload(bucket, region, str(zip_file_path), zip_file_path.name)
+            logger.info(f"Uploading took {time.perf_counter() - start_uploading:.2f}s")
+        except Exception as e:
+            raise Exception(e) from e
