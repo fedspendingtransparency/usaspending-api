@@ -337,7 +337,7 @@ class Command(BaseCommand):
         This is probably unnecessary, but let's double check our deletions just in case a record
         didn't get copied over for whatever reason.  It shouldn't take very long.
         """
-        with Timer(f"Validate {key_column}s deletions") as t:
+        with OneLineTimer(f"Validate {key_column}s deletions") as t:
             ids = tuple(
                 row[0]
                 for row in execute_sql(
