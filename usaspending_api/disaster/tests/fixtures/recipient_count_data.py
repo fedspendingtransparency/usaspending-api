@@ -15,7 +15,7 @@ def basic_fabs_award(award_count_sub_schedule, award_count_submission, defc_code
 def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_codes):
 
     transaction_normalized = mommy.make("awards.TransactionNormalized")
-    mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
+    mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="fpds")
     _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
 
 

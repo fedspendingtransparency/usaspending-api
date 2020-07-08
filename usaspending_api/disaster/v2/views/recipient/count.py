@@ -30,7 +30,10 @@ class RecipientCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
         ]
         award_ids = (
             FinancialAccountsByAwards.objects.annotate(
-                recipient=Coalesce("award__latest_transaction", "award__latest_transaction")
+                recipient=Coalesce(
+                    "award__latest_transaction__contract_data__awardee_or_recipient_uniqu",
+                    "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu",
+                )
             )
             .filter(*filters)
             .aggregate(count=Count("recipient", distinct=True))

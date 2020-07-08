@@ -44,7 +44,7 @@ def test_two_distinct_recipients(client, monkeypatch, double_fpds_awards_with_di
 def test_two_same_recipients(client, monkeypatch, double_fpds_awards_with_same_recipients, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = _default_post(client, helpers)
-    assert resp.data["count"] == 2
+    assert resp.data["count"] == 1
 
 
 @pytest.mark.django_db
