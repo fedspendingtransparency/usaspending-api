@@ -227,9 +227,12 @@ class TestWithMultipleDatabases(TestCase):
             )
         }
 
+        assert expected_results == actual_results
+
     def test_load_submission_file_c_no_linked_date(self):
         """
-        Test load submission management command for File C records that are not expected to be linked to Award data
+        Test load submission management command for File C records that are not expected to be linked to Award data.
+        Because no records were linked, all linked_dates should be null. 
         """
         mommy.make(
             "awards.Award",
@@ -242,7 +245,7 @@ class TestWithMultipleDatabases(TestCase):
 
         call_command("load_submission", "-9999")
 
-        assert FinancialAccountsByAwards.objects.filter(linked_date__isnull=True) == 6
+        assert FinancialAccountsByAwards.objects.filter(linked_date__isnull=True).count() == 6
 
     def test_load_submission_file_c_zero_and_null_amount_rows_ignored(self):
         """
