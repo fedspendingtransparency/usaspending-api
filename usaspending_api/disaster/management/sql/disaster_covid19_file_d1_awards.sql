@@ -27,8 +27,8 @@ SELECT
     "transaction_fpds"."funding_sub_tier_agency_na" AS "funding_sub_agency_name",
     "transaction_fpds"."funding_office_code" AS "funding_office_code",
     "transaction_fpds"."funding_office_name" AS "funding_office_name",
-    (SELECT STRING_AGG (DISTINCT U2. "tas_rendering_label", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1. "treasury_account_id" = U2. "treasury_account_identifier") WHERE U0. "id" = ("vw_award_search"."award_id") GROUP BY U0. "id") AS "treasury_accounts_funding_this_award",
-    (SELECT STRING_AGG (DISTINCT U3. "federal_account_code", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1. "treasury_account_id" = U2. "treasury_account_identifier") LEFT OUTER JOIN "federal_account" U3 ON (U2. "federal_account_id" = U3. "id") WHERE U0. "id" = ("vw_award_search"."award_id") GROUP BY U0. "id") AS "federal_accounts_funding_this_award",
+    (SELECT STRING_AGG (DISTINCT U2."tas_rendering_label", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1. "treasury_account_id" = U2. "treasury_account_identifier") WHERE U0. "id" = ("awards"."award_id") GROUP BY U0. "id") AS "treasury_accounts_funding_this_award",
+    (SELECT STRING_AGG (DISTINCT U3."federal_account_code", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1. "treasury_account_id" = U2. "treasury_account_identifier") LEFT OUTER JOIN "federal_account" U3 ON (U2. "federal_account_id" = U3. "id") WHERE U0. "id" = ("awards"."award_id") GROUP BY U0. "id") AS "federal_accounts_funding_this_award",
     "transaction_fpds"."foreign_funding" AS "foreign_funding",
     "transaction_fpds"."foreign_funding_desc" AS "foreign_funding_description",
     "transaction_fpds"."sam_exception" AS "sam_exception",
@@ -265,8 +265,7 @@ SELECT
     "awards"."officer_5_amount" AS "highly_compensated_officer_5_amount",
     CONCAT('https://www.usaspending.gov/#/award/', urlencode("awards"."generated_unique_award_id"), '/') AS "usaspending_permalink",
     "transaction_fpds"."last_modified" AS "last_modified_date"
-FROM "vw_award_search"
-INNER JOIN "awards" ON ("vw_award_search"."award_id" = "awards"."id")
+FROM "awards"
 INNER JOIN "transaction_fpds" ON ("awards"."latest_transaction_id" = "transaction_fpds"."transaction_id")
 INNER JOIN "transaction_fpds" AS "earliest_transaction" ON ("awards"."earliest_transaction_id" = "transaction_fpds"."transaction_id")
 INNER JOIN "financial_accounts_by_awards" ON ("awards"."id" = "financial_accounts_by_awards"."award_id")

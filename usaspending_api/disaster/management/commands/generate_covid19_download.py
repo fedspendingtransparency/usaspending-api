@@ -38,25 +38,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """
-            Generate File A / GTAS
-                Add to Zip File (split as necessary)
-            Generate File B
-                Add to Zip File (split as necessary)
-            Generate File D1 Awards
-                Add to Zip File (split as necessary)
-            Generate File D2 Awards
-                Add to Zip File (split as necessary)
-            Generate File F Contracts
-                Add to Zip File (split as necessary)
-            Generate File F Grants
-                Add to Zip File (split as necessary)
-            Add Data Dictionary
-            Add readme text file
-
-            Upload
-
-        from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
-
+            Generates a download data package specific to COVID-19 spending
         """
         full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
         short_timestamp = full_timestamp[:-6]
@@ -80,8 +62,8 @@ class Command(BaseCommand):
                 sql_dir / "disaster_covid19_file_d2_awards.sql",
                 working_dir / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
             ),
-            (sql_dir / "disaster_covid19_file_f_contracts.sql", working_dir / f"Contracts_Subawards_{short_timestamp}",),
-            (sql_dir / "disaster_covid19_file_f_grants.sql", working_dir / f"Assistance_Subawards_{short_timestamp}",),
+            (sql_dir / "disaster_covid19_file_f_contracts.sql", working_dir / f"Contracts_Subawards_{short_timestamp}"),
+            (sql_dir / "disaster_covid19_file_f_grants.sql", working_dir / f"Assistance_Subawards_{short_timestamp}"),
         ]
 
         for sql_file, final_name in download_file_list:
