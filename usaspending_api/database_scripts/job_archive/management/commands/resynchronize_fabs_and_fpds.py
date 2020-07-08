@@ -430,33 +430,35 @@ class Command(BaseCommand):
         from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
         from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 
-        delete_ids = get_ids(TEMP_TRANSACTION_FABS_DELETE_IDS_TABLE)
-        add_ids = get_ids(TEMP_TRANSACTION_FABS_ADD_IDS_TABLE)
-        if not delete_ids and not add_ids:
-            logger.info("No FABS transaction records to add or delete")
-            return
+        with Timer("Insert/delete FABS transactions"):
+            delete_ids = get_ids(TEMP_TRANSACTION_FABS_DELETE_IDS_TABLE)
+            add_ids = get_ids(TEMP_TRANSACTION_FABS_ADD_IDS_TABLE)
+            if not delete_ids and not add_ids:
+                logger.info("No FABS transaction records to add or delete")
+                return
 
-        update_award_ids = delete_fabs_transactions(delete_ids)
-        upsert_fabs_transactions(add_ids, update_award_ids)
+            update_award_ids = delete_fabs_transactions(delete_ids)
+            upsert_fabs_transactions(add_ids, update_award_ids)
 
     @staticmethod
     def delete_and_add_fpds_transaction_records():
         from usaspending_api.broker.management.commands.load_fpds_transactions import Command as FPDSCommand
         from usaspending_api.etl.transaction_loaders.fpds_loader import delete_stale_fpds
 
-        delete_ids = get_ids(TEMP_TRANSACTION_FPDS_DELETE_IDS_TABLE)
-        add_ids = get_ids(TEMP_TRANSACTION_FPDS_ADD_IDS_TABLE)
-        if not delete_ids and not add_ids:
-            logger.info("No FPDS transaction records to add or delete")
-            return
+        with Timer("Insert/delete FPDS transactions"):
+            delete_ids = get_ids(TEMP_TRANSACTION_FPDS_DELETE_IDS_TABLE)
+            add_ids = get_ids(TEMP_TRANSACTION_FPDS_ADD_IDS_TABLE)
+            if not delete_ids and not add_ids:
+                logger.info("No FPDS transaction records to add or delete")
+                return
 
-        # Structure necessary for deletes.
-        delete_ids = {date.today().strftime("%Y-%m-%d"): delete_ids}
+            # Structure necessary for deletes.
+            delete_ids = {date.today().strftime("%Y-%m-%d"): delete_ids}
 
-        fpds_command = FPDSCommand()
-        stale_awards = delete_stale_fpds(delete_ids)
-        stale_awards.extend(load_fpds_transactions(add_ids))
-        fpds_command.update_award_records(awards=stale_awards, skip_cd_linkage=False)
+            fpds_command = FPDSCommand()
+            stale_awards = delete_stale_fpds(delete_ids)
+            stale_awards.extend(load_fpds_transactions(add_ids))
+            fpds_command.update_award_records(awards=stale_awards, skip_cd_linkage=False)
 
     @staticmethod
     def drop_temp_tables():
