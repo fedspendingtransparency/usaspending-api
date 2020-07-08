@@ -6,18 +6,18 @@ from usaspending_api.common.data_classes import Pagination
 from usaspending_api.disaster.v2.views.data_classes import Collation, Element
 
 
-class TAS(Element):
+class MinorClass(Element):
     """Renaming the original generic object to clearly be TAS"""
 
 
-class FedAccount(Collation):
+class MajorClass(Collation):
     """Renaming the original generic object to clearly be Federal Account"""
 
 
 @dataclass_json
 @dataclass
 class FedAcctResults:
-    _federal_accounts: Dict[FedAccount, FedAccount] = field(default_factory=dict)
+    _federal_accounts: Dict[MinorClass, MinorClass] = field(default_factory=dict)
 
     def __getitem__(self, key):
         return self._federal_accounts.setdefault(key, key)
@@ -48,7 +48,10 @@ class FedAcctResults:
     def finalize(self, pagination: Pagination):
         self.rollup()
         self.sort(pagination.sort_key, pagination.sort_order)
-        return list(fa.to_dict() for fa in self.slice(pagination.lower_limit, pagination.upper_limit))
+        results = list(fa.to_dict() for fa in self.slice(pagination.lower_limit, pagination.upper_limit))
+        for result in results:
+            result.pop("total_budgetary_resources")
+        return results
 
     @staticmethod
     def sort_results(items, field, direction="desc"):

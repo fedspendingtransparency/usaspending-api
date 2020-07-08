@@ -6,7 +6,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.object_class.object_class_result import FedAcctResults, FedAccount, TAS
+from usaspending_api.disaster.v2.views.object_class.object_class_result import FedAcctResults, MajorClass, MinorClass
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
@@ -19,8 +19,8 @@ def construct_response(results: list, pagination: Pagination):
     FederalAccounts = FedAcctResults()
     for row in results:
         major_code = row.pop("major_code")
-        FA = FedAccount(id=major_code, code=major_code, description=row.pop("major_description"))
-        FederalAccounts[FA].include(TAS(**row))
+        FA = MajorClass(id=major_code, code=major_code, description=row.pop("major_description"))
+        FederalAccounts[FA].include(MinorClass(**row))
 
     return {
         "results": FederalAccounts.finalize(pagination),
@@ -119,11 +119,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         #  run a count query and fetch only a page's worth of results
         return (
             FinancialAccountsByAwards.objects.filter(*filters)
-            .values(
-                "treasury_account__federal_account__id",
-                "treasury_account__federal_account__federal_account_code",
-                "treasury_account__federal_account__account_title",
-            )
+            .values("object_class__major_object_class", "object_class__major_object_class_name")
             .annotate(**annotations)
             .values(*annotations.keys())
         )
