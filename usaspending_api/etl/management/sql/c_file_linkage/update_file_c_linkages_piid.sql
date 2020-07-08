@@ -11,7 +11,8 @@ SET
 			UPPER(aw.piid) = UPPER(faba.piid)
 			AND
 			UPPER(aw.parent_award_piid) = UPPER(faba.parent_award_id)
-	)
+	),
+	linked_date = NOW()
 WHERE
 	faba.financial_accounts_by_awards_id = ANY(
 		SELECT
@@ -44,7 +45,8 @@ SET
 			awards AS aw
 		WHERE
 			UPPER(aw.piid) = UPPER(faba.piid)
-	)
+	),
+	linked_date = NOW()
 WHERE
 	faba.financial_accounts_by_awards_id = ANY(
 		SELECT

@@ -9,7 +9,8 @@ SET
 			awards AS aw
 		WHERE
 			UPPER(aw.uri) = UPPER(faba.uri)
-	)
+	),
+	linked_date = NOW()
 WHERE
 	faba.financial_accounts_by_awards_id = ANY(
 		SELECT

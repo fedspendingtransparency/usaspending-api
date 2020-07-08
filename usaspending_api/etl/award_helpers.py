@@ -320,6 +320,7 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
       UPDATE financial_accounts_by_awards
         SET
           update_date = now(),
+          linked_date = now(),
           award_id = null
       WHERE award_id IN ({});
     """.format(

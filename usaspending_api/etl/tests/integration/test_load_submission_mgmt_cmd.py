@@ -227,7 +227,22 @@ class TestWithMultipleDatabases(TestCase):
             )
         }
 
-        assert expected_results == actual_results
+    def test_load_submission_file_c_no_linked_date(self):
+        """
+        Test load submission management command for File C records that are not expected to be linked to Award data
+        """
+        mommy.make(
+            "awards.Award",
+            id=-999,
+            piid="RANDOM_LOAD_SUB_PIID_DNE",
+            parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
+            latest_transaction_id=-999,
+        )
+        mommy.make("awards.TransactionNormalized", id=-999, award_id=-999)
+
+        call_command("load_submission", "-9999")
+
+        assert FinancialAccountsByAwards.objects.filter(linked_date__isnull=True) == 6
 
     def test_load_submission_file_c_zero_and_null_amount_rows_ignored(self):
         """

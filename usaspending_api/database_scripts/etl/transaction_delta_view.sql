@@ -19,10 +19,12 @@ SELECT
     ELSE UTM.uri
   END AS display_award_id,
 
-  CASE
-    WHEN AWD.update_date > TN.update_date THEN AWD.update_date
-    ELSE TN.update_date
-  END AS update_date,
+  GREATEST(
+    AWD.update_date,
+    TN.update_date,
+    TREASURY_ACCT.linked_date
+  ) as update_date,
+
   UTM.modification_number,
   AWD.generated_unique_award_id,
   UTM.award_id,
@@ -308,6 +310,7 @@ LEFT JOIN ref_population_cong_district RL_DISTRICT_POPULATION ON (RL_DISTRICT_PO
 LEFT JOIN (
   SELECT
     faba.award_id,
+    faba.linked_date,
     ARRAY_AGG(
       DISTINCT CONCAT(
         'agency=', agency.toptier_code,
@@ -341,7 +344,8 @@ LEFT JOIN (
  WHERE
    faba.award_id IS NOT NULL
  GROUP BY
-   faba.award_id
+   faba.award_id,
+   faba.linked_date
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = UTM.award_id)
 LEFT JOIN (
   SELECT

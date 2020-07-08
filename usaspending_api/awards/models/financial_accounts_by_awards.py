@@ -125,6 +125,8 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    # Date the C to D linkage was created or modified
+    linked_date = models.DateTimeField(null=True)
 
     class Meta:
         managed = True

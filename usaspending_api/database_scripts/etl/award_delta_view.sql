@@ -20,7 +20,11 @@ SELECT
   vw_award_search.award_amount,
   vw_award_search.total_subsidy_cost,
   vw_award_search.total_loan_value,
-  a.update_date,
+  
+  GREATEST(
+    a.update_date,
+    TREASURY_ACCT.linked_date
+  ) as update_date,
 
   vw_award_search.recipient_name,
   vw_award_search.recipient_unique_id,
@@ -127,6 +131,7 @@ HAVING
 LEFT JOIN (
   SELECT
     faba.award_id,
+    faba.linked_date,
     ARRAY_AGG(
       DISTINCT CONCAT(
         'agency=', agency.toptier_code,
@@ -160,5 +165,6 @@ LEFT JOIN (
  WHERE
    faba.award_id IS NOT NULL
  GROUP BY
-   faba.award_id
+   faba.award_id,
+   faba.linked_date
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = vw_award_search.award_id);

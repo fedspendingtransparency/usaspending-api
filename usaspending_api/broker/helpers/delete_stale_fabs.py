@@ -42,7 +42,7 @@ def delete_stale_fabs(ids_to_delete):
         )
     if delete_award_ids:
         # Financial Accounts by Awards
-        faba = 'UPDATE "financial_accounts_by_awards" SET "award_id" = null WHERE "award_id" IN ({});'
+        faba = 'UPDATE "financial_accounts_by_awards" SET "award_id" = null, "linked_date" = NOW() WHERE "award_id" IN ({});'
         # Subawards
         sub = 'UPDATE "subaward" SET "award_id" = null WHERE "award_id" IN ({});'.format(delete_award_str_ids)
         # Delete Awards

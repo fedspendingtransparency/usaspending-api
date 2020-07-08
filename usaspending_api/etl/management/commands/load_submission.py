@@ -2,7 +2,7 @@ import logging
 import re
 import signal
 
-from datetime import datetime
+from datetime import datetime, timezone
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import transaction
@@ -567,8 +567,11 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
 
         award = find_matching_award(**filters)
 
+        linked_date = None
         if award:
             awards_touched += [award]
+            # If an award is linked, mark the linked_date as now
+            linked_date = datetime.now(timezone.utc)
 
         award_financial_data = FinancialAccountsByAwards()
 
@@ -581,6 +584,7 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
             "object_class": row.get("object_class"),
             "program_activity": row.get("program_activity"),
             "disaster_emergency_fund": get_disaster_emergency_fund(row),
+            "linked_date": linked_date
         }
 
         # Still using the cpe|fyb regex compiled above for reverse
