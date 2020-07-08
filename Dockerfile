@@ -40,6 +40,4 @@ RUN python3 -m pip install -r requirements/requirements.txt
 ##### Copy the rest of the project files into the container
 COPY . /dockermount
 
-##### Compose overrides DATABASE_URL
-ENV DATABASE_URL postgres://username@host.docker.internal:5432/data_store_api
 ENV PYTHONUNBUFFERED=0

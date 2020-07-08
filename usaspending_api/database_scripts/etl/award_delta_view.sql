@@ -83,6 +83,45 @@ SELECT
   vw_award_search.product_or_service_description,
   vw_award_search.naics_code,
   vw_award_search.naics_description,
+
+  CASE
+    WHEN
+        vw_award_search.recipient_location_state_code IS NOT NULL
+        AND vw_award_search.recipient_location_county_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', vw_award_search.recipient_location_country_code,
+        '","state_code":"', vw_award_search.recipient_location_state_code,
+        '","state_fips":"', RL_STATE_LOOKUP.fips,
+        '","county_code":"', vw_award_search.recipient_location_county_code,
+        '","county_name":"', vw_award_search.recipient_location_county_name,
+        '","population":"', RL_COUNTY_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS recipient_location_county_agg_key,
+  CASE
+    WHEN
+        vw_award_search.recipient_location_state_code IS NOT NULL
+        AND vw_award_search.recipient_location_congressional_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', vw_award_search.recipient_location_country_code,
+        '","state_code":"', vw_award_search.recipient_location_state_code,
+        '","state_fips":"', RL_STATE_LOOKUP.fips,
+        '","congressional_code":"', vw_award_search.recipient_location_congressional_code,
+        '","population":"', RL_DISTRICT_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS recipient_location_congressional_agg_key,
+  CASE
+    WHEN vw_award_search.recipient_location_state_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', vw_award_search.recipient_location_country_code,
+        '","state_code":"', vw_award_search.recipient_location_state_code,
+        '","state_name":"', RL_STATE_LOOKUP.name,
+        '","population":"', RL_STATE_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS recipient_location_state_agg_key,
+
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
   DEFC.disaster_emergency_fund_codes as disaster_emergency_fund_codes,
@@ -98,6 +137,14 @@ LEFT JOIN (
   FROM
     recipient_lookup AS rlv
 ) recipient_lookup ON (recipient_lookup.duns = vw_award_search.recipient_unique_id AND vw_award_search.recipient_unique_id IS NOT NULL)
+LEFT JOIN (
+  SELECT   code, name, fips, MAX(id)
+  FROM     state_data
+  GROUP BY code, name, fips
+) RL_STATE_LOOKUP ON (RL_STATE_LOOKUP.code = vw_award_search.recipient_location_state_code)
+LEFT JOIN ref_population_county RL_STATE_POPULATION ON (RL_STATE_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_STATE_POPULATION.county_number = '000')
+LEFT JOIN ref_population_county RL_COUNTY_POPULATION ON (RL_COUNTY_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_COUNTY_POPULATION.county_number = vw_award_search.recipient_location_county_code)
+LEFT JOIN ref_population_cong_district RL_DISTRICT_POPULATION ON (RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_DISTRICT_POPULATION.congressional_district = vw_award_search.recipient_location_congressional_code)
 LEFT JOIN (
     SELECT
         faba.award_id,

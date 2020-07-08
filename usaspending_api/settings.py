@@ -41,7 +41,8 @@ ENABLE_CARES_ACT_FEATURES = False
 SECRET_KEY = get_random_string()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# Defaults to False, unless DJANGO_DEBUG env var is set to a truthy value
+DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = "localhost:3000"
 ALLOWED_HOSTS = ["*"]
@@ -354,6 +355,12 @@ LOGGING = {
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
     },
 }
+
+if DEBUG:
+    # make all loggers use the console when in debug
+    for logger in LOGGING["loggers"]:
+        if "console" not in LOGGING["loggers"][logger]["handlers"]:
+            LOGGING["loggers"][logger]["handlers"] += ["console"]
 
 
 # If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
