@@ -34,7 +34,14 @@ def test_two_transactions_two_awards(client, monkeypatch, basic_fabs_award, basi
 
 
 @pytest.mark.django_db
-def test_two_transactions_one_award(client, monkeypatch, double_fpds_award, helpers):
+def test_two_distinct_recipients(client, monkeypatch, double_fpds_awards_with_distict_recipients, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = _default_post(client, helpers)
+    assert resp.data["count"] == 2
+
+
+@pytest.mark.django_db
+def test_two_same_recipients(client, monkeypatch, double_fpds_awards_with_same_recipients, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 2

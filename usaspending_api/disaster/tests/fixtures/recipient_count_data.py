@@ -8,41 +8,44 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 @pytest.fixture
 def basic_fabs_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
-    _normal_faba(award)
-    _normal_fabs(award)
+    _normal_faba(_normal_fabs(1))
 
 
 @pytest.fixture
 def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
 
-    _normal_faba(award)
-
-    transaction_normalized = mommy.make("awards.TransactionNormalized", award=award)
+    transaction_normalized = mommy.make("awards.TransactionNormalized")
     mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
+    _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
 
 
 @pytest.fixture
-def double_fpds_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
-
-    _normal_faba(award)
-
-    transaction_normalized = mommy.make("awards.TransactionNormalized", award=award)
+def double_fpds_awards_with_distict_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
+    transaction_normalized = mommy.make("awards.TransactionNormalized")
     mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
+    _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
 
-    transaction_normalized = mommy.make("awards.TransactionNormalized", award=award)
+    transaction_normalized = mommy.make("awards.TransactionNormalized")
     mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="2")
+    _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
+
+
+@pytest.fixture
+def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
+    transaction_normalized = mommy.make("awards.TransactionNormalized")
+    mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
+    _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
+
+    transaction_normalized = mommy.make("awards.TransactionNormalized")
+    mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
+    _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
 
 
 @pytest.fixture
 def award_with_no_outlays(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
-
     mommy.make(
         "awards.FinancialAccountsByAwards",
-        award=award,
+        award=_normal_fabs(1),
         piid="piid 1",
         parent_award_id="same parent award",
         fain="fain 1",
@@ -52,20 +55,14 @@ def award_with_no_outlays(award_count_sub_schedule, award_count_submission, defc
         gross_outlays_delivered_orders_paid_total_cpe=0,
     )
 
-    _normal_fabs(award)
-
 
 @pytest.fixture
 def fabs_award_with_quarterly_submission(award_count_sub_schedule, award_count_quarterly_submission, defc_codes):
-    award = _normal_award()
-    _normal_faba(award)
-    _normal_fabs(award)
+    _normal_faba(_normal_fabs(1))
 
 
 @pytest.fixture
 def fabs_award_with_old_submission(defc_codes, award_count_sub_schedule):
-    award = _normal_award()
-
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         is_quarter=False,
@@ -83,7 +80,7 @@ def fabs_award_with_old_submission(defc_codes, award_count_sub_schedule):
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
-        award=award,
+        award=_normal_fabs(1),
         piid="piid 1",
         parent_award_id="same parent award",
         fain="fain 1",
@@ -92,13 +89,10 @@ def fabs_award_with_old_submission(defc_codes, award_count_sub_schedule):
         submission=old_submission,
         gross_outlays_delivered_orders_paid_total_cpe=8,
     )
-    _normal_fabs(award)
 
 
 @pytest.fixture
 def fabs_award_with_unclosed_submission(defc_codes, award_count_sub_schedule):
-    award = _normal_award()
-
     old_submission = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
@@ -108,7 +102,7 @@ def fabs_award_with_unclosed_submission(defc_codes, award_count_sub_schedule):
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
-        award=award,
+        award=_normal_fabs(1),
         piid="piid 1",
         parent_award_id="same parent award",
         fain="fain 1",
@@ -117,11 +111,6 @@ def fabs_award_with_unclosed_submission(defc_codes, award_count_sub_schedule):
         submission=old_submission,
         gross_outlays_delivered_orders_paid_total_cpe=8,
     )
-    _normal_fabs(award)
-
-
-def _normal_award():
-    return mommy.make("awards.Award", type="A")
 
 
 def _normal_faba(award):
@@ -138,6 +127,7 @@ def _normal_faba(award):
     )
 
 
-def _normal_fabs(award):
-    transaction_normalized = mommy.make("awards.TransactionNormalized", award=award)
+def _normal_fabs(id):
+    transaction_normalized = mommy.make("awards.TransactionNormalized", pk=id)
     mommy.make("awards.TransactionFABS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
+    return mommy.make("awards.Award", latest_transaction_id=id, type="A")
