@@ -173,8 +173,8 @@ def cursor_fetcher(cursor):
 
 def fetchall_fetcher(cursor):
     """
-    Fetcher that returns the default fetchall() if the cursor contains results
-    or None if not.  Return value will be roughly equivalent to:
+    Fetcher that returns the default fetchall().  Return value will be
+    roughly equivalent to:
 
         [
             (54360982, None),
@@ -182,9 +182,7 @@ def fetchall_fetcher(cursor):
         ]
 
     """
-    if cursor.rowcount > -1:
-        return cursor.fetchall()
-    return None
+    return cursor.fetchall()
 
 
 def named_tuple_fetcher(cursor):
