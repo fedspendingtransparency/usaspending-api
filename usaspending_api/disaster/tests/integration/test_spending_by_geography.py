@@ -3,8 +3,13 @@ import pytest
 
 from rest_framework import status
 
+from usaspending_api.awards.v2.lookups.lookups import grant_type_mapping, contract_type_mapping, loan_type_mapping
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
+
+def _get_shape_code_for_sort(result_dict):
+    return result_dict["shape_code"]
 
 
 def post(client, **kwargs):
@@ -76,22 +81,17 @@ def test_spending_by_geography_failure_with_invalid_fields(
         == "Field 'spending_type' is outside valid values ['obligation', 'outlay', 'face_value_of_loan']"
     )
 
-    # Test invalid "geo_layer" string
-    resp = post(client, def_codes=["L"], geo_layer="NOT VALID", geo_layer_filters=["SC-01"], spending_type="obligation")
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp.data["detail"] == "Field 'geo_layer' is outside valid values ['state', 'county', 'district']"
-
-    # Test invalid "spending_type" string
-    resp = post(client, def_codes=["L"], geo_layer="state", geo_layer_filters=["SC-01"], spending_type="NOT VALID")
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert (
-        resp.data["detail"]
-        == "Field 'spending_type' is outside valid values ['obligation', 'outlay', 'face_value_of_loan']"
+    # Test invalid "award_type_codes" string
+    resp = post(
+        client,
+        award_type_codes=["NOT VALID"],
+        def_codes=["L"],
+        geo_layer="state",
+        geo_layer_filters=["SC-01"],
+        spending_type="obligation",
     )
-
-
-def _get_shape_code_for_sort(result_dict):
-    return result_dict["shape_code"]
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Field 'filter|award_type_codes' is outside valid values " in resp.data["detail"]
 
 
 @pytest.mark.django_db
@@ -307,6 +307,103 @@ def _test_correct_response_for_face_value_of_loan(client):
             },
             {"amount": 0.0, "display_name": "Washington", "per_capita": 0.0, "population": 10000, "shape_code": "WA"},
         ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+
+def test_correct_response_for_award_type_codes(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_cases = [
+        _test_correct_response_of_loans,
+        _test_correct_response_of_contracts,
+        _test_correct_response_of_grants,
+    ]
+
+    for test in test_cases:
+        test(client)
+
+
+def _test_correct_response_of_loans(client):
+    resp = post(
+        client,
+        award_type_codes=list(loan_type_mapping.keys()),
+        def_codes=["L", "M"],
+        geo_layer="county",
+        geo_layer_filters=["45001", "45005"],
+        spending_type="obligation",
+    )
+    expected_response = {
+        "geo_layer": "county",
+        "spending_type": "obligation",
+        "results": [
+            {"amount": 220.0, "display_name": "Charleston", "per_capita": 220.0, "population": 1, "shape_code": "45001"}
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+
+def _test_correct_response_of_contracts(client):
+    resp = post(
+        client,
+        award_type_codes=list(contract_type_mapping.keys()),
+        def_codes=["L", "M"],
+        geo_layer="district",
+        geo_layer_filters=["4510", "4550", "5350"],
+        spending_type="obligation",
+    )
+    expected_response = {
+        "geo_layer": "district",
+        "spending_type": "obligation",
+        "results": [
+            {
+                "amount": 2000000.0,
+                "display_name": "SC-10",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "4510",
+            },
+            {
+                "amount": 200000.0,
+                "display_name": "SC-50",
+                "per_capita": 2000.0,
+                "population": 100,
+                "shape_code": "4550",
+            },
+            {"amount": 22000.0, "display_name": "WA-50", "per_capita": 22.0, "population": 1000, "shape_code": "5350"},
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+
+def _test_correct_response_of_grants(client):
+    resp = post(
+        client,
+        award_type_codes=list(grant_type_mapping.keys()),
+        def_codes=["L", "M"],
+        geo_layer="state",
+        geo_layer_filters=["SC", "WA"],
+        spending_type="obligation",
+    )
+    expected_response = {
+        "geo_layer": "state",
+        "spending_type": "obligation",
+        "results": [],
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
