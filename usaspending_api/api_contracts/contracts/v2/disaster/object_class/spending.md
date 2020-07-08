@@ -44,7 +44,6 @@ Returns spending details of Object Classes receiving supplemental funding budget
                         "count": 54,
                         "obligation": 89.01,
                         "outlay": 70.98,
-                        "total_budgetary_resources": null
                     },
                     {
                         "id": "41",
@@ -54,7 +53,6 @@ Returns spending details of Object Classes receiving supplemental funding budget
                         "count": 2,
                         "obligation": 50,
                         "outlay": 10,
-                        "total_budgetary_resources": null
                     }
                 ],
                 "page_metadata": {
@@ -98,7 +96,6 @@ Returns spending details of Object Classes receiving supplemental funding budget
         + `code`
         + `description`
         + `count`
-        + `total_budgetary_resources`
         + `obligation`
         + `outlay`
 
@@ -110,7 +107,6 @@ Returns spending details of Object Classes receiving supplemental funding budget
 + `count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
-+ `total_budgetary_resources` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)
