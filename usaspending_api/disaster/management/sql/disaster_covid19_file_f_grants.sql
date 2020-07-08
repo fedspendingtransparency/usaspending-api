@@ -89,16 +89,15 @@ SELECT
     "broker_subaward"."sub_high_comp_officer4_amount" AS "subawardee_highly_compensated_officer_4_amount",
     "broker_subaward"."sub_high_comp_officer5_full_na" AS "subawardee_highly_compensated_officer_5_name",
     "broker_subaward"."sub_high_comp_officer5_amount" AS "subawardee_highly_compensated_officer_5_amount",
-    CONCAT('https://www.usaspending.gov/#/award/', CONCAT(urlencode ("awards"."generated_unique_award_id"), '/')) AS "usaspending_permalink",
+    CONCAT('https://www.usaspending.gov/#/award/', urlencode("awards"."generated_unique_award_id"), '/') AS "usaspending_permalink",
     "broker_subaward"."date_submitted" AS "subaward_fsrs_report_last_modified_date"
 FROM "subaward_view"
 INNER JOIN "awards" ON ("subaward_view"."award_id" = "awards"."id")
-INNER JOIN "financial_accounts_by_awards" ON ("awards"."id" = "financial_accounts_by_awards"."award_id")
-INNER JOIN "disaster_emergency_fund_code" ON ("financial_accounts_by_awards"."disaster_emergency_fund_code" = "disaster_emergency_fund_code"."code")
-INNER JOIN "transaction_normalized" ON ("awards"."latest_transaction_id" = "transaction_normalized"."id")
-INNER JOIN "transaction_fabs" ON ("transaction_normalized"."id" = "transaction_fabs"."transaction_id")
+INNER JOIN "transaction_fabs" ON ("awards"."latest_transaction_id" = "transaction_fabs"."transaction_id")
 INNER JOIN "subaward" ON ("subaward_view"."subaward_id" = "subaward"."id")
 INNER JOIN "broker_subaward" ON ("subaward_view"."broker_subaward_id" = "broker_subaward"."id")
+INNER JOIN "financial_accounts_by_awards" ON ("awards"."id" = "financial_accounts_by_awards"."award_id")
+INNER JOIN "disaster_emergency_fund_code" ON ("financial_accounts_by_awards"."disaster_emergency_fund_code" = "disaster_emergency_fund_code"."code")
 WHERE (
     "subaward_view"."award_type" IN ('grant')
     AND "subaward_view"."action_date" >= '2020-04-01'

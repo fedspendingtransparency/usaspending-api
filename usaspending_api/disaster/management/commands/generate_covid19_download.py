@@ -58,21 +58,33 @@ class Command(BaseCommand):
         from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 
         """
-        timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
+        full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
+        short_timestamp = full_timestamp[:-6]
         self.zip_file_path = (
-            Path(settings.CSV_LOCAL_PATH) / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{timestamp}.zip"
+            Path(settings.CSV_LOCAL_PATH) / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{full_timestamp}.zip"
         )
+        self.prep_filesystem()
+
         sql_dir = Path("usaspending_api/disaster/management/sql")
         working_dir = Path(settings.CSV_LOCAL_PATH)
-        sql_file_list = [
+        download_file_list = [
             (
                 sql_dir / "disaster_covid19_file_b.sql",
-                working_dir / f"FY20P07-Present_All_TAS_AccountBreakdownByPA-OC_{timestamp[:-6]}",
-            )
+                working_dir / f"FY20P07-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
+            ),
+            (
+                sql_dir / "disaster_covid19_file_d1_awards.sql",
+                working_dir / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
+            ),
+            (
+                sql_dir / "disaster_covid19_file_d2_awards.sql",
+                working_dir / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
+            ),
+            (sql_dir / "disaster_covid19_file_f_contracts.sql", working_dir / f"Contracts_Subawards_{short_timestamp}",),
+            (sql_dir / "disaster_covid19_file_f_grants.sql", working_dir / f"Assistance_Subawards_{short_timestamp}",),
         ]
 
-        self.prep_filesystem()
-        for sql_file, final_name in sql_file_list:
+        for sql_file, final_name in download_file_list:
             intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")
             data_file, count = self.download_to_csv(sql_file, final_name, str(intermediate_data_file_path))
             if count <= 0:
