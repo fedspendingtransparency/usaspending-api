@@ -45,14 +45,16 @@ class ObjectClassResults:
                 results.append(fa)
         return results
 
-    def finalize(self, pagination: Pagination):
+    def finalize(self, pagination: Pagination, strip_total_budgetary_resources):
         self.rollup()
         self.sort(pagination.sort_key, pagination.sort_order)
         results = list(fa.to_dict() for fa in self.slice(pagination.lower_limit, pagination.upper_limit))
-        for result in results:
-            result.pop("total_budgetary_resources")
-            for child in result["children"]:
-                child.pop("total_budgetary_resources")
+        if strip_total_budgetary_resources:
+            for result in results:
+                result.pop("total_budgetary_resources")
+                for child in result["children"]:
+                    child.pop("total_budgetary_resources")
+
         return results
 
     @staticmethod
