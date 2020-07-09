@@ -20,15 +20,15 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 
 
 def construct_response(results: list, pagination: Pagination):
-    FederalAccounts = ObjectClassResults()
+    object_classes = ObjectClassResults()
     for row in results:
         major_code = row.pop("major_code")
         FA = MajorClass(id=major_code, code=major_code, description=row.pop("major_description"))
-        FederalAccounts[FA].include(MinorClass(**row))
+        object_classes[FA].include(MinorClass(**row))
 
     return {
-        "results": FederalAccounts.finalize(pagination),
-        "page_metadata": get_pagination_metadata(len(FederalAccounts), pagination.limit, pagination.page),
+        "results": object_classes.finalize(pagination),
+        "page_metadata": get_pagination_metadata(len(object_classes), pagination.limit, pagination.page),
     }
 
 
