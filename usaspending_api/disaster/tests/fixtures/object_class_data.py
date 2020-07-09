@@ -8,7 +8,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 @pytest.fixture
 def basic_faba_with_object_class(award_count_sub_schedule, award_count_submission, defc_codes):
-    basic_object_class = _major_object_class("001", ["0001"])
+    basic_object_class = _major_object_class("001", [1])
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -21,7 +21,7 @@ def basic_faba_with_object_class(award_count_sub_schedule, award_count_submissio
 
 @pytest.fixture
 def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_count_submission, defc_codes):
-    basic_object_class = _major_object_class("001", ["0001"])
+    basic_object_class = _major_object_class("001", [1])
 
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -37,7 +37,7 @@ def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_c
 def basic_fa_by_object_class_with_multpile_object_class(
     award_count_sub_schedule, award_count_quarterly_submission, defc_codes
 ):
-    major_object_class_1 = _major_object_class("001", ["0001", "0002", "0003"])
+    major_object_class_1 = _major_object_class("001", [1, 2, 3])
 
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -71,7 +71,7 @@ def basic_fa_by_object_class_with_multpile_object_class(
 def basic_fa_by_object_class_with_object_class_but_no_obligations(
     award_count_sub_schedule, award_count_submission, defc_codes
 ):
-    basic_object_class = _major_object_class("001", ["0001"])
+    basic_object_class = _major_object_class("001", [1])
 
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -89,10 +89,11 @@ def _major_object_class(major_code, minor_codes):
         retval.append(
             mommy.make(
                 "references.ObjectClass",
+                id=minor_code,
                 major_object_class=major_code,
                 major_object_class_name=f"{major_code} name",
-                object_class=minor_code,
-                object_class_name=f"{minor_code} name",
+                object_class=f"000{minor_code}",
+                object_class_name=f"000{minor_code} name",
             )
         )
     return retval
