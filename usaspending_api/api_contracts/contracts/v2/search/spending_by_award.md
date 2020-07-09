@@ -195,6 +195,7 @@ List of table columns
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
++ `def_codes` (optional, array[string])
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
