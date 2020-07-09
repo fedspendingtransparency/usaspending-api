@@ -31,7 +31,7 @@ SELECT
         ELSE NULL END
     ) AS "beginning_period_of_availability",
     COALESCE(taa."ending_period_of_availability",
-        CASE WHEN SPLIT_PART(REVERSE(gtas."tas_rendering_label"), '-', 3) = 'X'
+        CASE WHEN SPLIT_PART(REVERSE(gtas."tas_rendering_label"), '-', 3) != 'X'
         THEN REVERSE(SPLIT_PART(SPLIT_PART(REVERSE(gtas."tas_rendering_label"), '-', 3), '/', 1))
         ELSE NULL END
     ) AS "ending_period_of_availability",
@@ -44,7 +44,7 @@ SELECT
     COALESCE(taa."sub_account_code", REVERSE(SPLIT_PART(REVERSE(gtas."tas_rendering_label"), '-', 1))) AS sub_account_code,
     gtas."tas_rendering_label" AS "treasury_account_symbol",
     taa."account_title" AS "treasury_account_name",
-    (SELECT "name" FROM "toptier_agency" WHERE "toptier_agency"."toptier_code" = (
+    (SELECT U0."agency_name" FROM "cgac" U0 WHERE U0."cgac_code" = (
         COALESCE(
             taa."agency_id",
                 CASE WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
@@ -52,7 +52,7 @@ SELECT
                 ELSE SPLIT_PART(gtas."tas_rendering_label", '-', 1) END
         )
     )) AS "agency_identifier_name",
-    (SELECT "name" FROM "toptier_agency" WHERE "toptier_agency"."toptier_code" = (
+    (SELECT U0."agency_name" FROM "cgac" U0 WHERE U0."cgac_code" = (
     COALESCE(taa."allocation_transfer_agency_id",
         CASE WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
         THEN SPLIT_PART(gtas."tas_rendering_label", '-', 1)
