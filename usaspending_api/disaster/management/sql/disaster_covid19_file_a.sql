@@ -2,7 +2,8 @@ WITH latest_submissions AS (
     SELECT
         "dabs_submission_window_schedule"."submission_fiscal_year",
         "dabs_submission_window_schedule"."is_quarter",
-        MAX("dabs_submission_window_schedule"."submission_fiscal_month") AS "submission_fiscal_month"
+        MAX("dabs_submission_window_schedule"."submission_fiscal_month") AS "submission_fiscal_month",
+        MAX("dabs_submission_window_schedule"."submission_reveal_date") AS "submission_reveal_date"
     FROM "dabs_submission_window_schedule"
     WHERE
         "dabs_submission_window_schedule"."submission_reveal_date" <= now()
@@ -12,6 +13,7 @@ WITH latest_submissions AS (
 )
 
 SELECT
+    agency."name" AS "owning_agency_name",
     CONCAT('FY', gtas."fiscal_year", 'P', gtas."fiscal_period") AS "submission_period",
     COALESCE(taa."allocation_transfer_agency_id",
         CASE WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
@@ -57,7 +59,8 @@ SELECT
         ELSE NULL END
         )
     )) AS "allocation_transfer_agency_identifer_name",
-
+    taa."budget_function_title" AS "budget_function",
+    taa."budget_subfunction_title" AS "budget_subfunction",
     fa."federal_account_code" AS "federal_account_symbol",
     fa."account_title" AS "federal_account_name",
     gtas."disaster_emergency_fund_code" AS "disaster_emergency_fund_code",
@@ -68,10 +71,12 @@ SELECT
     (gtas."budget_authority_appropriation_amount_cpe" + gtas."other_budgetary_resources_amount_cpe") AS "total_budgetary_resources",
     gtas."obligations_incurred_total_cpe" AS "obligations_incurred",
     gtas."unobligated_balance_cpe" AS "unobligated_balance",
-    gtas."gross_outlay_amount_by_tas_cpe" AS "gross_outlay_amount"
+    gtas."gross_outlay_amount_by_tas_cpe" AS "gross_outlay_amount",
+    sub.submission_reveal_date AS "last_modified_date"
 FROM gtas_sf133_balances gtas
 INNER JOIN latest_submissions sub ON (gtas."fiscal_year" = sub."submission_fiscal_year" AND gtas."fiscal_period" = sub."submission_fiscal_month" AND sub."is_quarter" = False)
 INNER JOIN disaster_emergency_fund_code defc ON (gtas."disaster_emergency_fund_code" = defc."code")
 LEFT OUTER JOIN treasury_appropriation_account taa ON (gtas."treasury_account_identifier" = taa."treasury_account_identifier")
 LEFT OUTER JOIN federal_account fa ON (taa."federal_account_id" = fa."id")
+LEFT OUTER JOIN toptier_agency agency ON (fa."parent_toptier_agency_id" = agency."toptier_agency_id")
 WHERE defc."group_name" = 'covid_19'
