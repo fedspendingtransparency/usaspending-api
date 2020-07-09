@@ -232,7 +232,7 @@ class TestWithMultipleDatabases(TestCase):
     def test_load_submission_file_c_no_linked_date(self):
         """
         Test load submission management command for File C records that are not expected to be linked to Award data.
-        Because no records were linked, all linked_dates should be null. 
+        Because no records were linked, all linked_dates should be null.
         """
         mommy.make(
             "awards.Award",
