@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of award data
+    This route sends a request to begin generating a zip file of award data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/awards.md"
@@ -21,7 +21,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
 
 class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of IDV data
+    This route sends a request to begin generating a zip file of IDV data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/idv.md"
@@ -33,7 +33,7 @@ class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
 
 class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of Contract data
+    This route sends a request to begin generating a zip file of Contract data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/contract.md"
@@ -45,7 +45,7 @@ class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
 
 class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of Assistance data
+    This route sends a request to begin generating a zip file of Assistance data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/assistance.md"
@@ -57,8 +57,7 @@ class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to the backend to begin generating a zipfile of transaction data
-    download.
+    This route sends a request to begin generating a zip file of transaction data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/transactions.md"
@@ -71,7 +70,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
 
 class AccountDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to begin generating a zipfile of account data
+    This route sends a request to begin generating a zip file of account data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/accounts.md"
@@ -84,7 +83,8 @@ class AccountDownloadViewSet(BaseDownloadViewSet):
 
 class DisasterDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to begin generating a zipfile of account data
+    This route sends a request to begin generating a zip file of disaster data
+    Specifically, only COVID-19 at the moment
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/disaster.md"

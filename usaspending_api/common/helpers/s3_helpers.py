@@ -3,9 +3,9 @@ import io
 import logging
 import math
 
+from django.conf import settings
 from pathlib import Path
 from typing import List
-from django.conf import settings
 
 
 logger = logging.getLogger("script")

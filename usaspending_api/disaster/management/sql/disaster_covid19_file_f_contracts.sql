@@ -133,7 +133,7 @@ INNER JOIN (
     HAVING
         COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-    ) DEFC ON (DEFC.award_id = awards.id)
+) DEFC ON (DEFC.award_id = awards.id)
 WHERE (
     "subaward_view"."award_type" IN ('procurement')
     AND "subaward_view"."action_date" >= '2020-04-01'
