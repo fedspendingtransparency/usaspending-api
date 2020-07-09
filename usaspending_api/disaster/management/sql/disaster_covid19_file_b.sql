@@ -15,10 +15,10 @@ SELECT
     "submission_attributes"."reporting_agency_name" AS "reporting_agency_name",
     CASE
         WHEN "submission_attributes"."quarter_format_flag" = True THEN
-            CONCAT ('FY' , EXTRACT (YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months') , 'Q' , EXTRACT (QUARTER FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'))
+            CONCAT('FY', EXTRACT(YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'), 'Q', EXTRACT(QUARTER FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'))
         ELSE
-            CONCAT ('FY' , EXTRACT (YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months') , 'P' , EXTRACT (MONTH FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'))
-    END AS "last_reported_submission_period",
+            CONCAT('FY', EXTRACT(YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'), 'P', EXTRACT(MONTH FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'))
+    END AS "submission_period",
     "treasury_appropriation_account"."allocation_transfer_agency_id" AS "allocation_transfer_agency_identifier_code",
     "treasury_appropriation_account"."agency_id" AS "agency_identifier_code",
     "treasury_appropriation_account"."beginning_period_of_availability" AS "beginning_period_of_availability",
@@ -35,7 +35,7 @@ SELECT
     "federal_account"."federal_account_code" AS "federal_account_symbol",
     "federal_account"."account_title" AS "federal_account_name",
     "disaster_emergency_fund_code"."code" AS "disaster_emergency_fund_code",
-    "disaster_emergency_fund_code"."title" AS "disaster_emergency_fund_name",
+    "disaster_emergency_fund_code"."public_law" AS "disaster_emergency_fund_name",
     "ref_program_activity"."program_activity_code" AS "program_activity_code",
     "ref_program_activity"."program_activity_name" AS "program_activity_name",
     "object_class"."object_class" AS "object_class_code",

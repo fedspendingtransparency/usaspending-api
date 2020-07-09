@@ -21,6 +21,7 @@ from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, ass
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
+from usaspending_api.common.helpers.s3_helpers import multipart_upload
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.download.download_utils import construct_data_date_range
@@ -28,11 +29,7 @@ from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
-from usaspending_api.download.helpers import (
-    verify_requested_columns_available,
-    multipart_upload,
-    write_to_download_log as write_to_log,
-)
+from usaspending_api.download.helpers import verify_requested_columns_available, write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
 from usaspending_api.download.models import DownloadJob
 

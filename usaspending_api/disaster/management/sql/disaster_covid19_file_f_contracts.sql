@@ -3,11 +3,13 @@ SELECT
     "broker_subaward"."award_id" AS "prime_award_piid",
     "broker_subaward"."parent_award_id" AS "prime_award_parent_piid",
     "broker_subaward"."award_amount" AS "prime_award_amount",
-    DEFC."disaster_emergency_fund_codes" AS "prime_award_disaster_emergency_fund_codes,
+    DEFC."disaster_emergency_funds" AS "prime_award_disaster_emergency_fund_codes",
     DEFC."gross_outlay_amount_by_award_cpe" AS "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
     DEFC."transaction_obligated_amount" AS "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
     "broker_subaward"."action_date" AS "prime_award_base_action_date",
     EXTRACT (YEAR FROM ("awards"."date_signed") + INTERVAL '3 months') AS "prime_award_base_action_date_fiscal_year",
+    "awards"."certified_date" AS "prime_award_latest_action_date",
+    EXTRACT (YEAR FROM ("awards"."certified_date"::DATE) + INTERVAL '3 months') AS "prime_award_latest_action_date_fiscal_year",
     "awards"."period_of_performance_start_date" AS "prime_award_period_of_performance_start_date",
     "awards"."period_of_performance_current_end_date" AS "prime_award_period_of_performance_current_end_date",
     ("transaction_fpds"."period_of_perf_potential_e") ::date AS "period_of_performance_potential_end_date",
@@ -105,7 +107,7 @@ INNER JOIN "broker_subaward" ON ("subaward_view"."broker_subaward_id" = "broker_
 INNER JOIN (
     SELECT
         faba.award_id,
-        STRING_AGG(DISTINCT disaster_emergency_fund_code, ';' ORDER BY disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
+        STRING_AGG(DISTINCT CONCAT(disaster_emergency_fund_code, ': ', public_law), '; ' ORDER BY CONCAT(disaster_emergency_fund_code, ': ', public_law)) AS disaster_emergency_funds,
         COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
         COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
     FROM
@@ -126,12 +128,12 @@ INNER JOIN (
         AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period
         AND latest_closed_period_per_fy.is_quarter = sa.quarter_format_flag
     WHERE faba.award_id IS NOT NULL
-GROUP BY
-    faba.award_id
-HAVING
-    COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
-    OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-) DEFC ON (DEFC.award_id = awards.id)
+    GROUP BY
+        faba.award_id
+    HAVING
+        COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
+        OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
+    ) DEFC ON (DEFC.award_id = awards.id)
 WHERE (
     "subaward_view"."award_type" IN ('procurement')
     AND "subaward_view"."action_date" >= '2020-04-01'

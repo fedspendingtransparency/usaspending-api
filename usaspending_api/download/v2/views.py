@@ -1,6 +1,5 @@
 import logging
 
-from rest_framework.response import Response
 from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
 
 
@@ -91,6 +90,6 @@ class DisasterDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/disaster.md"
 
     def post(self, request):
-        """Return url to pre-generated ZIP file"""
+        """Return url to pre-generated zip file"""
 
-        return Response({"status": "ToDo"})
+        return BaseDownloadViewSet.post(self, request, "disaster")

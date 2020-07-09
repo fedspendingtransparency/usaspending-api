@@ -1,13 +1,16 @@
+import json
 import logging
 import multiprocessing
 import time
-import os
 
-from django.core.management.base import BaseCommand
 from datetime import datetime, timezone
 from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.utils.functional import cached_property
 from pathlib import Path
 
+from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
+from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.download.filestreaming.download_generation import (
     split_and_zip_data_files,
     wait_for_process,
@@ -16,10 +19,12 @@ from usaspending_api.download.filestreaming.download_generation import (
     generate_export_query_temp_file,
 )
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
-from usaspending_api.download.lookups import FILE_FORMATS
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
-from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.download.helpers import multipart_upload
+from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT
+from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
+
 
 logger = logging.getLogger("script")
 
@@ -28,6 +33,11 @@ class Command(BaseCommand):
     help = "Assemble raw COVID-19 Disaster Spending data into CSVs and Zip"
     file_format = "csv"
     filepaths_to_delete = []
+    total_download_count = 0
+    total_download_columns = 0
+    total_download_size = 0
+    working_dir = Path(settings.CSV_LOCAL_PATH)
+    full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -40,50 +50,64 @@ class Command(BaseCommand):
         """
             Generates a download data package specific to COVID-19 spending
         """
-        full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
-        short_timestamp = full_timestamp[:-6]
-        self.zip_file_path = (
-            Path(settings.CSV_LOCAL_PATH) / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{full_timestamp}.zip"
-        )
+
+        self.zip_file_path = self.working_dir / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
         self.prep_filesystem()
 
-        sql_dir = Path("usaspending_api/disaster/management/sql")
-        working_dir = Path(settings.CSV_LOCAL_PATH)
-        download_file_list = [
-            (
-                sql_dir / "disaster_covid19_file_b.sql",
-                working_dir / f"FY20P07-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
-            ),
-            (
-                sql_dir / "disaster_covid19_file_d1_awards.sql",
-                working_dir / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
-            ),
-            (
-                sql_dir / "disaster_covid19_file_d2_awards.sql",
-                working_dir / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
-            ),
-            (sql_dir / "disaster_covid19_file_f_contracts.sql", working_dir / f"Contracts_Subawards_{short_timestamp}"),
-            (sql_dir / "disaster_covid19_file_f_grants.sql", working_dir / f"Assistance_Subawards_{short_timestamp}"),
-        ]
-
-        for sql_file, final_name in download_file_list:
+        for sql_file, final_name in self.download_file_list:
             intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")
             data_file, count = self.download_to_csv(sql_file, final_name, str(intermediate_data_file_path))
             if count <= 0:
                 raise Exception(f"Missing Data for {final_name}!!!!")
 
-            self.filepaths_to_delete.extend(working_dir.glob(f"{final_name.stem}*"))
+            self.filepaths_to_delete.extend(self.working_dir.glob(f"{final_name.stem}*"))
 
         self.finalize_zip_contents()
         if options["skip_upload"]:
-            logger.warn("Not uploading Zip package to S3. Leaving file locally")
+            logger.warn("Not uploading zip file to S3. Leaving file locally")
+            logger.warn("Not creating database record")
         else:
-            logger.info("Upload final Zip package to S3")
-            self.upload_to_s3(self.zip_file_path)
+            logger.info("Upload final zip file to S3")
+            upload_download_file_to_s3(self.zip_file_path)
+            db_id = self.store_record_in_database()
+            logger.info(f"Created database record {db_id} for future retrieval")
             logger.info("Marking zip file for deletion in cleanup")
-            self.filepaths_to_delete.add(self.zip_file_path)
+            self.filepaths_to_delete.append(self.zip_file_path)
 
         self.cleanup()
+
+    @property
+    def download_file_list(self):
+        short_timestamp = self.full_timestamp[:-6]
+        sql_dir = Path("usaspending_api/disaster/management/sql")
+        return [
+            (
+                sql_dir / "disaster_covid19_file_b.sql",
+                self.working_dir
+                / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
+            ),
+            (
+                sql_dir / "disaster_covid19_file_d1_awards.sql",
+                self.working_dir / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
+            ),
+            (
+                sql_dir / "disaster_covid19_file_d2_awards.sql",
+                self.working_dir / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
+            ),
+            (
+                sql_dir / "disaster_covid19_file_f_contracts.sql",
+                self.working_dir / f"Contracts_Subawards_{short_timestamp}",
+            ),
+            (
+                sql_dir / "disaster_covid19_file_f_grants.sql",
+                self.working_dir / f"Assistance_Subawards_{short_timestamp}",
+            ),
+        ]
+
+    @cached_property
+    def get_current_fy_and_period(self):
+        latest = get_last_closed_submission_date(is_quarter=False)
+        return f"FY{latest['submission_fiscal_year']}P{latest['submission_fiscal_month']}"
 
     def cleanup(self):
         for path in self.filepaths_to_delete:
@@ -101,6 +125,7 @@ class Command(BaseCommand):
         )
         self.filepaths_to_delete.append(Path(file_description_path))
         append_files_to_zip_file([file_description_path], str(self.zip_file_path))
+        self.total_download_size = self.zip_file_path.stat().st_size
 
     def prep_filesystem(self):
         if self.zip_file_path.exists():
@@ -133,6 +158,7 @@ class Command(BaseCommand):
                     filename=intermediate_data_filename, has_header=True, delimiter=delim
                 )
                 logger.info(f"{destination_path} contains {count:,} rows of data")
+                self.total_download_count += count
             except Exception:
                 logger.exception("Unable to obtain delimited text file line count")
 
@@ -152,26 +178,31 @@ class Command(BaseCommand):
         except Exception as e:
             raise e
         finally:
-            os.close(temp_file)
-            os.remove(temp_file_path)
+            Path(temp_file_path).unlink()
         return destination_path, count
 
-    # def roll_data_file_into_zip(self, data_file, data_file_name):
-    #     start_time = time.perf_counter()
-    #     zip_process = multiprocessing.Process(
-    #         target=split_and_zip_data_files,
-    #         args=(str(self.zip_file_path), str(data_file), str(data_file_name), self.file_format, None),
-    #     )
-    #     zip_process.start()
-    #     wait_for_process(zip_process, start_time, None)
+    def store_record_in_database(self):
+        download_record = DownloadJob.objects.create(
+            file_name=self.zip_file_path.name,
+            file_size=self.total_download_size,
+            job_status_id=JOB_STATUS_DICT["finished"],
+            json_request=json.dumps(
+                {
+                    "filters": {
+                        "def_codes": list(
+                            DisasterEmergencyFundCode.objects.filter(group_name="covid_19")
+                            .order_by("code")
+                            .values_list("code", flat=True)
+                        ),
+                        "latest_fiscal_period": self.get_current_fy_and_period[7:],
+                        "latest_fiscal_year": self.get_current_fy_and_period[2:6],
+                        "start_date": "2020-04-01",
+                    }
+                }
+            ),
+            monthly_download=False,
+            number_of_columns=self.total_download_columns,
+            number_of_rows=self.total_download_count,
+        )
 
-    def upload_to_s3(self, zip_file_path):
-        try:
-            # push file to S3 bucket, if not local
-            bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
-            region = settings.USASPENDING_AWS_REGION
-            start_uploading = time.perf_counter()
-            multipart_upload(bucket, region, str(zip_file_path), zip_file_path.name)
-            logger.info(f"Uploading took {time.perf_counter() - start_uploading:.2f}s")
-        except Exception as e:
-            raise Exception(e) from e
+        return download_record.download_job_id

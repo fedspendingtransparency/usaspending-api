@@ -3,7 +3,7 @@ SELECT
     "awards"."fain" AS "award_id_fain",
     "awards"."uri" AS "award_id_uri",
     "transaction_fabs"."sai_number" AS "sai_number",
-    DEFC."disaster_emergency_fund_codes",
+    DEFC."disaster_emergency_funds" AS "disaster_emergency_fund_codes",
     DEFC."gross_outlay_amount_by_award_cpe" AS "outlayed_amount_funded_by_COVID-19_supplementals",
     DEFC."transaction_obligated_amount" AS "obligated_amount_funded_by_COVID-19_supplementals",
     "awards"."total_obligation" AS "total_obligated_amount",
@@ -90,7 +90,7 @@ INNER JOIN "transaction_fabs" ON ("awards"."latest_transaction_id" = "transactio
 INNER JOIN (
     SELECT
         faba.award_id,
-        STRING_AGG(DISTINCT disaster_emergency_fund_code, ';' ORDER BY disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
+        STRING_AGG(DISTINCT CONCAT(disaster_emergency_fund_code, ': ', public_law), '; ' ORDER BY CONCAT(disaster_emergency_fund_code, ': ', public_law)) AS disaster_emergency_funds,
         COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
         COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
     FROM
@@ -111,9 +111,9 @@ INNER JOIN (
         AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period
         AND latest_closed_period_per_fy.is_quarter = sa.quarter_format_flag
     WHERE faba.award_id IS NOT NULL
-GROUP BY
-    faba.award_id
-HAVING
-    COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
-    OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-) DEFC ON (DEFC.award_id = awards.id)
+    GROUP BY
+        faba.award_id
+    HAVING
+        COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
+        OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
+    ) DEFC ON (DEFC.award_id = awards.id)
