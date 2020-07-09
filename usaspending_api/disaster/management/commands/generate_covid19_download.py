@@ -122,7 +122,7 @@ class Command(BaseCommand):
     @cached_property
     def get_current_fy_and_period(self):
         latest = get_last_closed_submission_date(is_quarter=False)
-        return f"FY{latest['submission_fiscal_year']}P{latest['submission_fiscal_month']}"
+        return f"FY{latest['submission_fiscal_year']}P{str(latest['submission_fiscal_month']).zfill(2)}"
 
     def cleanup(self):
         for path in self.filepaths_to_delete:
