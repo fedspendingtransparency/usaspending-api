@@ -131,7 +131,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     def universal_annotations(self):
         return {
             "major_code": F("object_class__major_object_class"),
-            "count": Count("object_class_id", distinct=True),
+            "count": Count("object_class__object_class", distinct=True),
             "description": F("object_class__object_class_name"),
             "code": F("object_class__object_class"),
             "id": Min("object_class_id"),
