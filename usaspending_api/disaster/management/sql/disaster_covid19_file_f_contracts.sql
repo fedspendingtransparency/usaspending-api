@@ -25,8 +25,8 @@ SELECT
     "broker_subaward"."funding_sub_tier_agency_na" AS "prime_award_funding_sub_agency_name",
     "broker_subaward"."funding_office_code" AS "prime_award_funding_office_code",
     "broker_subaward"."funding_office_name" AS "prime_award_funding_office_name",
-    (SELECT STRING_AGG (DISTINCT U2."tas_rendering_label", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0."id" = U1."award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1."treasury_account_id" = U2."treasury_account_identifier") WHERE U0."id" = ("subaward_view"."award_id") GROUP BY U0."id") AS "prime_award_treasury_accounts_funding_this_award",
-    (SELECT STRING_AGG (DISTINCT U3."federal_account_code", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0."id" = U1."award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1."treasury_account_id" = U2."treasury_account_identifier") LEFT OUTER JOIN "federal_account" U3 ON (U2."federal_account_id" = U3."id") WHERE U0."id" = ("subaward_view"."award_id") GROUP BY U0."id") AS "prime_award_federal_accounts_funding_this_award",
+    (SELECT STRING_AGG (DISTINCT U2."tas_rendering_label", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0."id" = U1."award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1."treasury_account_id" = U2."treasury_account_identifier") WHERE U0."id" = ("subaward"."award_id") GROUP BY U0."id") AS "prime_award_treasury_accounts_funding_this_award",
+    (SELECT STRING_AGG (DISTINCT U3."federal_account_code", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0."id" = U1."award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1."treasury_account_id" = U2."treasury_account_identifier") LEFT OUTER JOIN "federal_account" U3 ON (U2."federal_account_id" = U3."id") WHERE U0."id" = ("subaward"."award_id") GROUP BY U0."id") AS "prime_award_federal_accounts_funding_this_award",
     "broker_subaward"."awardee_or_recipient_uniqu" AS "prime_awardee_duns",
     "broker_subaward"."awardee_or_recipient_legal" AS "prime_awardee_name",
     "broker_subaward"."dba_name" AS "prime_awardee_dba_name",
@@ -99,11 +99,10 @@ SELECT
     "broker_subaward"."sub_high_comp_officer5_amount" AS "subawardee_highly_compensated_officer_5_amount",
     CONCAT ('https://www.usaspending.gov/#/award/' , urlencode("awards"."generated_unique_award_id"), '/') AS "usaspending_permalink",
     "broker_subaward"."date_submitted" AS "subaward_fsrs_report_last_modified_date"
-FROM "subaward_view"
-INNER JOIN "awards" ON ("subaward_view"."award_id" = "awards"."id")
+FROM "subaward"
+INNER JOIN "awards" ON ("subaward"."award_id" = "awards"."id")
 INNER JOIN "transaction_fpds" ON ("awards"."latest_transaction_id" = "transaction_fpds"."transaction_id")
-INNER JOIN "subaward" ON ("subaward_view"."subaward_id" = "subaward"."id")
-INNER JOIN "broker_subaward" ON ("subaward_view"."broker_subaward_id" = "broker_subaward"."id")
+INNER JOIN "broker_subaward" ON ("subaward"."id" = "broker_subaward"."id")
 INNER JOIN (
     SELECT
         faba.award_id,
@@ -135,6 +134,6 @@ INNER JOIN (
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
 ) DEFC ON (DEFC.award_id = awards.id)
 WHERE (
-    "subaward_view"."award_type" IN ('procurement')
-    AND "subaward_view"."action_date" >= '2020-04-01'
+    "subaward"."award_type" IN ('procurement')
+    AND "subaward"."action_date" >= '2020-04-01'
 )

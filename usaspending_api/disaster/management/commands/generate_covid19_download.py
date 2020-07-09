@@ -50,6 +50,17 @@ class Command(BaseCommand):
         """
             Generates a download data package specific to COVID-19 spending
         """
+        self.upload = not options["skip_upload"]
+        try:
+            self.process_data_copy_jobs()
+            self.complete_zip_and_upload()
+        except Exception:
+            logger.exception("Exception encountered. See logs")
+        finally:
+            # "best-effort" attempt to cleanup temp files after a failure. Isn't 100% effective
+            self.cleanup()
+
+    def process_data_copy_jobs(self):
 
         self.zip_file_path = self.working_dir / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
         self.prep_filesystem()
@@ -62,19 +73,18 @@ class Command(BaseCommand):
 
             self.filepaths_to_delete.extend(self.working_dir.glob(f"{final_name.stem}*"))
 
+    def complete_zip_and_upload(self):
         self.finalize_zip_contents()
-        if options["skip_upload"]:
-            logger.warn("Not uploading zip file to S3. Leaving file locally")
-            logger.warn("Not creating database record")
-        else:
+        if self.upload:
             logger.info("Upload final zip file to S3")
             upload_download_file_to_s3(self.zip_file_path)
             db_id = self.store_record_in_database()
             logger.info(f"Created database record {db_id} for future retrieval")
             logger.info("Marking zip file for deletion in cleanup")
             self.filepaths_to_delete.append(self.zip_file_path)
-
-        self.cleanup()
+        else:
+            logger.warn("Not uploading zip file to S3. Leaving file locally")
+            logger.warn("Not creating database record")
 
     @property
     def download_file_list(self):
