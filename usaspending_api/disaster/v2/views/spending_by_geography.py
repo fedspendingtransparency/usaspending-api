@@ -1,4 +1,3 @@
-import copy
 import json
 from decimal import Decimal
 from enum import Enum
@@ -11,8 +10,9 @@ from elasticsearch_dsl import A, Q as ES_Q
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.validator import TinyShield, PAGINATION
+from usaspending_api.common.validator import TinyShield
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
@@ -30,6 +30,8 @@ class SpendingByGeographyViewSet(DisasterBase):
     """Spending by Recipient Location"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/spending_by_geography.md"
+
+    required_filters = ["def_codes", "award_type_codes"]
 
     agg_key: Optional[str]  # name of ES index field whose term value will be used for grouping the agg
     geo_layer: GeoLayer
@@ -50,7 +52,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                 "enum_values": ["state", "county", "district"],
                 "text_type": "search",
                 "allow_nulls": False,
-                "optional": True,
+                "optional": False,
             },
             {
                 "key": "geo_layer_filters",
@@ -71,14 +73,7 @@ class SpendingByGeographyViewSet(DisasterBase):
             },
         ]
 
-        # TODO: Need to reconcile the use of defc_codes as per the API contract
-        # TODO: def_codes cannot be used here, becasue the metric being summed is already pre-aggregated to include
-        #       _ALL_ COVID def codes, and therefore cannot be sliced into smaller portions of the sum per DEFC
-        # TODO: This really then becomes an endpoint only usable for the COVID-19 disaster, and not arbitrary
-        #       disasters (as it is setup right now)
-
         # NOTE: filter object in request handled in base class: see self.filters
-        models.extend(copy.deepcopy(PAGINATION))
         json_request = TinyShield(models).block(request.data)
 
         agg_key_dict = {
@@ -109,7 +104,14 @@ class SpendingByGeographyViewSet(DisasterBase):
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         result = self.query_elasticsearch(filter_query)
 
-        return Response({"geo_layer": self.geo_layer.value, "results": result})
+        return Response(
+            {
+                "geo_layer": self.geo_layer.value,
+                "spending_type": self.spending_type,
+                "results": result,
+                "messages": get_generic_filters_message(self.filters.keys(), self.required_filters),
+            }
+        )
 
     def build_elasticsearch_search_with_aggregation(self, filter_query: ES_Q) -> Optional[AwardSearch]:
         # Create the initial search using filters
@@ -156,9 +158,9 @@ class SpendingByGeographyViewSet(DisasterBase):
                 per_capita = (Decimal(amount) / Decimal(population)).quantize(Decimal(".01"))
 
             results[shape_code] = {
-                "shape_code": shape_code or None,
                 "amount": amount,
                 "display_name": display_name or None,
+                "shape_code": shape_code or None,
                 "population": population,
                 "per_capita": per_capita,
             }
