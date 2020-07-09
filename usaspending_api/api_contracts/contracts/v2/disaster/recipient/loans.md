@@ -85,10 +85,8 @@ Returns loan spending details of recipients receiving supplemental funding budge
         + `asc`
 + `sort` (optional, enum[string])
     Optional parameter indicating what value results should be sorted by
-    + Default: `id`
+    + Default: `description`
     + Members
-        + `id`
-        + `code`
         + `description`
         + `count`
         + `face_value_of_loan`

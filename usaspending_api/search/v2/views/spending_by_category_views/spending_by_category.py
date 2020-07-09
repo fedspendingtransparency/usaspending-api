@@ -22,7 +22,10 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms_for_transactions, get_scaled_sum_aggregations
+from usaspending_api.search.v2.elasticsearch_helper import (
+    get_number_of_unique_terms_for_transactions,
+    get_scaled_sum_aggregations,
+)
 
 logger = logging.getLogger(__name__)
 

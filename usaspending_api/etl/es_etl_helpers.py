@@ -424,7 +424,7 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
         # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
         # and this is needed for performance
         # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
-        file_df["routing"] = file_df["recipient_agg_key"]
+        file_df["routing"] = file_df[settings.ES_ROUTING_FIELD]
         yield file_df.to_dict(orient="records")
 
 

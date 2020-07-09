@@ -109,7 +109,7 @@ class SpendingByGeographyViewSet(DisasterBase):
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         result = self.query_elasticsearch(filter_query)
 
-        return Response({"geo_layer": self.geo_layer.value, "results": result,})
+        return Response({"geo_layer": self.geo_layer.value, "results": result})
 
     def build_elasticsearch_search_with_aggregation(self, filter_query: ES_Q) -> Optional[AwardSearch]:
         # Create the initial search using filters

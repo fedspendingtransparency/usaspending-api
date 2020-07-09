@@ -123,6 +123,7 @@ ES_AWARDS_QUERY_ALIAS_PREFIX = "award-query"
 ES_AWARDS_WRITE_ALIAS = "award-load-alias"
 ES_TIMEOUT = 90
 ES_REPOSITORY = ""
+ES_ROUTING_FIELD = "recipient_agg_key"
 
 # Application definition
 INSTALLED_APPS = [

@@ -81,10 +81,8 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
         + `asc`
 + `sort` (optional, enum[string])
     Optional parameter indicating what value results should be sorted by
-    + Default: `id`
+    + Default: `description`
     + Members
-        + `id`
-        + `code`
         + `description`
         + `count`
         + `obligation`
