@@ -71,17 +71,6 @@ class FiscalYearAndQuarter(Func):
     output_field = CharField()
 
 
-class FiscalYearAndPeriod(Func):
-    """ Generates a fiscal year and quarter string along the lines of FY2019Q1. """
-
-    function = "EXTRACT"
-    template = (
-        "CONCAT('FY', %(function)s(YEAR from (%(expressions)s) + INTERVAL '3 months'), "
-        "'P', LPAD(%(function)s(MONTH from (%(expressions)s) + INTERVAL '3 months')::text, 2, '0'))"
-    )
-    output_field = CharField()
-
-
 class BoolOr(Aggregate):
     """true if at least one input value is true, otherwise false"""
 
