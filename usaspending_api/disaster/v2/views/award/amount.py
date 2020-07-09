@@ -1,5 +1,5 @@
 from django.db.models import Q, Sum, Count
-from django.db.models.functions import Coalesce, Concat
+from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -23,7 +23,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             self.all_closed_defc_submissions,
         ]
 
-        count_field = Concat("piid", "parent_award_id", "fain", "uri")
+        count_field = self.unique_file_c
         if self.award_type_codes:
             filters.extend([Q(award__type__in=self.award_type_codes), Q(award__isnull=False)])
             count_field = "award_id"
