@@ -342,15 +342,6 @@ class _ProgramNumbers(_Filter):
 
         return ES_Q("bool", should=programs_numbers_query, minimum_should_match=1)
 
-    @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
-        def_codes_query = []
-
-        for v in filter_values:
-            def_codes_query.append(ES_Q("match", disaster_emergency_fund_codes=v))
-
-        return ES_Q("bool", should=def_codes_query, minimum_should_match=1)
-
 
 class _ContractPricingTypeCodes(_Filter):
     underscore_name = "contract_pricing_type_codes"
