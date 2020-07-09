@@ -30,51 +30,49 @@ Returns spending details of Object Classes receiving supplemental funding budget
     + Attributes (object)
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
-
-
     + Body
 
-    {
-      "results": [
-        {
-          "id": "90",
-          "code": "90",
-          "description": "Other",
-          "count": 5,
-          "obligation": 746085355.77,
-          "outlay": 723027742.93,
-          "children": [
             {
-              "id": 195,
-              "code": "920",
-              "description": "Undistributed",
-              "count": 1,
-              "obligation": 20077899.96,
-              "outlay": 13711575.76,
-              "total_budgetary_resources": 0
+              "results": [
+                {
+                  "id": "90",
+                  "code": "90",
+                  "description": "Other",
+                  "count": 5,
+                  "obligation": 746085355.77,
+                  "outlay": 723027742.93,
+                  "children": [
+                    {
+                      "id": 195,
+                      "code": "920",
+                      "description": "Undistributed",
+                      "count": 1,
+                      "obligation": 20077899.96,
+                      "outlay": 13711575.76,
+                      "total_budgetary_resources": 0
+                    }
+                  ]
+                },
+                {
+                  "id": "40",
+                  "code": "40",
+                  "description": "Grants and fixed charges",
+                  "count": 8,
+                  "obligation": 595026834439.96,
+                  "outlay": 569289818857.45,
+                  "children": []
+                }
+              ],
+              "page_metadata": {
+                "page": 1,
+                "next": 2,
+                "previous": null,
+                "hasNext": true,
+                "hasPrevious": false,
+                "total": 23,
+                "limit": 2
+              }
             }
-          ]
-        },
-        {
-          "id": "40",
-          "code": "40",
-          "description": "Grants and fixed charges",
-          "count": 8,
-          "obligation": 595026834439.96,
-          "outlay": 569289818857.45,
-          "children": []
-        }
-      ],
-      "page_metadata": {
-        "page": 1,
-        "next": 2,
-        "previous": null,
-        "hasNext": true,
-        "hasPrevious": false,
-        "total": 23,
-        "limit": 2
-      }
-    }
 
 # Data Structures
 
