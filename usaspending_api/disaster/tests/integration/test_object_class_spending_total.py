@@ -63,3 +63,16 @@ def test_object_class_spending_adds_over_multiple_object_classes(
     assert len(resp.json()["results"][0]["children"]) == 3
     assert resp.json()["results"][0]["obligation"] == 11
     assert resp.json()["results"][0]["outlay"] == 22
+
+
+@pytest.mark.django_db
+def test_object_class_spending_adds_over_multiple_object_classes_of_same_code(
+    client, basic_fa_by_object_class_with_multpile_object_class_of_same_code, monkeypatch, helpers
+):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="total")
+    assert len(resp.json()["results"]) == 1
+    assert len(resp.json()["results"][0]["children"]) == 1
+    assert resp.json()["results"][0]["obligation"] == 10
+    assert resp.json()["results"][0]["outlay"] == 22

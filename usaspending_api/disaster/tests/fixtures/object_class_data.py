@@ -68,6 +68,47 @@ def basic_fa_by_object_class_with_multpile_object_class(
 
 
 @pytest.fixture
+def basic_fa_by_object_class_with_multpile_object_class_of_same_code(
+    award_count_sub_schedule, award_count_quarterly_submission, defc_codes
+):
+    class1 = mommy.make(
+        "references.ObjectClass",
+        id=9,
+        major_object_class="major",
+        major_object_class_name=f"major name",
+        object_class=f"0001",
+        object_class_name=f"0001 name",
+    )
+
+    class2 = mommy.make(
+        "references.ObjectClass",
+        id=10,
+        major_object_class="major",
+        major_object_class_name=f"major name",
+        object_class=f"0001",
+        object_class_name=f"0001 name",
+    )
+
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        object_class=class1,
+        obligations_incurred_by_program_object_class_cpe=10,
+        gross_outlay_amount_by_program_object_class_cpe=2,
+    )
+
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        object_class=class2,
+        obligations_incurred_by_program_object_class_cpe=0,
+        gross_outlay_amount_by_program_object_class_cpe=20,
+    )
+
+
+@pytest.fixture
 def basic_fa_by_object_class_with_object_class_but_no_obligations(
     award_count_sub_schedule, award_count_submission, defc_codes
 ):

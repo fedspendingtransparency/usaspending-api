@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, Case, When
+from django.db.models import Q, Sum, Count, F, Value, Case, When, Min
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -9,7 +9,7 @@ from usaspending_api.common.helpers.generic_helper import get_pagination_metadat
 from usaspending_api.disaster.v2.views.object_class.object_class_result import (
     ObjectClassResults,
     MajorClass,
-    MinorClass,
+    ObjectClass,
 )
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
@@ -23,8 +23,8 @@ def construct_response(results: list, pagination: Pagination):
     object_classes = ObjectClassResults()
     for row in results:
         major_code = row.pop("major_code")
-        FA = MajorClass(id=major_code, code=major_code, description=row.pop("major_description"))
-        object_classes[FA].include(MinorClass(**row))
+        major_class = MajorClass(id=major_code, code=major_code, description=row.pop("major_description"))
+        object_classes[major_class].include(ObjectClass(**row))
 
     return {
         "results": object_classes.finalize(pagination),
@@ -134,6 +134,6 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
             "count": Count("object_class_id", distinct=True),
             "description": F("object_class__object_class_name"),
             "code": F("object_class__object_class"),
-            "id": F("object_class_id"),
+            "id": Min("object_class_id"),
             "major_description": F("object_class__major_object_class_name"),
         }
