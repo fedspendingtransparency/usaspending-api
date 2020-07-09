@@ -1,45 +1,34 @@
-from django.db.models import Q, Sum, Count, F, Value, DecimalField, Case, When
+from django.contrib.postgres.fields import ArrayField
+from django.db.models import Q, Sum, F, Value, DecimalField, Case, When, IntegerField
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
-
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.federal_account.federal_account_result import FedAcctResults, FedAccount, TAS
-from usaspending_api.disaster.v2.views.disaster_base import (
-    DisasterBase,
-    PaginationMixin,
-    SpendingMixin,
-)
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, PaginationMixin, SpendingMixin
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
-def construct_response(results: list, pagination: Pagination):
-    FederalAccounts = FedAcctResults()
-    for row in results:
-        FA = FedAccount(id=row.pop("fa_id"), code=row.pop("fa_code"), description=row.pop("fa_description"))
-        FederalAccounts[FA].include(TAS(**row))
+class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
+    """ Returns disaster spending by agency. """
 
-    return {
-        "results": FederalAccounts.finalize(pagination),
-        "page_metadata": get_pagination_metadata(len(FederalAccounts), pagination.limit, pagination.page),
-    }
-
-
-class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
-    """ Returns disaster spending by federal account. """
-
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
 
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            results = list(self.award_queryset)
+            results = self.award_queryset
         else:
-            results = list(self.total_queryset)
+            results = self.total_queryset
 
-        return Response(construct_response(results, self.pagination))
+        return Response(
+            {
+                "results": results.order_by(self.pagination.order_by)[
+                    self.pagination.lower_limit : self.pagination.upper_limit
+                ],
+                "page_metadata": get_pagination_metadata(results.count(), self.pagination.limit, self.pagination.page),
+            }
+        )
 
     @property
     def total_queryset(self):
@@ -52,18 +41,17 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
             ),
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(treasury_account__isnull=False),
-            Q(treasury_account__federal_account__isnull=False),
+            Q(treasury_account__funding_toptier_agency__isnull=False),
             self.all_closed_defc_submissions,
         ]
 
         annotations = {
-            "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "count": Count("treasury_account__tas_rendering_label", distinct=True),
-            "description": F("treasury_account__account_title"),
-            "code": F("treasury_account__tas_rendering_label"),
-            "id": F("treasury_account__treasury_account_identifier"),
-            "fa_description": F("treasury_account__federal_account__account_title"),
-            "fa_id": F("treasury_account__federal_account_id"),
+            "id": F("treasury_account__funding_toptier_agency"),
+            "code": F("treasury_account__funding_toptier_agency__toptier_code"),
+            "description": F("treasury_account__funding_toptier_agency__name"),
+            # Currently, this endpoint can never have children.
+            "children": Value([], output_field=ArrayField(IntegerField())),
+            "count": Value(0, output_field=IntegerField()),
             "obligation": Coalesce(
                 Sum(
                     Case(
@@ -93,14 +81,12 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
             ),
         }
 
-        # Assuming it is more performant to fetch all rows once rather than
-        #  run a count query and fetch only a page's worth of results
         return (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
             .values(
-                "treasury_account__federal_account__id",
-                "treasury_account__federal_account__federal_account_code",
-                "treasury_account__federal_account__account_title",
+                "treasury_account__funding_toptier_agency",
+                "treasury_account__funding_toptier_agency__toptier_code",
+                "treasury_account__funding_toptier_agency__name",
             )
             .annotate(**annotations)
             .values(*annotations.keys())
@@ -111,18 +97,17 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         filters = [
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(treasury_account__isnull=False),
-            Q(treasury_account__federal_account__isnull=False),
+            Q(treasury_account__funding_toptier_agency__isnull=False),
             self.all_closed_defc_submissions,
         ]
 
         annotations = {
-            "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "count": Count("treasury_account__tas_rendering_label", distinct=True),
-            "description": F("treasury_account__account_title"),
-            "code": F("treasury_account__tas_rendering_label"),
-            "id": F("treasury_account__treasury_account_identifier"),
-            "fa_description": F("treasury_account__federal_account__account_title"),
-            "fa_id": F("treasury_account__federal_account_id"),
+            "id": F("treasury_account__funding_toptier_agency"),
+            "code": F("treasury_account__funding_toptier_agency__toptier_code"),
+            "description": F("treasury_account__funding_toptier_agency__name"),
+            # Currently, this endpoint can never have children.
+            "children": Value([], output_field=ArrayField(IntegerField())),
+            "count": Value(0, output_field=IntegerField()),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
@@ -136,14 +121,12 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
             "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
         }
 
-        # Assuming it is more performant to fetch all rows once rather than
-        #  run a count query and fetch only a page's worth of results
         return (
             FinancialAccountsByAwards.objects.filter(*filters)
             .values(
-                "treasury_account__federal_account__id",
-                "treasury_account__federal_account__federal_account_code",
-                "treasury_account__federal_account__account_title",
+                "treasury_account__funding_toptier_agency",
+                "treasury_account__funding_toptier_agency__toptier_code",
+                "treasury_account__funding_toptier_agency__name",
             )
             .annotate(**annotations)
             .values(*annotations.keys())
