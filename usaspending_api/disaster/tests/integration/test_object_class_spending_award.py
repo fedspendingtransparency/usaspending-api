@@ -39,7 +39,9 @@ def test_object_class_spending_filters_on_defc(client, basic_faba_with_object_cl
 
 
 @pytest.mark.django_db
-def test_object_class_spending_filters_on_object_class_existance(client, basic_faba, monkeypatch, helpers):
+def test_object_class_spending_filters_on_object_class_existance(
+    client, award_count_sub_schedule, basic_faba, monkeypatch, helpers
+):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="award")
