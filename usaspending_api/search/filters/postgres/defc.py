@@ -9,8 +9,8 @@ class DefCodes:
 
     @classmethod
     def build_def_codes_filter(cls, queryset, filter_values):
-        filter_values = {"def_codes": filter_values}
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filter_values)
+        query = {"def_codes": filter_values}
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(query)
         search = AwardSearch().filter(filter_query)
         response = search.handle_execute()
         award_ids = [res.to_dict()["award_id"] for res in response]

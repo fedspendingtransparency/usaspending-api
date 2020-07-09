@@ -254,4 +254,5 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "def_codes":
             queryset = queryset.filter(DefCodes.build_def_codes_filter(queryset, value))
+            queryset = queryset.filter(action_date__gte="2020-04-01")
     return queryset
