@@ -75,9 +75,16 @@ def get_incremental_load_start_datetime():
     return min((last_load_date, max_updated_at))
 
 
-def _get_ids(sql, afa_ids, start_datetime, end_datetime):
+def _get_ids(sql, ids, afa_ids, start_datetime, end_datetime):
     params = []
-    if afa_ids:
+    if ids and afa_ids:
+        sql += " and (published_award_financial_assistance_id in %s or afa_generated_unique in %s)"
+        params.append(tuple(ids))
+        params.append(tuple(afa_ids))
+    elif ids:
+        sql += " and published_award_financial_assistance_id in %s"
+        params.append(tuple(ids))
+    elif afa_ids:
         sql += " and afa_generated_unique in %s"
         params.append(tuple(afa_ids))
     if start_datetime:
@@ -91,13 +98,13 @@ def _get_ids(sql, afa_ids, start_datetime, end_datetime):
         return tuple(row[0] for row in cursor.fetchall())
 
 
-def get_fabs_transaction_ids(afa_ids, start_datetime, end_datetime):
+def get_fabs_transaction_ids(ids, afa_ids, start_datetime, end_datetime):
     sql = """
         select  published_award_financial_assistance_id
         from    source_assistance_transaction
         where   is_active is true
     """
-    ids = _get_ids(sql, afa_ids, start_datetime, end_datetime)
+    ids = _get_ids(sql, ids, afa_ids, start_datetime, end_datetime)
     logger.info("Number of records to insert/update: {:,}".format(len(ids)))
     return ids
 
@@ -125,12 +132,23 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
+            "--ids",
+            default=[],
+            metavar="ID",
+            nargs="+",
+            type=int,
+            help="A list of Broker transaction IDs (published_award_financial_assistance_id) to "
+            "reload. IDs provided here will be combined with any --afa-id-file and --afa-ids "
+            "IDs provided. Nonexistent IDs will be ignored.",
+        )
+
+        parser.add_argument(
             "--afa-ids",
             default=[],
             metavar="AFA_ID",
             nargs="+",
             help="A list of Broker transaction IDs (afa_generated_unique) to "
-            "reload. IDs provided here will be combined with any --afa-id-file "
+            "reload. IDs provided here will be combined with any --afa-id-file and --ids "
             "IDs provided. Nonexistent IDs will be ignored. If any AFA IDs start "
             "with a dash or other special shell character, use the --afa-id-file "
             "option.",
@@ -141,7 +159,7 @@ class Command(BaseCommand):
             metavar="FILEPATH",
             help="A file containing only Broker transaction IDs (afa_generated_unique) "
             "to reload, one ID per line. IDs provided here will be combined with any "
-            "--afa-ids IDs provided. Nonexistent IDs will be ignored.",
+            "--afa-ids and --ids IDs provided. Nonexistent IDs will be ignored.",
         )
 
         parser.add_argument(
@@ -168,10 +186,12 @@ class Command(BaseCommand):
         # "Reload all" supersedes all other processing options.
         reload_all = options["reload_all"]
         if reload_all:
+            ids = None
             afa_ids = None
             start_datetime = None
             end_datetime = None
         else:
+            ids = options["ids"]
             afa_ids = set(options["afa_ids"])
             if options["afa_id_file"]:
                 afa_ids = tuple(afa_ids | read_afa_ids_from_file(options["afa_id_file"]))
@@ -179,7 +199,7 @@ class Command(BaseCommand):
             end_datetime = options["end_datetime"]
 
         # If no other processing options were provided than this is an incremental load.
-        is_incremental_load = not any((reload_all, afa_ids, start_datetime, end_datetime))
+        is_incremental_load = not any((reload_all, ids, afa_ids, start_datetime, end_datetime))
 
         if is_incremental_load:
             start_datetime = get_incremental_load_start_datetime()
@@ -193,7 +213,7 @@ class Command(BaseCommand):
             logger.info(f"{len(ids_to_delete):,} delete ids found in total")
 
         with timer("retrieving/diff-ing FABS Data", logger.info):
-            ids_to_upsert = get_fabs_transaction_ids(afa_ids, start_datetime, end_datetime)
+            ids_to_upsert = get_fabs_transaction_ids(ids, afa_ids, start_datetime, end_datetime)
 
         update_award_ids = delete_fabs_transactions(ids_to_delete) if is_incremental_load else []
         upsert_fabs_transactions(ids_to_upsert, update_award_ids)
