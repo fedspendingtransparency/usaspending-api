@@ -8,7 +8,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 @pytest.fixture
 def basic_faba_with_object_class(award_count_sub_schedule, award_count_submission, defc_codes):
-    basic_object_class = _major_object_class_with_children("001", [1])
+    basic_object_class = major_object_class_with_children("001", [1])
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -21,7 +21,7 @@ def basic_faba_with_object_class(award_count_sub_schedule, award_count_submissio
 
 @pytest.fixture
 def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_count_submission, defc_codes):
-    basic_object_class = _major_object_class_with_children("001", [1])
+    basic_object_class = major_object_class_with_children("001", [1])
 
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -37,7 +37,7 @@ def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_c
 def basic_fa_by_object_class_with_multpile_object_class(
     award_count_sub_schedule, award_count_quarterly_submission, defc_codes
 ):
-    major_object_class_1 = _major_object_class_with_children("001", [1, 2, 3])
+    major_object_class_1 = major_object_class_with_children("001", [1, 2, 3])
 
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -112,7 +112,7 @@ def basic_fa_by_object_class_with_multpile_object_class_of_same_code(
 def basic_fa_by_object_class_with_object_class_but_no_obligations(
     award_count_sub_schedule, award_count_submission, defc_codes
 ):
-    basic_object_class = _major_object_class_with_children("001", [1])
+    basic_object_class = major_object_class_with_children("001", [1])
 
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -124,7 +124,7 @@ def basic_fa_by_object_class_with_object_class_but_no_obligations(
     )
 
 
-def _major_object_class_with_children(major_code, minor_codes):
+def major_object_class_with_children(major_code, minor_codes):
     retval = []
     for minor_code in minor_codes:
         retval.append(

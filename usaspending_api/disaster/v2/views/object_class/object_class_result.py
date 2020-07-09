@@ -31,6 +31,7 @@ class ObjectClassResults:
                 row.outlay += child.outlay
                 row.obligation += child.obligation
                 row.count += child.count
+                row.total_budgetary_resources += child.total_budgetary_resources
 
     def sort(self, field, direction):
         for row in self._object_classes:
