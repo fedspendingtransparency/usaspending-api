@@ -1,10 +1,12 @@
 import logging
 import signal
+from datetime import datetime, timezone
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.awards.models import FinancialAccountsByAwards
 
 
 class Command(BaseCommand):
@@ -36,6 +38,12 @@ class Command(BaseCommand):
             submission = SubmissionAttributes.objects.get(submission_id=submission_id)
         except ObjectDoesNotExist:
             raise RuntimeError(f"Broker submission id {submission_id} does not exist")
+
+        # Mark associated Accounts as updated, so they will be reloaded in ES nightly load
+        for faba in FinancialAccountsByAwards.objects.filter(submission_id=submission_id).all():
+            if faba.award:
+                faba.award.update_date = datetime.now(timezone.utc)
+                faba.award.save()
 
         deleted_stats = submission.delete()
 
