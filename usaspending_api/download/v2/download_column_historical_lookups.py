@@ -1562,7 +1562,7 @@ query_paths = {
                 ("owning_agency_name", "treasury_account__funding_toptier_agency__name"),
                 ("reporting_agency_name", "submission__reporting_agency_name"),
                 ("submission_period", "submission_period",),  # Column is annotated in account_download.py
-                ("allocation_transfer_agency_identifer_code", "treasury_account__allocation_transfer_agency_id"),
+                ("allocation_transfer_agency_identifier_code", "treasury_account__allocation_transfer_agency_id"),
                 ("agency_identifier_code", "treasury_account__agency_id"),
                 ("beginning_period_of_availability", "treasury_account__beginning_period_of_availability"),
                 ("ending_period_of_availability", "treasury_account__ending_period_of_availability"),
