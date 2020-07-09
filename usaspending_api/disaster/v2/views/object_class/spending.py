@@ -6,7 +6,11 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.object_class.object_class_result import FedAcctResults, MajorClass, MinorClass
+from usaspending_api.disaster.v2.views.object_class.object_class_result import (
+    ObjectClassResults,
+    MajorClass,
+    MinorClass,
+)
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
@@ -16,7 +20,7 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 
 
 def construct_response(results: list, pagination: Pagination):
-    FederalAccounts = FedAcctResults()
+    FederalAccounts = ObjectClassResults()
     for row in results:
         major_code = row.pop("major_code")
         FA = MajorClass(id=major_code, code=major_code, description=row.pop("major_description"))

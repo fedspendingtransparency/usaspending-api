@@ -16,7 +16,7 @@ class MajorClass(Collation):
 
 @dataclass_json
 @dataclass
-class FedAcctResults:
+class ObjectClassResults:
     _object_classes: Dict[MinorClass, MinorClass] = field(default_factory=dict)
 
     def __getitem__(self, key):
