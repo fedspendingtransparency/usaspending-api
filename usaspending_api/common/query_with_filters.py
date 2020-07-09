@@ -342,12 +342,6 @@ class _ProgramNumbers(_Filter):
 
         return ES_Q("bool", should=programs_numbers_query, minimum_should_match=1)
 
-
-class _DisasterEmergencyFundCodes(_Filter):
-    """Disaster and Emergency Fund Code filters"""
-
-    underscore_name = "def_codes"
-
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
         def_codes_query = []
