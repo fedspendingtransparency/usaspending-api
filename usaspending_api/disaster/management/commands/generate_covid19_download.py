@@ -82,6 +82,11 @@ class Command(BaseCommand):
         sql_dir = Path("usaspending_api/disaster/management/sql")
         return [
             (
+                sql_dir / "disaster_covid19_file_a.sql",
+                self.working_dir
+                / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBalances_{short_timestamp}",
+            ),
+            (
                 sql_dir / "disaster_covid19_file_b.sql",
                 self.working_dir
                 / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
