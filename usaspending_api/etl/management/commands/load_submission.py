@@ -584,7 +584,7 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
             "object_class": row.get("object_class"),
             "program_activity": row.get("program_activity"),
             "disaster_emergency_fund": get_disaster_emergency_fund(row),
-            "linked_date": linked_date
+            "linked_date": linked_date,
         }
 
         # Still using the cpe|fyb regex compiled above for reverse
