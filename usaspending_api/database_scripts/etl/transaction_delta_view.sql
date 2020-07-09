@@ -310,7 +310,7 @@ LEFT JOIN ref_population_cong_district RL_DISTRICT_POPULATION ON (RL_DISTRICT_PO
 LEFT JOIN (
   SELECT
     faba.award_id,
-    faba.linked_date,
+    MAX(faba.linked_date) as linked_date,
     ARRAY_AGG(
       DISTINCT CONCAT(
         'agency=', agency.toptier_code,
@@ -344,8 +344,7 @@ LEFT JOIN (
  WHERE
    faba.award_id IS NOT NULL
  GROUP BY
-   faba.award_id,
-   faba.linked_date
+   faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = UTM.award_id)
 LEFT JOIN (
   SELECT
