@@ -131,12 +131,13 @@ def spending_by_award_test_data():
         is_quarter=True,
         submission_reveal_date="2020-04-01",
     )
-    mommy.make(
+    sa1 = mommy.make(
         "submissions.SubmissionAttributes",
         pk=1,
         reporting_fiscal_period=9,
         reporting_fiscal_year=2019,
         reporting_period_end="2019-06-30",
+        reporting_period_start="2020-04-02",
     )
 
     mommy.make(
@@ -146,7 +147,7 @@ def spending_by_award_test_data():
         transaction_obligated_amount=100,
         gross_outlay_amount_by_award_cpe=100,
         disaster_emergency_fund=defc,
-        submission_id=1,
+        submission=sa1,
     )
 
     # Subtier Agency

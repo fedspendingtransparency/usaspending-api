@@ -1198,14 +1198,20 @@ def _test_correct_response_for_def_codes_subaward(client):
     )
     expected_result = [
         {
+            "internal_id": "22222",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "22222",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+        {
             "internal_id": "11111",
             "prime_award_internal_id": 1,
             "Sub-Award ID": "11111",
             "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
-        }
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 1
+    assert len(resp.json().get("results")) == 2
     assert resp.json().get("results") == expected_result, "DEFC subaward filter does not match expected result"
 
 
