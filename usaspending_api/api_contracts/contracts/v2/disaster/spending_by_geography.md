@@ -25,8 +25,6 @@ This endpoint provides geographical spending information from emergency/disaster
         + `geo_layer_filters` (required, array[string])
             Allows us to only request data for what is currently in view in the map
         + `spending_type` (required, enum[string])
-            + Default
-                + `obligation`
             + Members
                 + `obligation`
                 + `outlay`
@@ -40,7 +38,7 @@ This endpoint provides geographical spending information from emergency/disaster
                 },
                 "geo_layer": "state",
                 "geo_layer_filters": ["NE", "WY", "CO", "IA", "IL", "MI", "IN", "TX"],
-                "spending_type": "obligations"
+                "spending_type": "obligation"
             }
 
 + Response 200 (application/json)
@@ -50,6 +48,11 @@ This endpoint provides geographical spending information from emergency/disaster
                 + `state`
                 + `county`
                 + `district`
+        + `spending_type` (required, enum[string])
+            + Members
+                + `obligation`
+                + `outlay`
+                + `face_value_of_loan`
         + `results` (array[GeographyTypeResult], fixed-type)
         + `messages` (optional, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -57,6 +60,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
             {
                 "geo_layer": "state",
+                "spending_type": "obligation",
                 "results": [
                     {
                         "shape_code": "ND",
@@ -86,6 +90,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
+    Return an award if an of the DEF Codes match the supplied filter since an Award can have multiple DEF Codes.
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
 
 ## GeographyTypeResult (object)

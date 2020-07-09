@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, date
 from django.db.models import Max, Q, F, Value, Case, When, Sum
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Concat
 from django.utils.functional import cached_property
 from rest_framework.views import APIView
 from typing import List
@@ -150,6 +150,10 @@ class FabaOutlayMixin:
             0,
         )
 
+    @property
+    def unique_file_c(self):
+        return Concat("piid", "parent_award_id", "fain", "uri")
+
 
 class SpendingMixin:
     required_filters = ["def_codes", "query"]
@@ -212,3 +216,11 @@ class LoansPaginationMixin(_BasePaginationMixin):
     def pagination(self):
         sortable_columns = ["id", "code", "description", "count", "face_value_of_loan", "obligation", "outlay"]
         return self.run_models(sortable_columns)
+
+
+class RecipientMixin:
+    required_filters = ["def_codes", "award_type_codes"]
+
+    @property
+    def award_type_codes(self):
+        return self.filters.get("award_type_codes")
