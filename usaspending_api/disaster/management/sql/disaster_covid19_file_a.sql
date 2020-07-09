@@ -1,15 +1,14 @@
-WITH latest_submissions AS (
+WITH recent_submission AS (
     SELECT
         "dabs_submission_window_schedule"."submission_fiscal_year",
         "dabs_submission_window_schedule"."is_quarter",
-        MAX("dabs_submission_window_schedule"."submission_fiscal_month") AS "submission_fiscal_month",
-        MAX("dabs_submission_window_schedule"."submission_reveal_date") AS "submission_reveal_date"
+        "dabs_submission_window_schedule"."submission_fiscal_month"
     FROM "dabs_submission_window_schedule"
     WHERE
         "dabs_submission_window_schedule"."submission_reveal_date" <= now()
-    GROUP BY
-        "dabs_submission_window_schedule"."submission_fiscal_year",
-        "dabs_submission_window_schedule"."is_quarter"
+        AND "dabs_submission_window_schedule"."is_quarter" = False
+    ORDER BY "dabs_submission_window_schedule"."submission_fiscal_year" DESC, "dabs_submission_window_schedule"."submission_fiscal_month" DESC
+    LIMIT 1
 )
 
 SELECT
@@ -73,7 +72,7 @@ SELECT
     gtas."unobligated_balance_cpe" AS "unobligated_balance",
     gtas."gross_outlay_amount_by_tas_cpe" AS "gross_outlay_amount"
 FROM gtas_sf133_balances gtas
-INNER JOIN latest_submissions sub ON (gtas."fiscal_year" = sub."submission_fiscal_year" AND gtas."fiscal_period" = sub."submission_fiscal_month" AND sub."is_quarter" = False)
+INNER JOIN recent_submission sub ON (gtas."fiscal_year" = sub."submission_fiscal_year" AND gtas."fiscal_period" = sub."submission_fiscal_month" AND sub."is_quarter" = False)
 INNER JOIN disaster_emergency_fund_code defc ON (gtas."disaster_emergency_fund_code" = defc."code")
 LEFT OUTER JOIN treasury_appropriation_account taa ON (gtas."treasury_account_identifier" = taa."treasury_account_identifier")
 LEFT OUTER JOIN federal_account fa ON (taa."federal_account_id" = fa."id")
