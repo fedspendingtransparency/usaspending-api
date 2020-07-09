@@ -530,6 +530,7 @@ def test_correct_response_for_each_filter(client, monkeypatch, spending_by_award
         _test_correct_response_for_set_extent_competed_type_codes,
         _test_correct_response_for_recipient_id,
         _test_correct_response_for_def_codes,
+        _test_correct_response_for_def_codes_subaward,
     ]
 
     for test in test_cases:
@@ -1173,6 +1174,39 @@ def _test_correct_response_for_def_codes(client):
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "DEFC filter does not match expected result"
+
+
+def _test_correct_response_for_def_codes_subaward(client):
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "def_codes": ["L"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Sub-Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Sub-Award ID",
+                "order": "desc",
+                "subawards": True,
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "internal_id": "11111",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11111",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results") == expected_result, "DEFC subaward filter does not match expected result"
 
 
 @pytest.mark.django_db
