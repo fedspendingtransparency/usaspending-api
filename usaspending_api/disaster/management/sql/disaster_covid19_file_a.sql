@@ -71,8 +71,7 @@ SELECT
     (gtas."budget_authority_appropriation_amount_cpe" + gtas."other_budgetary_resources_amount_cpe") AS "total_budgetary_resources",
     gtas."obligations_incurred_total_cpe" AS "obligations_incurred",
     gtas."unobligated_balance_cpe" AS "unobligated_balance",
-    gtas."gross_outlay_amount_by_tas_cpe" AS "gross_outlay_amount",
-    sub.submission_reveal_date AS "last_modified_date"
+    gtas."gross_outlay_amount_by_tas_cpe" AS "gross_outlay_amount"
 FROM gtas_sf133_balances gtas
 INNER JOIN latest_submissions sub ON (gtas."fiscal_year" = sub."submission_fiscal_year" AND gtas."fiscal_period" = sub."submission_fiscal_month" AND sub."is_quarter" = False)
 INNER JOIN disaster_emergency_fund_code defc ON (gtas."disaster_emergency_fund_code" = defc."code")
