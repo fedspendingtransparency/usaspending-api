@@ -2,7 +2,7 @@ import logging
 import re
 import signal
 
-from datetime import datetime
+from datetime import datetime, timezone
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import transaction
@@ -568,6 +568,9 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
         award = find_matching_award(**filters)
 
         if award:
+            # Mark the award as updated, so it will be reloaded into ElasticSearch during nightly job
+            award.updated_at = datetime.now(timezone.utc)
+            award.save()
             awards_touched += [award]
 
         award_financial_data = FinancialAccountsByAwards()
