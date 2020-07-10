@@ -40,9 +40,9 @@ class Command(BaseCommand):
             raise RuntimeError(f"Broker submission id {submission_id} does not exist")
 
         # Mark associated Accounts as updated, so they will be reloaded in ES nightly load
-        Award.objects.filter(id__in=FinancialAccountsByAwards.objects.filter(submission_id=submission_id)).update(
-            update_date=datetime.now(timezone.utc)
-        )
+        Award.objects.filter(
+            id__in=FinancialAccountsByAwards.objects.filter(submission_id=submission_id).values("award_id")
+        ).update(update_date=datetime.now(timezone.utc))
 
         deleted_stats = submission.delete()
 
