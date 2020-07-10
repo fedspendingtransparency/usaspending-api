@@ -568,9 +568,6 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
         award = find_matching_award(**filters)
 
         if award:
-            # Mark the award as updated, so it will be reloaded into ElasticSearch during nightly job
-            award.updated_at = datetime.now(timezone.utc)
-            award.save()
             awards_touched += [award]
 
         award_financial_data = FinancialAccountsByAwards()
@@ -588,6 +585,9 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
 
         # Still using the cpe|fyb regex compiled above for reverse
         load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=True, reverse=reverse)
+
+    # Mark the award as updated, so it will be reloaded into ElasticSearch during nightly job
+    Award.objects.filter(id__in=set(a.id for a in awards_touched)).update(update_date=datetime.now(timezone.utc))
 
     for key in skipped_tas:
         logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
