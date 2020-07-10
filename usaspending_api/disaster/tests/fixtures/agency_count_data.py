@@ -4,6 +4,7 @@ from model_mommy import mommy
 
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.references.models import Agency
 
 
 @pytest.fixture
@@ -13,7 +14,7 @@ def faba_with_toptier_agencies(award_count_sub_schedule, award_count_submission,
 
     toptier_agency(2)
     award2 = award_with_toptier_agency(2)
-    award3 = award_with_toptier_agency(2)
+    award3 = mommy.make("awards.Award", type="A", funding_agency=Agency.objects.first())
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
