@@ -38,6 +38,16 @@ class BaseDownloadViewSet(APIView):
             json_request = validate_contract_request(request.data)
         elif request_type == "assistance":
             json_request = validate_assistance_request(request.data)
+        elif request_type == "disaster":
+            filename = (
+                DownloadJob.objects.filter(
+                    file_name__startswith=settings.COVID19_DOWNLOAD_FILENAME_PREFIX, error_message__isnull=True
+                )
+                .order_by("-update_date")
+                .values_list("file_name", flat=True)
+                .first()
+            )
+            return self.get_download_response(file_name=filename)
         else:
             json_request = validate_account_request(request.data)
 
