@@ -1,5 +1,5 @@
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Q, Sum, F, Value, DecimalField, Case, When, IntegerField
+from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
