@@ -1,4 +1,5 @@
 import json
+import re
 from decimal import Decimal
 from typing import List, Optional
 
@@ -12,7 +13,10 @@ from usaspending_api.common.exceptions import ElasticsearchConnectionException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, RecipientLoansMixin
-from usaspending_api.search.v2.elasticsearch_helper import get_scaled_sum_aggregations
+from usaspending_api.search.v2.elasticsearch_helper import (
+    get_scaled_sum_aggregations,
+    get_number_of_unique_terms_for_awards,
+)
 
 
 class RecipientLoans(RecipientLoansMixin, DisasterBase):
@@ -44,10 +48,14 @@ class RecipientLoans(RecipientLoansMixin, DisasterBase):
 
         results = self.query_elasticsearch(filter_query)
 
+        # Get a count of recipients for pagination metadata;
+        # Defaults to 10k if greater than since that is the cap for Elasticsearch aggregations
+        total_results = get_number_of_unique_terms_for_awards(filter_query, "recipient_agg_key.hash")
+
         return Response(
             {
                 "results": results[: self.pagination.limit],
-                "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
+                "page_metadata": get_pagination_metadata(total_results, self.pagination.limit, self.pagination.page),
             }
         )
 
@@ -83,7 +91,7 @@ class RecipientLoans(RecipientLoansMixin, DisasterBase):
         # Define all aggregations needed to build the response
         search.aggs.bucket("group_by_agg_key", group_by_agg_key)
         for field, sum_aggregations in sum_aggregations.items():
-            search.aggs["group_by_agg_key"].metric(f"sum_{field}", sum_aggregations["sum_field"])
+            search.aggs["group_by_agg_key"].metric(field, sum_aggregations["sum_field"])
         search.aggs["group_by_agg_key"].pipeline("pagination_aggregation", pagination_aggregation)
 
         # Set size to 0 since we don't care about documents returned
@@ -99,7 +107,7 @@ class RecipientLoans(RecipientLoansMixin, DisasterBase):
 
             # Build a list of hash IDs to handle multiple levels
             recipient_hash = info.get("hash")
-            recipient_levels = info.get("levels")
+            recipient_levels = sorted(list(re.sub("[{},]", "", info.get("levels", ""))))
             if recipient_hash and recipient_levels:
                 recipient_hash_list = [f"{recipient_hash}-{level}" for level in recipient_levels]
             else:

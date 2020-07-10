@@ -142,10 +142,11 @@ SELECT
   DEFC.transaction_obligated_amount as total_covid_obligation
 FROM vw_award_search
 INNER JOIN awards a ON (a.id = vw_award_search.award_id)
-LEFT JOIN (
+LEFT JOIN LATERAL (
   SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) as recipient_levels
   FROM     recipient_profile
-  WHERE    recipient_name NOT IN (
+  WHERE    (recipient_hash = vw_award_search.recipient_hash OR recipient_unique_id = vw_award_search.recipient_unique_id) and
+           recipient_name NOT IN (
              'MULTIPLE RECIPIENTS',
              'REDACTED DUE TO PII',
              'MULTIPLE FOREIGN RECIPIENTS',
@@ -155,7 +156,8 @@ LEFT JOIN (
            ) AND recipient_name IS NOT NULL
            AND recipient_level != 'P'
   GROUP BY recipient_hash, recipient_unique_id
-) recipient_profile ON (recipient_profile.recipient_unique_id = vw_award_search.recipient_unique_id AND vw_award_search.recipient_unique_id IS NOT NULL)
+  LIMIT 1
+) recipient_profile ON TRUE
 LEFT JOIN (
   SELECT   code, name, fips, MAX(id)
   FROM     state_data

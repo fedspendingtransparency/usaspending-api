@@ -15,6 +15,8 @@ class Helpers:
             filters["def_codes"] = kwargs["def_codes"]
         if kwargs.get("query"):
             filters["query"] = kwargs["query"]
+        if kwargs.get("award_type_codes"):
+            filters["award_type_codes"] = kwargs["award_type_codes"]
 
         request_body["filter"] = filters
 

@@ -32,21 +32,21 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text",
-                        "count": 54,
-                        "obligation": 89.01,
-                        "outlay": 70.98
+                        "code": "987654321",
+                        "count": 2,
+                        "description": "RECIPIENT 3",
+                        "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
+                        "obligation": 2200.0,
+                        "outlay": 1100.0,
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text",
-                        "count": 2,
-                        "obligation": 50,
-                        "outlay": 10
-                    }
+                        "code": "456789123",
+                        "count": 1,
+                        "description": "RECIPIENT 2",
+                        "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
+                        "obligation": 20.0,
+                        "outlay": 0.0,
+                    },
                 ],
                 "page_metadata": {
                     "page": 1,
@@ -63,6 +63,8 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
++ `query` (optional, string)
+    A "keyword" or "search term" to filter down results based on this text snippet
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
     Defaults to all Award Type Codes.
 
@@ -89,7 +91,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
         + `outlay`
 
 ## Result (object)
-+ `id` (required, string)
++ `id` (required, array[string], fixed-type)
 + `code` (required, string)
 + `description` (required, string)
 + `count` (required, number)

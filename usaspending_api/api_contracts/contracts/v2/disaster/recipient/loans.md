@@ -32,25 +32,23 @@ Returns loan spending details of recipients receiving supplemental funding budge
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text of 090, for humans",
-                        "children": [],
-                        "count": 54,
-                        "face_value_of_loan": 89.01,
-                        "obligation": 467,
-                        "outlay": 5
+                        "code": "987654321",
+                        "count": 2,
+                        "description": "RECIPIENT 3",
+                        "face_value_of_loan": 0.0,
+                        "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
+                        "obligation": 2200.0,
+                        "outlay": 1100.0,
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text of 012, for humans",
-                        "children": [],
-                        "count": 2,
-                        "face_value_of_loan": 50,
-                        "obligation": 567,
-                        "outlay": 45
-                    }
+                        "code": "456789123",
+                        "count": 1,
+                        "description": "RECIPIENT 2",
+                        "face_value_of_loan": 0.0,
+                        "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
+                        "obligation": 20.0,
+                        "outlay": 0.0,
+                    },
                 ],
                 "page_metadata": {
                     "page": 1,
@@ -94,7 +92,7 @@ Returns loan spending details of recipients receiving supplemental funding budge
         + `outlay`
 
 ## Result (object)
-+ `id` (required, string)
++ `id` (required, array[string], fixed-type)
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
