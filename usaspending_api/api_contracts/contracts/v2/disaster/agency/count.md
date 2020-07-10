@@ -42,7 +42,7 @@ This endpoint returns a count of Agencies
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-    Defaults to all Award Type Codes.
+    If ANY award type codes are provided, count will be calculated from file C data, while if this parameter is not provided count will be calculated from file B. 
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing

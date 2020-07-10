@@ -29,8 +29,7 @@ class AgencyCountViewSet(CountBase, AwardTypeMixin):
             ]
             count = FinancialAccountsByAwards.objects.filter(*filters)
             count = count.values("award_id").filter(award__type__in=self.filters.get("award_type_codes"))
-            count = count.aggregate(count=Count("award_id", distinct=True))["count"]
-
+            count = count.aggregate(count=Count("award__funding_agency__toptier_agency", distinct=True))["count"]
         else:
             filters = [
                 Q(treasury_account__funding_toptier_agency=OuterRef("pk")),

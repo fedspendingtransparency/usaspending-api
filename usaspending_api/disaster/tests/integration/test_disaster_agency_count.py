@@ -27,6 +27,14 @@ def test_agency_count_success(client, monkeypatch, disaster_account_data, helper
 
 
 @pytest.mark.django_db
+def test_agency_count_with_award_types(client, monkeypatch, faba_with_toptier_agencies, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+
+    resp = helpers.post_for_count_endpoint(client, url, ["M"], ["A"])
+    assert resp.data["count"] == 2
+
+
+@pytest.mark.django_db
 def test_agency_count_invalid_defc(client, monkeypatch, disaster_account_data, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_count_endpoint(client, url, ["ZZ"])

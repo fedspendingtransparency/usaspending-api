@@ -43,6 +43,7 @@ class Helpers:
             request_body = json.dumps({"filter": {"def_codes": def_codes}})
         else:
             request_body = json.dumps({"filter": {}})
+        print(request_body)
         resp = client.post(url, content_type="application/json", data=request_body)
         return resp
 
