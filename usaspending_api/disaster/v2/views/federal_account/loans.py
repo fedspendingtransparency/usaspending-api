@@ -14,7 +14,7 @@ from usaspending_api.disaster.v2.views.federal_account.spending import construct
 
 
 class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBase):
-    """View to implement the API"""
+    """ Returns loan disaster spending by federal account. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
 
