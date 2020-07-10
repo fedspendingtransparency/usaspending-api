@@ -35,19 +35,19 @@ Returns loan spending details of recipients receiving supplemental funding budge
                         "code": "987654321",
                         "count": 2,
                         "description": "RECIPIENT 3",
-                        "face_value_of_loan": 0.0,
+                        "face_value_of_loan": 100.0,
                         "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
                         "obligation": 2200.0,
-                        "outlay": 1100.0,
+                        "outlay": 1100.0
                     },
                     {
                         "code": "456789123",
                         "count": 1,
                         "description": "RECIPIENT 2",
-                        "face_value_of_loan": 0.0,
+                        "face_value_of_loan": 200.0,
                         "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
                         "obligation": 20.0,
-                        "outlay": 0.0,
+                        "outlay": 0.0
                     },
                 ],
                 "page_metadata": {

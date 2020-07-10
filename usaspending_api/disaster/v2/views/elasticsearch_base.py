@@ -6,6 +6,7 @@ from elasticsearch_dsl import Q as ES_Q, A
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
@@ -23,6 +24,7 @@ class ElasticsearchDisasterBase(DisasterBase):
 
     query_fields: List[str]
     agg_key: str
+    is_loans: bool = False
 
     filter_query: ES_Q
     bucket_count: int
@@ -36,7 +38,11 @@ class ElasticsearchDisasterBase(DisasterBase):
         # Handle "query" filter outside of QueryWithFilters
         query = self.filters.pop("query", None)
 
-        self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
+        # If for a loans endpoint then filter on Loans
+        filters = self.filters
+        if self.is_loans:
+            filters.update({"award_type_codes": list(loan_type_mapping)})
+        self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
 
         if query:
             self.filter_query.must.append(

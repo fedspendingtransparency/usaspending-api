@@ -37,7 +37,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
                         "description": "RECIPIENT 3",
                         "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
                         "obligation": 2200.0,
-                        "outlay": 1100.0,
+                        "outlay": 1100.0
                     },
                     {
                         "code": "456789123",
@@ -45,7 +45,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
                         "description": "RECIPIENT 2",
                         "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
                         "obligation": 20.0,
-                        "outlay": 0.0,
+                        "outlay": 0.0
                     },
                 ],
                 "page_metadata": {
