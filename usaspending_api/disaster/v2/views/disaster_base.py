@@ -217,7 +217,7 @@ class LoansPaginationMixin(_BasePaginationMixin):
         return self.run_models(sortable_columns)
 
 
-class RecipientSpendingMixin(_BasePaginationMixin):
+class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
     sum_column_mapping = {"obligation": "total_covid_obligation", "outlay": "total_covid_outlay"}
     sort_column_mapping = {
         "description": "_key",
@@ -230,7 +230,7 @@ class RecipientSpendingMixin(_BasePaginationMixin):
         return self.run_models(list(self.sort_column_mapping), default_sort_column="description")
 
 
-class RecipientLoansMixin(_BasePaginationMixin):
+class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
     sum_column_mapping = {
         "obligation": "total_covid_obligation",
         "outlay": "total_covid_outlay",
