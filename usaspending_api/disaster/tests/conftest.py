@@ -29,6 +29,13 @@ from usaspending_api.disaster.tests.fixtures.federal_account_data import (
     unlinked_faba_account_data,
 )
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
+from usaspending_api.disaster.tests.fixtures.object_class_data import (
+    basic_faba_with_object_class,
+    basic_fa_by_object_class_with_object_class_but_no_obligations,
+    basic_fa_by_object_class_with_object_class,
+    basic_fa_by_object_class_with_multpile_object_class,
+    basic_fa_by_object_class_with_multpile_object_class_of_same_code,
+)
 from usaspending_api.disaster.tests.fixtures.overview_data import (
     basic_faba,
     basic_ref_data,
@@ -56,6 +63,11 @@ __all__ = [
     "award_count_submission",
     "award_with_no_outlays",
     "basic_award",
+    "basic_fa_by_object_class_with_object_class",
+    "basic_fa_by_object_class_with_object_class_but_no_obligations",
+    "basic_fa_by_object_class_with_multpile_object_class",
+    "basic_fa_by_object_class_with_multpile_object_class_of_same_code",
+    "basic_faba_with_object_class",
     "double_fpds_awards_with_distict_recipients",
     "double_fpds_awards_with_same_recipients",
     "obligations_incurred_award",
