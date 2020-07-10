@@ -24,7 +24,7 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
             info = json.loads(bucket.get("key"))
             results.append(
                 {
-                    "id": info["id"],
+                    "id": int(info["id"]),
                     "code": info["code"],
                     "description": info["description"],
                     "count": int(bucket.get("doc_count", 0)),

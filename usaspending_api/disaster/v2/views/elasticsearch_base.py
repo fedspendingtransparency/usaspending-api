@@ -84,12 +84,13 @@ class ElasticsearchDisasterBase(DisasterBase):
             "from": (self.pagination.page - 1) * self.pagination.limit,
             "size": self.pagination.limit + 1,
         }
-        sort_values = {"order": {self.sort_column_mapping[self.pagination.sort_key]: self.pagination.sort_order}}
 
         if self.agg_key == settings.ES_ROUTING_FIELD:
             size = self.pagination.upper_limit
             shard_size = size
-            group_by_agg_key_values = {**sort_values}
+            group_by_agg_key_values = {
+                "order": {self.sort_column_mapping[self.pagination.sort_key]: self.pagination.sort_order}
+            }
             bucket_sort_values = {**pagination_values}
 
         else:
@@ -99,7 +100,10 @@ class ElasticsearchDisasterBase(DisasterBase):
                 size = self.bucket_count
                 shard_size = self.bucket_count + 100
                 group_by_agg_key_values = {}
-                bucket_sort_values = {**pagination_values, **sort_values}
+                bucket_sort_values = {
+                    "sort": {self.sort_column_mapping[self.pagination.sort_key]: {"order": self.pagination.sort_order}},
+                    **pagination_values,
+                }
 
         if shard_size > 10000:
             raise ElasticsearchConnectionException(

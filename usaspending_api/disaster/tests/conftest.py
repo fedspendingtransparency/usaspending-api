@@ -47,6 +47,7 @@ from usaspending_api.disaster.tests.fixtures.overview_data import (
     year_2_gtas_covid_2,
     year_2_gtas_non_covid,
 )
+from usaspending_api.disaster.tests.fixtures.cfda_data import cfda_awards_and_transactions
 
 
 __all__ = [
@@ -55,6 +56,7 @@ __all__ = [
     "award_count_sub_schedule",
     "award_count_submission",
     "award_with_no_outlays",
+    "cfda_awards_and_transactions",
     "double_fpds_awards_with_distict_recipients",
     "double_fpds_awards_with_same_recipients",
     "obligations_incurred_award",

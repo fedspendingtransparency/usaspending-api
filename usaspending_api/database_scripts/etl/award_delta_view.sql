@@ -153,7 +153,7 @@ SELECT
   DEFC.transaction_obligated_amount as total_covid_obligation
 FROM vw_award_search
 INNER JOIN awards a ON (a.id = vw_award_search.award_id)
-LEFT JOIN transaction_fabs fabs on (fabs.transaction_id = a.latest_transaction_id)
+LEFT JOIN transaction_fabs fabs ON (fabs.transaction_id = a.latest_transaction_id)
 LEFT JOIN references_cfda cfda ON (cfda.program_number = fabs.cfda_number)
 LEFT JOIN LATERAL (
   SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) as recipient_levels

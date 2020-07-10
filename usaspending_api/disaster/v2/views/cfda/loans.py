@@ -16,6 +16,7 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
     required_filters = ["def_codes", "query"]
     query_fields = ["cfda_title", "cfda_number"]
     agg_key = "cfda_agg_key"
+    is_loans = True
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
@@ -24,7 +25,7 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
             info = json.loads(bucket.get("key"))
             results.append(
                 {
-                    "id": info["id"],
+                    "id": int(info["id"]),
                     "code": info["code"],
                     "description": info["description"],
                     "count": int(bucket.get("doc_count", 0)),
