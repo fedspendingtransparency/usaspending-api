@@ -26,6 +26,8 @@ List File C financial data for an IDV award's descendant contracts
             + Default: `reporting_fiscal_date`
             + Members
                 + `account_title`
+                + `disaster_emergency_fund_code`
+                + `gross_outlay_amount`
                 + `object_class`
                     Object class code, object class name
                 + `piid`

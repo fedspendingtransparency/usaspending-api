@@ -80,7 +80,6 @@ class IDVFundingTestCase(TestCase):
         assert response.status_code == expected_status_code
         if expected_response_parameters_tuple is not None:
             expected_response = self._generate_expected_response(*expected_response_parameters_tuple)
-            print(response.content.decode("utf-8"))
             assert json.loads(response.content.decode("utf-8")) == expected_response
 
     def test_defaults(self):
