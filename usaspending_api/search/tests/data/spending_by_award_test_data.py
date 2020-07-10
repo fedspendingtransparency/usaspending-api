@@ -123,7 +123,32 @@ def spending_by_award_test_data():
         main_account_code="4930",
         federal_account_id=1,
     )
-    mommy.make("awards.FinancialAccountsByAwards", award_id=1, treasury_account_id=1)
+    defc = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2019,
+        submission_fiscal_month=12,
+        is_quarter=True,
+        submission_reveal_date="2020-04-01",
+    )
+    sa1 = mommy.make(
+        "submissions.SubmissionAttributes",
+        pk=1,
+        reporting_fiscal_period=9,
+        reporting_fiscal_year=2019,
+        reporting_period_end="2019-06-30",
+        reporting_period_start="2020-04-02",
+    )
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=1,
+        treasury_account_id=1,
+        transaction_obligated_amount=100,
+        gross_outlay_amount_by_award_cpe=100,
+        disaster_emergency_fund=defc,
+        submission=sa1,
+    )
 
     # Subtier Agency
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
@@ -205,7 +230,7 @@ def spending_by_award_test_data():
         subaward_number=11111,
         prime_award_type="A",
         award_type="procurement",
-        action_date="2014-01-01",
+        action_date="2020-04-02",
         amount=10000,
         prime_recipient_name="recipient_name_for_award_1001",
         recipient_unique_id="duns_1001",
@@ -222,7 +247,7 @@ def spending_by_award_test_data():
         subaward_number=22222,
         prime_award_type="A",
         award_type="procurement",
-        action_date="2015-01-01",
+        action_date="2020-04-02",
         amount=20000,
         prime_recipient_name="recipient_name_for_award_1001",
         recipient_unique_id="duns_1001",
