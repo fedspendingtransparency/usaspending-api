@@ -224,14 +224,14 @@ LEFT JOIN (
         'a=', taa.availability_type_code
        )
      ) tas_components
- FROM
-   treasury_appropriation_account taa
-   INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
-   INNER JOIN federal_account fa ON (taa.federal_account_id = fa.id)
-   INNER JOIN toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
- WHERE
-   faba.award_id IS NOT NULL
- GROUP BY
-   faba.award_id
+  FROM
+    treasury_appropriation_account taa
+  INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
+  INNER JOIN federal_account fa ON (taa.federal_account_id = fa.id)
+  INNER JOIN toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
+  WHERE
+    faba.award_id IS NOT NULL
+  GROUP BY
+    faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = vw_award_search.award_id)
 ;

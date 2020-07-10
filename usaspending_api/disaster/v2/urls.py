@@ -8,6 +8,7 @@ from usaspending_api.disaster.v2.views.federal_account.count import FederalAccou
 from usaspending_api.disaster.v2.views.federal_account.loans import LoansViewSet
 from usaspending_api.disaster.v2.views.federal_account.spending import SpendingViewSet
 from usaspending_api.disaster.v2.views.object_class.count import ObjectClassCountViewSet
+from usaspending_api.disaster.v2.views.object_class.spending import ObjectClassSpendingViewSet
 from usaspending_api.disaster.v2.views.overview import OverviewViewSet
 from usaspending_api.disaster.v2.views.recipient.count import RecipientCountViewSet
 from usaspending_api.disaster.v2.views.recipient.loans import RecipientLoansViewSet
@@ -24,6 +25,7 @@ urlpatterns = [
     url(r"^federal_account/loans/$", LoansViewSet.as_view()),
     url(r"^federal_account/spending/$", SpendingViewSet.as_view()),
     url(r"^object_class/count/$", ObjectClassCountViewSet.as_view()),
+    url(r"^object_class/spending/$", ObjectClassSpendingViewSet.as_view()),
     url(r"^overview/$", OverviewViewSet.as_view()),
     url(r"^recipient/count/$", RecipientCountViewSet.as_view()),
     url(r"^recipient/loans/$", RecipientLoansViewSet.as_view()),

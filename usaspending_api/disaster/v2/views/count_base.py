@@ -26,4 +26,7 @@ class CountBase(DisasterBase):
         return Q(type__in=self.filters.get("award_type_codes"))
 
     def has_award_of_provided_type(self):
-        return Q(award__type__in=self.filters.get("award_type_codes"))
+        if self.filters.get("award_type_codes"):
+            return Q(award__type__in=self.filters.get("award_type_codes"))
+        else:
+            return ~Q(pk=None)  # always true; if types are not provided we don't check types

@@ -1,5 +1,6 @@
 -- When both FAIN and URI are populated, update File C assistance records to link to a corresponding award if there is
 -- an exact match based on FAIN first. If no exact match found, check URI.
+with cte as (
 UPDATE financial_accounts_by_awards AS faba
 SET
 	award_id = (
@@ -29,8 +30,18 @@ WHERE
 				WHERE
 					UPPER(aw_sub.fain) = UPPER(faba_sub.fain)
 			) = 1
-	);
+	) RETURNING award_id
+)
+UPDATE
+	awards
+SET
+	update_date = NOW()
+FROM
+	cte
+WHERE
+	id = cte.award_id;
 
+with cte as (
 UPDATE financial_accounts_by_awards AS faba
 SET
 	award_id = (
@@ -60,4 +71,13 @@ WHERE
 				WHERE
 					UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
 			) = 1
-	);
+    ) RETURNING award_id
+)
+UPDATE
+    awards
+SET
+    update_date = NOW()
+FROM
+    cte
+WHERE
+    id = cte.award_id;
