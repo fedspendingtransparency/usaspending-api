@@ -83,9 +83,8 @@ def delete_stale_fpds(detached_award_procurement_ids):
 def load_fpds_transactions(chunk):
     """
     Run transaction load for the provided ids. This will create any new rows in other tables to support the transaction
-    data, but does NOT update "secondary" award values like total obligations or C -> D linkages. If transactions are
-    being reloaded, this will also leave behind rows in supporting tables that won't be removed unless destroy_orphans
-    is called.
+    data, but does NOT update "secondary" award values like total obligations or C -> D linkages.
+
     returns ids for each award touched
     """
     with Timer() as timer:
