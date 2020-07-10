@@ -32,7 +32,7 @@ API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 # This flag is used to control dark release features for the CARES Act initiative.  Set this to True
 # for testing and once the CARES Act features go live.  Remove all references to this global once
 # we have finished fully rolling out all CARES Act features.
-ENABLE_CARES_ACT_FEATURES = False
+ENABLE_CARES_ACT_FEATURES = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -103,6 +103,8 @@ DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/Data_Dictio
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
 ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "AssistanceSummary_download_readme.txt")
 CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_download_readme.txt")
+COVID19_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "COVID-19_download_readme.txt")
+COVID19_DOWNLOAD_FILENAME_PREFIX = "COVID-19_Profile"
 AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_codes.csv".format(
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
