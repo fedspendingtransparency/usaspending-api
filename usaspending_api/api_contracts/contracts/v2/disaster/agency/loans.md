@@ -32,34 +32,34 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text of 090, for humans",
+                        "id": 121,
+                        "code": "485",
+                        "description": "Corporation for National and Community Service",
                         "children": [],
-                        "count": 54,
-                        "face_value_of_loan": 89.01,
-                        "obligation": 1234,
-                        "outlay": 908324
+                        "count": 0,
+                        "obligation": 16791.43,
+                        "outlay": 0.0,
+                        "face_value_of_loan": 0.0
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text of 012, for humans",
+                        "id": 118,
+                        "code": "514",
+                        "description": "U.S. Agency for Global Media",
                         "children": [],
-                        "count": 2,
-                        "face_value_of_loan": 50,
-                        "obligation": 643,
-                        "outlay": 1345
+                        "count": 0,
+                        "obligation": 221438.82,
+                        "outlay": 0.0,
+                        "face_value_of_loan": 0.0
                     }
                 ],
                 "page_metadata": {
                     "page": 1,
+                    "total": 12,
+                    "limit": 2,
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
-                    "hasPrevious": false,
-                    "total": 23,
-                    "limit": 2
+                    "hasPrevious": false
                 }
             }
 
@@ -101,9 +101,9 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
-+ `face_value_of_loan` (required, number, nullable)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
++ `face_value_of_loan` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)

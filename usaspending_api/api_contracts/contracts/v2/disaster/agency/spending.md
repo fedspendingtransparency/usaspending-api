@@ -37,34 +37,34 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text",
+                        "id": 168,
+                        "code": "349",
+                        "description": "District of Columbia Courts",
                         "children": [],
-                        "count": 54,
-                        "obligation": 89.01,
-                        "outlay": 70.98,
-                        "total_budgetary_resources": null
+                        "count": 0,
+                        "obligation": 148906061.27,
+                        "outlay": 143265869.34,
+                        "total_budgetary_resources": 18087913735.71
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text",
+                        "id": 130,
+                        "code": "413",
+                        "description": "National Council on Disability",
                         "children": [],
-                        "count": 2,
-                        "obligation": 50,
-                        "outlay": 10,
-                        "total_budgetary_resources": null
+                        "count": 0,
+                        "obligation": 225185.66,
+                        "outlay": 697329.0,
+                        "total_budgetary_resources": 183466350.0
                     }
                 ],
                 "page_metadata": {
                     "page": 1,
+                    "total": 62,
+                    "limit": 2,
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
-                    "hasPrevious": false,
-                    "total": 23,
-                    "limit": 2
+                    "hasPrevious": false
                 }
             }
 
@@ -72,8 +72,6 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-    Defaults to all Award Type Codes. Applicable only when requested `award` spending.
 + `query` (optional, string)
     A "keyword" or "search term" to filter down results based on this text snippet
 
@@ -146,30 +144,3 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `S`
 + `T`
 + `9`
-
-## AwardTypeCodes (enum[string])
-List of procurement and assistance award type codes supported by USAspending.gov
-
-### Members
-+ `02`
-+ `03`
-+ `04`
-+ `05`
-+ `06`
-+ `07`
-+ `08`
-+ `09`
-+ `10`
-+ `11`
-+ `A`
-+ `B`
-+ `C`
-+ `D`
-+ `IDV_A`
-+ `IDV_B_A`
-+ `IDV_B_B`
-+ `IDV_B_C`
-+ `IDV_B`
-+ `IDV_C`
-+ `IDV_D`
-+ `IDV_E`

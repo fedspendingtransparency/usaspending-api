@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, DecimalField, Case, When
+from django.db.models import Q, Sum, Count, F, Value, Case, When, Min
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -6,7 +6,11 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.federal_account.federal_account_result import FedAcctResults, FedAccount, TAS
+from usaspending_api.disaster.v2.views.object_class.object_class_result import (
+    ObjectClassResults,
+    MajorClass,
+    ObjectClass,
+)
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
@@ -16,21 +20,22 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 
 
 def construct_response(results: list, pagination: Pagination):
-    FederalAccounts = FedAcctResults()
+    object_classes = ObjectClassResults()
     for row in results:
-        FA = FedAccount(id=row.pop("fa_id"), code=row.pop("fa_code"), description=row.pop("fa_description"))
-        FederalAccounts[FA].include(TAS(**row))
+        major_code = row.pop("major_code")
+        major_class = MajorClass(id=major_code, code=major_code, description=row.pop("major_description"))
+        object_classes[major_class].include(ObjectClass(**row))
 
     return {
-        "results": FederalAccounts.finalize(pagination),
-        "page_metadata": get_pagination_metadata(len(FederalAccounts), pagination.limit, pagination.page),
+        "results": object_classes.finalize(pagination),
+        "page_metadata": get_pagination_metadata(len(object_classes), pagination.limit, pagination.page),
     }
 
 
-class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
-    """ Returns disaster spending by federal account. """
+class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
+    """View to implement the API"""
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/spending.md"
 
     @cache_response()
     def post(self, request):
@@ -51,19 +56,13 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
             ),
             Q(disaster_emergency_fund__in=self.def_codes),
-            Q(treasury_account__isnull=False),
-            Q(treasury_account__federal_account__isnull=False),
+            Q(object_class__isnull=False),
             self.all_closed_defc_submissions,
         ]
 
         annotations = {
-            "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "count": Count("treasury_account__tas_rendering_label", distinct=True),
-            "description": F("treasury_account__account_title"),
-            "code": F("treasury_account__tas_rendering_label"),
-            "id": F("treasury_account__treasury_account_identifier"),
-            "fa_description": F("treasury_account__federal_account__account_title"),
-            "fa_id": F("treasury_account__federal_account_id"),
+            **self.universal_annotations(),
+            "count": Count("object_class__object_class", distinct=True),
             "obligation": Coalesce(
                 Sum(
                     Case(
@@ -88,20 +87,13 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 ),
                 0,
             ),
-            "total_budgetary_resources": Coalesce(
-                Sum("treasury_account__gtas__budget_authority_appropriation_amount_cpe"), 0
-            ),
         }
 
         # Assuming it is more performant to fetch all rows once rather than
         #  run a count query and fetch only a page's worth of results
         return (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
-            .values(
-                "treasury_account__federal_account__id",
-                "treasury_account__federal_account__federal_account_code",
-                "treasury_account__federal_account__account_title",
-            )
+            .values("object_class__major_object_class", "object_class__major_object_class_name",)
             .annotate(**annotations)
             .values(*annotations.keys())
         )
@@ -110,19 +102,14 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     def award_queryset(self):
         filters = [
             Q(disaster_emergency_fund__in=self.def_codes),
-            Q(treasury_account__isnull=False),
-            Q(treasury_account__federal_account__isnull=False),
+            Q(object_class__isnull=False),
+            Q(award__isnull=False),
             self.all_closed_defc_submissions,
         ]
 
         annotations = {
-            "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "count": Count("treasury_account__tas_rendering_label", distinct=True),
-            "description": F("treasury_account__account_title"),
-            "code": F("treasury_account__tas_rendering_label"),
-            "id": F("treasury_account__treasury_account_identifier"),
-            "fa_description": F("treasury_account__federal_account__account_title"),
-            "fa_id": F("treasury_account__federal_account_id"),
+            **self.universal_annotations(),
+            "count": Count("award_id", distinct=True),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
@@ -133,18 +120,22 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 ),
                 0,
             ),
-            "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
         }
 
         # Assuming it is more performant to fetch all rows once rather than
         #  run a count query and fetch only a page's worth of results
         return (
             FinancialAccountsByAwards.objects.filter(*filters)
-            .values(
-                "treasury_account__federal_account__id",
-                "treasury_account__federal_account__federal_account_code",
-                "treasury_account__federal_account__account_title",
-            )
+            .values("object_class__major_object_class", "object_class__major_object_class_name")
             .annotate(**annotations)
             .values(*annotations.keys())
         )
+
+    def universal_annotations(self):
+        return {
+            "major_code": F("object_class__major_object_class"),
+            "description": F("object_class__object_class_name"),
+            "code": F("object_class__object_class"),
+            "id": Min("object_class_id"),
+            "major_description": F("object_class__major_object_class_name"),
+        }
