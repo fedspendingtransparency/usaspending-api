@@ -87,6 +87,17 @@ SELECT
   vw_award_search.pop_city_code,
 
   vw_award_search.cfda_number,
+  cfda.program_title AS cfda_title,
+  CASE
+    WHEN vw_award_search.cfda_number IS NOT NULL
+      THEN CONCAT(
+        '{"code":"', vw_award_search.cfda_number,
+        '","description":"', cfda.program_title,
+        '","id":"', cfda.id, '"}'
+      )
+    ELSE NULL
+  END AS cfda_agg_key,
+
   vw_award_search.sai_number,
   vw_award_search.type_of_contract_pricing,
   vw_award_search.extent_competed,
@@ -142,6 +153,8 @@ SELECT
   DEFC.transaction_obligated_amount as total_covid_obligation
 FROM vw_award_search
 INNER JOIN awards a ON (a.id = vw_award_search.award_id)
+LEFT JOIN transaction_fabs fabs on (fabs.transaction_id = a.latest_transaction_id)
+LEFT JOIN references_cfda cfda ON (cfda.program_number = fabs.cfda_number)
 LEFT JOIN LATERAL (
   SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) as recipient_levels
   FROM     recipient_profile

@@ -175,6 +175,8 @@ AWARD_VIEW_COLUMNS = [
     "pop_city_name",
     "pop_city_code",
     "cfda_number",
+    "cfda_title",
+    "cfda_agg_key",
     "sai_number",
     "type_of_contract_pricing",
     "extent_competed",
