@@ -10,14 +10,12 @@ from usaspending_api.references.models import ToptierAgency
 from usaspending_api.disaster.v2.views.disaster_base import AwardTypeMixin
 
 
-class AgencyCountViewSet(CountBase, AwardTypeMixin):
+class AgencyCountViewSet(AwardTypeMixin, CountBase):
     """
     Obtain the count of Agencies related to supplied DEFC filter.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/count.md"
-
-    required_filters = ["def_codes", "award_type_codes"]
 
     @cache_response()
     def post(self, request: Request) -> Response:
