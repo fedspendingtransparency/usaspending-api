@@ -17,7 +17,7 @@ SELECT
         WHEN "submission_attributes"."quarter_format_flag" = True THEN
             CONCAT('FY', EXTRACT(YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'), 'Q', EXTRACT(QUARTER FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'))
         ELSE
-            CONCAT('FY', EXTRACT(YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'), 'P', EXTRACT(MONTH FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'))
+            CONCAT('FY', EXTRACT(YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'), 'P', lpad(EXTRACT(MONTH FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months')::text, 2, '0'))
     END AS "submission_period",
     "treasury_appropriation_account"."allocation_transfer_agency_id" AS "allocation_transfer_agency_identifier_code",
     "treasury_appropriation_account"."agency_id" AS "agency_identifier_code",
@@ -63,9 +63,9 @@ GROUP BY
     "financial_accounts_by_program_activity_object_class"."financial_accounts_by_program_activity_object_class_id",
     CASE
         WHEN "submission_attributes"."quarter_format_flag" = True THEN
-            CONCAT ('FY' , EXTRACT (YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months') , 'Q' , EXTRACT (QUARTER FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'))
+            CONCAT('FY', EXTRACT(YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'), 'Q', EXTRACT(QUARTER FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'))
         ELSE
-            CONCAT ('FY' , EXTRACT (YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months') , 'P' , EXTRACT (MONTH FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'))
+            CONCAT('FY', EXTRACT(YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'), 'P', lpad(EXTRACT(MONTH FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months')::text, 2, '0'))
     END,
     (SELECT U0."agency_name" FROM "cgac" U0 WHERE U0."cgac_code" = ("treasury_appropriation_account"."allocation_transfer_agency_id")),
     (SELECT U0."agency_name" FROM "cgac" U0 WHERE U0."cgac_code" = ("treasury_appropriation_account"."agency_id")) ,

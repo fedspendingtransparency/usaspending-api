@@ -13,7 +13,7 @@ WITH recent_submission AS (
 
 SELECT
     agency."name" AS "owning_agency_name",
-    CONCAT('FY', gtas."fiscal_year", 'P', gtas."fiscal_period") AS "submission_period",
+    CONCAT('FY', gtas."fiscal_year", 'P', lpad(gtas."fiscal_period"::text, 2, '0')) AS "submission_period",
     COALESCE(taa."allocation_transfer_agency_id",
         CASE WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
         THEN SPLIT_PART(gtas."tas_rendering_label", '-', 1)
