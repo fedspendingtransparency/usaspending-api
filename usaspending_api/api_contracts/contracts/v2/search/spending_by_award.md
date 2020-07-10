@@ -195,7 +195,7 @@ List of table columns
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
-+ `def_codes` (optional, array[string])
++ `def_codes` (optional, array[DEFC], fixed-type)
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -295,3 +295,6 @@ List of filterable award types
 - `IDV_C`
 - `IDV_D`
 - `IDV_E`
+
+## DEFC (enum[string])
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
