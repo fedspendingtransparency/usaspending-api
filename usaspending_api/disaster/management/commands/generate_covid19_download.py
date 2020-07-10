@@ -56,6 +56,7 @@ class Command(BaseCommand):
             self.complete_zip_and_upload()
         except Exception:
             logger.exception("Exception encountered. See logs")
+            raise
         finally:
             # "best-effort" attempt to cleanup temp files after a failure. Isn't 100% effective
             self.cleanup()
