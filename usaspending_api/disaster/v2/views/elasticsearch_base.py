@@ -50,11 +50,9 @@ class ElasticsearchDisasterBase(DisasterBase):
             non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
         self.filter_query.must.append(ES_Q("bool", should=non_zero_queries, minimum_should_match=1))
 
-        results = self.query_elasticsearch()
-
-        # Get a count of recipients for pagination metadata;
-        # Defaults to 10k if greater than since that is the cap for Elasticsearch aggregations
         self.bucket_count = get_number_of_unique_terms_for_awards(self.filter_query, f"{self.agg_key}.hash")
+
+        results = self.query_elasticsearch()
 
         return Response(
             {

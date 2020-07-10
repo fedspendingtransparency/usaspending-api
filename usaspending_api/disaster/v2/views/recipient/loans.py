@@ -7,7 +7,7 @@ from usaspending_api.disaster.v2.views.disaster_base import ElasticsearchLoansPa
 from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
 
 
-class RecipientLoans(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterBase):
+class RecipientLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterBase):
     """
     This route takes DEF Codes and Award Type Codes and returns Loans by Recipient.
     """
