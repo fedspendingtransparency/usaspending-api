@@ -1,9 +1,11 @@
 import boto3
 import io
 import logging
+import math
 
-from typing import List
 from django.conf import settings
+from pathlib import Path
+from typing import List
 
 
 logger = logging.getLogger("script")
@@ -37,3 +39,19 @@ def access_s3_object(bucket_name: str, obj: "boto3.resources.factory.s3.ObjectSu
     bucket.download_fileobj(obj.key, data)
     data.seek(0)  # Like rewinding a VCR cassette
     return data
+
+
+def upload_download_file_to_s3(file_path):
+    bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+    region = settings.USASPENDING_AWS_REGION
+    multipart_upload(bucket, region, str(file_path), file_path.name)
+
+
+def multipart_upload(bucketname, regionname, source_path, keyname):
+    s3client = boto3.client("s3", region_name=regionname)
+    source_size = Path(source_path).stat().st_size
+    # Sets the chunksize at minimum ~5MB to sqrt(5MB) * sqrt(source size)
+    bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
+    config = boto3.s3.transfer.TransferConfig(multipart_chunksize=bytes_per_chunk)
+    transfer = boto3.s3.transfer.S3Transfer(s3client, config)
+    transfer.upload_file(source_path, bucketname, Path(keyname).name)
