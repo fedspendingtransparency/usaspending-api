@@ -207,14 +207,14 @@ class _BasePaginationMixin:
 class PaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "obligation", "outlay", "total_budgetary_resources", "count"]
+        sortable_columns = ["id", "code", "description", "count", "obligation", "outlay", "total_budgetary_resources"]
         return self.run_models(sortable_columns)
 
 
 class LoansPaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "count", "face_value_of_loan", "obligation", "outlay"]
+        sortable_columns = ["id", "code", "description", "count", "obligation", "outlay", "face_value_of_loan"]
         return self.run_models(sortable_columns)
 
 
