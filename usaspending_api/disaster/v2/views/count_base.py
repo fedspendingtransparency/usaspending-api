@@ -29,4 +29,4 @@ class CountBase(DisasterBase):
         if self.filters.get("award_type_codes"):
             return Q(award__type__in=self.filters.get("award_type_codes"))
         else:
-            return ~Q(pk=None)  # always true
+            return ~Q(pk=None)  # always true; if types are not provided we don't check types
