@@ -54,42 +54,50 @@ Lists federal account financial data for the requested award
             {
                 "results": [
                     {
-                        "transaction_obligated_amount": 6960.0,
-                        "federal_account": "028-0400",
-                        "account_title": "Office of the Inspector General, Social Security Administration",
-                        "funding_agency_name": "Social Security Administration",
-                        "funding_agency_id": 539,
-                        "awarding_agency_name": null,
-                        "awarding_agency_id": null,
-                        "object_class": "254",
-                        "object_class_name": "Operation and maintenance of facilities",
-                        "program_activity_code": "0001",
-                        "program_activity_name": "OFFICE OF INSPECTOR GENERAL (DIRECT)",
-                        "reporting_fiscal_year": 2017,
-                        "reporting_fiscal_quarter": 4
-                    },
-                    {
                         "transaction_obligated_amount": 70296.0,
+                        "gross_outlay_amount": 0.0,
+                        "disaster_emergency_fund_code": null,
                         "federal_account": "028-8704",
                         "account_title": "Salaries and Expenses, Social Security Administration",
                         "funding_agency_name": "Social Security Administration",
                         "funding_agency_id": 539,
-                        "awarding_agency_name": null,
-                        "awarding_agency_id": null,
+                        "awarding_agency_name": "Social Security Administration",
+                        "awarding_agency_id": 539,
                         "object_class": "254",
                         "object_class_name": "Operation and maintenance of facilities",
                         "program_activity_code": "0001",
                         "program_activity_name": "LAE PROGRAM DIRECT",
                         "reporting_fiscal_year": 2017,
-                        "reporting_fiscal_quarter": 4
+                        "reporting_fiscal_quarter": 4,
+                        "reporting_fiscal_month": 12,
+                        "is_quarterly_submission": true
+                    },
+                    {
+                        "transaction_obligated_amount": 6960.0,
+                        "gross_outlay_amount": 0.0,
+                        "disaster_emergency_fund_code": null,
+                        "federal_account": "028-0400",
+                        "account_title": "Office of the Inspector General, Social Security Administration",
+                        "funding_agency_name": "Social Security Administration",
+                        "funding_agency_id": 539,
+                        "awarding_agency_name": "Social Security Administration",
+                        "awarding_agency_id": 539,
+                        "object_class": "254",
+                        "object_class_name": "Operation and maintenance of facilities",
+                        "program_activity_code": "0001",
+                        "program_activity_name": "OFFICE OF INSPECTOR GENERAL (DIRECT)",
+                        "reporting_fiscal_year": 2017,
+                        "reporting_fiscal_quarter": 4,
+                        "reporting_fiscal_month": 12,
+                        "is_quarterly_submission": true
                     }
                 ],
                 "page_metadata": {
                     "page": 1,
                     "next": null,
                     "previous": null,
-                    "hasPrevious": false,
-                    "hasNext": false
+                    "hasNext": false,
+                    "hasPrevious": false
                 }
             }
 
