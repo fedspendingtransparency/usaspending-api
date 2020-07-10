@@ -234,7 +234,7 @@ class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
     sum_column_mapping = {
         "obligation": "total_covid_obligation",
         "outlay": "total_covid_outlay",
-        "face_value_of_loan": "face_value_loan_guarantee",
+        "face_value_of_loan": "total_loan_value",
     }
     sort_column_mapping = {
         "description": "_key",

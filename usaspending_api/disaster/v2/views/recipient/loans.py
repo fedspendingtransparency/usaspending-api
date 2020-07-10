@@ -17,6 +17,7 @@ class RecipientLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisa
     required_filters = ["def_codes", "query"]
     query_fields = ["recipient_name"]
     agg_key = "recipient_agg_key"
+    is_loans = True
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
