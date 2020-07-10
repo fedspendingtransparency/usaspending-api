@@ -293,7 +293,7 @@ def disaster_account_data():
         gross_outlay_amount_by_program_object_class_cpe=100000,
     )
 
-    a1 = mommy.make("awards.Award", total_loan_value=333)
+    a1 = mommy.make("awards.Award", total_loan_value=333, type="07")  # Loan
     a2 = mommy.make("awards.Award", total_loan_value=444)
 
     faba = "awards.FinancialAccountsByAwards"

@@ -3,12 +3,13 @@ from django.db.models import Q, Sum, F, Value, Case, When, IntegerField
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, PaginationMixin, SpendingMixin
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, LoansPaginationMixin, LoansMixin
 
 
-class LoansByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
+class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
     """ Returns loan disaster spending by agency. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
@@ -28,6 +29,7 @@ class LoansByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     @property
     def queryset(self):
         filters = [
+            Q(award__type__in=loan_type_mapping),
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(treasury_account__isnull=False),
             Q(treasury_account__funding_toptier_agency__isnull=False),
