@@ -4,15 +4,19 @@ from model_mommy import mommy
 
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.disaster.tests.fixtures.award_count_data import _normal_award
 
 
 @pytest.fixture
 def basic_faba_with_object_class(award_count_sub_schedule, award_count_submission, defc_codes):
     basic_object_class = major_object_class_with_children("001", [1])
 
+    award = _normal_award()
+
     mommy.make(
         "awards.FinancialAccountsByAwards",
         parent_award_id="basic award",
+        award=award,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
         object_class=basic_object_class[0],
@@ -121,6 +125,59 @@ def basic_fa_by_object_class_with_object_class_but_no_obligations(
         object_class=basic_object_class[0],
         obligations_incurred_by_program_object_class_cpe=0,
         gross_outlay_amount_by_program_object_class_cpe=0,
+    )
+
+
+@pytest.fixture
+def faba_with_object_class_and_two_awards(award_count_sub_schedule, award_count_submission, defc_codes):
+    basic_object_class = major_object_class_with_children("001", [1])
+
+    award1 = _normal_award()
+    award2 = _normal_award()
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        parent_award_id="basic award",
+        award=award1,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        object_class=basic_object_class[0],
+    )
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        parent_award_id="basic award",
+        award=award2,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        object_class=basic_object_class[0],
+    )
+
+
+@pytest.fixture
+def faba_with_two_object_classes_and_two_awards(award_count_sub_schedule, award_count_submission, defc_codes):
+    object_class1 = major_object_class_with_children("001", [1])
+    object_class2 = major_object_class_with_children("002", [2])
+
+    award1 = _normal_award()
+    award2 = _normal_award()
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        parent_award_id="basic award",
+        award=award1,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        object_class=object_class1[0],
+    )
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        parent_award_id="basic award",
+        award=award2,
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        submission=SubmissionAttributes.objects.all().first(),
+        object_class=object_class2[0],
     )
 
 

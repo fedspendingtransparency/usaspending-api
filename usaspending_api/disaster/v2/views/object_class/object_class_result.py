@@ -7,11 +7,11 @@ from usaspending_api.disaster.v2.views.data_classes import Collation, Element
 
 
 class ObjectClass(Element):
-    """Renaming the original generic object to clearly be TAS"""
+    """Renaming the original generic object to clearly be Object Class"""
 
 
 class MajorClass(Collation):
-    """Renaming the original generic object to clearly be Federal Account"""
+    """Renaming the original generic object to clearly be Major Object Class"""
 
 
 @dataclass_json

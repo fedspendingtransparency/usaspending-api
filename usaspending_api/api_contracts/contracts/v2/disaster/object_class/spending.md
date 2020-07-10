@@ -48,8 +48,7 @@ Returns spending details of Object Classes receiving supplemental funding budget
                       "description": "Undistributed",
                       "count": 1,
                       "obligation": 20077899.96,
-                      "outlay": 13711575.76,
-                      "total_budgetary_resources": 0
+                      "outlay": 13711575.76
                     }
                   ]
                 },

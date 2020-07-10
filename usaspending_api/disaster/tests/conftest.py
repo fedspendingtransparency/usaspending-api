@@ -30,6 +30,8 @@ from usaspending_api.disaster.tests.fixtures.federal_account_data import (
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
 from usaspending_api.disaster.tests.fixtures.object_class_data import (
     basic_faba_with_object_class,
+    faba_with_object_class_and_two_awards,
+    faba_with_two_object_classes_and_two_awards,
     basic_fa_by_object_class_with_object_class_but_no_obligations,
     basic_fa_by_object_class_with_object_class,
     basic_fa_by_object_class_with_multpile_object_class,
@@ -86,6 +88,8 @@ __all__ = [
     "early_gtas",
     "faba_with_non_covid_values",
     "faba_with_values",
+    "faba_with_object_class_and_two_awards",
+    "faba_with_two_object_classes_and_two_awards",
     "fabs_award_with_old_submission",
     "fabs_award_with_quarterly_submission",
     "fabs_award_with_unclosed_submission",
