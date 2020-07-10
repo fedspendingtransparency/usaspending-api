@@ -8,10 +8,10 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDi
 
 class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterBase):
     """
-    This route takes DEF Codes and Award Type Codes and returns Loans by Recipient.
+    This route takes DEF Codes and Query text and returns Loans of CFDA.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/recipient/loans.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/cfda/loans.md"
 
     required_filters = ["def_codes", "query"]
     query_fields = ["cfda_title", "cfda_number"]

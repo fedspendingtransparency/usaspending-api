@@ -3,6 +3,7 @@ from django.conf.urls import url
 from usaspending_api.disaster.v2.views.award.count import AwardCountViewSet
 from usaspending_api.disaster.v2.views.agency.count import AgencyCountViewSet
 from usaspending_api.disaster.v2.views.award.amount import AmountViewSet
+from usaspending_api.disaster.v2.views.cfda.count import CfdaCountViewSet
 from usaspending_api.disaster.v2.views.cfda.loans import CfdaLoansViewSet
 from usaspending_api.disaster.v2.views.cfda.spending import CfdaSpendingViewSet
 from usaspending_api.disaster.v2.views.def_code.count import DefCodeCountViewSet
@@ -21,6 +22,7 @@ urlpatterns = [
     url(r"^agency/count/$", AgencyCountViewSet.as_view()),
     url(r"^award/amount/$", AmountViewSet.as_view()),
     url(r"^award/count/$", AwardCountViewSet.as_view()),
+    url(r"^cfda/count/$", CfdaCountViewSet.as_view()),
     url(r"^cfda/loans/$", CfdaLoansViewSet.as_view()),
     url(r"^cfda/spending/$", CfdaSpendingViewSet.as_view()),
     url(r"^def_code/count/$", DefCodeCountViewSet.as_view()),

@@ -8,10 +8,10 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDi
 
 class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):
     """
-    This route takes DEF Codes and Award Type Codes and returns Spending by Recipient.
+    This route takes DEF Codes, Award Type Codes, and Query text and returns Spending of CFDA.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/recipient/spending.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/cfda/spending.md"
 
     required_filters = ["def_codes", "award_type_codes", "query"]
     query_fields = ["cfda_title", "cfda_number"]
