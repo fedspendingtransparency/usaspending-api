@@ -14,7 +14,7 @@ from usaspending_api.disaster.v2.views.object_class.spending import universal_an
 
 
 class ObjectClassLoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBase):
-    """View to implement the API"""
+    """Provides insights on the Object Classes' loans from disaster/emergency funding per the requested filters"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/loans.md"
 
