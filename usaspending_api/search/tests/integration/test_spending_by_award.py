@@ -1238,6 +1238,30 @@ def _test_correct_response_for_def_codes_subaward(client):
     assert len(resp.json().get("results")) == 2
     assert resp.json().get("results") == expected_result, "DEFC subaward filter does not match expected result"
 
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "def_codes": ["J"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Sub-Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Sub-Award ID",
+                "order": "desc",
+                "subawards": True,
+            }
+        ),
+    )
+    expected_result = []
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 0
+    assert resp.json().get("results") == expected_result, "DEFC subaward filter does not match expected result"
+
 
 @pytest.mark.django_db
 def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_index):
