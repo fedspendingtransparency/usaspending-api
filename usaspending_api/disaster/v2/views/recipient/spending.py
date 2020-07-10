@@ -7,7 +7,7 @@ from usaspending_api.disaster.v2.views.disaster_base import ElasticsearchSpendin
 from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
 
 
-class RecipientSpending(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):
+class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):
     """
     This route takes DEF Codes and Award Type Codes and returns Spending by Recipient.
     """
