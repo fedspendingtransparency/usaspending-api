@@ -19,7 +19,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
-def construct_response(results: list, pagination: Pagination):
+def construct_response(results: list, pagination: Pagination, strip_total_budgetary_resources=True):
     object_classes = ObjectClassResults()
     for row in results:
         major_code = row.pop("major_code")
@@ -27,7 +27,7 @@ def construct_response(results: list, pagination: Pagination):
         object_classes[major_class].include(ObjectClass(**row))
 
     return {
-        "results": object_classes.finalize(pagination),
+        "results": object_classes.finalize(pagination, strip_total_budgetary_resources),
         "page_metadata": get_pagination_metadata(len(object_classes), pagination.limit, pagination.page),
     }
 
@@ -61,7 +61,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         ]
 
         annotations = {
-            **self.universal_annotations(),
+            **universal_annotations(),
             "count": Count("object_class__object_class", distinct=True),
             "obligation": Coalesce(
                 Sum(
@@ -108,7 +108,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         ]
 
         annotations = {
-            **self.universal_annotations(),
+            **universal_annotations(),
             "count": Count("award_id", distinct=True),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
@@ -131,11 +131,12 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
             .values(*annotations.keys())
         )
 
-    def universal_annotations(self):
-        return {
-            "major_code": F("object_class__major_object_class"),
-            "description": F("object_class__object_class_name"),
-            "code": F("object_class__object_class"),
-            "id": Min("object_class_id"),
-            "major_description": F("object_class__major_object_class_name"),
-        }
+
+def universal_annotations():
+    return {
+        "major_code": F("object_class__major_object_class"),
+        "description": F("object_class__object_class_name"),
+        "code": F("object_class__object_class"),
+        "id": Min("object_class_id"),
+        "major_description": F("object_class__major_object_class_name"),
+    }
