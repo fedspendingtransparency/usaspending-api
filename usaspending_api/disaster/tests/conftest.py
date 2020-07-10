@@ -37,7 +37,11 @@ from usaspending_api.disaster.tests.fixtures.object_class_data import (
     basic_fa_by_object_class_with_multpile_object_class,
     basic_fa_by_object_class_with_multpile_object_class_of_same_code,
 )
-from usaspending_api.disaster.tests.fixtures.object_class_loan_data import basic_object_class_faba_with_loan_value
+from usaspending_api.disaster.tests.fixtures.object_class_loan_data import (
+    basic_object_class_faba_with_loan_value,
+    basic_object_class_multiple_faba_with_loan_value_with_single_object_class,
+    basic_object_class_multiple_faba_with_loan_value_with_two_object_classes,
+)
 from usaspending_api.disaster.tests.fixtures.overview_data import (
     basic_faba,
     basic_ref_data,
@@ -71,6 +75,8 @@ __all__ = [
     "basic_fa_by_object_class_with_multpile_object_class_of_same_code",
     "basic_faba_with_object_class",
     "basic_object_class_faba_with_loan_value",
+    "basic_object_class_multiple_faba_with_loan_value_with_single_object_class",
+    "basic_object_class_multiple_faba_with_loan_value_with_two_object_classes",
     "double_fpds_awards_with_distict_recipients",
     "double_fpds_awards_with_same_recipients",
     "obligations_incurred_award",

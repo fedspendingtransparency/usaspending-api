@@ -48,6 +48,27 @@ def test_object_class_spending_filters_on_defc(client, basic_object_class_faba_w
 
 
 @pytest.mark.django_db
+def test_object_class_adds_value_across_awards(
+    client, basic_object_class_multiple_faba_with_loan_value_with_single_object_class, monkeypatch, helpers
+):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
+    assert resp.json()["results"][0]["face_value_of_loan"] == 10
+
+
+@pytest.mark.django_db
+def test_object_class_doesnt_add_across_object_classes(
+    client, basic_object_class_multiple_faba_with_loan_value_with_two_object_classes, monkeypatch, helpers
+):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
+    assert resp.json()["results"][0]["face_value_of_loan"] == 5
+    assert resp.json()["results"][1]["face_value_of_loan"] == 5
+
+
+@pytest.mark.django_db
 def test_object_class_spending_filters_on_object_class_existance(
     client, award_count_sub_schedule, basic_faba, monkeypatch, helpers
 ):
