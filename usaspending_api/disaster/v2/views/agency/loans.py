@@ -13,8 +13,12 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, LoansPaginationMixin, LoansMixin, \
-    ElasticsearchSpendingPaginationMixin
+from usaspending_api.disaster.v2.views.disaster_base import (
+    DisasterBase,
+    LoansPaginationMixin,
+    LoansMixin,
+    ElasticsearchSpendingPaginationMixin,
+)
 from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
 
 logger = logging.getLogger(__name__)
@@ -34,6 +38,7 @@ def route_agency_loans_backend(request: HttpRequest, **initkwargs):
 
 # Attempt to provide this attribute for doc generator
 route_agency_loans_backend.endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
+
 
 class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
     """ Returns loan disaster spending by agency. """
@@ -109,6 +114,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elastics
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
         import pprint
+
         logger.warning(f"\n\n\t ES RESPONSE \n\nf{pprint.pprint(response)}")
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in info_buckets:

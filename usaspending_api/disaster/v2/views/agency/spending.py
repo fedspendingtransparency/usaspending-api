@@ -13,8 +13,12 @@ from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, PaginationMixin, SpendingMixin, \
-    ElasticsearchSpendingPaginationMixin
+from usaspending_api.disaster.v2.views.disaster_base import (
+    DisasterBase,
+    PaginationMixin,
+    SpendingMixin,
+    ElasticsearchSpendingPaginationMixin,
+)
 from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
@@ -176,6 +180,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
         import pprint
+
         logger.warning(f"\n\n\t ES RESPONSE \n\nf{pprint.pprint(response)}")
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in info_buckets:

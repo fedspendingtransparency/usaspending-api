@@ -294,7 +294,8 @@ def disaster_account_data():
     )
 
     a1 = mommy.make("awards.Award", total_loan_value=333, type="07")  # Loan
-    a2 = mommy.make("awards.Award", total_loan_value=444)
+    a2 = mommy.make("awards.Award", total_loan_value=444, type="02")  # Block Grant
+    a3 = mommy.make("awards.Award", total_loan_value=444, type="A")  # BPA Call
 
     faba = "awards.FinancialAccountsByAwards"
     mommy.make(
@@ -312,6 +313,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_m,
         transaction_obligated_amount=20,
         gross_outlay_amount_by_award_cpe=2000000,
+        award=a3,
     )
     mommy.make(
         faba,
@@ -320,6 +322,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_p,
         transaction_obligated_amount=200,
         gross_outlay_amount_by_award_cpe=200000,
+        award=a3,
     )
     mommy.make(
         faba,
@@ -337,6 +340,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_n,
         transaction_obligated_amount=20000,
         gross_outlay_amount_by_award_cpe=2000,
+        award=a3,
     )
     mommy.make(
         faba,
@@ -345,6 +349,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_n,
         transaction_obligated_amount=200000,
         gross_outlay_amount_by_award_cpe=200,
+        award=a3,
     )
     mommy.make(
         faba,
@@ -362,6 +367,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_o,
         transaction_obligated_amount=20000000,
         gross_outlay_amount_by_award_cpe=2,
+        award=a3,
     )
     mommy.make(
         faba,
@@ -370,6 +376,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_p,
         transaction_obligated_amount=0,
         gross_outlay_amount_by_award_cpe=0,
+        award=a3,
     )
     mommy.make(
         faba,
@@ -378,6 +385,7 @@ def disaster_account_data():
         disaster_emergency_fund=None,
         transaction_obligated_amount=20,
         gross_outlay_amount_by_award_cpe=2000000,
+        award=a3,
     )
     mommy.make(
         faba,
@@ -386,4 +394,5 @@ def disaster_account_data():
         disaster_emergency_fund=None,
         transaction_obligated_amount=200,
         gross_outlay_amount_by_award_cpe=200000,
+        award=a3,
     )
