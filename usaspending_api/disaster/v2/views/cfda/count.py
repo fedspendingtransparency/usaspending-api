@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
+from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchLoansPaginationMixin
 from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms_for_awards
 
 
@@ -22,7 +23,7 @@ class CfdaCountViewSet(DisasterBase):
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
 
         # Ensure that only non-zero values are taken into consideration
-        non_zero_columns = ["total_covid_obligation", "total_covid_outlay", "face_value_loan_guarentee"]
+        non_zero_columns = list(ElasticsearchLoansPaginationMixin.sum_column_mapping.values())
         non_zero_queries = []
         for field in non_zero_columns:
             non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))
