@@ -135,6 +135,9 @@ class ElasticsearchDisasterBase(DisasterBase):
         search = self.build_elasticsearch_search_with_aggregations()
         if search is None:
             return []
+        import logging
+        import pprint
+        logging.getLogger(__name__).warning(f"ES REQUEST:\n{pprint.pprint(search.to_dict())}")
         response = search.handle_execute()
         results = self.build_elasticsearch_result(response.aggs.to_dict())
         return results

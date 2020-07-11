@@ -1,12 +1,15 @@
 import json
+import logging
 from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
-from rest_framework.request import Request
+from django.http import HttpRequest
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
+
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
@@ -15,18 +18,22 @@ from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, Pagina
 from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
+logger = logging.getLogger(__name__)
 
-def route_agency_spending_backend(request: Request) -> bool:
+
+@csrf_exempt  # CSRF only applied on Session-based HTTP connections. See APIView.as_view()
+def route_agency_spending_backend(request: HttpRequest, **initkwargs):
     """
-    Per API contract, delegate requests that specify `award_type_codes` to the Elasticsearched-backend that gets sum
+    Per API contract, delegate requests that specify `award_type_codes` to the Elasticsearch-backend that gets sum
     amounts based on subtier Agency associated with the linked award.
     Otherwise use the Postgres-backend that gets sum amount from toptier Agency associated with the File C TAS
     """
-    if request and request.data and "filter" in request.data and "award_type_codes" in request.data["filter"]:
-        return SpendingBySubtierAgencyViewSet.as_view()
-    return SpendingByAgencyViewSet.as_view()
+    if DisasterBase.requests_award_type_codes(request):
+        return SpendingBySubtierAgencyViewSet.as_view()(request, **initkwargs)
+    return SpendingByAgencyViewSet.as_view()(request, **initkwargs)
 
 
+# Attempt to provide this attribute for doc generator
 route_agency_spending_backend.endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
 
 
@@ -168,6 +175,8 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
+        import pprint
+        logger.warning(f"\n\n\t ES RESPONSE \n\nf{pprint.pprint(response)}")
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in info_buckets:
             info = json.loads(bucket.get("key"))
