@@ -1,12 +1,43 @@
+import json
+import logging
+from decimal import Decimal
+from typing import List
+
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Q, Sum, F, Value, Case, When, IntegerField
 from django.db.models.functions import Coalesce
+from django.http import HttpRequest
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, LoansPaginationMixin, LoansMixin
+from usaspending_api.disaster.v2.views.disaster_base import (
+    DisasterBase,
+    LoansPaginationMixin,
+    LoansMixin,
+    ElasticsearchSpendingPaginationMixin,
+)
+from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
+
+logger = logging.getLogger(__name__)
+
+
+@csrf_exempt  # CSRF only applied on Session-based HTTP connections. See APIView.as_view()
+def route_agency_loans_backend(request: HttpRequest, **initkwargs):
+    """
+    Per API contract, delegate requests that specify `award_type_codes` to the Elasticsearch-backend that gets sum
+    amounts based on subtier Agency associated with the linked award.
+    Otherwise use the Postgres-backend that gets sum amount from toptier Agency associated with the File C TAS
+    """
+    if DisasterBase.requests_award_type_codes(request):
+        return LoansBySubtierAgencyViewSet.as_view()(request, **initkwargs)
+    return LoansByAgencyViewSet.as_view()(request, **initkwargs)
+
+
+# Attempt to provide this attribute for doc generator
+route_agency_loans_backend.endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
 
 
 class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
@@ -66,3 +97,40 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
             .annotate(**annotations)
             .values(*annotations.keys())
         )
+
+
+class LoansBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):
+    """
+    This route takes DEF Codes and Award Type Codes and returns Loans by Subtier Agency, rolled up to include
+    totals for each distinct Toptier agency.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
+
+    required_filters = ["def_codes", "award_type_codes", "query"]
+    query_fields = ["funding_toptier_agency_name"]
+    agg_key = "funding_toptier_agency_agg_key"
+    sub_agg_key = "funding_subtier_agency_agg_key"
+
+    def build_elasticsearch_result(self, response: dict) -> List[dict]:
+        results = []
+        import pprint
+
+        logger.warning(f"\n\n\t ES RESPONSE \n\nf{pprint.pprint(response)}")
+        info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
+        for bucket in info_buckets:
+            info = json.loads(bucket.get("key"))
+            results.append(
+                {
+                    "id": int(info["id"]),
+                    "code": info["code"],
+                    "description": info["name"],
+                    "count": int(bucket.get("doc_count", 0)),
+                    **{
+                        column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
+                        for column in self.sum_column_mapping
+                    },
+                }
+            )
+
+        return results
