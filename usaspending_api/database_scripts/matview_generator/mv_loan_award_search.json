@@ -186,6 +186,9 @@
       "name": "period_of_performance_current_end_date",
       "columns": [{"name": "period_of_performance_current_end_date", "order": "DESC NULLS LAST"}]
     }, {
+      "name": "recipient_hash",
+      "columns": [{"name": "recipient_hash"}]
+    }, {
       "name": "recipient_name",
       "where": "recipient_name IS NOT NULL",
       "columns": [{"name": "recipient_name"}]
