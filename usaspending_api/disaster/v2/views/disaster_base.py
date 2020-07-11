@@ -190,8 +190,7 @@ class _BasePaginationMixin:
     def pagination(self):
         """pass"""
 
-    def run_models(self, columns):
-        default_sort_column = "id"
+    def run_models(self, columns, default_sort_column="id"):
         model = customize_pagination_with_sort_columns(columns, default_sort_column)
         request_data = TinyShield(model).block(self.request.data.get("pagination", {}))
         return Pagination(
@@ -218,9 +217,31 @@ class LoansPaginationMixin(_BasePaginationMixin):
         return self.run_models(sortable_columns)
 
 
-class RecipientMixin:
-    required_filters = ["def_codes", "award_type_codes"]
+class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
+    sum_column_mapping = {"obligation": "total_covid_obligation", "outlay": "total_covid_outlay"}
+    sort_column_mapping = {
+        "description": "_key",
+        "count": "_count",
+        **sum_column_mapping,
+    }
 
-    @property
-    def award_type_codes(self):
-        return self.filters.get("award_type_codes")
+    @cached_property
+    def pagination(self):
+        return self.run_models(list(self.sort_column_mapping), default_sort_column="description")
+
+
+class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
+    sum_column_mapping = {
+        "obligation": "total_covid_obligation",
+        "outlay": "total_covid_outlay",
+        "face_value_of_loan": "total_loan_value",
+    }
+    sort_column_mapping = {
+        "description": "_key",
+        "count": "_count",
+        **sum_column_mapping,
+    }
+
+    @cached_property
+    def pagination(self):
+        return self.run_models(list(self.sort_column_mapping), default_sort_column="description")

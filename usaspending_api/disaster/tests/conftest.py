@@ -61,6 +61,7 @@ from usaspending_api.disaster.tests.fixtures.overview_data import (
     year_2_gtas_covid_2,
     year_2_gtas_non_covid,
 )
+from usaspending_api.disaster.tests.fixtures.cfda_data import cfda_awards_and_transactions
 
 
 __all__ = [
@@ -77,6 +78,7 @@ __all__ = [
     "basic_object_class_faba_with_loan_value",
     "basic_object_class_multiple_faba_with_loan_value_with_single_object_class",
     "basic_object_class_multiple_faba_with_loan_value_with_two_object_classes",
+    "cfda_awards_and_transactions",
     "double_fpds_awards_with_distict_recipients",
     "double_fpds_awards_with_same_recipients",
     "obligations_incurred_award",
