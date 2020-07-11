@@ -1,8 +1,10 @@
 from django.conf.urls import url
 
+from usaspending_api.disaster.v2.views.award.amount import AmountViewSet
 from usaspending_api.disaster.v2.views.award.count import AwardCountViewSet
 from usaspending_api.disaster.v2.views.agency.count import AgencyCountViewSet
-from usaspending_api.disaster.v2.views.award.amount import AmountViewSet
+from usaspending_api.disaster.v2.views.agency.loans import LoansByAgencyViewSet
+from usaspending_api.disaster.v2.views.agency.spending import SpendingByAgencyViewSet
 from usaspending_api.disaster.v2.views.cfda.count import CfdaCountViewSet
 from usaspending_api.disaster.v2.views.cfda.loans import CfdaLoansViewSet
 from usaspending_api.disaster.v2.views.cfda.spending import CfdaSpendingViewSet
@@ -12,6 +14,7 @@ from usaspending_api.disaster.v2.views.federal_account.loans import LoansViewSet
 from usaspending_api.disaster.v2.views.federal_account.spending import SpendingViewSet
 from usaspending_api.disaster.v2.views.object_class.count import ObjectClassCountViewSet
 from usaspending_api.disaster.v2.views.object_class.spending import ObjectClassSpendingViewSet
+from usaspending_api.disaster.v2.views.object_class.loans import ObjectClassLoansViewSet
 from usaspending_api.disaster.v2.views.overview import OverviewViewSet
 from usaspending_api.disaster.v2.views.recipient.count import RecipientCountViewSet
 from usaspending_api.disaster.v2.views.recipient.loans import RecipientLoansViewSet
@@ -21,6 +24,8 @@ from usaspending_api.disaster.v2.views.spending_by_geography import SpendingByGe
 
 urlpatterns = [
     url(r"^agency/count/$", AgencyCountViewSet.as_view()),
+    url(r"^agency/loans/$", LoansByAgencyViewSet.as_view()),
+    url(r"^agency/spending/$", SpendingByAgencyViewSet.as_view()),
     url(r"^award/amount/$", AmountViewSet.as_view()),
     url(r"^award/count/$", AwardCountViewSet.as_view()),
     url(r"^cfda/count/$", CfdaCountViewSet.as_view()),
@@ -32,6 +37,7 @@ urlpatterns = [
     url(r"^federal_account/spending/$", SpendingViewSet.as_view()),
     url(r"^object_class/count/$", ObjectClassCountViewSet.as_view()),
     url(r"^object_class/spending/$", ObjectClassSpendingViewSet.as_view()),
+    url(r"^object_class/loans/$", ObjectClassLoansViewSet.as_view()),
     url(r"^overview/$", OverviewViewSet.as_view()),
     url(r"^recipient/count/$", RecipientCountViewSet.as_view()),
     url(r"^recipient/loans/$", RecipientLoansViewSet.as_view()),

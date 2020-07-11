@@ -30,10 +30,17 @@ from usaspending_api.disaster.tests.fixtures.federal_account_data import (
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
 from usaspending_api.disaster.tests.fixtures.object_class_data import (
     basic_faba_with_object_class,
+    faba_with_object_class_and_two_awards,
+    faba_with_two_object_classes_and_two_awards,
     basic_fa_by_object_class_with_object_class_but_no_obligations,
     basic_fa_by_object_class_with_object_class,
     basic_fa_by_object_class_with_multpile_object_class,
     basic_fa_by_object_class_with_multpile_object_class_of_same_code,
+)
+from usaspending_api.disaster.tests.fixtures.object_class_loan_data import (
+    basic_object_class_faba_with_loan_value,
+    basic_object_class_multiple_faba_with_loan_value_with_single_object_class,
+    basic_object_class_multiple_faba_with_loan_value_with_two_object_classes,
 )
 from usaspending_api.disaster.tests.fixtures.overview_data import (
     basic_faba,
@@ -68,6 +75,9 @@ __all__ = [
     "basic_fa_by_object_class_with_multpile_object_class",
     "basic_fa_by_object_class_with_multpile_object_class_of_same_code",
     "basic_faba_with_object_class",
+    "basic_object_class_faba_with_loan_value",
+    "basic_object_class_multiple_faba_with_loan_value_with_single_object_class",
+    "basic_object_class_multiple_faba_with_loan_value_with_two_object_classes",
     "cfda_awards_and_transactions",
     "double_fpds_awards_with_distict_recipients",
     "double_fpds_awards_with_same_recipients",
@@ -86,6 +96,8 @@ __all__ = [
     "early_gtas",
     "faba_with_non_covid_values",
     "faba_with_values",
+    "faba_with_object_class_and_two_awards",
+    "faba_with_two_object_classes_and_two_awards",
     "fabs_award_with_old_submission",
     "fabs_award_with_quarterly_submission",
     "fabs_award_with_unclosed_submission",
