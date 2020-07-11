@@ -17,7 +17,9 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 SORTABLE_COLUMNS = {
     "account_title": ["fa.account_title"],
     "awarding_agency_name": ["awarding_agency_name"],
+    "disaster_emergency_fund_code": ["disaster_emergency_fund_code"],
     "funding_agency_name": ["funding_agency_name"],
+    "gross_outlay_amount": ["gross_outlay_amount"],
     "object_class": ["oc.object_class_name", "oc.object_class"],
     "piid": ["gfaba.piid"],
     "program_activity": ["rpa.program_activity_code", "rpa.program_activity_name"],
@@ -65,7 +67,9 @@ GET_FUNDING_SQL = SQL(
                 ga.piid,
                 ga.awarding_agency_id,
                 ga.funding_agency_id,
-                nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
+                coalesce(faba.transaction_obligated_amount, 0.0) transaction_obligated_amount,
+                coalesce(faba.gross_outlay_amount_by_award_cpe, 0.0) gross_outlay_amount,
+                faba.disaster_emergency_fund_code,
                 faba.financial_accounts_by_awards_id,
                 faba.submission_id,
                 faba.treasury_account_id,
@@ -79,6 +83,9 @@ GET_FUNDING_SQL = SQL(
         gfaba.generated_unique_award_id,
         sa.reporting_fiscal_year,
         sa.reporting_fiscal_quarter,
+        sa.reporting_fiscal_period          reporting_fiscal_month,
+        sa.quarter_format_flag              is_quarterly_submission,
+        gfaba.disaster_emergency_fund_code,
         gfaba.piid,
         aa.id                               awarding_agency_id,
         ata.name                            awarding_agency_name,
@@ -91,7 +98,8 @@ GET_FUNDING_SQL = SQL(
         rpa.program_activity_name,
         oc.object_class,
         oc.object_class_name,
-        gfaba.transaction_obligated_amount
+        gfaba.transaction_obligated_amount,
+        gfaba.gross_outlay_amount
     from
         gather_financial_accounts_by_awards gfaba
         left outer join submission_attributes sa on sa.submission_id = gfaba.submission_id

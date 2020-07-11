@@ -23,7 +23,7 @@ RECIPIENT_HASH_PREFIX = "d0de516c-54af-4999-abda-428ce877"
 
 
 def create_idv_test_data():
-    # mommy.make('references.Agency', id=12000)
+    defc_a = mommy.make("references.DisasterEmergencyFundCode", code="A")
 
     # You'll see a bunch of weird math and such in the code that follows.  The
     # goal is to try to mix values up a bit.  We don't want values to overlap
@@ -105,7 +105,9 @@ def create_idv_test_data():
             "submissions.SubmissionAttributes",
             submission_id=1000 + award_id,
             reporting_fiscal_year=2000 + award_id,
-            reporting_fiscal_quarter=award_id % 4 + 1,
+            reporting_fiscal_period=award_id % 12 + 1,
+            reporting_fiscal_quarter=(award_id % 12 + 3) // 3,
+            quarter_format_flag=bool(award_id % 2),
         )
 
         federal_account = mommy.make(
@@ -153,6 +155,8 @@ def create_idv_test_data():
             program_activity_id=ref_program_activity.id,
             object_class_id=object_class.id,
             transaction_obligated_amount=200000 + award_id,
+            gross_outlay_amount_by_award_cpe=900 + award_id,
+            disaster_emergency_fund=defc_a if award_id < 7 else None,
         )
 
         mommy.make(

@@ -5,10 +5,11 @@ from model_mommy import mommy
 
 @pytest.fixture
 def disaster_account_data():
-    ta1 = mommy.make("references.ToptierAgency", toptier_code="007")
-    ta2 = mommy.make("references.ToptierAgency", toptier_code="008")
-    ta3 = mommy.make("references.ToptierAgency", toptier_code="009")
-    ta4 = mommy.make("references.ToptierAgency", toptier_code="010")
+
+    ta1 = mommy.make("references.ToptierAgency", pk=7, toptier_code="007", name="Agency 007")
+    ta2 = mommy.make("references.ToptierAgency", pk=8, toptier_code="008", name="Agency 008")
+    ta3 = mommy.make("references.ToptierAgency", pk=9, toptier_code="009", name="Agency 009")
+    ta4 = mommy.make("references.ToptierAgency", pk=10, toptier_code="010", name="Agency 010")
 
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -69,6 +70,7 @@ def disaster_account_data():
     fa2 = mommy.make("accounts.FederalAccount", federal_account_code="002-0000", account_title="FA 2")
     fa3 = mommy.make("accounts.FederalAccount", federal_account_code="003-0000", account_title="FA 3")
     fa4 = mommy.make("accounts.FederalAccount", federal_account_code="004-0000", account_title="FA 4")
+
     tas1 = mommy.make(
         "accounts.TreasuryAppropriationAccount",
         funding_toptier_agency=ta1,
@@ -165,11 +167,11 @@ def disaster_account_data():
     )
 
     defc = "references.DisasterEmergencyFundCode"
-    defc1 = mommy.make(defc, code="L", public_law="PUBLIC LAW FOR CODE L", title="TITLE FOR CODE L")
-    defc2 = mommy.make(defc, code="M", public_law="PUBLIC LAW FOR CODE M", title="TITLE FOR CODE M")
-    defc3 = mommy.make(defc, code="N", public_law="PUBLIC LAW FOR CODE N", title="TITLE FOR CODE N")
-    defc4 = mommy.make(defc, code="O", public_law="PUBLIC LAW FOR CODE O", title="TITLE FOR CODE O")
-    defc5 = mommy.make(defc, code="P", public_law="PUBLIC LAW FOR CODE P", title="TITLE FOR CODE P")
+    defc_l = mommy.make(defc, code="L", public_law="PUBLIC LAW FOR CODE L", title="TITLE FOR CODE L")
+    defc_m = mommy.make(defc, code="M", public_law="PUBLIC LAW FOR CODE M", title="TITLE FOR CODE M")
+    defc_n = mommy.make(defc, code="N", public_law="PUBLIC LAW FOR CODE N", title="TITLE FOR CODE N")
+    defc_o = mommy.make(defc, code="O", public_law="PUBLIC LAW FOR CODE O", title="TITLE FOR CODE O")
+    defc_p = mommy.make(defc, code="P", public_law="PUBLIC LAW FOR CODE P", title="TITLE FOR CODE P")
     mommy.make(defc, code="9", public_law="PUBLIC LAW FOR CODE 9", title="TITLE FOR CODE 9")
 
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
@@ -180,7 +182,7 @@ def disaster_account_data():
         submission=sub1,
         program_activity=pa1,
         object_class=oc1,
-        disaster_emergency_fund=defc1,
+        disaster_emergency_fund=defc_l,
         obligations_incurred_by_program_object_class_cpe=1,
         gross_outlay_amount_by_program_object_class_cpe=10000000,
     )
@@ -191,7 +193,7 @@ def disaster_account_data():
         submission=sub1,
         program_activity=pa2,
         object_class=oc2,
-        disaster_emergency_fund=defc2,
+        disaster_emergency_fund=defc_m,
         obligations_incurred_by_program_object_class_cpe=10,
         gross_outlay_amount_by_program_object_class_cpe=1000000,
     )
@@ -202,7 +204,7 @@ def disaster_account_data():
         submission=sub1,
         program_activity=pa3,
         object_class=oc3,
-        disaster_emergency_fund=defc5,
+        disaster_emergency_fund=defc_p,
         obligations_incurred_by_program_object_class_cpe=100,
         gross_outlay_amount_by_program_object_class_cpe=100000,
     )
@@ -213,7 +215,7 @@ def disaster_account_data():
         submission=sub2,
         program_activity=pa4,
         object_class=oc4,
-        disaster_emergency_fund=defc4,
+        disaster_emergency_fund=defc_o,
         obligations_incurred_by_program_object_class_cpe=1000,
         gross_outlay_amount_by_program_object_class_cpe=10000,
     )
@@ -224,7 +226,7 @@ def disaster_account_data():
         submission=sub3,
         program_activity=pa4,
         object_class=oc3,
-        disaster_emergency_fund=defc3,
+        disaster_emergency_fund=defc_n,
         obligations_incurred_by_program_object_class_cpe=10000,
         gross_outlay_amount_by_program_object_class_cpe=1000,
     )
@@ -235,7 +237,7 @@ def disaster_account_data():
         submission=sub3,
         program_activity=pa4,
         object_class=oc3,
-        disaster_emergency_fund=defc3,
+        disaster_emergency_fund=defc_n,
         obligations_incurred_by_program_object_class_cpe=100000,
         gross_outlay_amount_by_program_object_class_cpe=100,
     )
@@ -246,7 +248,7 @@ def disaster_account_data():
         submission=sub4,
         program_activity=pa4,
         object_class=oc4,
-        disaster_emergency_fund=defc4,
+        disaster_emergency_fund=defc_o,
         obligations_incurred_by_program_object_class_cpe=1000000,
         gross_outlay_amount_by_program_object_class_cpe=10,
     )
@@ -257,7 +259,7 @@ def disaster_account_data():
         submission=sub4,
         program_activity=pa4,
         object_class=oc4,
-        disaster_emergency_fund=defc4,
+        disaster_emergency_fund=defc_o,
         obligations_incurred_by_program_object_class_cpe=10000000,
         gross_outlay_amount_by_program_object_class_cpe=1,
     )
@@ -268,7 +270,7 @@ def disaster_account_data():
         submission=sub5,
         program_activity=pa5,
         object_class=oc5,
-        disaster_emergency_fund=defc5,
+        disaster_emergency_fund=defc_p,
         obligations_incurred_by_program_object_class_cpe=0,
         gross_outlay_amount_by_program_object_class_cpe=0,
     )
@@ -289,4 +291,99 @@ def disaster_account_data():
         disaster_emergency_fund=None,
         obligations_incurred_by_program_object_class_cpe=100,
         gross_outlay_amount_by_program_object_class_cpe=100000,
+    )
+
+    a1 = mommy.make("awards.Award", total_loan_value=333, type="07")  # Loan
+    a2 = mommy.make("awards.Award", total_loan_value=444)
+
+    faba = "awards.FinancialAccountsByAwards"
+    mommy.make(
+        faba,
+        treasury_account=tas1,
+        submission=sub1,
+        disaster_emergency_fund=defc_l,
+        transaction_obligated_amount=2,
+        gross_outlay_amount_by_award_cpe=20000000,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas1,
+        submission=sub1,
+        disaster_emergency_fund=defc_m,
+        transaction_obligated_amount=20,
+        gross_outlay_amount_by_award_cpe=2000000,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas1,
+        submission=sub1,
+        disaster_emergency_fund=defc_p,
+        transaction_obligated_amount=200,
+        gross_outlay_amount_by_award_cpe=200000,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas2,
+        submission=sub2,
+        disaster_emergency_fund=defc_o,
+        transaction_obligated_amount=2000,
+        gross_outlay_amount_by_award_cpe=20000,
+        award=a1,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas2,
+        submission=sub3,
+        disaster_emergency_fund=defc_n,
+        transaction_obligated_amount=20000,
+        gross_outlay_amount_by_award_cpe=2000,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas3,
+        submission=sub3,
+        disaster_emergency_fund=defc_n,
+        transaction_obligated_amount=200000,
+        gross_outlay_amount_by_award_cpe=200,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas3,
+        submission=sub4,
+        disaster_emergency_fund=defc_o,
+        transaction_obligated_amount=2000000,
+        gross_outlay_amount_by_award_cpe=20,
+        award=a2,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas3,
+        submission=sub4,
+        disaster_emergency_fund=defc_o,
+        transaction_obligated_amount=20000000,
+        gross_outlay_amount_by_award_cpe=2,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas4,
+        submission=sub5,
+        disaster_emergency_fund=defc_p,
+        transaction_obligated_amount=0,
+        gross_outlay_amount_by_award_cpe=0,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas5,
+        submission=sub1,
+        disaster_emergency_fund=None,
+        transaction_obligated_amount=20,
+        gross_outlay_amount_by_award_cpe=2000000,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas6,
+        submission=sub1,
+        disaster_emergency_fund=None,
+        transaction_obligated_amount=200,
+        gross_outlay_amount_by_award_cpe=200000,
     )

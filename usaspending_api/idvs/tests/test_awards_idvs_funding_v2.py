@@ -2,7 +2,6 @@ import json
 
 from django.test import TestCase
 from rest_framework import status
-from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.idvs.v2.views.funding import SORTABLE_COLUMNS
 from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data
 
@@ -32,11 +31,15 @@ class IDVFundingTestCase(TestCase):
                 {
                     "award_id": _id,
                     "generated_unique_award_id": "CONT_IDV_%s" % _sid,
+                    "gross_outlay_amount": 900.0 + _id,
                     "reporting_fiscal_year": 2000 + _id,
-                    "reporting_fiscal_quarter": _id % 4 + 1,
+                    "reporting_fiscal_quarter": (_id % 12 + 3) // 3,
+                    "reporting_fiscal_month": _id % 12 + 1,
+                    "is_quarterly_submission": bool(_id % 2),
                     "piid": "piid_%s" % _sid,
                     "awarding_agency_id": 8000 + _id,
                     "awarding_agency_name": "toptier_awarding_agency_name_%s" % (8500 + _id),
+                    "disaster_emergency_fund_code": "A" if _id < 7 else None,
                     "funding_agency_id": 9000 + _id,
                     "funding_agency_name": "toptier_funding_agency_name_%s" % (9500 + _id),
                     "agency_id": str(100 + _id).zfill(3),
@@ -164,20 +167,3 @@ class IDVFundingTestCase(TestCase):
             {"award_id": 2, "piid": "piid_013", "limit": 3, "page": 1, "sort": "piid", "order": "asc"},
             (None, None, 1, False, False, 13),
         )
-
-    def test_dev_2307(self):
-
-        # Make one of the transaction_obligated_amount values NaN.  Going from
-        # the drawing in idv_test_data.py, if we update contract 12, we should
-        # see this record for IDV 7.
-        FinancialAccountsByAwards.objects.filter(pk=6012).update(transaction_obligated_amount="NaN")
-
-        # Retrieve the NaN value.
-        response = self.client.post(
-            DETAIL_ENDPOINT, {"award_id": 7, "sort": "transaction_obligated_amount", "order": "desc"}
-        )
-        assert response.status_code == 200
-        result = json.loads(response.content.decode("utf-8"))
-        assert len(result["results"]) == 2
-        for r in result["results"]:
-            assert r["transaction_obligated_amount"] in (None, 200011.0)
