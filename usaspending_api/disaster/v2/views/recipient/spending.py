@@ -3,13 +3,15 @@ import re
 from decimal import Decimal
 from typing import List
 
-from usaspending_api.disaster.v2.views.disaster_base import ElasticsearchSpendingPaginationMixin
-from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
+from usaspending_api.disaster.v2.views.elasticsearch_base import (
+    ElasticsearchDisasterBase,
+    ElasticsearchSpendingPaginationMixin,
+)
 
 
 class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):
     """
-    This route takes DEF Codes and Award Type Codes and returns Spending by Recipient.
+    This route takes DEF Codes, Query text, and Award Type Codes and returns Spending by Recipient.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/recipient/spending.md"
@@ -17,6 +19,8 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
     required_filters = ["def_codes", "award_type_codes", "query"]
     query_fields = ["recipient_name"]
     agg_key = "recipient_agg_key"
+
+    sum_column_mapping: List[str]  # Set in the pagination mixin
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []

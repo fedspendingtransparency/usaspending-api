@@ -2,8 +2,10 @@ import json
 from decimal import Decimal
 from typing import List
 
-from usaspending_api.disaster.v2.views.disaster_base import ElasticsearchLoansPaginationMixin
-from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
+from usaspending_api.disaster.v2.views.elasticsearch_base import (
+    ElasticsearchDisasterBase,
+    ElasticsearchLoansPaginationMixin,
+)
 
 
 class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterBase):
