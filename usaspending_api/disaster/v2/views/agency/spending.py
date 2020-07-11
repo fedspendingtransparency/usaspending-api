@@ -5,6 +5,7 @@ from typing import List
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
+from rest_framework.request import Request
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
@@ -15,6 +16,20 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDi
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
+def route_agency_spending_backend(request: Request) -> bool:
+    """
+    Per API contract, delegate requests that specify `award_type_codes` to the Elasticsearched-backend that gets sum
+    amounts based on subtier Agency associated with the linked award.
+    Otherwise use the Postgres-backend that gets sum amount from toptier Agency associated with the File C TAS
+    """
+    if request and request.data and "filter" in request.data and "award_type_codes" in request.data["filter"]:
+        return SpendingBySubtierAgencyViewSet.as_view()
+    return SpendingByAgencyViewSet.as_view()
+
+
+route_agency_spending_backend.endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
+
+
 class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     """ Returns disaster spending by agency. """
 
@@ -22,10 +37,6 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
 
     @cache_response()
     def post(self, request):
-        if self.filters.get("award_type_codes"):
-            # Per API contract, delegate requests that specify `award_type_codes` to an alternate backend query
-            return SpendingBySubtierAgencyViewSet.as_view()(request)
-
         if self.spending_type == "award":
             results = self.award_queryset
         else:
