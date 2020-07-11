@@ -1,3 +1,7 @@
+import json
+from decimal import Decimal
+from typing import List
+
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
@@ -5,7 +9,9 @@ from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, PaginationMixin, SpendingMixin
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, PaginationMixin, SpendingMixin, \
+    ElasticsearchSpendingPaginationMixin
+from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
@@ -16,6 +22,10 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
 
     @cache_response()
     def post(self, request):
+        if self.filters.get("award_type_codes"):
+            # Per API contract, delegate requests that specify `award_type_codes` to an alternate backend query
+            return SpendingBySubtierAgencyViewSet.as_view()(request)
+
         if self.spending_type == "award":
             results = self.award_queryset
         else:
@@ -131,3 +141,36 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
             .annotate(**annotations)
             .values(*annotations.keys())
         )
+
+
+class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):
+    """
+    This route takes DEF Codes and Award Type Codes and returns Spending by Subtier Agency, rolled up to include
+    totals for each distinct Toptier agency.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
+
+    required_filters = ["def_codes", "award_type_codes", "query"]
+    query_fields = ["funding_toptier_agency_name"]
+    agg_key = "funding_subtier_agency_agg_key"
+
+    def build_elasticsearch_result(self, response: dict) -> List[dict]:
+        results = []
+        info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
+        for bucket in info_buckets:
+            info = json.loads(bucket.get("key"))
+            results.append(
+                {
+                    "id": int(info["id"]),
+                    "code": info["code"],
+                    "description": info["name"],
+                    "count": int(bucket.get("doc_count", 0)),
+                    **{
+                        column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
+                        for column in self.sum_column_mapping
+                    },
+                }
+            )
+
+        return results
