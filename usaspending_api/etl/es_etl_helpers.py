@@ -154,6 +154,8 @@ AWARD_VIEW_COLUMNS = [
     "funding_toptier_agency_code",
     "awarding_subtier_agency_code",
     "funding_subtier_agency_code",
+    "funding_toptier_agency_agg_key",
+    "funding_subtier_agency_agg_key",
     "recipient_location_country_code",
     "recipient_location_country_name",
     "recipient_location_state_code",
