@@ -52,7 +52,7 @@ def award_with_no_outlays(award_count_sub_schedule, award_count_submission, defc
         uri="uri 1",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
-        gross_outlays_delivered_orders_paid_total_cpe=0,
+        gross_outlay_amount_by_award_cpe=0,
     )
 
 
@@ -87,7 +87,7 @@ def fabs_award_with_old_submission(defc_codes, award_count_sub_schedule):
         uri="uri 1",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=old_submission,
-        gross_outlays_delivered_orders_paid_total_cpe=8,
+        gross_outlay_amount_by_award_cpe=8,
     )
 
 
@@ -109,7 +109,7 @@ def fabs_award_with_unclosed_submission(defc_codes, award_count_sub_schedule):
         uri="uri 1",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=old_submission,
-        gross_outlays_delivered_orders_paid_total_cpe=8,
+        gross_outlay_amount_by_award_cpe=8,
     )
 
 
@@ -123,7 +123,7 @@ def _normal_faba(award):
         uri="uri 1",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
-        gross_outlays_delivered_orders_paid_total_cpe=8,
+        gross_outlay_amount_by_award_cpe=8,
     )
 
 

@@ -55,13 +55,6 @@ def test_award_count_non_matching_award_type(client, monkeypatch, non_matching_d
 
 
 @pytest.mark.django_db
-def test_award_count_not_last_submission(client, monkeypatch, not_last_submission_award, helpers):
-    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-    resp = _default_post(client, helpers)
-    assert resp.data["count"] == 0
-
-
-@pytest.mark.django_db
 def test_no_award_with_award_types_provided(client, monkeypatch, file_c_with_no_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = _default_post(client, helpers)
