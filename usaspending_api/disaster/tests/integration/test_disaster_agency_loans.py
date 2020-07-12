@@ -44,16 +44,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
         client, url, award_type_codes=["07", "08"], def_codes=["L", "M", "N", "O", "P"], spending_type="award",
     )
     expected_results = [
-        {
-            "id": 8,
-            "code": "008",
-            "description": "Agency 008",
-            "children": [],
-            "count": 0,
-            "obligation": 2000.0,
-            "outlay": 20000.0,
-            "face_value_of_loan": 333.0,
-        }
+        {"id": 1, "code": "007", "description": "Agency 007", "count": 1, "obligation": 2000.0, "outlay": 0.0}
     ]
 
     assert resp.status_code == status.HTTP_200_OK
@@ -63,12 +54,6 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
         client, url, award_type_codes=["08"], def_codes=["L", "M", "N", "O", "P"], spending_type="award",
     )
 
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["results"] == []
-
-    resp = helpers.post_for_spending_endpoint(
-        client, url, award_type_codes=["XX"], def_codes=["L", "M", "N", "O", "P"], spending_type="award",
-    )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == []
 

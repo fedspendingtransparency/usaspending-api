@@ -6,10 +6,18 @@ from model_mommy import mommy
 @pytest.fixture
 def disaster_account_data():
 
-    ta1 = mommy.make("references.ToptierAgency", pk=7, toptier_code="007", name="Agency 007")
-    ta2 = mommy.make("references.ToptierAgency", pk=8, toptier_code="008", name="Agency 008")
-    ta3 = mommy.make("references.ToptierAgency", pk=9, toptier_code="009", name="Agency 009")
-    ta4 = mommy.make("references.ToptierAgency", pk=10, toptier_code="010", name="Agency 010")
+    ta1 = mommy.make("references.ToptierAgency", toptier_agency_id=7, toptier_code="007", name="Agency 007")
+    ta2 = mommy.make("references.ToptierAgency", toptier_agency_id=8, toptier_code="008", name="Agency 008")
+    ta3 = mommy.make("references.ToptierAgency", toptier_agency_id=9, toptier_code="009", name="Agency 009")
+    ta4 = mommy.make("references.ToptierAgency", toptier_agency_id=10, toptier_code="010", name="Agency 010")
+
+    sa1 = mommy.make("references.SubtierAgency", subtier_agency_id=1, subtier_code="1007", name="Subtier Agency 1007")
+    sa2 = mommy.make("references.SubtierAgency", subtier_agency_id=2, subtier_code="1008", name="Subtier Agency 1008")
+    sa3 = mommy.make("references.SubtierAgency", subtier_agency_id=3, subtier_code="2008", name="Subtier Agency 2008")
+
+    ag1 = mommy.make("references.Agency", id=1, toptier_agency=ta1, subtier_agency=sa1)
+    ag2 = mommy.make("references.Agency", id=2, toptier_agency=ta2, subtier_agency=sa2)
+    ag3 = mommy.make("references.Agency", id=3, toptier_agency=ta2, subtier_agency=sa3)
 
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -167,11 +175,21 @@ def disaster_account_data():
     )
 
     defc = "references.DisasterEmergencyFundCode"
-    defc_l = mommy.make(defc, code="L", public_law="PUBLIC LAW FOR CODE L", title="TITLE FOR CODE L")
-    defc_m = mommy.make(defc, code="M", public_law="PUBLIC LAW FOR CODE M", title="TITLE FOR CODE M")
-    defc_n = mommy.make(defc, code="N", public_law="PUBLIC LAW FOR CODE N", title="TITLE FOR CODE N")
-    defc_o = mommy.make(defc, code="O", public_law="PUBLIC LAW FOR CODE O", title="TITLE FOR CODE O")
-    defc_p = mommy.make(defc, code="P", public_law="PUBLIC LAW FOR CODE P", title="TITLE FOR CODE P")
+    defc_l = mommy.make(
+        defc, code="L", public_law="PUBLIC LAW FOR CODE L", title="TITLE FOR CODE L", group_name="covid_19"
+    )
+    defc_m = mommy.make(
+        defc, code="M", public_law="PUBLIC LAW FOR CODE M", title="TITLE FOR CODE M", group_name="covid_19"
+    )
+    defc_n = mommy.make(
+        defc, code="N", public_law="PUBLIC LAW FOR CODE N", title="TITLE FOR CODE N", group_name="covid_19"
+    )
+    defc_o = mommy.make(
+        defc, code="O", public_law="PUBLIC LAW FOR CODE O", title="TITLE FOR CODE O", group_name="covid_19"
+    )
+    defc_p = mommy.make(
+        defc, code="P", public_law="PUBLIC LAW FOR CODE P", title="TITLE FOR CODE P", group_name="covid_19"
+    )
     mommy.make(defc, code="9", public_law="PUBLIC LAW FOR CODE 9", title="TITLE FOR CODE 9")
 
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
@@ -293,9 +311,29 @@ def disaster_account_data():
         gross_outlay_amount_by_program_object_class_cpe=100000,
     )
 
-    a1 = mommy.make("awards.Award", total_loan_value=333, type="07")  # Loan
-    a2 = mommy.make("awards.Award", total_loan_value=444, type="02")  # Block Grant
-    a3 = mommy.make("awards.Award", total_loan_value=444, type="A")  # BPA Call
+    a1 = mommy.make(
+        "awards.Award", total_loan_value=333, type="07", funding_agency=ag1, latest_transaction_id=10
+    )  # Loan
+    a2 = mommy.make(
+        "awards.Award", total_loan_value=444, type="02", funding_agency=ag2, latest_transaction_id=20
+    )  # Block Grant
+    a3 = mommy.make(
+        "awards.Award", total_loan_value=444, type="A", funding_agency=ag3, latest_transaction_id=30
+    )  # BPA Call
+
+    mommy.make(
+        "awards.TransactionNormalized", id=10, award=a1, action_date="2020-01-01", is_fpds=False, funding_agency=ag1
+    )
+    mommy.make(
+        "awards.TransactionNormalized", id=20, award=a2, action_date="2020-01-02", is_fpds=False, funding_agency=ag2
+    )
+    mommy.make(
+        "awards.TransactionNormalized", id=30, award=a3, action_date="2020-01-03", is_fpds=True, funding_agency=ag3
+    )
+
+    mommy.make("awards.TransactionFABS", transaction_id=10)
+    mommy.make("awards.TransactionFABS", transaction_id=20)
+    mommy.make("awards.TransactionFPDS", transaction_id=30)
 
     faba = "awards.FinancialAccountsByAwards"
     mommy.make(
