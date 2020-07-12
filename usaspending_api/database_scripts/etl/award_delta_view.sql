@@ -177,7 +177,6 @@ LEFT JOIN (
   SELECT a.id, a.toptier_agency_id, a.toptier_flag, ta.name, ta.abbreviation, ta.toptier_code
   FROM agency a
   INNER JOIN toptier_agency ta ON (a.toptier_agency_id = ta.toptier_agency_id)
-  WHERE a.toptier_flag = TRUE
 ) TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
 LEFT JOIN references_cfda cfda ON (cfda.program_number = fabs.cfda_number)
 LEFT JOIN LATERAL (
