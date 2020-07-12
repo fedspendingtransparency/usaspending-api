@@ -188,7 +188,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
     required_filters = ["def_codes", "award_type_codes", "query"]
     query_fields = ["funding_toptier_agency_name"]
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
-    sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) aggregation key
+    sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []

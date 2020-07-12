@@ -162,19 +162,21 @@ class ElasticsearchDisasterBase(DisasterBase):
             search.aggs[self.agg_group_name].metric(field, sum_aggregations["sum_field"])
         search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
 
-        # Set size to 0 since we don't care about documents returned
-        search.update_from_dict({"size": 0})
-
         # If provided, break down primary bucket aggregation into sub-aggregations based on a sub_agg_key
         if self.sub_agg_key:
             self.extend_elasticsearch_search_with_sub_aggregation(search)
+
+        # Set size to 0 since we don't care about documents returned
+        search.update_from_dict({"size": 0})
 
         return search
 
     def extend_elasticsearch_search_with_sub_aggregation(self, search: AwardSearch):
         """
         This template method is called if the `self.sub_agg_key` is supplied, in order to post-process the query and
-        inject a sub-aggregation on a secondary dimension (that is subordinate to the first agg_key).
+        inject a sub-aggregation on a secondary dimension (that is subordinate to the first agg_key's dimension).
+
+        Example: Subtier Agency spending rolled up to Toptier Agency spending
         """
         sub_bucket_count = get_number_of_unique_terms_for_awards(self.filter_query, f"{self.sub_agg_key}.hash")
         size = sub_bucket_count
@@ -201,11 +203,10 @@ class ElasticsearchDisasterBase(DisasterBase):
             mapping: get_scaled_sum_aggregations(mapping) for mapping in self.sum_column_mapping.values()
         }
 
-        # TODO - this last partneeds work. Need to figure out how to inject the sub-aggs into/underneath the primary agg
         # Append sub-agg to primary agg, and include the sub-agg's sum metric aggs too
         search.aggs[self.agg_group_name].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key)
         for field, sum_aggregations in sum_aggregations.items():
-            search.aggs[self.agg_group_name][self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
+            search.aggs[self.agg_group_name].aggs[self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
 
     def query_elasticsearch(self) -> list:
         search = self.build_elasticsearch_search_with_aggregations()
