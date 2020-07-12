@@ -6,7 +6,6 @@ from typing import List
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
-from django.http import HttpRequest
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 
@@ -24,23 +23,34 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
+
 logger = logging.getLogger(__name__)
 
 
-@csrf_exempt  # CSRF only applied on Session-based HTTP connections. See APIView.as_view()
-def route_agency_spending_backend(request: HttpRequest, **initkwargs):
+def route_agency_spending_backend(**initkwargs):
     """
     Per API contract, delegate requests that specify `award_type_codes` to the Elasticsearch-backend that gets sum
     amounts based on subtier Agency associated with the linked award.
     Otherwise use the Postgres-backend that gets sum amount from toptier Agency associated with the File C TAS
     """
-    if DisasterBase.requests_award_type_codes(request):
-        return SpendingBySubtierAgencyViewSet.as_view()(request, **initkwargs)
-    return SpendingByAgencyViewSet.as_view()(request, **initkwargs)
+    spending_by_subtier_agency = SpendingBySubtierAgencyViewSet.as_view(**initkwargs)
+    spending_by_agency = SpendingByAgencyViewSet.as_view(**initkwargs)
 
+    @csrf_exempt
+    def route_agency_spending_backend(request, *args, **kwargs):
+        """
+        Returns disaster spending by agency.  If agency type codes are provided, the characteristics of
+        the result are modified a bit.  Instead of being purely a rollup of File C agency loans, the results
+        become a rollup of File D subtier agencies by toptier agency and subtiers will be included as children
+        of the toptier agency.
+        """
+        if DisasterBase.requests_award_type_codes(request):
+            return spending_by_subtier_agency(request, *args, **kwargs)
+        return spending_by_agency(request, *args, **kwargs)
 
-# Attempt to provide this attribute for doc generator
-route_agency_spending_backend.endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
+    route_agency_spending_backend.endpoint_doc = SpendingBySubtierAgencyViewSet.endpoint_doc
+    route_agency_spending_backend.__doc__ = SpendingBySubtierAgencyViewSet.__doc__
+    return route_agency_spending_backend
 
 
 class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):

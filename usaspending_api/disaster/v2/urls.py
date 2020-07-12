@@ -24,8 +24,8 @@ from usaspending_api.disaster.v2.views.spending_by_geography import SpendingByGe
 
 urlpatterns = [
     url(r"^agency/count/$", AgencyCountViewSet.as_view()),
-    url(r"^agency/loans/$", route_agency_loans_backend),
-    url(r"^agency/spending/$", route_agency_spending_backend),
+    url(r"^agency/loans/$", route_agency_loans_backend()),
+    url(r"^agency/spending/$", route_agency_spending_backend()),
     url(r"^award/amount/$", AmountViewSet.as_view()),
     url(r"^award/count/$", AwardCountViewSet.as_view()),
     url(r"^cfda/count/$", CfdaCountViewSet.as_view()),

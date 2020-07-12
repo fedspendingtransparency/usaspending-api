@@ -75,17 +75,20 @@ def validate_docs(url, url_object, master_endpoint_list):
     in the master endpoints.md doc.
     """
     qualified_name = url_object.lookup_str
-    view_class = url_object.callback.cls
+
+    # This endpoint provides a message to users that the endpoint has been removed and, as such, needs no contract.
+    if qualified_name == "usaspending_api.common.views.RemovedEndpointView":
+        return []
+
+    # Handles class and function based views.
+    view = url_object.callback.cls if getattr(url_object.callback, "cls", None) else url_object.callback
 
     messages = []
 
-    if qualified_name == "usaspending_api.common.views.RemovedEndpointView":
-        return messages
-
-    if not hasattr(view_class, "endpoint_doc"):
+    if not hasattr(view, "endpoint_doc"):
         messages.append("{} ({}) missing endpoint_doc property".format(qualified_name, url))
     else:
-        endpoint_doc = getattr(view_class, "endpoint_doc")
+        endpoint_doc = getattr(view, "endpoint_doc")
         if not endpoint_doc:
             messages.append("{}.endpoint_doc ({}) is invalid".format(qualified_name, url))
         else:
@@ -97,8 +100,12 @@ def validate_docs(url, url_object, master_endpoint_list):
                     )
                 )
 
-    if not (view_class.__doc__ or "").strip():
-        messages.append("{} ({}) has no docstring".format(qualified_name, url))
+    if not (view.__doc__ or "").strip():
+        messages.append(
+            f"{qualified_name} ({url}) has no docstring.  The docstring is used to provide documentation in "
+            f"the Django Rest Framework default UI.  It provides a modicum of help on an otherwise completely "
+            f"blank page."
+        )
 
     # Fix up the url a little so we can pattern match it.
     pattern = url + ("" if url.endswith("/") else "/") + "?"  # Optional trailing slash.

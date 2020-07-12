@@ -6,7 +6,6 @@ from typing import List
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Q, Sum, F, Value, Case, When, IntegerField
 from django.db.models.functions import Coalesce
-from django.http import HttpRequest
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -23,23 +22,28 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchSpendingPaginationMixin,
 )
 
+
 logger = logging.getLogger(__name__)
 
 
-@csrf_exempt  # CSRF only applied on Session-based HTTP connections. See APIView.as_view()
-def route_agency_loans_backend(request: HttpRequest, **initkwargs):
+def route_agency_loans_backend(**initkwargs):
     """
     Per API contract, delegate requests that specify `award_type_codes` to the Elasticsearch-backend that gets sum
     amounts based on subtier Agency associated with the linked award.
     Otherwise use the Postgres-backend that gets sum amount from toptier Agency associated with the File C TAS
     """
-    if DisasterBase.requests_award_type_codes(request):
-        return LoansBySubtierAgencyViewSet.as_view()(request, **initkwargs)
-    return LoansByAgencyViewSet.as_view()(request, **initkwargs)
+    loans_by_subtier_agency = LoansBySubtierAgencyViewSet.as_view(**initkwargs)
+    loans_by_agency = LoansByAgencyViewSet.as_view(**initkwargs)
 
+    @csrf_exempt
+    def route_agency_loans_backend(request, *args, **kwargs):
+        if DisasterBase.requests_award_type_codes(request):
+            return loans_by_subtier_agency(request, *args, **kwargs)
+        return loans_by_agency(request, *args, **kwargs)
 
-# Attempt to provide this attribute for doc generator
-route_agency_loans_backend.endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
+    route_agency_loans_backend.endpoint_doc = LoansBySubtierAgencyViewSet.endpoint_doc
+    route_agency_loans_backend.__doc__ = LoansBySubtierAgencyViewSet.__doc__
+    return route_agency_loans_backend
 
 
 class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
