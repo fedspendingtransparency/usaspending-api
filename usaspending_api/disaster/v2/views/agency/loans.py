@@ -19,7 +19,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
 )
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
-    ElasticsearchSpendingPaginationMixin,
+    ElasticsearchSpendingPaginationMixin, ElasticsearchLoansPaginationMixin,
 )
 
 
@@ -105,7 +105,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
         )
 
 
-class LoansBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):
+class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterBase):
     """
     This route takes DEF Codes and Award Type Codes and returns Loans by Subtier Agency, rolled up to include
     totals for each distinct Toptier agency.
@@ -115,8 +115,8 @@ class LoansBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elastics
 
     required_filters = ["def_codes", "award_type_codes", "query"]
     query_fields = ["funding_toptier_agency_name"]
-    agg_key = "funding_toptier_agency_agg_key"
-    sub_agg_key = "funding_subtier_agency_agg_key"
+    agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
+    sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
