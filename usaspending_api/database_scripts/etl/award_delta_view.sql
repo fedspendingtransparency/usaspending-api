@@ -71,7 +71,7 @@ SELECT
       THEN CONCAT(
         '{"name":"', vw_award_search.funding_toptier_agency_name,
         '","code":"', vw_award_search.funding_toptier_agency_code,
-        '","id":"', TFA.id, '"}'
+        '","id":"', FA.toptier_agency_id, '"}'
       )
     ELSE NULL
   END AS funding_toptier_agency_agg_key,
@@ -80,7 +80,7 @@ SELECT
       THEN CONCAT(
         '{"name":"', vw_award_search.funding_subtier_agency_name,
         '","code":"', vw_award_search.funding_subtier_agency_code,
-        '","id":"', FA.id, '"}'
+        '","id":"', FA.subtier_agency_id, '"}'
       )
     ELSE NULL
   END AS funding_subtier_agency_agg_key,
@@ -173,11 +173,6 @@ FROM vw_award_search
 INNER JOIN awards a ON (a.id = vw_award_search.award_id)
 LEFT JOIN transaction_fabs fabs ON (fabs.transaction_id = a.latest_transaction_id)
 LEFT JOIN agency FA on (vw_award_search.funding_agency_id = FA.id)
-LEFT JOIN (
-  SELECT a.id, a.toptier_agency_id, a.toptier_flag, ta.name, ta.abbreviation, ta.toptier_code
-  FROM agency a
-  INNER JOIN toptier_agency ta ON (a.toptier_agency_id = ta.toptier_agency_id)
-) TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
 LEFT JOIN references_cfda cfda ON (cfda.program_number = fabs.cfda_number)
 LEFT JOIN LATERAL (
   SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) as recipient_levels

@@ -73,8 +73,8 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "description": "Agency 009",
             "children": [],
             "count": 0,
-            "obligation": 22200000.0,
-            "outlay": 22.0,
+            "obligation": 22199998.0,
+            "outlay": 200000022.0,
             "total_budgetary_resources": None,
         },
         {
@@ -109,11 +109,53 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(
-        client, url, award_type_codes=["A", "07", "08"], def_codes=["L", "M", "N", "O", "P"], spending_type="award",
+        client, url, award_type_codes=["A", "07", "02"], def_codes=["L", "M", "N", "O", "P"], spending_type="award",
     )
     expected_results = [
-        {"id": 2, "code": "008", "description": "Agency 008", "count": 1, "obligation": 20220220.0, "outlay": 0.0},
-        {"id": 1, "code": "007", "description": "Agency 007", "count": 1, "obligation": 2000.0, "outlay": 0.0},
+        {
+            "id": 8,
+            "code": "008",
+            "description": "Agency 008",
+            "count": 2,
+            "obligation": 22220218.0,
+            "outlay": 0.0,
+            "children": [
+                {
+                    "id": 2008,
+                    "code": "2008",
+                    "description": "Subtier 2008",
+                    "count": 2,
+                    "obligation": 20220218.0,
+                    "outlay": 0.0,
+                },
+                {
+                    "id": 1008,
+                    "code": "1008",
+                    "description": "Subtier 1008",
+                    "count": 1,
+                    "obligation": 2000000.0,
+                    "outlay": 0.0,
+                },
+            ],
+        },
+        {
+            "id": 7,
+            "code": "007",
+            "description": "Agency 007",
+            "count": 1,
+            "obligation": 2000.0,
+            "outlay": 0.0,
+            "children": [
+                {
+                    "id": 1007,
+                    "code": "1007",
+                    "description": "Subtier 1007",
+                    "count": 1,
+                    "obligation": 2000.0,
+                    "outlay": 0.0,
+                }
+            ],
+        },
     ]
 
     assert resp.status_code == status.HTTP_200_OK
@@ -123,7 +165,24 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
         client, url, award_type_codes=["A"], def_codes=["L", "M", "N", "O", "P"], spending_type="award",
     )
     expected_results = [
-        {"id": 2, "code": "008", "description": "Agency 008", "count": 1, "obligation": 20220220.0, "outlay": 0.0}
+        {
+            "id": 8,
+            "code": "008",
+            "description": "Agency 008",
+            "count": 1,
+            "obligation": 20220220.0,
+            "outlay": 0.0,
+            "children": [
+                {
+                    "id": 2008,
+                    "code": "2008",
+                    "description": "Subtier 2008",
+                    "count": 1,
+                    "obligation": 20220220.0,
+                    "outlay": 0.0,
+                }
+            ],
+        }
     ]
 
     assert resp.status_code == status.HTTP_200_OK
@@ -133,7 +192,32 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
         client, url, award_type_codes=["02"], def_codes=["L", "M", "N", "O", "P"], spending_type="award",
     )
     expected_results = [
-        {"id": 2, "code": "008", "description": "Agency 008", "count": 1, "obligation": 2000000.0, "outlay": 0.0}
+        {
+            "id": 8,
+            "code": "008",
+            "description": "Agency 008",
+            "count": 2,
+            "obligation": 1999998.0,
+            "outlay": 0.0,
+            "children": [
+                {
+                    "id": 2008,
+                    "code": "2008",
+                    "description": "Subtier 2008",
+                    "count": 1,
+                    "obligation": -2.0,
+                    "outlay": 0.0,
+                },
+                {
+                    "id": 1008,
+                    "code": "1008",
+                    "description": "Subtier 1008",
+                    "count": 1,
+                    "obligation": 2000000.0,
+                    "outlay": 0.0,
+                },
+            ],
+        }
     ]
 
     assert resp.status_code == status.HTTP_200_OK

@@ -44,7 +44,26 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
         client, url, award_type_codes=["07", "08"], def_codes=["L", "M", "N", "O", "P"], spending_type="award",
     )
     expected_results = [
-        {"id": 1, "code": "007", "description": "Agency 007", "count": 1, "obligation": 2000.0, "outlay": 0.0}
+        {
+            "id": 7,
+            "code": "007",
+            "description": "Agency 007",
+            "count": 1,
+            "obligation": 2000.0,
+            "outlay": 0.0,
+            "face_value_of_loan": 333.0,
+            "children": [
+                {
+                    "id": 1007,
+                    "code": "1007",
+                    "description": "Subtier 1007",
+                    "count": 1,
+                    "obligation": 2000.0,
+                    "outlay": 0.0,
+                    "face_value_of_loan": 333.0,
+                }
+            ],
+        }
     ]
 
     assert resp.status_code == status.HTTP_200_OK
