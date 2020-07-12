@@ -192,23 +192,27 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
-        import pprint
-
-        logger.warning(f"\n\n\t ES RESPONSE \n\nf{pprint.pprint(response)}")
-        info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
+        info_buckets = response.get(self.agg_group_name, {}).get("buckets", [])
         for bucket in info_buckets:
-            info = json.loads(bucket.get("key"))
-            results.append(
-                {
-                    "id": int(info["id"]),
-                    "code": info["code"],
-                    "description": info["name"],
-                    "count": int(bucket.get("doc_count", 0)),
-                    **{
-                        column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
-                        for column in self.sum_column_mapping
-                    },
-                }
-            )
+            result = self._build_json_result(bucket)
+            child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
+            children = []
+            for child_bucket in child_info_buckets:
+                children.append(self._build_json_result(child_bucket))
+            result["children"] = children
+            results.append(result)
 
         return results
+
+    def _build_json_result(self, bucket: dict):
+        info = json.loads(bucket.get("key"))
+        return {
+            "id": int(info["id"]),
+            "code": info["code"],
+            "description": info["name"],
+            "count": int(bucket.get("doc_count", 0)),  # the count of distinct awards contributing to the totals
+            **{
+                column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
+                for column in self.sum_column_mapping
+            },
+        }
