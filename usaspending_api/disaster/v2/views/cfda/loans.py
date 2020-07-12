@@ -27,9 +27,9 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
             info = json.loads(bucket.get("key"))
             results.append(
                 {
-                    "id": int(info["id"]),
-                    "code": info["code"],
-                    "description": info["description"],
+                    "id": int(info.get("id")) if info.get("id") else None,
+                    "code": info["code"] or None,
+                    "description": info["description"] or None,
                     "count": int(bucket.get("doc_count", 0)),
                     **{
                         column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
