@@ -17,9 +17,11 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansPaginationMixin,
     LoansMixin,
+)
+from usaspending_api.disaster.v2.views.elasticsearch_base import (
+    ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
 )
-from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
 
 logger = logging.getLogger(__name__)
 

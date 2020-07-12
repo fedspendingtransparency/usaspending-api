@@ -182,8 +182,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         sub_group_by_sub_agg_key_values = {}
 
         if shard_size > 10000:
-            raise ElasticsearchConnectionException(
-                "Current filters return too many unique Subtier Agencies. Narrow filters to return results."
+            raise ForbiddenException(
+                "Current filters return too many unique items. Narrow filters to return results or use downloads."
             )
 
         # Sub-aggregation to append to primary agg

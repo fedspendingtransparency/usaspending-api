@@ -1,33 +1,28 @@
 import json
 import logging
 from decimal import Decimal
-from typing import List, Optional
+from typing import List
 
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
 from django.http import HttpRequest
 from django.views.decorators.csrf import csrf_exempt
-from elasticsearch_dsl import A
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
-from usaspending_api.common.exceptions import ElasticsearchConnectionException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
     SpendingMixin,
+)
+from usaspending_api.disaster.v2.views.elasticsearch_base import (
+    ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
 )
-from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchDisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.search.v2.elasticsearch_helper import (
-    get_scaled_sum_aggregations,
-    get_number_of_unique_terms_for_awards,
-)
 
 logger = logging.getLogger(__name__)
 
