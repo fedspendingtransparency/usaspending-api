@@ -25,7 +25,7 @@ class RecipientCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
             Q(recipient__isnull=False),
             self.is_in_provided_def_codes(),
             self.all_closed_defc_submissions,
-            self.is_non_zero_award_cpe(),
+            self.is_non_zero_award_spending(),
             self.has_award_of_provided_type(),
         ]
         award_ids = (

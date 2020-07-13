@@ -21,7 +21,7 @@ class DefCodeCountViewSet(CountBase):
             Q(disaster_emergency_fund_id=OuterRef("pk")),
             self.is_in_provided_def_codes(),
             self.all_closed_defc_submissions,
-            self.is_non_zero_object_class_cpe(),
+            self.is_non_zero_total_spending(),
         ]
         count = (
             DisasterEmergencyFundCode.objects.annotate(

@@ -1,5 +1,6 @@
 from usaspending_api.disaster.tests.fixtures.recipient_location_data import awards_and_transactions
 from usaspending_api.disaster.tests.fixtures.disaster_account_data import disaster_account_data
+from usaspending_api.disaster.tests.fixtures.agency_count_data import faba_with_toptier_agencies
 from usaspending_api.disaster.tests.fixtures.award_count_data import (
     basic_award,
     award_count_sub_schedule,
@@ -7,7 +8,6 @@ from usaspending_api.disaster.tests.fixtures.award_count_data import (
     obligations_incurred_award,
     multiple_file_c_to_same_award,
     non_matching_defc_award,
-    not_last_submission_award,
     award_count_quarterly_submission,
     award_with_quarterly_submission,
     award_with_early_submission,
@@ -66,10 +66,10 @@ from usaspending_api.disaster.tests.fixtures.cfda_data import cfda_awards_and_tr
 
 __all__ = [
     "awards_and_transactions",
-    "basic_award",
     "award_count_sub_schedule",
     "award_count_submission",
     "award_with_no_outlays",
+    "basic_award",
     "basic_fa_by_object_class_with_object_class",
     "basic_fa_by_object_class_with_object_class_but_no_obligations",
     "basic_fa_by_object_class_with_multpile_object_class",
@@ -83,7 +83,6 @@ __all__ = [
     "double_fpds_awards_with_same_recipients",
     "obligations_incurred_award",
     "non_matching_defc_award",
-    "not_last_submission_award",
     "award_count_quarterly_submission",
     "award_with_quarterly_submission",
     "award_with_early_submission",
@@ -94,6 +93,7 @@ __all__ = [
     "defc_codes",
     "disaster_account_data",
     "early_gtas",
+    "faba_with_toptier_agencies",
     "faba_with_non_covid_values",
     "faba_with_values",
     "faba_with_object_class_and_two_awards",
