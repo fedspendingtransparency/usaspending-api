@@ -1,12 +1,56 @@
+import json
+import logging
+from decimal import Decimal
+from typing import List
+
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
+
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, PaginationMixin, SpendingMixin
+from usaspending_api.disaster.v2.views.disaster_base import (
+    DisasterBase,
+    PaginationMixin,
+    SpendingMixin,
+)
+from usaspending_api.disaster.v2.views.elasticsearch_base import (
+    ElasticsearchDisasterBase,
+    ElasticsearchSpendingPaginationMixin,
+)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+
+
+logger = logging.getLogger(__name__)
+
+
+def route_agency_spending_backend(**initkwargs):
+    """
+    Per API contract, delegate requests that specify `award_type_codes` to the Elasticsearch-backend that gets sum
+    amounts based on subtier Agency associated with the linked award.
+    Otherwise use the Postgres-backend that gets sum amount from toptier Agency associated with the File C TAS
+    """
+    spending_by_subtier_agency = SpendingBySubtierAgencyViewSet.as_view(**initkwargs)
+    spending_by_agency = SpendingByAgencyViewSet.as_view(**initkwargs)
+
+    @csrf_exempt
+    def route_agency_spending_backend(request, *args, **kwargs):
+        """
+        Returns disaster spending by agency.  If agency type codes are provided, the characteristics of
+        the result are modified a bit.  Instead of being purely a rollup of File C agency loans, the results
+        become a rollup of File D subtier agencies by toptier agency and subtiers will be included as children
+        of the toptier agency.
+        """
+        if DisasterBase.requests_award_type_codes(request):
+            return spending_by_subtier_agency(request, *args, **kwargs)
+        return spending_by_agency(request, *args, **kwargs)
+
+    route_agency_spending_backend.endpoint_doc = SpendingBySubtierAgencyViewSet.endpoint_doc
+    route_agency_spending_backend.__doc__ = SpendingBySubtierAgencyViewSet.__doc__
+    return route_agency_spending_backend
 
 
 class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
@@ -131,3 +175,45 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
             .annotate(**annotations)
             .values(*annotations.keys())
         )
+
+
+class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):
+    """
+    This route takes DEF Codes and Award Type Codes and returns Spending by Subtier Agency, rolled up to include
+    totals for each distinct Toptier agency.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
+
+    required_filters = ["def_codes", "award_type_codes", "query"]
+    query_fields = ["funding_toptier_agency_name"]
+    agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
+    sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
+
+    def build_elasticsearch_result(self, response: dict) -> List[dict]:
+        results = []
+        info_buckets = response.get(self.agg_group_name, {}).get("buckets", [])
+        for bucket in info_buckets:
+            result = self._build_json_result(bucket)
+            child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
+            children = []
+            for child_bucket in child_info_buckets:
+                children.append(self._build_json_result(child_bucket))
+            result["children"] = children
+            results.append(result)
+
+        return results
+
+    def _build_json_result(self, bucket: dict):
+        info = json.loads(bucket.get("key"))
+        return {
+            "id": int(info["id"]),
+            "code": info["code"],
+            "description": info["name"],
+            # the count of distinct subtier agencies contributing to the totals
+            "count": int(bucket.get("doc_count", 0)),
+            **{
+                column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
+                for column in self.sum_column_mapping
+            },
+        }

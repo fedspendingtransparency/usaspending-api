@@ -1,12 +1,14 @@
+import json
 from datetime import datetime, timezone, date
 from django.db.models import Max, Q, F, Value, Case, When, Sum
 from django.db.models.functions import Coalesce, Concat
+from django.http import HttpRequest
 from django.utils.functional import cached_property
 from rest_framework.views import APIView
 from typing import List
 
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_month
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
@@ -64,6 +66,17 @@ class DisasterBase(APIView):
     reporting_period_min_date = date(2020, 4, 1)
     reporting_period_min_year, reporting_period_min_month = generate_fiscal_year_and_month(reporting_period_min_date)
 
+    @classmethod
+    def requests_award_type_codes(cls, request: HttpRequest) -> bool:
+        """Return True if an an endpoint was requested with filter.award_type_codes"""
+        # NOTE: The point at which this is used in the request life cycle, it has not been post-processed to include
+        # a POST or data attribute. Must get payload from body
+        if request and request.body:
+            body_json = json.loads(request.body)
+            if "filter" in body_json and "award_type_codes" in body_json["filter"]:
+                return True
+        return False
+
     @cached_property
     def filters(self):
         all_def_codes = sorted(list(DisasterEmergencyFundCode.objects.values_list("code", flat=True)))
@@ -93,6 +106,16 @@ class DisasterBase(APIView):
                 "enum_values": list(award_type_mapping.keys()),
                 "allow_nulls": True,
                 "optional": True,
+            },
+            "_loan_award_type_codes": {
+                "key": "filter|award_type_codes",
+                "name": "award_type_codes",
+                "type": "array",
+                "array_type": "enum",
+                "enum_values": list(loan_type_mapping.keys()),
+                "allow_nulls": True,
+                "optional": True,
+                "default": list(loan_type_mapping.keys()),
             },
         }
         model = [object_keys_lookup[key] for key in self.required_filters]

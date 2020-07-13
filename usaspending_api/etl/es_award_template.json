@@ -264,6 +264,24 @@
             }
           }
         },
+        "funding_toptier_agency_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
+        "funding_subtier_agency_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
         "recipient_location_country_code": {
           "type": "keyword"
         },

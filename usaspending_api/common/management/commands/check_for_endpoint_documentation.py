@@ -27,7 +27,9 @@ class Command(BaseCommand):
 
         # By request, let's count how much documentation falls in the contracts directory vs not-contracts.
         contract_count = sum(
-            getattr(e[1].callback.cls, "endpoint_doc", "").startswith("usaspending_api/api_contracts/contracts/")
+            getattr(
+                e[1].callback.cls if getattr(e[1].callback, "cls", None) else e[1].callback, "endpoint_doc", ""
+            ).startswith("usaspending_api/api_contracts/contracts/")
             for e in endpoints
         )
 

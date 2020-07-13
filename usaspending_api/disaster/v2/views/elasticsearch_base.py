@@ -7,7 +7,6 @@ from elasticsearch_dsl import Q as ES_Q, A
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
@@ -55,7 +54,9 @@ class ElasticsearchDisasterBase(DisasterBase):
 
     query_fields: List[str]
     agg_key: str
-    is_loans: bool = False
+    agg_group_name: str = "group_by_agg_key"  # name used for the tier-1 aggregation group
+    sub_agg_key: str = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
+    sub_agg_group_name: str = "sub_group_by_sub_agg_key"  # name used for the tier-2 aggregation group
 
     filter_query: ES_Q
     bucket_count: int
@@ -68,13 +69,7 @@ class ElasticsearchDisasterBase(DisasterBase):
     def post(self, request: Request) -> Response:
         # Handle "query" filter outside of QueryWithFilters
         query = self.filters.pop("query", None)
-
-        # If for a loans endpoint then filter on Loans
-        filters = self.filters
-        if self.is_loans:
-            filters.update({"award_type_codes": list(loan_type_mapping)})
-        self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
-
+        self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         if query:
             self.filter_query.must.append(
                 ES_Q("query_string", query=query, default_operator="OR", fields=self.query_fields)
@@ -154,15 +149,56 @@ class ElasticsearchDisasterBase(DisasterBase):
         }
 
         # Define all aggregations needed to build the response
-        search.aggs.bucket("group_by_agg_key", group_by_agg_key)
+        search.aggs.bucket(self.agg_group_name, group_by_agg_key)
         for field, sum_aggregations in sum_aggregations.items():
-            search.aggs["group_by_agg_key"].metric(field, sum_aggregations["sum_field"])
-        search.aggs["group_by_agg_key"].pipeline("pagination_aggregation", bucket_sort_aggregation)
+            search.aggs[self.agg_group_name].metric(field, sum_aggregations["sum_field"])
+        search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
+
+        # If provided, break down primary bucket aggregation into sub-aggregations based on a sub_agg_key
+        if self.sub_agg_key:
+            self.extend_elasticsearch_search_with_sub_aggregation(search)
 
         # Set size to 0 since we don't care about documents returned
         search.update_from_dict({"size": 0})
 
         return search
+
+    def extend_elasticsearch_search_with_sub_aggregation(self, search: AwardSearch):
+        """
+        This template method is called if the `self.sub_agg_key` is supplied, in order to post-process the query and
+        inject a sub-aggregation on a secondary dimension (that is subordinate to the first agg_key's dimension).
+
+        Example: Subtier Agency spending rolled up to Toptier Agency spending
+        """
+        sub_bucket_count = get_number_of_unique_terms_for_awards(self.filter_query, f"{self.sub_agg_key}.hash")
+        size = sub_bucket_count
+        shard_size = sub_bucket_count + 100
+        sub_group_by_sub_agg_key_values = {}
+
+        if shard_size > 10000:
+            raise ForbiddenException(
+                "Current filters return too many unique items. Narrow filters to return results or use downloads."
+            )
+
+        # Sub-aggregation to append to primary agg
+        sub_group_by_sub_agg_key_values.update(
+            {
+                "field": self.sub_agg_key,
+                "size": size,
+                "shard_size": shard_size,
+                "order": {self.sort_column_mapping[self.pagination.sort_key]: self.pagination.sort_order},
+            }
+        )
+        sub_group_by_sub_agg_key = A("terms", **sub_group_by_sub_agg_key_values)
+
+        sum_aggregations = {
+            mapping: get_scaled_sum_aggregations(mapping) for mapping in self.sum_column_mapping.values()
+        }
+
+        # Append sub-agg to primary agg, and include the sub-agg's sum metric aggs too
+        search.aggs[self.agg_group_name].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key)
+        for field, sum_aggregations in sum_aggregations.items():
+            search.aggs[self.agg_group_name].aggs[self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
 
     def query_elasticsearch(self) -> list:
         search = self.build_elasticsearch_search_with_aggregations()
