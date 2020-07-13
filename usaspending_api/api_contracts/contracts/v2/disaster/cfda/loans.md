@@ -49,7 +49,7 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                         "id": 100,
                         "obligation": 2.0,
                         "outlay": 0.0,
-                        "resource_link": None
+                        "resource_link": null
                     }
                 ],
                 "page_metadata": {
