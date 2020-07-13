@@ -46,7 +46,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
                         "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
                         "obligation": 20.0,
                         "outlay": 0.0
-                    },
+                    }
                 ],
                 "page_metadata": {
                     "page": 1,
