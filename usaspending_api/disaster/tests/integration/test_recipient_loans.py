@@ -126,7 +126,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
 
 
 @pytest.mark.django_db
-def test_recipient_loans_invalid_defc(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
+def test_invalid_defc(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["ZZ"])
@@ -135,9 +135,7 @@ def test_recipient_loans_invalid_defc(client, monkeypatch, helpers, elasticsearc
 
 
 @pytest.mark.django_db
-def test_recipient_loans_invalid_defc_type(
-    client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions
-):
+def test_invalid_defc_type(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes="100")
@@ -146,7 +144,7 @@ def test_recipient_loans_invalid_defc_type(
 
 
 @pytest.mark.django_db
-def test_recipient_loans_missing_defc(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
+def test_missing_defc(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = helpers.post_for_spending_endpoint(client, url)
