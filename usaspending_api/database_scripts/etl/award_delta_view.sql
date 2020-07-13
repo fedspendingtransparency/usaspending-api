@@ -111,7 +111,8 @@ SELECT
       THEN CONCAT(
         '{"code":"', vw_award_search.cfda_number,
         '","description":"', cfda.program_title,
-        '","id":"', cfda.id, '"}'
+        '","id":"', cfda.id,
+        '","url":"', CASE WHEN cfda.url = 'None;' THEN NULL ELSE cfda.url END, '"}'
       )
     ELSE NULL
   END AS cfda_agg_key,

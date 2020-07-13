@@ -26,9 +26,33 @@ def test_correct_response_single_defc(
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L"])
     expected_results = [
-        {"code": "30.300", "count": 1, "description": "CFDA 3", "id": 300, "obligation": 2000.0, "outlay": 1000.0},
-        {"code": "20.200", "count": 1, "description": "CFDA 2", "id": 200, "obligation": 20.0, "outlay": 0.0},
-        {"code": "10.100", "count": 1, "description": "CFDA 1", "id": 100, "obligation": 2.0, "outlay": 0.0},
+        {
+            "code": "30.300",
+            "count": 1,
+            "description": "CFDA 3",
+            "id": 300,
+            "obligation": 2000.0,
+            "outlay": 1000.0,
+            "resource_link": "www.example.com/300",
+        },
+        {
+            "code": "20.200",
+            "count": 1,
+            "description": "CFDA 2",
+            "id": 200,
+            "obligation": 20.0,
+            "outlay": 0.0,
+            "resource_link": "www.example.com/200",
+        },
+        {
+            "code": "10.100",
+            "count": 1,
+            "description": "CFDA 1",
+            "id": 100,
+            "obligation": 2.0,
+            "outlay": 0.0,
+            "resource_link": None,
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
@@ -42,9 +66,33 @@ def test_correct_response_multiple_defc(
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"])
     expected_results = [
-        {"code": "30.300", "count": 1, "description": "CFDA 3", "id": 300, "obligation": 2000.0, "outlay": 1000.0},
-        {"code": "20.200", "count": 2, "description": "CFDA 2", "id": 200, "obligation": 220.0, "outlay": 100.0},
-        {"code": "10.100", "count": 1, "description": "CFDA 1", "id": 100, "obligation": 2.0, "outlay": 0.0},
+        {
+            "code": "30.300",
+            "count": 1,
+            "description": "CFDA 3",
+            "id": 300,
+            "obligation": 2000.0,
+            "outlay": 1000.0,
+            "resource_link": "www.example.com/300",
+        },
+        {
+            "code": "20.200",
+            "count": 2,
+            "description": "CFDA 2",
+            "id": 200,
+            "obligation": 220.0,
+            "outlay": 100.0,
+            "resource_link": "www.example.com/200",
+        },
+        {
+            "code": "10.100",
+            "count": 1,
+            "description": "CFDA 1",
+            "id": 100,
+            "obligation": 2.0,
+            "outlay": 0.0,
+            "resource_link": None,
+        },
     ]
 
     assert resp.status_code == status.HTTP_200_OK
@@ -64,7 +112,15 @@ def test_correct_response_with_query(
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="3")
     expected_results = [
-        {"code": "30.300", "count": 1, "description": "CFDA 3", "id": 300, "obligation": 2000.0, "outlay": 1000.0}
+        {
+            "code": "30.300",
+            "count": 1,
+            "description": "CFDA 3",
+            "id": 300,
+            "obligation": 2000.0,
+            "outlay": 1000.0,
+            "resource_link": "www.example.com/300",
+        }
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
@@ -83,8 +139,24 @@ def test_correct_response_with_award_type_codes(
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"])
     expected_results = [
-        {"code": "20.200", "count": 1, "description": "CFDA 2", "id": 200, "obligation": 20.0, "outlay": 0.0},
-        {"code": "10.100", "count": 1, "description": "CFDA 1", "id": 100, "obligation": 2.0, "outlay": 0.0},
+        {
+            "code": "20.200",
+            "count": 1,
+            "description": "CFDA 2",
+            "id": 200,
+            "obligation": 20.0,
+            "outlay": 0.0,
+            "resource_link": "www.example.com/200",
+        },
+        {
+            "code": "10.100",
+            "count": 1,
+            "description": "CFDA 1",
+            "id": 100,
+            "obligation": 2.0,
+            "outlay": 0.0,
+            "resource_link": None,
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
@@ -126,7 +198,15 @@ def test_pagination_page_and_limit(
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1)
     expected_results = {
         "results": [
-            {"code": "20.200", "count": 2, "description": "CFDA 2", "id": 200, "obligation": 220.0, "outlay": 100.0}
+            {
+                "code": "20.200",
+                "count": 2,
+                "description": "CFDA 2",
+                "id": 200,
+                "obligation": 220.0,
+                "outlay": 100.0,
+                "resource_link": "www.example.com/200",
+            }
         ],
         "page_metadata": {
             "hasNext": True,

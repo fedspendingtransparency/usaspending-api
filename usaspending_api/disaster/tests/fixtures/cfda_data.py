@@ -190,6 +190,6 @@ def cfda_awards_and_transactions(db):
     )
 
     # References CFDA
-    mommy.make("references.Cfda", id=100, program_number="10.100", program_title="CFDA 1")
-    mommy.make("references.Cfda", id=200, program_number="20.200", program_title="CFDA 2")
-    mommy.make("references.Cfda", id=300, program_number="30.300", program_title="CFDA 3")
+    mommy.make("references.Cfda", id=100, program_number="10.100", program_title="CFDA 1", url="None;")
+    mommy.make("references.Cfda", id=200, program_number="20.200", program_title="CFDA 2", url="www.example.com/200")
+    mommy.make("references.Cfda", id=300, program_number="30.300", program_title="CFDA 3", url="www.example.com/300")
