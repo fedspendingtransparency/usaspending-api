@@ -23,7 +23,7 @@ class AgencyCountViewSet(AwardTypeMixin, CountBase):
             filters = [
                 self.is_in_provided_def_codes(),
                 self.all_closed_defc_submissions,
-                self.is_non_zero_award_cpe(),
+                self.is_non_zero_award_spending(),
             ]
             count = (
                 FinancialAccountsByAwards.objects.filter(*filters)
@@ -36,7 +36,7 @@ class AgencyCountViewSet(AwardTypeMixin, CountBase):
                 Q(treasury_account__funding_toptier_agency=OuterRef("pk")),
                 self.is_in_provided_def_codes(),
                 self.all_closed_defc_submissions,
-                self.is_non_zero_object_class_cpe(),
+                self.is_non_zero_total_spending(),
             ]
             count = (
                 ToptierAgency.objects.annotate(

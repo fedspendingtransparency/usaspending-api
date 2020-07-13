@@ -6,7 +6,7 @@ class CountBase(DisasterBase):
     def is_in_provided_def_codes(self):
         return Q(disaster_emergency_fund__code__in=self.def_codes)
 
-    def is_non_zero_object_class_cpe(self):
+    def is_non_zero_total_spending(self):
         return Q(
             Q(obligations_incurred_by_program_object_class_cpe__gt=0)
             | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
@@ -14,7 +14,7 @@ class CountBase(DisasterBase):
             | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
         )
 
-    def is_non_zero_award_cpe(self):
+    def is_non_zero_award_spending(self):
         return Q(
             Q(transaction_obligated_amount__gt=0)
             | Q(transaction_obligated_amount__lt=0)
