@@ -24,7 +24,24 @@ SELECT
 
   vw_award_search.recipient_name,
   vw_award_search.recipient_unique_id,
-  recipient_lookup.recipient_hash,
+  recipient_profile.recipient_hash,
+  CASE
+    WHEN recipient_profile.recipient_hash IS NULL or recipient_profile.recipient_levels IS NULL
+      THEN
+        CONCAT(
+          '{"name":"', vw_award_search.recipient_name,
+          '","unique_id":"', vw_award_search.recipient_unique_id,
+          '","hash":"","levels":""}'
+        )
+    ELSE
+      CONCAT(
+        '{"name":"', vw_award_search.recipient_name,
+        '","unique_id":"', vw_award_search.recipient_unique_id,
+        '","hash":"', recipient_profile.recipient_hash,
+        '","levels":"', recipient_profile.recipient_levels, '"}'
+      )
+  END AS recipient_agg_key,
+
   vw_award_search.parent_recipient_unique_id,
   vw_award_search.business_categories,
 
@@ -125,14 +142,22 @@ SELECT
   DEFC.transaction_obligated_amount as total_covid_obligation
 FROM vw_award_search
 INNER JOIN awards a ON (a.id = vw_award_search.award_id)
-LEFT JOIN (
-  SELECT
-    recipient_hash,
-    legal_business_name AS recipient_name,
-    duns
-  FROM
-    recipient_lookup AS rlv
-) recipient_lookup ON (recipient_lookup.duns = vw_award_search.recipient_unique_id AND vw_award_search.recipient_unique_id IS NOT NULL)
+LEFT JOIN LATERAL (
+  SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) as recipient_levels
+  FROM     recipient_profile
+  WHERE    (recipient_hash = vw_award_search.recipient_hash OR recipient_unique_id = vw_award_search.recipient_unique_id) and
+           recipient_name NOT IN (
+             'MULTIPLE RECIPIENTS',
+             'REDACTED DUE TO PII',
+             'MULTIPLE FOREIGN RECIPIENTS',
+             'PRIVATE INDIVIDUAL',
+             'INDIVIDUAL RECIPIENT',
+             'MISCELLANEOUS FOREIGN AWARDEES'
+           ) AND recipient_name IS NOT NULL
+           AND recipient_level != 'P'
+  GROUP BY recipient_hash, recipient_unique_id
+  LIMIT 1
+) recipient_profile ON TRUE
 LEFT JOIN (
   SELECT   code, name, fips, MAX(id)
   FROM     state_data
