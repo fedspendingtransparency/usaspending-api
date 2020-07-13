@@ -52,7 +52,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                         "id": 100,
                         "obligation": 2.0,
                         "outlay": 0.0,
-                        "resource_link": None
+                        "resource_link": null
                     }
                 ],
                 "page_metadata": {
