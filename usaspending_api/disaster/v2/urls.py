@@ -1,10 +1,13 @@
 from django.conf.urls import url
 
+from usaspending_api.disaster.v2.views.award.amount import AmountViewSet
+from usaspending_api.disaster.v2.views.award.count import AwardCountViewSet
 from usaspending_api.disaster.v2.views.agency.count import AgencyCountViewSet
 from usaspending_api.disaster.v2.views.agency.loans import LoansByAgencyViewSet
 from usaspending_api.disaster.v2.views.agency.spending import SpendingByAgencyViewSet
-from usaspending_api.disaster.v2.views.award.amount import AmountViewSet
-from usaspending_api.disaster.v2.views.award.count import AwardCountViewSet
+from usaspending_api.disaster.v2.views.cfda.count import CfdaCountViewSet
+from usaspending_api.disaster.v2.views.cfda.loans import CfdaLoansViewSet
+from usaspending_api.disaster.v2.views.cfda.spending import CfdaSpendingViewSet
 from usaspending_api.disaster.v2.views.def_code.count import DefCodeCountViewSet
 from usaspending_api.disaster.v2.views.federal_account.count import FederalAccountCountViewSet
 from usaspending_api.disaster.v2.views.federal_account.loans import LoansViewSet
@@ -25,6 +28,9 @@ urlpatterns = [
     url(r"^agency/spending/$", SpendingByAgencyViewSet.as_view()),
     url(r"^award/amount/$", AmountViewSet.as_view()),
     url(r"^award/count/$", AwardCountViewSet.as_view()),
+    url(r"^cfda/count/$", CfdaCountViewSet.as_view()),
+    url(r"^cfda/loans/$", CfdaLoansViewSet.as_view()),
+    url(r"^cfda/spending/$", CfdaSpendingViewSet.as_view()),
     url(r"^def_code/count/$", DefCodeCountViewSet.as_view()),
     url(r"^federal_account/count/$", FederalAccountCountViewSet.as_view()),
     url(r"^federal_account/loans/$", LoansViewSet.as_view()),
