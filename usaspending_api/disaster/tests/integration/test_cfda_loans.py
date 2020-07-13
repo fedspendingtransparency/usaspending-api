@@ -203,6 +203,7 @@ def test_correct_response_with_award_type_codes(
                 "id": 200,
                 "obligation": 20.0,
                 "outlay": 0.0,
+                "resource_link": "www.example.com/200",
             },
             {
                 "code": "10.100",
@@ -212,6 +213,7 @@ def test_correct_response_with_award_type_codes(
                 "id": 100,
                 "obligation": 2.0,
                 "outlay": 0.0,
+                "resource_link": None,
             },
         ],
         "page_metadata": {
@@ -239,6 +241,7 @@ def test_correct_response_with_award_type_codes(
                 "id": 200,
                 "obligation": 200.0,
                 "outlay": 100.0,
+                "resource_link": "www.example.com/200",
             }
         ],
         "page_metadata": {
