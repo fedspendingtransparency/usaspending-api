@@ -1,19 +1,34 @@
 {
-  "SELECT fiscal_year, CASE WHEN sf_133.period = 3 THEN 1 WHEN sf_133.period = 6 THEN 2 WHEN sf_133.period = 9 THEN 3 WHEN sf_133.period = 12 THEN 4 END AS fiscal_quarter, SUM(amount) AS total_obligation FROM sf_133 WHERE line = 2190 AND period in (3, 6, 9, 12) GROUP BY fiscal_year, fiscal_quarter ORDER BY fiscal_year, fiscal_quarter;": [
+  "SELECT\n                fiscal_year,\n                period as fiscal_period,\n                COALESCE(SUM(CASE WHEN line IN (2190) THEN sf.amount ELSE 0 END), 0.0) AS obligations_incurred_total_cpe,\nCOALESCE(SUM(CASE WHEN line IN (1160,1180,1260,1280) THEN sf.amount ELSE 0 END), 0.0) AS budget_authority_appropriation_amount_cpe,\nCOALESCE(SUM(CASE WHEN line IN (1340,1440,1540,1640,1750,1850) THEN sf.amount ELSE 0 END), 0.0) AS other_budgetary_resources_amount_cpe,\nCOALESCE(SUM(CASE WHEN line IN (3020) THEN sf.amount ELSE 0 END), 0.0) AS gross_outlay_amount_by_tas_cpe,\nCOALESCE(SUM(CASE WHEN line IN (2490) THEN sf.amount ELSE 0 END), 0.0) AS unobligated_balance_cpe,\n                disaster_emergency_fund_code,\n                CONCAT(\n                    CASE WHEN sf.allocation_transfer_agency is not null THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END,\n                    sf.agency_identifier, '-',\n                    CASE WHEN sf.beginning_period_of_availa is not null THEN CONCAT(sf.beginning_period_of_availa, '/', sf.ending_period_of_availabil) ELSE sf.availability_type_code END,\n                    '-', sf.main_account_code, '-', sf.sub_account_code)\n                as tas_rendering_label\n            FROM\n                sf_133 sf\n            GROUP BY\n                fiscal_year,\n                fiscal_period,\n                disaster_emergency_fund_code,\n                tas_rendering_label\n            ORDER BY\n                fiscal_year,\n                fiscal_period;": [
     {
       "fiscal_year": 1600,
-      "fiscal_quarter": "-1",
-      "total_obligation": "-10"
+      "fiscal_period": "-1",
+      "obligations_incurred_total_cpe": "-10",
+      "budget_authority_appropriation_amount_cpe": "-11",
+      "other_budgetary_resources_amount_cpe": "-11",
+      "gross_outlay_amount_by_tas_cpe": "-11",
+      "unobligated_balance_cpe": "-11",
+      "disaster_emergency_fund_code": "A"
     },
     {
       "fiscal_year": 1600,
-      "fiscal_quarter": "-2",
-      "total_obligation": "-1"
+      "fiscal_period": "-2",
+      "obligations_incurred_total_cpe": "-9",
+      "budget_authority_appropriation_amount_cpe": "-12",
+      "other_budgetary_resources_amount_cpe": "-12",
+      "gross_outlay_amount_by_tas_cpe": "-12",
+      "unobligated_balance_cpe": "-12",
+      "disaster_emergency_fund_code": "A"
     },
     {
       "fiscal_year": 1601,
-      "fiscal_quarter": "-1",
-      "total_obligation": "-10"
+      "fiscal_period": "-1",
+      "obligations_incurred_total_cpe": "-8",
+      "budget_authority_appropriation_amount_cpe": "-13",
+      "other_budgetary_resources_amount_cpe": "-13",
+      "gross_outlay_amount_by_tas_cpe": "-13",
+      "unobligated_balance_cpe": "-13",
+      "disaster_emergency_fund_code": "A"
     }
   ]
 }

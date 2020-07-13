@@ -32,7 +32,7 @@ API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 # This flag is used to control dark release features for the CARES Act initiative.  Set this to True
 # for testing and once the CARES Act features go live.  Remove all references to this global once
 # we have finished fully rolling out all CARES Act features.
-ENABLE_CARES_ACT_FEATURES = False
+ENABLE_CARES_ACT_FEATURES = True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -137,22 +137,23 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "rest_framework_tracking",
-    "usaspending_api.agency",
-    "usaspending_api.common",
-    "usaspending_api.etl",
-    "usaspending_api.references",
-    "usaspending_api.awards",
     "usaspending_api.accounts",
-    "usaspending_api.submissions",
-    "usaspending_api.financial_activities",
+    "usaspending_api.agency",
     "usaspending_api.api_docs",
+    "usaspending_api.awards",
     "usaspending_api.broker",
-    "usaspending_api.database_scripts.job_archive",
-    "usaspending_api.download",
     "usaspending_api.bulk_download",
+    "usaspending_api.common",
+    "usaspending_api.database_scripts.job_archive",
+    "usaspending_api.disaster",
+    "usaspending_api.download",
+    "usaspending_api.etl",
+    "usaspending_api.financial_activities",
     "usaspending_api.recipient",
-    "usaspending_api.transactions",
+    "usaspending_api.references",
     "usaspending_api.search",
+    "usaspending_api.submissions",
+    "usaspending_api.transactions",
     "django_spaghetti",
     "simple_history",
     "ddtrace.contrib.django",  # Datadog APM tracing
