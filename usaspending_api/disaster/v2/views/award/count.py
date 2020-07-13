@@ -23,7 +23,7 @@ class AwardCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
         filters = [
             self.is_in_provided_def_codes(),
             self.all_closed_defc_submissions,
-            self.is_non_zero_award_cpe(),
+            self.is_non_zero_award_spending(),
         ]
         count = FinancialAccountsByAwards.objects.filter(*filters)
         if self.award_type_codes:
