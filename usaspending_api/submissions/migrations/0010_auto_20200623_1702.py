@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
     INSERT_SQL = """
 INSERT
 	INTO
-	dabs_submission_window_schedule (id, period_start_date, period_end_date, submission_start_date, submission_due_date, certification_due_date, submission_reveal_date, submission_fiscal_year, submission_fiscal_quarter, submission_fiscal_month, is_quarter )
+	dabs_submission_window_schedule (id, period_start_date, period_end_date, submission_start_date, certification_due_date, submission_due_date, submission_reveal_date, submission_fiscal_year, submission_fiscal_quarter, submission_fiscal_month, is_quarter )
 VALUES ('2017031', '2016-10-01 00:00:00', '2016-12-31 00:00:00', '2017-01-19 00:00:00', '2017-02-19 00:00:00', '2017-02-19 00:00:00', '2017-02-20 00:00:00', 2017, 1, 3, TRUE),
 ('2017061', '2017-01-01 00:00:00', '2017-03-31 00:00:00', '2017-04-19 00:00:00', '2017-05-19 00:00:00', '2017-05-19 00:00:00', '2017-05-20 00:00:00', 2017, 2, 6, TRUE),
 ('2017091', '2017-04-01 00:00:00', '2017-06-30 00:00:00', '2017-07-19 00:00:00', '2017-08-14 00:00:00', '2017-08-14 00:00:00', '2017-08-15 00:00:00', 2017, 3, 9, TRUE),
