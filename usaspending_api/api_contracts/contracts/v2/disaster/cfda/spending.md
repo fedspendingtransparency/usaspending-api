@@ -37,20 +37,22 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
             {
                 "results": [
                     {
-                        "code": "30.300",
-                        "count": 1,
-                        "description": "CFDA 3",
-                        "id": 300,
-                        "obligation": 2000.0,
-                        "outlay": 1000.0
-                    },
-                    {
                         "code": "20.200",
                         "count": 1,
                         "description": "CFDA 2",
                         "id": 200,
                         "obligation": 20.0,
-                        "outlay": 0.0
+                        "outlay": 0.0,
+                        "resource_link": "www.example.com/200"
+                    },
+                    {
+                        "code": "10.100",
+                        "count": 1,
+                        "description": "CFDA 1",
+                        "id": 100,
+                        "obligation": 2.0,
+                        "outlay": 0.0,
+                        "resource_link": None
                     }
                 ],
                 "page_metadata": {
@@ -101,7 +103,6 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 + `id` (required, string)
 + `code` (required, string)
 + `description` (required, string)
-+ `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)

@@ -34,6 +34,7 @@ def test_correct_response_single_defc(
             "id": 200,
             "obligation": 20.0,
             "outlay": 0.0,
+            "resource_link": "www.example.com/200",
         },
         {
             "code": "10.100",
@@ -43,6 +44,7 @@ def test_correct_response_single_defc(
             "id": 100,
             "obligation": 2.0,
             "outlay": 0.0,
+            "resource_link": None,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -65,6 +67,7 @@ def test_correct_response_multiple_defc(
             "id": 200,
             "obligation": 220.0,
             "outlay": 100.0,
+            "resource_link": "www.example.com/200",
         },
         {
             "code": "10.100",
@@ -74,6 +77,7 @@ def test_correct_response_multiple_defc(
             "id": 100,
             "obligation": 2.0,
             "outlay": 0.0,
+            "resource_link": None,
         },
     ]
 
@@ -102,6 +106,7 @@ def test_correct_response_with_query(
             "id": 200,
             "obligation": 220.0,
             "outlay": 100.0,
+            "resource_link": "www.example.com/200",
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -152,6 +157,7 @@ def test_pagination_page_and_limit(
                 "id": 100,
                 "obligation": 2.0,
                 "outlay": 0.0,
+                "resource_link": None,
             }
         ],
         "page_metadata": {

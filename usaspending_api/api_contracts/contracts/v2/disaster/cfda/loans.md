@@ -38,7 +38,8 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                         "face_value_of_loan": 330.0,
                         "id": 200,
                         "obligation": 220.0,
-                        "outlay": 100.0
+                        "outlay": 100.0,
+                        "resource_link": "www.example.com/200"
                     },
                     {
                         "code": "10.100",
@@ -47,7 +48,8 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                         "face_value_of_loan": 3.0,
                         "id": 100,
                         "obligation": 2.0,
-                        "outlay": 0.0
+                        "outlay": 0.0,
+                        "resource_link": None
                     }
                 ],
                 "page_metadata": {
@@ -97,7 +99,6 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
 + `id` (required, string)
 + `code` (required, string)
 + `description` (required, string)
-+ `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
 + `obligation` (required, number, nullable)
