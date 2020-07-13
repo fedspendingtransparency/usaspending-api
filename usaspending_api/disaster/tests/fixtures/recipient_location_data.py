@@ -266,7 +266,7 @@ def awards_and_transactions():
         legal_entity_county_name="TEST NAME",
         legal_entity_congressional="50",
         awardee_or_recipient_legal=None,
-        awardee_or_recipient_uniqu="123456789",
+        awardee_or_recipient_uniqu="987654321",
     )
     mommy.make(
         "awards.TransactionFPDS",
@@ -277,7 +277,7 @@ def awards_and_transactions():
         legal_entity_county_name="TEST NAME",
         legal_entity_congressional="50",
         awardee_or_recipient_legal=None,
-        awardee_or_recipient_uniqu="123456789",
+        awardee_or_recipient_uniqu="987654321",
     )
     mommy.make(
         "awards.TransactionFPDS",
@@ -384,7 +384,11 @@ def awards_and_transactions():
         recipient_unique_id=None,
     )
     mommy.make(
-        "recipient.RecipientProfile", recipient_name="RECIPIENT 2", recipient_level="R", recipient_unique_id="456789123"
+        "recipient.RecipientProfile",
+        recipient_name="RECIPIENT 2",
+        recipient_level="R",
+        recipient_hash="3c92491a-f2cd-ec7d-294b-7daf91511866",
+        recipient_unique_id="456789123",
     )
     mommy.make(
         "recipient.RecipientProfile",
@@ -409,10 +413,10 @@ def awards_and_transactions():
     )
     mommy.make(
         "recipient.RecipientProfile",
-        recipient_name=None,
+        recipient_name="RECIPIENT 3",
         recipient_level="R",
-        recipient_hash="25f9e794-323b-4538-85f5-181f1b624d0b",
-        recipient_unique_id="123456789",
+        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        recipient_unique_id="987654321",
     )
 
     # Recipient Lookup

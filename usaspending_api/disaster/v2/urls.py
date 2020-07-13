@@ -14,6 +14,8 @@ from usaspending_api.disaster.v2.views.object_class.spending import ObjectClassS
 from usaspending_api.disaster.v2.views.object_class.loans import ObjectClassLoansViewSet
 from usaspending_api.disaster.v2.views.overview import OverviewViewSet
 from usaspending_api.disaster.v2.views.recipient.count import RecipientCountViewSet
+from usaspending_api.disaster.v2.views.recipient.loans import RecipientLoansViewSet
+from usaspending_api.disaster.v2.views.recipient.spending import RecipientSpendingViewSet
 from usaspending_api.disaster.v2.views.spending import ExperimentalDisasterViewSet
 from usaspending_api.disaster.v2.views.spending_by_geography import SpendingByGeographyViewSet
 
@@ -32,6 +34,8 @@ urlpatterns = [
     url(r"^object_class/loans/$", ObjectClassLoansViewSet.as_view()),
     url(r"^overview/$", OverviewViewSet.as_view()),
     url(r"^recipient/count/$", RecipientCountViewSet.as_view()),
+    url(r"^recipient/loans/$", RecipientLoansViewSet.as_view()),
+    url(r"^recipient/spending/$", RecipientSpendingViewSet.as_view()),
     url(r"^spending/$", ExperimentalDisasterViewSet.as_view()),
     url(r"^spending_by_geography/$", SpendingByGeographyViewSet.as_view()),
 ]

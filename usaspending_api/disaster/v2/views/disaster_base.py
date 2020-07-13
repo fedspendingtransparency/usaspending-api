@@ -190,8 +190,7 @@ class _BasePaginationMixin:
     def pagination(self):
         """pass"""
 
-    def run_models(self, columns):
-        default_sort_column = "id"
+    def run_models(self, columns, default_sort_column="id"):
         model = customize_pagination_with_sort_columns(columns, default_sort_column)
         request_data = TinyShield(model).block(self.request.data.get("pagination", {}))
         return Pagination(
@@ -216,11 +215,3 @@ class LoansPaginationMixin(_BasePaginationMixin):
     def pagination(self):
         sortable_columns = ["id", "code", "description", "count", "obligation", "outlay", "face_value_of_loan"]
         return self.run_models(sortable_columns)
-
-
-class RecipientMixin:
-    required_filters = ["def_codes", "award_type_codes"]
-
-    @property
-    def award_type_codes(self):
-        return self.filters.get("award_type_codes")

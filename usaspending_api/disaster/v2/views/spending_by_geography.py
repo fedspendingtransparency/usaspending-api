@@ -13,7 +13,7 @@ from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator import TinyShield
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, RecipientMixin
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_awards,
@@ -26,10 +26,12 @@ class GeoLayer(Enum):
     STATE = "state"
 
 
-class SpendingByGeographyViewSet(RecipientMixin, DisasterBase):
+class SpendingByGeographyViewSet(DisasterBase):
     """Spending by Recipient Location"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/spending_by_geography.md"
+
+    required_filters = ["def_codes", "award_type_codes"]
 
     agg_key: Optional[str]  # name of ES index field whose term value will be used for grouping the agg
     geo_layer: GeoLayer
