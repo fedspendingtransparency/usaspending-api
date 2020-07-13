@@ -16,10 +16,9 @@ class RecipientLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisa
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/recipient/loans.md"
 
-    required_filters = ["def_codes", "query"]
+    required_filters = ["def_codes", "query", "_loan_award_type_codes"]
     query_fields = ["recipient_name"]
     agg_key = "recipient_agg_key"
-    is_loans = True
 
     sum_column_mapping: List[str]  # Set in the pagination mixin
 

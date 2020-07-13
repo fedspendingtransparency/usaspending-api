@@ -12,7 +12,7 @@ def test_correct_response_defc_no_results(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["N"])
+    resp = helpers.post_for_spending_endpoint(client, url, award_type_codes=["07", "08"], def_codes=["N"])
     expected_results = []
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
@@ -168,6 +168,87 @@ def test_pagination_page_and_limit(
             "page": 2,
             "previous": 1,
             "total": 2,
+        },
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_results
+
+
+@pytest.mark.django_db
+def test_invalid_award_type_codes(
+    client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = helpers.post_for_spending_endpoint(client, url, award_type_codes=["ZZ", "08"], def_codes=["L", "M"])
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.data["detail"] == "Field 'filter|award_type_codes' is outside valid values ['07', '08']"
+
+
+@pytest.mark.django_db
+def test_correct_response_with_award_type_codes(
+    client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = helpers.post_for_spending_endpoint(client, url, award_type_codes=["07"], def_codes=["L", "M"])
+    expected_results = {
+        "results": [
+            {
+                "code": "20.200",
+                "count": 1,
+                "description": "CFDA 2",
+                "face_value_of_loan": 30.0,
+                "id": 200,
+                "obligation": 20.0,
+                "outlay": 0.0,
+            },
+            {
+                "code": "10.100",
+                "count": 1,
+                "description": "CFDA 1",
+                "face_value_of_loan": 3.0,
+                "id": 100,
+                "obligation": 2.0,
+                "outlay": 0.0,
+            },
+        ],
+        "page_metadata": {
+            "hasNext": False,
+            "hasPrevious": False,
+            "limit": 10,
+            "next": None,
+            "page": 1,
+            "previous": None,
+            "total": 2,
+        },
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_results
+
+    resp = helpers.post_for_spending_endpoint(client, url, award_type_codes=["08"], def_codes=["L", "M"])
+    expected_results = {
+        "results": [
+            {
+                "code": "20.200",
+                "count": 1,
+                "description": "CFDA 2",
+                "face_value_of_loan": 300.0,
+                "id": 200,
+                "obligation": 200.0,
+                "outlay": 100.0,
+            }
+        ],
+        "page_metadata": {
+            "hasNext": False,
+            "hasPrevious": False,
+            "limit": 10,
+            "next": None,
+            "page": 1,
+            "previous": None,
+            "total": 1,
         },
     }
 
