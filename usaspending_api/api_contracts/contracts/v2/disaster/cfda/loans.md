@@ -32,26 +32,22 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text of 090, for humans",
-                        "children": [],
-                        "count": 54,
-                        "face_value_of_loan": 89.01,
-                        "obligation": 45,
-                        "outlay": 3244,
-                        "resource_link": "https://beta.sam.gov/fal/25b529f3b5f94b6c939bc0ae8424ae6c/view"
+                        "code": "20.200",
+                        "count": 2,
+                        "description": "CFDA 2",
+                        "face_value_of_loan": 330.0,
+                        "id": 200,
+                        "obligation": 220.0,
+                        "outlay": 100.0
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text of 012, for humans",
-                        "children": [],
-                        "count": 2,
-                        "face_value_of_loan": 50,
-                        "obligation": 123,
-                        "outlay": 3249,
-                        "resource_link": null
+                        "code": "10.100",
+                        "count": 1,
+                        "description": "CFDA 1",
+                        "face_value_of_loan": 3.0,
+                        "id": 100,
+                        "obligation": 2.0,
+                        "outlay": 0.0
                     }
                 ],
                 "page_metadata": {

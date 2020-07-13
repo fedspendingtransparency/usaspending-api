@@ -37,24 +37,20 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text",
-                        "children": [],
-                        "count": 54,
-                        "obligation": 89.01,
-                        "outlay": 70.98,
-                        "resource_link": "https://beta.sam.gov/fal/25b529f3b5f94b6c939bc0ae8424ae6c/view"
+                        "code": "30.300",
+                        "count": 1,
+                        "description": "CFDA 3",
+                        "id": 300,
+                        "obligation": 2000.0,
+                        "outlay": 1000.0
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text",
-                        "children": [],
-                        "count": 2,
-                        "obligation": 50,
-                        "outlay": 10,
-                        "resource_link": null
+                        "code": "20.200",
+                        "count": 1,
+                        "description": "CFDA 2",
+                        "id": 200,
+                        "obligation": 20.0,
+                        "outlay": 0.0
                     }
                 ],
                 "page_metadata": {
