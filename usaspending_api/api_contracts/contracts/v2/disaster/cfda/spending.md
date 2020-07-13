@@ -37,23 +37,21 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text",
-                        "children": [],
-                        "count": 54,
-                        "obligation": 89.01,
-                        "outlay": 70.98,
-                        "resource_link": "https://beta.sam.gov/fal/25b529f3b5f94b6c939bc0ae8424ae6c/view"
+                        "code": "20.200",
+                        "count": 1,
+                        "description": "CFDA 2",
+                        "id": 200,
+                        "obligation": 20.0,
+                        "outlay": 0.0,
+                        "resource_link": "www.example.com/200"
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text",
-                        "children": [],
-                        "count": 2,
-                        "obligation": 50,
-                        "outlay": 10,
+                        "code": "10.100",
+                        "count": 1,
+                        "description": "CFDA 1",
+                        "id": 100,
+                        "obligation": 2.0,
+                        "outlay": 0.0,
                         "resource_link": null
                     }
                 ],
@@ -105,7 +103,6 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 + `id` (required, string)
 + `code` (required, string)
 + `description` (required, string)
-+ `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
