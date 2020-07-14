@@ -159,10 +159,12 @@ class Command(BaseCommand):
         try:
             temp_file, temp_file_path = generate_export_query_temp_file(export_query, None)
             # Create a separate process to run the PSQL command; wait
+            logger.info(f"temp file: {temp_file_path}")
             psql_process = multiprocessing.Process(
                 target=execute_psql, args=(temp_file_path, intermediate_data_filename, None)
             )
             psql_process.start()
+            logger.info(f"Child Process: ({psql_process.pid}) '{psql_process.name}'")
             wait_for_process(psql_process, start_time, None)
 
             delim = FILE_FORMATS[self.file_format]["delimiter"]
