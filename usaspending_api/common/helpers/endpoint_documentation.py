@@ -1,7 +1,7 @@
 import os
 import re
 
-from usaspending_api.settings import BASE_DIR
+from usaspending_api.settings import REPO_DIR
 
 # Typically we only care about v2 API endpoints, but if we ever add v3 or
 # whatever, add the base path to this tuple.
@@ -54,7 +54,7 @@ def get_endpoints_from_endpoints_markdown():
     Looks for and extracts URLs for patterns like |[display](url)|method|description|
     from the master endpoints.md markdown file.
     """
-    with open(str(BASE_DIR / ENDPOINTS_MD)) as f:
+    with open(str(REPO_DIR / ENDPOINTS_MD)) as f:
         contents = f.read()
     return [e.split("?")[0] for e in ENDPOINT_PATTERN.findall(contents) if e]
 
@@ -75,21 +75,24 @@ def validate_docs(url, url_object, master_endpoint_list):
     in the master endpoints.md doc.
     """
     qualified_name = url_object.lookup_str
-    view_class = url_object.callback.cls
+
+    # This endpoint provides a message to users that the endpoint has been removed and, as such, needs no contract.
+    if qualified_name == "usaspending_api.common.views.RemovedEndpointView":
+        return []
+
+    # Handles class and function based views.
+    view = url_object.callback.cls if getattr(url_object.callback, "cls", None) else url_object.callback
 
     messages = []
 
-    if qualified_name == "usaspending_api.common.views.RemovedEndpointView":
-        return messages
-
-    if not hasattr(view_class, "endpoint_doc"):
+    if not hasattr(view, "endpoint_doc"):
         messages.append("{} ({}) missing endpoint_doc property".format(qualified_name, url))
     else:
-        endpoint_doc = getattr(view_class, "endpoint_doc")
+        endpoint_doc = getattr(view, "endpoint_doc")
         if not endpoint_doc:
             messages.append("{}.endpoint_doc ({}) is invalid".format(qualified_name, url))
         else:
-            absolute_endpoint_doc = str(BASE_DIR / endpoint_doc)
+            absolute_endpoint_doc = str(REPO_DIR / endpoint_doc)
             if not case_sensitive_file_exists(absolute_endpoint_doc):
                 messages.append(
                     "{}.endpoint_doc ({}) references a file that does not exist ({})".format(
@@ -97,8 +100,12 @@ def validate_docs(url, url_object, master_endpoint_list):
                     )
                 )
 
-    if not (view_class.__doc__ or "").strip():
-        messages.append("{} ({}) has no docstring".format(qualified_name, url))
+    if not (view.__doc__ or "").strip():
+        messages.append(
+            f"{qualified_name} ({url}) has no docstring.  The docstring is used to provide documentation in "
+            f"the Django Rest Framework default UI.  It provides a modicum of help on an otherwise completely "
+            f"blank page."
+        )
 
     # Fix up the url a little so we can pattern match it.
     pattern = url + ("" if url.endswith("/") else "/") + "?"  # Optional trailing slash.

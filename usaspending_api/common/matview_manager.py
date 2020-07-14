@@ -5,7 +5,7 @@ from usaspending_api.search.models import TASAutocompleteMatview
 
 import usaspending_api.search.models as mv
 
-DEFAULT_MATIVEW_DIR = settings.BASE_DIR.parent / "matviews"
+DEFAULT_MATIVEW_DIR = settings.REPO_DIR.parent / "matviews"
 DEPENDENCY_FILEPATH = settings.APP_DIR / "database_scripts" / "matviews" / "functions_and_enums.sql"
 JSON_DIR = settings.APP_DIR / "database_scripts" / "matview_sql_generator"
 MATVIEW_GENERATOR_FILE = settings.APP_DIR / "database_scripts" / "matview_generator" / "matview_sql_generator.py"

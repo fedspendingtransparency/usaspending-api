@@ -18,6 +18,14 @@ class InvalidParameterException(APIException):
     default_code = "invalid_request"
 
 
+class ForbiddenException(APIException):
+    """Exception for when the request was valid, but the server is refusing to respond to it."""
+
+    status_code = status.HTTP_403_FORBIDDEN
+    default_detail = "Request was valid but server is refusing to respond due to constraints"
+    default_code = "forbidden"
+
+
 class EndpointRemovedException(APIException):
     """Exception for invalid API request parameters."""
 

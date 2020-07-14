@@ -8,6 +8,9 @@ class Agency(models.Model):
     update_date = models.DateTimeField(auto_now=True)
     toptier_agency = models.ForeignKey("references.ToptierAgency", models.DO_NOTHING, db_index=True)
     subtier_agency = models.OneToOneField("references.SubtierAgency", models.DO_NOTHING, null=True, db_index=True)
+    # toptier_flag is ONLY used to show subtiers that represent toptiers.  Not all toptiers will have
+    # a toptier_flag = True.  Do not use it to try to find agency records when only given a toptier.
+    # There is a discussion about this in the documentation repository if you'd like further clarification.
     toptier_flag = models.BooleanField(default=False)
     user_selectable = models.BooleanField(default=False)
 

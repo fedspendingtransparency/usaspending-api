@@ -37,34 +37,34 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text",
+                        "id": 168,
+                        "code": "349",
+                        "description": "District of Columbia Courts",
                         "children": [],
-                        "count": 54,
-                        "obligation": 89.01,
-                        "outlay": 70.98,
-                        "total_budgetary_resources": null
+                        "count": 0,
+                        "obligation": 148906061.27,
+                        "outlay": 143265869.34,
+                        "total_budgetary_resources": 18087913735.71
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text",
+                        "id": 130,
+                        "code": "413",
+                        "description": "National Council on Disability",
                         "children": [],
-                        "count": 2,
-                        "obligation": 50,
-                        "outlay": 10,
-                        "total_budgetary_resources": null
+                        "count": 0,
+                        "obligation": 225185.66,
+                        "outlay": 697329.0,
+                        "total_budgetary_resources": 183466350.0
                     }
                 ],
                 "page_metadata": {
                     "page": 1,
+                    "total": 62,
+                    "limit": 2,
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
-                    "hasPrevious": false,
-                    "total": 23,
-                    "limit": 2
+                    "hasPrevious": false
                 }
             }
 
@@ -73,7 +73,13 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-    Defaults to all Award Type Codes. Applicable only when requested `award` spending.
+    + Only to be used when `"spending_type": "award"`
+    + If ANY award type codes are provided, obligation and outlay spending amounts will be summed for the distinct set of toptier
+      agencies, whose subtier agencies funded awards -- awards of the type given by `award_type_codes` -- linked to
+      `FinancialAccountsByAwards` records (which are derived from DABS File C).
+    + If this parameter is not provided, obligation and outlay spending amounts will be summed for a different set of agencies:
+      the distinct set of toptier agencies "owning" appropriations accounts used in funding _any_ award spending for this disaster
+      (i.e. from agencies "owning" Treasury Account Symbol (TAS) accounts on `FinancialAccountsByAwards` records, which are derived from DABS File C).
 + `query` (optional, string)
     A "keyword" or "search term" to filter down results based on this text snippet
 
@@ -90,8 +96,17 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `count`
+        + `total_budgetary_resources`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
 + `id` (required, string)

@@ -31,7 +31,7 @@ from django.db.models import Case, CharField, DateField, F, Func, Max, Sum, Valu
 from django.db.models.functions import Cast, Coalesce, Concat
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.orm_helpers import FiscalYear, FiscalYearAndQuarter, get_agency_name_annotation
+from usaspending_api.common.helpers.orm_helpers import FiscalYear, get_agency_name_annotation, get_fyp_or_q_notation
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import ToptierAgency
@@ -141,12 +141,11 @@ def get_period_and_quarter_filter(account_type, filters):
 def generate_treasury_account_query(queryset, account_type, tas_id):
     """ Derive necessary fields for a treasury account-grouped query """
     derived_fields = {
-        "last_reported_submission_period": FiscalYearAndQuarter("reporting_period_end"),
         "allocation_transfer_agency_identifier_name": get_agency_name_annotation(
             tas_id, "allocation_transfer_agency_id"
         ),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
-        "submission_period": FiscalYearAndQuarter("reporting_period_end"),
+        "submission_period": get_fyp_or_q_notation("submission"),
         "last_modified_date"
         + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
     }
@@ -163,9 +162,8 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         "reporting_agency_name": StringAgg("submission__reporting_agency_name", "; ", distinct=True),
         "budget_function": StringAgg(f"{tas_id}__budget_function_title", "; ", distinct=True),
         "budget_subfunction": StringAgg(f"{tas_id}__budget_subfunction_title", "; ", distinct=True),
-        "last_reported_submission_period": Max(FiscalYearAndQuarter("reporting_period_end")),
+        "submission_period": get_fyp_or_q_notation("submission"),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
-        "submission_period": FiscalYearAndQuarter("reporting_period_end"),
         "last_modified_date"
         + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
     }

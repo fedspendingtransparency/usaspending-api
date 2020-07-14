@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# DEFC Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/def_code/loans/]
+# CFDA Programs Spending Disaster/Emergency Funding via Loans [/api/v2/disaster/cfda/loans/]
 
-This endpoint provides insights on the DEFC loans from disaster/emergency funding per the requested filters.
+This endpoint provides insights on the CFDA Programs' loans from disaster/emergency funding per the requested filters.
 
 ## POST
 
-Returns loan spending details of DEFC receiving supplemental funding budgetary resources
+Returns loan spending details of CFDA Programs receiving supplemental funding budgetary resources
 
 + Request (application/json)
     + Schema
@@ -32,20 +32,24 @@ Returns loan spending details of DEFC receiving supplemental funding budgetary r
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text of 090, for humans",
-                        "children": [],
-                        "count": 54,
-                        "face_value_of_loan": 89.01
+                        "code": "20.200",
+                        "count": 2,
+                        "description": "CFDA 2",
+                        "face_value_of_loan": 330.0,
+                        "id": 200,
+                        "obligation": 220.0,
+                        "outlay": 100.0,
+                        "resource_link": "www.example.com/200"
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text of 012, for humans",
-                        "children": [],
-                        "count": 2,
-                        "face_value_of_loan": 50
+                        "code": "10.100",
+                        "count": 1,
+                        "description": "CFDA 1",
+                        "face_value_of_loan": 3.0,
+                        "id": 100,
+                        "obligation": 2.0,
+                        "outlay": 0.0,
+                        "resource_link": null
                     }
                 ],
                 "page_metadata": {
@@ -63,6 +67,12 @@ Returns loan spending details of DEFC receiving supplemental funding budgetary r
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
++ `award_type_codes` (optional, array[string], fixed-type)
+    + Only accepts loan award type `07` or `08` in the array, since this endpoint is specific to loans
+    + Default: `["07", "08"]`
+    + Members
+        + `07`
+        + `08`
 + `query` (optional, string)
     A "keyword" or "search term" to filter down results based on this text snippet
 
@@ -79,16 +89,29 @@ Returns loan spending details of DEFC receiving supplemental funding budgetary r
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `count`
+        + `face_value_of_loan`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
 + `id` (required, string)
 + `code` (required, string)
 + `description` (required, string)
-+ `children` (optional, array[Result], fixed-type)
 + `count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
++ `obligation` (required, number, nullable)
++ `outlay` (required, number, nullable)
++ `resource_link` (required, string, nullable)
+    Link to an external website with more information about this result.
+
 
 ## PageMetadata (object)
 + `page` (required, number)

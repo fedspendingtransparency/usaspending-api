@@ -129,6 +129,15 @@
             }
           }
         },
+        "recipient_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
         "parent_recipient_unique_id": {
           "type": "text",
           "fields": {
@@ -255,6 +264,24 @@
             }
           }
         },
+        "funding_toptier_agency_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
+        "funding_subtier_agency_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
         "recipient_location_country_code": {
           "type": "keyword"
         },
@@ -296,6 +323,33 @@
           "fields": {
             "keyword": {
               "type": "keyword"
+            }
+          }
+        },
+        "recipient_location_county_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
+        "recipient_location_congressional_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
+        "recipient_location_state_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "fields": {
+            "hash": {
+              "type": "murmur3"
             }
           }
         },
@@ -359,6 +413,23 @@
             }
           }
         },
+        "cfda_title": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword"
+            }
+          }
+        },
+        "cfda_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
         "sai_number": {
           "type": "text",
           "fields": {
@@ -418,6 +489,17 @@
         },
         "tas_components": {
           "type": "keyword"
+        },
+        "disaster_emergency_fund_codes": {
+          "type": "keyword"
+        },
+        "total_covid_obligation": {
+          "type": "scaled_float",
+          "scaling_factor": 100
+        },
+        "total_covid_outlay": {
+          "type": "scaled_float",
+          "scaling_factor": 100
         }
       }
   }
