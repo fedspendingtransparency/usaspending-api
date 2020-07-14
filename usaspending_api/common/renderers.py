@@ -7,7 +7,7 @@ from rest_framework.renderers import BrowsableAPIRenderer
 from rest_framework.request import override_method
 from urllib.parse import quote, urljoin
 from usaspending_api.common.helpers.endpoint_documentation import case_sensitive_file_exists
-from usaspending_api.settings import BASE_DIR
+from usaspending_api.settings import REPO_DIR
 
 
 logger = logging.getLogger("console")
@@ -84,7 +84,7 @@ class DocumentAPIRenderer(BrowsableAPIRenderer):
             endpoint_doc = getattr(view, "endpoint_doc", None)
             if endpoint_doc:
                 git_branch = self._get_current_git_branch("master")
-                endpoint_doc = str(BASE_DIR / endpoint_doc)
+                endpoint_doc = str(REPO_DIR / endpoint_doc)
                 endpoint_url = self._build_github_url(endpoint_doc, git_branch)
                 description = self._add_url_to_description(context.get("description") or "", endpoint_url)
                 context["description"] = mark_safe(description)
@@ -97,7 +97,7 @@ class DocumentAPIRenderer(BrowsableAPIRenderer):
         Attempt to figure out which git branch is current.  .git/HEAD typically
         follows a structure of refs/heads/<branch name>.  We want <branch name>.
         """
-        file_path = str(BASE_DIR / ".git" / "HEAD")
+        file_path = str(REPO_DIR / ".git" / "HEAD")
         if case_sensitive_file_exists(file_path):
             with open(file_path) as f:
                 return "/".join(f.read().split("/", 2)[2:]).strip()
@@ -108,8 +108,8 @@ class DocumentAPIRenderer(BrowsableAPIRenderer):
         """
         Convert a file path to a GitHub URL.
         """
-        if doc_path.startswith(str(BASE_DIR)):
-            doc_path = doc_path[len(str(BASE_DIR)) :].lstrip("/")
+        if doc_path.startswith(str(REPO_DIR)):
+            doc_path = doc_path[len(str(REPO_DIR)) :].lstrip("/")
             return urljoin(BASE_GITHUB_URL, quote(doc_path)).format(git_branch=git_branch)
         return ""
 

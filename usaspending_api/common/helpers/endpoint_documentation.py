@@ -1,7 +1,7 @@
 import os
 import re
 
-from usaspending_api.settings import BASE_DIR
+from usaspending_api.settings import REPO_DIR
 
 # Typically we only care about v2 API endpoints, but if we ever add v3 or
 # whatever, add the base path to this tuple.
@@ -54,7 +54,7 @@ def get_endpoints_from_endpoints_markdown():
     Looks for and extracts URLs for patterns like |[display](url)|method|description|
     from the master endpoints.md markdown file.
     """
-    with open(str(BASE_DIR / ENDPOINTS_MD)) as f:
+    with open(str(REPO_DIR / ENDPOINTS_MD)) as f:
         contents = f.read()
     return [e.split("?")[0] for e in ENDPOINT_PATTERN.findall(contents) if e]
 
@@ -92,7 +92,7 @@ def validate_docs(url, url_object, master_endpoint_list):
         if not endpoint_doc:
             messages.append("{}.endpoint_doc ({}) is invalid".format(qualified_name, url))
         else:
-            absolute_endpoint_doc = str(BASE_DIR / endpoint_doc)
+            absolute_endpoint_doc = str(REPO_DIR / endpoint_doc)
             if not case_sensitive_file_exists(absolute_endpoint_doc):
                 messages.append(
                     "{}.endpoint_doc ({}) references a file that does not exist ({})".format(

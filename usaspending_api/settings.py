@@ -11,9 +11,9 @@ from django.utils.crypto import get_random_string
 from pathlib import Path
 from ddtrace import patch_all
 
-# All paths inside the project should be additive to BASE_DIR or APP_DIR
+# All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
-BASE_DIR = APP_DIR.parent
+REPO_DIR = APP_DIR.parent
 
 # Row-limited download limit
 MAX_DOWNLOAD_LIMIT = 500000
@@ -61,9 +61,9 @@ if not USASPENDING_AWS_REGION:
     USASPENDING_AWS_REGION = os.environ.get("USASPENDING_AWS_REGION")
 
 # AWS locations for CSV files
-CSV_LOCAL_PATH = str(BASE_DIR / "csv_downloads") + "/"
+CSV_LOCAL_PATH = str(REPO_DIR / "csv_downloads") + "/"
 DOWNLOAD_ENV = ""
-BULK_DOWNLOAD_LOCAL_PATH = str(BASE_DIR / "bulk_downloads") + "/"
+BULK_DOWNLOAD_LOCAL_PATH = str(REPO_DIR / "bulk_downloads") + "/"
 
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"

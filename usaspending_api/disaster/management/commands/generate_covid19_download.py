@@ -1,6 +1,7 @@
 import json
 import logging
 import multiprocessing
+import re
 import time
 
 from datetime import datetime, timezone
@@ -36,7 +37,8 @@ class Command(BaseCommand):
     total_download_count = 0
     total_download_columns = 0
     total_download_size = 0
-    working_dir = Path(settings.CSV_LOCAL_PATH)
+    working_dir_path = Path(settings.CSV_LOCAL_PATH)
+    readme_path = Path(settings.COVID19_DOWNLOAD_README_FILE_PATH)
     full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
 
     def add_arguments(self, parser):
@@ -51,7 +53,11 @@ class Command(BaseCommand):
             Generates a download data package specific to COVID-19 spending
         """
         self.upload = not options["skip_upload"]
+        self.zip_file_path = (
+            self.working_dir_path / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
+        )
         try:
+            self.prep_filesystem()
             self.process_data_copy_jobs()
             self.complete_zip_and_upload()
         except Exception:
@@ -62,9 +68,8 @@ class Command(BaseCommand):
             self.cleanup()
 
     def process_data_copy_jobs(self):
-
-        self.zip_file_path = self.working_dir / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
-        self.prep_filesystem()
+        logger.info(f"Creating new COVID-19 download zip file: {self.zip_file_path}")
+        self.filepaths_to_delete.append(self.zip_file_path)
 
         for sql_file, final_name in self.download_file_list:
             intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")
@@ -72,7 +77,7 @@ class Command(BaseCommand):
             if count <= 0:
                 raise Exception(f"Missing Data for {final_name}!!!!")
 
-            self.filepaths_to_delete.extend(self.working_dir.glob(f"{final_name.stem}*"))
+            self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_name.stem}*"))
 
     def complete_zip_and_upload(self):
         self.finalize_zip_contents()
@@ -82,9 +87,9 @@ class Command(BaseCommand):
             db_id = self.store_record_in_database()
             logger.info(f"Created database record {db_id} for future retrieval")
             logger.info("Marking zip file for deletion in cleanup")
-            self.filepaths_to_delete.append(self.zip_file_path)
         else:
             logger.warn("Not uploading zip file to S3. Leaving file locally")
+            self.filepaths_to_delete.remove(self.zip_file_path)
             logger.warn("Not creating database record")
 
     @property
@@ -94,29 +99,29 @@ class Command(BaseCommand):
         return [
             (
                 sql_dir / "disaster_covid19_file_a.sql",
-                self.working_dir
+                self.working_dir_path
                 / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBalances_{short_timestamp}",
             ),
             (
                 sql_dir / "disaster_covid19_file_b.sql",
-                self.working_dir
+                self.working_dir_path
                 / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
             ),
             (
                 sql_dir / "disaster_covid19_file_d1_awards.sql",
-                self.working_dir / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
+                self.working_dir_path / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
                 sql_dir / "disaster_covid19_file_d2_awards.sql",
-                self.working_dir / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
+                self.working_dir_path / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
                 sql_dir / "disaster_covid19_file_f_contracts.sql",
-                self.working_dir / f"Contracts_Subawards_{short_timestamp}",
+                self.working_dir_path / f"Contracts_Subawards_{short_timestamp}",
             ),
             (
                 sql_dir / "disaster_covid19_file_f_grants.sql",
-                self.working_dir / f"Assistance_Subawards_{short_timestamp}",
+                self.working_dir_path / f"Assistance_Subawards_{short_timestamp}",
             ),
         ]
 
@@ -131,13 +136,13 @@ class Command(BaseCommand):
             path.unlink()
 
     def finalize_zip_contents(self):
-        self.filepaths_to_delete.append(Path(settings.CSV_LOCAL_PATH) / "Data_Dictionary_Crosswalk.xlsx")
+        self.filepaths_to_delete.append(self.working_dir_path / "Data_Dictionary_Crosswalk.xlsx")
 
         add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
 
-        file_description = build_file_description(settings.COVID19_DOWNLOAD_README_FILE_PATH, dict())
+        file_description = build_file_description(str(self.readme_path), dict())
         file_description_path = save_file_description(
-            str(self.zip_file_path.parent), settings.COVID19_DOWNLOAD_README_FILE_PATH.split("/")[-1], file_description
+            str(self.zip_file_path.parent), self.readme_path.name, file_description
         )
         self.filepaths_to_delete.append(Path(file_description_path))
         append_files_to_zip_file([file_description_path], str(self.zip_file_path))
@@ -155,9 +160,9 @@ class Command(BaseCommand):
         start_time = time.perf_counter()
         logger.info(f"Downloading data to {destination_path}")
         options = FILE_FORMATS[self.file_format]["options"]
-        export_query = r"\COPY ({}) TO STDOUT {}".format(str(sql_filepath.read_text()).replace("\n", "  "), options)
+        export_query = r"\COPY ({}) TO STDOUT {}".format(read_sql_file(sql_filepath), options)
         try:
-            temp_file, temp_file_path = generate_export_query_temp_file(export_query, None)
+            temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, self.working_dir_path)
             # Create a separate process to run the PSQL command; wait
             psql_process = multiprocessing.Process(
                 target=execute_psql, args=(temp_file_path, intermediate_data_filename, None)
@@ -222,3 +227,9 @@ class Command(BaseCommand):
         )
 
         return download_record.download_job_id
+
+
+def read_sql_file(file_path: Path) -> str:
+    """Open file and return text with most whitespace removed"""
+    p = re.compile(r"\s\s+")
+    return p.sub(" ", str(file_path.read_text().replace("\n", "  ")))
