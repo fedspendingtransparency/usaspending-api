@@ -53,7 +53,11 @@ class Command(BaseCommand):
             Generates a download data package specific to COVID-19 spending
         """
         self.upload = not options["skip_upload"]
+        self.zip_file_path = (
+            self.working_dir_path / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
+        )
         try:
+            self.prep_filesystem()
             self.process_data_copy_jobs()
             self.complete_zip_and_upload()
         except Exception:
@@ -64,13 +68,8 @@ class Command(BaseCommand):
             self.cleanup()
 
     def process_data_copy_jobs(self):
-
-        self.zip_file_path = (
-            self.working_dir_path / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
-        )
-        self.prep_filesystem()
-
-        logger.info(f"WORKING DIR: {self.working_dir_path}\nZip path: {self.zip_file_path}\nREADME:{self.readme_path}")
+        logger.info(f"Creating new COVID-19 download zip file: {self.zip_file_path}")
+        self.filepaths_to_delete.append(self.zip_file_path)
 
         for sql_file, final_name in self.download_file_list:
             intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")
@@ -88,9 +87,9 @@ class Command(BaseCommand):
             db_id = self.store_record_in_database()
             logger.info(f"Created database record {db_id} for future retrieval")
             logger.info("Marking zip file for deletion in cleanup")
-            self.filepaths_to_delete.append(self.zip_file_path)
         else:
             logger.warn("Not uploading zip file to S3. Leaving file locally")
+            self.filepaths_to_delete.remove(self.zip_file_path)
             logger.warn("Not creating database record")
 
     @property
@@ -165,12 +164,10 @@ class Command(BaseCommand):
         try:
             temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, self.working_dir_path)
             # Create a separate process to run the PSQL command; wait
-            logger.info(f"temp file: {temp_file_path}")
             psql_process = multiprocessing.Process(
                 target=execute_psql, args=(temp_file_path, intermediate_data_filename, None)
             )
             psql_process.start()
-            logger.info(f"Child Process: ({psql_process.pid}) '{psql_process.name}'")
             wait_for_process(psql_process, start_time, None)
 
             delim = FILE_FORMATS[self.file_format]["delimiter"]

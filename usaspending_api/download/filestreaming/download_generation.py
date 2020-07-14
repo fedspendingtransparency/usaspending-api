@@ -512,13 +512,9 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         )
 
         duration = time.perf_counter() - log_time
-        try:
-            write_to_log(
-                message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job
-            )
-        except Exception as e:
-            write_to_log(message=f"Exception {e}", download_job=download_job)
-            write_to_log(message=f"Wrote {source_path}, took {duration:.4f} seconds", download_job=download_job)
+        write_to_log(
+            message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job
+        )
     except Exception as e:
         if not settings.IS_LOCAL:
             # Not logging the command as it can contain the database connection string
