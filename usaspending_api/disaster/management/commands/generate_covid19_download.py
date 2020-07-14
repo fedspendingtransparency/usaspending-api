@@ -157,7 +157,7 @@ class Command(BaseCommand):
         options = FILE_FORMATS[self.file_format]["options"]
         export_query = r"\COPY ({}) TO STDOUT {}".format(str(sql_filepath.read_text()).replace("\n", "  "), options)
         try:
-            temp_file, temp_file_path = generate_export_query_temp_file(export_query, None)
+            temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, self.working_dir)
             # Create a separate process to run the PSQL command; wait
             logger.info(f"temp file: {temp_file_path}")
             psql_process = multiprocessing.Process(

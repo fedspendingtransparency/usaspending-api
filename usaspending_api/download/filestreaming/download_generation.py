@@ -394,11 +394,13 @@ def generate_export_query(source_query, limit, source, columns, file_format):
     return r"\COPY ({}) TO STDOUT {}".format(query_annotated, options)
 
 
-def generate_export_query_temp_file(export_query, download_job):
-    write_to_log(message="Saving PSQL Query: {}".format(export_query), download_job=download_job, is_debug=True)
-
+def generate_export_query_temp_file(export_query, download_job, temp_dir=None):
+    write_to_log(message=f"Saving PSQL Query: {export_query}", download_job=download_job, is_debug=True)
+    dir_name = "/tmp"
+    if temp_dir:
+        dir_name = temp_dir
     # Create a unique temporary file to hold the raw query, using \copy
-    (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
+    (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir=dir_name)
 
     with open(temp_sql_file_path, "w") as file:
         file.write(export_query)
