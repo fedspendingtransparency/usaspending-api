@@ -67,7 +67,7 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `award_type_codes` (optional, array[string], fixed-type)
++ `award_type_codes` (optional, array[enum[string]], fixed-type)
     + Only accepts loan award type `07` or `08` in the array, since this endpoint is specific to loans
     + Default: `["07", "08"]`
     + Members
