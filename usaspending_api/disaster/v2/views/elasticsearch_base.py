@@ -23,14 +23,16 @@ from usaspending_api.search.v2.elasticsearch_helper import (
 class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
     sum_column_mapping = {"obligation": "total_covid_obligation", "outlay": "total_covid_outlay"}
     sort_column_mapping = {
-        "description": "_key",
         "count": "_count",
+        "description": "_key",  # True sort field
+        "code": "_key",  # Fake sort, really sorting on description
+        "id": "_key",  # Fake sort, really sorting on description
         **sum_column_mapping,
     }
 
     @cached_property
     def pagination(self):
-        return self.run_models(list(self.sort_column_mapping), default_sort_column="description")
+        return self.run_models(list(self.sort_column_mapping), default_sort_column="id")
 
 
 class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
@@ -40,14 +42,16 @@ class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
         "face_value_of_loan": "total_loan_value",
     }
     sort_column_mapping = {
-        "description": "_key",
         "count": "_count",
+        "description": "_key",  # True sort field
+        "code": "_key",  # Fake sort, really sorting on description
+        "id": "_key",  # Fake sort, really sorting on description
         **sum_column_mapping,
     }
 
     @cached_property
     def pagination(self):
-        return self.run_models(list(self.sort_column_mapping), default_sort_column="description")
+        return self.run_models(list(self.sort_column_mapping), default_sort_column="id")
 
 
 class ElasticsearchDisasterBase(DisasterBase):
@@ -86,14 +90,18 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         results = self.query_elasticsearch()
 
-        return Response(
-            {
-                "results": results[: self.pagination.limit],
-                "page_metadata": get_pagination_metadata(
-                    self.bucket_count, self.pagination.limit, self.pagination.page
-                ),
-            }
-        )
+        response = {
+            "results": results[: self.pagination.limit],
+            "page_metadata": get_pagination_metadata(self.bucket_count, self.pagination.limit, self.pagination.page),
+        }
+
+        if self.pagination.sort_key in ("id", "code"):
+            response["message"] = (
+                f"Notice! API Requests to sort on '{self.pagination.sort_key}' field isn't fully implemented."
+                " Results were actually sorted by 'description'"
+            )
+
+        return Response(response)
 
     @abstractmethod
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
