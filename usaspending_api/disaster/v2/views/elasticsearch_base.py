@@ -24,9 +24,9 @@ class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
     sum_column_mapping = {"obligation": "total_covid_obligation", "outlay": "total_covid_outlay"}
     sort_column_mapping = {
         "count": "_count",
-        "description": "_key",  # True sort field
-        "code": "_key",  # Fake sort, really sorting on description
-        "id": "_key",  # Fake sort, really sorting on description
+        "description": "_key",  # _key will ultimately sort on description value
+        "code": "_key",  # Façade sort behavior, really sorting on description
+        "id": "_key",  # Façade sort, really sorting on description
         **sum_column_mapping,
     }
 
@@ -43,9 +43,9 @@ class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
     }
     sort_column_mapping = {
         "count": "_count",
-        "description": "_key",  # True sort field
-        "code": "_key",  # Fake sort, really sorting on description
-        "id": "_key",  # Fake sort, really sorting on description
+        "description": "_key",  # _key will ultimately sort on description value
+        "code": "_key",  # Façade sort behavior, really sorting on description
+        "id": "_key",  # Façade sort, really sorting on description
         **sum_column_mapping,
     }
 
@@ -97,8 +97,8 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         if self.pagination.sort_key in ("id", "code"):
             response["message"] = (
-                f"Notice! API Requests to sort on '{self.pagination.sort_key}' field isn't fully implemented."
-                " Results were actually sorted by 'description'"
+                f"Notice! API Request to sort on '{self.pagination.sort_key}' field isn't fully implemented."
+                " Results were actually sorted using 'description' field."
             )
 
         return Response(response)

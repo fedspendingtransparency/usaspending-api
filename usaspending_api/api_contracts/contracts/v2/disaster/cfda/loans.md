@@ -91,8 +91,10 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
         + `asc`
 + `sort` (optional, enum[string])
     Optional parameter indicating what value results should be sorted by
-    + Default: `description`
+    + Default: `id`
     + Members
+        + `id`
+        + `code`
         + `description`
         + `count`
         + `face_value_of_loan`
