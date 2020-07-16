@@ -90,10 +90,8 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
         + `asc`
 + `sort` (optional, enum[string])
     Optional parameter indicating what value results should be sorted by
-    + Default: `id`
+    + Default: `description`
     + Members
-        + `id`
-        + `code`
         + `description`
         + `count`
         + `obligation`

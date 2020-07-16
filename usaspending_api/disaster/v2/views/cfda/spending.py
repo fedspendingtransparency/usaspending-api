@@ -15,7 +15,7 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/cfda/spending.md"
 
-    required_filters = ["def_codes", "award_type_codes", "query"]
+    required_filters = ["def_codes", "_assistance_award_type_codes", "query"]
     query_fields = ["cfda_title", "cfda_number"]
     agg_key = "cfda_agg_key"
 
