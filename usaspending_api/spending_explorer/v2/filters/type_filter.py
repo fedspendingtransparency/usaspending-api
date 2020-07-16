@@ -52,7 +52,8 @@ def get_unreported_data_obj(
         .annotate(Sum("obligations_incurred_total_cpe"))
         .values("obligations_incurred_total_cpe__sum")
     )
-    expected_total = gtas[0]["obligations_incurred_total_cpe__sum"] if gtas else None
+    # because we are measuring portions of a total value stored as a negative number in our GTAS table, we flip the sign
+    expected_total = -1 * gtas[0]["obligations_incurred_total_cpe__sum"] if gtas else None
 
     if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()) == set(VALID_UNREPORTED_FILTERS):
         unreported_obj = {"id": None, "code": None, "type": spending_type, "name": UNREPORTED_DATA_NAME, "amount": None}

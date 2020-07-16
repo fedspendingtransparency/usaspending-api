@@ -71,7 +71,7 @@ class Command(mixins.ETLMixin, BaseCommand):
     def column_statements(self):
         return "\n".join(
             [
-                f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount ELSE 0 END), 0.0) AS {key},"""
+                f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount * -1 ELSE 0 END), 0.0) AS {key},"""
                 for key, val in DERIVED_COLUMNS.items()
             ]
         )
