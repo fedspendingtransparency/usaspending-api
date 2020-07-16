@@ -79,7 +79,7 @@ class DisasterBase(APIView):
 
     @cached_property
     def filters(self):
-        all_def_codes = sorted(list(DisasterEmergencyFundCode.objects.values_list("code", flat=True)))
+        all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
         object_keys_lookup = {
             "def_codes": {
                 "key": "filter|def_codes",
@@ -103,7 +103,7 @@ class DisasterBase(APIView):
                 "name": "award_type_codes",
                 "type": "array",
                 "array_type": "enum",
-                "enum_values": sorted(list(award_type_mapping.keys())),
+                "enum_values": sorted(award_type_mapping.keys()),
                 "allow_nulls": True,
                 "optional": True,
             },
@@ -112,7 +112,7 @@ class DisasterBase(APIView):
                 "name": "award_type_codes",
                 "type": "array",
                 "array_type": "enum",
-                "enum_values": sorted(list(loan_type_mapping.keys())),
+                "enum_values": sorted(loan_type_mapping.keys()),
                 "allow_nulls": True,
                 "optional": True,
                 "default": list(loan_type_mapping.keys()),
@@ -122,7 +122,7 @@ class DisasterBase(APIView):
                 "name": "award_type_codes",
                 "type": "array",
                 "array_type": "enum",
-                "enum_values": sorted(list(assistance_type_mapping.keys())),
+                "enum_values": sorted(assistance_type_mapping.keys()),
                 "allow_nulls": True,
                 "optional": True,
                 "default": list(assistance_type_mapping.keys()),

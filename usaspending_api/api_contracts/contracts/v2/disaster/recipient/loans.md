@@ -66,7 +66,7 @@ Returns loan spending details of recipients receiving supplemental funding budge
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
 + `award_type_codes` (optional, array[enum[string]], fixed-type)
-    + Only accepts loan award type `07` or `08` in the array, since this endpoint is specific to loans
+    Only accepts loan award type `07` or `08` in the array, since this endpoint is specific to loans
     + Default: `["07", "08"]`
     + Members
         + `07`
