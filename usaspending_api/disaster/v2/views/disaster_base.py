@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from typing import List
 
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping, assistance_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_month
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
@@ -79,7 +79,7 @@ class DisasterBase(APIView):
 
     @cached_property
     def filters(self):
-        all_def_codes = sorted(list(DisasterEmergencyFundCode.objects.values_list("code", flat=True)))
+        all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
         object_keys_lookup = {
             "def_codes": {
                 "key": "filter|def_codes",
@@ -103,7 +103,7 @@ class DisasterBase(APIView):
                 "name": "award_type_codes",
                 "type": "array",
                 "array_type": "enum",
-                "enum_values": list(award_type_mapping.keys()),
+                "enum_values": sorted(award_type_mapping.keys()),
                 "allow_nulls": True,
                 "optional": True,
             },
@@ -112,10 +112,20 @@ class DisasterBase(APIView):
                 "name": "award_type_codes",
                 "type": "array",
                 "array_type": "enum",
-                "enum_values": list(loan_type_mapping.keys()),
+                "enum_values": sorted(loan_type_mapping.keys()),
                 "allow_nulls": True,
                 "optional": True,
                 "default": list(loan_type_mapping.keys()),
+            },
+            "_assistance_award_type_codes": {
+                "key": "filter|award_type_codes",
+                "name": "award_type_codes",
+                "type": "array",
+                "array_type": "enum",
+                "enum_values": sorted(assistance_type_mapping.keys()),
+                "allow_nulls": True,
+                "optional": True,
+                "default": list(assistance_type_mapping.keys()),
             },
         }
         model = [object_keys_lookup[key] for key in self.required_filters]
