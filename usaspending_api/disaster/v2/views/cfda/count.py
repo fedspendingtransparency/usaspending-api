@@ -16,7 +16,7 @@ class CfdaCountViewSet(DisasterBase):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/cfda/count.md"
 
-    required_filters = ["def_codes", "award_type_codes"]
+    required_filters = ["def_codes", "_assistance_award_type_codes"]
 
     @cache_response()
     def post(self, request: Request) -> Response:

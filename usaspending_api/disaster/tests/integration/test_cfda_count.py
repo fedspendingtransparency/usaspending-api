@@ -40,6 +40,21 @@ def test_correct_response_multiple_defc(
 
 
 @pytest.mark.django_db
+def test_correct_response_with_award_type_codes(
+    client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["11"])
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["count"] == 0
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["07", "09", "11"])
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["count"] == 2
+
+
+@pytest.mark.django_db
 def test_invalid_defc(client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -64,3 +79,17 @@ def test_missing_defc(client, monkeypatch, helpers, elasticsearch_award_index, c
     resp = helpers.post_for_count_endpoint(client, url)
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert resp.data["detail"] == "Missing value: 'filter|def_codes' is a required field"
+
+
+@pytest.mark.django_db
+def test_invalid_award_type_codes(
+    client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = helpers.post_for_spending_endpoint(client, url, award_type_codes=["ZZ", "08"], def_codes=["L", "M"])
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert (
+        resp.data["detail"]
+        == "Field 'filter|award_type_codes' is outside valid values ['02', '03', '04', '05', '06', '07', '08', '09', '10', '11']"
+    )
