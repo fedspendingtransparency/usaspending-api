@@ -38,7 +38,7 @@ def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearc
             "description": "RECIPIENT 2",
             "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
             "obligation": 20.0,
-            "outlay": 0.0,
+            "outlay": 10.0,
         },
         {
             "code": "DUNS Number not provided",
@@ -46,7 +46,7 @@ def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearc
             "description": "RECIPIENT 1",
             "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
             "obligation": 2.0,
-            "outlay": 0.0,
+            "outlay": 1.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -67,7 +67,7 @@ def test_correct_response_multiple_defc(
             "description": "RECIPIENT 3",
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
             "obligation": 202200.0,
-            "outlay": 1100.0,
+            "outlay": 101100.0,
         },
         {
             "code": "456789123",
@@ -75,7 +75,7 @@ def test_correct_response_multiple_defc(
             "description": "RECIPIENT 2",
             "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
             "obligation": 20.0,
-            "outlay": 0.0,
+            "outlay": 10.0,
         },
         {
             "code": "DUNS Number not provided",
@@ -83,7 +83,7 @@ def test_correct_response_multiple_defc(
             "description": "RECIPIENT 1",
             "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
             "obligation": 2.0,
-            "outlay": 0.0,
+            "outlay": 1.0,
         },
         {
             "code": "096354360",
@@ -91,7 +91,7 @@ def test_correct_response_multiple_defc(
             "description": "MULTIPLE RECIPIENTS",
             "id": None,
             "obligation": 20000.0,
-            "outlay": 0.0,
+            "outlay": 10000.0,
         },
         {
             "code": "DUNS Number not provided",
@@ -99,7 +99,7 @@ def test_correct_response_multiple_defc(
             "description": "MULTIPLE RECIPIENTS",
             "id": None,
             "obligation": 2000000.0,
-            "outlay": 0.0,
+            "outlay": 1000000.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -123,7 +123,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
             "description": "RECIPIENT 3",
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
             "obligation": 202200.0,
-            "outlay": 1100.0,
+            "outlay": 101100.0,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -157,7 +157,7 @@ def test_correct_response_with_award_type_codes(
             "description": "RECIPIENT 2",
             "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
             "obligation": 20.0,
-            "outlay": 0.0,
+            "outlay": 10.0,
         },
         {
             "code": "DUNS Number not provided",
@@ -165,7 +165,7 @@ def test_correct_response_with_award_type_codes(
             "description": "RECIPIENT 1",
             "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
             "obligation": 2.0,
-            "outlay": 0.0,
+            "outlay": 1.0,
         },
         {
             "code": "096354360",
@@ -173,7 +173,7 @@ def test_correct_response_with_award_type_codes(
             "description": "MULTIPLE RECIPIENTS",
             "id": None,
             "obligation": 20000.0,
-            "outlay": 0.0,
+            "outlay": 10000.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -220,7 +220,7 @@ def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_a
                 "description": "RECIPIENT 2",
                 "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
                 "obligation": 20.0,
-                "outlay": 0.0,
+                "outlay": 10.0,
             }
         ],
         "page_metadata": {
