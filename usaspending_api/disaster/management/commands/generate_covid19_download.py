@@ -75,7 +75,7 @@ class Command(BaseCommand):
             intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")
             data_file, count = self.download_to_csv(sql_file, final_name, str(intermediate_data_file_path))
             if count <= 0:
-                raise Exception(f"Missing Data for {final_name}!!!!")
+                logger.warning(f"Empty data file generated: {final_name}!")
 
             self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_name.stem}*"))
 

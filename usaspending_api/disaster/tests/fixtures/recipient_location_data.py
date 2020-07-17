@@ -41,9 +41,9 @@ def awards_and_transactions():
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
-        reporting_fiscal_period=7,
+        reporting_fiscal_period=8,
         quarter_format_flag=False,
-        reporting_period_start="2022-04-01",
+        reporting_period_start="2022-05-01",
     )
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -55,9 +55,9 @@ def awards_and_transactions():
     sub3 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
-        reporting_fiscal_period=7,
+        reporting_fiscal_period=8,
         quarter_format_flag=False,
-        reporting_period_start="2022-04-01",
+        reporting_period_start="2022-05-01",
     )
 
     # Financial Accounts by Awards
