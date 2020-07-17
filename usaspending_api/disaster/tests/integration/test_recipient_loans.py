@@ -156,7 +156,7 @@ def test_missing_defc(client, monkeypatch, helpers, elasticsearch_award_index, a
 def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1)
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1, sort="description")
     expected_results = {
         "results": [
             {
@@ -199,7 +199,9 @@ def test_correct_response_with_award_type_codes(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, award_type_codes=["07"], def_codes=["L", "M"])
+    resp = helpers.post_for_spending_endpoint(
+        client, url, award_type_codes=["07"], def_codes=["L", "M"], sort="description"
+    )
     expected_results = {
         "results": [
             {
@@ -235,7 +237,9 @@ def test_correct_response_with_award_type_codes(
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
 
-    resp = helpers.post_for_spending_endpoint(client, url, award_type_codes=["08"], def_codes=["L", "M"])
+    resp = helpers.post_for_spending_endpoint(
+        client, url, award_type_codes=["08"], def_codes=["L", "M"], sort="description"
+    )
     expected_results = {
         "results": [
             {
