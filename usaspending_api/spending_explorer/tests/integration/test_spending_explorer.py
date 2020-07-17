@@ -30,7 +30,7 @@ GLOBAL_MOCK_DICT = [
         "is_quarter": True,
     },
     {"model": ObjectClass, "id": 1},
-    {"model": GTASSF133Balances, "fiscal_year": 1600, "fiscal_period": 3, "obligations_incurred_total_cpe": 10},
+    {"model": GTASSF133Balances, "fiscal_year": 1600, "fiscal_period": 3, "obligations_incurred_total_cpe": -10},
     {
         "model": SubmissionAttributes,
         "submission_id": -1,
@@ -140,7 +140,7 @@ def test_unreported_data_actual_value_file_c(client):
             "submission_reveal_date": datetime(1600, 1, 28, tzinfo=timezone.utc),
             "is_quarter": True,
         },
-        {"model": GTASSF133Balances, "fiscal_year": 1600, "fiscal_period": 3, "obligations_incurred_total_cpe": 10},
+        {"model": GTASSF133Balances, "fiscal_year": 1600, "fiscal_period": 3, "obligations_incurred_total_cpe": -10},
         {
             "model": SubmissionAttributes,
             "submission_id": -1,
