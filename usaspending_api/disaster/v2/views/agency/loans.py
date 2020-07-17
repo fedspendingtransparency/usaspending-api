@@ -77,7 +77,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
         ]
 
         annotations = {
-            "id": F("treasury_account__funding_toptier_agency"),
+            "id": F("treasury_account__funding_toptier_agency__agency"),
             "code": F("treasury_account__funding_toptier_agency__toptier_code"),
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children.
@@ -99,7 +99,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
         return (
             FinancialAccountsByAwards.objects.filter(*filters)
             .values(
-                "treasury_account__funding_toptier_agency",
+                "treasury_account__funding_toptier_agency__agency",
                 "treasury_account__funding_toptier_agency__toptier_code",
                 "treasury_account__funding_toptier_agency__name",
             )
