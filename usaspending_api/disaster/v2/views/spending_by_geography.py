@@ -163,6 +163,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                 "shape_code": shape_code or None,
                 "population": population,
                 "per_capita": per_capita,
+                "award_count": int(bucket.get("doc_count", 0)),
             }
 
         return results
