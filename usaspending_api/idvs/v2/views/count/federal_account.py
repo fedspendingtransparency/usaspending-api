@@ -23,7 +23,7 @@ GET_COUNT_SQL = SQL(
     ), gather_awards as (
         select  id award_id
         from    awards
-        where   {award_id_column} = {award_id} and
+        where   {awards_table_id_column} = {award_id} and
                 (piid = {piid} or {piid} is null)
         union   all
         select  ca.id award_id
@@ -76,9 +76,11 @@ class IDVFederalAccountCountViewSet(APIView):
         # integer or a generated award id that is a string.
         award_id = request_data["award_id"]
         award_id_column = "award_id" if type(award_id) is int else "generated_unique_award_id"
+        awards_table_id_column = "id" if type(award_id) is int else "generated_unique_award_id"
 
         sql = GET_COUNT_SQL.format(
             award_id_column=Identifier(award_id_column),
+            awards_table_id_column=Identifier(awards_table_id_column),
             award_id=Literal(award_id),
             piid=Literal(request_data.get("piid")),
         )

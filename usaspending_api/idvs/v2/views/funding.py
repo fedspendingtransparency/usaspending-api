@@ -55,7 +55,7 @@ GET_FUNDING_SQL = SQL(
                 awarding_agency_id,
                 funding_agency_id
         from    awards
-        where   {award_id_column} = {award_id} and
+        where   {awards_table_id_column} = {award_id} and
                 (piid = {piid} or {piid} is null)
         union   all
         select  ca.id award_id,
@@ -156,9 +156,11 @@ class IDVFundingViewSet(APIView):
         # integer or a generated award id that is a string.
         award_id = request_data["award_id"]
         award_id_column = "award_id" if type(award_id) is int else "generated_unique_award_id"
+        awards_table_id_column = "id" if type(award_id) is int else "generated_unique_award_id"
 
         sql = GET_FUNDING_SQL.format(
             award_id_column=Identifier(award_id_column),
+            awards_table_id_column=Identifier(awards_table_id_column),
             award_id=Literal(award_id),
             piid=Literal(request_data.get("piid")),
             order_by=build_composable_order_by(SORTABLE_COLUMNS[request_data["sort"]], request_data["order"]),
