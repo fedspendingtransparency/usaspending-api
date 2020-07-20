@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, DecimalField, Case, When, OuterRef, Subquery
+from django.db.models import Q, Sum, Count, F, Value, DecimalField, Case, When, OuterRef, Subquery, Func
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -86,15 +86,16 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 0,
             ),
             "total_budgetary_resources": Coalesce(
-                Sum(
-                    Subquery(
-                        GTASSF133Balances.objects.filter(
-                            fiscal_year=OuterRef("submission__reporting_fiscal_year"),
-                            fiscal_period=OuterRef("submission__reporting_fiscal_period"),
-                            treasury_account_identifier=OuterRef("treasury_account"),
-                            disaster_emergency_fund_code=OuterRef("disaster_emergency_fund"),
-                        ).values("budget_authority_appropriation_amount_cpe")
+                Subquery(
+                    GTASSF133Balances.objects.filter(
+                        disaster_emergency_fund_code__in=self.def_codes,
+                        fiscal_period=8,
+                        fiscal_year=2020,
+                        treasury_account_identifier=OuterRef("treasury_account"),
                     )
+                    .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
+                    .values("amount"),
+                    output_field=DecimalField(),
                 ),
                 0,
             ),

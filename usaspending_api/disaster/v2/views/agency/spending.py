@@ -18,7 +18,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchSpendingPaginationMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
+from usaspending_api.references.models import GTASSF133Balances, Agency
 
 
 logger = logging.getLogger(__name__)
@@ -87,10 +87,14 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         ]
 
         annotations = {
-            "id": F("treasury_account__funding_toptier_agency__agency"),
+            "id": Subquery(
+                Agency.objects.filter(
+                    toptier_agency_id=OuterRef("treasury_account__funding_toptier_agency"), toptier_flag=True
+                ).values("id")
+            ),
             "code": F("treasury_account__funding_toptier_agency__toptier_code"),
             "description": F("treasury_account__funding_toptier_agency__name"),
-            # Currently, this endpoint can never have children.
+            # Currently, this endpoint can never have children w/o type = `award` & `award_type_codes`
             "children": Value([], output_field=ArrayField(IntegerField())),
             "count": Value(0, output_field=IntegerField()),
             "obligation": Coalesce(
@@ -135,7 +139,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         return (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
             .values(
-                "treasury_account__funding_toptier_agency__agency",
+                "treasury_account__funding_toptier_agency",
                 "treasury_account__funding_toptier_agency__toptier_code",
                 "treasury_account__funding_toptier_agency__name",
             )
@@ -153,7 +157,11 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         ]
 
         annotations = {
-            "id": F("treasury_account__funding_toptier_agency__agency"),
+            "id": Subquery(
+                Agency.objects.filter(
+                    toptier_agency_id=OuterRef("treasury_account__funding_toptier_agency"), toptier_flag=True
+                ).values("id")
+            ),
             "code": F("treasury_account__funding_toptier_agency__toptier_code"),
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children.
@@ -175,7 +183,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         return (
             FinancialAccountsByAwards.objects.filter(*filters)
             .values(
-                "treasury_account__funding_toptier_agency__agency",
+                "treasury_account__funding_toptier_agency",
                 "treasury_account__funding_toptier_agency__toptier_code",
                 "treasury_account__funding_toptier_agency__name",
             )
