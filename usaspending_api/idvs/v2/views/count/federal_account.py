@@ -21,15 +21,17 @@ GET_COUNT_SQL = SQL(
                 inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
         where   ppa.{award_id_column} = {award_id}
     ), gather_awards as (
-        select  ca.id award_id,
-                ca.generated_unique_award_id,
-                ca.piid
+        select  id award_id
+        from    awards
+        where   {award_id_column} = {award_id} and
+                (piid = {piid} or {piid} is null)
+        union   all
+        select  ca.id award_id
         from    gather_award_ids gaids
                 inner join awards pa on pa.id = gaids.award_id
                 inner join awards ca on
                     ca.parent_award_piid = pa.piid and
                     ca.fpds_parent_agency_id = pa.fpds_agency_id and
-                    ca.type not like 'IDV%' and
                     (ca.piid = {piid} or {piid} is null)
     ), gather_financial_accounts_by_awards as (
         select  ga.award_id,

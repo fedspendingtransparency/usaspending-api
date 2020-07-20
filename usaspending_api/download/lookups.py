@@ -21,7 +21,7 @@ from usaspending_api.search.models import AwardSearchView, UniversalTransactionV
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
     idv_transaction_filter,
-    idv_treasury_account_funding_filter,
+    idv_federal_account_funding_filter,
 )
 from usaspending_api.awards.v2.filters.award_filters import (
     awards_transaction_filter,
@@ -162,7 +162,7 @@ VALUE_MAPPINGS = {
         "table": FinancialAccountsByAwards,
         "table_name": "award_financial",
         "download_name": "IDV_{piid}_FederalAccountFunding",
-        "filter_function": idv_treasury_account_funding_filter,
+        "filter_function": idv_federal_account_funding_filter,
         "is_for_idv": True,
     },
     "idv_transaction_history": {
