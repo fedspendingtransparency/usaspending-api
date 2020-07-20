@@ -213,7 +213,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             "code": info["code"],
             "description": info["name"],
             # the count of distinct subtier agencies contributing to the totals
-            "count": int(bucket.get("doc_count", 0)),
+            "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
                 for column in self.sum_column_mapping
