@@ -67,6 +67,8 @@ query_paths = {
                 ("funding_office_name", "award__latest_transaction__contract_data__funding_office_name"),
                 ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("foreign_funding", "award__latest_transaction__contract_data__foreign_funding"),
                 ("foreign_funding_description", "award__latest_transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "award__latest_transaction__contract_data__sam_exception"),
@@ -630,6 +632,8 @@ query_paths = {
                 ("funding_office_name", "award__latest_transaction__assistance_data__funding_office_name"),
                 ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
                 ("recipient_parent_duns", "award__latest_transaction__assistance_data__ultimate_parent_unique_ide"),
@@ -786,6 +790,8 @@ query_paths = {
                 ("funding_office_name", "transaction__contract_data__funding_office_name"),
                 ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("foreign_funding", "transaction__contract_data__foreign_funding"),
                 ("foreign_funding_description", "transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "transaction__contract_data__sam_exception"),
@@ -1155,6 +1161,8 @@ query_paths = {
                 ("funding_office_name", "transaction__assistance_data__funding_office_name"),
                 ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "transaction__assistance_data__awardee_or_recipient_legal"),
                 ("recipient_parent_duns", "transaction__assistance_data__ultimate_parent_unique_ide"),
@@ -1260,6 +1268,8 @@ query_paths = {
                 ("prime_award_funding_office_name", "broker_subaward__funding_office_name"),
                 ("prime_award_treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
@@ -1387,6 +1397,8 @@ query_paths = {
                 ("prime_award_funding_office_name", "broker_subaward__funding_office_name"),
                 ("prime_award_treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
