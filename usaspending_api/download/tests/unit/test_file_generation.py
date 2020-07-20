@@ -33,7 +33,7 @@ def test_get_transactions_csv_sources(db):
     assert csv_sources[1].source_type == "transactions"
 
 
-def test_get_sub_awards_csv_sources():
+def test_get_sub_awards_csv_sources(db):
     original = VALUE_MAPPINGS["sub_awards"]["filter_function"]
     VALUE_MAPPINGS["sub_awards"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
