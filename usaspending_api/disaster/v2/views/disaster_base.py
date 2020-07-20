@@ -66,7 +66,6 @@ class DisasterBase(APIView):
     required_filters = ["def_codes"]
     reporting_period_min_date = date(2020, 4, 1)
     reporting_period_min_year, reporting_period_min_month = generate_fiscal_year_and_month(reporting_period_min_date)
-    latest_reporting_period = get_last_closed_submission_date(False)
 
     @classmethod
     def requests_award_type_codes(cls, request: HttpRequest) -> bool:
@@ -141,6 +140,10 @@ class DisasterBase(APIView):
     @cached_property
     def final_period_submission_query_filters(self):
         return filter_by_latest_closed_periods()
+
+    @cached_property
+    def latest_reporting_period(self):
+        return get_last_closed_submission_date(False)
 
     @cached_property
     def all_closed_defc_submissions(self):
