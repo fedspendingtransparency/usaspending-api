@@ -14,6 +14,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_y
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 COVID_19_GROUP_NAME = "covid_19"
@@ -65,6 +66,7 @@ class DisasterBase(APIView):
     required_filters = ["def_codes"]
     reporting_period_min_date = date(2020, 4, 1)
     reporting_period_min_year, reporting_period_min_month = generate_fiscal_year_and_month(reporting_period_min_date)
+    latest_reporting_period = get_last_closed_submission_date(False)
 
     @classmethod
     def requests_award_type_codes(cls, request: HttpRequest) -> bool:

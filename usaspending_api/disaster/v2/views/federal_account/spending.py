@@ -89,8 +89,8 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 Subquery(
                     GTASSF133Balances.objects.filter(
                         disaster_emergency_fund_code__in=self.def_codes,
-                        fiscal_period=8,
-                        fiscal_year=2020,
+                        fiscal_period=self.latest_reporting_period["submission_fiscal_month"],
+                        fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
                         treasury_account_identifier=OuterRef("treasury_account"),
                     )
                     .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))

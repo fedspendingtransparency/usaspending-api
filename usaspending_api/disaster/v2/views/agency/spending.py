@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef
+from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
@@ -125,11 +125,14 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 Sum(
                     Subquery(
                         GTASSF133Balances.objects.filter(
-                            fiscal_year=OuterRef("submission__reporting_fiscal_year"),
-                            fiscal_period=OuterRef("submission__reporting_fiscal_period"),
+                            disaster_emergency_fund_code__in=self.def_codes,
+                            fiscal_period=self.latest_reporting_period["submission_fiscal_month"],
+                            fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
                             treasury_account_identifier=OuterRef("treasury_account"),
-                            disaster_emergency_fund_code=OuterRef("disaster_emergency_fund"),
-                        ).values("budget_authority_appropriation_amount_cpe")
+                        )
+                        .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
+                        .values("amount"),
+                        output_field=DecimalField(),
                     )
                 ),
                 0,
