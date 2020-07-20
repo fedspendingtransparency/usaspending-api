@@ -71,7 +71,7 @@ SELECT
       THEN CONCAT(
         '{"name":"', vw_award_search.funding_toptier_agency_name,
         '","code":"', vw_award_search.funding_toptier_agency_code,
-        '","id":"', FA.toptier_agency_id, '"}'
+        '","id":"', FA.id, '"}'
       )
     ELSE NULL
   END AS funding_toptier_agency_agg_key,
@@ -80,7 +80,7 @@ SELECT
       THEN CONCAT(
         '{"name":"', vw_award_search.funding_subtier_agency_name,
         '","code":"', vw_award_search.funding_subtier_agency_code,
-        '","id":"', FA.subtier_agency_id, '"}'
+        '","id":"', FA.id, '"}'
       )
     ELSE NULL
   END AS funding_subtier_agency_agg_key,

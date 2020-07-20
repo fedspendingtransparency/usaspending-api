@@ -67,21 +67,24 @@ This endpoint provides geographical spending information from emergency/disaster
                         "amount": 4771026.93,
                         "display_name": "North Dakota",
                         "population": 762062,
-                        "per_capita": 6.26
+                        "per_capita": 6.26,
+                        "award_count": 185
                     },
                     {
                         "shape_code": "NV",
                         "amount": 26928552.59,
                         "display_name": "Nevada",
                         "population": 3080156,
-                        "per_capita": 8.74
+                        "per_capita": 8.74,
+                        "award_count": 124
                     },
                     {
                         "shape_code": "OH",
                         "amount": 187505278.16,
                         "display_name": "Ohio",
                         "population": 11689100,
-                        "per_capita": 16.04
+                        "per_capita": 16.04,
+                        "award_count": 134
                     }
                 ]
             }
@@ -100,6 +103,7 @@ This endpoint provides geographical spending information from emergency/disaster
 + `shape_code` (required, string)
 + `population` (required, number, nullable)
 + `per_capita` (required, number, nullable)
++ `award_count` (required, number)
 
 
 ## DEFC (enum[string])

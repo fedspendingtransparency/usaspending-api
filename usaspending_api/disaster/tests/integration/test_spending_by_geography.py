@@ -128,6 +128,7 @@ def _test_correct_response_for_county(client):
                 "per_capita": 2000220.0,
                 "population": 1,
                 "shape_code": "45001",
+                "award_count": 3,
             },
             {
                 "amount": 200000.0,
@@ -135,6 +136,7 @@ def _test_correct_response_for_county(client):
                 "per_capita": 20000.0,
                 "population": 10,
                 "shape_code": "45005",
+                "award_count": 1,
             },
         ],
         "messages": [get_time_period_message()],
@@ -164,6 +166,7 @@ def _test_correct_response_for_district(client):
                 "per_capita": None,
                 "population": None,
                 "shape_code": "4510",
+                "award_count": 1,
             },
             {
                 "amount": 200200.0,
@@ -171,8 +174,16 @@ def _test_correct_response_for_district(client):
                 "per_capita": 2002.0,
                 "population": 100,
                 "shape_code": "4550",
+                "award_count": 2,
             },
-            {"amount": 22000.0, "display_name": "WA-50", "per_capita": 22.0, "population": 1000, "shape_code": "5350"},
+            {
+                "amount": 22000.0,
+                "display_name": "WA-50",
+                "per_capita": 22.0,
+                "population": 1000,
+                "shape_code": "5350",
+                "award_count": 2,
+            },
         ],
         "messages": [get_time_period_message()],
     }
@@ -195,6 +206,7 @@ def _test_correct_response_for_state(client):
                 "per_capita": 2.2,
                 "population": 10000,
                 "shape_code": "WA",
+                "award_count": 2,
             },
         ],
         "messages": [get_time_period_message()],
@@ -236,6 +248,7 @@ def _test_correct_response_for_obligation(client):
                 "per_capita": 2200.22,
                 "population": 1000,
                 "shape_code": "SC",
+                "award_count": 4,
             },
             {
                 "amount": 22000.0,
@@ -243,6 +256,7 @@ def _test_correct_response_for_obligation(client):
                 "per_capita": 2.2,
                 "population": 10000,
                 "shape_code": "WA",
+                "award_count": 2,
             },
         ],
         "messages": [get_time_period_message()],
@@ -263,18 +277,20 @@ def _test_correct_response_for_outlay(client):
         "spending_type": "outlay",
         "results": [
             {
-                "amount": 100.0,
+                "amount": 1100110.0,
                 "display_name": "South Carolina",
-                "per_capita": 0.1,
+                "per_capita": 1100.11,
                 "population": 1000,
                 "shape_code": "SC",
+                "award_count": 4,
             },
             {
-                "amount": 1000.0,
+                "amount": 11000.0,
                 "display_name": "Washington",
-                "per_capita": 0.1,
+                "per_capita": 1.1,
                 "population": 10000,
                 "shape_code": "WA",
+                "award_count": 2,
             },
         ],
         "messages": [get_time_period_message()],
@@ -304,8 +320,16 @@ def _test_correct_response_for_face_value_of_loan(client):
                 "per_capita": 0.33,
                 "population": 1000,
                 "shape_code": "SC",
+                "award_count": 4,
             },
-            {"amount": 0.0, "display_name": "Washington", "per_capita": 0.0, "population": 10000, "shape_code": "WA"},
+            {
+                "amount": 0.0,
+                "display_name": "Washington",
+                "per_capita": 0.0,
+                "population": 10000,
+                "shape_code": "WA",
+                "award_count": 2,
+            },
         ],
         "messages": [get_time_period_message()],
     }
@@ -342,7 +366,14 @@ def _test_correct_response_of_loans(client):
         "geo_layer": "county",
         "spending_type": "obligation",
         "results": [
-            {"amount": 220.0, "display_name": "Charleston", "per_capita": 220.0, "population": 1, "shape_code": "45001"}
+            {
+                "amount": 220.0,
+                "display_name": "Charleston",
+                "per_capita": 220.0,
+                "population": 1,
+                "shape_code": "45001",
+                "award_count": 2,
+            }
         ],
         "messages": [get_time_period_message()],
     }
@@ -372,6 +403,7 @@ def _test_correct_response_of_contracts(client):
                 "per_capita": None,
                 "population": None,
                 "shape_code": "4510",
+                "award_count": 1,
             },
             {
                 "amount": 200000.0,
@@ -379,8 +411,16 @@ def _test_correct_response_of_contracts(client):
                 "per_capita": 2000.0,
                 "population": 100,
                 "shape_code": "4550",
+                "award_count": 1,
             },
-            {"amount": 22000.0, "display_name": "WA-50", "per_capita": 22.0, "population": 1000, "shape_code": "5350"},
+            {
+                "amount": 22000.0,
+                "display_name": "WA-50",
+                "per_capita": 22.0,
+                "population": 1000,
+                "shape_code": "5350",
+                "award_count": 2,
+            },
         ],
         "messages": [get_time_period_message()],
     }
