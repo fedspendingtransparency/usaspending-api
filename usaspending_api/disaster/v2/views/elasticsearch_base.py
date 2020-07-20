@@ -18,6 +18,7 @@ from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_awards,
 )
+from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 
 class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
@@ -75,9 +76,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         query = self.filters.pop("query", None)
         self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         if query:
-            self.filter_query.must.append(
-                ES_Q("query_string", query=query, default_operator="OR", fields=self.query_fields)
-            )
+            query = es_sanitize(query) + "*"
+            self.filter_query.must.append(ES_Q("simple_query_string", query=query, fields=self.query_fields))
 
         # Ensure that only non-zero values are taken into consideration
         non_zero_queries = []
