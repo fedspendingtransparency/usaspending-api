@@ -1,5 +1,5 @@
-from django.db.models import Q, Count
-from django.db.models.functions import Coalesce
+from django.db.models import Q, Count, Case, When, F, TextField
+from django.db.models.functions import Cast
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -7,6 +7,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.disaster.v2.views.count_base import CountBase
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.disaster.v2.views.disaster_base import FabaOutlayMixin, AwardTypeMixin
+from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
 class RecipientCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
@@ -30,9 +31,13 @@ class RecipientCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
         ]
         award_ids = (
             FinancialAccountsByAwards.objects.annotate(
-                recipient=Coalesce(
-                    "award__latest_transaction__contract_data__awardee_or_recipient_uniqu",
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu",
+                recipient=Case(
+                    When(
+                        award__awardsearchview__recipient_name__in=SPECIAL_CASES,
+                        then=F("award__awardsearchview__recipient_name"),
+                    ),
+                    default=Cast(F("award__awardsearchview__recipient_hash"), output_field=TextField()),
+                    output_field=TextField(),
                 )
             )
             .filter(*filters)
