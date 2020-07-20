@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When
+from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
@@ -12,16 +12,13 @@ from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.disaster_base import (
-    DisasterBase,
-    PaginationMixin,
-    SpendingMixin,
-)
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, PaginationMixin, SpendingMixin
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 
 
 logger = logging.getLogger(__name__)
@@ -90,7 +87,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         ]
 
         annotations = {
-            "id": F("treasury_account__funding_toptier_agency"),
+            "id": F("treasury_account__funding_toptier_agency__agency"),
             "code": F("treasury_account__funding_toptier_agency__toptier_code"),
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children.
@@ -121,14 +118,24 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 0,
             ),
             "total_budgetary_resources": Coalesce(
-                Sum("treasury_account__gtas__budget_authority_appropriation_amount_cpe"), 0
+                Sum(
+                    Subquery(
+                        GTASSF133Balances.objects.filter(
+                            fiscal_year=OuterRef("submission__reporting_fiscal_year"),
+                            fiscal_period=OuterRef("submission__reporting_fiscal_period"),
+                            treasury_account_identifier=OuterRef("treasury_account"),
+                            disaster_emergency_fund_code=OuterRef("disaster_emergency_fund"),
+                        ).values("budget_authority_appropriation_amount_cpe")
+                    )
+                ),
+                0,
             ),
         }
 
         return (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
             .values(
-                "treasury_account__funding_toptier_agency",
+                "treasury_account__funding_toptier_agency__agency",
                 "treasury_account__funding_toptier_agency__toptier_code",
                 "treasury_account__funding_toptier_agency__name",
             )
