@@ -1241,8 +1241,19 @@ query_paths = {
                 ("prime_award_piid", "broker_subaward__award_id"),
                 ("prime_award_parent_piid", "broker_subaward__parent_award_id"),
                 ("prime_award_amount", "broker_subaward__award_amount"),
+                ("prime_award_disaster_emergency_fund_codes", None),  # Annotation is used to create this column
+                (
+                    "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "broker_subaward__action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
+                ("prime_award_latest_action_date", "award__latest_transaction__action_date"),
+                ("prime_award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("period_of_performance_potential_end_date", None),  # Annotation is used to create this column
@@ -1369,8 +1380,19 @@ query_paths = {
                 ("prime_award_unique_key", "broker_subaward__unique_award_key"),
                 ("prime_award_fain", "broker_subaward__award_id"),
                 ("prime_award_amount", "broker_subaward__award_amount"),
+                ("prime_award_disaster_emergency_fund_codes", None),  # Annotation is used to create this column
+                (
+                    "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "broker_subaward__action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
+                ("prime_award_latest_action_date", "award__latest_transaction__action_date"),
+                ("prime_award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("prime_award_awarding_agency_code", "broker_subaward__awarding_agency_code"),
