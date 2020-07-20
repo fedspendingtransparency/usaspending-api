@@ -15,6 +15,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
     SpendingMixin,
+    FabaOutlayMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
@@ -23,7 +24,9 @@ def construct_response(results: list, pagination: Pagination, strip_total_budget
     object_classes = ObjectClassResults()
     for row in results:
         major_code = row.pop("major_code")
-        major_class = MajorClass(id=major_code, code=major_code, description=row.pop("major_description"))
+        major_class = MajorClass(
+            id=major_code, code=major_code, award_count=0, description=row.pop("major_description")
+        )
         object_classes[major_class].include(ObjectClass(**row))
 
     return {
@@ -32,7 +35,7 @@ def construct_response(results: list, pagination: Pagination, strip_total_budget
     }
 
 
-class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
+class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterBase):
     """View to implement the API"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/spending.md"
@@ -120,6 +123,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 ),
                 0,
             ),
+            "award_count": self.unique_file_c_count(),
         }
 
         # Assuming it is more performant to fetch all rows once rather than

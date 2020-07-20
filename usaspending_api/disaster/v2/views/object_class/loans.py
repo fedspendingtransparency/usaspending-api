@@ -56,6 +56,7 @@ class ObjectClassLoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin,
                 0,
             ),
             "total_budgetary_resources": Coalesce(Sum("award__total_loan_value"), 0),
+            "award_count": self.unique_file_c_count(),
         }
 
         # Assuming it is more performant to fetch all rows once rather than

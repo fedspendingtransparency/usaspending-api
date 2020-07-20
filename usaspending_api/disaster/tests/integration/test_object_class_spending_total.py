@@ -18,10 +18,19 @@ def test_basic_object_class_spending_total_success(
             "code": "001",
             "description": "001 name",
             "count": 1,
+            "award_count": None,
             "obligation": 0.0,
             "outlay": 0.0,
             "children": [
-                {"id": 1, "code": "0001", "description": "0001 name", "count": 1, "obligation": 0.0, "outlay": 0.0}
+                {
+                    "id": 1,
+                    "code": "0001",
+                    "description": "0001 name",
+                    "count": 1,
+                    "award_count": None,
+                    "obligation": 0.0,
+                    "outlay": 0.0,
+                }
             ],
         }
     ]

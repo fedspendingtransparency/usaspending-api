@@ -34,7 +34,6 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
-    print(resp.json()["results"])
     assert resp.json()["results"] == expected_results
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "L", "N", "O"], spending_type="total")
