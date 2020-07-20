@@ -16,6 +16,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansPaginationMixin,
     LoansMixin,
+    FabaOutlayMixin,
 )
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
@@ -46,7 +47,7 @@ def route_agency_loans_backend(**initkwargs):
     return route_agency_loans_backend
 
 
-class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
+class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, DisasterBase):
     """ Returns loan disaster spending by agency. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
@@ -80,6 +81,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
             # Currently, this endpoint can never have children.
             "children": Value([], output_field=ArrayField(IntegerField())),
             "count": Value(0, output_field=IntegerField()),
+            "award_count": self.unique_file_c_count(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
