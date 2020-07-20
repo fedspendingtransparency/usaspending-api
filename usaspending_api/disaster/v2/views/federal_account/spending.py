@@ -11,6 +11,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
     SpendingMixin,
+    FabaOutlayMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
@@ -18,7 +19,9 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 def construct_response(results: list, pagination: Pagination):
     FederalAccounts = FedAcctResults()
     for row in results:
-        FA = FedAccount(id=row.pop("fa_id"), code=row.pop("fa_code"), description=row.pop("fa_description"))
+        FA = FedAccount(
+            id=row.pop("fa_id"), code=row.pop("fa_code"), award_count=0, description=row.pop("fa_description")
+        )
         FederalAccounts[FA].include(TAS(**row))
 
     return {
@@ -27,7 +30,7 @@ def construct_response(results: list, pagination: Pagination):
     }
 
 
-class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
+class SpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterBase):
     """ Returns disaster spending by federal account. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
@@ -118,6 +121,7 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
             "count": Count("treasury_account__tas_rendering_label", distinct=True),
+            "award_count": self.unique_file_c_count(),
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),

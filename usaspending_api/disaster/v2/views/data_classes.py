@@ -9,6 +9,7 @@ class Element:
     id: int
     code: str
     description: str
+    award_count: int = None
     count: int = 0
     obligation: float = 0
     outlay: float = 0

@@ -19,6 +19,7 @@ def test_federal_account_loans_success(client, generic_account_data, monkeypatch
                 {
                     "code": "2020/52",
                     "count": 1,
+                    "award_count": 1,
                     "description": "ferns",
                     "face_value_of_loan": 4444.0,
                     "id": 24,
@@ -28,6 +29,7 @@ def test_federal_account_loans_success(client, generic_account_data, monkeypatch
                 {
                     "code": "2020/98",
                     "count": 2,
+                    "award_count": 2,
                     "description": "evergreens",
                     "face_value_of_loan": 4444.0,
                     "id": 23,
@@ -37,6 +39,7 @@ def test_federal_account_loans_success(client, generic_account_data, monkeypatch
             ],
             "code": "000-0000",
             "count": 3,
+            "award_count": 3,
             "description": "gifts",
             "face_value_of_loan": 8888.0,
             "outlay": 556.0,
