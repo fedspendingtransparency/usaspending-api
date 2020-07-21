@@ -1,5 +1,5 @@
-from django.db.models import Q, Sum, F, Value, Case, When, Min
-from django.db.models.functions import Coalesce
+from django.db.models import Q, Sum, F, Value, Case, When, Min, TextField
+from django.db.models.functions import Coalesce, Cast
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -64,7 +64,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin
         ]
 
         annotations = {
-            **universal_annotations(),
+            **shared_object_class_annotations(),
             "obligation": Coalesce(
                 Sum(
                     Case(
@@ -110,7 +110,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin
         ]
 
         annotations = {
-            **universal_annotations(),
+            **shared_object_class_annotations(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
@@ -134,11 +134,11 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin
         )
 
 
-def universal_annotations():
+def shared_object_class_annotations():
     return {
         "major_code": F("object_class__major_object_class"),
         "description": F("object_class__object_class_name"),
         "code": F("object_class__object_class"),
-        "id": Min("object_class_id"),
+        "id": Cast(Min("object_class_id"), TextField()),
         "major_description": F("object_class__major_object_class_name"),
     }

@@ -43,7 +43,7 @@ Returns spending details of Object Classes receiving supplemental funding budget
                   "outlay": 723027742.93,
                   "children": [
                     {
-                      "id": 195,
+                      "id": "195",
                       "code": "920",
                       "description": "Undistributed",
                       "award_count": 1,

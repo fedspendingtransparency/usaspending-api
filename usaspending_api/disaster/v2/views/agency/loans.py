@@ -48,7 +48,10 @@ def route_agency_loans_backend(**initkwargs):
 
 
 class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, DisasterBase):
-    """ Returns loan disaster spending by agency. """
+    """
+        This endpoint provides insights on the Agencies awarding loans from
+        disaster/emergency funding per the requested filters.
+    """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
 
