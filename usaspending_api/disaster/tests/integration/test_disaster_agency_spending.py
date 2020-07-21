@@ -16,7 +16,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
     )
     expected_results = [
         {
-            "id": 9,
+            "id": 4,
             "code": "009",
             "description": "Agency 009",
             "children": [],
@@ -26,7 +26,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "total_budgetary_resources": 0.0,
         },
         {
-            "id": 8,
+            "id": 2,
             "code": "008",
             "description": "Agency 008",
             "children": [],
@@ -36,7 +36,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "total_budgetary_resources": 0.0,
         },
         {
-            "id": 7,
+            "id": 1,
             "code": "007",
             "description": "Agency 007",
             "children": [],
@@ -53,7 +53,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "L"], spending_type="total")
     expected_results = [
         {
-            "id": 7,
+            "id": 1,
             "code": "007",
             "description": "Agency 007",
             "children": [],
@@ -77,16 +77,6 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "count": 0,
             "obligation": 22199998.0,
             "outlay": 200000022.0,
-            "total_budgetary_resources": None,
-        },
-        {
-            "id": 3,
-            "code": "008",
-            "description": "Agency 008",
-            "children": [],
-            "count": 0,
-            "obligation": 22000.0,
-            "outlay": 20000.0,
             "total_budgetary_resources": None,
         },
         {
