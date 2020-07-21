@@ -34,7 +34,6 @@ def generic_account_data():
         tas_rendering_label="2020/99",
         account_title="flowers",
         treasury_account_identifier=22,
-        gtas__budget_authority_appropriation_amount_cpe=4358,
     )
     tre_acct2 = mommy.make(
         "accounts.TreasuryAppropriationAccount",
@@ -42,7 +41,6 @@ def generic_account_data():
         tas_rendering_label="2020/98",
         account_title="evergreens",
         treasury_account_identifier=23,
-        gtas__budget_authority_appropriation_amount_cpe=109237,
     )
     tre_acct3 = mommy.make(
         "accounts.TreasuryAppropriationAccount",
@@ -50,7 +48,6 @@ def generic_account_data():
         tas_rendering_label="2020/52",
         account_title="ferns",
         treasury_account_identifier=24,
-        gtas__budget_authority_appropriation_amount_cpe=39248,
     )
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -156,6 +153,30 @@ def generic_account_data():
         gross_outlay_amount_by_award_cpe=333,
         disaster_emergency_fund__code="N",
         treasury_account=tre_acct3,
+    )
+    mommy.make(
+        "references.GTASSF133Balances",
+        budget_authority_appropriation_amount_cpe=4358,
+        fiscal_year=2022,
+        fiscal_period=7,
+        disaster_emergency_fund_code="M",
+        treasury_account_identifier=tre_acct1,
+    )
+    mommy.make(
+        "references.GTASSF133Balances",
+        budget_authority_appropriation_amount_cpe=109237,
+        fiscal_year=2022,
+        fiscal_period=7,
+        disaster_emergency_fund_code="M",
+        treasury_account_identifier=tre_acct2,
+    )
+    mommy.make(
+        "references.GTASSF133Balances",
+        budget_authority_appropriation_amount_cpe=39248,
+        fiscal_year=2022,
+        fiscal_period=7,
+        disaster_emergency_fund_code="M",
+        treasury_account_identifier=tre_acct3,
     )
 
 
