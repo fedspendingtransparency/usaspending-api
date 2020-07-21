@@ -101,7 +101,6 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children w/o type = `award` & `award_type_codes`
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "count": Value(0, output_field=IntegerField()),
             "obligation": Coalesce(
                 Sum(
                     Case(
@@ -174,7 +173,6 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children.
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "count": Value(0, output_field=IntegerField()),
             "award_count": self.unique_file_c_count(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(

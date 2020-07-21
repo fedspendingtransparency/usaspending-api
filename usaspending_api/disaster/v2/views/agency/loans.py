@@ -84,7 +84,6 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children.
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "count": Value(0, output_field=IntegerField()),
             "award_count": self.unique_file_c_count(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
@@ -145,7 +144,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
             "code": info["code"],
             "description": info["name"],
             # the count of distinct subtier agencies contributing to the totals
-            "count": int(bucket.get("doc_count", 0)),
+            "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
                 for column in self.sum_column_mapping

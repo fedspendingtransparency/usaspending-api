@@ -15,7 +15,6 @@ def test_federal_account_award_success(client, generic_account_data, monkeypatch
             "children": [
                 {
                     "code": "2020/99",
-                    "count": 1,
                     "award_count": 1,
                     "description": "flowers",
                     "id": 22,
@@ -25,7 +24,6 @@ def test_federal_account_award_success(client, generic_account_data, monkeypatch
                 }
             ],
             "code": "000-0000",
-            "count": 1,
             "award_count": 1,
             "description": "gifts",
             "id": 21,
@@ -43,7 +41,6 @@ def test_federal_account_award_success(client, generic_account_data, monkeypatch
             "children": [
                 {
                     "code": "2020/52",
-                    "count": 1,
                     "award_count": 1,
                     "description": "ferns",
                     "id": 24,
@@ -53,7 +50,6 @@ def test_federal_account_award_success(client, generic_account_data, monkeypatch
                 },
                 {
                     "code": "2020/98",
-                    "count": 1,
                     "award_count": 2,
                     "description": "evergreens",
                     "id": 23,
@@ -63,7 +59,6 @@ def test_federal_account_award_success(client, generic_account_data, monkeypatch
                 },
                 {
                     "code": "2020/99",
-                    "count": 1,
                     "award_count": 1,
                     "description": "flowers",
                     "id": 22,
@@ -73,7 +68,6 @@ def test_federal_account_award_success(client, generic_account_data, monkeypatch
                 },
             ],
             "code": "000-0000",
-            "count": 3,
             "award_count": 4,
             "description": "gifts",
             "id": 21,

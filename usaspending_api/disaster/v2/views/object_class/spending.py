@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, Case, When, Min
+from django.db.models import Q, Sum, F, Value, Case, When, Min
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -65,7 +65,6 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin
 
         annotations = {
             **universal_annotations(),
-            "count": Count("object_class__object_class", distinct=True),
             "obligation": Coalesce(
                 Sum(
                     Case(
@@ -112,7 +111,6 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin
 
         annotations = {
             **universal_annotations(),
-            "count": Count("award_id", distinct=True),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(

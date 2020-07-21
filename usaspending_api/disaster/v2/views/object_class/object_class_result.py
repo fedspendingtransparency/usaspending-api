@@ -30,7 +30,6 @@ class ObjectClassResults:
             for child in row.children:
                 row.outlay += child.outlay
                 row.obligation += child.obligation
-                row.count += child.count
                 row.total_budgetary_resources += child.total_budgetary_resources
 
                 if child.award_count:
