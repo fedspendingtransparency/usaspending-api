@@ -6,7 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models import Award, FinancialAccountsByAwards
+from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.data_layer.orm import (
     construct_contract_response,
     construct_idv_response,
@@ -74,13 +74,6 @@ class AwardRetrieveViewSet(APIView):
             response_content = construct_idv_response(request_dict)
         else:
             response_content = construct_assistance_response(request_dict)
-
-        response_content["disaster_emergency_fund_codes"] = list(
-            FinancialAccountsByAwards.objects.filter(award=award, disaster_emergency_fund__isnull=False)
-            .order_by("disaster_emergency_fund__code")
-            .distinct()
-            .values_list("disaster_emergency_fund__code", flat=True)
-        )
 
         return response_content
 
