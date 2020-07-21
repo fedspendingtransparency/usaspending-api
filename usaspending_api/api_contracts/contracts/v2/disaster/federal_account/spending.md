@@ -41,7 +41,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                         "code": "090",
                         "description": "Description text",
                         "children": [],
-                        "count": 54,
+                        "award_count": 54,
                         "obligation": 89.01,
                         "outlay": 70.98,
                         "total_budgetary_resources": null
@@ -51,7 +51,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                         "code": "012",
                         "description": "Description text",
                         "children": [],
-                        "count": 2,
+                        "award_count": 2,
                         "obligation": 50,
                         "outlay": 10,
                         "total_budgetary_resources": null
@@ -105,7 +105,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
-+ `count` (required, number)
++ `award_count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 + `total_budgetary_resources` (required, number, nullable)
