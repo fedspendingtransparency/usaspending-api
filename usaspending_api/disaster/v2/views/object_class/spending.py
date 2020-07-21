@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, F, Value, Case, When, Min, TextField
+from django.db.models import Q, Sum, F, Value, Case, When, Min, TextField, IntegerField
 from django.db.models.functions import Coalesce, Cast
 from rest_framework.response import Response
 
@@ -89,6 +89,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin
                 ),
                 0,
             ),
+            "award_count": Value(None, output_field=IntegerField()),
         }
 
         # Assuming it is more performant to fetch all rows once rather than

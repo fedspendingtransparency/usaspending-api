@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, F, Value, DecimalField, Case, When, OuterRef, Subquery, Func
+from django.db.models import Q, Sum, F, Value, DecimalField, Case, When, OuterRef, Subquery, Func, IntegerField
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -65,6 +65,7 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterB
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),
+            "award_count": Value(None, output_field=IntegerField()),
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Coalesce(
