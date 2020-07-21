@@ -41,7 +41,7 @@ def idv_transaction_filter(filters):
     return TransactionNormalized.objects.filter(award_id=idv_award_id)
 
 
-def idv_federal_account_funding_filter(account_type, download_table, filters, account_level):
+def idv_treasury_account_funding_filter(account_type, download_table, filters, account_level):
     if account_level != "treasury_account":
         raise InvalidParameterException("Only treasury level account reporting is supported at this time")
     idv_award_id = _get_idv_award_id(filters)

@@ -33,10 +33,9 @@ for k, v in SORTABLE_COLUMNS.items():
 
 DEFAULT_SORT_COLUMN = "reporting_fiscal_date"
 
-# Get funding information for child and grandchild contracts of an IDV but
-# not the IDVs themselves.  As per direction from the product owner, agency
-# data is to be retrieved from the File D (awards) data not File C
-# (financial_accounts_by_awards).
+# Get funding information for the entire IDV hierarchy.  As per direction from
+# the product owner, agency data is to be retrieved from the File D (awards)
+# data not File C (financial_accounts_by_awards).
 GET_FUNDING_SQL = SQL(
     """
     with gather_award_ids as (
