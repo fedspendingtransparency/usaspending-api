@@ -32,7 +32,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
                 + `state`
                 + `county`
                 + `district`
-        + `geo_layer_filters` (required, array[string])
+        + `geo_layer_filters` (optional, array[string])
 
     + Body
 
