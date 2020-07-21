@@ -205,6 +205,42 @@ def transform_keyword(request, api_version):
     return request
 
 
+def get_all_award_ids_in_idv_hierarchy(root_idv_award_id):
+    """
+    Unfortunately, there's no clean way to get IDV descendants using the Django
+    ORM so we will turn to the dark side to get what we need.  For the provided
+    IDV award id (surrogate, integer, internal award id), this function will
+    return the award id of all awards in the IDV's hierarchy, including the root
+    IDV itself.
+    """
+    sql = """
+        with cte as (
+            select      award_id
+            from        parent_award
+            where       award_id = %(root_idv_award_id)s
+            union all
+            select      cpa.award_id
+            from        parent_award ppa
+                        inner join parent_award cpa on
+                            cpa.parent_award_id = ppa.award_id
+            where       ppa.award_id = %(root_idv_award_id)s
+        )
+        select  ca.id
+        from    cte
+                inner join awards pa on
+                    pa.id = cte.award_id
+                inner join awards ca on
+                    ca.parent_award_piid = pa.piid and
+                    ca.fpds_parent_agency_id = pa.fpds_agency_id
+        union   all
+        select  %(root_idv_award_id)s
+    """
+    connection = get_connection()
+    with connection.cursor() as cursor:
+        cursor.execute(sql, {"root_idv_award_id": root_idv_award_id})
+        return [row[0] for row in cursor.fetchall()]
+
+
 def get_descendant_award_ids(root_idv_award_id, include_child_idvs):
     """
     Unfortunately, there's no clean way to get IDV descendants using the Django
