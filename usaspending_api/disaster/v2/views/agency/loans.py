@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Q, Sum, F, Value, Case, When, IntegerField, Subquery, OuterRef
+from django.db.models import Q, Sum, F, Value, Case, When, IntegerField, Subquery, OuterRef, Count
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
@@ -87,7 +87,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children.
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "award_count": self.unique_file_c_count(),
+            "award_count": Count("award_id", distinct=True),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
