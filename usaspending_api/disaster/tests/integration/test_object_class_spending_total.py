@@ -21,7 +21,7 @@ def test_basic_object_class_spending_total_success(
             "obligation": 0.0,
             "outlay": 0.0,
             "children": [
-                {"id": 1, "code": "0001", "description": "0001 name", "count": 1, "obligation": 0.0, "outlay": 0.0}
+                {"id": "1", "code": "0001", "description": "0001 name", "count": 1, "obligation": 0.0, "outlay": 0.0}
             ],
         }
     ]

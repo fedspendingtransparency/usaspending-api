@@ -1,5 +1,5 @@
-from django.db.models import Q, Sum, Count, F, Value, Case, When, Min
-from django.db.models.functions import Coalesce
+from django.db.models import Q, Sum, Count, F, Value, Case, When, Min, TextField
+from django.db.models.functions import Coalesce, Cast
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -61,7 +61,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         ]
 
         annotations = {
-            **universal_annotations(),
+            **shared_object_class_annotations(),
             "count": Count("object_class__object_class", distinct=True),
             "obligation": Coalesce(
                 Sum(
@@ -108,7 +108,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         ]
 
         annotations = {
-            **universal_annotations(),
+            **shared_object_class_annotations(),
             "count": Count("award_id", distinct=True),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
@@ -132,11 +132,11 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         )
 
 
-def universal_annotations():
+def shared_object_class_annotations():
     return {
         "major_code": F("object_class__major_object_class"),
         "description": F("object_class__object_class_name"),
         "code": F("object_class__object_class"),
-        "id": Min("object_class_id"),
+        "id": Cast(Min("object_class_id"), TextField()),
         "major_description": F("object_class__major_object_class_name"),
     }
