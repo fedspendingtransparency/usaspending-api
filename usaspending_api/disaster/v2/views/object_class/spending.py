@@ -61,7 +61,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         ]
 
         annotations = {
-            **shared_annotations(),
+            **shared_object_class_annotations(),
             "count": Count("object_class__object_class", distinct=True),
             "obligation": Coalesce(
                 Sum(
@@ -108,7 +108,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         ]
 
         annotations = {
-            **shared_annotations(),
+            **shared_object_class_annotations(),
             "count": Count("award_id", distinct=True),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
@@ -132,7 +132,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         )
 
 
-def shared_annotations():
+def shared_object_class_annotations():
     return {
         "major_code": F("object_class__major_object_class"),
         "description": F("object_class__object_class_name"),
