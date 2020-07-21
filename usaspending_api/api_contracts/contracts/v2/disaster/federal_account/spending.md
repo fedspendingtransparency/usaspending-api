@@ -60,7 +60,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                                 "id": 78470,
                                 "code": "020-X-1894-000",
                                 "description": "Air Carrier Worker Support, Departmental Offices, Department of Treasury",
-                                "count": 1,
+                                "award_count": 1,
                                 "obligation": 49162967964.08,
                                 "outlay": 34401350618.2,
                                 "total_budgetary_resources": 576000000000
@@ -78,7 +78,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                                 "id": 78461,
                                 "code": "020-2020/2020-1892-000",
                                 "description": "Coronavirus Relief Fund, Departmental Offices, Treasury",
-                                "count": 1,
+                                "award_count": 1,
                                 "obligation": 293266617784.74,
                                 "outlay": 293266617784.74,
                                 "total_budgetary_resources": 600000000000

@@ -41,7 +41,7 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
                         "code": "349",
                         "description": "District of Columbia Courts",
                         "children": [],
-                        "award_count": 1,
+                        "award_count": null,
                         "obligation": 148906061.27,
                         "outlay": 143265869.34,
                         "total_budgetary_resources": 18087913735.71
@@ -51,7 +51,7 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
                         "code": "413",
                         "description": "National Council on Disability",
                         "children": [],
-                        "award_count": 1,
+                        "award_count": null,
                         "obligation": 225185.66,
                         "outlay": 697329.0,
                         "total_budgetary_resources": 183466350.0
