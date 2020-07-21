@@ -105,7 +105,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
-+ `award_count` (required, number)
++ `award_count` (required, number, nullable)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 + `total_budgetary_resources` (required, number, nullable)
