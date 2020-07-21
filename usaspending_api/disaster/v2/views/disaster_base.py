@@ -14,6 +14,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_y
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 COVID_19_GROUP_NAME = "covid_19"
@@ -139,6 +140,10 @@ class DisasterBase(APIView):
     @cached_property
     def final_period_submission_query_filters(self):
         return filter_by_latest_closed_periods()
+
+    @cached_property
+    def latest_reporting_period(self):
+        return get_last_closed_submission_date(False)
 
     @cached_property
     def all_closed_defc_submissions(self):

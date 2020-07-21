@@ -21,15 +21,17 @@ GET_COUNT_SQL = SQL(
                 inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
         where   ppa.{award_id_column} = {award_id}
     ), gather_awards as (
-        select  ca.id award_id,
-                ca.generated_unique_award_id,
-                ca.piid
+        select  id award_id
+        from    awards
+        where   {awards_table_id_column} = {award_id} and
+                (piid = {piid} or {piid} is null)
+        union   all
+        select  ca.id award_id
         from    gather_award_ids gaids
                 inner join awards pa on pa.id = gaids.award_id
                 inner join awards ca on
                     ca.parent_award_piid = pa.piid and
                     ca.fpds_parent_agency_id = pa.fpds_agency_id and
-                    ca.type not like 'IDV%' and
                     (ca.piid = {piid} or {piid} is null)
     ), gather_financial_accounts_by_awards as (
         select  ga.award_id,
@@ -74,9 +76,11 @@ class IDVFederalAccountCountViewSet(APIView):
         # integer or a generated award id that is a string.
         award_id = request_data["award_id"]
         award_id_column = "award_id" if type(award_id) is int else "generated_unique_award_id"
+        awards_table_id_column = "id" if type(award_id) is int else "generated_unique_award_id"
 
         sql = GET_COUNT_SQL.format(
             award_id_column=Identifier(award_id_column),
+            awards_table_id_column=Identifier(awards_table_id_column),
             award_id=Literal(award_id),
             piid=Literal(request_data.get("piid")),
         )

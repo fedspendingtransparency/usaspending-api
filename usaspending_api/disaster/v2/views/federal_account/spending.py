@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, DecimalField, Case, When
+from django.db.models import Q, Sum, Count, F, Value, DecimalField, Case, When, OuterRef, Subquery, Func
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -7,12 +7,9 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.federal_account.federal_account_result import FedAcctResults, FedAccount, TAS
-from usaspending_api.disaster.v2.views.disaster_base import (
-    DisasterBase,
-    PaginationMixin,
-    SpendingMixin,
-)
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, PaginationMixin, SpendingMixin
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 
 
 def construct_response(results: list, pagination: Pagination):
@@ -89,7 +86,18 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 0,
             ),
             "total_budgetary_resources": Coalesce(
-                Sum("treasury_account__gtas__budget_authority_appropriation_amount_cpe"), 0
+                Subquery(
+                    GTASSF133Balances.objects.filter(
+                        disaster_emergency_fund_code__in=self.def_codes,
+                        fiscal_period=self.latest_reporting_period["submission_fiscal_month"],
+                        fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
+                        treasury_account_identifier=OuterRef("treasury_account"),
+                    )
+                    .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
+                    .values("amount"),
+                    output_field=DecimalField(),
+                ),
+                0,
             ),
         }
 

@@ -17,7 +17,7 @@ This endpoint returns a high-level overview of a specific recipient, given its i
 
 + Parameters
 
-    + `recipient_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-C` (required, string)
+    + `recipient_id`: `45700e3c-05bc-6426-ddc6-5e0ce1664716-C` (required, string)
         A unique identifier for the recipient at a specific level (parent, child, or neither).
     + `year` (optional, string)
         The fiscal year you would like data for. Use `all` to view all time or `latest` to view the latest 12 months.
@@ -27,7 +27,7 @@ This endpoint returns a high-level overview of a specific recipient, given its i
 + Response 200 (application/json)
 
     + Attributes (RecipientOverview)
-    
+
     + Body
 
             {

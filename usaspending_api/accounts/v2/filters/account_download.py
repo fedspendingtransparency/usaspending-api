@@ -146,12 +146,16 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
         ),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": get_fyp_or_q_notation("submission"),
-        "last_modified_date"
-        + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
     }
 
+    lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
     if account_type == "award_financial":
+        # Separating out last_modified_date like this prevents unnecessary grouping in the full File
+        # C TAS download.  Keeping it as MAX caused grouping on every single column in the SQL statement.
+        derived_fields[lmd] = Cast("submission__published_date", output_field=DateField())
         derived_fields = award_financial_derivations(derived_fields)
+    else:
+        derived_fields[lmd] = Cast(Max("submission__published_date"), output_field=DateField())
 
     return queryset.annotate(**derived_fields)
 
