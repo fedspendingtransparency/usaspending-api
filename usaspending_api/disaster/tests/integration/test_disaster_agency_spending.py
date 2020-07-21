@@ -11,10 +11,12 @@ url = "/api/v2/disaster/agency/spending/"
 def test_basic_success(client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="total")
+    resp = helpers.post_for_spending_endpoint(
+        client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="total", sort="description"
+    )
     expected_results = [
         {
-            "id": 9,
+            "id": 4,
             "code": "009",
             "description": "Agency 009",
             "children": [],
@@ -24,7 +26,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "total_budgetary_resources": 0.0,
         },
         {
-            "id": 8,
+            "id": 2,
             "code": "008",
             "description": "Agency 008",
             "children": [],
@@ -34,7 +36,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "total_budgetary_resources": 0.0,
         },
         {
-            "id": 7,
+            "id": 1,
             "code": "007",
             "description": "Agency 007",
             "children": [],
@@ -51,7 +53,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "L"], spending_type="total")
     expected_results = [
         {
-            "id": 7,
+            "id": 1,
             "code": "007",
             "description": "Agency 007",
             "children": [],
@@ -68,7 +70,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="award")
     expected_results = [
         {
-            "id": 9,
+            "id": 4,
             "code": "009",
             "description": "Agency 009",
             "children": [],
@@ -79,7 +81,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "total_budgetary_resources": None,
         },
         {
-            "id": 8,
+            "id": 2,
             "code": "008",
             "description": "Agency 008",
             "children": [],
@@ -90,7 +92,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "total_budgetary_resources": None,
         },
         {
-            "id": 7,
+            "id": 1,
             "code": "007",
             "description": "Agency 007",
             "children": [],
@@ -116,46 +118,56 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     )
     expected_results = [
         {
-            "id": 8,
+            "id": 3,
             "code": "008",
             "description": "Agency 008",
-            "award_count": 3,
-            "obligation": 22220218.0,
-            "outlay": 0.0,
+            "award_count": 2,
+            "obligation": 20220218,
+            "outlay": 0,
             "children": [
                 {
-                    "id": 2008,
+                    "id": 3,
                     "code": "2008",
                     "description": "Subtier 2008",
                     "award_count": 2,
-                    "obligation": 20220218.0,
-                    "outlay": 0.0,
-                },
-                {
-                    "id": 1008,
-                    "code": "1008",
-                    "description": "Subtier 1008",
-                    "award_count": 1,
-                    "obligation": 2000000.0,
-                    "outlay": 0.0,
-                },
+                    "obligation": 20220218,
+                    "outlay": 0,
+                }
             ],
         },
         {
-            "id": 7,
+            "id": 2,
+            "code": "008",
+            "description": "Agency 008",
+            "award_count": 1,
+            "obligation": 2000000,
+            "outlay": 0,
+            "children": [
+                {
+                    "id": 2,
+                    "code": "1008",
+                    "description": "Subtier 1008",
+                    "award_count": 1,
+                    "obligation": 2000000,
+                    "outlay": 0,
+                }
+            ],
+        },
+        {
+            "id": 1,
             "code": "007",
             "description": "Agency 007",
             "award_count": 1,
-            "obligation": 2000.0,
-            "outlay": 0.0,
+            "obligation": 2000,
+            "outlay": 0,
             "children": [
                 {
-                    "id": 1007,
+                    "id": 1,
                     "code": "1007",
                     "description": "Subtier 1007",
                     "award_count": 1,
-                    "obligation": 2000.0,
-                    "outlay": 0.0,
+                    "obligation": 2000,
+                    "outlay": 0,
                 }
             ],
         },
@@ -169,7 +181,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     )
     expected_results = [
         {
-            "id": 8,
+            "id": 3,
             "code": "008",
             "description": "Agency 008",
             "award_count": 1,
@@ -177,7 +189,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             "outlay": 0.0,
             "children": [
                 {
-                    "id": 2008,
+                    "id": 3,
                     "code": "2008",
                     "description": "Subtier 2008",
                     "award_count": 1,
@@ -196,31 +208,41 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     )
     expected_results = [
         {
-            "id": 8,
+            "id": 3,
             "code": "008",
             "description": "Agency 008",
-            "award_count": 2,
-            "obligation": 1999998.0,
-            "outlay": 0.0,
+            "award_count": 1,
+            "obligation": -2,
+            "outlay": 0,
             "children": [
                 {
-                    "id": 2008,
+                    "id": 3,
                     "code": "2008",
                     "description": "Subtier 2008",
                     "award_count": 1,
-                    "obligation": -2.0,
-                    "outlay": 0.0,
-                },
+                    "obligation": -2,
+                    "outlay": 0,
+                }
+            ],
+        },
+        {
+            "id": 2,
+            "code": "008",
+            "description": "Agency 008",
+            "award_count": 1,
+            "obligation": 2000000,
+            "outlay": 0,
+            "children": [
                 {
-                    "id": 1008,
+                    "id": 2,
                     "code": "1008",
                     "description": "Subtier 1008",
                     "award_count": 1,
-                    "obligation": 2000000.0,
-                    "outlay": 0.0,
-                },
+                    "obligation": 2000000,
+                    "outlay": 0,
+                }
             ],
-        }
+        },
     ]
 
     assert resp.status_code == status.HTTP_200_OK

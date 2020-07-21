@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Q, Sum, F, Value, Case, When, IntegerField
+from django.db.models import Q, Sum, F, Value, Case, When, IntegerField, Subquery, OuterRef
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
@@ -22,7 +22,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchLoansPaginationMixin,
 )
-
+from usaspending_api.references.models import Agency
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,11 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
         ]
 
         annotations = {
-            "id": F("treasury_account__funding_toptier_agency"),
+            "id": Subquery(
+                Agency.objects.filter(
+                    toptier_agency_id=OuterRef("treasury_account__funding_toptier_agency"), toptier_flag=True
+                ).values("id")
+            ),
             "code": F("treasury_account__funding_toptier_agency__toptier_code"),
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children.

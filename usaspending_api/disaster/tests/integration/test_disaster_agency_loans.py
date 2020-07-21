@@ -14,7 +14,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M", "N", "O", "P"])
     expected_results = [
         {
-            "id": 8,
+            "id": 2,
             "code": "008",
             "description": "Agency 008",
             "children": [],
@@ -23,7 +23,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "obligation": 2000.0,
             "outlay": 20000.0,
             "face_value_of_loan": 333.0,
-        }
+        },
     ]
 
     assert resp.status_code == status.HTTP_200_OK
@@ -46,7 +46,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     )
     expected_results = [
         {
-            "id": 7,
+            "id": 1,
             "code": "007",
             "description": "Agency 007",
             "count": 1,
@@ -55,7 +55,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             "face_value_of_loan": 333.0,
             "children": [
                 {
-                    "id": 1007,
+                    "id": 1,
                     "code": "1007",
                     "description": "Subtier 1007",
                     "count": 1,

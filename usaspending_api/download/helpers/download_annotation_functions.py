@@ -100,6 +100,36 @@ def universal_transaction_matview_annotations():
                 ),
             ),
         ),
+        "object_classes_funding_this_award": Subquery(
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .annotate(
+                value=ExpressionWrapper(
+                    Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    output_field=TextField(),
+                )
+            )
+            .values("award_id")
+            .annotate(total=StringAgg("value", ";", distinct=True))
+            .values("total"),
+            output_field=TextField(),
+        ),
+        "program_activities_funding_this_award": Subquery(
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .annotate(
+                value=ExpressionWrapper(
+                    Concat(
+                        F("program_activity__program_activity_code"),
+                        Value(": "),
+                        F("program_activity__program_activity_name"),
+                    ),
+                    output_field=TextField(),
+                )
+            )
+            .values("award_id")
+            .annotate(total=StringAgg("value", ";", distinct=True))
+            .values("total"),
+            output_field=TextField(),
+        ),
     }
     return annotation_fields
 
@@ -160,6 +190,36 @@ def universal_award_matview_annotations():
             .annotate(sum=Sum("transaction_obligated_amount"))
             .values("sum"),
             output_field=DecimalField(),
+        ),
+        "object_classes_funding_this_award": Subquery(
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .annotate(
+                value=ExpressionWrapper(
+                    Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    output_field=TextField(),
+                )
+            )
+            .values("award_id")
+            .annotate(total=StringAgg("value", ";", distinct=True))
+            .values("total"),
+            output_field=TextField(),
+        ),
+        "program_activities_funding_this_award": Subquery(
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .annotate(
+                value=ExpressionWrapper(
+                    Concat(
+                        F("program_activity__program_activity_code"),
+                        Value(": "),
+                        F("program_activity__program_activity_name"),
+                    ),
+                    output_field=TextField(),
+                )
+            )
+            .values("award_id")
+            .annotate(total=StringAgg("value", ";", distinct=True))
+            .values("total"),
+            output_field=TextField(),
         ),
         "award_latest_action_date_fiscal_year": FiscalYear(F("award__latest_transaction__action_date")),
     }
@@ -222,6 +282,36 @@ def idv_order_annotations():
             output_field=DecimalField(),
         ),
         "award_latest_action_date_fiscal_year": FiscalYear(F("latest_transaction__action_date")),
+        "object_classes_funding_this_award": Subquery(
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            .annotate(
+                value=ExpressionWrapper(
+                    Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    output_field=TextField(),
+                )
+            )
+            .values("award_id")
+            .annotate(total=StringAgg("value", ";", distinct=True))
+            .values("total"),
+            output_field=TextField(),
+        ),
+        "program_activities_funding_this_award": Subquery(
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            .annotate(
+                value=ExpressionWrapper(
+                    Concat(
+                        F("program_activity__program_activity_code"),
+                        Value(": "),
+                        F("program_activity__program_activity_name"),
+                    ),
+                    output_field=TextField(),
+                )
+            )
+            .values("award_id")
+            .annotate(total=StringAgg("value", ";", distinct=True))
+            .values("total"),
+            output_field=TextField(),
+        ),
     }
     return annotation_fields
 
@@ -302,6 +392,36 @@ def idv_transaction_annotations():
                 ),
             ),
         ),
+        "object_classes_funding_this_award": Subquery(
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .annotate(
+                value=ExpressionWrapper(
+                    Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    output_field=TextField(),
+                )
+            )
+            .values("award_id")
+            .annotate(total=StringAgg("value", ";", distinct=True))
+            .values("total"),
+            output_field=TextField(),
+        ),
+        "program_activities_funding_this_award": Subquery(
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .annotate(
+                value=ExpressionWrapper(
+                    Concat(
+                        F("program_activity__program_activity_code"),
+                        Value(": "),
+                        F("program_activity__program_activity_name"),
+                    ),
+                    output_field=TextField(),
+                )
+            )
+            .values("award_id")
+            .annotate(total=StringAgg("value", ";", distinct=True))
+            .values("total"),
+            output_field=TextField(),
+        ),
     }
     return annotation_fields
 
@@ -332,5 +452,90 @@ def subaward_annotations():
         "usaspending_permalink": Concat(
             Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
         ),
+        "prime_award_object_classes_funding_this_award": Subquery(
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .annotate(
+                value=ExpressionWrapper(
+                    Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    output_field=TextField(),
+                )
+            )
+            .values("award_id")
+            .annotate(total=StringAgg("value", ";", distinct=True))
+            .values("total"),
+            output_field=TextField(),
+        ),
+        "prime_award_program_activities_funding_this_award": Subquery(
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .annotate(
+                value=ExpressionWrapper(
+                    Concat(
+                        F("program_activity__program_activity_code"),
+                        Value(": "),
+                        F("program_activity__program_activity_name"),
+                    ),
+                    output_field=TextField(),
+                )
+            )
+            .values("award_id")
+            .annotate(total=StringAgg("value", ";", distinct=True))
+            .values("total"),
+            output_field=TextField(),
+        ),
+        "prime_award_disaster_emergency_fund_codes": Case(
+            When(
+                broker_subaward__action_date__gte=datetime.date(2020, 4, 1),
+                then=Subquery(
+                    FinancialAccountsByAwards.objects.filter(
+                        award_id=OuterRef("award_id"), disaster_emergency_fund__isnull=False
+                    )
+                    .annotate(
+                        value=ExpressionWrapper(
+                            Concat(
+                                F("disaster_emergency_fund__code"),
+                                Value(": "),
+                                F("disaster_emergency_fund__public_law"),
+                            ),
+                            output_field=TextField(),
+                        )
+                    )
+                    .values("award_id")
+                    .annotate(total=StringAgg("value", ";", distinct=True))
+                    .values("total"),
+                    output_field=TextField(),
+                ),
+            )
+        ),
+        "prime_award_outlayed_amount_funded_by_COVID-19_supplementals": Case(
+            When(
+                broker_subaward__action_date__gte=datetime.date(2020, 4, 1),
+                then=Subquery(
+                    FinancialAccountsByAwards.objects.filter(
+                        filter_by_latest_closed_periods(),
+                        award_id=OuterRef("award_id"),
+                        # disaster_emergency_fund__group_name="covid_19",
+                    )
+                    .values("award_id")
+                    .annotate(sum=Sum("gross_outlay_amount_by_award_cpe"))
+                    .values("sum"),
+                    output_field=DecimalField(),
+                ),
+            ),
+        ),
+        "prime_award_obligated_amount_funded_by_COVID-19_supplementals": Case(
+            When(
+                broker_subaward__action_date__gte=datetime.date(2020, 4, 1),
+                then=Subquery(
+                    FinancialAccountsByAwards.objects.filter(
+                        award_id=OuterRef("award_id"),  # disaster_emergency_fund__group_name="covid_19"
+                    )
+                    .values("award_id")
+                    .annotate(sum=Sum("transaction_obligated_amount"))
+                    .values("sum"),
+                    output_field=DecimalField(),
+                ),
+            ),
+        ),
+        "prime_award_latest_action_date_fiscal_year": FiscalYear("award__latest_transaction__action_date"),
     }
     return annotation_fields

@@ -18,19 +18,22 @@ from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_awards,
 )
+from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 
 class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
     sum_column_mapping = {"obligation": "total_covid_obligation", "outlay": "total_covid_outlay"}
     sort_column_mapping = {
-        "description": "_key",
         "count": "_count",
+        "description": "_key",  # _key will ultimately sort on description value
+        "code": "_key",  # Façade sort behavior, really sorting on description
+        "id": "_key",  # Façade sort, really sorting on description
         **sum_column_mapping,
     }
 
     @cached_property
     def pagination(self):
-        return self.run_models(list(self.sort_column_mapping), default_sort_column="description")
+        return self.run_models(list(self.sort_column_mapping), default_sort_column="id")
 
 
 class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
@@ -40,14 +43,16 @@ class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
         "face_value_of_loan": "total_loan_value",
     }
     sort_column_mapping = {
-        "description": "_key",
         "count": "_count",
+        "description": "_key",  # _key will ultimately sort on description value
+        "code": "_key",  # Façade sort behavior, really sorting on description
+        "id": "_key",  # Façade sort, really sorting on description
         **sum_column_mapping,
     }
 
     @cached_property
     def pagination(self):
-        return self.run_models(list(self.sort_column_mapping), default_sort_column="description")
+        return self.run_models(list(self.sort_column_mapping), default_sort_column="id")
 
 
 class ElasticsearchDisasterBase(DisasterBase):
@@ -71,9 +76,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         query = self.filters.pop("query", None)
         self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         if query:
-            self.filter_query.must.append(
-                ES_Q("query_string", query=query, default_operator="OR", fields=self.query_fields)
-            )
+            query = es_sanitize(query) + "*"
+            self.filter_query.must.append(ES_Q("simple_query_string", query=query, fields=self.query_fields))
 
         # Ensure that only non-zero values are taken into consideration
         non_zero_queries = []
@@ -86,14 +90,18 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         results = self.query_elasticsearch()
 
-        return Response(
-            {
-                "results": results[: self.pagination.limit],
-                "page_metadata": get_pagination_metadata(
-                    self.bucket_count, self.pagination.limit, self.pagination.page
-                ),
-            }
-        )
+        response = {
+            "results": results[: self.pagination.limit],
+            "page_metadata": get_pagination_metadata(self.bucket_count, self.pagination.limit, self.pagination.page),
+        }
+
+        if self.pagination.sort_key in ("id", "code"):
+            response["message"] = (
+                f"Notice! API Request to sort on '{self.pagination.sort_key}' field isn't fully implemented."
+                " Results were actually sorted using 'description' field."
+            )
+
+        return Response(response)
 
     @abstractmethod
     def build_elasticsearch_result(self, response: dict) -> List[dict]:

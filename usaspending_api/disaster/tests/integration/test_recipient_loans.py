@@ -44,7 +44,7 @@ def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearc
             "face_value_of_loan": 30.0,
             "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
             "obligation": 20.0,
-            "outlay": 0.0,
+            "outlay": 10.0,
         },
         {
             "code": "DUNS Number not provided",
@@ -53,7 +53,7 @@ def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearc
             "face_value_of_loan": 3.0,
             "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
             "obligation": 2.0,
-            "outlay": 0.0,
+            "outlay": 1.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -84,7 +84,7 @@ def test_correct_response_multiple_defc(
             "face_value_of_loan": 30.0,
             "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
             "obligation": 20.0,
-            "outlay": 0.0,
+            "outlay": 10.0,
         },
         {
             "code": "DUNS Number not provided",
@@ -93,7 +93,7 @@ def test_correct_response_multiple_defc(
             "face_value_of_loan": 3.0,
             "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
             "obligation": 2.0,
-            "outlay": 0.0,
+            "outlay": 1.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -120,6 +120,72 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
             "obligation": 200.0,
             "outlay": 100.0,
         }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="REC")
+    expected_results = [
+        {
+            "code": "987654321",
+            "count": 1,
+            "description": "RECIPIENT 3",
+            "face_value_of_loan": 300.0,
+            "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
+            "obligation": 200.0,
+            "outlay": 100.0,
+        },
+        {
+            "code": "456789123",
+            "count": 1,
+            "description": "RECIPIENT 2",
+            "face_value_of_loan": 30.0,
+            "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
+            "obligation": 20.0,
+            "outlay": 10.0,
+        },
+        {
+            "code": "DUNS Number not provided",
+            "count": 1,
+            "description": "RECIPIENT 1",
+            "face_value_of_loan": 3.0,
+            "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
+            "obligation": 2.0,
+            "outlay": 1.0,
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="rec")
+    expected_results = [
+        {
+            "code": "987654321",
+            "count": 1,
+            "description": "RECIPIENT 3",
+            "face_value_of_loan": 300.0,
+            "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
+            "obligation": 200.0,
+            "outlay": 100.0,
+        },
+        {
+            "code": "456789123",
+            "count": 1,
+            "description": "RECIPIENT 2",
+            "face_value_of_loan": 30.0,
+            "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
+            "obligation": 20.0,
+            "outlay": 10.0,
+        },
+        {
+            "code": "DUNS Number not provided",
+            "count": 1,
+            "description": "RECIPIENT 1",
+            "face_value_of_loan": 3.0,
+            "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
+            "obligation": 2.0,
+            "outlay": 1.0,
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
@@ -156,7 +222,7 @@ def test_missing_defc(client, monkeypatch, helpers, elasticsearch_award_index, a
 def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1)
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1, sort="description")
     expected_results = {
         "results": [
             {
@@ -166,7 +232,7 @@ def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_a
                 "face_value_of_loan": 30.0,
                 "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
                 "obligation": 20.0,
-                "outlay": 0.0,
+                "outlay": 10.0,
             }
         ],
         "page_metadata": {
@@ -199,7 +265,9 @@ def test_correct_response_with_award_type_codes(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, award_type_codes=["07"], def_codes=["L", "M"])
+    resp = helpers.post_for_spending_endpoint(
+        client, url, award_type_codes=["07"], def_codes=["L", "M"], sort="description"
+    )
     expected_results = {
         "results": [
             {
@@ -209,7 +277,7 @@ def test_correct_response_with_award_type_codes(
                 "face_value_of_loan": 30.0,
                 "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
                 "obligation": 20.0,
-                "outlay": 0.0,
+                "outlay": 10.0,
             },
             {
                 "code": "DUNS Number not provided",
@@ -218,7 +286,7 @@ def test_correct_response_with_award_type_codes(
                 "face_value_of_loan": 3.0,
                 "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
                 "obligation": 2.0,
-                "outlay": 0.0,
+                "outlay": 1.0,
             },
         ],
         "page_metadata": {
@@ -235,7 +303,9 @@ def test_correct_response_with_award_type_codes(
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
 
-    resp = helpers.post_for_spending_endpoint(client, url, award_type_codes=["08"], def_codes=["L", "M"])
+    resp = helpers.post_for_spending_endpoint(
+        client, url, award_type_codes=["08"], def_codes=["L", "M"], sort="description"
+    )
     expected_results = {
         "results": [
             {

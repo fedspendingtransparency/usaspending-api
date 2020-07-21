@@ -13,10 +13,12 @@ def disaster_account_data():
     sa1 = mommy.make("references.SubtierAgency", subtier_agency_id=1007, subtier_code="1007", name="Subtier 1007")
     sa2 = mommy.make("references.SubtierAgency", subtier_agency_id=1008, subtier_code="1008", name="Subtier 1008")
     sa3 = mommy.make("references.SubtierAgency", subtier_agency_id=2008, subtier_code="2008", name="Subtier 2008")
+    sa4 = mommy.make("references.SubtierAgency", subtier_agency_id=3008, subtier_code="3008", name="Subtier 3008")
 
-    ag1 = mommy.make("references.Agency", id=1, toptier_agency=ta1, subtier_agency=sa1)
-    ag2 = mommy.make("references.Agency", id=2, toptier_agency=ta2, subtier_agency=sa2)
+    ag1 = mommy.make("references.Agency", id=1, toptier_agency=ta1, subtier_agency=sa1, toptier_flag=True)
+    ag2 = mommy.make("references.Agency", id=2, toptier_agency=ta2, subtier_agency=sa2, toptier_flag=True)
     ag3 = mommy.make("references.Agency", id=3, toptier_agency=ta2, subtier_agency=sa3)
+    mommy.make("references.Agency", id=4, toptier_agency=ta3, subtier_agency=sa4, toptier_flag=True)
 
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
