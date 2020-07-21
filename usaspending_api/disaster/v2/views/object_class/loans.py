@@ -10,7 +10,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     LoansMixin,
     FabaOutlayMixin,
 )
-from usaspending_api.disaster.v2.views.object_class.spending import universal_annotations, construct_response
+from usaspending_api.disaster.v2.views.object_class.spending import shared_annotations, construct_response
 
 
 class ObjectClassLoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBase):
@@ -44,7 +44,7 @@ class ObjectClassLoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin,
         ]
 
         annotations = {
-            **universal_annotations(),
+            **shared_annotations(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
