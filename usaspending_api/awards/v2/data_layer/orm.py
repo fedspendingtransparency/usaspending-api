@@ -574,7 +574,6 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
 def fetch_disaster_emergency_fund_codes_for_award(award_id):
     return list(
         FinancialAccountsByAwards.objects.filter(award_id=award_id, disaster_emergency_fund__isnull=False)
-        .order_by("disaster_emergency_fund__code")
         .distinct()
         .values_list("disaster_emergency_fund__code", flat=True)
         .order_by("disaster_emergency_fund__code")
