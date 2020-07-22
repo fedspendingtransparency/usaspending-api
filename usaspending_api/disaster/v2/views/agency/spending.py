@@ -83,9 +83,9 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
 
         annotations = {
             "id": Subquery(
-                Agency.objects.filter(
-                    toptier_agency_id=OuterRef("treasury_account__funding_toptier_agency"), toptier_flag=True
-                ).values("id")
+                Agency.objects.filter(toptier_agency=OuterRef("treasury_account__funding_toptier_agency"))
+                .order_by("-toptier_flag", "id")
+                .values("id")[:1]
             ),
             "code": F("treasury_account__funding_toptier_agency__toptier_code"),
             "description": F("treasury_account__funding_toptier_agency__name"),
@@ -154,9 +154,9 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
 
         annotations = {
             "id": Subquery(
-                Agency.objects.filter(
-                    toptier_agency_id=OuterRef("treasury_account__funding_toptier_agency"), toptier_flag=True
-                ).values("id")
+                Agency.objects.filter(toptier_agency=OuterRef("treasury_account__funding_toptier_agency"))
+                .order_by("-toptier_flag", "id")
+                .values("id")[:1]
             ),
             "code": F("treasury_account__funding_toptier_agency__toptier_code"),
             "description": F("treasury_account__funding_toptier_agency__name"),
