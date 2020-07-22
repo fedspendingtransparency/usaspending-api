@@ -202,7 +202,14 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             "obligation": 1999998.0,
             "outlay": 0.0,
             "children": [
-                {"id": 2, "code": "2008", "description": "Subtier 2008", "award_count": 1, "obligation": -2.0, "outlay": 0.0},
+                {
+                    "id": 2,
+                    "code": "2008",
+                    "description": "Subtier 2008",
+                    "award_count": 1,
+                    "obligation": -2.0,
+                    "outlay": 0.0,
+                },
                 {
                     "id": 2,
                     "code": "1008",
