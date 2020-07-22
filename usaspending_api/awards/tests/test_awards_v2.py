@@ -1112,10 +1112,10 @@ def test_file_c_data(client, awards_and_transactions):
     # fiscal period is not 12 & is not after 2020-04-01, so we expect no data to come back
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 0.0}]
-    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 0.0}]
-    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 0.0
-    assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 0.0
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 100.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
+    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 100.0
+    assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 100.0
     mommy.make(
         "submissions.SubmissionAttributes",
         pk=1,
@@ -1136,9 +1136,9 @@ def test_file_c_data(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/1/")
     # now we have the period 12 data, so we expect outlays here
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 100.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 200.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
-    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 100.0
+    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 200.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 100.0
     mommy.make(
         "submissions.SubmissionAttributes",
@@ -1160,9 +1160,9 @@ def test_file_c_data(client, awards_and_transactions):
     # again, period is not 12, no data reported
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 110.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 210.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
-    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 110.0
+    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 210.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 100.0
     mommy.make(
         "submissions.SubmissionAttributes",
@@ -1184,9 +1184,9 @@ def test_file_c_data(client, awards_and_transactions):
     # expect outlays here
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 120.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 220.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 110.0}]
-    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 120.0
+    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 220.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
     mommy.make(
         "submissions.SubmissionAttributes",
@@ -1207,9 +1207,9 @@ def test_file_c_data(client, awards_and_transactions):
     # period is 12 but amounts are 0, so we expect no change
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 120.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 220.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 110.0}]
-    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 120.0
+    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 220.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
 
 
