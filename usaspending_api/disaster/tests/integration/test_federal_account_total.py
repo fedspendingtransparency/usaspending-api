@@ -14,7 +14,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
             "children": [
                 {
                     "code": "2020/99",
-                    "count": 1,
+                    "award_count": None,
                     "description": "flowers",
                     "id": 22,
                     "obligation": 100.0,
@@ -23,7 +23,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                 }
             ],
             "code": "000-0000",
-            "count": 1,
+            "award_count": None,
             "description": "gifts",
             "id": 21,
             "obligation": 100.0,
@@ -40,7 +40,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
             "children": [
                 {
                     "code": "2020/52",
-                    "count": 1,
+                    "award_count": None,
                     "description": "ferns",
                     "id": 24,
                     "obligation": 3.0,
@@ -49,7 +49,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                 },
                 {
                     "code": "2020/98",
-                    "count": 1,
+                    "award_count": None,
                     "description": "evergreens",
                     "id": 23,
                     "obligation": 201.0,
@@ -58,7 +58,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                 },
                 {
                     "code": "2020/99",
-                    "count": 1,
+                    "award_count": None,
                     "description": "flowers",
                     "id": 22,
                     "obligation": 100.0,
@@ -67,7 +67,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                 },
             ],
             "code": "000-0000",
-            "count": 3,
+            "award_count": None,
             "description": "gifts",
             "id": 21,
             "obligation": 304.0,

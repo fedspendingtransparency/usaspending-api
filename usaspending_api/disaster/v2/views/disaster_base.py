@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timezone, date
-from django.db.models import Max, Q, F, Value, Case, When, Sum
+from django.db.models import Max, Q, F, Value, Case, When, Sum, Count
 from django.db.models.functions import Coalesce, Concat
 from django.http import HttpRequest
 from django.utils.functional import cached_property
@@ -237,6 +237,9 @@ class FabaOutlayMixin:
     @property
     def unique_file_c(self):
         return Concat("piid", "parent_award_id", "fain", "uri")
+
+    def unique_file_c_count(self):
+        return Count(self.unique_file_c, distinct=True)
 
 
 class SpendingMixin:
