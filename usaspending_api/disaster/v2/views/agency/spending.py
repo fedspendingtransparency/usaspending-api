@@ -7,6 +7,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
+from django_cte import With
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -23,7 +24,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchSpendingPaginationMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.models import GTASSF133Balances, Agency
+from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 
 
 logger = logging.getLogger(__name__)
@@ -78,25 +79,16 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
 
     @property
     def total_queryset(self):
-        filters = [
-            Q(treasury_account__funding_toptier_agency__isnull=False),
+
+        cte_filters = [
             Q(treasury_account__isnull=False),
             self.all_closed_defc_submissions,
             self.is_in_provided_def_codes,
             self.is_non_zero_total_spending,
         ]
 
-        annotations = {
-            "id": Subquery(
-                Agency.objects.filter(toptier_agency=OuterRef("treasury_account__funding_toptier_agency"))
-                .order_by("-toptier_flag", "id")
-                .values("id")[:1]
-            ),
-            "code": F("treasury_account__funding_toptier_agency__toptier_code"),
-            "description": F("treasury_account__funding_toptier_agency__name"),
-            # Currently, this endpoint can never have children w/o type = `award` & `award_type_codes`
-            "children": Value([], output_field=ArrayField(IntegerField())),
-            "award_count": Value(None, output_field=IntegerField()),
+        cte_annotations = {
+            "funding_toptier_agency_id": F("treasury_account__funding_toptier_agency_id"),
             "obligation": Coalesce(
                 Sum(
                     Case(
@@ -121,13 +113,35 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
                 ),
                 0,
             ),
+        }
+
+        cte = With(
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(*cte_filters)
+            .values("treasury_account__funding_toptier_agency_id")
+            .annotate(**cte_annotations)
+            .values(*cte_annotations)
+        )
+
+        annotations = {
+            "id": Subquery(
+                Agency.objects.filter(toptier_agency_id=OuterRef("toptier_agency_id"))
+                .order_by("-toptier_flag", "id")
+                .values("id")[:1]
+            ),
+            "code": F("toptier_code"),
+            "description": F("name"),
+            # Currently, this endpoint can never have children w/o type = `award` & `award_type_codes`
+            "children": Value([], output_field=ArrayField(IntegerField())),
+            "count": Value(0, output_field=IntegerField()),
+            "obligation": cte.col.obligation,
+            "outlay": cte.col.outlay,
             "total_budgetary_resources": Coalesce(
                 Subquery(
                     GTASSF133Balances.objects.filter(
                         disaster_emergency_fund_code__in=self.def_codes,
                         fiscal_period=self.latest_reporting_period["submission_fiscal_month"],
                         fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
-                        treasury_account_identifier=OuterRef("treasury_account"),
+                        treasury_account_identifier__funding_toptier_agency_id=OuterRef("toptier_agency_id"),
                     )
                     .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
                     .values("amount"),
@@ -138,14 +152,10 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
         }
 
         return (
-            FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
-            .values(
-                "treasury_account__funding_toptier_agency",
-                "treasury_account__funding_toptier_agency__toptier_code",
-                "treasury_account__funding_toptier_agency__name",
-            )
+            cte.join(ToptierAgency, toptier_agency_id=cte.col.funding_toptier_agency_id)
+            .with_cte(cte)
             .annotate(**annotations)
-            .values(*annotations.keys())
+            .values(*annotations)
         )
 
     @property
