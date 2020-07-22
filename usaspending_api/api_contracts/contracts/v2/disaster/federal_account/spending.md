@@ -63,7 +63,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                                 "award_count": 1,
                                 "obligation": 49162967964.08,
                                 "outlay": 34401350618.2,
-                                "total_budgetary_resources": 576000000000
+                                "total_budgetary_resources": null
                             }],
                         "award_count": 54,
                         "obligation": 89.01,
@@ -81,7 +81,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                                 "award_count": 1,
                                 "obligation": 293266617784.74,
                                 "outlay": 293266617784.74,
-                                "total_budgetary_resources": 600000000000
+                                "total_budgetary_resources": null
                             }],
                         "award_count": 2,
                         "obligation": 50,
