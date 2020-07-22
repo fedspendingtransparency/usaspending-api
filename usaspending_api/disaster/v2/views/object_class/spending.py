@@ -106,7 +106,6 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin
         filters = [
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(object_class__isnull=False),
-            Q(award__isnull=False),
             self.all_closed_defc_submissions,
         ]
 
