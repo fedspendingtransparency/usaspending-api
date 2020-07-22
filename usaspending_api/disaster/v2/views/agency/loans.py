@@ -9,7 +9,6 @@ from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -69,11 +68,11 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
     @property
     def queryset(self):
         filters = [
-            Q(award__type__in=loan_type_mapping),
-            Q(disaster_emergency_fund__in=self.def_codes),
-            Q(treasury_account__isnull=False),
             Q(treasury_account__funding_toptier_agency__isnull=False),
+            Q(treasury_account__isnull=False),
             self.all_closed_defc_submissions,
+            self.is_in_provided_def_codes,
+            self.is_loan_award,
         ]
 
         annotations = {

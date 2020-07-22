@@ -165,6 +165,39 @@ class DisasterBase(APIView):
                 )
         return q & Q(submission__reporting_period_start__gte=str(self.reporting_period_min_date))
 
+    @property
+    def is_in_provided_def_codes(self):
+        return Q(disaster_emergency_fund__code__in=self.def_codes)
+
+    @property
+    def is_non_zero_total_spending(self):
+        return Q(
+            Q(obligations_incurred_by_program_object_class_cpe__gt=0)
+            | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
+            | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
+            | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
+        )
+
+    @property
+    def is_non_zero_award_spending(self):
+        return Q(
+            Q(transaction_obligated_amount__gt=0)
+            | Q(transaction_obligated_amount__lt=0)
+            | Q(gross_outlay_amount_by_award_cpe__gt=0)
+            | Q(gross_outlay_amount_by_award_cpe__lt=0)
+        )
+
+    @property
+    def is_provided_award_type(self):
+        return Q(type__in=self.filters.get("award_type_codes"))
+
+    @property
+    def has_award_of_provided_type(self):
+        if self.filters.get("award_type_codes"):
+            return Q(award__type__in=self.filters.get("award_type_codes")) & Q(award__isnull=False)
+        else:
+            return ~Q(pk=None)  # always true; if types are not provided we don't check types
+
 
 class AwardTypeMixin:
     required_filters = ["def_codes", "award_type_codes"]
@@ -222,6 +255,10 @@ class LoansMixin:
     @property
     def query(self):
         return self.filters.get("query")
+
+    @property
+    def is_loan_award(self):
+        return Q(award__type__in=loan_type_mapping)
 
 
 class _BasePaginationMixin:

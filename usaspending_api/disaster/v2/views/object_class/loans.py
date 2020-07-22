@@ -37,10 +37,10 @@ class ObjectClassLoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin,
     @property
     def queryset(self):
         filters = [
-            Q(disaster_emergency_fund__in=self.def_codes),
             Q(award_id__isnull=False),
             Q(object_class__isnull=False),
             self.all_closed_defc_submissions,
+            self.is_in_provided_def_codes,
         ]
 
         annotations = {

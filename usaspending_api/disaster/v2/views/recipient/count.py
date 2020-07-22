@@ -5,14 +5,14 @@ from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
-from usaspending_api.disaster.v2.views.count_base import CountBase
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.disaster.v2.views.disaster_base import FabaOutlayMixin, AwardTypeMixin
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.models import AwardSearchView
 
 
-class RecipientCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
+class RecipientCountViewSet(DisasterBase, FabaOutlayMixin, AwardTypeMixin):
     """
     Obtain the count of Recipients related to supplied DEFC filter.
     """
@@ -25,9 +25,9 @@ class RecipientCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
     def post(self, request: Request) -> Response:
 
         filters = [
-            self.is_in_provided_def_codes(),
+            self.is_in_provided_def_codes,
             self.all_closed_defc_submissions,
-            self.is_non_zero_award_spending(),
+            self.is_non_zero_award_spending,
         ]
 
         recipients = (
@@ -38,7 +38,7 @@ class RecipientCountViewSet(CountBase, FabaOutlayMixin, AwardTypeMixin):
                     output_field=TextField(),
                 )
             )
-            .filter(self.has_award_of_provided_type())
+            .filter(self.has_award_of_provided_type)
             .extra(
                 where=[
                     f"Exists({generate_raw_quoted_query(FinancialAccountsByAwards.objects.filter(*filters))}"

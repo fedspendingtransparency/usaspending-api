@@ -74,16 +74,11 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     @property
     def total_queryset(self):
         filters = [
-            Q(
-                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
-                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
-            ),
-            Q(disaster_emergency_fund__in=self.def_codes),
-            Q(treasury_account__isnull=False),
             Q(treasury_account__funding_toptier_agency__isnull=False),
+            Q(treasury_account__isnull=False),
             self.all_closed_defc_submissions,
+            self.is_in_provided_def_codes,
+            self.is_non_zero_total_spending,
         ]
 
         annotations = {
@@ -153,10 +148,10 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     @property
     def award_queryset(self):
         filters = [
-            Q(disaster_emergency_fund__in=self.def_codes),
+            self.is_in_provided_def_codes,
+            self.all_closed_defc_submissions,
             Q(treasury_account__isnull=False),
             Q(treasury_account__funding_toptier_agency__isnull=False),
-            self.all_closed_defc_submissions,
         ]
 
         annotations = {
