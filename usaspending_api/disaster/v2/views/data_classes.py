@@ -9,7 +9,7 @@ class Element:
     id: int
     code: str
     description: str
-    count: int = 0
+    award_count: int = None
     obligation: float = 0
     outlay: float = 0
     total_budgetary_resources: float = 0

@@ -1,5 +1,5 @@
-from django.db.models import Q, Sum, Count, F, Value, Case, When, Min
-from django.db.models.functions import Coalesce
+from django.db.models import Q, Sum, F, Value, Case, When, Min, TextField, IntegerField
+from django.db.models.functions import Coalesce, Cast
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -15,6 +15,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
     SpendingMixin,
+    FabaOutlayMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
@@ -23,7 +24,9 @@ def construct_response(results: list, pagination: Pagination, strip_total_budget
     object_classes = ObjectClassResults()
     for row in results:
         major_code = row.pop("major_code")
-        major_class = MajorClass(id=major_code, code=major_code, description=row.pop("major_description"))
+        major_class = MajorClass(
+            id=major_code, code=major_code, award_count=0, description=row.pop("major_description")
+        )
         object_classes[major_class].include(ObjectClass(**row))
 
     return {
@@ -32,7 +35,7 @@ def construct_response(results: list, pagination: Pagination, strip_total_budget
     }
 
 
-class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
+class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterBase):
     """View to implement the API"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/spending.md"
@@ -61,8 +64,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         ]
 
         annotations = {
-            **universal_annotations(),
-            "count": Count("object_class__object_class", distinct=True),
+            **shared_object_class_annotations(),
             "obligation": Coalesce(
                 Sum(
                     Case(
@@ -87,6 +89,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 ),
                 0,
             ),
+            "award_count": Value(None, output_field=IntegerField()),
         }
 
         # Assuming it is more performant to fetch all rows once rather than
@@ -103,13 +106,11 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         filters = [
             Q(disaster_emergency_fund__in=self.def_codes),
             Q(object_class__isnull=False),
-            Q(award__isnull=False),
             self.all_closed_defc_submissions,
         ]
 
         annotations = {
-            **universal_annotations(),
-            "count": Count("award_id", distinct=True),
+            **shared_object_class_annotations(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
@@ -120,6 +121,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 ),
                 0,
             ),
+            "award_count": self.unique_file_c_count(),
         }
 
         # Assuming it is more performant to fetch all rows once rather than
@@ -132,11 +134,11 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         )
 
 
-def universal_annotations():
+def shared_object_class_annotations():
     return {
         "major_code": F("object_class__major_object_class"),
         "description": F("object_class__object_class_name"),
         "code": F("object_class__object_class"),
-        "id": Min("object_class_id"),
+        "id": Cast(Min("object_class_id"), TextField()),
         "major_description": F("object_class__major_object_class_name"),
     }

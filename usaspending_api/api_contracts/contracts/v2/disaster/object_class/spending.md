@@ -38,15 +38,15 @@ Returns spending details of Object Classes receiving supplemental funding budget
                   "id": "90",
                   "code": "90",
                   "description": "Other",
-                  "count": 5,
+                  "award_count": 5,
                   "obligation": 746085355.77,
                   "outlay": 723027742.93,
                   "children": [
                     {
-                      "id": 195,
+                      "id": "195",
                       "code": "920",
                       "description": "Undistributed",
-                      "count": 1,
+                      "award_count": 1,
                       "obligation": 20077899.96,
                       "outlay": 13711575.76
                     }
@@ -56,7 +56,7 @@ Returns spending details of Object Classes receiving supplemental funding budget
                   "id": "40",
                   "code": "40",
                   "description": "Grants and fixed charges",
-                  "count": 8,
+                  "award_count": 8,
                   "obligation": 595026834439.96,
                   "outlay": 569289818857.45,
                   "children": []
@@ -111,7 +111,7 @@ Returns spending details of Object Classes receiving supplemental funding budget
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
-+ `count` (required, number)
++ `award_count` (required, number, nullable)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 

@@ -713,6 +713,7 @@ This endpoint returns a list of data that is associated with the award profile p
 # Data Structures
 
 ## ContractResponse (object)
++ `id` (required, number)
 + `category` (required, enum[string])
     + Members
         + `contract`
@@ -753,6 +754,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## IDVResponse (object)
++ `id` (required, number)
 + `category` (required, enum[string])
     + Members
         + `idv`
@@ -797,6 +799,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## FinancialAssistanceResponse (object)
++ `id` (required, number)
 + `category` (required, enum[string])
     + Members
         + `loans`
@@ -873,7 +876,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `office_agency_name` (required, string, nullable)
 
 ## ParentDetails (object)
-+ `agency_id` (required, string)
++ `agency_id` (required, number)
 + `agency_name` (required, string)
 + `sub_agency_id` (required, string)
 + `sub_agency_name` (required, string)
@@ -886,10 +889,12 @@ This endpoint returns a list of data that is associated with the award profile p
 
 ## TopTierAgency (object)
 + `name` (required, string, nullable)
++ `code` (required, string)
 + `abbreviation` (required, string, nullable)
 
 ## SubTierAgency (object)
 + `name` (required, string, nullable)
++ `code` (required, string)
 + `abbreviation` (required, string, nullable)
 
 ## Recipient (object)

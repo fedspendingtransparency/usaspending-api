@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timezone, date
-from django.db.models import Max, Q, F, Value, Case, When, Sum
+from django.db.models import Max, Q, F, Value, Case, When, Sum, Count
 from django.db.models.functions import Coalesce, Concat
 from django.http import HttpRequest
 from django.utils.functional import cached_property
@@ -14,6 +14,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_y
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 COVID_19_GROUP_NAME = "covid_19"
@@ -141,6 +142,10 @@ class DisasterBase(APIView):
         return filter_by_latest_closed_periods()
 
     @cached_property
+    def latest_reporting_period(self):
+        return get_last_closed_submission_date(False)
+
+    @cached_property
     def all_closed_defc_submissions(self):
         """
             These filters should only be used when looking at submission data
@@ -186,6 +191,9 @@ class FabaOutlayMixin:
     @property
     def unique_file_c(self):
         return Concat("piid", "parent_award_id", "fain", "uri")
+
+    def unique_file_c_count(self):
+        return Count(self.unique_file_c, distinct=True)
 
 
 class SpendingMixin:
