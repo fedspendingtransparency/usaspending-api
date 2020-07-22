@@ -146,7 +146,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
             "id": int(info["id"]),
             "code": info["code"],
             "description": info["name"],
-            # the count of distinct subtier agencies contributing to the totals
+            # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
