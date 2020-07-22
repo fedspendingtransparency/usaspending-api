@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Q, Sum, F, Value, Case, When, IntegerField, Subquery, OuterRef
+from django.db.models import Q, Sum, F, Value, Case, When, IntegerField, Subquery, OuterRef, Count
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
@@ -16,6 +16,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansPaginationMixin,
     LoansMixin,
+    FabaOutlayMixin,
 )
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
@@ -46,7 +47,7 @@ def route_agency_loans_backend(**initkwargs):
     return route_agency_loans_backend
 
 
-class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
+class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, DisasterBase):
     """
         This endpoint provides insights on the Agencies awarding loans from
         disaster/emergency funding per the requested filters.
@@ -86,7 +87,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, DisasterBase):
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children.
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "count": Value(0, output_field=IntegerField()),
+            "award_count": Count("award_id", distinct=True),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
@@ -145,8 +146,8 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
             "id": int(info["id"]),
             "code": info["code"],
             "description": info["name"],
-            # the count of distinct subtier agencies contributing to the totals
-            "count": int(bucket.get("doc_count", 0)),
+            # the count of distinct awards contributing to the totals
+            "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
                 for column in self.sum_column_mapping

@@ -12,7 +12,12 @@ from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, PaginationMixin, SpendingMixin
+from usaspending_api.disaster.v2.views.disaster_base import (
+    DisasterBase,
+    PaginationMixin,
+    SpendingMixin,
+    FabaOutlayMixin,
+)
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
@@ -50,7 +55,7 @@ def route_agency_spending_backend(**initkwargs):
     return route_agency_spending_backend
 
 
-class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
+class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterBase):
     """ Returns disaster spending by agency. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
@@ -96,7 +101,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children w/o type = `award` & `award_type_codes`
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "count": Value(0, output_field=IntegerField()),
+            "award_count": Value(None, output_field=IntegerField()),
             "obligation": Coalesce(
                 Sum(
                     Case(
@@ -169,7 +174,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children.
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "count": Value(0, output_field=IntegerField()),
+            "award_count": self.unique_file_c_count(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
@@ -229,7 +234,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             "code": info["code"],
             "description": info["name"],
             # the count of distinct subtier agencies contributing to the totals
-            "count": int(bucket.get("doc_count", 0)),
+            "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
                 for column in self.sum_column_mapping

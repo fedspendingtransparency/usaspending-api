@@ -90,16 +90,29 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         results = self.query_elasticsearch()
 
+        messages = []
+        if self.pagination.sort_key in ("id", "code"):
+            messages.append(
+                (
+                    f"Notice! API Request to sort on '{self.pagination.sort_key}' field isn't fully implemented."
+                    " Results were actually sorted using 'description' field."
+                )
+            )
+        if self.bucket_count > 10000 and self.agg_key == settings.ES_ROUTING_FIELD:
+            self.bucket_count = 10000
+            messages.append(
+                (
+                    "Notice! API Request is capped at 10,000 results. Either download to view all results or"
+                    " filter using the 'query' attribute."
+                )
+            )
+
         response = {
             "results": results[: self.pagination.limit],
             "page_metadata": get_pagination_metadata(self.bucket_count, self.pagination.limit, self.pagination.page),
         }
-
-        if self.pagination.sort_key in ("id", "code"):
-            response["message"] = (
-                f"Notice! API Request to sort on '{self.pagination.sort_key}' field isn't fully implemented."
-                " Results were actually sorted using 'description' field."
-            )
+        if messages:
+            response["messages"] = messages
 
         return Response(response)
 
