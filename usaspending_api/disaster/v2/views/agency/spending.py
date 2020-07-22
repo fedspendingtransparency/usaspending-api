@@ -41,7 +41,7 @@ def route_agency_spending_backend(**initkwargs):
         become a rollup of File D subtier agencies by toptier agency and subtiers will be included as children
         of the toptier agency.
         """
-        if DisasterBase.requests_award_type_codes(request):
+        if DisasterBase.requests_award_type_codes(request) & DisasterBase.requests_award_spending_type(request):
             return spending_by_subtier_agency(request, *args, **kwargs)
         return spending_by_agency(request, *args, **kwargs)
 
@@ -117,18 +117,16 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 0,
             ),
             "total_budgetary_resources": Coalesce(
-                Sum(
-                    Subquery(
-                        GTASSF133Balances.objects.filter(
-                            disaster_emergency_fund_code__in=self.def_codes,
-                            fiscal_period=self.latest_reporting_period["submission_fiscal_month"],
-                            fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
-                            treasury_account_identifier=OuterRef("treasury_account"),
-                        )
-                        .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
-                        .values("amount"),
-                        output_field=DecimalField(),
+                Subquery(
+                    GTASSF133Balances.objects.filter(
+                        disaster_emergency_fund_code__in=self.def_codes,
+                        fiscal_period=self.latest_reporting_period["submission_fiscal_month"],
+                        fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
+                        treasury_account_identifier=OuterRef("treasury_account"),
                     )
+                    .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
+                    .values("amount"),
+                    output_field=DecimalField(),
                 ),
                 0,
             ),

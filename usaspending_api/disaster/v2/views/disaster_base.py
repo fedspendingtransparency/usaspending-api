@@ -69,12 +69,25 @@ class DisasterBase(APIView):
 
     @classmethod
     def requests_award_type_codes(cls, request: HttpRequest) -> bool:
-        """Return True if an an endpoint was requested with filter.award_type_codes"""
+        """Return True if an endpoint was requested with filter.award_type_codes"""
+
         # NOTE: The point at which this is used in the request life cycle, it has not been post-processed to include
         # a POST or data attribute. Must get payload from body
         if request and request.body:
             body_json = json.loads(request.body)
             if "filter" in body_json and "award_type_codes" in body_json["filter"]:
+                return True
+        return False
+
+    @classmethod
+    def requests_award_spending_type(cls, request: HttpRequest) -> bool:
+        """Return True if an endpoint was requested with spending_type = award"""
+
+        # NOTE: The point at which this is used in the request life cycle, it has not been post-processed to include
+        # a POST or data attribute. Must get payload from body
+        if request and request.body:
+            body_json = json.loads(request.body)
+            if body_json.get("spending_type", "") == "award":
                 return True
         return False
 

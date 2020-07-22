@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count
+from django.db.models import Sum, Count
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -8,7 +8,7 @@ from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, AwardT
 
 
 class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
-    """View to implement the API"""
+    """Returns aggregated values of obligation, outlay, and count of Award records"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/award/amount.md"
 

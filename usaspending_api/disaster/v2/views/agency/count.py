@@ -23,10 +23,10 @@ class AgencyCountViewSet(AwardTypeMixin, DisasterBase):
             self.all_closed_defc_submissions,
             self.has_award_of_provided_type,
             self.is_in_provided_def_codes,
-            self.is_non_zero_award_spending,
         ]
 
         if self.award_type_codes:
+            filters.append(self.is_non_zero_award_spending)
             count = (
                 FinancialAccountsByAwards.objects.filter(*filters)
                 .values("award_id")
@@ -34,7 +34,9 @@ class AgencyCountViewSet(AwardTypeMixin, DisasterBase):
             )
 
         else:
-            filters.append(Q(treasury_account__funding_toptier_agency=OuterRef("pk")))
+            filters.extend(
+                [Q(treasury_account__funding_toptier_agency=OuterRef("pk")), self.is_non_zero_total_spending]
+            )
             count = (
                 ToptierAgency.objects.annotate(
                     include=Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters).values("pk"))
