@@ -71,7 +71,7 @@ SELECT
       THEN CONCAT(
         '{"name":"', vw_award_search.funding_toptier_agency_name,
         '","code":"', vw_award_search.funding_toptier_agency_code,
-        '","id":"', vw_award_search.funding_agency_id, '"}'
+        '","id":"', (SELECT aa.id FROM Agency aa WHERE aa.toptier_agency_id = (SELECT aaa.toptier_agency_id FROM Agency aaa WHERE aaa.id = vw_award_search.funding_agency_id) AND aa.toptier_flag = True), '"}'
       )
     ELSE NULL
   END AS funding_toptier_agency_agg_key,
@@ -80,7 +80,7 @@ SELECT
       THEN CONCAT(
         '{"name":"', vw_award_search.funding_subtier_agency_name,
         '","code":"', vw_award_search.funding_subtier_agency_code,
-        '","id":"', vw_award_search.funding_agency_id, '"}'
+        '","id":"', (SELECT aa.id FROM Agency aa WHERE aa.toptier_agency_id = (SELECT aaa.toptier_agency_id FROM Agency aaa WHERE aaa.id = vw_award_search.funding_agency_id) AND aa.toptier_flag = True), '"}'
       )
     ELSE NULL
   END AS funding_subtier_agency_agg_key,
