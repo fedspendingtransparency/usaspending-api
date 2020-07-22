@@ -35,7 +35,7 @@ def filter_by_closed_periods():
             q |= (
                 Q(submission__reporting_fiscal_year=sub.fiscal_year)
                 & Q(submission__quarter_format_flag=sub.is_quarter)
-                & Q(submission__reporting_fiscal_period__lte=sub.fiscal_period)
+                & Q(submission__reporting_fiscal_period=sub.fiscal_period)
             )
     return q & Q(submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)))
 
