@@ -20,7 +20,7 @@ def test_basic_object_class_award_success(client, basic_object_class_faba_with_l
             "outlay": 0.0,
             "children": [
                 {
-                    "id": 1,
+                    "id": "1",
                     "code": "0001",
                     "description": "0001 name",
                     "count": 0,
