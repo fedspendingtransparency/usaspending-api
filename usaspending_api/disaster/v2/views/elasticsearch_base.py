@@ -24,10 +24,10 @@ from usaspending_api.search.v2.es_sanitization import es_sanitize
 class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
     sum_column_mapping = {"obligation": "total_covid_obligation", "outlay": "total_covid_outlay"}
     sort_column_mapping = {
-        "count": "_count",
+        "award_count": "_count",
         "description": "_key",  # _key will ultimately sort on description value
         "code": "_key",  # Façade sort behavior, really sorting on description
-        "id": "_key",  # Façade sort, really sorting on description
+        "id": "_key",  # Façade sort behavior, really sorting on description
         **sum_column_mapping,
     }
 
@@ -43,10 +43,10 @@ class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
         "face_value_of_loan": "total_loan_value",
     }
     sort_column_mapping = {
-        "count": "_count",
+        "award_count": "_count",
         "description": "_key",  # _key will ultimately sort on description value
         "code": "_key",  # Façade sort behavior, really sorting on description
-        "id": "_key",  # Façade sort, really sorting on description
+        "id": "_key",  # Façade sort behavior, really sorting on description
         **sum_column_mapping,
     }
 
@@ -139,7 +139,10 @@ class ElasticsearchDisasterBase(DisasterBase):
             size = self.pagination.upper_limit
             shard_size = size
             group_by_agg_key_values = {
-                "order": {self.sort_column_mapping[self.pagination.sort_key]: self.pagination.sort_order}
+                "order": {
+                    self.sort_column_mapping[self.pagination.sort_key]: self.pagination.sort_order,
+                    self.sort_column_mapping["id"]: self.pagination.sort_order,
+                }
             }
             bucket_sort_values = {**pagination_values}
         else:
@@ -150,7 +153,10 @@ class ElasticsearchDisasterBase(DisasterBase):
                 shard_size = self.bucket_count + 100
                 group_by_agg_key_values = {}
                 bucket_sort_values = {
-                    "sort": {self.sort_column_mapping[self.pagination.sort_key]: {"order": self.pagination.sort_order}},
+                    "sort": {
+                        self.sort_column_mapping[self.pagination.sort_key]: {"order": self.pagination.sort_order},
+                        self.sort_column_mapping["id"]: {"order": self.pagination.sort_order},
+                    },
                     **pagination_values,
                 }
 
@@ -207,7 +213,10 @@ class ElasticsearchDisasterBase(DisasterBase):
                 "field": self.sub_agg_key,
                 "size": size,
                 "shard_size": shard_size,
-                "order": {self.sort_column_mapping[self.pagination.sort_key]: self.pagination.sort_order},
+                "order": {
+                    self.sort_column_mapping[self.pagination.sort_key]: self.pagination.sort_order,
+                    self.sort_column_mapping["id"]: self.pagination.sort_order,
+                },
             }
         )
         sub_group_by_sub_agg_key = A("terms", **sub_group_by_sub_agg_key_values)
