@@ -169,11 +169,11 @@ def test_pagination_page_and_limit(
             "previous": 1,
             "total": 2,
         },
-        "message": (
+        "messages": [
             "Notice! API Request to sort on 'id' field isn't fully "
             "implemented. Results were actually sorted using 'description' "
             "field."
-        ),
+        ],
     }
 
     assert resp.status_code == status.HTTP_200_OK

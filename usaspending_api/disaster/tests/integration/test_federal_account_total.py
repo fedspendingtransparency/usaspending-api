@@ -14,7 +14,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
             "children": [
                 {
                     "code": "2020/99",
-                    "count": 1,
+                    "award_count": None,
                     "description": "flowers",
                     "id": 22,
                     "obligation": 100.0,
@@ -23,7 +23,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                 }
             ],
             "code": "000-0000",
-            "count": 1,
+            "award_count": None,
             "description": "gifts",
             "id": 21,
             "obligation": 100.0,
@@ -40,7 +40,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
             "children": [
                 {
                     "code": "2020/52",
-                    "count": 1,
+                    "award_count": None,
                     "description": "ferns",
                     "id": 24,
                     "obligation": 3.0,
@@ -49,16 +49,16 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                 },
                 {
                     "code": "2020/98",
-                    "count": 1,
+                    "award_count": None,
                     "description": "evergreens",
                     "id": 23,
                     "obligation": 201.0,
                     "outlay": 223.0,
-                    "total_budgetary_resources": 218474.0,
+                    "total_budgetary_resources": 109237.0,
                 },
                 {
                     "code": "2020/99",
-                    "count": 1,
+                    "award_count": None,
                     "description": "flowers",
                     "id": 22,
                     "obligation": 100.0,
@@ -67,12 +67,12 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                 },
             ],
             "code": "000-0000",
-            "count": 3,
+            "award_count": None,
             "description": "gifts",
             "id": 21,
             "obligation": 304.0,
             "outlay": 667.0,
-            "total_budgetary_resources": 262080.0,
+            "total_budgetary_resources": 152843.0,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK

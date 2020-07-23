@@ -262,6 +262,7 @@ ROW_CONSTRAINT_FILTER_DEFAULTS = {
     "federal_account_ids": [],
     "object_class_ids": [],
     "program_activity_ids": [],
+    "def_codes": [],
 }
 ACCOUNT_FILTER_DEFAULTS = {
     "agency": "all",

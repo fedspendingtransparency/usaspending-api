@@ -4,9 +4,10 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When
+from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
+from django_cte import With
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -16,12 +17,14 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
     SpendingMixin,
+    FabaOutlayMixin,
 )
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 
 
 logger = logging.getLogger(__name__)
@@ -44,7 +47,7 @@ def route_agency_spending_backend(**initkwargs):
         become a rollup of File D subtier agencies by toptier agency and subtiers will be included as children
         of the toptier agency.
         """
-        if DisasterBase.requests_award_type_codes(request):
+        if DisasterBase.requests_award_type_codes(request) & DisasterBase.requests_award_spending_type(request):
             return spending_by_subtier_agency(request, *args, **kwargs)
         return spending_by_agency(request, *args, **kwargs)
 
@@ -53,7 +56,7 @@ def route_agency_spending_backend(**initkwargs):
     return route_agency_spending_backend
 
 
-class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
+class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterBase):
     """ Returns disaster spending by agency. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
@@ -76,26 +79,16 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
 
     @property
     def total_queryset(self):
-        filters = [
-            Q(
-                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
-                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
-            ),
-            Q(disaster_emergency_fund__in=self.def_codes),
+
+        cte_filters = [
             Q(treasury_account__isnull=False),
-            Q(treasury_account__funding_toptier_agency__isnull=False),
             self.all_closed_defc_submissions,
+            self.is_in_provided_def_codes,
+            self.is_non_zero_total_spending,
         ]
 
-        annotations = {
-            "id": F("treasury_account__funding_toptier_agency"),
-            "code": F("treasury_account__funding_toptier_agency__toptier_code"),
-            "description": F("treasury_account__funding_toptier_agency__name"),
-            # Currently, this endpoint can never have children.
-            "children": Value([], output_field=ArrayField(IntegerField())),
-            "count": Value(0, output_field=IntegerField()),
+        cte_annotations = {
+            "funding_toptier_agency_id": F("treasury_account__funding_toptier_agency_id"),
             "obligation": Coalesce(
                 Sum(
                     Case(
@@ -120,38 +113,71 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
                 ),
                 0,
             ),
+        }
+
+        cte = With(
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(*cte_filters)
+            .values("treasury_account__funding_toptier_agency_id")
+            .annotate(**cte_annotations)
+            .values(*cte_annotations)
+        )
+
+        annotations = {
+            "id": Subquery(
+                Agency.objects.filter(toptier_agency_id=OuterRef("toptier_agency_id"))
+                .order_by("-toptier_flag", "id")
+                .values("id")[:1]
+            ),
+            "code": F("toptier_code"),
+            "description": F("name"),
+            # Currently, this endpoint can never have children w/o type = `award` & `award_type_codes`
+            "children": Value([], output_field=ArrayField(IntegerField())),
+            "award_count": Value(0, output_field=IntegerField()),
+            "obligation": cte.col.obligation,
+            "outlay": cte.col.outlay,
             "total_budgetary_resources": Coalesce(
-                Sum("treasury_account__gtas__budget_authority_appropriation_amount_cpe"), 0
+                Subquery(
+                    GTASSF133Balances.objects.filter(
+                        disaster_emergency_fund_code__in=self.def_codes,
+                        fiscal_period=self.latest_reporting_period["submission_fiscal_month"],
+                        fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
+                        treasury_account_identifier__funding_toptier_agency_id=OuterRef("toptier_agency_id"),
+                    )
+                    .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
+                    .values("amount"),
+                    output_field=DecimalField(),
+                ),
+                0,
             ),
         }
 
         return (
-            FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
-            .values(
-                "treasury_account__funding_toptier_agency",
-                "treasury_account__funding_toptier_agency__toptier_code",
-                "treasury_account__funding_toptier_agency__name",
-            )
+            cte.join(ToptierAgency, toptier_agency_id=cte.col.funding_toptier_agency_id)
+            .with_cte(cte)
             .annotate(**annotations)
-            .values(*annotations.keys())
+            .values(*annotations)
         )
 
     @property
     def award_queryset(self):
         filters = [
-            Q(disaster_emergency_fund__in=self.def_codes),
+            self.is_in_provided_def_codes,
+            self.all_closed_defc_submissions,
             Q(treasury_account__isnull=False),
             Q(treasury_account__funding_toptier_agency__isnull=False),
-            self.all_closed_defc_submissions,
         ]
 
         annotations = {
-            "id": F("treasury_account__funding_toptier_agency__agency"),
+            "id": Subquery(
+                Agency.objects.filter(toptier_agency=OuterRef("treasury_account__funding_toptier_agency"))
+                .order_by("-toptier_flag", "id")
+                .values("id")[:1]
+            ),
             "code": F("treasury_account__funding_toptier_agency__toptier_code"),
             "description": F("treasury_account__funding_toptier_agency__name"),
             # Currently, this endpoint can never have children.
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "count": Value(0, output_field=IntegerField()),
+            "award_count": self.unique_file_c_count(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
@@ -168,7 +194,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, DisasterBase):
         return (
             FinancialAccountsByAwards.objects.filter(*filters)
             .values(
-                "treasury_account__funding_toptier_agency__agency",
+                "treasury_account__funding_toptier_agency",
                 "treasury_account__funding_toptier_agency__toptier_code",
                 "treasury_account__funding_toptier_agency__name",
             )
@@ -211,7 +237,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             "code": info["code"],
             "description": info["name"],
             # the count of distinct subtier agencies contributing to the totals
-            "count": int(bucket.get("doc_count", 0)),
+            "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
                 for column in self.sum_column_mapping

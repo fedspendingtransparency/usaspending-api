@@ -1074,6 +1074,7 @@ def test_file_c_data(client, awards_and_transactions):
         submission_fiscal_month=12,
         is_quarter=True,
         submission_reveal_date="2020-04-01",
+        period_start_date="2020-04-01",
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -1081,6 +1082,7 @@ def test_file_c_data(client, awards_and_transactions):
         submission_fiscal_month=12,
         is_quarter=True,
         submission_reveal_date="2020-04-01",
+        period_start_date="2020-04-01",
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -1088,13 +1090,16 @@ def test_file_c_data(client, awards_and_transactions):
         submission_fiscal_month=12,
         is_quarter=True,
         submission_reveal_date="2020-04-01",
+        period_start_date="2020-04-01",
     )
     mommy.make(
         "submissions.SubmissionAttributes",
         pk=2,
-        reporting_fiscal_period=9,
+        reporting_fiscal_period=8,
         reporting_fiscal_year=2019,
         reporting_period_end="2019-06-30",
+        quarter_format_flag=False,
+        reporting_period_start="2020-04-01",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -1104,7 +1109,7 @@ def test_file_c_data(client, awards_and_transactions):
         disaster_emergency_fund=defc,
         submission_id=2,
     )
-    # fiscal period is not 12 & is not current, so we expect no outlays to be reported
+    # fiscal period is not 12 & is not after 2020-04-01, so we expect no data to come back
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 100.0}]
@@ -1116,7 +1121,9 @@ def test_file_c_data(client, awards_and_transactions):
         pk=1,
         reporting_fiscal_period=12,
         reporting_fiscal_year=2020,
-        reporting_period_end="2019-06-30",
+        reporting_period_end="2020-06-30",
+        quarter_format_flag=True,
+        reporting_period_start="2020-04-01",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -1139,6 +1146,8 @@ def test_file_c_data(client, awards_and_transactions):
         reporting_fiscal_period=10,
         reporting_fiscal_year=2018,
         reporting_period_end="2019-06-30",
+        quarter_format_flag=False,
+        reporting_period_start="2020-04-01",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -1160,7 +1169,9 @@ def test_file_c_data(client, awards_and_transactions):
         pk=4,
         reporting_fiscal_period=12,
         reporting_fiscal_year=2018,
-        reporting_period_end="2019-06-30",
+        reporting_period_end="2020-06-30",
+        quarter_format_flag=True,
+        reporting_period_start="2020-04-01",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -1182,7 +1193,8 @@ def test_file_c_data(client, awards_and_transactions):
         pk=5,
         reporting_fiscal_period=12,
         reporting_fiscal_year=2019,
-        reporting_period_end="2019-06-30",
+        reporting_period_end="2020-06-30",
+        quarter_format_flag=True,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",

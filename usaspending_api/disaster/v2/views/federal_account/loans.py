@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F
+from django.db.models import Q, Sum, F, Count
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -37,7 +37,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBa
     @property
     def queryset(self):
         filters = [
-            Q(disaster_emergency_fund__in=self.def_codes),
+            self.is_in_provided_def_codes,
             Q(award_id__isnull=False),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
@@ -46,7 +46,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBa
 
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "count": Count("award_id", distinct=True),
+            "award_count": Count("award_id", distinct=True),
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),

@@ -84,16 +84,13 @@ class IDVFundingTestCase(TestCase):
 
     def test_defaults(self):
 
-        self._test_post({"award_id": 1}, (None, None, 1, False, False, 6))
-
-        self._test_post({"award_id": "CONT_IDV_001"}, (None, None, 1, False, False, 6))
-
-        self._test_post({"award_id": 2}, (None, None, 1, False, False, 14, 13, 12, 11, 10, 9))
+        self._test_post({"award_id": 1}, (None, None, 1, False, False, 6, 5, 4, 3, 1))
+        self._test_post({"award_id": "CONT_IDV_001"}, (None, None, 1, False, False, 6, 5, 4, 3, 1))
+        self._test_post({"award_id": 2}, (None, None, 1, False, False, 14, 13, 12, 11, 10, 9, 8, 7, 2))
 
     def test_with_nonexistent_id(self):
 
         self._test_post({"award_id": 0}, (None, None, 1, False, False))
-
         self._test_post({"award_id": "CONT_IDV_000"}, (None, None, 1, False, False))
 
     def test_with_bogus_id(self):
@@ -103,28 +100,21 @@ class IDVFundingTestCase(TestCase):
     def test_piid_filter(self):
 
         self._test_post({"award_id": 2, "piid": "piid_013"}, (None, None, 1, False, False, 13))
-
         self._test_post({"award_id": 1, "piid": "nonexistent_piid"}, (None, None, 1, False, False))
-
         self._test_post({"award_id": 1, "piid": 12345}, (None, None, 1, False, False))
 
     def test_limit_values(self):
 
         self._test_post({"award_id": 2, "limit": 1}, (None, 2, 1, False, True, 14))
-
-        self._test_post({"award_id": 2, "limit": 6}, (None, None, 1, False, False, 14, 13, 12, 11, 10, 9))
-
+        self._test_post({"award_id": 2, "limit": 10}, (None, None, 1, False, False, 14, 13, 12, 11, 10, 9, 8, 7, 2))
         self._test_post({"award_id": 2, "limit": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
         self._test_post({"award_id": 2, "limit": 2000000000}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
         self._test_post({"award_id": 2, "limit": {"BOGUS": "LIMIT"}}, expected_status_code=status.HTTP_400_BAD_REQUEST)
 
     def test_page_values(self):
 
         self._test_post({"award_id": 2, "limit": 1, "page": 2}, (1, 3, 2, True, True, 13))
-
-        self._test_post({"award_id": 2, "limit": 1, "page": 6}, (5, None, 6, True, False, 9))
+        self._test_post({"award_id": 2, "limit": 1, "page": 9}, (8, None, 9, True, False, 2))
 
         # This should probably not be right, but it is the expected result.
         self._test_post({"award_id": 2, "limit": 1, "page": 99}, (98, None, 99, True, False))
@@ -132,7 +122,6 @@ class IDVFundingTestCase(TestCase):
         self._test_post(
             {"award_id": 2, "limit": 1, "page": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
         )
-
         self._test_post(
             {"award_id": 2, "limit": 1, "page": "BOGUS PAGE"}, expected_status_code=status.HTTP_400_BAD_REQUEST
         )
@@ -143,22 +132,20 @@ class IDVFundingTestCase(TestCase):
 
             self._test_post(
                 {"award_id": 2, "order": "desc", "sort": sortable_column},
-                (None, None, 1, False, False, 14, 13, 12, 11, 10, 9),
+                (None, None, 1, False, False, 14, 13, 12, 11, 10, 9, 8, 7, 2),
             )
 
             self._test_post(
                 {"award_id": 2, "order": "asc", "sort": sortable_column},
-                (None, None, 1, False, False, 9, 10, 11, 12, 13, 14),
+                (None, None, 1, False, False, 2, 7, 8, 9, 10, 11, 12, 13, 14),
             )
 
         self._test_post({"award_id": 2, "sort": "BOGUS FIELD"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
 
     def test_sort_order_values(self):
 
-        self._test_post({"award_id": 2, "order": "desc"}, (None, None, 1, False, False, 14, 13, 12, 11, 10, 9))
-
-        self._test_post({"award_id": 2, "order": "asc"}, (None, None, 1, False, False, 9, 10, 11, 12, 13, 14))
-
+        self._test_post({"award_id": 2, "order": "desc"}, (None, None, 1, False, False, 14, 13, 12, 11, 10, 9, 8, 7, 2))
+        self._test_post({"award_id": 2, "order": "asc"}, (None, None, 1, False, False, 2, 7, 8, 9, 10, 11, 12, 13, 14))
         self._test_post({"award_id": 2, "order": "BOGUS ORDER"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
 
     def test_complete_queries(self):

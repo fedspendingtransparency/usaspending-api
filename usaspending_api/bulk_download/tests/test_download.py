@@ -494,7 +494,7 @@ def test_download_awards_with_all_award_types(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 9
-    assert resp.json()["total_columns"] == 558
+    assert resp.json()["total_columns"] == 576
 
 
 def test_download_awards_with_all_prime_awards(client, award_data):
@@ -516,7 +516,7 @@ def test_download_awards_with_all_prime_awards(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 6
-    assert resp.json()["total_columns"] == 372
+    assert resp.json()["total_columns"] == 376
 
 
 def test_download_awards_with_some_prime_awards(client, award_data):
@@ -538,7 +538,7 @@ def test_download_awards_with_some_prime_awards(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 3
-    assert resp.json()["total_columns"] == 279
+    assert resp.json()["total_columns"] == 281
 
 
 def test_download_awards_with_all_sub_awards(client, award_data):
@@ -560,7 +560,7 @@ def test_download_awards_with_all_sub_awards(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1
-    assert resp.json()["total_columns"] == 186
+    assert resp.json()["total_columns"] == 200
 
 
 def test_download_awards_with_some_sub_awards(client, award_data):
@@ -582,7 +582,7 @@ def test_download_awards_with_some_sub_awards(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 2
-    assert resp.json()["total_columns"] == 91
+    assert resp.json()["total_columns"] == 98
 
 
 def test_download_awards_with_domestic_scope(client, award_data):
@@ -607,7 +607,7 @@ def test_download_awards_with_domestic_scope(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 4
-    assert resp.json()["total_columns"] == 558
+    assert resp.json()["total_columns"] == 576
 
     # Place of Performance Scope
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
@@ -630,7 +630,7 @@ def test_download_awards_with_domestic_scope(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 4
-    assert resp.json()["total_columns"] == 558
+    assert resp.json()["total_columns"] == 576
 
 
 def test_download_awards_with_foreign_scope(client, award_data):
@@ -655,7 +655,7 @@ def test_download_awards_with_foreign_scope(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 5
-    assert resp.json()["total_columns"] == 558
+    assert resp.json()["total_columns"] == 576
 
     # Place of Performance Scope
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
@@ -678,7 +678,7 @@ def test_download_awards_with_foreign_scope(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 5
-    assert resp.json()["total_columns"] == 558
+    assert resp.json()["total_columns"] == 576
 
 
 @pytest.mark.django_db

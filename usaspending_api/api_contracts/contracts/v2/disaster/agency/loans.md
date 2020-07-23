@@ -36,7 +36,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
                         "code": "485",
                         "description": "Corporation for National and Community Service",
                         "children": [],
-                        "count": 0,
+                        "award_count": 1,
                         "obligation": 16791.43,
                         "outlay": 0.0,
                         "face_value_of_loan": 0.0
@@ -46,7 +46,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
                         "code": "514",
                         "description": "U.S. Agency for Global Media",
                         "children": [],
-                        "count": 0,
+                        "award_count": 1,
                         "obligation": 221438.82,
                         "outlay": 0.0,
                         "face_value_of_loan": 0.0
@@ -114,7 +114,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
-+ `count` (required, number)
++ `award_count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 + `face_value_of_loan` (required, number, nullable)

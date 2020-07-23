@@ -112,8 +112,8 @@ Returns the number of transactions that would be included in a download request 
 + `upper_bound`: 1000000 (optional, number)
 
 ### NAICSCodeObject (object)
-+ `require`: [`33`] (optional, array[string], fixed-type)
-+ `exclude`: [`3333`] (optional, array[string], fixed-type)
++ `require`: `33` (optional, array[string], fixed-type)
++ `exclude`: `3333` (optional, array[string], fixed-type)
 
 ### PSCCodeObject (object)
 + `require`: [[`Service`, `B`, `B5`]] (optional, array[array[string]], fixed-type)
@@ -126,7 +126,7 @@ Returns the number of transactions that would be included in a download request 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
     Allocation Transfer Agency Identifier - three characters
-+ `aid` (required, string)
++ `aid`: `090` (required, string)
     Agency Identifier - three characters
 + `bpoa` (optional, string, nullable)
     Beginning Period of Availability - four digits
@@ -134,7 +134,7 @@ Returns the number of transactions that would be included in a download request 
     Ending Period of Availability - four digits
 + `a` (optional, string, nullable)
     Availability Type Code - X or null
-+ `main` (required, string)
++ `main`: `1000` (required, string)
     Main Account Code - four digits
 + `sub` (optional, string, nullable)
     Sub-Account Code - three digits

@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, F, Value, Case, When
+from django.db.models import Q, Sum, F, Value, Case, When, Count
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -10,7 +10,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     LoansMixin,
     FabaOutlayMixin,
 )
-from usaspending_api.disaster.v2.views.object_class.spending import universal_annotations, construct_response
+from usaspending_api.disaster.v2.views.object_class.spending import shared_object_class_annotations, construct_response
 
 
 class ObjectClassLoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBase):
@@ -37,14 +37,14 @@ class ObjectClassLoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin,
     @property
     def queryset(self):
         filters = [
-            Q(disaster_emergency_fund__in=self.def_codes),
             Q(award_id__isnull=False),
             Q(object_class__isnull=False),
             self.all_closed_defc_submissions,
+            self.is_in_provided_def_codes,
         ]
 
         annotations = {
-            **universal_annotations(),
+            **shared_object_class_annotations(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
@@ -56,6 +56,7 @@ class ObjectClassLoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin,
                 0,
             ),
             "total_budgetary_resources": Coalesce(Sum("award__total_loan_value"), 0),
+            "award_count": Count("award_id", distinct=True),
         }
 
         # Assuming it is more performant to fetch all rows once rather than
