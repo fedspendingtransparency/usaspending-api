@@ -8,6 +8,8 @@ class DefCodes:
 
     @classmethod
     def build_def_codes_filter(cls, queryset, filter_values):
-        subquery = FinancialAccountsByAwards.objects.filter(disaster_emergency_fund__in=filter_values).values("award__id")
+        subquery = FinancialAccountsByAwards.objects.filter(disaster_emergency_fund__in=filter_values).values(
+            "award__id"
+        )
         q = Q(award_id__in=subquery)
         return q
