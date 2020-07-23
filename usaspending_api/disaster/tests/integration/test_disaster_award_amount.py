@@ -61,6 +61,18 @@ def test_award_amount_on_sum_non_zero_toa(client, monkeypatch, multiple_file_c_t
 
 
 @pytest.mark.django_db
+def test_award_amount_on_sum_non_zero_outlay(client, monkeypatch, multiple_outlay_file_c_to_same_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
+
+    resp = helpers.post_for_amount_endpoint(client, url, ["M"], None)
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["award_count"] == 1
+    assert resp.data["outlay"] == 14.0
+    assert resp.data["obligation"] == 0.0
+
+
+@pytest.mark.django_db
 def test_award_amount_on_sum_zero_toa(client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
