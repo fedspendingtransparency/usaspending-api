@@ -160,19 +160,52 @@ def disaster_account_data():
 
     oc = "references.ObjectClass"
     oc1 = mommy.make(
-        oc, major_object_class=10, major_object_class_name="Name 10", object_class=100, object_class_name="equipment"
+        oc,
+        major_object_class=10,
+        major_object_class_name="Name 10",
+        object_class=100,
+        object_class_name="equipment",
+        direct_reimbursable="R",
     )
     oc2 = mommy.make(
-        oc, major_object_class=20, major_object_class_name="Name 20", object_class=110, object_class_name="hvac"
+        oc,
+        major_object_class=20,
+        major_object_class_name="Name 20",
+        object_class=110,
+        object_class_name="hvac",
+        direct_reimbursable="R",
     )
     oc3 = mommy.make(
-        oc, major_object_class=30, major_object_class_name="Name 30", object_class=120, object_class_name="supplies"
+        oc,
+        major_object_class=30,
+        major_object_class_name="Name 30",
+        object_class=120,
+        object_class_name="supplies",
+        direct_reimbursable="R",
     )
     oc4 = mommy.make(
-        oc, major_object_class=40, major_object_class_name="Name 40", object_class=130, object_class_name="interest"
+        oc,
+        major_object_class=40,
+        major_object_class_name="Name 40",
+        object_class=130,
+        object_class_name="interest",
+        direct_reimbursable="R",
     )
     oc5 = mommy.make(
-        oc, major_object_class=40, major_object_class_name="Name 40", object_class=140, object_class_name="interest"
+        oc,
+        major_object_class=40,
+        major_object_class_name="Name 40",
+        object_class=140,
+        object_class_name="interest",
+        direct_reimbursable="R",
+    )
+    oc6 = mommy.make(
+        oc,
+        major_object_class=30,
+        major_object_class_name="Name 30",
+        object_class=120,
+        object_class_name="supplies",
+        direct_reimbursable="D",
     )
 
     defc = "references.DisasterEmergencyFundCode"
@@ -255,7 +288,7 @@ def disaster_account_data():
         treasury_account=tas3,
         submission=sub3,
         program_activity=pa4,
-        object_class=oc3,
+        object_class=oc6,
         disaster_emergency_fund=defc_n,
         obligations_incurred_by_program_object_class_cpe=100000,
         gross_outlay_amount_by_program_object_class_cpe=100,
@@ -450,4 +483,22 @@ def disaster_account_data():
         transaction_obligated_amount=-2,
         gross_outlay_amount_by_award_cpe=200000000,
         award=a4,
+    )
+    mommy.make(
+        "references.GTASSF133Balances",
+        disaster_emergency_fund_code="M",
+        tas_rendering_label="003-X-0000-000",
+        treasury_account_identifier=tas3,
+        budget_authority_appropriation_amount_cpe=2398472389.78,
+        fiscal_period=8,
+        fiscal_year=2022,
+    )
+    mommy.make(
+        "references.GTASSF133Balances",
+        disaster_emergency_fund_code="N",
+        tas_rendering_label="002-X-0000-000",
+        treasury_account_identifier=tas2,
+        budget_authority_appropriation_amount_cpe=892743123.12,
+        fiscal_period=8,
+        fiscal_year=2022,
     )
