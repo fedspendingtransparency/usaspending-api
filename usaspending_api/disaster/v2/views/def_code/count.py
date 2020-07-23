@@ -3,12 +3,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.disaster.v2.views.count_base import CountBase
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import DisasterEmergencyFundCode
 
 
-class DefCodeCountViewSet(CountBase):
+class DefCodeCountViewSet(DisasterBase):
     """
     Obtain the count of DEF Codes related to supplied DEFC filter.
     """
@@ -19,9 +19,9 @@ class DefCodeCountViewSet(CountBase):
     def post(self, request: Request) -> Response:
         filters = [
             Q(disaster_emergency_fund_id=OuterRef("pk")),
-            self.is_in_provided_def_codes(),
+            self.is_in_provided_def_codes,
             self.all_closed_defc_submissions,
-            self.is_non_zero_total_spending(),
+            self.is_non_zero_total_spending,
         ]
         count = (
             DisasterEmergencyFundCode.objects.annotate(
