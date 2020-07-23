@@ -137,7 +137,7 @@ def faba_with_object_class_and_two_awards(award_count_sub_schedule, award_count_
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
-        parent_award_id="basic award",
+        parent_award_id="basic award 1",
         award=award1,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -146,7 +146,7 @@ def faba_with_object_class_and_two_awards(award_count_sub_schedule, award_count_
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
-        parent_award_id="basic award",
+        parent_award_id="basic award 2",
         award=award2,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),

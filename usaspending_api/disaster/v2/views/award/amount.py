@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count
+from django.db.models import Sum, Count
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -8,7 +8,7 @@ from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, AwardT
 
 
 class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
-    """View to implement the API"""
+    """Returns aggregated values of obligation, outlay, and count of Award records"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/award/amount.md"
 
@@ -19,13 +19,13 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
     @property
     def queryset(self):
         filters = [
-            Q(disaster_emergency_fund__in=self.def_codes),
             self.all_closed_defc_submissions,
+            self.has_award_of_provided_type,
+            self.is_in_provided_def_codes,
         ]
 
         count_field = self.unique_file_c
         if self.award_type_codes:
-            filters.extend([Q(award__type__in=self.award_type_codes), Q(award__isnull=False)])
             count_field = "award_id"
 
         fields = {
