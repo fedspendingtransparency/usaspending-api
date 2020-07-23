@@ -2,6 +2,7 @@ from django.db.models import Sum, Count
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
+from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.validator import TinyShield
@@ -13,6 +14,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/award/amount.md"
 
+    @cache_response()
     def post(self, request):
         additional_models = [
             {
