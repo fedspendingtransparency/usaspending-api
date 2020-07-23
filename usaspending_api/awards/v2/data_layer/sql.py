@@ -22,4 +22,5 @@ defc_sql = """
         AND latest_closed_period_per_fy.is_quarter = sa.quarter_format_flag
     WHERE {award_id_sql}
     GROUP BY disaster_emergency_fund_code
+    SORT BY obligated_amount desc
     """
