@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, DecimalField, Case, When, OuterRef, Subquery, Func
+from django.db.models import Q, Sum, F, Value, DecimalField, Case, When, OuterRef, Subquery, Func, IntegerField
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -7,7 +7,12 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.federal_account.federal_account_result import FedAcctResults, FedAccount, TAS
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, PaginationMixin, SpendingMixin
+from usaspending_api.disaster.v2.views.disaster_base import (
+    DisasterBase,
+    PaginationMixin,
+    SpendingMixin,
+    FabaOutlayMixin,
+)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 
@@ -15,7 +20,9 @@ from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balan
 def construct_response(results: list, pagination: Pagination):
     FederalAccounts = FedAcctResults()
     for row in results:
-        FA = FedAccount(id=row.pop("fa_id"), code=row.pop("fa_code"), description=row.pop("fa_description"))
+        FA = FedAccount(
+            id=row.pop("fa_id"), code=row.pop("fa_code"), award_count=0, description=row.pop("fa_description")
+        )
         FederalAccounts[FA].include(TAS(**row))
 
     return {
@@ -24,7 +31,7 @@ def construct_response(results: list, pagination: Pagination):
     }
 
 
-class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
+class SpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterBase):
     """ Returns disaster spending by federal account. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
@@ -41,24 +48,19 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     @property
     def total_queryset(self):
         filters = [
-            Q(
-                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
-                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
-            ),
-            Q(disaster_emergency_fund__in=self.def_codes),
+            self.is_in_provided_def_codes,
+            self.is_non_zero_total_spending,
+            self.all_closed_defc_submissions,
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
-            self.all_closed_defc_submissions,
         ]
 
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "count": Count("treasury_account__tas_rendering_label", distinct=True),
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),
+            "award_count": Value(None, output_field=IntegerField()),
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Coalesce(
@@ -117,7 +119,7 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
     @property
     def award_queryset(self):
         filters = [
-            Q(disaster_emergency_fund__in=self.def_codes),
+            self.is_in_provided_def_codes,
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
             self.all_closed_defc_submissions,
@@ -125,7 +127,7 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, DisasterBase):
 
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "count": Count("treasury_account__tas_rendering_label", distinct=True),
+            "award_count": self.unique_file_c_count(),
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),

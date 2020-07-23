@@ -15,7 +15,7 @@ def test_basic_object_class_award_success(client, basic_object_class_faba_with_l
             "id": "001",
             "code": "001",
             "description": "001 name",
-            "count": 0,
+            "award_count": 1,
             "obligation": 0.0,
             "outlay": 0.0,
             "children": [
@@ -23,7 +23,7 @@ def test_basic_object_class_award_success(client, basic_object_class_faba_with_l
                     "id": "1",
                     "code": "0001",
                     "description": "0001 name",
-                    "count": 0,
+                    "award_count": 1,
                     "obligation": 0.0,
                     "outlay": 0.0,
                     "face_value_of_loan": 5,
