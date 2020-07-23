@@ -83,6 +83,7 @@ def universal_transaction_matview_annotations():
                         filter_by_latest_closed_periods(),
                         award_id=OuterRef("award_id"),
                         disaster_emergency_fund__group_name="covid_19",
+                        submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
                     )
                     .values("award_id")
                     .annotate(sum=Sum("gross_outlay_amount_by_award_cpe"))
@@ -96,7 +97,9 @@ def universal_transaction_matview_annotations():
                 transaction__action_date__gte=datetime.date(2020, 4, 1),
                 then=Subquery(
                     FinancialAccountsByAwards.objects.filter(
-                        award_id=OuterRef("award_id"), disaster_emergency_fund__group_name="covid_19"
+                        award_id=OuterRef("award_id"),
+                        disaster_emergency_fund__group_name="covid_19",
+                        submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
                     )
                     .values("award_id")
                     .annotate(sum=Sum("transaction_obligated_amount"))
@@ -190,6 +193,7 @@ def universal_award_matview_annotations():
                 filter_by_latest_closed_periods(),
                 award_id=OuterRef("award_id"),
                 disaster_emergency_fund__group_name="covid_19",
+                submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
             )
             .values("award_id")
             .annotate(sum=Sum("gross_outlay_amount_by_award_cpe"))
@@ -198,7 +202,9 @@ def universal_award_matview_annotations():
         ),
         "obligated_amount_funded_by_COVID-19_supplementals": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                award_id=OuterRef("award_id"), disaster_emergency_fund__group_name="covid_19"
+                award_id=OuterRef("award_id"),
+                disaster_emergency_fund__group_name="covid_19",
+                submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
             )
             .values("award_id")
             .annotate(sum=Sum("transaction_obligated_amount"))
@@ -291,6 +297,7 @@ def idv_order_annotations():
                 filter_by_latest_closed_periods(),
                 award_id=OuterRef("id"),
                 disaster_emergency_fund__group_name="covid_19",
+                submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
             )
             .values("award_id")
             .annotate(sum=Sum("gross_outlay_amount_by_award_cpe"))
@@ -299,7 +306,9 @@ def idv_order_annotations():
         ),
         "obligated_amount_funded_by_COVID-19_supplementals": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                award_id=OuterRef("id"), disaster_emergency_fund__group_name="covid_19"
+                award_id=OuterRef("id"),
+                disaster_emergency_fund__group_name="covid_19",
+                submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
             )
             .values("award_id")
             .annotate(sum=Sum("transaction_obligated_amount"))
@@ -400,6 +409,7 @@ def idv_transaction_annotations():
                         filter_by_latest_closed_periods(),
                         award_id=OuterRef("award_id"),
                         disaster_emergency_fund__group_name="covid_19",
+                        submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
                     )
                     .values("award_id")
                     .annotate(sum=Sum("gross_outlay_amount_by_award_cpe"))
@@ -413,7 +423,9 @@ def idv_transaction_annotations():
                 action_date__gte="2020-04-01",
                 then=Subquery(
                     FinancialAccountsByAwards.objects.filter(
-                        award_id=OuterRef("award_id"), disaster_emergency_fund__group_name="covid_19"
+                        award_id=OuterRef("award_id"),
+                        disaster_emergency_fund__group_name="covid_19",
+                        submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
                     )
                     .values("award_id")
                     .annotate(sum=Sum("transaction_obligated_amount"))
@@ -549,6 +561,7 @@ def subaward_annotations():
                         filter_by_latest_closed_periods(),
                         award_id=OuterRef("award_id"),
                         disaster_emergency_fund__group_name="covid_19",
+                        submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
                     )
                     .values("award_id")
                     .annotate(sum=Sum("gross_outlay_amount_by_award_cpe"))
@@ -562,7 +575,9 @@ def subaward_annotations():
                 broker_subaward__action_date__gte=datetime.date(2020, 4, 1),
                 then=Subquery(
                     FinancialAccountsByAwards.objects.filter(
-                        award_id=OuterRef("award_id"), disaster_emergency_fund__group_name="covid_19"
+                        award_id=OuterRef("award_id"),
+                        disaster_emergency_fund__group_name="covid_19",
+                        submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
                     )
                     .values("award_id")
                     .annotate(sum=Sum("transaction_obligated_amount"))
