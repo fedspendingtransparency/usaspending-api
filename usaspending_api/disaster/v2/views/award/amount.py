@@ -3,7 +3,6 @@ from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.validator import TinyShield
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, AwardTypeMixin, FabaOutlayMixin
@@ -14,7 +13,6 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/award/amount.md"
 
-    @cache_response()
     def post(self, request):
         additional_models = [
             {
@@ -51,8 +49,8 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
 
         fields = {
             "award_count": Count(count_field, distinct=True),
-            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
-            "outlay": self.outlay_field_annotation,
+            "obligation": Coalesce(Sum("total_obligation"), 0),
+            "outlay": Coalesce(Sum("total_outlay"), 0),
         }
 
         if self.award_type_codes:
