@@ -203,7 +203,7 @@ LEFT JOIN (
         faba.award_id,
         ARRAY_AGG(DISTINCT disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
         COALESCE(sum(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
-        COALESCE(sum(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
+        COALESCE(sum(CASE WHEN (latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year AND latest_closed_period_per_fy.submission_fiscal_month <= sa.reporting_fiscal_period) THEN faba.transaction_obligated_amount END), 0) AS transaction_obligated_amount
     FROM
         financial_accounts_by_awards faba
     INNER JOIN disaster_emergency_fund_code defc
