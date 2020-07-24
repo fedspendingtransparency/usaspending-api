@@ -55,8 +55,8 @@ class CustomCacheResponse(CacheResponse):
                 else:
                     response.data["results"] = list(response.data["results"])
 
-            response.render()  # should be rendered, before pickling while storing to cache
             response["Cache-Trace"] = "no-cache"
+            response.render()  # should be rendered, before pickling while storing to cache
 
             if not response.status_code >= 400 or self.cache_errors:
                 if self.cache_errors:
