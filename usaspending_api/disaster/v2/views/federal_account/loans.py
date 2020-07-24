@@ -37,7 +37,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBa
     @property
     def queryset(self):
         filters = [
-            Q(disaster_emergency_fund__in=self.def_codes),
+            self.is_in_provided_def_codes,
             Q(award_id__isnull=False),
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),

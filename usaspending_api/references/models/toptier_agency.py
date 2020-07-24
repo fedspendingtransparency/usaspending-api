@@ -1,10 +1,11 @@
 from django.db import models
 from django.db.models import Exists, OuterRef
+from django_cte import CTEManager
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.references.models.agency import Agency
 
 
-class ToptierAgencyManagerQuerySet(models.QuerySet):
+class ToptierAgencyManager(CTEManager):
     def account_agencies(self):
         """
         Returns only those toptier agencies that have ever had a submission.  This is used primarily to
@@ -13,13 +14,17 @@ class ToptierAgencyManagerQuerySet(models.QuerySet):
         FinancialAccountsByAwards, and their ilk).  DO NOT USE THIS FOR AWARD RELATED AGENCY DROPDOWN
         LISTS (see award_agencies method for those).
         """
-        return self.annotate(
-            has_submission=Exists(
-                AppropriationAccountBalances.objects.filter(
-                    treasury_account_identifier__funding_toptier_agency_id=OuterRef("toptier_agency_id")
-                ).values("pk")
+        return (
+            self.get_queryset()
+            .annotate(
+                has_submission=Exists(
+                    AppropriationAccountBalances.objects.filter(
+                        treasury_account_identifier__funding_toptier_agency_id=OuterRef("toptier_agency_id")
+                    ).values("pk")
+                )
             )
-        ).filter(has_submission=True)
+            .filter(has_submission=True)
+        )
 
     def award_agencies(self):
         """
@@ -28,13 +33,17 @@ class ToptierAgencyManagerQuerySet(models.QuerySet):
         TransactionNormalized, TransactionFABS, TransactionFPDS, and their ilk).  DO NOT USE THIS FOR ACCOUNT
         RELATED AGENCY DROPDOWN LISTS OR FOR AGENCY PAGES (see account_agencies method for those).
         """
-        return self.annotate(
-            user_selectable=Exists(
-                Agency.objects.filter(
-                    user_selectable=True, subtier_agency_id__isnull=False, toptier_agency_id=OuterRef("pk")
-                ).values("pk")
+        return (
+            self.get_queryset()
+            .annotate(
+                user_selectable=Exists(
+                    Agency.objects.filter(
+                        user_selectable=True, subtier_agency_id__isnull=False, toptier_agency_id=OuterRef("pk")
+                    ).values("pk")
+                )
             )
-        ).filter(user_selectable=True)
+            .filter(user_selectable=True)
+        )
 
 
 class ToptierAgency(models.Model):
@@ -50,7 +59,7 @@ class ToptierAgency(models.Model):
     justification = models.URLField(blank=True, null=True)
     icon_filename = models.TextField(blank=True, null=True)
 
-    objects = ToptierAgencyManagerQuerySet.as_manager()
+    objects = ToptierAgencyManager()
 
     class Meta:
         db_table = "toptier_agency"
