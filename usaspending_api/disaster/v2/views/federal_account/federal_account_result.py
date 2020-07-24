@@ -65,6 +65,8 @@ class FedAcctResults:
             reverse = False
 
         if isinstance(items, list):
-            return sorted(items, key=lambda x: getattr(x, field), reverse=reverse)
+            return sorted(items, key=lambda x: (getattr(x, field), getattr(x, "id")), reverse=reverse)
         else:
-            return {k: items[k] for k in sorted(items, key=lambda x: getattr(x, field), reverse=reverse)}
+            return {
+                k: items[k] for k in sorted(items, key=lambda x: (getattr(x, field), getattr(x, "id")), reverse=reverse)
+            }

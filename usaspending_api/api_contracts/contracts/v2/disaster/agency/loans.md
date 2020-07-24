@@ -67,13 +67,13 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `award_type_codes` (optional, array[enum[string]], fixed-type)  
++ `award_type_codes` (optional, array[enum[string]], fixed-type)
     Only accepts loan award type `07` or `08` in the array, since this endpoint is specific to loans.
 
     If ANY award type codes are provided, loan amounts will be summed for the distinct set of toptier agencies,
     whose subtier agencies funded loan awards linked to `FinancialAccountsByAwards` records (which are derived from DABS File C).
 
-    If this parameter is not provided, loan amounts will be summed for a different set of agencies: 
+    If this parameter is not provided, loan amounts will be summed for a different set of agencies:
     the distinct set of toptier agencies "owning" appropriations accounts used in funding _any_ award spending
     for this disaster (i.e. from agencies "owning" Treasury Account Symbol (TAS) accounts on `FinancialAccountsByAwards`
     records, which are derived from DABS File C).
@@ -104,7 +104,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
         + `id`
         + `code`
         + `description`
-        + `count`
+        + `award_count`
         + `face_value_of_loan`
         + `obligation`
         + `outlay`

@@ -28,7 +28,7 @@ def test_correct_response_single_defc(
     expected_results = [
         {
             "code": "30.300",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 3",
             "id": 300,
             "obligation": 2000.0,
@@ -37,7 +37,7 @@ def test_correct_response_single_defc(
         },
         {
             "code": "20.200",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 2",
             "id": 200,
             "obligation": 20.0,
@@ -46,7 +46,7 @@ def test_correct_response_single_defc(
         },
         {
             "code": "10.100",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 1",
             "id": 100,
             "obligation": 2.0,
@@ -68,7 +68,7 @@ def test_correct_response_multiple_defc(
     expected_results = [
         {
             "code": "30.300",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 3",
             "id": 300,
             "obligation": 2000.0,
@@ -77,7 +77,7 @@ def test_correct_response_multiple_defc(
         },
         {
             "code": "20.200",
-            "count": 2,
+            "award_count": 2,
             "description": "CFDA 2",
             "id": 200,
             "obligation": 220.0,
@@ -86,7 +86,7 @@ def test_correct_response_multiple_defc(
         },
         {
             "code": "10.100",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 1",
             "id": 100,
             "obligation": 2.0,
@@ -114,7 +114,7 @@ def test_correct_response_with_query(
     expected_results = [
         {
             "code": "30.300",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 3",
             "id": 300,
             "obligation": 2000.0,
@@ -141,7 +141,7 @@ def test_correct_response_with_award_type_codes(
     expected_results = [
         {
             "code": "20.200",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 2",
             "id": 200,
             "obligation": 20.0,
@@ -150,7 +150,7 @@ def test_correct_response_with_award_type_codes(
         },
         {
             "code": "10.100",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 1",
             "id": 100,
             "obligation": 2.0,
@@ -214,7 +214,7 @@ def test_pagination_page_and_limit(
         "results": [
             {
                 "code": "20.200",
-                "count": 2,
+                "award_count": 2,
                 "description": "CFDA 2",
                 "id": 200,
                 "obligation": 220.0,

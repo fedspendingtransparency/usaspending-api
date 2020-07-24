@@ -30,7 +30,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             count_field = "award_id"
 
         fields = {
-            "count": Count(count_field, distinct=True),
+            "award_count": Count(count_field, distinct=True),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": self.outlay_field_annotation,
         }
