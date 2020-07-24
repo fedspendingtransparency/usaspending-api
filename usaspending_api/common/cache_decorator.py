@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from django.conf import settings
 from django.db.models import QuerySet
 from rest_framework_extensions.cache.decorators import CacheResponse
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
@@ -45,15 +44,18 @@ class CustomCacheResponse(CacheResponse):
                 and "results" in response.data
                 and isinstance(response.data["results"], QuerySet)
             ):
-                if settings.IS_LOCAL:
-                    raise RuntimeError(
-                        "Your view is returning a QuerySet.  QuerySets are not really designed to "
-                        "be pickled and can cause caching issues.  Please materialize the QuerySet "
-                        "using a List or some other more primitive data structure.  Thank you, have "
-                        "a lovely day, and don't forget to wash your hands regularly!"
-                    )
-                else:
-                    response.data["results"] = list(response.data["results"])
+                # This was causing problems in Travis.  Add it back if the hack becomes permanent
+                # and find a workaround for Travis.
+                #
+                # if settings.IS_LOCAL:
+                #     raise RuntimeError(
+                #         "Your view is returning a QuerySet.  QuerySets are not really designed to "
+                #         "be pickled and can cause caching issues.  Please materialize the QuerySet "
+                #         "using a List or some other more primitive data structure.  Thank you, have "
+                #         "a lovely day, and don't forget to wash your hands regularly!"
+                #     )
+                # else:
+                response.data["results"] = list(response.data["results"])
 
             response["Cache-Trace"] = "no-cache"
             response.render()  # should be rendered, before pickling while storing to cache
