@@ -134,7 +134,7 @@ def cfda_awards_and_transactions(db):
         id=10,
         award=award1,
         federal_action_obligation=5,
-        action_date="2020-01-01",
+        action_date="2020-04-01",
         is_fpds=False,
     )
     mommy.make(
@@ -142,7 +142,7 @@ def cfda_awards_and_transactions(db):
         id=20,
         award=award2,
         federal_action_obligation=50,
-        action_date="2020-01-02",
+        action_date="2020-04-02",
         is_fpds=False,
     )
     mommy.make(
@@ -150,7 +150,7 @@ def cfda_awards_and_transactions(db):
         id=30,
         award=award3,
         federal_action_obligation=500,
-        action_date="2020-01-03",
+        action_date="2020-04-03",
         is_fpds=False,
     )
     mommy.make(
@@ -158,7 +158,7 @@ def cfda_awards_and_transactions(db):
         id=40,
         award=award4,
         federal_action_obligation=5000,
-        action_date="2020-01-04",
+        action_date="2020-04-04",
         is_fpds=False,
     )
     mommy.make(
@@ -166,7 +166,7 @@ def cfda_awards_and_transactions(db):
         id=50,
         award=award5,
         federal_action_obligation=50000,
-        action_date="2020-01-05",
+        action_date="2020-04-05",
         is_fpds=True,
     )
 
