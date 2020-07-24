@@ -396,7 +396,7 @@ class _DisasterEmergencyFundCodes(_Filter):
             "bool",
             should=def_codes_query,
             minimum_should_match=1,
-            must=[ES_Q("range", action_date={"gte": "2020-04-01"})],
+            must=ES_Q("range", action_date={"gte": "2020-04-01"}),
         )
 
 
