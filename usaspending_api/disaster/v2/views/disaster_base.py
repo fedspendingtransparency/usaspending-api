@@ -291,18 +291,27 @@ class _BasePaginationMixin:
             upper_limit=(request_data["page"] * request_data["limit"]),
             sort_key=request_data.get("sort", "obligated_amount"),
             sort_order=request_data["order"],
+            secondary_sort_key="id",
         )
 
 
 class PaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "count", "obligation", "outlay", "total_budgetary_resources"]
+        sortable_columns = [
+            "id",
+            "code",
+            "description",
+            "award_count",
+            "obligation",
+            "outlay",
+            "total_budgetary_resources",
+        ]
         return self.run_models(sortable_columns)
 
 
 class LoansPaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "count", "obligation", "outlay", "face_value_of_loan"]
+        sortable_columns = ["id", "code", "description", "award_count", "obligation", "outlay", "face_value_of_loan"]
         return self.run_models(sortable_columns)

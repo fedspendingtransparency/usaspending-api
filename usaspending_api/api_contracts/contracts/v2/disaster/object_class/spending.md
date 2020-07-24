@@ -102,7 +102,7 @@ Returns spending details of Object Classes receiving supplemental funding budget
         + `id`
         + `code`
         + `description`
-        + `count`
+        + `award_count`
         + `obligation`
         + `outlay`
 
