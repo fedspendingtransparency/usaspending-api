@@ -202,8 +202,18 @@ LEFT JOIN (
     SELECT
         faba.award_id,
         ARRAY_AGG(DISTINCT disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
-        COALESCE(sum(CASE WHEN (latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period AND latest_closed_period_per_fy.is_quarter IS FALSE) THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
-        COALESCE(sum(CASE WHEN (latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year AND latest_closed_period_per_fy.submission_fiscal_month <= sa.reporting_fiscal_period) THEN faba.transaction_obligated_amount END), 0) AS transaction_obligated_amount
+        COALESCE(sum(CASE WHEN (latest_closed_period_per_fy.is_quarter IS FALSE) THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(sum(CASE WHEN (
+          SELECT TRUE
+          FROM dabs_submission_window_schedule dabs
+          WHERE
+            dabs.submission_reveal_date < now()
+            AND dabs.period_start_date >= '2020-04-01'
+            AND dabs.submission_fiscal_year = sa.reporting_fiscal_year
+            AND sa.reporting_fiscal_period <= dabs.submission_fiscal_month
+            AND dabs.is_quarter = sa.quarter_format_flag
+          LIMIT 1
+          ) THEN faba.transaction_obligated_amount END), 0) AS transaction_obligated_amount
     FROM
         financial_accounts_by_awards faba
     INNER JOIN disaster_emergency_fund_code defc
