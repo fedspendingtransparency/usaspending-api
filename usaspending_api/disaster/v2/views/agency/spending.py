@@ -70,7 +70,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
 
         return Response(
             {
-                "results": results.order_by(self.pagination.order_by)[
+                "results": results.order_by(*self.pagination.robust_order_by_fields)[
                     self.pagination.lower_limit : self.pagination.upper_limit
                 ],
                 "page_metadata": get_pagination_metadata(results.count(), self.pagination.limit, self.pagination.page),
@@ -236,7 +236,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             "id": int(info["id"]),
             "code": info["code"],
             "description": info["name"],
-            # the count of distinct subtier agencies contributing to the totals
+            # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")

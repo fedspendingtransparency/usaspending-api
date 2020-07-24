@@ -28,7 +28,7 @@ def test_correct_response_single_defc(
     expected_results = [
         {
             "code": "20.200",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 2",
             "face_value_of_loan": 30.0,
             "id": 200,
@@ -38,7 +38,7 @@ def test_correct_response_single_defc(
         },
         {
             "code": "10.100",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 1",
             "face_value_of_loan": 3.0,
             "id": 100,
@@ -61,7 +61,7 @@ def test_correct_response_multiple_defc(
     expected_results = [
         {
             "code": "20.200",
-            "count": 2,
+            "award_count": 2,
             "description": "CFDA 2",
             "face_value_of_loan": 330.0,
             "id": 200,
@@ -71,7 +71,7 @@ def test_correct_response_multiple_defc(
         },
         {
             "code": "10.100",
-            "count": 1,
+            "award_count": 1,
             "description": "CFDA 1",
             "face_value_of_loan": 3.0,
             "id": 100,
@@ -100,7 +100,7 @@ def test_correct_response_with_query(
     expected_results = [
         {
             "code": "20.200",
-            "count": 2,
+            "award_count": 2,
             "description": "CFDA 2",
             "face_value_of_loan": 330.0,
             "id": 200,
@@ -151,7 +151,7 @@ def test_pagination_page_and_limit(
         "results": [
             {
                 "code": "10.100",
-                "count": 1,
+                "award_count": 1,
                 "description": "CFDA 1",
                 "face_value_of_loan": 3.0,
                 "id": 100,
@@ -204,7 +204,7 @@ def test_correct_response_with_award_type_codes(
         "results": [
             {
                 "code": "20.200",
-                "count": 1,
+                "award_count": 1,
                 "description": "CFDA 2",
                 "face_value_of_loan": 30.0,
                 "id": 200,
@@ -214,7 +214,7 @@ def test_correct_response_with_award_type_codes(
             },
             {
                 "code": "10.100",
-                "count": 1,
+                "award_count": 1,
                 "description": "CFDA 1",
                 "face_value_of_loan": 3.0,
                 "id": 100,
@@ -244,7 +244,7 @@ def test_correct_response_with_award_type_codes(
         "results": [
             {
                 "code": "20.200",
-                "count": 1,
+                "award_count": 1,
                 "description": "CFDA 2",
                 "face_value_of_loan": 300.0,
                 "id": 200,

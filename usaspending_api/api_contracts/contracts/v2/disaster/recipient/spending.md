@@ -33,7 +33,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
                 "results": [
                     {
                         "code": "987654321",
-                        "count": 2,
+                        "award_count": 2,
                         "description": "RECIPIENT 3",
                         "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
                         "obligation": 2200.0,
@@ -41,7 +41,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
                     },
                     {
                         "code": "456789123",
-                        "count": 1,
+                        "award_count": 1,
                         "description": "RECIPIENT 2",
                         "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
                         "obligation": 20.0,
@@ -86,7 +86,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
     + Default: `description`
     + Members
         + `description`
-        + `count`
+        + `award_count`
         + `obligation`
         + `outlay`
 
@@ -94,7 +94,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 + `id` (required, array[string], fixed-type)
 + `code` (required, string)
 + `description` (required, string)
-+ `count` (required, number)
++ `award_count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 
