@@ -1,14 +1,10 @@
 from django.contrib.postgres.fields import ArrayField
-from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 
 from usaspending_api.awards.models import TransactionNormalized
 
 
 class UniversalTransactionView(models.Model):
-    keyword_ts_vector = SearchVectorField()
-    award_ts_vector = SearchVectorField()
-    recipient_name_ts_vector = SearchVectorField()
     treasury_account_identifiers = ArrayField(models.IntegerField(), default=None)
     transaction = models.OneToOneField(TransactionNormalized, on_delete=models.DO_NOTHING, primary_key=True)
     action_date = models.DateField(blank=True, null=False)
