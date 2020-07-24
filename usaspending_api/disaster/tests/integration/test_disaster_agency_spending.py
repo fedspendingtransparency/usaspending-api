@@ -20,29 +20,29 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "code": "009",
             "description": "Agency 009",
             "children": [],
+            "award_count": 0,
             "obligation": 11000000.0,
             "outlay": 11.0,
-            "award_count": None,
-            "total_budgetary_resources": 0.0,
+            "total_budgetary_resources": 2398472389.78,
         },
         {
             "id": 2,
             "code": "008",
             "description": "Agency 008",
             "children": [],
+            "award_count": 0,
             "obligation": 1000.0,
             "outlay": 10000.0,
-            "award_count": None,
-            "total_budgetary_resources": 0.0,
+            "total_budgetary_resources": 892743123.12,
         },
         {
             "id": 1,
             "code": "007",
             "description": "Agency 007",
             "children": [],
+            "award_count": 0,
             "obligation": 0.0,
             "outlay": 0.0,
-            "award_count": None,
             "total_budgetary_resources": 0.0,
         },
     ]
@@ -57,9 +57,9 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "code": "007",
             "description": "Agency 007",
             "children": [],
+            "award_count": 0,
             "obligation": 0.0,
             "outlay": 0.0,
-            "award_count": None,
             "total_budgetary_resources": 0.0,
         }
     ]
@@ -115,39 +115,29 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     )
     expected_results = [
         {
-            "id": 3,
-            "code": "008",
-            "description": "Agency 008",
-            "award_count": 2,
-            "obligation": 20220218,
-            "outlay": 0,
-            "children": [
-                {
-                    "id": 3,
-                    "code": "2008",
-                    "description": "Subtier 2008",
-                    "award_count": 2,
-                    "obligation": 20220218,
-                    "outlay": 0,
-                }
-            ],
-        },
-        {
             "id": 2,
             "code": "008",
             "description": "Agency 008",
-            "award_count": 1,
-            "obligation": 2000000,
-            "outlay": 0,
+            "award_count": 3,
+            "obligation": 22220218.0,
+            "outlay": 0.0,
             "children": [
                 {
+                    "code": "2008",
+                    "award_count": 2,
+                    "description": "Subtier 2008",
                     "id": 2,
+                    "obligation": 20220218.0,
+                    "outlay": 0.0,
+                },
+                {
                     "code": "1008",
-                    "description": "Subtier 1008",
                     "award_count": 1,
-                    "obligation": 2000000,
-                    "outlay": 0,
-                }
+                    "description": "Subtier 1008",
+                    "id": 2,
+                    "obligation": 2000000.0,
+                    "outlay": 0.0,
+                },
             ],
         },
         {
@@ -155,16 +145,16 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             "code": "007",
             "description": "Agency 007",
             "award_count": 1,
-            "obligation": 2000,
-            "outlay": 0,
+            "obligation": 2000.0,
+            "outlay": 0.0,
             "children": [
                 {
                     "id": 1,
                     "code": "1007",
                     "description": "Subtier 1007",
                     "award_count": 1,
-                    "obligation": 2000,
-                    "outlay": 0,
+                    "obligation": 2000.0,
+                    "outlay": 0.0,
                 }
             ],
         },
@@ -178,7 +168,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     )
     expected_results = [
         {
-            "id": 3,
+            "id": 2,
             "code": "008",
             "description": "Agency 008",
             "award_count": 1,
@@ -186,7 +176,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             "outlay": 0.0,
             "children": [
                 {
-                    "id": 3,
+                    "id": 2,
                     "code": "2008",
                     "description": "Subtier 2008",
                     "award_count": 1,
@@ -205,39 +195,29 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     )
     expected_results = [
         {
-            "id": 3,
-            "code": "008",
-            "description": "Agency 008",
-            "award_count": 1,
-            "obligation": -2,
-            "outlay": 0,
-            "children": [
-                {
-                    "id": 3,
-                    "code": "2008",
-                    "description": "Subtier 2008",
-                    "award_count": 1,
-                    "obligation": -2,
-                    "outlay": 0,
-                }
-            ],
-        },
-        {
             "id": 2,
             "code": "008",
             "description": "Agency 008",
-            "award_count": 1,
-            "obligation": 2000000,
-            "outlay": 0,
+            "award_count": 2,
+            "obligation": 1999998.0,
+            "outlay": 0.0,
             "children": [
+                {
+                    "id": 2,
+                    "code": "2008",
+                    "description": "Subtier 2008",
+                    "award_count": 1,
+                    "obligation": -2.0,
+                    "outlay": 0.0,
+                },
                 {
                     "id": 2,
                     "code": "1008",
                     "description": "Subtier 1008",
                     "award_count": 1,
-                    "obligation": 2000000,
-                    "outlay": 0,
-                }
+                    "obligation": 2000000.0,
+                    "outlay": 0.0,
+                },
             ],
         },
     ]
