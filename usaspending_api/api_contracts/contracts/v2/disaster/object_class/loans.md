@@ -90,7 +90,7 @@ Returns loan spending details of Object Classes receiving supplemental funding b
         + `id`
         + `code`
         + `description`
-        + `count`
+        + `award_count`
         + `face_value_of_loan`
         + `obligation`
         + `outlay`

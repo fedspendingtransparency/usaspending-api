@@ -30,7 +30,7 @@ def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearc
     expected_results = [
         {
             "code": "987654321",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 3",
             "face_value_of_loan": 300.0,
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
@@ -39,7 +39,7 @@ def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearc
         },
         {
             "code": "456789123",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 2",
             "face_value_of_loan": 30.0,
             "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
@@ -48,7 +48,7 @@ def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearc
         },
         {
             "code": "DUNS Number not provided",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 1",
             "face_value_of_loan": 3.0,
             "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
@@ -70,7 +70,7 @@ def test_correct_response_multiple_defc(
     expected_results = [
         {
             "code": "987654321",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 3",
             "face_value_of_loan": 300.0,
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
@@ -79,7 +79,7 @@ def test_correct_response_multiple_defc(
         },
         {
             "code": "456789123",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 2",
             "face_value_of_loan": 30.0,
             "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
@@ -88,7 +88,7 @@ def test_correct_response_multiple_defc(
         },
         {
             "code": "DUNS Number not provided",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 1",
             "face_value_of_loan": 3.0,
             "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
@@ -113,7 +113,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
     expected_results = [
         {
             "code": "987654321",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 3",
             "face_value_of_loan": 300.0,
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
@@ -128,7 +128,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
     expected_results = [
         {
             "code": "987654321",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 3",
             "face_value_of_loan": 300.0,
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
@@ -137,7 +137,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
         },
         {
             "code": "456789123",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 2",
             "face_value_of_loan": 30.0,
             "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
@@ -146,7 +146,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
         },
         {
             "code": "DUNS Number not provided",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 1",
             "face_value_of_loan": 3.0,
             "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
@@ -161,7 +161,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
     expected_results = [
         {
             "code": "987654321",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 3",
             "face_value_of_loan": 300.0,
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
@@ -170,7 +170,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
         },
         {
             "code": "456789123",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 2",
             "face_value_of_loan": 30.0,
             "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
@@ -179,7 +179,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
         },
         {
             "code": "DUNS Number not provided",
-            "count": 1,
+            "award_count": 1,
             "description": "RECIPIENT 1",
             "face_value_of_loan": 3.0,
             "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
@@ -227,7 +227,7 @@ def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_a
         "results": [
             {
                 "code": "456789123",
-                "count": 1,
+                "award_count": 1,
                 "description": "RECIPIENT 2",
                 "face_value_of_loan": 30.0,
                 "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
@@ -272,7 +272,7 @@ def test_correct_response_with_award_type_codes(
         "results": [
             {
                 "code": "456789123",
-                "count": 1,
+                "award_count": 1,
                 "description": "RECIPIENT 2",
                 "face_value_of_loan": 30.0,
                 "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
@@ -281,7 +281,7 @@ def test_correct_response_with_award_type_codes(
             },
             {
                 "code": "DUNS Number not provided",
-                "count": 1,
+                "award_count": 1,
                 "description": "RECIPIENT 1",
                 "face_value_of_loan": 3.0,
                 "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
@@ -310,7 +310,7 @@ def test_correct_response_with_award_type_codes(
         "results": [
             {
                 "code": "987654321",
-                "count": 1,
+                "award_count": 1,
                 "description": "RECIPIENT 3",
                 "face_value_of_loan": 300.0,
                 "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],

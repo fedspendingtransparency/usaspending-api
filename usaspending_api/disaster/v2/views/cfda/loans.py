@@ -30,7 +30,7 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
                     "id": int(info.get("id")) if info.get("id") else None,
                     "code": info.get("code") or None,
                     "description": info.get("description") or None,
-                    "count": int(bucket.get("doc_count", 0)),
+                    "award_count": int(bucket.get("doc_count", 0)),
                     "resource_link": info.get("url") or None,
                     **{
                         column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")

@@ -38,7 +38,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                 "results": [
                     {
                         "code": "20.200",
-                        "count": 1,
+                        "award_count": 1,
                         "description": "CFDA 2",
                         "id": 200,
                         "obligation": 20.0,
@@ -47,7 +47,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                     },
                     {
                         "code": "10.100",
-                        "count": 1,
+                        "award_count": 1,
                         "description": "CFDA 1",
                         "id": 100,
                         "obligation": 2.0,
@@ -95,7 +95,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
         + `id`
         + `code`
         + `description`
-        + `count`
+        + `award_count`
         + `obligation`
         + `outlay`
 
@@ -103,7 +103,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 + `id` (required, string)
 + `code` (required, string)
 + `description` (required, string)
-+ `count` (required, number)
++ `award_count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 + `resource_link` (required, string, nullable)
