@@ -119,16 +119,16 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             "code": "008",
             "description": "Agency 008",
             "award_count": 3,
-            "obligation": 22220218.0,
-            "outlay": 0.0,
+            "obligation": 21999998.0,
+            "outlay": 200000022.0,
             "children": [
                 {
                     "code": "2008",
                     "award_count": 2,
                     "description": "Subtier 2008",
                     "id": 2,
-                    "obligation": 20220218.0,
-                    "outlay": 0.0,
+                    "obligation": 19999998.0,
+                    "outlay": 200000002.0,
                 },
                 {
                     "code": "1008",
@@ -136,7 +136,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
                     "description": "Subtier 1008",
                     "id": 2,
                     "obligation": 2000000.0,
-                    "outlay": 0.0,
+                    "outlay": 20.0,
                 },
             ],
         },
@@ -146,7 +146,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             "description": "Agency 007",
             "award_count": 1,
             "obligation": 2000.0,
-            "outlay": 0.0,
+            "outlay": 20000.0,
             "children": [
                 {
                     "id": 1,
@@ -154,7 +154,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
                     "description": "Subtier 1007",
                     "award_count": 1,
                     "obligation": 2000.0,
-                    "outlay": 0.0,
+                    "outlay": 20000.0,
                 }
             ],
         },
@@ -172,16 +172,16 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             "code": "008",
             "description": "Agency 008",
             "award_count": 1,
-            "obligation": 20220220.0,
-            "outlay": 0.0,
+            "obligation": 20000000.0,
+            "outlay": 2.0,
             "children": [
                 {
                     "id": 2,
                     "code": "2008",
                     "description": "Subtier 2008",
                     "award_count": 1,
-                    "obligation": 20220220.0,
-                    "outlay": 0.0,
+                    "obligation": 20000000.0,
+                    "outlay": 2.0,
                 }
             ],
         }
@@ -200,7 +200,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             "description": "Agency 008",
             "award_count": 2,
             "obligation": 1999998.0,
-            "outlay": 0.0,
+            "outlay": 200000020.0,
             "children": [
                 {
                     "id": 2,
@@ -208,7 +208,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
                     "description": "Subtier 2008",
                     "award_count": 1,
                     "obligation": -2.0,
-                    "outlay": 0.0,
+                    "outlay": 200000000.0,
                 },
                 {
                     "id": 2,
@@ -216,7 +216,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
                     "description": "Subtier 1008",
                     "award_count": 1,
                     "obligation": 2000000.0,
-                    "outlay": 0.0,
+                    "outlay": 20.0,
                 },
             ],
         },
