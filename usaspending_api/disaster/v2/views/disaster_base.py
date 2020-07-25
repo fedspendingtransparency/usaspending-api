@@ -19,9 +19,6 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 COVID_19_GROUP_NAME = "covid_19"
 
-REPORTING_PERIOD_MIN_DATE = date(2020, 4, 1)
-REPORTING_PERIOD_MIN_YEAR, REPORTING_PERIOD_MIN_MONTH = generate_fiscal_year_and_month(REPORTING_PERIOD_MIN_DATE)
-
 
 def latest_gtas_of_each_year_queryset():
     q = Q()
@@ -52,30 +49,6 @@ def filter_by_latest_closed_periods() -> Q:
     return q
 
 
-def filter_by_defc_closed_periods() -> Q:
-    """
-        These filters should only be used when looking at submission data
-        that includes DEF Codes, which only started appearing in submission
-        for FY2020 P07 (Apr 1, 2020) and after
-    """
-    q = Q()
-    for sub in final_submissions_for_all_fy():
-        if (
-            sub.fiscal_year == REPORTING_PERIOD_MIN_YEAR
-            and sub.fiscal_period >= REPORTING_PERIOD_MIN_MONTH
-        ) or sub.fiscal_year > REPORTING_PERIOD_MIN_YEAR:
-            q |= (
-                Q(submission__reporting_fiscal_year=sub.fiscal_year)
-                & Q(submission__quarter_format_flag=sub.is_quarter)
-                & Q(submission__reporting_fiscal_period__lte=sub.fiscal_period)
-            )
-    if not q:
-        # Edgecase not expected in production. If there are no DABS between
-        # FY2020 P07 (Apr 1, 2020) and now() then ensure nothing is returned
-        q = Q(pk__isnull=True)
-    return q & Q(submission__reporting_period_start__gte=str(REPORTING_PERIOD_MIN_DATE))
-
-
 def final_submissions_for_all_fy() -> List[tuple]:
     """
         Returns a list the latest monthly and quarterly submission for each
@@ -91,6 +64,8 @@ def final_submissions_for_all_fy() -> List[tuple]:
 
 class DisasterBase(APIView):
     required_filters = ["def_codes"]
+    reporting_period_min_date = date(2020, 4, 1)
+    reporting_period_min_year, reporting_period_min_month = generate_fiscal_year_and_month(reporting_period_min_date)
 
     @classmethod
     def requests_award_type_codes(cls, request: HttpRequest) -> bool:
@@ -185,7 +160,23 @@ class DisasterBase(APIView):
 
     @cached_property
     def all_closed_defc_submissions(self):
-        return filter_by_defc_closed_periods()
+        """
+            These filters should only be used when looking at submission data
+            that includes DEF Codes, which only started appearing in submission
+            for FY2020 P07 (Apr 1, 2020) and after
+        """
+        q = Q()
+        for sub in final_submissions_for_all_fy():
+            if (
+                sub.fiscal_year == self.reporting_period_min_year
+                and sub.fiscal_period >= self.reporting_period_min_month
+            ) or sub.fiscal_year > self.reporting_period_min_year:
+                q |= (
+                    Q(submission__reporting_fiscal_year=sub.fiscal_year)
+                    & Q(submission__quarter_format_flag=sub.is_quarter)
+                    & Q(submission__reporting_fiscal_period__lte=sub.fiscal_period)
+                )
+        return q & Q(submission__reporting_period_start__gte=str(self.reporting_period_min_date))
 
     @property
     def is_in_provided_def_codes(self):
