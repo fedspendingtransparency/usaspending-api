@@ -3,6 +3,13 @@
   "refresh": true,
   "matview_sql": [
     "SELECT",
+    "  to_tsvector(CONCAT_WS(' ',",
+    "    COALESCE(recipient_lookup.recipient_name, transaction_fabs.awardee_or_recipient_legal),",
+    "    (SELECT string_agg(tn.description, ' ') FROM transaction_normalized AS tn WHERE tn.award_id = awards.id GROUP BY tn.award_id)",
+    "  )) AS keyword_ts_vector,",
+    "  to_tsvector(CONCAT_WS(' ', awards.fain, awards.uri)) AS award_ts_vector,",
+    "  to_tsvector(COALESCE(recipient_lookup.recipient_name, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name_ts_vector,",
+    "",
     "  tas.treasury_account_identifiers,",
     "",
     "  awards.id AS award_id,",
