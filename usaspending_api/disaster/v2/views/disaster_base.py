@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timezone, date
-from django.db.models import Max, Q, F, Value, Case, When, Sum
+from django.db.models import Max, Q, F, Value, Case, When, Sum, Count
 from django.db.models.functions import Coalesce, Concat
 from django.http import HttpRequest
 from django.utils.functional import cached_property
@@ -69,12 +69,25 @@ class DisasterBase(APIView):
 
     @classmethod
     def requests_award_type_codes(cls, request: HttpRequest) -> bool:
-        """Return True if an an endpoint was requested with filter.award_type_codes"""
+        """Return True if an endpoint was requested with filter.award_type_codes"""
+
         # NOTE: The point at which this is used in the request life cycle, it has not been post-processed to include
         # a POST or data attribute. Must get payload from body
         if request and request.body:
             body_json = json.loads(request.body)
             if "filter" in body_json and "award_type_codes" in body_json["filter"]:
+                return True
+        return False
+
+    @classmethod
+    def requests_award_spending_type(cls, request: HttpRequest) -> bool:
+        """Return True if an endpoint was requested with spending_type = award"""
+
+        # NOTE: The point at which this is used in the request life cycle, it has not been post-processed to include
+        # a POST or data attribute. Must get payload from body
+        if request and request.body:
+            body_json = json.loads(request.body)
+            if body_json.get("spending_type", "") == "award":
                 return True
         return False
 
@@ -165,6 +178,39 @@ class DisasterBase(APIView):
                 )
         return q & Q(submission__reporting_period_start__gte=str(self.reporting_period_min_date))
 
+    @property
+    def is_in_provided_def_codes(self):
+        return Q(disaster_emergency_fund__code__in=self.def_codes)
+
+    @property
+    def is_non_zero_total_spending(self):
+        return Q(
+            Q(obligations_incurred_by_program_object_class_cpe__gt=0)
+            | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
+            | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
+            | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
+        )
+
+    @property
+    def is_non_zero_award_spending(self):
+        return Q(
+            Q(transaction_obligated_amount__gt=0)
+            | Q(transaction_obligated_amount__lt=0)
+            | Q(gross_outlay_amount_by_award_cpe__gt=0)
+            | Q(gross_outlay_amount_by_award_cpe__lt=0)
+        )
+
+    @property
+    def is_provided_award_type(self):
+        return Q(type__in=self.filters.get("award_type_codes"))
+
+    @property
+    def has_award_of_provided_type(self):
+        if self.filters.get("award_type_codes"):
+            return Q(award__type__in=self.filters.get("award_type_codes")) & Q(award__isnull=False)
+        else:
+            return ~Q(pk=None)  # always true; if types are not provided we don't check types
+
 
 class AwardTypeMixin:
     required_filters = ["def_codes", "award_type_codes"]
@@ -191,6 +237,9 @@ class FabaOutlayMixin:
     @property
     def unique_file_c(self):
         return Concat("piid", "parent_award_id", "fain", "uri")
+
+    def unique_file_c_count(self):
+        return Count(self.unique_file_c, distinct=True)
 
 
 class SpendingMixin:
@@ -223,6 +272,10 @@ class LoansMixin:
     def query(self):
         return self.filters.get("query")
 
+    @property
+    def is_loan_award(self):
+        return Q(award__type__in=loan_type_mapping)
+
 
 class _BasePaginationMixin:
     def pagination(self):
@@ -238,18 +291,27 @@ class _BasePaginationMixin:
             upper_limit=(request_data["page"] * request_data["limit"]),
             sort_key=request_data.get("sort", "obligated_amount"),
             sort_order=request_data["order"],
+            secondary_sort_key="id",
         )
 
 
 class PaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "count", "obligation", "outlay", "total_budgetary_resources"]
+        sortable_columns = [
+            "id",
+            "code",
+            "description",
+            "award_count",
+            "obligation",
+            "outlay",
+            "total_budgetary_resources",
+        ]
         return self.run_models(sortable_columns)
 
 
 class LoansPaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "count", "obligation", "outlay", "face_value_of_loan"]
+        sortable_columns = ["id", "code", "description", "award_count", "obligation", "outlay", "face_value_of_loan"]
         return self.run_models(sortable_columns)

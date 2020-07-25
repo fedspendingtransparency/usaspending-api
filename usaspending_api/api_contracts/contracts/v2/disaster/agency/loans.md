@@ -36,7 +36,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
                         "code": "485",
                         "description": "Corporation for National and Community Service",
                         "children": [],
-                        "count": 0,
+                        "award_count": 1,
                         "obligation": 16791.43,
                         "outlay": 0.0,
                         "face_value_of_loan": 0.0
@@ -46,7 +46,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
                         "code": "514",
                         "description": "U.S. Agency for Global Media",
                         "children": [],
-                        "count": 0,
+                        "award_count": 1,
                         "obligation": 221438.82,
                         "outlay": 0.0,
                         "face_value_of_loan": 0.0
@@ -67,13 +67,13 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `award_type_codes` (optional, array[enum[string]], fixed-type)  
++ `award_type_codes` (optional, array[enum[string]], fixed-type)
     Only accepts loan award type `07` or `08` in the array, since this endpoint is specific to loans.
 
     If ANY award type codes are provided, loan amounts will be summed for the distinct set of toptier agencies,
     whose subtier agencies funded loan awards linked to `FinancialAccountsByAwards` records (which are derived from DABS File C).
 
-    If this parameter is not provided, loan amounts will be summed for a different set of agencies: 
+    If this parameter is not provided, loan amounts will be summed for a different set of agencies:
     the distinct set of toptier agencies "owning" appropriations accounts used in funding _any_ award spending
     for this disaster (i.e. from agencies "owning" Treasury Account Symbol (TAS) accounts on `FinancialAccountsByAwards`
     records, which are derived from DABS File C).
@@ -104,7 +104,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
         + `id`
         + `code`
         + `description`
-        + `count`
+        + `award_count`
         + `face_value_of_loan`
         + `obligation`
         + `outlay`
@@ -114,7 +114,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
-+ `count` (required, number)
++ `award_count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 + `face_value_of_loan` (required, number, nullable)

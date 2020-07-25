@@ -14,31 +14,66 @@ def basic_fabs_award(award_count_sub_schedule, award_count_submission, defc_code
 @pytest.fixture
 def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_codes):
 
-    transaction_normalized = mommy.make("awards.TransactionNormalized")
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", award_id=100, action_date="2022-05-01", is_fpds=True
+    )
     mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="fpds")
-    _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
+    _normal_faba(mommy.make("awards.Award", id=100, latest_transaction=transaction_normalized, type="A"))
 
 
 @pytest.fixture
 def double_fpds_awards_with_distict_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
-    transaction_normalized = mommy.make("awards.TransactionNormalized")
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", award_id=200, action_date="2022-05-01", is_fpds=True
+    )
     mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
-    _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
+    _normal_faba(mommy.make("awards.Award", id=200, latest_transaction=transaction_normalized, type="A"))
 
-    transaction_normalized = mommy.make("awards.TransactionNormalized")
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", award_id=300, action_date="2022-05-01", is_fpds=True
+    )
     mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="2")
-    _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
+    _normal_faba(mommy.make("awards.Award", id=300, latest_transaction=transaction_normalized, type="A"))
 
 
 @pytest.fixture
 def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
-    transaction_normalized = mommy.make("awards.TransactionNormalized")
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", award_id=400, action_date="2022-05-01", is_fpds=True
+    )
     mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
-    _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
+    _normal_faba(mommy.make("awards.Award", id=400, latest_transaction=transaction_normalized, type="A"))
 
-    transaction_normalized = mommy.make("awards.TransactionNormalized")
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", award_id=500, action_date="2022-05-01", is_fpds=True
+    )
     mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
-    _normal_faba(mommy.make("awards.Award", latest_transaction=transaction_normalized, type="A"))
+    _normal_faba(mommy.make("awards.Award", id=500, latest_transaction=transaction_normalized, type="A"))
+
+
+@pytest.fixture
+def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", award_id=600, action_date="2022-05-01", is_fpds=True
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction=transaction_normalized,
+        awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
+        awardee_or_recipient_uniqu="123",
+    )
+    _normal_faba(mommy.make("awards.Award", id=600, latest_transaction=transaction_normalized, type="A"))
+
+    transaction_normalized = mommy.make(
+        "awards.TransactionNormalized", award_id=700, action_date="2022-05-01", is_fpds=True
+    )
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction=transaction_normalized,
+        awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
+        awardee_or_recipient_uniqu="456",
+    )
+    _normal_faba(mommy.make("awards.Award", id=700, latest_transaction=transaction_normalized, type="A"))
 
 
 @pytest.fixture
@@ -128,6 +163,7 @@ def _normal_faba(award):
 
 
 def _normal_fabs(id):
-    transaction_normalized = mommy.make("awards.TransactionNormalized", pk=id)
+    award = mommy.make("awards.Award", latest_transaction_id=id, type="07")
+    transaction_normalized = mommy.make("awards.TransactionNormalized", pk=id, award=award, action_date="2022-05-01")
     mommy.make("awards.TransactionFABS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
-    return mommy.make("awards.Award", latest_transaction_id=id, type="A")
+    return award

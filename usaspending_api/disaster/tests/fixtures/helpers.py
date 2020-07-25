@@ -39,12 +39,14 @@ class Helpers:
 
     @staticmethod
     def post_for_count_endpoint(client, url, def_codes=None, award_type_codes=None):
+        filters = {}
+
         if award_type_codes:
-            request_body = json.dumps({"filter": {"def_codes": def_codes, "award_type_codes": award_type_codes}})
-        elif def_codes:
-            request_body = json.dumps({"filter": {"def_codes": def_codes}})
-        else:
-            request_body = json.dumps({"filter": {}})
+            filters["award_type_codes"] = award_type_codes
+        if def_codes:
+            filters["def_codes"] = def_codes
+
+        request_body = json.dumps({"filter": filters})
         resp = client.post(url, content_type="application/json", data=request_body)
         return resp
 

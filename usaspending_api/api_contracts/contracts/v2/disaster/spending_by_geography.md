@@ -22,7 +22,7 @@ This endpoint provides geographical spending information from emergency/disaster
                 + `state`
                 + `county`
                 + `district`
-        + `geo_layer_filters` (required, array[string])
+        + `geo_layer_filters` (optional, array[string])
             Allows us to only request data for what is currently in view in the map
         + `spending_type` (required, enum[string])
             + Members

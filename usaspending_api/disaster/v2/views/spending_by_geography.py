@@ -60,8 +60,6 @@ class SpendingByGeographyViewSet(DisasterBase):
                 "type": "array",
                 "array_type": "text",
                 "text_type": "search",
-                "allow_nulls": False,
-                "optional": False,
             },
             {
                 "key": "spending_type",

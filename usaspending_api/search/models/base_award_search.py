@@ -19,7 +19,7 @@ class BaseAwardSearchModel(models.Model):
     award_ts_vector = SearchVectorField()
     recipient_name_ts_vector = SearchVectorField()
     treasury_account_identifiers = ArrayField(models.IntegerField(), default=None)
-    award = models.OneToOneField(Award, on_delete=models.DO_NOTHING, primary_key=True)
+    award = models.OneToOneField(Award, on_delete=models.DO_NOTHING, primary_key=True, related_name="%(class)s")
     category = models.TextField()
     type = models.TextField()
     type_description = models.TextField()

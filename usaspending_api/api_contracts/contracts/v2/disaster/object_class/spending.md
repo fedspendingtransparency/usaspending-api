@@ -33,44 +33,44 @@ Returns spending details of Object Classes receiving supplemental funding budget
     + Body
 
             {
-                "page_metadata": {
-                    "hasNext": true,
-                    "hasPrevious": false,
-                    "limit": 2,
-                    "next": 2,
-                    "page": 1,
-                    "previous": null,
-                    "total": 23
-                },
-                "results": [
+              "results": [
+                {
+                  "id": "90",
+                  "code": "90",
+                  "description": "Other",
+                  "award_count": 5,
+                  "obligation": 746085355.77,
+                  "outlay": 723027742.93,
+                  "children": [
                     {
-                        "children": [
-                            {
-                                "code": "920",
-                                "count": 1,
-                                "description": "Undistributed",
-                                "id": 195,
-                                "obligation": 20077899.96,
-                                "outlay": 13711575.76
-                            }
-                        ],
-                        "code": "90",
-                        "count": 5,
-                        "description": "Other",
-                        "id": "90",
-                        "obligation": 746085355.77,
-                        "outlay": 723027742.93
-                    },
-                    {
-                        "children": [],
-                        "code": "40",
-                        "count": 8,
-                        "description": "Grants and fixed charges",
-                        "id": "40",
-                        "obligation": 595026834439.96,
-                        "outlay": 569289818857.45
+                      "id": "195",
+                      "code": "920",
+                      "description": "Undistributed",
+                      "award_count": 1,
+                      "obligation": 20077899.96,
+                      "outlay": 13711575.76
                     }
-                ]
+                  ]
+                },
+                {
+                  "id": "40",
+                  "code": "40",
+                  "description": "Grants and fixed charges",
+                  "award_count": 8,
+                  "obligation": 595026834439.96,
+                  "outlay": 569289818857.45,
+                  "children": []
+                }
+              ],
+              "page_metadata": {
+                "page": 1,
+                "next": 2,
+                "previous": null,
+                "hasNext": true,
+                "hasPrevious": false,
+                "total": 23,
+                "limit": 2
+              }
             }
 
 # Data Structures
@@ -102,7 +102,7 @@ Returns spending details of Object Classes receiving supplemental funding budget
         + `id`
         + `code`
         + `description`
-        + `count`
+        + `award_count`
         + `obligation`
         + `outlay`
 
@@ -111,7 +111,7 @@ Returns spending details of Object Classes receiving supplemental funding budget
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
-+ `count` (required, number)
++ `award_count` (required, number, nullable)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 
