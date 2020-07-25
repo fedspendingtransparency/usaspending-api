@@ -50,7 +50,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             "description": "Agency 007",
             "award_count": 1,
             "obligation": 2000.0,
-            "outlay": 0.0,
+            "outlay": 20000.0,
             "face_value_of_loan": 333.0,
             "children": [
                 {
@@ -59,7 +59,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
                     "description": "Subtier 1007",
                     "award_count": 1,
                     "obligation": 2000.0,
-                    "outlay": 0.0,
+                    "outlay": 20000.0,
                     "face_value_of_loan": 333.0,
                 }
             ],
