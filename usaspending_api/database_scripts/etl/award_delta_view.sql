@@ -232,8 +232,8 @@ LEFT JOIN (
         AND  sa.reporting_fiscal_period = closed_periods.submission_fiscal_month
         AND  sa.quarter_format_flag = closed_periods.is_quarter
     WHERE faba.award_id IS NOT NULL
-GROUP BY
-    faba.award_id
+    GROUP BY
+        faba.award_id
 ) DEFC ON (DEFC.award_id = vw_es_award_search.award_id)
 LEFT JOIN (
   SELECT
