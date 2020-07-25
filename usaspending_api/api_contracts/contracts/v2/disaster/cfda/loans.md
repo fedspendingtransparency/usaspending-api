@@ -33,7 +33,7 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                 "results": [
                     {
                         "code": "20.200",
-                        "count": 2,
+                        "award_count": 2,
                         "description": "CFDA 2",
                         "face_value_of_loan": 330.0,
                         "id": 200,
@@ -43,7 +43,7 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                     },
                     {
                         "code": "10.100",
-                        "count": 1,
+                        "award_count": 1,
                         "description": "CFDA 1",
                         "face_value_of_loan": 3.0,
                         "id": 100,
@@ -96,7 +96,7 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
         + `id`
         + `code`
         + `description`
-        + `count`
+        + `award_count`
         + `face_value_of_loan`
         + `obligation`
         + `outlay`
@@ -105,7 +105,7 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
 + `id` (required, string)
 + `code` (required, string)
 + `description` (required, string)
-+ `count` (required, number)
++ `award_count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)

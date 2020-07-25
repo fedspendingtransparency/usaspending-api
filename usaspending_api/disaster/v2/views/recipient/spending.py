@@ -41,7 +41,7 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
                     "id": recipient_hash_list,
                     "code": info["unique_id"] or "DUNS Number not provided",
                     "description": info["name"] or None,
-                    "count": int(bucket.get("doc_count", 0)),
+                    "award_count": int(bucket.get("doc_count", 0)),
                     **{
                         column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
                         for column in self.sum_column_mapping

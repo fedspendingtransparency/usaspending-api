@@ -128,7 +128,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
         + `id`
         + `code`
         + `description`
-        + `count`
+        + `award_count`
         + `total_budgetary_resources`
         + `obligation`
         + `outlay`
