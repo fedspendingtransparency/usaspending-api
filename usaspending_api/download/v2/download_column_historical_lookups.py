@@ -1909,6 +1909,17 @@ query_paths = {
             ]
         ),
     },
+    "disaster": {
+        "recipient": OrderedDict(
+            [
+                ("recipient", "recipient_name"),
+                ("award_obligations", None),  # to be filled in by annotation
+                ("award_outlays", None),  # to be filled in by annotation
+                ("face_value_of_loans", None),  # to be filled in by annotation
+                ("number_of_awards", None),  # to be filled in by annotation
+            ]
+        )
+    },
 }
 
 # check the ENABLE_CARES_ACT_FEATURES and delete keys if necessary DEV-5180

@@ -42,6 +42,7 @@ from usaspending_api.download.helpers.download_annotation_functions import (
     subaward_annotations,
     idv_order_annotations,
     idv_transaction_annotations,
+    disaster_recipient_annotations,
 )
 
 
@@ -230,6 +231,15 @@ VALUE_MAPPINGS = {
         "filter_function": awards_transaction_filter,
         "is_for_assistance": True,
         "annotations_function": idv_transaction_annotations,
+    },
+    "disaster_recipient": {
+        "source_type": "disaster",
+        "table": AwardSearchView,
+        "table_name": "recipient",
+        "download_name": "COVID-19-Recipients_{award_category}_{timestamp}",
+        "filter_function": AwardsElasticsearchDownload.query,
+        "annotations_function": disaster_recipient_annotations,
+        "base_fields": ["recipient_name"],
     },
 }
 

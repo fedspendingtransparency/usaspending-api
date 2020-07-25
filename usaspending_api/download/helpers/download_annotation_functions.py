@@ -19,6 +19,7 @@ from django.db.models import (
     DecimalField,
     Case,
     When,
+    Count,
 )
 
 AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
@@ -538,4 +539,43 @@ def subaward_annotations():
         ),
         "prime_award_latest_action_date_fiscal_year": FiscalYear("award__latest_transaction__action_date"),
     }
+    return annotation_fields
+
+
+def disaster_recipient_annotations():
+    annotation_fields = {
+        "award_obligations": Case(
+            When(
+                action_date__gte="2020-04-01",
+                then=Subquery(
+                    FinancialAccountsByAwards.objects.filter(
+                        award_id=OuterRef("award_id"), disaster_emergency_fund__group_name="covid_19"
+                    )
+                    .values("award_id")
+                    .annotate(sum=Sum("transaction_obligated_amount"))
+                    .values("sum"),
+                    output_field=DecimalField(),
+                ),
+            ),
+        ),
+        "award_outlays": Case(
+            When(
+                action_date__gte="2020-04-01",
+                then=Subquery(
+                    FinancialAccountsByAwards.objects.filter(
+                        filter_by_latest_closed_periods(),
+                        award_id=OuterRef("award_id"),
+                        disaster_emergency_fund__group_name="covid_19",
+                    )
+                    .values("award_id")
+                    .annotate(sum=Sum("gross_outlay_amount_by_award_cpe"))
+                    .values("sum"),
+                    output_field=DecimalField(),
+                ),
+            ),
+        ),
+        "face_value_of_loans": Sum("total_loan_value"),
+        "number_of_awards": Count("award_id"),
+    }
+
     return annotation_fields
