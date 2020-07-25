@@ -20,6 +20,7 @@ from django.db.models import (
     Case,
     When,
     Count,
+    Q,
 )
 
 AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
@@ -594,35 +595,18 @@ def subaward_annotations():
 
 def disaster_recipient_annotations():
     annotation_fields = {
-        "award_obligations": Case(
-            When(
-                action_date__gte="2020-04-01",
-                then=Subquery(
-                    FinancialAccountsByAwards.objects.filter(
-                        award_id=OuterRef("award_id"), disaster_emergency_fund__group_name="covid_19"
-                    )
-                    .values("award_id")
-                    .annotate(sum=Sum("transaction_obligated_amount"))
-                    .values("sum"),
-                    output_field=DecimalField(),
-                ),
-            ),
+        "award_obligations": Sum(
+            "award__financial_set__transaction_obligated_amount",
+            filter=Q(award__financial_set__disaster_emergency_fund__group_name="covid_19"),
+            output_field=DecimalField(),
         ),
-        "award_outlays": Case(
-            When(
-                action_date__gte="2020-04-01",
-                then=Subquery(
-                    FinancialAccountsByAwards.objects.filter(
-                        filter_by_latest_closed_periods(),
-                        award_id=OuterRef("award_id"),
-                        disaster_emergency_fund__group_name="covid_19",
-                    )
-                    .values("award_id")
-                    .annotate(sum=Sum("gross_outlay_amount_by_award_cpe"))
-                    .values("sum"),
-                    output_field=DecimalField(),
-                ),
+        "award_outlays": Sum(
+            "award__financial_set__gross_outlay_amount_by_award_cpe",
+            filter=Q(
+                filter_by_latest_closed_periods("award__financial_set__"),
+                award__financial_set__disaster_emergency_fund__group_name="covid_19",
             ),
+            output_field=DecimalField(),
         ),
         "face_value_of_loans": Sum("total_loan_value"),
         "number_of_awards": Count("award_id"),
