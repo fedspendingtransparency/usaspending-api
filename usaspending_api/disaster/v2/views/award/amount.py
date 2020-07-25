@@ -22,6 +22,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             self.all_closed_defc_submissions,
             self.has_award_of_provided_type,
             self.is_in_provided_def_codes,
+            self.is_non_zero_award_spending,
         ]
 
         count_field = self.unique_file_c
@@ -29,7 +30,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             count_field = "award_id"
 
         fields = {
-            "count": Count(count_field, distinct=True),
+            "award_count": Count(count_field, distinct=True),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": self.outlay_field_annotation,
         }
