@@ -1,4 +1,5 @@
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 
 from usaspending_api.awards.models import Award, Subaward, BrokerSubaward
@@ -7,6 +8,9 @@ from usaspending_api.awards.models import Award, Subaward, BrokerSubaward
 class SubawardView(models.Model):
     subaward = models.OneToOneField(Subaward, primary_key=True, on_delete=models.deletion.DO_NOTHING)
     broker_subaward = models.OneToOneField(BrokerSubaward, on_delete=models.deletion.DO_NOTHING)
+    keyword_ts_vector = SearchVectorField()
+    award_ts_vector = SearchVectorField()
+    recipient_name_ts_vector = SearchVectorField()
     treasury_account_identifiers = ArrayField(models.IntegerField(), default=None)
     latest_transaction_id = models.BigIntegerField()
     last_modified_date = models.DateField()
