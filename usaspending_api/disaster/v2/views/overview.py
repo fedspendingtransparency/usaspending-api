@@ -1,16 +1,18 @@
-from rest_framework.response import Response
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
-from usaspending_api.references.models import DisasterEmergencyFundCode
-from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.disaster.v2.views.disaster_base import (
-    latest_gtas_of_each_year_queryset,
-    latest_faba_of_each_year_queryset,
-)
-from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
-from django.db.models.functions import Coalesce
-from django.db.models import Sum
-from usaspending_api.common.validator.tinyshield import TinyShield
 from decimal import Decimal
+from django.db.models import Sum, F
+from django.utils.functional import cached_property
+from rest_framework.response import Response
+
+from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
+from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.disaster.v2.views.disaster_base import (
+    DisasterBase,
+    filter_by_defc_closed_periods,
+    latest_faba_of_each_year_queryset,
+    latest_gtas_of_each_year_queryset,
+)
+from usaspending_api.references.models import DisasterEmergencyFundCode
 
 
 class OverviewViewSet(DisasterBase):
@@ -24,14 +26,14 @@ class OverviewViewSet(DisasterBase):
     def get(self, request):
 
         request_values = self._parse_and_validate(request.GET)
-        defc = request_values["def_codes"].split(",")
+        self.defc = request_values["def_codes"].split(",")
 
-        funding = self.funding(defc)
+        self.total_budget_authority = sum([elem["amount"] for elem in self.funding])
         return Response(
             {
-                "funding": funding,
-                "total_budget_authority": sum([elem["amount"] for elem in funding]),
-                "spending": self.spending(funding, defc),
+                "funding": self.funding,
+                "total_budget_authority": self.total_budget_authority,
+                "spending": self.spending(),
             }
         )
 
@@ -50,67 +52,63 @@ class OverviewViewSet(DisasterBase):
         ]
         return TinyShield(models).block(request)
 
-    def funding(self, defc):
-        raw_values = (
+    @cached_property
+    def funding(self):
+        return list(
             latest_gtas_of_each_year_queryset()
-            .filter(disaster_emergency_fund_code__in=defc)
+            .filter(disaster_emergency_fund_code__in=self.defc)
             .values("disaster_emergency_fund_code")
             .annotate(
-                budget_authority_appropriation_amount_cpe=Sum("budget_authority_appropriation_amount_cpe"),
-                other_budgetary_resources_amount_cpe=Sum("other_budgetary_resources_amount_cpe"),
+                def_code=F("disaster_emergency_fund_code"),
+                amount=Sum(F("budget_authority_appropriation_amount_cpe") + F("other_budgetary_resources_amount_cpe")),
             )
+            .values("def_code", "amount")
         )
 
-        return [
-            {
-                "def_code": elem["disaster_emergency_fund_code"],
-                "amount": elem["budget_authority_appropriation_amount_cpe"]
-                + elem["other_budgetary_resources_amount_cpe"],
-            }
-            for elem in raw_values
-        ]
+    def spending(self):
+        other_obligations = self.other_obligations()
+        award_obligations = self.award_obligations()
 
-    def spending(self, funding, defc):
         return {
-            "award_obligations": self.award_obligations(defc),
-            "award_outlays": self.award_outlays(defc),
-            "total_obligations": self.total_obligations(funding, defc),
-            "total_outlays": self.total_outlays(defc),
+            "award_obligations": award_obligations,
+            "award_outlays": self.award_outlays(),
+            "total_obligations": self.total_budget_authority - (award_obligations + other_obligations),
+            "total_outlays": self.total_outlays(),
         }
 
-    def award_obligations(self, defc):
+    def award_obligations(self):
         return (
-            FinancialAccountsByAwards.objects.filter(disaster_emergency_fund__in=defc)
+            FinancialAccountsByAwards.objects.filter(
+                filter_by_defc_closed_periods(), disaster_emergency_fund__in=self.defc
+            )
             .values("transaction_obligated_amount")
             .aggregate(total=Sum("transaction_obligated_amount"))["total"]
             or 0.0
         )
 
-    def award_outlays(self, defc):
+    def award_outlays(self):
         return (
             latest_faba_of_each_year_queryset()
-            .filter(disaster_emergency_fund__in=defc)
-            .annotate(amount=Coalesce("gross_outlay_amount_by_award_cpe", 0))
-            .aggregate(total=Sum("amount"))["total"]
+            .filter(disaster_emergency_fund__in=self.defc)
+            .aggregate(total=Sum("gross_outlay_amount_by_award_cpe"))["total"]
         ) or 0.0
 
-    def total_obligations(self, funding, defc):
-        remaining_balance = (
+    def other_obligations(self):
+        remaining_balances = list(
             latest_gtas_of_each_year_queryset()
-            .filter(disaster_emergency_fund_code__in=defc)
+            .filter(disaster_emergency_fund_code__in=self.defc)
+            .values("fiscal_year")
+            .annotate(total=Sum("unobligated_balance_cpe"))
+            .values("fiscal_year", "total")
             .order_by("-fiscal_year")
-            .first()
         )
-        if remaining_balance:
-            remaining_balance = remaining_balance.unobligated_balance_cpe
-        else:
-            remaining_balance = Decimal("0.0")
-        return sum([elem["amount"] for elem in funding]) - remaining_balance
 
-    def total_outlays(self, defc):
+        return remaining_balances[0]["total"] if remaining_balances else Decimal("0.0")
+
+    def total_outlays(self):
         return (
             latest_gtas_of_each_year_queryset()
-            .filter(disaster_emergency_fund_code__in=defc)
+            .filter(disaster_emergency_fund_code__in=self.defc)
             .values("gross_outlay_amount_by_tas_cpe")
             .aggregate(total=Sum("gross_outlay_amount_by_tas_cpe"))["total"]
             or 0.0
