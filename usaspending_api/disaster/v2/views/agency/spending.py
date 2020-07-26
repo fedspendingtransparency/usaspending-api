@@ -70,9 +70,9 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
 
         return Response(
             {
-                "results": results.order_by(*self.pagination.robust_order_by_fields)[
+                "results": list(results.order_by(*self.pagination.robust_order_by_fields)[
                     self.pagination.lower_limit : self.pagination.upper_limit
-                ],
+                ]),
                 "page_metadata": get_pagination_metadata(results.count(), self.pagination.limit, self.pagination.page),
             }
         )

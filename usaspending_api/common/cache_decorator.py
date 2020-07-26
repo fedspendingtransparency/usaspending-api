@@ -1,11 +1,29 @@
 # -*- coding: utf-8 -*-
 import logging
 
+from django.conf import settings
 from django.db.models import QuerySet
 from rest_framework_extensions.cache.decorators import CacheResponse
+from typing import Any
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 
 logger = logging.getLogger("console")
+
+
+def contains_queryset(data: Any) -> bool:
+    """Boring non-generator to traverse a complex object and flag any Querysets"""
+    if isinstance(data, QuerySet):
+        return True
+    elif isinstance(data, dict):
+        for v in data.values():
+            if contains_queryset(v):
+                return True
+    elif isinstance(data, list):
+        for k in data:
+            if contains_queryset(k):
+                return True
+
+    return False
 
 
 class CustomCacheResponse(CacheResponse):
@@ -30,32 +48,16 @@ class CustomCacheResponse(CacheResponse):
             response = view_method(view_instance, request, *args, **kwargs)
             response = view_instance.finalize_response(request, response, *args, **kwargs)
 
-            # THIS IS A STOPGAP UNTIL WE GET A CHANCE TO FIX ALL OF THE OFFENDING ENDPOINTS.
-            # Subqueries with OuterRefs cannot be pickled currently.  Rather than attempt to locate
-            # every single instance of a response meeting this criteria we will force QuerySet
-            # materialization by simply replacing {"results": QuerySet} with {"results": List}.
-            # This will not solve every case, but should catch the bulk of them.  Any stragglers
-            # will need to be fixed by hand...
-            if (
-                response
-                and not response.is_rendered
-                and response.data
-                and isinstance(response.data, dict)
-                and "results" in response.data
-                and isinstance(response.data["results"], QuerySet)
-            ):
-                # This was causing problems in Travis.  Add it back if the hack becomes permanent
-                # and find a workaround for Travis.
-                #
-                # if settings.IS_LOCAL:
-                #     raise RuntimeError(
-                #         "Your view is returning a QuerySet.  QuerySets are not really designed to "
-                #         "be pickled and can cause caching issues.  Please materialize the QuerySet "
-                #         "using a List or some other more primitive data structure.  Thank you, have "
-                #         "a lovely day, and don't forget to wash your hands regularly!"
-                #     )
-                # else:
-                response.data["results"] = list(response.data["results"])
+            # While returning a Queryset is functional most of the time, it isn't
+            # fully supported by Django Rest Framework. This check was inserted
+            # in local mode to catch if a Queryset is being returned by the view
+            # which could cause an exception when setting the cache
+            if settings.IS_LOCAL and response and not response.is_rendered and contains_queryset(response.data):
+                raise RuntimeError(
+                    "Your view is returning a QuerySet.  QuerySets are not really designed to "
+                    "be pickled and can cause caching issues.  Please materialize the QuerySet "
+                    "using a List or some other more primitive data structure."
+                )
 
             response["Cache-Trace"] = "no-cache"
             response.render()  # should be rendered, before pickling while storing to cache
