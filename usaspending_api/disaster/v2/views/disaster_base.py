@@ -63,8 +63,7 @@ def filter_by_defc_closed_periods() -> Q:
     q = Q()
     for sub in final_submissions_for_all_fy():
         if (
-            sub.fiscal_year == REPORTING_PERIOD_MIN_YEAR
-            and sub.fiscal_period >= REPORTING_PERIOD_MIN_MONTH
+            sub.fiscal_year == REPORTING_PERIOD_MIN_YEAR and sub.fiscal_period >= REPORTING_PERIOD_MIN_MONTH
         ) or sub.fiscal_year > REPORTING_PERIOD_MIN_YEAR:
             q |= (
                 Q(submission__reporting_fiscal_year=sub.fiscal_year)

@@ -28,7 +28,7 @@ class OverviewViewSet(DisasterBase):
         request_values = self._parse_and_validate(request.GET)
         self.defc = request_values["def_codes"].split(",")
 
-        self.total_budget_authority = sum([elem["amount"] for elem in self.funding])
+        self.total_budget_authority = Decimal(sum([elem["amount"] for elem in self.funding]))
         return Response(
             {
                 "funding": self.funding,
@@ -72,7 +72,8 @@ class OverviewViewSet(DisasterBase):
         return {
             "award_obligations": award_obligations,
             "award_outlays": self.award_outlays(),
-            "total_obligations": self.total_budget_authority - (award_obligations + other_obligations),
+            "total_obligations": self.total_budget_authority
+            - (Decimal(award_obligations) + Decimal(other_obligations)),
             "total_outlays": self.total_outlays(),
         }
 

@@ -15,6 +15,7 @@ def test_award_count_basic(client, monkeypatch, basic_award, helpers):
 @pytest.mark.django_db
 def test_award_count_quarterly(client, monkeypatch, award_with_quarterly_submission, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 1
 
