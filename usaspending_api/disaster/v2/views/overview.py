@@ -1,6 +1,5 @@
 from decimal import Decimal
 from django.db.models import Sum, F
-from django.utils.functional import cached_property
 from rest_framework.response import Response
 
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
@@ -31,11 +30,7 @@ class OverviewViewSet(DisasterBase):
 
         self.total_budget_authority = Decimal(sum([elem["amount"] for elem in funding]))
         return Response(
-            {
-                "funding": funding,
-                "total_budget_authority": self.total_budget_authority,
-                "spending": self.spending(),
-            }
+            {"funding": funding, "total_budget_authority": self.total_budget_authority, "spending": self.spending()}
         )
 
     def _parse_and_validate(self, request):
