@@ -392,7 +392,12 @@ class _DisasterEmergencyFundCodes(_Filter):
         def_codes_query = []
         for v in filter_values:
             def_codes_query.append(ES_Q("match", disaster_emergency_fund_codes=v))
-        return ES_Q("bool", should=def_codes_query, minimum_should_match=1)
+        return ES_Q(
+            "bool",
+            should=def_codes_query,
+            minimum_should_match=1,
+            must=ES_Q("range", action_date={"gte": "2020-04-01"}),
+        )
 
 
 class QueryWithFilters:
