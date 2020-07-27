@@ -300,7 +300,7 @@ class _BasePaginationMixin:
             limit=request_data["limit"],
             lower_limit=(request_data["page"] - 1) * request_data["limit"],
             upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", "obligated_amount"),
+            sort_key=request_data.get("sort", "obligation"),
             sort_order=request_data["order"],
             secondary_sort_key="id",
         )
