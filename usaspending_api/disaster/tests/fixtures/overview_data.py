@@ -1,5 +1,6 @@
 import pytest
 
+from datetime import date
 from model_mommy import mommy
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.disaster.v2.views.disaster_base import COVID_19_GROUP_NAME
@@ -188,6 +189,7 @@ def _year_1_faba(value, code):
         reporting_fiscal_year=2021,
         reporting_fiscal_period=LATE_MONTH,
         quarter_format_flag=False,
+        reporting_period_start=date(2021, LATE_MONTH, 1),
     )
 
     mommy.make(
@@ -205,6 +207,7 @@ def _year_2_faba_with_value(value):
         reporting_fiscal_year=2022,
         reporting_fiscal_period=EARLY_MONTH,
         quarter_format_flag=False,
+        reporting_period_start=date(2022, EARLY_MONTH, 1),
     )
 
     mommy.make(
@@ -222,6 +225,7 @@ def _year_2_late_faba_with_value(value):
         reporting_fiscal_year=2022,
         reporting_fiscal_period=LATE_MONTH,
         quarter_format_flag=False,
+        reporting_period_start=date(2022, LATE_MONTH, 1),
     )
 
     mommy.make(
