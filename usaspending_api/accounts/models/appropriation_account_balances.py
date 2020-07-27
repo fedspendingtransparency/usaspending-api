@@ -71,12 +71,11 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
                     s.submission_id
                 from
                     submission_attributes s
-                join
-                    appropriation_account_balances aab on s.submission_id = aab.submission_id
+                    inner join appropriation_account_balances aab on s.submission_id = aab.submission_id
                 order by
                     aab.treasury_account_identifier,
                     s.reporting_fiscal_year,
-                    s.reporting_period_start desc,
+                    s.reporting_period_end desc,
                     s.submission_id desc
             ) t
         )

@@ -142,6 +142,22 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
 
     bulk_treasury_appropriation_account_tas_lookup(certified_award_financial.tas_ids, db_cursor)
 
+    _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse)
+
+    update_c_to_d_linkages("contract", False, submission_attributes.submission_id)
+    update_c_to_d_linkages("assistance", False, submission_attributes.submission_id)
+
+    for key in skipped_tas:
+        logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
+
+    total_tas_skipped = 0
+    for key in skipped_tas:
+        total_tas_skipped += skipped_tas[key]["count"]
+
+    logger.info(f"Skipped a total of {total_tas_skipped:,} TAS rows for File C")
+
+
+def _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse):
     save_manager = BulkCreateManager(FinancialAccountsByAwards)
     for index, row in enumerate(certified_award_financial, 1):
         if not (index % 1000):
@@ -189,15 +205,3 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
         )
 
     save_manager.save_stragglers()
-
-    update_c_to_d_linkages("contract", False, submission_attributes.submission_id)
-    update_c_to_d_linkages("assistance", False, submission_attributes.submission_id)
-
-    for key in skipped_tas:
-        logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
-
-    total_tas_skipped = 0
-    for key in skipped_tas:
-        total_tas_skipped += skipped_tas[key]["count"]
-
-    logger.info(f"Skipped a total of {total_tas_skipped:,} TAS rows for File C")

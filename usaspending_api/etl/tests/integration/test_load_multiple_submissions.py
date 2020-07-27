@@ -9,7 +9,6 @@ from model_mommy import mommy
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
-from usaspending_api.etl.management.commands.load_multiple_submissions import Command as LoadMultipleCommand
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -312,21 +311,9 @@ class TestWithMultipleDatabases(TransactionTestCase):
         with self.assertRaises(CommandError):
             call_command("load_multiple_submissions")
         with self.assertRaises(CommandError):
-            call_command("load_multiple_submissions", "--list-ids-only")
-
-        # Load nothing.
-        call_command("load_multiple_submissions", "--submission-ids", 1, 2, 3, "--list-ids-only")
-        assert SubmissionAttributes.objects.count() == 0
-        assert AppropriationAccountBalances.objects.count() == 0
-        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 0
-        assert FinancialAccountsByAwards.objects.count() == 0
-
-        # Also load nothing.
-        call_command("load_multiple_submissions", "--incremental", "--list-ids-only")
-        assert SubmissionAttributes.objects.count() == 0
-        assert AppropriationAccountBalances.objects.count() == 0
-        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 0
-        assert FinancialAccountsByAwards.objects.count() == 0
+            call_command("load_multiple_submissions", "--report-queue-status-only", "--submission_ids")
+        with self.assertRaises(CommandError):
+            call_command("load_multiple_submissions", "--submission_ids", "--incremental")
 
         # Load specific submissions.
         call_command("load_multiple_submissions", "--submission-ids", 1, 2, 3)
@@ -441,29 +428,6 @@ class TestWithMultipleDatabases(TransactionTestCase):
         with connections["data_broker"].cursor() as cursor:
             cursor.execute("update submission set updated_at = now() where submission_id = 1")
         call_command("load_multiple_submissions", "--submission-ids", 1)
-
-        # Everything is in sync.  Both lists should be empty.
-        certified_only_submission_ids, load_submission_ids = LoadMultipleCommand.get_incremental_submission_ids()
-        assert certified_only_submission_ids == []
-        assert load_submission_ids == []
-
-        # There should be only one certified_only difference.
-        SubmissionAttributes.objects.filter(submission_id=3).update(certified_date="1999-01-01")
-        certified_only_submission_ids, load_submission_ids = LoadMultipleCommand.get_incremental_submission_ids()
-        assert [tuple(c) for c in certified_only_submission_ids] == [(3, datetime(2000, 2, 3))]
-        assert load_submission_ids == []
-
-        # There should be one certified_only difference and one reload.
-        SubmissionAttributes.objects.filter(submission_id=1).update(published_date="1999-01-01")
-        certified_only_submission_ids, load_submission_ids = LoadMultipleCommand.get_incremental_submission_ids()
-        assert [tuple(c) for c in certified_only_submission_ids] == [(3, datetime(2000, 2, 3))]
-        assert load_submission_ids == [1]
-
-        # Fix everything.
-        call_command("load_multiple_submissions", "--incremental")
-        certified_only_submission_ids, load_submission_ids = LoadMultipleCommand.get_incremental_submission_ids()
-        assert certified_only_submission_ids == []
-        assert load_submission_ids == []
 
         # Confirm that submission 3 only received a certified_date change, not a reload.
         assert SubmissionAttributes.objects.get(submission_id=3).create_date == create_date_sub_3

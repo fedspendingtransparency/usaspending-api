@@ -91,7 +91,6 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
             1. It is significantly more performant than the more accurate SQL
             2. The endpoints which use this field are V1 which don't require the effort for accuracy and performance.
     """
-
     FINAL_OF_FY_SQL = """
         with submission_ids as (
             select distinct submission_id from (
@@ -103,7 +102,7 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
                 order by
                     f.treasury_account_id,
                     s.reporting_fiscal_year,
-                    s.reporting_period_start desc
+                    s.reporting_period_end desc
             ) t
         )
         update  financial_accounts_by_program_activity_object_class f
