@@ -395,6 +395,18 @@ class _DisasterEmergencyFundCodes(_Filter):
         return ES_Q("bool", should=def_codes_query, minimum_should_match=1)
 
 
+class _QueryText(_Filter):
+    """Query text with a specific field to search on (i.e. {'text': <query_text>, 'fields': [<field_to_search_on>]})"""
+
+    underscore_name = "query"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: dict, query_type: _QueryType) -> ES_Q:
+        query_text = f"{es_sanitize(filter_values['text'])}*"
+        query_fields = filter_values["fields"]
+        return ES_Q("simple_query_string", query=query_text, default_operator="AND", fields=query_fields)
+
+
 class QueryWithFilters:
 
     filter_lookup = {
@@ -419,6 +431,7 @@ class QueryWithFilters:
         _SetAsideTypeCodes.underscore_name: _SetAsideTypeCodes,
         _ExtentCompetedTypeCodes.underscore_name: _ExtentCompetedTypeCodes,
         _DisasterEmergencyFundCodes.underscore_name: _DisasterEmergencyFundCodes,
+        _QueryText.underscore_name: _QueryText,
     }
 
     unsupported_filters = ["legal_entities"]
