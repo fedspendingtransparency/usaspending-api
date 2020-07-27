@@ -131,6 +131,14 @@ def cfda_awards_and_transactions(db):
     # Transaction Normalized
     mommy.make(
         "awards.TransactionNormalized",
+        id=1,
+        award=award1,
+        federal_action_obligation=5,
+        action_date="2020-01-01",
+        is_fpds=False,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
         id=10,
         award=award1,
         federal_action_obligation=5,
