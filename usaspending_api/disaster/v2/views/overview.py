@@ -27,11 +27,12 @@ class OverviewViewSet(DisasterBase):
 
         request_values = self._parse_and_validate(request.GET)
         self.defc = request_values["def_codes"].split(",")
+        funding = self.funding()
 
-        self.total_budget_authority = Decimal(sum([elem["amount"] for elem in self.funding]))
+        self.total_budget_authority = Decimal(sum([elem["amount"] for elem in funding]))
         return Response(
             {
-                "funding": self.funding,
+                "funding": funding,
                 "total_budget_authority": self.total_budget_authority,
                 "spending": self.spending(),
             }
@@ -52,7 +53,6 @@ class OverviewViewSet(DisasterBase):
         ]
         return TinyShield(models).block(request)
 
-    @cached_property
     def funding(self):
         return list(
             latest_gtas_of_each_year_queryset()
@@ -66,14 +66,13 @@ class OverviewViewSet(DisasterBase):
         )
 
     def spending(self):
-        other_obligations = self.other_obligations()
+        remaining_balances = self.remaining_balances()
         award_obligations = self.award_obligations()
 
         return {
             "award_obligations": award_obligations,
             "award_outlays": self.award_outlays(),
-            "total_obligations": self.total_budget_authority
-            - (Decimal(award_obligations) + Decimal(other_obligations)),
+            "total_obligations": self.total_budget_authority - Decimal(remaining_balances),
             "total_outlays": self.total_outlays(),
         }
 
@@ -94,7 +93,7 @@ class OverviewViewSet(DisasterBase):
             .aggregate(total=Sum("gross_outlay_amount_by_award_cpe"))["total"]
         ) or 0.0
 
-    def other_obligations(self):
+    def remaining_balances(self):
         remaining_balances = list(
             latest_gtas_of_each_year_queryset()
             .filter(disaster_emergency_fund_code__in=self.defc)
