@@ -206,6 +206,7 @@ def test_award_outlays_doesnt_sum_multiple_periods(
     client, monkeypatch, helpers, defc_codes, basic_ref_data, early_gtas, multi_period_faba
 ):
     helpers.patch_datetime_now(monkeypatch, 2022, LATE_MONTH, 25)
+    helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data["spending"]["award_outlays"] == Decimal("0.8")
 
