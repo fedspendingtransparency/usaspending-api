@@ -34,6 +34,7 @@ WHERE
 					AND
 					UPPER(aw_sub.parent_award_piid) = UPPER(faba_sub.parent_award_id)
 			) = 1
+            {submission_id_clause}
 	) RETURNING award_id
 )
 UPDATE
@@ -75,6 +76,7 @@ WHERE
 				WHERE
 					UPPER(aw_sub.piid) = UPPER(faba_sub.piid)
 			) = 1
+            {submission_id_clause}
 	) RETURNING award_id
 )
 UPDATE

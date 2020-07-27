@@ -5,10 +5,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 class AppropriationAccountBalancesManager(models.Manager):
     def get_queryset(self):
-        """
-        Get only records from the last submission per TAS per fiscal year.
-        """
-
+        """ Get only records from the last submission per TAS per fiscal year. """
         return super(AppropriationAccountBalancesManager, self).get_queryset().filter(final_of_fy=True)
 
 
@@ -67,26 +64,30 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     final_objects = AppropriationAccountBalancesManager()
 
     FINAL_OF_FY_SQL = """
-        WITH submission_and_tai AS (
-            SELECT
-                DISTINCT ON (aab.treasury_account_identifier, FY(s.reporting_period_start))
-                aab.treasury_account_identifier,
-                s.submission_id
-            FROM submission_attributes s
-            JOIN appropriation_account_balances aab
-                  ON (s.submission_id = aab.submission_id)
-            ORDER BY aab.treasury_account_identifier,
-                       FY(s.reporting_period_start),
-                       s.reporting_period_start DESC
+        with submission_and_tai as (
+            select distinct treasury_account_identifier, submission_id from (
+                select distinct on (aab.treasury_account_identifier, s.reporting_fiscal_year)
+                    aab.treasury_account_identifier,
+                    s.submission_id
+                from
+                    submission_attributes s
+                join
+                    appropriation_account_balances aab on s.submission_id = aab.submission_id
+                order by
+                    aab.treasury_account_identifier,
+                    s.reporting_fiscal_year,
+                    s.reporting_period_start desc,
+                    s.submission_id desc
+            ) t
         )
-        UPDATE appropriation_account_balances aab
-            SET final_of_fy = true
-            FROM submission_and_tai sat
-            WHERE aab.treasury_account_identifier = sat.treasury_account_identifier AND
-            aab.submission_id = sat.submission_id"""
+        update  appropriation_account_balances
+        set     final_of_fy = ((treasury_account_identifier, submission_id) in
+                    (select treasury_account_identifier, submission_id from submission_and_tai))
+        where   final_of_fy != ((treasury_account_identifier, submission_id) in
+                    (select treasury_account_identifier, submission_id from submission_and_tai));
+    """
 
     @classmethod
     def populate_final_of_fy(cls):
         with connection.cursor() as cursor:
-            cursor.execute("UPDATE appropriation_account_balances SET final_of_fy = false")
             cursor.execute(cls.FINAL_OF_FY_SQL)

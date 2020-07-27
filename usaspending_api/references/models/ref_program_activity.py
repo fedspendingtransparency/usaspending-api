@@ -18,11 +18,14 @@ class RefProgramActivity(models.Model):
     class Meta:
         managed = True
         db_table = "ref_program_activity"
-        unique_together = (
-            "program_activity_code",
-            "program_activity_name",
-            "responsible_agency_id",
-            "allocation_transfer_agency_id",
-            "main_account_code",
-            "budget_year",
-        )
+
+        # There is a limitation in nearly all SQL databases where NULLs are not considered part of
+        # unique constraints.  This is by design and is part of the spec.  This means it's possible
+        # to insert duplicate rows if any of the columns in those rows contains a null.  To work
+        # around this, either all of the columns need to be non-nullable or we need to coalesce
+        # nullable columns.  We're going with the second option since this is an established table
+        # and working through all the code to ensure nothing breaks because we're suddenly returning
+        # blanks seems riskier.
+        #
+        # What does this mean?  Well, it means there's a unique constraint defined in SQL in one of
+        # the migrations for this table.  Sorry.
