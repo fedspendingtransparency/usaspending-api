@@ -39,8 +39,9 @@ def late_gtas(defc_codes):
         fiscal_period=LATE_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
+        total_budgetary_resources_cpe=0.3,
         budget_authority_appropriation_amount_cpe=0.3,
-        other_budgetary_resources_amount_cpe=0.0,
+        other_budgetary_resources_amount_cpe=0.1,
         gross_outlay_amount_by_tas_cpe=0.03,
     )
 
@@ -54,7 +55,8 @@ def quarterly_gtas(defc_codes):
         fiscal_period=9,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
-        budget_authority_appropriation_amount_cpe=0.26,
+        total_budgetary_resources_cpe=0.26,
+        budget_authority_appropriation_amount_cpe=0.25,
         other_budgetary_resources_amount_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.02,
     )
@@ -68,7 +70,8 @@ def early_gtas(defc_codes):
         fiscal_period=EARLY_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
-        budget_authority_appropriation_amount_cpe=0.2,
+        total_budgetary_resources_cpe=0.2,
+        budget_authority_appropriation_amount_cpe=0.19,
         other_budgetary_resources_amount_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.02,
     )
@@ -82,7 +85,8 @@ def non_covid_gtas(defc_codes):
         fiscal_period=LATE_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="A",
-        budget_authority_appropriation_amount_cpe=0.32,
+        total_budgetary_resources_cpe=0.32,
+        budget_authority_appropriation_amount_cpe=0.31,
         other_budgetary_resources_amount_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.13,
     )
@@ -96,8 +100,9 @@ def unobligated_balance_gtas(defc_codes):
         fiscal_period=LATE_MONTH,
         unobligated_balance_cpe=1.5,
         disaster_emergency_fund_code="A",
-        budget_authority_appropriation_amount_cpe=0.75,
-        other_budgetary_resources_amount_cpe=0.75,
+        total_budgetary_resources_cpe=1.5,
+        budget_authority_appropriation_amount_cpe=0.74,
+        other_budgetary_resources_amount_cpe=0.74,
         gross_outlay_amount_by_tas_cpe=0.0,
     )
 
@@ -110,8 +115,9 @@ def other_budget_authority_gtas(defc_codes):
         fiscal_period=EARLY_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
-        budget_authority_appropriation_amount_cpe=0.7,
-        other_budgetary_resources_amount_cpe=0.15,
+        total_budgetary_resources_cpe=0.85,
+        budget_authority_appropriation_amount_cpe=0.69,
+        other_budgetary_resources_amount_cpe=0.14,
         gross_outlay_amount_by_tas_cpe=0.02,
     )
 
@@ -139,7 +145,8 @@ def _year_2_gtas(code):
         fiscal_period=EARLY_MONTH,
         unobligated_balance_cpe=0.1,
         disaster_emergency_fund_code=code,
-        budget_authority_appropriation_amount_cpe=0.32,
+        total_budgetary_resources_cpe=0.32,
+        budget_authority_appropriation_amount_cpe=0.31,
         other_budgetary_resources_amount_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.07,
     )

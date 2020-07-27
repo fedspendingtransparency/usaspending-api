@@ -53,10 +53,7 @@ class OverviewViewSet(DisasterBase):
             latest_gtas_of_each_year_queryset()
             .filter(disaster_emergency_fund_code__in=self.defc)
             .values("disaster_emergency_fund_code")
-            .annotate(
-                def_code=F("disaster_emergency_fund_code"),
-                amount=Sum(F("budget_authority_appropriation_amount_cpe") + F("other_budgetary_resources_amount_cpe")),
-            )
+            .annotate(def_code=F("disaster_emergency_fund_code"), amount=Sum("total_budgetary_resources_cpe"),)
             .values("def_code", "amount")
         )
 
