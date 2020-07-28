@@ -73,6 +73,10 @@ class Helpers:
         monkeypatch.setattr("usaspending_api.disaster.v2.views.disaster_base.datetime", PatchedDatetime)
         usaspending_api.common.helpers.fiscal_year_helpers.current_fiscal_year = lambda: year
 
+    @staticmethod
+    def reset_dabs_cache():
+        usaspending_api.disaster.v2.views.disaster_base.final_submissions_for_all_fy.cache_clear()
+
 
 @pytest.fixture
 def helpers():

@@ -8,6 +8,7 @@ url = "/api/v2/disaster/award/amount/"
 @pytest.mark.django_db
 def test_award_amount_success(client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
 
     resp = helpers.post_for_amount_endpoint(client, url, ["L"], ["A", "09", "10"])
     assert resp.status_code == status.HTTP_200_OK
