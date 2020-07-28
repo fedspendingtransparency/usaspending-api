@@ -9,6 +9,7 @@ from usaspending_api.etl.management import load_base
 from usaspending_api.etl.submission_loader_helpers.file_a import get_file_a, load_file_a
 from usaspending_api.etl.submission_loader_helpers.file_b import get_file_b, load_file_b
 from usaspending_api.etl.submission_loader_helpers.file_c import get_file_c, load_file_c
+from usaspending_api.etl.submission_loader_helpers.final_of_fy import populate_final_of_fy
 from usaspending_api.etl.submission_loader_helpers.program_activities import update_program_activities
 from usaspending_api.etl.submission_loader_helpers.submission_attributes import (
     attempt_submission_update_only,
@@ -28,6 +29,7 @@ class Command(load_base.Command):
     submission_id = None
     file_c_chunk_size = 100000
     force_reload = False
+    skip_final_of_fy_calculation = False
     db_cursor = None
 
     help = (
@@ -46,6 +48,14 @@ class Command(load_base.Command):
             ),
         )
         parser.add_argument(
+            "--skip-final-of-fy-calculation",
+            action="store_true",
+            help=(
+                "This is mainly designed to be used by the multiple_submission_loader.  Prevents "
+                "the final_of_fy value from being recalculated for each submission that's loaded.",
+            ),
+        )
+        parser.add_argument(
             "--file-c-chunk-size",
             type=int,
             default=self.file_c_chunk_size,
@@ -61,6 +71,7 @@ class Command(load_base.Command):
         self.submission_id = options["submission_id"]
         self.force_reload = options["force_reload"]
         self.file_c_chunk_size = options["file_c_chunk_size"]
+        self.skip_final_of_fy_calculation = options["skip_final_of_fy_calculation"]
         self.db_cursor = db_cursor
 
         # This has to occur outside of the transaction so we don't hang up other loaders that may be
@@ -124,6 +135,14 @@ class Command(load_base.Command):
         start_time = datetime.now()
         load_file_c(submission_attributes, self.db_cursor, certified_award_financial)
         logger.info(f"Finished loading File C data, took {datetime.now() - start_time}")
+
+        if self.skip_final_of_fy_calculation:
+            logger.info("Skipping final_of_fy calculation as requested.")
+        else:
+            logger.info("Updating final_of_fy")
+            start_time = datetime.now()
+            populate_final_of_fy()
+            logger.info(f"Finished updating final_of_fy, took {datetime.now() - start_time}")
 
         # Once all the files have been processed, run any global cleanup/post-load tasks.
         # Cleanup not specific to this submission is run in the `.handle` method

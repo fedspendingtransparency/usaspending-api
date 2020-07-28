@@ -204,6 +204,13 @@ def get_queue_status() -> Tuple[List[int], List[int], List[int], List[int], List
     )
 
 
+def get_ready_and_in_progress_count():
+    return DABSLoaderQueue.objects.filter(
+        Q(state=DABSLoaderQueue.READY)
+        | Q(state=DABSLoaderQueue.IN_PROGRESS) & Q(heartbeat__gte=get_abandoned_heartbeat_cutoff())
+    ).count()
+
+
 class HeartbeatTimer(Timer):
     """
     Based on a threaded Timer, spins up a "heartbeat" timer in the background that updates the
@@ -227,6 +234,5 @@ class HeartbeatTimer(Timer):
             if count != 1:
                 logger.info(f"No heartbeat updated.  Processing has completed.")
                 break
-            logger.info(f"Waiting for next heartbeat.")
             self.finished.wait(self.interval)
         logger.info(f"Heartbeat timer ending.")

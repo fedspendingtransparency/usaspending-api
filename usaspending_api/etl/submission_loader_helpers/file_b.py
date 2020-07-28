@@ -196,8 +196,6 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
 
     save_manager.save_stragglers()
 
-    FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
-
     for key in skipped_tas:
         logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
 

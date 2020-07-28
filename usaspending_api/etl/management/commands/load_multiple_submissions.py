@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import Max
 from django.utils.crypto import get_random_string
 from usaspending_api.common.helpers.date_helper import now, datetime_command_line_argument_type
+from usaspending_api.etl.submission_loader_helpers.final_of_fy import populate_final_of_fy
 from usaspending_api.etl.submission_loader_helpers.submission_ids import get_new_or_updated_submission_ids
 from usaspending_api.submissions import dabs_loader_queue_helpers as dlqh
 from usaspending_api.submissions.models import DABSLoaderQueue, SubmissionAttributes
@@ -105,11 +106,13 @@ class Command(BaseCommand):
 
         if self.submission_ids:
             self.add_specific_submissions_to_queue()
-            self.load_specific_submissions()
+            processed_count = self.load_specific_submissions()
         else:
             since_datetime = self.start_datetime or self.calculate_load_submissions_since_datetime()
             self.add_submissions_since_datetime_to_queue(since_datetime)
-            self.load_incremental_submissions()
+            processed_count = self.load_incremental_submissions()
+
+        self.update_final_of_fy(processed_count)
 
         failed_and_unrecognized_count = self.report_queue_status()
         if failed_and_unrecognized_count > 0:
@@ -131,13 +134,13 @@ class Command(BaseCommand):
         Logs various information about the state of the submission queue.  Returns a count of failed
         and unrecognized submissions so the caller can whine about it if they're so inclined.
         """
-        new, in_progress, abandoned, failed, unrecognized = dlqh.get_queue_status()
-        overall_count = sum(len(s) for s in (new, in_progress, abandoned, failed, unrecognized))
+        ready, in_progress, abandoned, failed, unrecognized = dlqh.get_queue_status()
+        overall_count = sum(len(s) for s in (ready, in_progress, abandoned, failed, unrecognized))
 
         msg = [
             "The current queue status is as follows:\n",
             f"There are {overall_count:,} total submissions in the queue.",
-            f"   {len(new):,} are new and have not yet started processing.",
+            f"   {len(ready):,} are ready but have not yet started processing.",
             f"   {len(in_progress):,} are in progress.",
             f"   {len(abandoned):,} have been abandoned.",
             f"   {len(failed):,} have FAILED.",
@@ -183,14 +186,18 @@ class Command(BaseCommand):
         )
 
     def load_specific_submissions(self):
+        processed_count = 0
         for submission_id in self.submission_ids:
             count = dlqh.start_processing(submission_id, self.processor_id)
             if count == 0:
                 logger.info(f"Submission {submission_id} has already been picked up by another processor.  Skipping.")
             else:
                 self.load_submission(submission_id, force_reload=True)
+                processed_count += 1
+        return processed_count
 
-    def add_submissions_since_datetime_to_queue(self, since_datetime):
+    @staticmethod
+    def add_submissions_since_datetime_to_queue(since_datetime):
         if since_datetime is None:
             logger.info("No records found in submission_attributes.  Performing a full load.")
         else:
@@ -204,12 +211,15 @@ class Command(BaseCommand):
         )
 
     def load_incremental_submissions(self):
+        processed_count = 0
         while True:
             submission_id, force_reload = dlqh.claim_next_available_submission(self.processor_id)
             if submission_id is None:
                 logger.info("No more available submissions in the queue.  Exiting.")
                 break
             self.load_submission(submission_id, force_reload)
+            processed_count += 1
+        return processed_count
 
     def cancel_heartbeat_timer(self):
         if self.heartbeat_timer:
@@ -227,7 +237,7 @@ class Command(BaseCommand):
         Accepts a locked/claimed submission id, spins up a heartbeat thread, loads the submission,
         returns True if successful or False if not.
         """
-        args = ["--file-c-chunk-size", self.file_c_chunk_size]
+        args = ["--file-c-chunk-size", self.file_c_chunk_size, "--skip-final-of-fy-calculation"]
         if force_reload:
             args.append("--force-reload")
         self.start_heartbeat_timer(submission_id)
@@ -250,3 +260,20 @@ class Command(BaseCommand):
             # relatively low volume table, this should not cause any noticeable performance issues.
             since -= timedelta(days=30)
         return since
+
+    @staticmethod
+    def update_final_of_fy(processed_count):
+        """
+        For performance and deadlocking reasons, we only update final_of_fy once the last
+        submission is processed.  To this end, only update final_of_fy if any loads were
+        performed and there's nothing processable left in the queue.
+        """
+        if processed_count < 1:
+            logger.info("No work performed.  Not updating final_of_fy.")
+            return
+        if dlqh.get_ready_and_in_progress_count() > 0:
+            logger.info("Queue is not empty.  Not updating final_of_fy.")
+            return
+        logger.info("Updating final_of_fy")
+        populate_final_of_fy()
+        logger.info(f"Finished updating final_of_fy.")

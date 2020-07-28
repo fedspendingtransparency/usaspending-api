@@ -67,8 +67,6 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
 
     save_manager.save_stragglers()
 
-    AppropriationAccountBalances.populate_final_of_fy()
-
     for key in skipped_tas:
         logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
 
