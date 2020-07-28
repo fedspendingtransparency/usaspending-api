@@ -16,7 +16,7 @@ def test_award_amount_success(client, monkeypatch, generic_account_data, unlinke
     assert resp.data["outlay"] == 222
     assert resp.data["obligation"] == 200
 
-    resp = helpers.post_for_amount_endpoint(client, url, ["N", "O"], ["A", "09", "10"])
+    resp = helpers.post_for_amount_endpoint(client, url, ["N", "O"], ["A", "07", "08"])
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["award_count"] == 2
     assert resp.data["outlay"] == 334
