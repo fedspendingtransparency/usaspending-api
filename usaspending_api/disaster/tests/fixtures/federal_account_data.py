@@ -25,8 +25,8 @@ def generic_account_data():
     mommy.make("references.DisasterEmergencyFundCode", code="A")
     award1 = mommy.make("awards.Award", id=111, total_loan_value=1111, type="A")
     award2 = mommy.make("awards.Award", id=222, total_loan_value=2222, type="A")
-    award3 = mommy.make("awards.Award", id=333, total_loan_value=3333, type="10")
-    award4 = mommy.make("awards.Award", id=444, total_loan_value=4444, type="09")
+    award3 = mommy.make("awards.Award", id=333, total_loan_value=3333, type="07")
+    award4 = mommy.make("awards.Award", id=444, total_loan_value=4444, type="08")
     fed_acct1 = mommy.make("accounts.FederalAccount", account_title="gifts", federal_account_code="000-0000", id=21)
     tre_acct1 = mommy.make(
         "accounts.TreasuryAppropriationAccount",
