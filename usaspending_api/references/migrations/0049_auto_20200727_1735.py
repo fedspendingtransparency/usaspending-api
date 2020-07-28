@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0048_drop_old_gtas'),
+        ('references', '0049_gtassf133balances_total_budgetary_resources_cpe'),
     ]
 
     operations = [
