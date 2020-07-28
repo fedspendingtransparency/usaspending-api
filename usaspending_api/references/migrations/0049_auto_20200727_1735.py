@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
         # Special index used to guarantee uniquity on the natural key columns.
         migrations.RunSQL(
             sql=["""
-                create unique index idx_ref_program_activity_natural_key on ref_program_activity (
+                create unique index if not exists idx_ref_program_activity_natural_key on ref_program_activity (
                     program_activity_code,
                     coalesce(program_activity_name, ''),
                     coalesce(responsible_agency_id, ''),
