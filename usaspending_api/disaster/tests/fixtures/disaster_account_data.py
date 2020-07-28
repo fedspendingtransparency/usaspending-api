@@ -389,16 +389,16 @@ def disaster_account_data():
     )  # Block Grant - subtier sister to a2
 
     mommy.make(
-        "awards.TransactionNormalized", id=10, award=a1, action_date="2020-01-01", is_fpds=False, funding_agency=ag1
+        "awards.TransactionNormalized", id=10, award=a1, action_date="2020-04-01", is_fpds=False, funding_agency=ag1
     )
     mommy.make(
-        "awards.TransactionNormalized", id=20, award=a2, action_date="2020-01-02", is_fpds=False, funding_agency=ag2
+        "awards.TransactionNormalized", id=20, award=a2, action_date="2020-04-02", is_fpds=False, funding_agency=ag2
     )
     mommy.make(
-        "awards.TransactionNormalized", id=30, award=a3, action_date="2020-01-03", is_fpds=True, funding_agency=ag3
+        "awards.TransactionNormalized", id=30, award=a3, action_date="2020-04-03", is_fpds=True, funding_agency=ag3
     )
     mommy.make(
-        "awards.TransactionNormalized", id=40, award=a4, action_date="2020-01-04", is_fpds=False, funding_agency=ag3
+        "awards.TransactionNormalized", id=40, award=a4, action_date="2020-04-04", is_fpds=False, funding_agency=ag3
     )
 
     mommy.make("awards.TransactionFABS", transaction_id=10)
