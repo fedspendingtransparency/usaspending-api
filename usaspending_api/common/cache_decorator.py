@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
+from collections.abc import Iterable
 from django.conf import settings
 from django.db.models import QuerySet
 from rest_framework_extensions.cache.decorators import CacheResponse
@@ -11,19 +12,18 @@ logger = logging.getLogger("console")
 
 
 def contains_queryset(data: Any) -> bool:
-    """Boring non-generator to traverse a complex object and flag any Querysets"""
-    if isinstance(data, QuerySet):
-        return True
-    elif isinstance(data, dict):
-        for v in data.values():
-            if contains_queryset(v):
-                return True
-    elif isinstance(data, list):
-        for k in data:
-            if contains_queryset(k):
-                return True
-
-    return False
+    """Traverse a complex object and return True if a Queryset exists anywhere"""
+    type_checks = (
+        (dict, lambda x: any([contains_queryset(datum) for datum in x.values()])),
+        (str, lambda x: False),  # short-circuit since str is an iterable. Leave before Iterable
+        (Iterable, lambda x: any([contains_queryset(datum) for datum in x])),
+        (QuerySet, lambda x: True),
+    )
+    for type_check in type_checks:
+        if isinstance(data, type_check[0]):
+            return type_check[1](data)
+    else:
+        return False
 
 
 class CustomCacheResponse(CacheResponse):
@@ -52,12 +52,14 @@ class CustomCacheResponse(CacheResponse):
             # fully supported by Django Rest Framework. This check was inserted
             # in local mode to catch if a Queryset is being returned by the view
             # which could cause an exception when setting the cache
-            if settings.IS_LOCAL and response and not response.is_rendered and contains_queryset(response.data):
-                raise RuntimeError(
-                    "Your view is returning a QuerySet.  QuerySets are not really designed to "
-                    "be pickled and can cause caching issues.  Please materialize the QuerySet "
-                    "using a List or some other more primitive data structure."
-                )
+            if settings.IS_LOCAL and response and not response.is_rendered:
+                if contains_queryset(response.data):
+                    raise RuntimeError(
+                        "Your view is returning a QuerySet. QuerySets are not"
+                        " really designed to be pickled and can cause caching"
+                        " issues. Please materialize the QuerySet using a List"
+                        " or some other more primitive data structure."
+                    )
 
             response["Cache-Trace"] = "no-cache"
             response.render()  # should be rendered, before pickling while storing to cache
