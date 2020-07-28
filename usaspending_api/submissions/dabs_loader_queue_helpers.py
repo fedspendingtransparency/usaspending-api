@@ -9,7 +9,7 @@ from traceback import format_exception
 from typing import List, Optional, Tuple
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
-from usaspending_api.submissions.models import SubmissionQueue
+from usaspending_api.submissions.models import DABSLoaderQueue
 
 
 logger = logging.getLogger("script")
@@ -35,10 +35,10 @@ def add_submission_ids(submission_ids: List[int]) -> int:
     if not submission_ids:
         return 0
 
-    values = ", ".join(f"({i}, '{SubmissionQueue.NEW}', false)" for i in submission_ids)
+    values = ", ".join(f"({i}, '{DABSLoaderQueue.READY}', false)" for i in submission_ids)
 
     sql = f"""
-        insert into {SubmissionQueue._meta.db_table} (submission_id, state, force_reload) (
+        insert into {DABSLoaderQueue._meta.db_table} (submission_id, state, force_reload) (
             values {values}
         ) on conflict (submission_id) do nothing
     """
@@ -49,16 +49,16 @@ def add_submission_ids(submission_ids: List[int]) -> int:
 
 
 def mark_force_reload(submission_ids: List[int]) -> int:
-    """ Mark submissions as requiring a full reload.  Only NEW submissions can be marked. """
+    """ Mark submissions as requiring a full reload.  Only READY submissions can be marked. """
     if not submission_ids:
         return 0
 
     sql = f"""
-        update {SubmissionQueue._meta.db_table} set
+        update {DABSLoaderQueue._meta.db_table} set
             force_reload = True
         where
             submission_id in %s
-            and state = '{SubmissionQueue.NEW}'
+            and state = '{DABSLoaderQueue.READY}'
             and force_reload is not True
     """
 
@@ -73,7 +73,7 @@ def claim_next_available_submission(processor_id: str) -> Tuple[Optional[int], O
     Returns None if there are no available submission ids remaining in the queue.
     """
     submissions = (
-        SubmissionQueue.objects.filter(state=SubmissionQueue.NEW)
+        DABSLoaderQueue.objects.filter(state=DABSLoaderQueue.READY)
         .order_by("submission_id")
         .values("submission_id", "force_reload")[:1000]
     )
@@ -91,10 +91,10 @@ def start_processing(submission_id: int, processor_id: str) -> int:
     claimed by another processor.
     """
     now_ = now()
-    return SubmissionQueue.objects.filter(
-        submission_id=submission_id, processor_id__isnull=True, state=SubmissionQueue.NEW
+    return DABSLoaderQueue.objects.filter(
+        submission_id=submission_id, processor_id__isnull=True, state=DABSLoaderQueue.READY
     ).update(
-        state=SubmissionQueue.IN_PROGRESS,
+        state=DABSLoaderQueue.IN_PROGRESS,
         processor_id=processor_id,
         processing_started=now_,
         heartbeat=now_,
@@ -113,13 +113,13 @@ def update_heartbeat(submission_id: int, processor_id: str) -> int:
     transactions.
     """
     sql = f"""
-        update  {SubmissionQueue._meta.db_table}
+        update  {DABSLoaderQueue._meta.db_table}
         set     heartbeat = %s::timestamptz
         where   submission_id = %s and processor_id = %s and state = %s
     """
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
-            cursor.execute(sql, [now(), submission_id, processor_id, SubmissionQueue.IN_PROGRESS])
+            cursor.execute(sql, [now(), submission_id, processor_id, DABSLoaderQueue.IN_PROGRESS])
             return cursor.rowcount
 
 
@@ -130,8 +130,8 @@ def complete_processing(submission_id: int, processor_id: str) -> int:
     submission no longer exists in the queue or someone else has claimed it and that's probably a
     problem.
     """
-    return SubmissionQueue.objects.filter(
-        submission_id=submission_id, processor_id=processor_id, state=SubmissionQueue.IN_PROGRESS
+    return DABSLoaderQueue.objects.filter(
+        submission_id=submission_id, processor_id=processor_id, state=DABSLoaderQueue.IN_PROGRESS
     ).delete()
 
 
@@ -143,9 +143,9 @@ def fail_processing(submission_id: int, processor_id: str, exception: BaseExcept
     because the heartbeat was not properly refreshed.
     """
     exception_message = "".join(format_exception(type(exception), exception, exception.__traceback__))
-    return SubmissionQueue.objects.filter(
-        submission_id=submission_id, processor_id=processor_id, state=SubmissionQueue.IN_PROGRESS
-    ).update(state=SubmissionQueue.FAILED, processor_id=None, processing_failed=now(), exception=exception_message)
+    return DABSLoaderQueue.objects.filter(
+        submission_id=submission_id, processor_id=processor_id, state=DABSLoaderQueue.IN_PROGRESS
+    ).update(state=DABSLoaderQueue.FAILED, processor_id=None, processing_failed=now(), exception=exception_message)
 
 
 def reset_abandoned_locks() -> int:
@@ -153,7 +153,7 @@ def reset_abandoned_locks() -> int:
     IN_PROGRESS submissions with heartbeats older than ABANDONED_LOCK_MINUTES are considered abandoned
     and must be reset so processing can be restarted on them.  Returns the count of reset locks.
     """
-    return _reset_submissions(state=SubmissionQueue.IN_PROGRESS, heartbeat__lt=get_abandoned_heartbeat_cutoff())
+    return _reset_submissions(state=DABSLoaderQueue.IN_PROGRESS, heartbeat__lt=get_abandoned_heartbeat_cutoff())
 
 
 def reset_failed_submissions(submission_ids: List[int]) -> int:
@@ -161,12 +161,12 @@ def reset_failed_submissions(submission_ids: List[int]) -> int:
     FAILED submissions must be reset before they can be reprocessed.  Returns the count of
     submissions reset.
     """
-    return _reset_submissions(state=SubmissionQueue.FAILED, submission_id__in=submission_ids)
+    return _reset_submissions(state=DABSLoaderQueue.FAILED, submission_id__in=submission_ids)
 
 
 def _reset_submissions(**filters) -> int:
-    return SubmissionQueue.objects.filter(**filters).update(
-        state=SubmissionQueue.NEW,
+    return DABSLoaderQueue.objects.filter(**filters).update(
+        state=DABSLoaderQueue.READY,
         processor_id=None,
         processing_started=None,
         heartbeat=None,
@@ -179,7 +179,7 @@ def get_queue_status() -> Tuple[List[int], List[int], List[int], List[int], List
     """
     Looks up queue statistics and returns them in a tuple of lists containing submission_ids:
 
-        new           - list of NEW submission ids that have not yet started processing
+        ready         - list of READY submission ids that have not yet started processing
         in_progress   - list of submission ids currently IN_PROGRESS that are not abandoned
         abandoned     - list of IN_PROGRESS submission ids that have become abandoned
         failed        - list of submission ids that have FAILED
@@ -190,17 +190,17 @@ def get_queue_status() -> Tuple[List[int], List[int], List[int], List[int], List
 
     def get_queryset(*filters, **kwfilters):
         return (
-            SubmissionQueue.objects.filter(*filters, **kwfilters)
+            DABSLoaderQueue.objects.filter(*filters, **kwfilters)
             .order_by("-submission_id")
             .values_list("submission_id", flat=True)
         )
 
     return (
-        get_queryset(state=SubmissionQueue.NEW),
-        get_queryset(state=SubmissionQueue.IN_PROGRESS, heartbeat__gte=abandoned_heartbeat_cutoff),
-        get_queryset(state=SubmissionQueue.IN_PROGRESS, heartbeat__lt=abandoned_heartbeat_cutoff),
-        get_queryset(state=SubmissionQueue.FAILED),
-        get_queryset(Q(state__isnull=True) | ~Q(state__in=tuple(s[0] for s in SubmissionQueue.STATES))),
+        get_queryset(state=DABSLoaderQueue.READY),
+        get_queryset(state=DABSLoaderQueue.IN_PROGRESS, heartbeat__gte=abandoned_heartbeat_cutoff),
+        get_queryset(state=DABSLoaderQueue.IN_PROGRESS, heartbeat__lt=abandoned_heartbeat_cutoff),
+        get_queryset(state=DABSLoaderQueue.FAILED),
+        get_queryset(Q(state__isnull=True) | ~Q(state__in=tuple(s[0] for s in DABSLoaderQueue.STATES))),
     )
 
 

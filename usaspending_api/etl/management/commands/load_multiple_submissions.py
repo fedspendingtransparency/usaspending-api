@@ -8,8 +8,8 @@ from django.db.models import Max
 from django.utils.crypto import get_random_string
 from usaspending_api.common.helpers.date_helper import now, datetime_command_line_argument_type
 from usaspending_api.etl.submission_loader_helpers.submission_ids import get_new_or_updated_submission_ids
-from usaspending_api.submissions import submission_queue_helpers as sqh
-from usaspending_api.submissions.models import SubmissionQueue, SubmissionAttributes
+from usaspending_api.submissions import dabs_loader_queue_helpers as dlqh
+from usaspending_api.submissions.models import DABSLoaderQueue, SubmissionAttributes
 
 
 logger = logging.getLogger("script")
@@ -23,7 +23,7 @@ class Command(BaseCommand):
         "The goal of this management command is coordinate the loading of multiple submissions "
         "simultaneously using the load_submission single submission loader.  To load submissions "
         "in parallel, kick off multiple runs at the same time.  Runs will be coordinated via the "
-        "submission_queue table in the database which allows loaders to be run from different "
+        "dabs_loader_queue table in the database which allows loaders to be run from different "
         "machines in different environments.  Using the database as the queue sidesteps the AWS "
         "SQS 24 hour message lifespan limitation.  There is no hard cap on the number of jobs that "
         "can be run simultaneously, but certainly there is a soft cap imposed by resource "
@@ -131,7 +131,7 @@ class Command(BaseCommand):
         Logs various information about the state of the submission queue.  Returns a count of failed
         and unrecognized submissions so the caller can whine about it if they're so inclined.
         """
-        new, in_progress, abandoned, failed, unrecognized = sqh.get_queue_status()
+        new, in_progress, abandoned, failed, unrecognized = dlqh.get_queue_status()
         overall_count = sum(len(s) for s in (new, in_progress, abandoned, failed, unrecognized))
 
         msg = [
@@ -161,21 +161,21 @@ class Command(BaseCommand):
 
     @staticmethod
     def reset_abandoned_locks():
-        count = sqh.reset_abandoned_locks()
+        count = dlqh.reset_abandoned_locks()
         if count > 0:
             logger.info(f"Reset {count:,} abandoned locks.")
         return count
 
     def add_specific_submissions_to_queue(self):
-        reset = sqh.reset_failed_submissions(self.submission_ids)
+        reset = dlqh.reset_failed_submissions(self.submission_ids)
         if reset > 0:
             logger.info(
-                f"{reset:,} of the provided submissions ids were in a {SubmissionQueue.FAILED} "
+                f"{reset:,} of the provided submissions ids were in a {DABSLoaderQueue.FAILED} "
                 f"state and have been reset so they can be reprocessed."
             )
         with transaction.atomic():
-            added = sqh.add_submission_ids(self.submission_ids)
-            sqh.mark_force_reload(self.submission_ids)
+            added = dlqh.add_submission_ids(self.submission_ids)
+            dlqh.mark_force_reload(self.submission_ids)
         count = len(self.submission_ids)
         logger.info(
             f"Received {count:,} submission ids on the command line.  {added:,} were "
@@ -184,7 +184,7 @@ class Command(BaseCommand):
 
     def load_specific_submissions(self):
         for submission_id in self.submission_ids:
-            count = sqh.start_processing(submission_id, self.processor_id)
+            count = dlqh.start_processing(submission_id, self.processor_id)
             if count == 0:
                 logger.info(f"Submission {submission_id} has already been picked up by another processor.  Skipping.")
             else:
@@ -196,7 +196,7 @@ class Command(BaseCommand):
         else:
             logger.info(f"Performing incremental load starting from {since_datetime}.")
         submission_ids = get_new_or_updated_submission_ids(since_datetime)
-        added = sqh.add_submission_ids(submission_ids)
+        added = dlqh.add_submission_ids(submission_ids)
         count = len(submission_ids)
         logger.info(
             f"Identified {count:,} new or updated submission ids in Broker.  {added:,} were "
@@ -205,7 +205,7 @@ class Command(BaseCommand):
 
     def load_incremental_submissions(self):
         while True:
-            submission_id, force_reload = sqh.claim_next_available_submission(self.processor_id)
+            submission_id, force_reload = dlqh.claim_next_available_submission(self.processor_id)
             if submission_id is None:
                 logger.info("No more available submissions in the queue.  Exiting.")
                 break
@@ -219,7 +219,7 @@ class Command(BaseCommand):
     def start_heartbeat_timer(self, submission_id):
         if self.heartbeat_timer:
             self.cancel_heartbeat_timer()
-        self.heartbeat_timer = sqh.HeartbeatTimer(submission_id, self.processor_id)
+        self.heartbeat_timer = dlqh.HeartbeatTimer(submission_id, self.processor_id)
         self.heartbeat_timer.start()
 
     def load_submission(self, submission_id, force_reload):
@@ -236,10 +236,10 @@ class Command(BaseCommand):
         except (Exception, SystemExit) as e:
             self.cancel_heartbeat_timer()
             logger.exception(f"Submission {submission_id} failed to load")
-            sqh.fail_processing(submission_id, self.processor_id, e)
+            dlqh.fail_processing(submission_id, self.processor_id, e)
             return False
         self.cancel_heartbeat_timer()
-        sqh.complete_processing(submission_id, self.processor_id)
+        dlqh.complete_processing(submission_id, self.processor_id)
         return True
 
     @staticmethod

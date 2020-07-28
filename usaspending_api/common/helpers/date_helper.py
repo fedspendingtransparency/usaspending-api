@@ -7,7 +7,7 @@ from typing import Callable
 
 
 def now():
-    """ Let's standardize how we do "now". """
+    """ Now now() is a standardized function to obtain "now" when you need it now. """
     return datetime.now(timezone.utc)
 
 

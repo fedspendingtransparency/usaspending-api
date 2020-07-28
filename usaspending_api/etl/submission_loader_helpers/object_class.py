@@ -11,6 +11,16 @@ class Bunch:
 OBJECT_CLASSES = None
 
 
+def reset_object_class_cache():
+    """
+    An unfortunate side effect of globals is that they don't get refreshed automatically
+    for tests.  So, to keep the performance of caching object classes globally but still
+    allow tests to function properly, we need a way to reset the object class cache.
+    """
+    global OBJECT_CLASSES
+    OBJECT_CLASSES = None
+
+
 def get_object_class_row(row):
     """Lookup an object class record.
 

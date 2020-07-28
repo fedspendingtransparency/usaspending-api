@@ -28,4 +28,4 @@ class RefProgramActivity(models.Model):
         # blanks seems riskier.
         #
         # What does this mean?  Well, it means there's a unique constraint defined in SQL in one of
-        # the migrations for this table.  Sorry.
+        # the migrations for this table.

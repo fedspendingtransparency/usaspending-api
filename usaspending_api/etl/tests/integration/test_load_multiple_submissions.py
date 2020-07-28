@@ -9,6 +9,7 @@ from model_mommy import mommy
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
+from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -30,6 +31,8 @@ class TestWithMultipleDatabases(TransactionTestCase):
         unfortunate side effect of using dblink and having to modify the database.  We can refactor this
         set of tests once either of those situations is alleviated.
         """
+
+        reset_object_class_cache()
 
         mommy.make(
             "accounts.TreasuryAppropriationAccount",

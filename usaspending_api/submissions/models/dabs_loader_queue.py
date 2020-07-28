@@ -1,14 +1,14 @@
 from django.db.models import BooleanField, DateTimeField, IntegerField, Model, TextField
 
 
-class SubmissionQueue(Model):
+class DABSLoaderQueue(Model):
     """ A relatively simplistic queue for multiple submission loaders to coordinate processing. """
 
-    NEW = "NEW"
+    READY = "READY"
     IN_PROGRESS = "IN PROGRESS"
     FAILED = "FAILED"
 
-    STATES = [(NEW, NEW), (IN_PROGRESS, IN_PROGRESS), (FAILED, FAILED)]
+    STATES = [(READY, READY), (IN_PROGRESS, IN_PROGRESS), (FAILED, FAILED)]
 
     # Submission unique identifier.  Common to both USAspending and Broker.
     submission_id = IntegerField(primary_key=True)
@@ -16,7 +16,7 @@ class SubmissionQueue(Model):
     # There are also two conceptual states; ABANDONED is an IN_PROGRESS submission whose heartbeat
     # has exceeded ABANDONED_LOCK_MINUTES and COMPLETED which is a submission that was successfully
     # loaded but, since COMPLETED records are immediately deleted, is no longer in the table.
-    state = TextField(choices=STATES, default=NEW)
+    state = TextField(choices=STATES, default=READY)
 
     # If we absolutely, positively need to perform a full reload instead of just an update.
     force_reload = BooleanField(default=False)
@@ -41,4 +41,4 @@ class SubmissionQueue(Model):
     exception = TextField(null=True, default=None)
 
     class Meta:
-        db_table = "submission_queue"
+        db_table = "dabs_loader_queue"
