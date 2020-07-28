@@ -10,6 +10,7 @@ def test_basic_object_class_spending_total_success(
     client, basic_fa_by_object_class_with_object_class, monkeypatch, helpers
 ):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="total")
     expected_results = [

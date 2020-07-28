@@ -15,6 +15,7 @@ def test_award_count_basic(client, monkeypatch, basic_award, helpers):
 @pytest.mark.django_db
 def test_award_count_quarterly(client, monkeypatch, award_with_quarterly_submission, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 1
 
@@ -22,6 +23,7 @@ def test_award_count_quarterly(client, monkeypatch, award_with_quarterly_submiss
 @pytest.mark.django_db
 def test_award_count_early(client, monkeypatch, award_with_early_submission, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 1
 
@@ -29,6 +31,7 @@ def test_award_count_early(client, monkeypatch, award_with_early_submission, hel
 @pytest.mark.django_db
 def test_award_count_obligations_incurred(client, monkeypatch, basic_award, obligations_incurred_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 2
 
@@ -36,6 +39,7 @@ def test_award_count_obligations_incurred(client, monkeypatch, basic_award, obli
 @pytest.mark.django_db
 def test_multiple_faba_per_award(client, monkeypatch, multiple_file_c_to_same_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 1
 
@@ -43,6 +47,7 @@ def test_multiple_faba_per_award(client, monkeypatch, multiple_file_c_to_same_aw
 @pytest.mark.django_db
 def test_award_count_non_matching_defc(client, monkeypatch, non_matching_defc_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 0
 
@@ -50,6 +55,7 @@ def test_award_count_non_matching_defc(client, monkeypatch, non_matching_defc_aw
 @pytest.mark.django_db
 def test_award_count_non_matching_award_type(client, monkeypatch, non_matching_defc_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
     resp = helpers.post_for_count_endpoint(client, url, ["M"], ["B"])
     assert resp.data["count"] == 0
 
@@ -57,6 +63,7 @@ def test_award_count_non_matching_award_type(client, monkeypatch, non_matching_d
 @pytest.mark.django_db
 def test_no_award_with_award_types_provided(client, monkeypatch, file_c_with_no_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 0
 
