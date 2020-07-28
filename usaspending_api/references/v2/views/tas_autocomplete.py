@@ -51,7 +51,7 @@ class TASAutocomplete(APIView):
             else:
                 kwargs[current_column] = current_value
 
-        results = (
+        results = list(
             TASAutocompleteMatview.objects.filter(**kwargs)
             .values_list(requested_column, flat=True)
             .distinct()

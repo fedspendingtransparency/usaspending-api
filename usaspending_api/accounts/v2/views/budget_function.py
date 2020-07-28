@@ -17,7 +17,7 @@ class ListBudgetFunctionViewSet(APIView):
     @cache_response()
     def get(self, request):
         # Retrieve all Budget Functions, grouped by code and title, ordered by code
-        results = (
+        results = list(
             TreasuryAppropriationAccount.objects.filter(~Q(budget_function_code=""), ~Q(budget_function_code=None))
             .values("budget_function_code", "budget_function_title")
             .order_by("budget_function_title")
@@ -48,7 +48,7 @@ class ListBudgetSubfunctionViewSet(APIView):
             queryset = queryset.filter(budget_function_code=budget_function)
 
         # Group by code and title, order by code
-        results = (
+        results = list(
             queryset.values("budget_subfunction_code", "budget_subfunction_title")
             .order_by("budget_subfunction_title")
             .distinct()

@@ -16,7 +16,11 @@ class SubmissionPeriodsViewSet(APIView):
     def get(self, request):
 
         # filter out records with submission window date after now
-        subs = DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=datetime.datetime.now()).values()
+        subs = (
+            DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=datetime.datetime.now())
+            .order_by("-submission_fiscal_year", "-submission_fiscal_month", "is_quarter")
+            .values()
+        )
 
         # remove id from the records
         for sub in subs:

@@ -392,7 +392,24 @@ class _DisasterEmergencyFundCodes(_Filter):
         def_codes_query = []
         for v in filter_values:
             def_codes_query.append(ES_Q("match", disaster_emergency_fund_codes=v))
-        return ES_Q("bool", should=def_codes_query, minimum_should_match=1)
+        return ES_Q(
+            "bool",
+            should=def_codes_query,
+            minimum_should_match=1,
+            must=ES_Q("range", action_date={"gte": "2020-04-01"}),
+        )
+
+
+class _QueryText(_Filter):
+    """Query text with a specific field to search on (i.e. {'text': <query_text>, 'fields': [<field_to_search_on>]})"""
+
+    underscore_name = "query"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: dict, query_type: _QueryType) -> ES_Q:
+        query_text = f"{es_sanitize(filter_values['text'])}*"
+        query_fields = filter_values["fields"]
+        return ES_Q("simple_query_string", query=query_text, default_operator="AND", fields=query_fields)
 
 
 class _QueryText(_Filter):

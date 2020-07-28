@@ -199,11 +199,16 @@ LEFT JOIN ref_population_county RL_STATE_POPULATION ON (RL_STATE_POPULATION.stat
 LEFT JOIN ref_population_county RL_COUNTY_POPULATION ON (RL_COUNTY_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_COUNTY_POPULATION.county_number = vw_es_award_search.recipient_location_county_code)
 LEFT JOIN ref_population_cong_district RL_DISTRICT_POPULATION ON (RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_DISTRICT_POPULATION.congressional_district = vw_es_award_search.recipient_location_congressional_code)
 LEFT JOIN (
+    -- Get awards with COVID-related data
+    -- CONDITIONS:
+    -- 1. Only care about data that references an (D1/D2) award, since this is used to update those referenced awards
+    -- 2. Only care about those awards if they are in a closed submission period, from FY2020 P07 onward
+    -- 3. Only care about outlays for those awards if the period with outlay data is the last closed period in its FY
     SELECT
         faba.award_id,
-        ARRAY_AGG(DISTINCT disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
-        COALESCE(sum(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
-        COALESCE(sum(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
+        ARRAY_AGG(DISTINCT disaster_emergency_fund_code ORDER BY disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
+        COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
     FROM
         financial_accounts_by_awards faba
     INNER JOIN disaster_emergency_fund_code defc
@@ -221,12 +226,14 @@ LEFT JOIN (
         ON latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year
         AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period
         AND latest_closed_period_per_fy.is_quarter = sa.quarter_format_flag
+    INNER JOIN dabs_submission_window_schedule AS closed_periods
+        ON   closed_periods.period_start_date >= '2020-04-01' AND closed_periods.submission_reveal_date < now()
+        AND  sa.reporting_fiscal_year = closed_periods.submission_fiscal_year
+        AND  sa.reporting_fiscal_period = closed_periods.submission_fiscal_month
+        AND  sa.quarter_format_flag = closed_periods.is_quarter
     WHERE faba.award_id IS NOT NULL
-GROUP BY
-    faba.award_id
-HAVING
-    COALESCE(sum(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
-    OR COALESCE(sum(faba.transaction_obligated_amount), 0) != 0
+    GROUP BY
+        faba.award_id
 ) DEFC ON (DEFC.award_id = vw_es_award_search.award_id)
 LEFT JOIN (
   SELECT
