@@ -27,9 +27,9 @@ def test_program_activity_fresh_load(monkeypatch):
     expected_results = {
         "count": 3,
         "row_tuples": [
-            (1600, -1, -10.00, -11.00, -11.00, -11.00),
-            (1600, -2, -9.00, -12.00, -12.00, -12.00),
-            (1601, -1, -8.00, -13.00, -13.00, -13.00),
+            (1600, -1, -10.00, -11.00, -11.00, -11.00, 11),
+            (1600, -2, -9.00, -12.00, -12.00, -12.00, 12),
+            (1601, -1, -8.00, -13.00, -13.00, -13.00, 13),
         ],
     }
 
@@ -43,6 +43,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 "budget_authority_appropriation_amount_cpe",
                 "other_budgetary_resources_amount_cpe",
                 "unobligated_balance_cpe",
+                "total_budgetary_resources_cpe",
             )
         ),
     }

@@ -173,7 +173,7 @@ def type_filter(_type, filters, limit=None):
 
         alt_set = alt_set[:limit] if _type == "award" else alt_set
 
-        results = {"total": actual_total, "end_date": fiscal_date, "results": alt_set}
+        results = {"total": actual_total, "end_date": fiscal_date, "results": list(alt_set)}
 
     else:
         # Annotate and get explorer _type filtered results
