@@ -210,7 +210,7 @@ class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
 
         response = {
             "search_text": search_text,
-            "results": glossary_terms.values_list("term", flat=True),
+            "results": list(glossary_terms.values_list("term", flat=True)),
             "count": glossary_terms.count(),
             "matched_terms": serializer.data,
         }
