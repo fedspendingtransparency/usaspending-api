@@ -1293,7 +1293,6 @@ query_paths = {
                 ("prime_awardee_country_name", "broker_subaward__legal_entity_country_name"),
                 ("prime_awardee_address_line_1", "broker_subaward__legal_entity_address_line1"),
                 ("prime_awardee_city_name", "broker_subaward__legal_entity_city_name"),
-                ("prime_awardee_county_name", "broker_subaward__legal_entity_county_name"),
                 ("prime_awardee_state_code", "broker_subaward__legal_entity_state_code"),
                 ("prime_awardee_state_name", "broker_subaward__legal_entity_state_name"),
                 ("prime_awardee_zip_code", "broker_subaward__legal_entity_zip"),
