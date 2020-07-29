@@ -89,7 +89,7 @@ def award_count_submission():
     mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
-        reporting_fiscal_period=7,
+        reporting_fiscal_period=8,
         quarter_format_flag=False,
         reporting_period_start="2022-04-01",
     )

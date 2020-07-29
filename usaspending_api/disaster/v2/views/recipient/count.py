@@ -1,4 +1,4 @@
-from django.db.models import Count, Case, When, F, TextField, OuterRef, Subquery, Sum, DecimalField, Q
+from django.db.models import Count, Case, When, F, TextField, OuterRef, Subquery, Sum, DecimalField, Q, Value
 from django.db.models.functions import Cast, Coalesce
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -42,7 +42,15 @@ class RecipientCountViewSet(DisasterBase, FabaOutlayMixin, AwardTypeMixin):
             total_toa=Coalesce(Sum("transaction_obligated_amount", output_field=DecimalField()), 0.0)
         ).values("total_toa")
         total_outlay = related_faba.annotate(
-            total_outlay=Coalesce(Sum("gross_outlay_amount_by_award_cpe", output_field=DecimalField()), 0.0)
+            total_outlay=Coalesce(
+                Sum(
+                    Case(
+                        When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
+                        default=Value(0),
+                    )
+                ),
+                0,
+            )
         ).values("total_outlay")
 
         recipients = (

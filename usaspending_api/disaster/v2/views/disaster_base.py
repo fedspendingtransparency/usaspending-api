@@ -77,12 +77,6 @@ def filter_by_defc_closed_periods() -> Q:
     return q & Q(submission__reporting_period_start__gte=str(REPORTING_PERIOD_MIN_DATE))
 
 
-def when_non_zero_award_spending(query):
-    return query.annotate(
-        total_outlay=Sum("gross_outlay_amount_by_award_cpe"), total_obligation=Sum("transaction_obligated_amount")
-    ).exclude(total_outlay=0, total_obligation=0)
-
-
 @lru_cache(maxsize=1)
 def final_submissions_for_all_fy() -> List[tuple]:
     """
@@ -241,6 +235,11 @@ class FabaOutlayMixin:
             ),
             0,
         )
+
+    def when_non_zero_award_spending(self, query):
+        return query.annotate(
+            total_outlay=self.outlay_field_annotation, total_obligation=Sum("transaction_obligated_amount")
+        ).exclude(total_outlay=0, total_obligation=0)
 
     @property
     def unique_file_c(self):

@@ -51,7 +51,7 @@ def faba_for_award(award, toa, outlay):
         award=award,
         parent_award_id="basic award",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
-        submission=SubmissionAttributes.objects.all().first(),
+        submission=SubmissionAttributes.objects.filter(reporting_fiscal_year=2022, reporting_fiscal_period=8).first(),
         transaction_obligated_amount=toa,
         gross_outlay_amount_by_award_cpe=outlay,
     )

@@ -8,7 +8,6 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     AwardTypeMixin,
     FabaOutlayMixin,
-    when_non_zero_award_spending,
 )
 
 
@@ -41,10 +40,10 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
         }
 
         if self.award_type_codes:
-            return when_non_zero_award_spending(
+            return self.when_non_zero_award_spending(
                 FinancialAccountsByAwards.objects.filter(*filters).values(count_field)
             ).aggregate(**fields)
         else:
-            return when_non_zero_award_spending(
+            return self.when_non_zero_award_spending(
                 FinancialAccountsByAwards.objects.filter(*filters).annotate(unique_c=count_field)
             ).aggregate(**fields)
