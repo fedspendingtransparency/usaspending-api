@@ -19,7 +19,7 @@ def test_basic_object_class_spending_total_success(
             "code": "001",
             "description": "001 name",
             "award_count": None,
-            "obligation": 0.0,
+            "obligation": 9.0,
             "outlay": 0.0,
             "children": [
                 {
@@ -27,12 +27,15 @@ def test_basic_object_class_spending_total_success(
                     "code": "0001",
                     "description": "0001 name",
                     "award_count": None,
-                    "obligation": 0.0,
+                    "obligation": 9.0,
                     "outlay": 0.0,
                 }
             ],
         }
     ]
+
+    print(resp.json()["results"])
+
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
