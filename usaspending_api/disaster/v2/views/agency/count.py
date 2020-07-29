@@ -27,7 +27,7 @@ class AgencyCountViewSet(AwardTypeMixin, DisasterBase):
 
         if self.award_type_codes:
             count = when_non_zero_award_spending(
-                FinancialAccountsByAwards.objects.filter(*filters).values("award_id")
+                FinancialAccountsByAwards.objects.filter(*filters).values("award__funding_agency__toptier_agency")
             ).aggregate(count=Count("award__funding_agency__toptier_agency", distinct=True))["count"]
 
         else:

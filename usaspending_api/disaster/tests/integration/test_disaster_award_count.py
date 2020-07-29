@@ -45,6 +45,16 @@ def test_multiple_faba_per_award(client, monkeypatch, multiple_file_c_to_same_aw
 
 
 @pytest.mark.django_db
+def test_multiple_faba_per_award_that_cancel_out(
+    client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers
+):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
+    resp = _default_post(client, helpers)
+    assert resp.data["count"] == 0
+
+
+@pytest.mark.django_db
 def test_award_count_non_matching_defc(client, monkeypatch, non_matching_defc_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
