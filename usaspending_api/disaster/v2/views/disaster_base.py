@@ -5,12 +5,14 @@ from django.db.models import Max, Q, F, Value, Case, When, Sum, Count
 from django.db.models.functions import Coalesce, Concat
 from django.http import HttpRequest
 from django.utils.functional import cached_property
+from django_cte import With
 from functools import lru_cache
 from rest_framework.views import APIView
 from typing import List
 
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping, assistance_type_mapping
+from usaspending_api.common.containers import Bunch
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_month
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
@@ -229,6 +231,81 @@ class DisasterBase(APIView):
             return Q(piid__isnull=bool(self.filters["award_type"] == "assistance"))
         else:
             return ~Q(pk=None)  # always true; if types are not provided we don't check types
+
+    def construct_loan_queryset(self, faba_grouping_column, base_model, base_model_column):
+        grouping_key = F(faba_grouping_column) if isinstance(faba_grouping_column, str) else faba_grouping_column
+
+        base_values = With(
+            FinancialAccountsByAwards.objects.filter(
+                Q(award__type__in=loan_type_mapping), self.all_closed_defc_submissions, self.is_in_provided_def_codes,
+            )
+            .annotate(
+                grouping_key=grouping_key,
+                total_loan_value=F("award__total_loan_value"),
+                reporting_fiscal_year=F("submission__reporting_fiscal_year"),
+                reporting_fiscal_period=F("submission__reporting_fiscal_period"),
+                quarter_format_flag=F("submission__quarter_format_flag"),
+            )
+            .filter(grouping_key__isnull=False)
+            .values(
+                "grouping_key",
+                "financial_accounts_by_awards_id",
+                "award_id",
+                "transaction_obligated_amount",
+                "gross_outlay_amount_by_award_cpe",
+                "reporting_fiscal_year",
+                "reporting_fiscal_period",
+                "quarter_format_flag",
+                "total_loan_value",
+            ),
+            "base_values",
+        )
+
+        q = Q()
+        for sub in final_submissions_for_all_fy():
+            q |= (
+                Q(reporting_fiscal_year=sub.fiscal_year)
+                & Q(quarter_format_flag=sub.is_quarter)
+                & Q(reporting_fiscal_period=sub.fiscal_period)
+            )
+
+        aggregate_faba = With(
+            base_values.queryset()
+            .values("grouping_key")
+            .annotate(
+                obligation=Coalesce(Sum("transaction_obligated_amount"), 0),
+                outlay=Coalesce(Sum(Case(When(q, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0),)), 0,),
+            )
+            .values("grouping_key", "obligation", "outlay"),
+            "aggregate_faba",
+        )
+
+        distinct_awards = With(
+            base_values.queryset().values("grouping_key", "award_id", "total_loan_value").distinct(), "distinct_awards",
+        )
+
+        aggregate_awards = With(
+            distinct_awards.queryset()
+            .values("grouping_key")
+            .annotate(award_count=Count("award_id"), face_value_of_loan=Coalesce(Sum("total_loan_value"), 0))
+            .values("grouping_key", "award_count", "face_value_of_loan"),
+            "aggregate_awards",
+        )
+
+        return Bunch(
+            award_count_column=aggregate_awards.col.award_count,
+            obligation_column=aggregate_faba.col.obligation,
+            outlay_column=aggregate_faba.col.outlay,
+            face_value_of_loan_column=aggregate_awards.col.face_value_of_loan,
+            queryset=aggregate_awards.join(
+                aggregate_faba.join(base_model, **{base_model_column: aggregate_faba.col.grouping_key}),
+                **{base_model_column: aggregate_awards.col.grouping_key},
+            )
+            .with_cte(base_values)
+            .with_cte(aggregate_faba)
+            .with_cte(distinct_awards)
+            .with_cte(aggregate_awards),
+        )
 
 
 class AwardTypeMixin:
