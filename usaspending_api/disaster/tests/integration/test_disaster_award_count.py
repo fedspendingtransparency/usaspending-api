@@ -8,6 +8,8 @@ url = "/api/v2/disaster/award/count/"
 @pytest.mark.django_db
 def test_award_count_basic(client, monkeypatch, basic_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
+
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 1
 
