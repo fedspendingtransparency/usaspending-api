@@ -969,48 +969,36 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
         group_name="covid_19",
     )
     mommy.make(
-        "accounts.FederalAccount",
-        id=99,
+        "accounts.FederalAccount", id=99,
     )
     mommy.make(
-        "accounts.TreasuryAppropriationAccount",
-        federal_account_id=99,
-        treasury_account_identifier=99,
+        "accounts.TreasuryAppropriationAccount", federal_account_id=99, treasury_account_identifier=99,
     )
     mommy.make(
-        "awards.FinancialAccountsByAwards",
-        pk=1,
-        award_id=99,
-        disaster_emergency_fund=defc1,
-        treasury_account_id=99
+        "awards.FinancialAccountsByAwards", pk=1, award_id=99, disaster_emergency_fund=defc1, treasury_account_id=99
     )
     mommy.make("awards.Award", id=99, total_obligation=20, piid="0001")
     mommy.make(
         "awards.TransactionNormalized",
         id=99,
-        action_date='2020-04-02',
+        action_date="2020-04-02",
         federal_action_obligation=10,
         award_id=99,
         is_fpds=True,
         type="A",
     )
-    mommy.make(
-        "awards.TransactionFPDS",
-        transaction_id=99,
-        piid="0001"
-    )
+    mommy.make("awards.TransactionFPDS", transaction_id=99, piid="0001")
     mommy.make(
         "awards.TransactionNormalized",
         id=100,
-        action_date='2020-01-01',
+        action_date="2020-01-01",
         federal_action_obligation=10,
         award_id=99,
         is_fpds=True,
         type="A",
     )
     mommy.make(
-        "awards.TransactionFPDS",
-        transaction_id=100,
+        "awards.TransactionFPDS", transaction_id=100,
     )
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     resp = client.post(
@@ -1020,6 +1008,4 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
     )
     assert resp.status_code == status.HTTP_200_OK
     print(resp.json().get("results"))
-    assert (
-        {"aggregated_amount":10, "time_period":{"fiscal_year":"2020"}} in resp.json().get("results")
-    )
+    assert {"aggregated_amount": 10, "time_period": {"fiscal_year": "2020"}} in resp.json().get("results")
