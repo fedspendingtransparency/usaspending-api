@@ -224,6 +224,14 @@ class DisasterBase(APIView):
         else:
             return ~Q(pk=None)  # always true; if types are not provided we don't check types
 
+    @property
+    def has_award_of_classification(self):
+        if self.filters.get("award_type"):
+            # Simple check: if "procurement" then piid cannot be null, otherwise piid must be null
+            return Q(piid__isnull=bool(self.filters["award_type"] == "assistance"))
+        else:
+            return ~Q(pk=None)  # always true; if types are not provided we don't check types
+
     def construct_loan_queryset(self, faba_grouping_column, base_model, base_model_column):
         grouping_key = F(faba_grouping_column) if isinstance(faba_grouping_column, str) else faba_grouping_column
 
