@@ -41,6 +41,7 @@ class ObjectClassLoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin,
             Q(object_class__isnull=False),
             self.all_closed_defc_submissions,
             self.is_in_provided_def_codes,
+            self.is_loan_award,
         ]
 
         annotations = {
