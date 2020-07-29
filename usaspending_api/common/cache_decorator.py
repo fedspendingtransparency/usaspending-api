@@ -1,10 +1,29 @@
 # -*- coding: utf-8 -*-
 import logging
-from rest_framework_extensions.cache.decorators import CacheResponse
 
+from collections.abc import Iterable
+from django.conf import settings
+from django.db.models import QuerySet
+from rest_framework_extensions.cache.decorators import CacheResponse
+from typing import Any
 from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
 
 logger = logging.getLogger("console")
+
+
+def contains_queryset(data: Any) -> bool:
+    """Traverse a complex object and return True if a Queryset exists anywhere"""
+    type_checks = (
+        (dict, lambda x: any([contains_queryset(datum) for datum in x.values()])),
+        (str, lambda x: False),  # short-circuit since str is an iterable. Leave before Iterable
+        (Iterable, lambda x: any([contains_queryset(datum) for datum in x])),
+        (QuerySet, lambda x: True),
+    )
+    for type_check in type_checks:
+        if isinstance(data, type_check[0]):
+            return type_check[1](data)
+    else:
+        return False
 
 
 class CustomCacheResponse(CacheResponse):
@@ -28,8 +47,22 @@ class CustomCacheResponse(CacheResponse):
         if not response:
             response = view_method(view_instance, request, *args, **kwargs)
             response = view_instance.finalize_response(request, response, *args, **kwargs)
+
+            # While returning a Queryset is functional most of the time, it isn't
+            # fully supported by Django Rest Framework. This check was inserted
+            # in local mode to catch if a Queryset is being returned by the view
+            # which could cause an exception when setting the cache
+            if settings.IS_LOCAL and response and not response.is_rendered:
+                if contains_queryset(response.data):
+                    raise RuntimeError(
+                        "Your view is returning a QuerySet. QuerySets are not"
+                        " really designed to be pickled and can cause caching"
+                        " issues. Please materialize the QuerySet using a List"
+                        " or some other more primitive data structure."
+                    )
+
             response["Cache-Trace"] = "no-cache"
-            response.render()  # should be rendered, before picklining while storing to cache
+            response.render()  # should be rendered, before pickling while storing to cache
 
             if not response.status_code >= 400 or self.cache_errors:
                 if self.cache_errors:

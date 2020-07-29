@@ -1,7 +1,6 @@
 from django.db.models import Q
 
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
-from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.awards.models import FinancialAccountsByAwards
 
 
 class DefCodes:
@@ -9,9 +8,8 @@ class DefCodes:
 
     @classmethod
     def build_def_codes_filter(cls, queryset, filter_values):
-        query = {"def_codes": filter_values}
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(query)
-        search = AwardSearch().filter(filter_query)
-        response = search.handle_execute()
-        award_ids = [res.to_dict()["award_id"] for res in response]
-        return Q(award_id__in=list(award_ids))
+        subquery = FinancialAccountsByAwards.objects.filter(disaster_emergency_fund__in=filter_values).values(
+            "award__id"
+        )
+        q = Q(award_id__in=subquery)
+        return q

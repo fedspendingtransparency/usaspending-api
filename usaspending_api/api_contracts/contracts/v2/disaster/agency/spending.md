@@ -72,7 +72,7 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)  
++ `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
     Only to be used when `"spending_type": "award"`.
 
     If ANY award type codes are provided, obligation and outlay spending amounts will be summed for the distinct set of toptier
@@ -105,7 +105,7 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
         + `id`
         + `code`
         + `description`
-        + `count`
+        + `award_count`
         + `total_budgetary_resources`
         + `obligation`
         + `outlay`

@@ -1,9 +1,11 @@
 import json
+
 from datetime import datetime, timezone, date
 from django.db.models import Max, Q, F, Value, Case, When, Sum, Count
 from django.db.models.functions import Coalesce, Concat
 from django.http import HttpRequest
 from django.utils.functional import cached_property
+from functools import lru_cache
 from rest_framework.views import APIView
 from typing import List
 
@@ -18,6 +20,9 @@ from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 COVID_19_GROUP_NAME = "covid_19"
+
+REPORTING_PERIOD_MIN_DATE = date(2020, 4, 1)
+REPORTING_PERIOD_MIN_YEAR, REPORTING_PERIOD_MIN_MONTH = generate_fiscal_year_and_month(REPORTING_PERIOD_MIN_DATE)
 
 
 def latest_gtas_of_each_year_queryset():
@@ -49,6 +54,30 @@ def filter_by_latest_closed_periods() -> Q:
     return q
 
 
+def filter_by_defc_closed_periods() -> Q:
+    """
+        These filters should only be used when looking at submission data
+        that includes DEF Codes, which only started appearing in submission
+        for FY2020 P07 (Apr 1, 2020) and after
+    """
+    q = Q()
+    for sub in final_submissions_for_all_fy():
+        if (
+            sub.fiscal_year == REPORTING_PERIOD_MIN_YEAR and sub.fiscal_period >= REPORTING_PERIOD_MIN_MONTH
+        ) or sub.fiscal_year > REPORTING_PERIOD_MIN_YEAR:
+            q |= (
+                Q(submission__reporting_fiscal_year=sub.fiscal_year)
+                & Q(submission__quarter_format_flag=sub.is_quarter)
+                & Q(submission__reporting_fiscal_period__lte=sub.fiscal_period)
+            )
+    if not q:
+        # Edgecase not expected in production. If there are no DABS between
+        # FY2020 P07 (Apr 1, 2020) and now() then ensure nothing is returned
+        q = Q(pk__isnull=True)
+    return q & Q(submission__reporting_period_start__gte=str(REPORTING_PERIOD_MIN_DATE))
+
+
+@lru_cache(maxsize=1)
 def final_submissions_for_all_fy() -> List[tuple]:
     """
         Returns a list the latest monthly and quarterly submission for each
@@ -64,8 +93,6 @@ def final_submissions_for_all_fy() -> List[tuple]:
 
 class DisasterBase(APIView):
     required_filters = ["def_codes"]
-    reporting_period_min_date = date(2020, 4, 1)
-    reporting_period_min_year, reporting_period_min_month = generate_fiscal_year_and_month(reporting_period_min_date)
 
     @classmethod
     def requests_award_type_codes(cls, request: HttpRequest) -> bool:
@@ -160,23 +187,7 @@ class DisasterBase(APIView):
 
     @cached_property
     def all_closed_defc_submissions(self):
-        """
-            These filters should only be used when looking at submission data
-            that includes DEF Codes, which only started appearing in submission
-            for FY2020 P07 (Apr 1, 2020) and after
-        """
-        q = Q()
-        for sub in final_submissions_for_all_fy():
-            if (
-                sub.fiscal_year == self.reporting_period_min_year
-                and sub.fiscal_period >= self.reporting_period_min_month
-            ) or sub.fiscal_year > self.reporting_period_min_year:
-                q |= (
-                    Q(submission__reporting_fiscal_year=sub.fiscal_year)
-                    & Q(submission__quarter_format_flag=sub.is_quarter)
-                    & Q(submission__reporting_fiscal_period__lte=sub.fiscal_period)
-                )
-        return q & Q(submission__reporting_period_start__gte=str(self.reporting_period_min_date))
+        return filter_by_defc_closed_periods()
 
     @property
     def is_in_provided_def_codes(self):
@@ -289,20 +300,29 @@ class _BasePaginationMixin:
             limit=request_data["limit"],
             lower_limit=(request_data["page"] - 1) * request_data["limit"],
             upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", "obligated_amount"),
+            sort_key=request_data.get("sort", "obligation"),
             sort_order=request_data["order"],
+            secondary_sort_key="id",
         )
 
 
 class PaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "count", "obligation", "outlay", "total_budgetary_resources"]
+        sortable_columns = [
+            "id",
+            "code",
+            "description",
+            "award_count",
+            "obligation",
+            "outlay",
+            "total_budgetary_resources",
+        ]
         return self.run_models(sortable_columns)
 
 
 class LoansPaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "count", "obligation", "outlay", "face_value_of_loan"]
+        sortable_columns = ["id", "code", "description", "award_count", "obligation", "outlay", "face_value_of_loan"]
         return self.run_models(sortable_columns)

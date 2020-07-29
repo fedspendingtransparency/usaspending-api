@@ -56,6 +56,13 @@ def cfda_awards_and_transactions(db):
         quarter_format_flag=False,
         reporting_period_start="2022-04-01",
     )
+    sub4 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=9999,
+        reporting_fiscal_period=7,
+        quarter_format_flag=False,
+        reporting_period_start="9999-04-01",
+    )
 
     # Financial Accounts by Awards
     mommy.make(
@@ -103,11 +110,31 @@ def cfda_awards_and_transactions(db):
         gross_outlay_amount_by_award_cpe=10000,
         transaction_obligated_amount=20000,
     )
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        pk=6,
+        award=award1,
+        submission=sub4,
+        disaster_emergency_fund=defc1,
+        gross_outlay_amount_by_award_cpe=100,
+        transaction_obligated_amount=200,
+    )
 
     # DABS Submission Window Schedule
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
-        id="2022081",
+        id="2022070",
+        is_quarter=False,
+        period_start_date="2022-04-01",
+        period_end_date="2022-04-30",
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="2020-4-15",
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        id="2022080",
         is_quarter=False,
         period_start_date="2022-05-01",
         period_end_date="2022-05-30",
@@ -118,7 +145,7 @@ def cfda_awards_and_transactions(db):
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
-        id="2022080",
+        id="2022081",
         is_quarter=True,
         period_start_date="2022-05-01",
         period_end_date="2022-05-30",
@@ -127,11 +154,23 @@ def cfda_awards_and_transactions(db):
         submission_fiscal_month=8,
         submission_reveal_date="2020-5-15",
     )
+    # Unclosed submisssion window
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        id="9999070",
+        is_quarter=True,
+        period_start_date="9999-04-01",
+        period_end_date="9999-04-30",
+        submission_fiscal_year=9999,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="9999-4-15",
+    )
 
     # Transaction Normalized
     mommy.make(
         "awards.TransactionNormalized",
-        id=10,
+        id=1,
         award=award1,
         federal_action_obligation=5,
         action_date="2020-01-01",
@@ -139,10 +178,18 @@ def cfda_awards_and_transactions(db):
     )
     mommy.make(
         "awards.TransactionNormalized",
+        id=10,
+        award=award1,
+        federal_action_obligation=5,
+        action_date="2020-04-01",
+        is_fpds=False,
+    )
+    mommy.make(
+        "awards.TransactionNormalized",
         id=20,
         award=award2,
         federal_action_obligation=50,
-        action_date="2020-01-02",
+        action_date="2020-04-02",
         is_fpds=False,
     )
     mommy.make(
@@ -150,7 +197,7 @@ def cfda_awards_and_transactions(db):
         id=30,
         award=award3,
         federal_action_obligation=500,
-        action_date="2020-01-03",
+        action_date="2020-04-03",
         is_fpds=False,
     )
     mommy.make(
@@ -158,7 +205,7 @@ def cfda_awards_and_transactions(db):
         id=40,
         award=award4,
         federal_action_obligation=5000,
-        action_date="2020-01-04",
+        action_date="2020-04-04",
         is_fpds=False,
     )
     mommy.make(
@@ -166,7 +213,7 @@ def cfda_awards_and_transactions(db):
         id=50,
         award=award5,
         federal_action_obligation=50000,
-        action_date="2020-01-05",
+        action_date="2020-04-05",
         is_fpds=True,
     )
 
