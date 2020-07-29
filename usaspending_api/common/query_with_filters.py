@@ -393,11 +393,7 @@ class _DisasterEmergencyFundCodes(_Filter):
         for v in filter_values:
             def_codes_query.append(ES_Q("match", disaster_emergency_fund_codes=v))
         if query_type == _QueryType.AWARDS:
-            return ES_Q(
-                "bool",
-                should=def_codes_query,
-                minimum_should_match=1,
-            )
+            return ES_Q("bool", should=def_codes_query, minimum_should_match=1,)
         return ES_Q(
             "bool",
             should=def_codes_query,
