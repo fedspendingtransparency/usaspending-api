@@ -612,6 +612,7 @@ def disaster_recipient_annotations():
                 filter=Q(
                     filter_by_latest_closed_periods("award__financial_set__"),
                     award__financial_set__disaster_emergency_fund__group_name="covid_19",
+                    award__financial_set__submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
                 ),
                 output_field=DecimalField(),
             ),
