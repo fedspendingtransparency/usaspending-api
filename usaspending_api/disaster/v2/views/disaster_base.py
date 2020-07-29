@@ -222,6 +222,14 @@ class DisasterBase(APIView):
         else:
             return ~Q(pk=None)  # always true; if types are not provided we don't check types
 
+    @property
+    def has_award_of_classification(self):
+        if self.filters.get("award_type"):
+            # Simple check: if "procurement" then piid cannot be null, otherwise piid must be null
+            return Q(piid__isnull=bool(self.filters["award_type"] == "assistance"))
+        else:
+            return ~Q(pk=None)  # always true; if types are not provided we don't check types
+
 
 class AwardTypeMixin:
     required_filters = ["def_codes", "award_type_codes"]
