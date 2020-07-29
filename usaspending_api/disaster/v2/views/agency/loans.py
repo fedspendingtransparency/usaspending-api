@@ -58,16 +58,15 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
 
     @cache_response()
     def post(self, request):
-        results = self.queryset
 
+        # This is an expensive query and can only ever return a little over a hundred rows so it's
+        # actually faster to materialize the entire result set and carve off what we need than to
+        # run it twice (once for the page of results we want and a second time for the overall count).
+        results = list(self.queryset.order_by(*self.pagination.robust_order_by_fields))
         return Response(
             {
-                "results": list(
-                    results.order_by(*self.pagination.robust_order_by_fields)[
-                        self.pagination.lower_limit : self.pagination.upper_limit
-                    ]
-                ),
-                "page_metadata": get_pagination_metadata(results.count(), self.pagination.limit, self.pagination.page),
+                "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
+                "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
         )
 
