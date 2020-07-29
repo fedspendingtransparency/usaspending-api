@@ -226,7 +226,7 @@ def validate_disaster_recipient_request(request_data):
             "name": "query",
             "type": "text",
             "text_type": "search",
-            "allow_nulls": True,
+            "allow_nulls": False,
             "optional": True,
         },
         {
@@ -235,7 +235,7 @@ def validate_disaster_recipient_request(request_data):
             "type": "array",
             "array_type": "enum",
             "enum_values": sorted(award_type_mapping.keys()),
-            "allow_nulls": True,
+            "allow_nulls": False,
             "optional": True,
         },
     ]

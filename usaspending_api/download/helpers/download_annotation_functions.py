@@ -598,7 +598,10 @@ def disaster_recipient_annotations():
         "award_obligations": Coalesce(
             Sum(
                 "award__financial_set__transaction_obligated_amount",
-                filter=Q(award__financial_set__disaster_emergency_fund__group_name="covid_19"),
+                filter=Q(
+                    award__financial_set__disaster_emergency_fund__group_name="covid_19",
+                    award__financial_set__submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
+                ),
                 output_field=DecimalField(),
             ),
             0,
