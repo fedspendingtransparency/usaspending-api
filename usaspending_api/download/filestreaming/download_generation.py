@@ -191,6 +191,20 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
             )
             download_sources.append(account_source)
 
+        elif VALUE_MAPPINGS[download_type]["source_type"] == "disaster":
+            # Disaster Page downloads
+            disaster_source = DownloadSource(
+                VALUE_MAPPINGS[download_type]["source_type"],
+                VALUE_MAPPINGS[download_type]["table_name"],
+                download_type,
+                agency_id,
+            )
+            disaster_source.award_category = json_request["award_category"]
+            disaster_source.queryset = filter_function(
+                json_request["filters"], VALUE_MAPPINGS[download_type]["base_fields"]
+            )
+            download_sources.append(disaster_source)
+
     verify_requested_columns_available(tuple(download_sources), json_request.get("columns", []))
 
     return download_sources
@@ -205,6 +219,7 @@ def build_data_file_name(source, download_job, piid, assistance_id):
         return strip_file_extension(download_job.file_name)
 
     file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
+    timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
 
     if source.is_for_idv or source.is_for_contract:
         data_file_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
@@ -212,6 +227,8 @@ def build_data_file_name(source, download_job, piid, assistance_id):
         data_file_name = file_name_pattern.format(
             assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)
         )
+    elif source.source_type == "disaster_recipient":
+        data_file_name = file_name_pattern.format(award_category=source.award_category, timestamp=timestamp)
     else:
         if source.agency_code == "all":
             agency = "All"
@@ -224,7 +241,6 @@ def build_data_file_name(source, download_job, piid, assistance_id):
             agency = ""
         elif source.file_type not in ("treasury_account", "federal_account"):
             agency = f"{agency}_"
-        timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
 
         data_file_name = file_name_pattern.format(
             agency=agency,

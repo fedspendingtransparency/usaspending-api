@@ -44,14 +44,14 @@ def latest_faba_of_each_year_queryset() -> FinancialAccountsByAwards:
     return FinancialAccountsByAwards.objects.filter(q)
 
 
-def filter_by_latest_closed_periods() -> Q:
+def filter_by_latest_closed_periods(submission_query_path: str = "") -> Q:
     """Return Django Q for all latest closed submissions (quarterly and monthly)"""
     q = Q()
     for sub in final_submissions_for_all_fy():
         q |= (
-            Q(submission__reporting_fiscal_year=sub.fiscal_year)
-            & Q(submission__quarter_format_flag=sub.is_quarter)
-            & Q(submission__reporting_fiscal_period=sub.fiscal_period)
+            Q(**{f"{submission_query_path}submission__reporting_fiscal_year": sub.fiscal_year})
+            & Q(**{f"{submission_query_path}submission__quarter_format_flag": sub.is_quarter})
+            & Q(**{f"{submission_query_path}submission__reporting_fiscal_period": sub.fiscal_period})
         )
     return q
 
