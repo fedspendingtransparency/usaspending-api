@@ -615,7 +615,7 @@ def disaster_recipient_annotations():
             0,
         ),
         "face_value_of_loans": Coalesce(Sum("total_loan_value"), 0),
-        "number_of_awards": Count("award_id"),
+        "number_of_awards": Count("award_id", distinct=True),
     }
 
     return annotation_fields
