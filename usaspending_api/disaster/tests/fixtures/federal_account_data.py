@@ -155,6 +155,24 @@ def generic_account_data():
         treasury_account=tre_acct3,
     )
     mommy.make(
+        "awards.FinancialAccountsByAwards",
+        submission=sub1,
+        piid="0iwnff",
+        transaction_obligated_amount=5,
+        gross_outlay_amount_by_award_cpe=555,
+        disaster_emergency_fund__code="L",
+        treasury_account=tre_acct3,
+    )
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        submission=sub1,
+        fain="howeusd",
+        transaction_obligated_amount=8,
+        gross_outlay_amount_by_award_cpe=888,
+        disaster_emergency_fund__code="N",
+        treasury_account=tre_acct2,
+    )
+    mommy.make(
         "references.GTASSF133Balances",
         budget_authority_appropriation_amount_cpe=4358,
         fiscal_year=2022,
