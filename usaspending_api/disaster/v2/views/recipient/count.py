@@ -1,5 +1,5 @@
-from django.db.models import Count, Case, When, F, TextField
-from django.db.models.functions import Cast
+from django.db.models import Count, Case, When, F, TextField, OuterRef, Subquery, Sum, DecimalField, Q
+from django.db.models.functions import Cast, Coalesce
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -32,6 +32,19 @@ class RecipientCountViewSet(DisasterBase, FabaOutlayMixin, AwardTypeMixin):
             self.all_closed_defc_submissions,
         ]
 
+        related_faba = (
+            FinancialAccountsByAwards.objects.filter(*filters)
+            .filter(award_id=OuterRef("award_id"))
+            .order_by()
+            .values("award_id")
+        )
+        total_toa = related_faba.annotate(
+            total_toa=Coalesce(Sum("transaction_obligated_amount", output_field=DecimalField()), 0.0)
+        ).values("total_toa")
+        total_outlay = related_faba.annotate(
+            total_outlay=Coalesce(Sum("gross_outlay_amount_by_award_cpe", output_field=DecimalField()), 0.0)
+        ).values("total_outlay")
+
         recipients = (
             AwardSearchView.objects.annotate(
                 recipient=Case(
@@ -41,11 +54,14 @@ class RecipientCountViewSet(DisasterBase, FabaOutlayMixin, AwardTypeMixin):
                 )
             )
             .filter(self.has_award_of_provided_type)
+            .values("recipient")
+            .annotate(total_toa=Subquery(total_toa, output_field=DecimalField()))
+            .annotate(total_outlay=Subquery(total_outlay, output_field=DecimalField()))
+            .filter(~Q(total_toa=0.0) | ~Q(total_outlay=0.0))
             .extra(
                 where=[
                     f"Exists({generate_raw_quoted_query(FinancialAccountsByAwards.objects.filter(*filters))}"
-                    f" AND financial_accounts_by_awards.award_id = {AwardSearchView._meta.db_table}.award_id)",
-                    f"Exists (SELECT sum(transaction_obligated_amount), sum(gross_outlay_amount_by_award_cpe) FROM financial_accounts_by_awards faba WHERE faba.award_id = {AwardSearchView._meta.db_table}.award_id GROUP BY faba.award_id having sum(transaction_obligated_amount) != 0 or sum(gross_outlay_amount_by_award_cpe) != 0)",
+                    f" AND financial_accounts_by_awards.award_id = {AwardSearchView._meta.db_table}.award_id)"
                 ]
             )
             .aggregate(count=Count("recipient", distinct=True))
