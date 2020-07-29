@@ -992,7 +992,7 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
         "awards.TransactionNormalized",
         id=100,
         action_date="2020-01-01",
-        federal_action_obligation=10,
+        federal_action_obligation=22,
         award_id=99,
         is_fpds=True,
         type="A",
