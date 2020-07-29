@@ -5,7 +5,7 @@ from usaspending_api.common.helpers.orm_helpers import FiscalYear
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.disaster.v2.views.disaster_base import filter_by_latest_closed_periods
 from usaspending_api.settings import HOST
-from django.db.models.functions import Concat, Cast
+from django.db.models.functions import Concat, Cast, Coalesce
 from django.db.models import (
     Func,
     F,
@@ -595,20 +595,26 @@ def subaward_annotations():
 
 def disaster_recipient_annotations():
     annotation_fields = {
-        "award_obligations": Sum(
-            "award__financial_set__transaction_obligated_amount",
-            filter=Q(award__financial_set__disaster_emergency_fund__group_name="covid_19"),
-            output_field=DecimalField(),
-        ),
-        "award_outlays": Sum(
-            "award__financial_set__gross_outlay_amount_by_award_cpe",
-            filter=Q(
-                filter_by_latest_closed_periods("award__financial_set__"),
-                award__financial_set__disaster_emergency_fund__group_name="covid_19",
+        "award_obligations": Coalesce(
+            Sum(
+                "award__financial_set__transaction_obligated_amount",
+                filter=Q(award__financial_set__disaster_emergency_fund__group_name="covid_19"),
+                output_field=DecimalField(),
             ),
-            output_field=DecimalField(),
+            0,
         ),
-        "face_value_of_loans": Sum("total_loan_value"),
+        "award_outlays": Coalesce(
+            Sum(
+                "award__financial_set__gross_outlay_amount_by_award_cpe",
+                filter=Q(
+                    filter_by_latest_closed_periods("award__financial_set__"),
+                    award__financial_set__disaster_emergency_fund__group_name="covid_19",
+                ),
+                output_field=DecimalField(),
+            ),
+            0,
+        ),
+        "face_value_of_loans": Coalesce(Sum("total_loan_value"), 0),
         "number_of_awards": Count("award_id"),
     }
 
