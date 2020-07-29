@@ -50,6 +50,7 @@ SELECT
     "transaction_fpds"."legal_entity_address_line1" AS "recipient_address_line_1",
     "transaction_fpds"."legal_entity_address_line2" AS "recipient_address_line_2",
     "transaction_fpds"."legal_entity_city_name" AS "recipient_city_name",
+    "transaction_fpds"."legal_entity_county_name" AS "recipient_county_name",
     "transaction_fpds"."legal_entity_state_code" AS "recipient_state_code",
     "transaction_fpds"."legal_entity_state_descrip" AS "recipient_state_name",
     "transaction_fpds"."legal_entity_zip4" AS "recipient_zip_4_code",
