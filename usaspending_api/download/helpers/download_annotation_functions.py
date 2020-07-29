@@ -1,29 +1,48 @@
 import datetime
+
 from django.contrib.postgres.aggregates import StringAgg
+from django.db.models.functions import Cast, Concat, Coalesce
+from django.db.models import (
+    Case,
+    DateField,
+    DecimalField,
+    ExpressionWrapper,
+    F,
+    Func,
+    OuterRef,
+    Q,
+    Subquery,
+    Sum,
+    TextField,
+    Value,
+    When,
+    Count,
+)
 
 from usaspending_api.common.helpers.orm_helpers import FiscalYear
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
-from usaspending_api.disaster.v2.views.disaster_base import filter_by_latest_closed_periods
-from usaspending_api.settings import HOST
-from django.db.models.functions import Concat, Cast, Coalesce
-from django.db.models import (
-    Func,
-    F,
-    Value,
-    Subquery,
-    OuterRef,
-    TextField,
-    DateField,
-    ExpressionWrapper,
-    Sum,
-    DecimalField,
-    Case,
-    When,
-    Count,
-    Q,
+from usaspending_api.disaster.v2.views.disaster_base import (
+    filter_by_latest_closed_periods,
+    final_submissions_for_all_fy,
 )
+from usaspending_api.settings import HOST
+
 
 AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
+
+
+def filter_limit_to_closed_periods() -> Q:
+    """Return Django Q for all closed submissions (quarterly and monthly)"""
+    q = Q()
+    for sub in final_submissions_for_all_fy():
+        q |= (
+            Q(submission__reporting_fiscal_year=sub.fiscal_year)
+            & Q(submission__quarter_format_flag=sub.is_quarter)
+            & Q(submission__reporting_fiscal_period__lte=sub.fiscal_period)
+        )
+    if not q:
+        q = Q(pk__isnull=True)
+    return q
 
 
 def universal_transaction_matview_annotations():
@@ -52,7 +71,9 @@ def universal_transaction_matview_annotations():
             When(
                 transaction__action_date__gte=datetime.date(2020, 4, 1),
                 then=Subquery(
-                    FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+                    FinancialAccountsByAwards.objects.filter(
+                        filter_limit_to_closed_periods(), award_id=OuterRef("award_id")
+                    )
                     .annotate(
                         value=ExpressionWrapper(
                             Case(
@@ -99,6 +120,7 @@ def universal_transaction_matview_annotations():
                 transaction__action_date__gte=datetime.date(2020, 4, 1),
                 then=Subquery(
                     FinancialAccountsByAwards.objects.filter(
+                        filter_limit_to_closed_periods(),
                         award_id=OuterRef("award_id"),
                         disaster_emergency_fund__group_name="covid_19",
                         submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
@@ -111,7 +133,7 @@ def universal_transaction_matview_annotations():
             ),
         ),
         "object_classes_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
@@ -124,7 +146,7 @@ def universal_transaction_matview_annotations():
             output_field=TextField(),
         ),
         "program_activities_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     Concat(
@@ -167,7 +189,7 @@ def universal_award_matview_annotations():
             Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "disaster_emergency_fund_codes": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     Case(
@@ -204,6 +226,7 @@ def universal_award_matview_annotations():
         ),
         "obligated_amount_funded_by_COVID-19_supplementals": Subquery(
             FinancialAccountsByAwards.objects.filter(
+                filter_limit_to_closed_periods(),
                 award_id=OuterRef("award_id"),
                 disaster_emergency_fund__group_name="covid_19",
                 submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
@@ -214,7 +237,7 @@ def universal_award_matview_annotations():
             output_field=DecimalField(),
         ),
         "object_classes_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
@@ -227,7 +250,7 @@ def universal_award_matview_annotations():
             output_field=TextField(),
         ),
         "program_activities_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     Concat(
@@ -271,7 +294,7 @@ def idv_order_annotations():
             Value(AWARD_URL), Func(F("generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "disaster_emergency_fund_codes": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("id"))
             .annotate(
                 value=ExpressionWrapper(
                     Case(
@@ -308,6 +331,7 @@ def idv_order_annotations():
         ),
         "obligated_amount_funded_by_COVID-19_supplementals": Subquery(
             FinancialAccountsByAwards.objects.filter(
+                filter_limit_to_closed_periods(),
                 award_id=OuterRef("id"),
                 disaster_emergency_fund__group_name="covid_19",
                 submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
@@ -319,7 +343,7 @@ def idv_order_annotations():
         ),
         "award_latest_action_date_fiscal_year": FiscalYear(F("latest_transaction__action_date")),
         "object_classes_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("id"))
             .annotate(
                 value=ExpressionWrapper(
                     Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
@@ -332,7 +356,7 @@ def idv_order_annotations():
             output_field=TextField(),
         ),
         "program_activities_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("id"))
             .annotate(
                 value=ExpressionWrapper(
                     Concat(
@@ -378,7 +402,9 @@ def idv_transaction_annotations():
             When(
                 action_date__gte="2020-04-01",
                 then=Subquery(
-                    FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+                    FinancialAccountsByAwards.objects.filter(
+                        filter_limit_to_closed_periods(), award_id=OuterRef("award_id")
+                    )
                     .annotate(
                         value=ExpressionWrapper(
                             Case(
@@ -425,6 +451,7 @@ def idv_transaction_annotations():
                 action_date__gte="2020-04-01",
                 then=Subquery(
                     FinancialAccountsByAwards.objects.filter(
+                        filter_limit_to_closed_periods(),
                         award_id=OuterRef("award_id"),
                         disaster_emergency_fund__group_name="covid_19",
                         submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
@@ -437,7 +464,7 @@ def idv_transaction_annotations():
             ),
         ),
         "object_classes_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
@@ -450,7 +477,7 @@ def idv_transaction_annotations():
             output_field=TextField(),
         ),
         "program_activities_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     Concat(
@@ -497,7 +524,7 @@ def subaward_annotations():
             Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "prime_award_object_classes_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
@@ -510,7 +537,7 @@ def subaward_annotations():
             output_field=TextField(),
         ),
         "prime_award_program_activities_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     Concat(
@@ -530,7 +557,9 @@ def subaward_annotations():
             When(
                 broker_subaward__action_date__gte=datetime.date(2020, 4, 1),
                 then=Subquery(
-                    FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+                    FinancialAccountsByAwards.objects.filter(
+                        filter_limit_to_closed_periods(), award_id=OuterRef("award_id")
+                    )
                     .annotate(
                         value=ExpressionWrapper(
                             Case(
@@ -577,6 +606,7 @@ def subaward_annotations():
                 broker_subaward__action_date__gte=datetime.date(2020, 4, 1),
                 then=Subquery(
                     FinancialAccountsByAwards.objects.filter(
+                        filter_limit_to_closed_periods(),
                         award_id=OuterRef("award_id"),
                         disaster_emergency_fund__group_name="covid_19",
                         submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
