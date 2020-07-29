@@ -1,11 +1,5 @@
+from usaspending_api.common.containers import Bunch
 from usaspending_api.references.models import ObjectClass
-
-
-class Bunch:
-    """Generic class to hold a group of attributes."""
-
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
 
 
 OBJECT_CLASSES = None
