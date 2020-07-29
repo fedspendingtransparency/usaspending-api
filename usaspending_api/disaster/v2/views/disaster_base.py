@@ -229,10 +229,7 @@ class DisasterBase(APIView):
 
         base_values = With(
             FinancialAccountsByAwards.objects.filter(
-                Q(treasury_account__isnull=False),
-                Q(award__type__in=loan_type_mapping),
-                self.all_closed_defc_submissions,
-                self.is_in_provided_def_codes,
+                Q(award__type__in=loan_type_mapping), self.all_closed_defc_submissions, self.is_in_provided_def_codes,
             )
             .annotate(
                 grouping_key=grouping_key,
@@ -241,6 +238,7 @@ class DisasterBase(APIView):
                 reporting_fiscal_period=F("submission__reporting_fiscal_period"),
                 quarter_format_flag=F("submission__quarter_format_flag"),
             )
+            .filter(grouping_key__isnull=False)
             .values(
                 "grouping_key",
                 "financial_accounts_by_awards_id",
