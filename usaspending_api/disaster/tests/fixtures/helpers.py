@@ -51,12 +51,14 @@ class Helpers:
         return resp
 
     @staticmethod
-    def post_for_amount_endpoint(client, url, def_codes, award_type_codes):
+    def post_for_amount_endpoint(client, url, def_codes, award_type_codes=None, award_type=None):
         filters = {}
         if def_codes:
             filters["def_codes"] = def_codes
         if award_type_codes:
             filters["award_type_codes"] = award_type_codes
+        if award_type:
+            filters["award_type"] = award_type
         resp = client.post(url, content_type="application/json", data=json.dumps({"filter": filters}))
         return resp
 

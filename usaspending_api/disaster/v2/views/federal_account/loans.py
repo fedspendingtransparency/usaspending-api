@@ -1,8 +1,6 @@
-from django.db.models import Q, Sum, F, Count
-from django.db.models.functions import Coalesce
+from django.db.models import F
 from rest_framework.response import Response
-
-from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
@@ -36,38 +34,22 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBa
 
     @property
     def queryset(self):
-        filters = [
-            Q(award_id__isnull=False),
-            Q(treasury_account__federal_account__isnull=False),
-            Q(treasury_account__isnull=False),
-            self.all_closed_defc_submissions,
-            self.is_in_provided_def_codes,
-            self.is_loan_award,
-        ]
+        query = self.construct_loan_queryset(
+            "treasury_account__treasury_account_identifier", TreasuryAppropriationAccount, "treasury_account_identifier"
+        )
 
         annotations = {
-            "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "award_count": Count("award_id", distinct=True),
-            "description": F("treasury_account__account_title"),
-            "code": F("treasury_account__tas_rendering_label"),
-            "id": F("treasury_account__treasury_account_identifier"),
-            "fa_description": F("treasury_account__federal_account__account_title"),
-            "fa_id": F("treasury_account__federal_account_id"),
-            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
-            "outlay": self.outlay_field_annotation,
+            "fa_code": F("federal_account__federal_account_code"),
+            "award_count": query.award_count_column,
+            "description": F("account_title"),
+            "code": F("tas_rendering_label"),
+            "id": F("treasury_account_identifier"),
+            "fa_description": F("federal_account__account_title"),
+            "fa_id": F("federal_account_id"),
+            "obligation": query.obligation_column,
+            "outlay": query.outlay_column,
             # hack to use the Dataclasses, will be renamed later
-            "total_budgetary_resources": Coalesce(Sum("award__total_loan_value"), 0),
+            "total_budgetary_resources": query.face_value_of_loan_column,
         }
 
-        # Assuming it is more performant to fetch all rows once rather than
-        #  run a count query and fetch only a page's worth of results
-        return (
-            FinancialAccountsByAwards.objects.filter(*filters)
-            .values(
-                "treasury_account__federal_account__id",
-                "treasury_account__federal_account__federal_account_code",
-                "treasury_account__federal_account__account_title",
-            )
-            .annotate(**annotations)
-            .values(*annotations.keys())
-        )
+        return query.queryset.annotate(**annotations).values(*annotations)

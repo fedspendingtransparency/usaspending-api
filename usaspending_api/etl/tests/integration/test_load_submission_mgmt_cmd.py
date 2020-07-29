@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.test import TestCase
 from model_mommy import mommy
 from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
 
 
@@ -16,6 +17,9 @@ class TestWithMultipleDatabases(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+
+        reset_object_class_cache()
+
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=-99999,

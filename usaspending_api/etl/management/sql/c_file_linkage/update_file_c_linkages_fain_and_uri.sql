@@ -30,6 +30,7 @@ WHERE
 				WHERE
 					UPPER(aw_sub.fain) = UPPER(faba_sub.fain)
 			) = 1
+            {submission_id_clause}
 	) RETURNING award_id
 )
 UPDATE
@@ -71,6 +72,7 @@ WHERE
 				WHERE
 					UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
 			) = 1
+            {submission_id_clause}
     ) RETURNING award_id
 )
 UPDATE
