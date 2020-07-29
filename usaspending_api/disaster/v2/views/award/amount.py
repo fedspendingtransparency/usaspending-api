@@ -4,11 +4,9 @@ from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.disaster.v2.views.disaster_base import (
-    DisasterBase,
-    AwardTypeMixin,
-    FabaOutlayMixin,
-)
+from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.common.validator import TinyShield
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, AwardTypeMixin, FabaOutlayMixin
 
 
 class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
@@ -18,12 +16,30 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
 
     @cache_response()
     def post(self, request):
+        additional_models = [
+            {
+                "key": "filter|award_type",
+                "name": "award_type",
+                "type": "enum",
+                "enum_values": ("assistance", "procurement"),
+                "allow_nulls": False,
+                "optional": True,
+            }
+        ]
+
+        f = TinyShield(additional_models).block(self.request.data).get("filter")
+        if f:
+            self.filters["award_type"] = f.get("award_type")
+
+        if all(x in self.filters for x in ["award_type_codes", "award_type"]):
+            raise UnprocessableEntityException("Cannot provide both 'award_type_codes' and 'award_type'")
         return Response(self.queryset)
 
     @property
     def queryset(self):
         filters = [
             self.all_closed_defc_submissions,
+            self.has_award_of_classification,
             self.has_award_of_provided_type,
             self.is_in_provided_def_codes,
         ]

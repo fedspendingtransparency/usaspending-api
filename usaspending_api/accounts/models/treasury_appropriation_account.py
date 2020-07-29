@@ -1,6 +1,8 @@
 from collections import defaultdict
 from decimal import Decimal
 from django.db import models
+from django_cte import CTEManager
+
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.models import DataSourceTrackedModel
 from usaspending_api.common.exceptions import UnprocessableEntityException
@@ -166,6 +168,8 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             "incoming": {},
         }
         return results
+
+    objects = CTEManager()
 
     class Meta:
         managed = True

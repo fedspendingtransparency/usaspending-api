@@ -438,8 +438,17 @@ def disaster_account_data():
         treasury_account=tas2,
         submission=sub2,
         disaster_emergency_fund=defc_o,
-        transaction_obligated_amount=2000,
-        gross_outlay_amount_by_award_cpe=20000,
+        transaction_obligated_amount=1000,
+        gross_outlay_amount_by_award_cpe=10000,
+        award=a1,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas2,
+        submission=sub2,
+        disaster_emergency_fund=defc_o,
+        transaction_obligated_amount=1000,
+        gross_outlay_amount_by_award_cpe=10000,
         award=a1,
     )
     mommy.make(
