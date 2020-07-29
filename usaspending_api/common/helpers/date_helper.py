@@ -1,9 +1,14 @@
 import operator
 
 from argparse import ArgumentTypeError
-from datetime import timezone, datetime
+from datetime import datetime, timezone
 from dateutil import parser
 from typing import Callable
+
+
+def now():
+    """ Now now() is a standardized function to obtain "now" when you need it now. """
+    return datetime.now(timezone.utc)
 
 
 def cast_datetime_to_naive(datetime):

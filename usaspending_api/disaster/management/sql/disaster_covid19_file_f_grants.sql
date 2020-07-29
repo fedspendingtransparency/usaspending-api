@@ -36,6 +36,7 @@ SELECT
     "broker_subaward"."legal_entity_country_name" AS "prime_awardee_country_name",
     "broker_subaward"."legal_entity_address_line1" AS "prime_awardee_address_line_1",
     "broker_subaward"."legal_entity_city_name" AS "prime_awardee_city_name",
+    "transaction_fabs"."legal_entity_county_name" AS "prime_awardee_county_name",
     "broker_subaward"."legal_entity_state_code" AS "prime_awardee_state_code",
     "broker_subaward"."legal_entity_state_name" AS "prime_awardee_state_name",
     "broker_subaward"."legal_entity_zip" AS "prime_awardee_zip_code",
