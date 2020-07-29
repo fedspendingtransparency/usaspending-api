@@ -44,7 +44,8 @@ class RecipientCountViewSet(DisasterBase, FabaOutlayMixin, AwardTypeMixin):
             .extra(
                 where=[
                     f"Exists({generate_raw_quoted_query(FinancialAccountsByAwards.objects.filter(*filters))}"
-                    f" AND financial_accounts_by_awards.award_id = {AwardSearchView._meta.db_table}.award_id)"
+                    f" AND financial_accounts_by_awards.award_id = {AwardSearchView._meta.db_table}.award_id)",
+                    f"Exists (SELECT sum(transaction_obligated_amount), sum(gross_outlay_amount_by_award_cpe) FROM financial_accounts_by_awards faba WHERE faba.award_id = {AwardSearchView._meta.db_table}.award_id GROUP BY faba.award_id having sum(transaction_obligated_amount) != 0 or sum(gross_outlay_amount_by_award_cpe) != 0)",
                 ]
             )
             .aggregate(count=Count("recipient", distinct=True))
