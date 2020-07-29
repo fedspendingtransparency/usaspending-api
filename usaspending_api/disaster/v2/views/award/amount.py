@@ -4,7 +4,12 @@ from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, AwardTypeMixin, FabaOutlayMixin
+from usaspending_api.disaster.v2.views.disaster_base import (
+    DisasterBase,
+    AwardTypeMixin,
+    FabaOutlayMixin,
+    when_non_zero_award_spending,
+)
 
 
 class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
@@ -22,12 +27,12 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             self.all_closed_defc_submissions,
             self.has_award_of_provided_type,
             self.is_in_provided_def_codes,
-            self.is_non_zero_award_spending,
         ]
 
-        count_field = self.unique_file_c
         if self.award_type_codes:
             count_field = "award_id"
+        else:
+            count_field = self.unique_file_c
 
         fields = {
             "award_count": Count(count_field, distinct=True),
@@ -35,4 +40,11 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             "outlay": self.outlay_field_annotation,
         }
 
-        return FinancialAccountsByAwards.objects.filter(*filters).aggregate(**fields)
+        if self.award_type_codes:
+            return when_non_zero_award_spending(
+                FinancialAccountsByAwards.objects.filter(*filters).values(count_field)
+            ).aggregate(**fields)
+        else:
+            return when_non_zero_award_spending(
+                FinancialAccountsByAwards.objects.filter(*filters).annotate(unique_c=count_field)
+            ).aggregate(**fields)

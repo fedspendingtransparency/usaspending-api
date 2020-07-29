@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.disaster.v2.views.disaster_base import AwardTypeMixin
+from usaspending_api.disaster.v2.views.disaster_base import AwardTypeMixin, when_non_zero_award_spending
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import ToptierAgency
@@ -26,12 +26,9 @@ class AgencyCountViewSet(AwardTypeMixin, DisasterBase):
         ]
 
         if self.award_type_codes:
-            filters.append(self.is_non_zero_award_spending)
-            count = (
-                FinancialAccountsByAwards.objects.filter(*filters)
-                .values("award_id")
-                .aggregate(count=Count("award__funding_agency__toptier_agency", distinct=True))["count"]
-            )
+            count = when_non_zero_award_spending(
+                FinancialAccountsByAwards.objects.filter(*filters).values("award_id")
+            ).aggregate(count=Count("award__funding_agency__toptier_agency", distinct=True))["count"]
 
         else:
             filters.extend(

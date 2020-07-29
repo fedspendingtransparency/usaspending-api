@@ -7,7 +7,10 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.disaster.v2.views.disaster_base import FabaOutlayMixin, AwardTypeMixin
+from usaspending_api.disaster.v2.views.disaster_base import (
+    FabaOutlayMixin,
+    AwardTypeMixin,
+)
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.models import AwardSearchView
 
@@ -27,7 +30,6 @@ class RecipientCountViewSet(DisasterBase, FabaOutlayMixin, AwardTypeMixin):
         filters = [
             self.is_in_provided_def_codes,
             self.all_closed_defc_submissions,
-            self.is_non_zero_award_spending,
         ]
 
         recipients = (
