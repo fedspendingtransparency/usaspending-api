@@ -31,14 +31,14 @@ from usaspending_api.settings import HOST
 AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
 
 
-def filter_limit_to_closed_periods() -> Q:
+def filter_limit_to_closed_periods(submission_query_path: str = "") -> Q:
     """Return Django Q for all closed submissions (quarterly and monthly)"""
     q = Q()
     for sub in final_submissions_for_all_fy():
         q |= (
-            Q(submission__reporting_fiscal_year=sub.fiscal_year)
-            & Q(submission__quarter_format_flag=sub.is_quarter)
-            & Q(submission__reporting_fiscal_period__lte=sub.fiscal_period)
+            Q(**{f"{submission_query_path}submission__reporting_fiscal_year": sub.fiscal_year})
+            & Q(**{f"{submission_query_path}submission__quarter_format_flag": sub.is_quarter})
+            & Q(**{f"{submission_query_path}submission__reporting_fiscal_period__lte": sub.fiscal_period})
         )
     if not q:
         q = Q(pk__isnull=True)
@@ -629,7 +629,7 @@ def disaster_recipient_annotations():
             Sum(
                 "award__financial_set__transaction_obligated_amount",
                 filter=Q(
-                    filter_by_latest_closed_periods("award__financial_set__"),
+                    filter_limit_to_closed_periods("award__financial_set__"),
                     award__financial_set__disaster_emergency_fund__group_name="covid_19",
                     award__financial_set__submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
                 ),
