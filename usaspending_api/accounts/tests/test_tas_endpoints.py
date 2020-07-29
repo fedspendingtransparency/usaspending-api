@@ -12,10 +12,18 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 @pytest.fixture
 def account_models():
     # Add submission data
-    subm_2015_1 = mommy.make("submissions.SubmissionAttributes", reporting_period_start=date(2014, 10, 1))
-    subm_2015_2 = mommy.make("submissions.SubmissionAttributes", reporting_period_start=date(2015, 8, 1))
-    subm_2016_1 = mommy.make("submissions.SubmissionAttributes", reporting_period_start=date(2016, 1, 1))
-    subm_2016_2 = mommy.make("submissions.SubmissionAttributes", reporting_period_start=date(2016, 6, 1))
+    subm_2015_1 = mommy.make(
+        "submissions.SubmissionAttributes", reporting_period_start=date(2014, 10, 1), reporting_fiscal_year=2015
+    )
+    subm_2015_2 = mommy.make(
+        "submissions.SubmissionAttributes", reporting_period_start=date(2015, 8, 1), reporting_fiscal_year=2015
+    )
+    subm_2016_1 = mommy.make(
+        "submissions.SubmissionAttributes", reporting_period_start=date(2016, 1, 1), reporting_fiscal_year=2016
+    )
+    subm_2016_2 = mommy.make(
+        "submissions.SubmissionAttributes", reporting_period_start=date(2016, 6, 1), reporting_fiscal_year=2016
+    )
 
     # add object classes
     obj_clas_1 = mommy.make("references.ObjectClass", object_class=1)

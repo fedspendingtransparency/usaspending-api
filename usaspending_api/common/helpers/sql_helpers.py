@@ -4,7 +4,6 @@ from collections import namedtuple, OrderedDict
 from django.conf import settings
 from django.db import connections, router, DEFAULT_DB_ALIAS
 from psycopg2.sql import Composable, Identifier, SQL
-
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
 
@@ -44,7 +43,7 @@ def read_sql_file(file_path):
         sql_file = fd.read()
 
     # all SQL commands (split on ';') and trimmed for whitespaces
-    return [command.strip() for command in sql_file.split(";") if command]
+    return [command.strip() for command in sql_file.split(";") if command.strip()]
 
 
 def _build_order_by_column(sort_column, sort_order=None, sort_null=None):
