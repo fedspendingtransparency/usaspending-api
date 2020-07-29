@@ -1175,7 +1175,6 @@ query_paths = {
                 ("recipient_address_line_2", "transaction__assistance_data__legal_entity_address_line2"),
                 ("recipient_city_code", "transaction__assistance_data__legal_entity_city_code"),
                 ("recipient_city_name", "transaction__assistance_data__legal_entity_city_name"),
-                ("recipient_county_name", "transaction__assistance_data__legal_entity_county_name"),
                 ("recipient_county_code", "transaction__assistance_data__legal_entity_county_code"),
                 ("recipient_county_name", "transaction__assistance_data__legal_entity_county_name"),
                 ("recipient_state_code", "transaction__assistance_data__legal_entity_state_code"),
