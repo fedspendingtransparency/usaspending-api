@@ -3,13 +3,10 @@ import logging
 
 from decimal import Decimal
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Q, Sum, F, Value, Case, When, IntegerField, Subquery, OuterRef, Count
-from django.db.models.functions import Coalesce
+from django.db.models import F, Value, IntegerField, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
-from django_cte import With
 from rest_framework.response import Response
 from typing import List
-from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -17,7 +14,6 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     LoansPaginationMixin,
     LoansMixin,
     FabaOutlayMixin,
-    final_submissions_for_all_fy,
 )
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
@@ -73,64 +69,8 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
     @property
     def queryset(self):
 
-        base_values = With(
-            FinancialAccountsByAwards.objects.filter(
-                Q(treasury_account__isnull=False),
-                self.all_closed_defc_submissions,
-                self.is_in_provided_def_codes,
-                self.is_loan_award,
-            )
-            .annotate(
-                funding_toptier_agency_id=F("treasury_account__funding_toptier_agency_id"),
-                total_loan_value=F("award__total_loan_value"),
-                reporting_fiscal_year=F("submission__reporting_fiscal_year"),
-                reporting_fiscal_period=F("submission__reporting_fiscal_period"),
-                quarter_format_flag=F("submission__quarter_format_flag"),
-            )
-            .values(
-                "funding_toptier_agency_id",
-                "financial_accounts_by_awards_id",
-                "award_id",
-                "transaction_obligated_amount",
-                "gross_outlay_amount_by_award_cpe",
-                "reporting_fiscal_year",
-                "reporting_fiscal_period",
-                "quarter_format_flag",
-                "total_loan_value",
-            ),
-            "base_values",
-        )
-
-        q = Q()
-        for sub in final_submissions_for_all_fy():
-            q |= (
-                Q(reporting_fiscal_year=sub.fiscal_year)
-                & Q(quarter_format_flag=sub.is_quarter)
-                & Q(reporting_fiscal_period=sub.fiscal_period)
-            )
-
-        aggregate_faba = With(
-            base_values.queryset()
-            .values("funding_toptier_agency_id")
-            .annotate(
-                obligation=Coalesce(Sum("transaction_obligated_amount"), 0),
-                outlay=Coalesce(Sum(Case(When(q, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0),)), 0,),
-            )
-            .values("funding_toptier_agency_id", "obligation", "outlay"),
-            "aggregate_faba",
-        )
-
-        distinct_awards = With(
-            base_values.queryset().values("funding_toptier_agency_id", "award_id", "total_loan_value").distinct(),
-            "distinct_awards",
-        )
-
-        aggregate_awards = With(
-            distinct_awards.queryset()
-            .values("funding_toptier_agency_id")
-            .annotate(award_count=Count("award_id"), face_value_of_loan=Coalesce(Sum("total_loan_value"), 0))
-            .values("funding_toptier_agency_id", "award_count", "face_value_of_loan"),
-            "aggregate_awards",
+        query = self.construct_loan_queryset(
+            "treasury_account__funding_toptier_agency_id", ToptierAgency, "toptier_agency_id"
         )
 
         annotations = {
@@ -143,24 +83,13 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
             "description": F("name"),
             # Currently, this flavor of the endpoint can never have children
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "award_count": aggregate_awards.col.award_count,
-            "obligation": aggregate_faba.col.obligation,
-            "outlay": aggregate_faba.col.outlay,
-            "face_value_of_loan": aggregate_awards.col.face_value_of_loan,
+            "award_count": query.award_count_column,
+            "obligation": query.obligation_column,
+            "outlay": query.outlay_column,
+            "face_value_of_loan": query.face_value_of_loan_column,
         }
 
-        return (
-            aggregate_awards.join(
-                aggregate_faba.join(ToptierAgency, toptier_agency_id=aggregate_faba.col.funding_toptier_agency_id),
-                toptier_agency_id=aggregate_awards.col.funding_toptier_agency_id,
-            )
-            .with_cte(base_values)
-            .with_cte(aggregate_faba)
-            .with_cte(distinct_awards)
-            .with_cte(aggregate_awards)
-            .annotate(**annotations)
-            .values(*annotations)
-        )
+        return query.queryset.annotate(**annotations).values(*annotations)
 
 
 class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterBase):

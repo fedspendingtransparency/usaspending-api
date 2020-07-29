@@ -7,15 +7,9 @@ from django.conf import settings
 from django.db import connections
 from django.db.models import Max
 from django.utils.functional import cached_property
+from usaspending_api.common.containers import Bunch
 from usaspending_api.references.models import ObjectClass, RefProgramActivity, DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
-
-
-class Bunch:
-    """Generic class to hold a group of attributes."""
-
-    def __init__(self, **kwds):
-        self.__dict__.update(kwds)
 
 
 def get_or_create_program_activity(row, submission_attributes):
