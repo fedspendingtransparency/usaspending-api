@@ -98,10 +98,9 @@ class Command(load_base.Command):
         logger.info(f"Getting submission {self.submission_id} from Broker...")
         submission_data = self.get_broker_submission()
         logger.info(f"Finished getting submission {self.submission_id} from Broker")
+        submission_data = self.validate_submission_data(submission_data)
         agency_name = retrive_agency_name_from_code(submission_data["toptier_code"])
         logger.info(f"Submission belongs to {agency_name}")
-
-        submission_data = self.validate_submission_data(submission_data)
 
         if not self.force_reload and attempt_submission_update_only(submission_data):
             logger.info(f"{self.submission_id} did not require a full reload.  Updated.")
