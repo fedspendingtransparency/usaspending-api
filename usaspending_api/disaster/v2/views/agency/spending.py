@@ -145,7 +145,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
                         fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
                         treasury_account_identifier__funding_toptier_agency_id=OuterRef("toptier_agency_id"),
                     )
-                    .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
+                    .annotate(amount=Func("total_budgetary_resources_cpe", function="Sum"))
                     .values("amount"),
                     output_field=DecimalField(),
                 ),

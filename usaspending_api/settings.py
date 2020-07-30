@@ -44,7 +44,7 @@ SECRET_KEY = get_random_string()
 # Defaults to False, unless DJANGO_DEBUG env var is set to a truthy value
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
-HOST = "localhost:3000"
+HOST = "https://qat.usaspending.gov"
 ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
@@ -56,16 +56,16 @@ IS_LOCAL = True
 RUN_LOCAL_DOWNLOAD_IN_PROCESS = os.environ.get("RUN_LOCAL_DOWNLOAD_IN_PROCESS", "").lower() not in ["false", "0", "no"]
 
 # AWS Region for USAspending Infrastructure
-USASPENDING_AWS_REGION = ""
+USASPENDING_AWS_REGION = "us-gov-west-1"
 if not USASPENDING_AWS_REGION:
     USASPENDING_AWS_REGION = os.environ.get("USASPENDING_AWS_REGION")
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = str(REPO_DIR / "csv_downloads") + "/"
-DOWNLOAD_ENV = ""
+DOWNLOAD_ENV = "qat"
 BULK_DOWNLOAD_LOCAL_PATH = str(REPO_DIR / "bulk_downloads") + "/"
 
-BULK_DOWNLOAD_S3_BUCKET_NAME = ""
+BULK_DOWNLOAD_S3_BUCKET_NAME = "usaspending-bulk-download-qat"
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
