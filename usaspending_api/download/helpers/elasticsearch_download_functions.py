@@ -1,7 +1,7 @@
 import itertools
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Union
+from typing import Union, List
 
 from django.conf import settings
 from django.db.models import QuerySet
@@ -81,10 +81,14 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
     _search_type = AwardSearch
 
     @classmethod
-    def query(cls, filters: dict) -> QuerySet:
+    def query(cls, filters: dict, values: List[str] = None) -> QuerySet:
         base_queryset = AwardSearchView.objects.all()
         flat_ids = cls._get_download_ids(filters)
-        queryset = base_queryset.extra(where=[f'"awards"."id" = ANY(SELECT UNNEST(ARRAY{flat_ids}::INTEGER[]))'])
+        queryset = base_queryset.extra(
+            where=[f'"vw_award_search"."award_id" = ANY(SELECT UNNEST(ARRAY{flat_ids}::INTEGER[]))']
+        )
+        if values:
+            queryset = queryset.values(*values)
         return queryset
 
 

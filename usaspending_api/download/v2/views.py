@@ -1,7 +1,6 @@
 import logging
 
-from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
-
+from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet, DownloadRequestType
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data["award_levels"] = ["elasticsearch_awards", "sub_awards"]
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, "award")
+        return BaseDownloadViewSet.post(self, request, DownloadRequestType.AWARD)
 
 
 class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
@@ -28,7 +27,7 @@ class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, "idv")
+        return BaseDownloadViewSet.post(self, request, DownloadRequestType.IDV)
 
 
 class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
@@ -40,7 +39,7 @@ class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, "contract")
+        return BaseDownloadViewSet.post(self, request, DownloadRequestType.CONTRACT)
 
 
 class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
@@ -52,7 +51,7 @@ class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, "assistance")
+        return BaseDownloadViewSet.post(self, request, DownloadRequestType.ASSISTANCE)
 
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
@@ -65,7 +64,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data["award_levels"] = ["elasticsearch_transactions", "sub_awards"]
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, "award")
+        return BaseDownloadViewSet.post(self, request, DownloadRequestType.AWARD)
 
 
 class AccountDownloadViewSet(BaseDownloadViewSet):
@@ -78,7 +77,7 @@ class AccountDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         """Push a message to SQS with the validated request JSON"""
 
-        return BaseDownloadViewSet.post(self, request, "account")
+        return BaseDownloadViewSet.post(self, request, DownloadRequestType.ACCOUNT)
 
 
 class DisasterDownloadViewSet(BaseDownloadViewSet):
@@ -92,4 +91,16 @@ class DisasterDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         """Return url to pre-generated zip file"""
 
-        return BaseDownloadViewSet.post(self, request, "disaster")
+        return BaseDownloadViewSet.post(self, request, DownloadRequestType.DISASTER)
+
+
+class DisasterRecipientDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to begin generating a zip file of recipient disaster data
+    Specifically, only COVID-19 at the moment
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/disaster/recipients.md"
+
+    def post(self, request):
+        return BaseDownloadViewSet.post(self, request, DownloadRequestType.DISASTER_RECIPIENT)

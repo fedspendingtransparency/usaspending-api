@@ -957,3 +957,55 @@ def test_failure_with_invalid_group(client, monkeypatch, elasticsearch_transacti
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert resp.json().get("detail") == "Missing value: 'group' is a required field", "Expected to fail with no group"
+
+
+@pytest.mark.django_db
+def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
+    defc1 = mommy.make(
+        "references.DisasterEmergencyFundCode",
+        code="L",
+        public_law="PUBLIC LAW FOR CODE L",
+        title="TITLE FOR CODE L",
+        group_name="covid_19",
+    )
+    mommy.make(
+        "accounts.FederalAccount", id=99,
+    )
+    mommy.make(
+        "accounts.TreasuryAppropriationAccount", federal_account_id=99, treasury_account_identifier=99,
+    )
+    mommy.make(
+        "awards.FinancialAccountsByAwards", pk=1, award_id=99, disaster_emergency_fund=defc1, treasury_account_id=99
+    )
+    mommy.make("awards.Award", id=99, total_obligation=20, piid="0001")
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=99,
+        action_date="2020-04-02",
+        federal_action_obligation=10,
+        award_id=99,
+        is_fpds=True,
+        type="A",
+    )
+    mommy.make("awards.TransactionFPDS", transaction_id=99, piid="0001")
+    mommy.make(
+        "awards.TransactionNormalized",
+        id=100,
+        action_date="2020-01-01",
+        federal_action_obligation=22,
+        award_id=99,
+        is_fpds=True,
+        type="A",
+    )
+    mommy.make(
+        "awards.TransactionFPDS", transaction_id=100,
+    )
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps({"group": "fiscal_year", "filters": {"def_codes": ["L"]}}),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    print(resp.json().get("results"))
+    assert {"aggregated_amount": 10, "time_period": {"fiscal_year": "2020"}} in resp.json().get("results")

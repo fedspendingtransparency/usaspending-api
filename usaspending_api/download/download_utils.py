@@ -17,6 +17,8 @@ def create_unique_filename(json_request, origination=None):
     elif json_request.get("is_for_assistance"):
         slug_text = slugify_text_for_file_names(json_request.get("assistance_id"), "UNKNOWN", 50)
         download_name = f"ASST_{slug_text}_{timestamp}.zip"
+    elif json_request["request_type"] == "disaster_recipient":
+        download_name = f"COVID-19_Profile_{timestamp}.zip"
     elif json_request["request_type"] == "account":
         file_name_template = obtain_zip_filename_format(json_request["download_types"])
         agency = obtain_filename_prefix_from_agency_id(request_agency)

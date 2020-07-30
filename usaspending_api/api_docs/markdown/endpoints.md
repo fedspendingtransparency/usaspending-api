@@ -88,13 +88,13 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/disaster/recipient/loans/](/api/v2/disaster/recipient/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension |
 |[/api/v2/disaster/recipient/spending/](/api/v2/disaster/recipient/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension |
 |[/api/v2/disaster/spending_by_geography/](/api/v2/disaster/spending_by_geography/)|POST| Geographic award spending of Disaster/Emergency funding |
-|[/api/v2/disaster/spending_over_time/](/api/v2/disaster/spending_over_time/)|POST| Award types in the time period spending Disaster/Emergency funding |
 |[/api/v2/download/accounts/](/api/v2/download/accounts/)|POST| Generates zip file for download of account data in CSV format |
 |[/api/v2/download/assistance/](/api/v2/download/assistance/)|POST| Returns a zipped file containing Assistance data |
 |[/api/v2/download/awards/](/api/v2/download/awards/)|POST| Generates zip file for download of award data in CSV format |
 |[/api/v2/download/contract/](/api/v2/download/contract/)|POST| Returns a zipped file containing Contract data |
 |[/api/v2/download/count/](/api/v2/download/count/)|POST| Returns the number of transactions that would be included in a download request for the given filter set |
 |[/api/v2/download/disaster/](/api/v2/download/disaster/)|POST| Returns a zipped file containing Account and Award data for the Disaster Funding |
+|[/api/v2/download/disaster/recipients/](/api/v2/download/disaster/recipients/)|POST| Returns a zipped file containing Disaster Recipient Funding data |
 |[/api/v2/download/idv/](/api/v2/download/idv/)|POST| Returns a zipped file containing IDV data |
 |[/api/v2/download/status/](/api/v2/download/status/)|GET| gets the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day |
 |[/api/v2/download/transactions/](/api/v2/download/transactions/)|POST|Generates zip file for download of award data in CSV format |

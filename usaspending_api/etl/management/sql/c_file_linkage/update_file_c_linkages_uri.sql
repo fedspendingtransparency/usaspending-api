@@ -29,6 +29,7 @@ WHERE
 				FROM awards AS aw_sub
 				WHERE UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
 			) = 1
+            {submission_id_clause}
 	) RETURNING award_id
 )
 UPDATE
