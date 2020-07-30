@@ -142,9 +142,9 @@ def generate_gross_outlay_amount_derived_field(filters, account_type):
             q |= closed_period.build_submission_id_q("submission")
 
     if q:
-        return Case(When(q, then=F(column_name)), default=Value(None), output_field=DecimalField(),)
+        return Case(When(q, then=F(column_name)), default=Value(None), output_field=DecimalField())
 
-    return Value(None)
+    return Value(None, output_field=DecimalField())
 
 
 def generate_treasury_account_query(queryset, account_type, tas_id, filters):
