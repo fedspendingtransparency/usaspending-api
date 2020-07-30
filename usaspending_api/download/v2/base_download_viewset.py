@@ -47,11 +47,15 @@ class BaseDownloadViewSet(APIView):
         request_type: DownloadRequestType = DownloadRequestType.AWARD,
         origination: Optional[str] = None,
     ):
+        # This download is pre-generated and does not have the "request_type" property since it did not
+        # go through our normal download generation process (it is added below). A check for this
+        # in the json_request is used to determine uniqueness from other Disaster downloads.
         if request_type == DownloadRequestType.DISASTER:
             filename = (
                 DownloadJob.objects.filter(
                     file_name__startswith=settings.COVID19_DOWNLOAD_FILENAME_PREFIX, error_message__isnull=True
                 )
+                .exclude(json_request__contains="request_type")
                 .order_by("-update_date")
                 .values_list("file_name", flat=True)
                 .first()
