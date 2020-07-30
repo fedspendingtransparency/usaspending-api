@@ -10,6 +10,7 @@ urlpatterns = [
     url(r"^awards", views.RowLimitedAwardDownloadViewSet.as_view()),
     url(r"^contract", views.RowLimitedContractDownloadViewSet.as_view()),
     url(r"^count", DownloadTransactionCountViewSet.as_view()),
+    url(r"^disaster/recipients", views.DisasterRecipientDownloadViewSet.as_view()),
     url(r"^disaster", views.DisasterDownloadViewSet.as_view()),
     url(r"^idv", views.RowLimitedIDVDownloadViewSet.as_view()),
     url(r"^status", DownloadStatusViewSet.as_view()),

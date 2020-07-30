@@ -91,20 +91,24 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
             1. It is significantly more performant than the more accurate SQL
             2. The endpoints which use this field are V1 which don't require the effort for accuracy and performance.
     """
-
     FINAL_OF_FY_SQL = """
-        UPDATE financial_accounts_by_program_activity_object_class
-        SET final_of_fy = submission_id in
-        ( SELECT DISTINCT ON
-            (fabpaoc.treasury_account_id,
-             FY(s.reporting_period_start))
-          s.submission_id
-          FROM submission_attributes s
-          JOIN financial_accounts_by_program_activity_object_class fabpaoc
-              ON (s.submission_id = fabpaoc.submission_id)
-          ORDER BY fabpaoc.treasury_account_id,
-                   FY(s.reporting_period_start),
-                   s.reporting_period_start DESC)"""
+        with submission_ids as (
+            select distinct submission_id from (
+                select distinct on (f.treasury_account_id, s.reporting_fiscal_year)
+                    s.submission_id
+                from
+                    submission_attributes s
+                    inner join financial_accounts_by_program_activity_object_class f on s.submission_id = f.submission_id
+                order by
+                    f.treasury_account_id,
+                    s.reporting_fiscal_year,
+                    s.reporting_period_end desc
+            ) t
+        )
+        update  financial_accounts_by_program_activity_object_class f
+        set     final_of_fy = (submission_id in (select submission_id from submission_ids))
+        where   final_of_fy != (submission_id in (select submission_id from submission_ids))
+    """
 
     UPDATED_FINAL_OF_FY_SQL = """
         UPDATE financial_accounts_by_program_activity_object_class

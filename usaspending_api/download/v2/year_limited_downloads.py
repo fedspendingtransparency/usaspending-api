@@ -1,5 +1,5 @@
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
+from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet, DownloadRequestType
 from usaspending_api.references.models import ToptierAgency
 
 
@@ -16,7 +16,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         # TODO: update front end to use the Common Filter Object and get rid of this function
         self.process_filters(request.data)
 
-        return BaseDownloadViewSet.post(self, request, "award", "bulk_download")
+        return BaseDownloadViewSet.post(self, request, DownloadRequestType.AWARD, "bulk_download")
 
     def process_filters(self, request_data):
         """Filter function to update Bulk Download parameters to shared parameters"""

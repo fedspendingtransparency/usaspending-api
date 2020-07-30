@@ -1,12 +1,17 @@
 from usaspending_api.disaster.tests.fixtures.recipient_location_data import awards_and_transactions
 from usaspending_api.disaster.tests.fixtures.disaster_account_data import disaster_account_data
-from usaspending_api.disaster.tests.fixtures.agency_count_data import faba_with_toptier_agencies
+from usaspending_api.disaster.tests.fixtures.agency_count_data import (
+    faba_with_toptier_agencies,
+    faba_with_toptier_agencies_that_cancel_out_in_toa,
+    faba_with_toptier_agencies_that_cancel_out_in_outlay,
+)
 from usaspending_api.disaster.tests.fixtures.award_count_data import (
     basic_award,
     award_count_sub_schedule,
     award_count_submission,
     obligations_incurred_award,
     multiple_file_c_to_same_award,
+    multiple_file_c_to_same_award_that_cancel_out,
     non_matching_defc_award,
     award_count_quarterly_submission,
     award_with_quarterly_submission,
@@ -96,6 +101,8 @@ __all__ = [
     "disaster_account_data",
     "early_gtas",
     "faba_with_toptier_agencies",
+    "faba_with_toptier_agencies_that_cancel_out_in_toa",
+    "faba_with_toptier_agencies_that_cancel_out_in_outlay",
     "faba_with_non_covid_values",
     "faba_with_values",
     "faba_with_object_class_and_two_awards",
@@ -107,6 +114,7 @@ __all__ = [
     "helpers",
     "late_gtas",
     "multiple_file_c_to_same_award",
+    "multiple_file_c_to_same_award_that_cancel_out",
     "multi_period_faba",
     "multi_year_faba",
     "non_covid_gtas",

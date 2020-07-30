@@ -24,6 +24,7 @@ class DownloadSource:
         self.is_for_idv = VALUE_MAPPINGS[source_type].get("is_for_idv", False)
         self.is_for_contract = VALUE_MAPPINGS[source_type].get("is_for_contract", False)
         self.is_for_assistance = VALUE_MAPPINGS[source_type].get("is_for_assistance", False)
+        self.award_category = None
 
     def __repr__(self):
         return "DownloadSource('{}', '{}', '{}', '{}')".format(

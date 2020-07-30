@@ -1,17 +1,15 @@
-from datetime import date
-
 import pytest
-from model_mommy import mommy
 
+from model_mommy import mommy
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
 
 @pytest.fixture
 def app_acc_bal_models():
-    sub_16_1 = mommy.make("submissions.SubmissionAttributes", reporting_period_start=date(2016, 1, 1))
-    sub_16_2 = mommy.make("submissions.SubmissionAttributes", reporting_period_start=date(2016, 4, 1))
-    sub_17_1 = mommy.make("submissions.SubmissionAttributes", reporting_period_start=date(2016, 10, 1))
-    sub_17_2 = mommy.make("submissions.SubmissionAttributes", reporting_period_start=date(2017, 2, 1))
+    sub_16_1 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
+    sub_16_2 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
+    sub_17_1 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
+    sub_17_2 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
     tas_1 = mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="ABC", _fill_optional=True)
     tas_2 = mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="XYZ", _fill_optional=True)
     mommy.make(

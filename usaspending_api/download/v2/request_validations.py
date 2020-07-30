@@ -10,6 +10,10 @@ from usaspending_api.awards.v2.lookups.lookups import (
     award_type_mapping,
     contract_type_mapping,
     idv_type_mapping,
+    grant_type_mapping,
+    direct_payment_type_mapping,
+    loan_type_mapping,
+    other_type_mapping,
 )
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import fiscal_year_helpers as fy_helpers
@@ -26,6 +30,7 @@ from usaspending_api.download.lookups import (
     VALUE_MAPPINGS,
     YEAR_CONSTRAINT_FILTER_DEFAULTS,
 )
+from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions import helpers as sub_helpers
 
 
@@ -199,6 +204,76 @@ def validate_account_request(request_data):
 
     # Validate the rest of the filters
     check_types_and_assign_defaults(filters, json_request["filters"], ACCOUNT_FILTER_DEFAULTS)
+
+    return json_request
+
+
+def validate_disaster_recipient_request(request_data):
+    _validate_required_parameters(request_data, ["filters"])
+    all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
+    model = [
+        {
+            "key": "filters|def_codes",
+            "name": "def_codes",
+            "type": "array",
+            "array_type": "enum",
+            "enum_values": all_def_codes,
+            "allow_nulls": False,
+            "optional": False,
+        },
+        {
+            "key": "filters|query",
+            "name": "query",
+            "type": "text",
+            "text_type": "search",
+            "allow_nulls": False,
+            "optional": True,
+        },
+        {
+            "key": "filters|award_type_codes",
+            "name": "award_type_codes",
+            "type": "array",
+            "array_type": "enum",
+            "enum_values": sorted(award_type_mapping.keys()),
+            "allow_nulls": False,
+            "optional": True,
+        },
+    ]
+    filters = TinyShield(model).block(request_data)["filters"]
+
+    # Determine what to use in the filename based on "award_type_codes" filter;
+    # Also add "face_value_of_loans" column if only loan types
+    award_category = "All-Awards"
+    award_type_codes = set(filters.get("award_type_codes", award_type_mapping.keys()))
+    columns = ["recipient", "award_obligations", "award_outlays", "number_of_awards"]
+
+    if award_type_codes <= set(contract_type_mapping.keys()):
+        award_category = "Contracts"
+    elif award_type_codes <= set(idv_type_mapping.keys()):
+        award_category = "Contract-IDVs"
+    elif award_type_codes <= set(grant_type_mapping.keys()):
+        award_category = "Grants"
+    elif award_type_codes <= set(loan_type_mapping.keys()):
+        award_category = "Loans"
+        columns.insert(3, "face_value_of_loans")
+    elif award_type_codes <= set(direct_payment_type_mapping.keys()):
+        award_category = "Direct-Payments"
+    elif award_type_codes <= set(other_type_mapping.keys()):
+        award_category = "Other-Financial-Assistance"
+
+    # Need to specify the field to use "query" filter on if present
+    query_text = filters.pop("query", None)
+    if query_text:
+        filters["query"] = {"text": query_text, "fields": ["recipient_name"]}
+
+    json_request = {
+        "award_category": award_category,
+        "columns": tuple(columns),
+        "download_types": ["disaster_recipient"],
+        "file_format": str(request_data.get("file_format", "csv")).lower(),
+        "filters": filters,
+    }
+    _validate_file_format(json_request)
 
     return json_request
 
