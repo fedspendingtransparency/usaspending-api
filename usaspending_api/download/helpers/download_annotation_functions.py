@@ -133,7 +133,9 @@ def universal_transaction_matview_annotations():
             ),
         ),
         "object_classes_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(
+                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
+            )
             .annotate(
                 value=ExpressionWrapper(
                     Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
@@ -239,7 +241,9 @@ def universal_award_matview_annotations():
             output_field=DecimalField(),
         ),
         "object_classes_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(
+                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
+            )
             .annotate(
                 value=ExpressionWrapper(
                     Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
@@ -470,7 +474,9 @@ def idv_transaction_annotations():
             ),
         ),
         "object_classes_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(
+                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
+            )
             .annotate(
                 value=ExpressionWrapper(
                     Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
@@ -532,7 +538,9 @@ def subaward_annotations():
             Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "prime_award_object_classes_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(
+                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
+            )
             .annotate(
                 value=ExpressionWrapper(
                     Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
