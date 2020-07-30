@@ -409,9 +409,9 @@ class _QueryText(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: dict, query_type: _QueryType) -> ES_Q:
-        query_text = f"{es_sanitize(filter_values['text'])}*"
+        query_text = es_sanitize(filter_values["text"])
         query_fields = filter_values["fields"]
-        return ES_Q("simple_query_string", query=query_text, default_operator="AND", fields=query_fields)
+        return ES_Q("multi_match", query=query_text, type="phrase_prefix", fields=query_fields)
 
 
 class QueryWithFilters:
