@@ -236,7 +236,7 @@ VALUE_MAPPINGS = {
         "source_type": "disaster",
         "table": AwardSearchView,
         "table_name": "recipient",
-        "download_name": "COVID-19-Recipients_{award_category}_{timestamp}",
+        "download_name": "COVID-19_Recipients_{award_category}_{timestamp}",
         "filter_function": AwardsElasticsearchDownload.query,
         "annotations_function": disaster_recipient_annotations,
         "base_fields": ["recipient_name", "recipient_unique_id"],
