@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 from django.db import connection
-from typing import Optional, List
-
 from django.db.models import Q
-
+from typing import Optional, List
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import is_final_quarter, is_final_period
 from usaspending_api.common.helpers.sql_helpers import execute_sql
@@ -75,7 +73,7 @@ def get_last_closed_periods_per_year() -> List[ClosedPeriod]:
                     where   is_quarter is false and
                             submission_reveal_date <= now()
                     order   by submission_fiscal_year, -submission_fiscal_month
-                ) as m on m.submission_fiscal_year = q.submission_fiscal_year;
+                ) as m on m.submission_fiscal_year = q.submission_fiscal_year
     """
     return [ClosedPeriod(t[0], t[1], t[2]) for t in execute_sql(sql)]
 

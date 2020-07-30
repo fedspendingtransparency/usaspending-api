@@ -1,6 +1,6 @@
 import json
 
-from datetime import datetime, timezone, date
+from datetime import date
 from django.db.models import Max, Q, F, Value, Case, When, Sum, Count
 from django.db.models.functions import Coalesce, Concat
 from django.http import HttpRequest
@@ -14,6 +14,7 @@ from usaspending_api.awards.models.financial_accounts_by_awards import Financial
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping, assistance_type_mapping
 from usaspending_api.common.containers import Bunch
 from usaspending_api.common.data_classes import Pagination
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_month
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
@@ -86,7 +87,7 @@ def final_submissions_for_all_fy() -> List[tuple]:
         fiscal year IF it is "closed" aka ready for display on USAspending.gov
     """
     return (
-        DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=datetime.now(timezone.utc))
+        DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=now())
         .values("submission_fiscal_year", "is_quarter")
         .annotate(fiscal_year=F("submission_fiscal_year"), fiscal_period=Max("submission_fiscal_month"))
         .values_list("fiscal_year", "is_quarter", "fiscal_period", named=True)
