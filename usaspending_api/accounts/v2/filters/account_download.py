@@ -81,7 +81,7 @@ def account_download_filter(account_type, download_table, filters, account_level
         queryset = generate_federal_account_query(download_table.objects, account_type, tas_id, filters)
     else:
         raise InvalidParameterException(
-            'Invalid Parameter: account_level must be either "federal_account" or ' '"treasury_account"'
+            'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
         )
 
     # Apply filter and return
@@ -90,11 +90,15 @@ def account_download_filter(account_type, download_table, filters, account_level
 
 def get_submission_filter(account_type, filters):
 
-    filter_year = int(filters.get("fy", -1))
-    filter_quarter = int(filters.get("quarter", -1))
-    filter_month = int(filters.get("period", -1))
+    filter_year = int(filters.get("fy") or -1)
+    filter_quarter = int(filters.get("quarter") or -1)
+    filter_month = int(filters.get("period") or -1)
 
-    outlay_filter = Q(submission_id__in=get_submission_ids_for_periods(filter_year, filter_quarter, filter_month))
+    submission_ids = get_submission_ids_for_periods(filter_year, filter_quarter, filter_month)
+    if submission_ids:
+        outlay_filter = Q(submission_id__in=get_submission_ids_for_periods(filter_year, filter_quarter, filter_month))
+    else:
+        outlay_filter = Q()
 
     if account_type in ["account_balances", "object_class_program_activity"]:
         submission_filter = outlay_filter
@@ -142,9 +146,11 @@ def generate_gross_outlay_amount_derived_field(filters, account_type):
             q |= closed_period.build_submission_id_q("submission")
 
     if q:
-        return Case(When(q, then=F(column_name)), default=Value(None), output_field=DecimalField())
+        return Case(
+            When(q, then=F(column_name)), default=Cast(Value(None), DecimalField(max_digits=23, decimal_places=2))
+        )
 
-    return Value(None, output_field=DecimalField())
+    return Cast(Value(None), DecimalField(max_digits=23, decimal_places=2))
 
 
 def generate_treasury_account_query(queryset, account_type, tas_id, filters):
