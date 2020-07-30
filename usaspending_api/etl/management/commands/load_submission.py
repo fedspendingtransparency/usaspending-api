@@ -15,7 +15,7 @@ from usaspending_api.etl.submission_loader_helpers.submission_attributes import 
     attempt_submission_update_only,
     get_submission_attributes,
 )
-
+from usaspending_api.references.helpers import retrive_agency_name_from_code
 
 logger = logging.getLogger("script")
 
@@ -98,6 +98,8 @@ class Command(load_base.Command):
         logger.info(f"Getting submission {self.submission_id} from Broker...")
         submission_data = self.get_broker_submission()
         logger.info(f"Finished getting submission {self.submission_id} from Broker")
+        agency_name = retrive_agency_name_from_code(submission_data["toptier_code"])
+        logger.info(f"Submission belongs to {agency_name}")
 
         submission_data = self.validate_submission_data(submission_data)
 
