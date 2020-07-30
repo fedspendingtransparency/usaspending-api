@@ -8,6 +8,8 @@ url = "/api/v2/disaster/federal_account/spending/"
 @pytest.mark.django_db
 def test_federal_account_success(client, generic_account_data, monkeypatch, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
+
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="total")
     expected_results = [
         {

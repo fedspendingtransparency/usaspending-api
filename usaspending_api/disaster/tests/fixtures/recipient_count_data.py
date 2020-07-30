@@ -122,7 +122,7 @@ def fabs_award_with_old_submission(defc_codes, award_count_sub_schedule):
         uri="uri 1",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=old_submission,
-        gross_outlay_amount_by_award_cpe=8,
+        transaction_obligated_amount=8,
     )
 
 

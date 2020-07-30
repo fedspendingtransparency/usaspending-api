@@ -8,6 +8,8 @@ url = "/api/v2/disaster/award/count/"
 @pytest.mark.django_db
 def test_award_count_basic(client, monkeypatch, basic_award, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
+
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 1
 
@@ -42,6 +44,16 @@ def test_multiple_faba_per_award(client, monkeypatch, multiple_file_c_to_same_aw
     helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
     assert resp.data["count"] == 1
+
+
+@pytest.mark.django_db
+def test_multiple_faba_per_award_that_cancel_out(
+    client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers
+):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
+    resp = _default_post(client, helpers)
+    assert resp.data["count"] == 0
 
 
 @pytest.mark.django_db

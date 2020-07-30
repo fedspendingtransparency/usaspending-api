@@ -42,12 +42,12 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             self.has_award_of_classification,
             self.has_award_of_provided_type,
             self.is_in_provided_def_codes,
-            self.is_non_zero_award_spending,
         ]
 
-        count_field = self.unique_file_c
         if self.award_type_codes:
             count_field = "award_id"
+        else:
+            count_field = self.unique_file_c
 
         fields = {
             "award_count": Count(count_field, distinct=True),
@@ -55,4 +55,11 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             "outlay": self.outlay_field_annotation,
         }
 
-        return FinancialAccountsByAwards.objects.filter(*filters).aggregate(**fields)
+        if self.award_type_codes:
+            return self.when_non_zero_award_spending(
+                FinancialAccountsByAwards.objects.filter(*filters).values(count_field)
+            ).aggregate(**fields)
+        else:
+            return self.when_non_zero_award_spending(
+                FinancialAccountsByAwards.objects.filter(*filters).annotate(unique_c=count_field)
+            ).aggregate(**fields)

@@ -46,6 +46,14 @@ def multiple_file_c_to_same_award(award_count_sub_schedule, award_count_submissi
 
 
 @pytest.fixture
+def multiple_file_c_to_same_award_that_cancel_out(award_count_sub_schedule, award_count_submission, defc_codes):
+    award = _normal_award()
+
+    _faba_for_award(award)
+    _faba_for_award(award, negative=True)
+
+
+@pytest.fixture
 def obligations_incurred_award(award_count_sub_schedule, award_count_submission, defc_codes):
     award = _normal_award()
 
@@ -81,7 +89,7 @@ def award_count_submission():
     mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
-        reporting_fiscal_period=7,
+        reporting_fiscal_period=8,
         quarter_format_flag=False,
         reporting_period_start="2022-04-01",
     )
@@ -145,7 +153,7 @@ def _normal_award():
     return mommy.make("awards.Award", type="A")
 
 
-def _faba_for_award(award, id=1):
+def _faba_for_award(award, id=1, negative=False):
     mommy.make(
         "awards.FinancialAccountsByAwards",
         piid=f"piid {id}",
@@ -155,5 +163,5 @@ def _faba_for_award(award, id=1):
         award=award,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
-        transaction_obligated_amount=7,
+        transaction_obligated_amount=-7 if negative else 7,
     )

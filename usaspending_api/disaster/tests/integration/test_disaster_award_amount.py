@@ -30,7 +30,9 @@ def test_award_amount_success(client, monkeypatch, generic_account_data, unlinke
 
 
 @pytest.mark.django_db
-def test_award_amount_all_success(client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers):
+def test_award_amount_no_award_type_success(
+    client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers
+):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_amount_endpoint(client, url, ["N"], None)
@@ -44,6 +46,17 @@ def test_award_amount_all_success(client, monkeypatch, generic_account_data, unl
     assert resp.data["award_count"] == 7
     assert resp.data["outlay"] == 10890997.00
     assert resp.data["obligation"] == 1089204.00
+
+
+@pytest.mark.django_db
+def test_award_amount_on_sum_zero_toa(client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+
+    resp = helpers.post_for_amount_endpoint(client, url, ["N"], None)
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["award_count"] == 0
+    assert resp.data["outlay"] == 0.0
+    assert resp.data["obligation"] == 0.0
 
 
 @pytest.mark.django_db

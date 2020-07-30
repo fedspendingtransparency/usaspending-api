@@ -205,15 +205,6 @@ class DisasterBase(APIView):
         )
 
     @property
-    def is_non_zero_award_spending(self):
-        return Q(
-            Q(transaction_obligated_amount__gt=0)
-            | Q(transaction_obligated_amount__lt=0)
-            | Q(gross_outlay_amount_by_award_cpe__gt=0)
-            | Q(gross_outlay_amount_by_award_cpe__lt=0)
-        )
-
-    @property
     def is_provided_award_type(self):
         return Q(type__in=self.filters.get("award_type_codes"))
 
@@ -329,6 +320,11 @@ class FabaOutlayMixin:
             ),
             0,
         )
+
+    def when_non_zero_award_spending(self, query):
+        return query.annotate(
+            total_outlay=self.outlay_field_annotation, total_obligation=Sum("transaction_obligated_amount")
+        ).exclude(total_outlay=0, total_obligation=0)
 
     @property
     def unique_file_c(self):
