@@ -95,7 +95,7 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterB
                         fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
                         treasury_account_identifier=OuterRef("treasury_account"),
                     )
-                    .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
+                    .annotate(amount=Func("total_budgetary_resources_cpe", function="Sum"))
                     .values("amount"),
                     output_field=DecimalField(),
                 ),
