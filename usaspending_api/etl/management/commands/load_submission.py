@@ -74,10 +74,13 @@ class Command(load_base.Command):
         self.skip_final_of_fy_calculation = options["skip_final_of_fy_calculation"]
         self.db_cursor = db_cursor
 
+        logger.info(f"Starting processing for submission {self.submission_id}...")
+
         # This has to occur outside of the transaction so we don't hang up other loaders that may be
         # running in parallel.  Worst case scenario of running it outside of the main transaction is
         # that is that we load some program activities that are never used due to the submission failing
         # to load and then being deleted from Broker.
+        logger.info(f"Checking for new program activities created...")
         new_program_activities = update_program_activities(self.submission_id)
         logger.info(f"{new_program_activities:,} new program activities created")
 
