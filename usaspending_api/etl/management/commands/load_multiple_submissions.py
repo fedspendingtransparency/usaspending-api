@@ -273,7 +273,7 @@ class Command(BaseCommand):
             logger.info("No work performed.  Not updating final_of_fy.")
             return
         if ready_and_in_progress_count > 0:
-            logger.info("Queue is not empty.  Not updating final_of_fy.")
+            logger.info("Submissions still in progress.  Not updating final_of_fy.")
             return
         logger.info("Updating final_of_fy")
         populate_final_of_fy()
