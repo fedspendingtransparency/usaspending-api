@@ -263,7 +263,7 @@ class Command(BaseCommand):
         return since
 
     @staticmethod
-    def update_final_of_fy(processed_count, ready_and_in_progress_count):
+    def update_final_of_fy(processed_count, in_progress_count):
         """
         For performance and deadlocking reasons, we only update final_of_fy once the last
         submission is processed.  To this end, only update final_of_fy if any loads were
@@ -272,7 +272,7 @@ class Command(BaseCommand):
         if processed_count < 1:
             logger.info("No work performed.  Not updating final_of_fy.")
             return
-        if ready_and_in_progress_count > 0:
+        if in_progress_count > 0:
             logger.info("Submissions still in progress.  Not updating final_of_fy.")
             return
         logger.info("Updating final_of_fy")
