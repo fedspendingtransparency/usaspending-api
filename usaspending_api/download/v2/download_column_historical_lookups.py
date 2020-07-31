@@ -1578,7 +1578,7 @@ query_paths = {
                     "deobligations_recoveries_refunds_by_tas_cpe",
                 ),
                 ("unobligated_balance", "unobligated_balance_cpe"),
-                ("gross_outlay_amount", "gross_outlay_amount_by_tas_cpe"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total_cpe"),
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1619,7 +1619,7 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                 ),
                 ("unobligated_balance", "unobligated_balance"),
-                ("gross_outlay_amount", "gross_outlay_amount"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total"),
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1664,7 +1664,7 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                     "deobligations_recoveries_refund_pri_program_object_class_cpe",
                 ),
-                ("gross_outlay_amount", "gross_outlay_amount_by_program_object_class_cpe"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1693,7 +1693,7 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                 ),
-                ("gross_outlay_amount", "gross_outlay_amount"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1746,7 +1746,10 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
+                (
+                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_fyb_to_period_end",
+                ),  # Column is annotated in account_download.py
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
                 ("award_type", "award_type"),  # Column is annotated in account_download.py
@@ -1844,7 +1847,10 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
+                (
+                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_fyb_to_period_end",
+                ),  # Column is annotated in account_download.py
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
                 ("award_type", "award_type"),  # Column is annotated in account_download.py

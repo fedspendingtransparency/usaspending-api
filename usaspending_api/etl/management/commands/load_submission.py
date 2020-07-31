@@ -152,6 +152,8 @@ class Command(load_base.Command):
         # Cleanup not specific to this submission is run in the `.handle` method
         logger.info(f"Successfully loaded submission {self.submission_id}.")
 
+        logger.info("Committing transaction...")
+
     def get_broker_submission(self):
         self.db_cursor.execute(
             f"""

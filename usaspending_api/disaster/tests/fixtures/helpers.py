@@ -64,16 +64,11 @@ class Helpers:
 
     @staticmethod
     def patch_datetime_now(monkeypatch, year, month, day):
-        patched_datetime = datetime.datetime(year, month, day, tzinfo=datetime.timezone.utc)
+        def patched_datetime():
+            return datetime.datetime(year, month, day, tzinfo=datetime.timezone.utc)
 
-        class PatchedDatetime(datetime.datetime):
-            @classmethod
-            def now(cls, *args):
-                return patched_datetime
-
-        monkeypatch.setattr("usaspending_api.submissions.helpers.datetime", PatchedDatetime)
-        monkeypatch.setattr("usaspending_api.disaster.v2.views.disaster_base.datetime", PatchedDatetime)
-        usaspending_api.common.helpers.fiscal_year_helpers.current_fiscal_year = lambda: year
+        monkeypatch.setattr("usaspending_api.submissions.helpers.now", patched_datetime)
+        monkeypatch.setattr("usaspending_api.disaster.v2.views.disaster_base.now", patched_datetime)
 
     @staticmethod
     def reset_dabs_cache():

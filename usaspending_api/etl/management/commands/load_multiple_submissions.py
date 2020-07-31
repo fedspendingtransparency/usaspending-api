@@ -113,10 +113,15 @@ class Command(BaseCommand):
             self.add_submissions_since_datetime_to_queue(since_datetime)
             processed_count = self.load_incremental_submissions()
 
-        self.update_final_of_fy(processed_count)
+        ready, in_progress, abandoned, failed, unrecognized = dlqh.get_queue_status()
+        failed_unrecognized_and_abandoned_count = len(failed) + len(unrecognized) + len(abandoned)
+        in_progress_count = len(in_progress)
 
-        failed_and_unrecognized_count = self.report_queue_status()
-        if failed_and_unrecognized_count > 0:
+        self.update_final_of_fy(processed_count, in_progress_count)
+
+        # Only return unstable state if something's in a bad state and we're the last one standing.
+        # Should cut down on Slack noise a bit.
+        if failed_unrecognized_and_abandoned_count > 0 and in_progress_count == 0:
             raise SystemExit(3)
 
     def record_options(self, options):
@@ -160,8 +165,6 @@ class Command(BaseCommand):
         log_submission_ids(unrecognized, "are in an unrecognized state")
 
         logger.info("\n".join(msg) + "\n")
-
-        return len(failed) + len(unrecognized)
 
     @staticmethod
     def reset_abandoned_locks():
@@ -243,9 +246,11 @@ class Command(BaseCommand):
             logger.exception(f"Submission {submission_id} failed to load")
             dlqh.fail_processing(submission_id, self.processor_id, e)
             self.do_not_retry.append(submission_id)
+            self.report_queue_status()
             return False
         self.cancel_heartbeat_timer()
         dlqh.complete_processing(submission_id, self.processor_id)
+        self.report_queue_status()
         return True
 
     @staticmethod
@@ -258,7 +263,7 @@ class Command(BaseCommand):
         return since
 
     @staticmethod
-    def update_final_of_fy(processed_count):
+    def update_final_of_fy(processed_count, in_progress_count):
         """
         For performance and deadlocking reasons, we only update final_of_fy once the last
         submission is processed.  To this end, only update final_of_fy if any loads were
@@ -267,8 +272,8 @@ class Command(BaseCommand):
         if processed_count < 1:
             logger.info("No work performed.  Not updating final_of_fy.")
             return
-        if dlqh.get_ready_and_in_progress_count() > 0:
-            logger.info("Queue is not empty.  Not updating final_of_fy.")
+        if in_progress_count > 0:
+            logger.info("Submissions still in progress.  Not updating final_of_fy.")
             return
         logger.info("Updating final_of_fy")
         populate_final_of_fy()
