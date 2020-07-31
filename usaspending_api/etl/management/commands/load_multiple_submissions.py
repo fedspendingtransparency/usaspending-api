@@ -114,14 +114,14 @@ class Command(BaseCommand):
             processed_count = self.load_incremental_submissions()
 
         ready, in_progress, abandoned, failed, unrecognized = dlqh.get_queue_status()
-        failed_and_unrecognized = len(failed) + len(unrecognized)
-        ready_and_in_progress = len(ready) + len(in_progress)
+        failed_unrecognized_and_abandoned_count = len(failed) + len(unrecognized) + len(abandoned)
+        in_progress_count = len(in_progress)
 
-        self.update_final_of_fy(processed_count, ready_and_in_progress)
+        self.update_final_of_fy(processed_count, in_progress_count)
 
         # Only return unstable state if something's in a bad state and we're the last one standing.
         # Should cut down on Slack noise a bit.
-        if failed_and_unrecognized > 0 and ready_and_in_progress == 0:
+        if failed_unrecognized_and_abandoned_count > 0 and in_progress_count == 0:
             raise SystemExit(3)
 
     def record_options(self, options):
