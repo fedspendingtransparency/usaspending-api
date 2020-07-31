@@ -96,9 +96,9 @@ def get_submission_filter(account_type, filters):
 
     submission_ids = get_submission_ids_for_periods(filter_year, filter_quarter, filter_month)
     if submission_ids:
-        outlay_filter = Q(submission_id__in=get_submission_ids_for_periods(filter_year, filter_quarter, filter_month))
+        outlay_filter = Q(submission_id__in=submission_ids)
     else:
-        outlay_filter = Q()
+        outlay_filter = Q(submission_id__isnull=True)
 
     if account_type in ["account_balances", "object_class_program_activity"]:
         submission_filter = outlay_filter

@@ -25,6 +25,10 @@ class ClosedPeriod:
     fiscal_quarter: Optional[int]
     fiscal_month: Optional[int]
 
+    def __post_init__(self):
+        if self.fiscal_quarter is None and self.fiscal_month is None:
+            raise RuntimeError("At least one of fiscal_quarter or fiscal_month is required.")
+
     @property
     def is_final(self) -> bool:
         return (self.fiscal_quarter is None or is_final_quarter(self.fiscal_quarter)) and (
@@ -38,14 +42,16 @@ class ClosedPeriod:
         if self.fiscal_quarter:
             q |= Q(**{f"{prefix}reporting_fiscal_quarter": self.fiscal_quarter, f"{prefix}quarter_format_flag": True})
         if self.fiscal_month:
-            q |= Q(**{f"{prefix}reporting_fiscal_period": self.fiscal_quarter, f"{prefix}quarter_format_flag": False})
+            q |= Q(**{f"{prefix}reporting_fiscal_period": self.fiscal_month, f"{prefix}quarter_format_flag": False})
         return Q(Q(q) & Q(**{f"{prefix}reporting_fiscal_year": self.fiscal_year}))
 
     def build_submission_id_q(self, submission_relation_name: Optional[str] = None) -> Q:
         prefix = f"{submission_relation_name}__" if submission_relation_name else ""
         submission_ids = get_submission_ids_for_periods(self.fiscal_year, self.fiscal_quarter, self.fiscal_month)
         if not submission_ids:
-            return Q()
+            # If there are no submission ids it means there are no submissions in the period which
+            # means nothing should be returned.
+            return Q(**{f"{prefix}submission_id__isnull": True})
         return Q(**{f"{prefix}submission_id__in": submission_ids})
 
 
