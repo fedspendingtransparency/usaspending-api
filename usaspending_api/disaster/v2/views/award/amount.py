@@ -61,5 +61,5 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             ).aggregate(**fields)
         else:
             return self.when_non_zero_award_spending(
-                FinancialAccountsByAwards.objects.filter(*filters).annotate(unique_c=count_field)
+                FinancialAccountsByAwards.objects.filter(*filters).annotate(unique_c=count_field).values("unique_c")
             ).aggregate(**fields)
