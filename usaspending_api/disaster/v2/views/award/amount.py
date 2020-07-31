@@ -51,8 +51,8 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
 
         fields = {
             "award_count": Count(count_field, distinct=True),
-            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
-            "outlay": self.outlay_field_annotation,
+            "obligation": Coalesce(Sum("total_obligation"), 0),
+            "outlay": Coalesce(Sum("total_outlay"), 0),
         }
 
         if self.award_type_codes:
