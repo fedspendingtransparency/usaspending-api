@@ -2,13 +2,12 @@ import logging
 import psycopg2
 
 from datetime import timedelta
-from django.db import connection
 from django.db.models import Q
 from threading import Timer
 from traceback import format_exception
 from typing import List, Optional, Tuple
 from usaspending_api.common.helpers.date_helper import now
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, execute_dml_sql
 from usaspending_api.submissions.models import DABSLoaderQueue
 
 
@@ -43,9 +42,7 @@ def add_submission_ids(submission_ids: List[int]) -> int:
         ) on conflict (submission_id) do nothing
     """
 
-    with connection.cursor() as cursor:
-        cursor.execute(sql)
-        return cursor.rowcount
+    return execute_dml_sql(sql)
 
 
 def mark_force_reload(submission_ids: List[int]) -> int:
@@ -174,29 +171,29 @@ def get_queue_status() -> Tuple[List[int], List[int], List[int], List[int], List
         unrecognized  - list of submission ids in an unrecognized state
 
     """
-    abandoned_heartbeat_cutoff = get_abandoned_heartbeat_cutoff()
-
-    def get_queryset(*filters, **kwfilters):
-        return (
-            DABSLoaderQueue.objects.filter(*filters, **kwfilters)
-            .order_by("-submission_id")
-            .values_list("submission_id", flat=True)
-        )
-
-    return (
-        get_queryset(state=DABSLoaderQueue.READY),
-        get_queryset(state=DABSLoaderQueue.IN_PROGRESS, heartbeat__gte=abandoned_heartbeat_cutoff),
-        get_queryset(state=DABSLoaderQueue.IN_PROGRESS, heartbeat__lt=abandoned_heartbeat_cutoff),
-        get_queryset(state=DABSLoaderQueue.FAILED),
-        get_queryset(Q(state__isnull=True) | ~Q(state__in=tuple(s[0] for s in DABSLoaderQueue.STATES))),
+    entries = (
+        DABSLoaderQueue.objects.all()
+        .values_list("submission_id", "state", "heartbeat", named=True)
+        .order_by("-submission_id")
     )
 
+    abandoned_heartbeat_cutoff = get_abandoned_heartbeat_cutoff()
 
-def get_ready_and_in_progress_count():
-    return DABSLoaderQueue.objects.filter(
-        Q(state=DABSLoaderQueue.READY)
-        | Q(state=DABSLoaderQueue.IN_PROGRESS) & Q(heartbeat__gte=get_abandoned_heartbeat_cutoff())
-    ).count()
+    ready, in_progress, abandoned, failed, unrecognized = [], [], [], [], []
+    for entry in entries:
+        if entry.state == DABSLoaderQueue.READY:
+            ready.append(entry.submission_id)
+        elif entry.state == DABSLoaderQueue.IN_PROGRESS:
+            if entry.heartbeat >= abandoned_heartbeat_cutoff:
+                in_progress.append(entry.submission_id)
+            else:
+                abandoned.append(entry.submission_id)
+        elif entry.state == DABSLoaderQueue.FAILED:
+            failed.append(entry.submission_id)
+        else:
+            unrecognized.append(entry.submission_id)
+
+    return ready, in_progress, abandoned, failed, unrecognized
 
 
 class HeartbeatTimer(Timer):
