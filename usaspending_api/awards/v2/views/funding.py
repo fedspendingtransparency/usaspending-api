@@ -39,7 +39,7 @@ FUNDING_SQL = SQL(
                 a.funding_agency_id,
                 faba.submission_id,
                 faba.transaction_obligated_amount,
-                coalesce(faba.gross_outlay_amount_by_award_cpe, 0.0) gross_outlay_amount,
+                faba.gross_outlay_amount_by_award_cpe gross_outlay_amount,
                 faba.disaster_emergency_fund_code,
                 faba.treasury_account_id,
                 faba.object_class_id,
