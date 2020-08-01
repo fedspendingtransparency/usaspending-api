@@ -1,21 +1,8 @@
-import boto3
 import logging
-import math
-import os
 
 from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger(__name__)
-
-
-def multipart_upload(bucketname, regionname, source_path, keyname):
-    s3client = boto3.client("s3", region_name=regionname)
-    source_size = os.stat(source_path).st_size
-    # Sets the chunksize at minimum ~5MB to sqrt(5MB) * sqrt(source size)
-    bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
-    config = boto3.s3.transfer.TransferConfig(multipart_chunksize=bytes_per_chunk)
-    transfer = boto3.s3.transfer.S3Transfer(s3client, config)
-    transfer.upload_file(source_path, bucketname, os.path.basename(keyname))
 
 
 def write_to_download_log(

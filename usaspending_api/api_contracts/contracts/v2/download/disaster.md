@@ -9,20 +9,15 @@ Creates a new download job for the requested account and award. Returns a link t
 
 + Request (application/json)
     + Attributes (object)
-        + `filters` (required, Filters, fixed-type)
+        + `filters` (optional, Filters, fixed-type)
+            Currently ignored, download will only be generated for COVID-19 spending data
         + `file_format` (optional, enum[string])
-            The format of the file(s) in the zip file containing the data.
-            + Default: `csv`
-            + Members
-                + `csv`
-                + `tsv`
-                + `pstxt`
+            Currently ignored, download will only be generated with CSV data files
     + Body
 
             {
                 "filters": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
-                    "fiscal_year": "2020"
+                    "def_codes": ["L", "M", "N", "O", "P"]
                 }
             }
 
@@ -33,34 +28,28 @@ Creates a new download job for the requested account and award. Returns a link t
         + `file_name` (required, string)
             Is the name of the zipfile containing CSVs that will be generated (with a timestamp suffix).
         + `file_url` (required, string)
-            The URL for the file.
+            The URL for downloading the zip file containing the generated data files. It might not resolve to a file if the download is in-progress.
         + `download_request` (required, object)
             The JSON object used when processing the download.
     + Body
 
             {
-                "status_url": "http://localhost:8000/api/v2/download/status?file_name=COVID19_2020-08-17_H21M09S13110251.zip",
-                "file_name": "COVID19_2020-08-17_H21M09S13110251.zip",
-                "file_url": "/csv_downloads/COVID19_2020-08-17_H21M09S13110251.zip",
+                "status_url": "https://api.usaspending.gov/api/v2/download/status?file_name=COVID-19_Profile_2020-07-09_H17M39S27272793.zip",
+                "file_name": "COVID-19_Profile_2020-07-09_H17M39S27272793.zip",
+                "file_url": "https://files.usaspending.gov/generated_downloads/COVID-19_Profile_2020-07-09_H17M39S27272793.zip",
                 "download_request": {
-                    "account_level": "treasury_account",
-                    "award_id": 68835500,
-                    "columns": [],
-                    "download_types": [
-                        "contract_federal_account_funding",
-                        "contract_transactions",
-                        "sub_contracts"
-                    ],
-                    "file_format": "csv",
                     "filters": {
-                        "def_codes": ["L", "M", "N", "O", "P"],
-                        "fiscal_year": "2020"
-                    },
-                    "is_for_assistance": true,
-                    "is_for_contract": true,
-                    "is_for_idv": false,
-                    "limit": 500000,
-                    "request_type": "disaster"
+                        "def_codes": [
+                            "L",
+                            "M",
+                            "N",
+                            "O",
+                            "P"
+                        ],
+                        "latest_fiscal_period": "8",
+                        "latest_fiscal_year": "2020",
+                        "start_date": "2020-04-01"
+                    }
                 }
             }
 
@@ -68,7 +57,6 @@ Creates a new download job for the requested account and award. Returns a link t
 
 ## Filters (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-+ `fiscal_year` (required, number)
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing

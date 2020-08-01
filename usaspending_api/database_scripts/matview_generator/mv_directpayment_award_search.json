@@ -26,6 +26,11 @@
     "  0::NUMERIC(23, 2) AS total_subsidy_cost,",
     "  0::NUMERIC(23, 2) AS total_loan_value,",
     "",
+    "  COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(",
+    "    CASE",
+    "      WHEN transaction_fabs.awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', transaction_fabs.awardee_or_recipient_uniqu)",
+    "      ELSE CONCAT('name-', transaction_fabs.awardee_or_recipient_legal) END",
+    "  ))::uuid) AS recipient_hash,",
     "  UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,",
     "  transaction_fabs.awardee_or_recipient_uniqu AS recipient_unique_id,",
     "  transaction_fabs.ultimate_parent_unique_ide AS parent_recipient_unique_id,",
@@ -57,7 +62,7 @@
     "  rl_country_lookup.country_name AS recipient_location_country_name,",
     "  transaction_fabs.legal_entity_state_code AS recipient_location_state_code,",
     "  LPAD(CAST(CAST((REGEXP_MATCH(transaction_fabs.legal_entity_county_code, '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS smallint) AS text), 3, '0') AS recipient_location_county_code,",
-    "  transaction_fabs.legal_entity_county_name AS recipient_location_county_name,",
+    "  COALESCE(rl_county_lookup.county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,",
     "  LPAD(CAST(CAST((REGEXP_MATCH(transaction_fabs.legal_entity_congressional, '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS smallint) AS text), 2, '0') AS recipient_location_congressional_code,",
     "  transaction_fabs.legal_entity_zip5 AS recipient_location_zip5,",
     "  TRIM(TRAILING FROM transaction_fabs.legal_entity_city_name) AS recipient_location_city_name,",
@@ -66,7 +71,7 @@
     "  pop_country_lookup.country_code AS pop_country_code,",
     "  transaction_fabs.place_of_perfor_state_code AS pop_state_code,",
     "  LPAD(CAST(CAST((REGEXP_MATCH(transaction_fabs.place_of_perform_county_co, '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS smallint) AS text), 3, '0') AS pop_county_code,",
-    "  transaction_fabs.place_of_perform_county_na AS pop_county_name,",
+    "  COALESCE(pop_county_lookup.county_name, transaction_fabs.place_of_perform_county_na) AS pop_county_name,",
     "  transaction_fabs.place_of_performance_code AS pop_city_code,",
     "  transaction_fabs.place_of_performance_zip5 AS pop_zip5,",
     "  LPAD(CAST(CAST((REGEXP_MATCH(transaction_fabs.place_of_performance_congr, '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS smallint) AS text), 2, '0') AS pop_congressional_code,",
@@ -93,7 +98,8 @@
     "LEFT OUTER JOIN",
     "  (SELECT",
     "    legal_business_name AS recipient_name,",
-    "    duns",
+    "    duns,",
+    "    recipient_hash",
     "  FROM recipient_lookup AS rlv",
     "  ) recipient_lookup ON recipient_lookup.duns = transaction_fabs.awardee_or_recipient_uniqu AND transaction_fabs.awardee_or_recipient_uniqu IS NOT NULL",
     "LEFT OUTER JOIN",
@@ -133,6 +139,14 @@
     "   ref_country_code AS rl_country_lookup on (",
     "      rl_country_lookup.country_code = COALESCE(transaction_fabs.legal_entity_country_code, 'USA')",
     "      OR rl_country_lookup.country_name = transaction_fabs.legal_entity_country_code)",
+    "LEFT OUTER JOIN",
+    " (SELECT DISTINCT ON (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM ref_city_county_state_code) AS rl_county_lookup on",
+    "   rl_county_lookup.state_alpha = transaction_fabs.legal_entity_state_code and",
+    "   rl_county_lookup.county_numeric = LPAD(CAST(CAST((REGEXP_MATCH(transaction_fabs.legal_entity_county_code, '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS smallint) AS text), 3, '0')",
+    "LEFT OUTER JOIN",
+    " (SELECT DISTINCT ON (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM ref_city_county_state_code) AS pop_county_lookup on",
+    "   pop_county_lookup.state_alpha = transaction_fabs.place_of_perfor_state_code and",
+    "   pop_county_lookup.county_numeric = LPAD(CAST(CAST((REGEXP_MATCH(transaction_fabs.place_of_perform_county_co, '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS smallint) AS text), 3, '0')",
     "WHERE",
     "  latest_transaction.action_date >= '2007-10-01'",
     "  AND awards.type IN ('06','10')",
@@ -145,98 +159,19 @@
       "unique": true,
       "columns": [{"name": "award_id"}]
     }, {
-      "name": "category",
-      "columns": [{"name": "category"}]
-    }, {
-      "name": "type",
-      "where": "type IS NOT NULL",
-      "columns": [{"name": "type"}]
-    }, {
-      "name": "ordered_type",
-      "columns": [{"name": "type", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "ordered_type_desc",
-      "columns": [{"name": "type_description", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "ordered_fain",
-      "where": "fain IS NOT NULL",
-      "columns": [{"name": "UPPER(fain)", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "ordered_award_amount",
-      "columns": [{"name": "award_amount", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "ordered_total_obligation",
-      "columns": [{"name": "total_obligation", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "total_obl_bin",
-      "columns": [{"name": "total_obl_bin"}]
-    }, {
-      "name": "ordered_total_subsidy_cost",
-      "columns": [{"name": "total_subsidy_cost", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "ordered_total_loan_value",
-      "columns": [{"name": "total_loan_value", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "period_of_performance_start_date",
-      "columns": [{"name": "period_of_performance_start_date", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "period_of_performance_current_end_date",
-      "columns": [{"name": "period_of_performance_current_end_date", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "recipient_name",
-      "where": "recipient_name IS NOT NULL",
-      "columns": [{"name": "recipient_name"}]
+      "name": "recipient_hash",
+      "columns": [{"name": "recipient_hash"}]
     }, {
       "name": "recipient_unique_id",
       "where": "recipient_unique_id IS NOT NULL",
       "columns": [{"name": "recipient_unique_id"}]
-    }, {
-      "name": "parent_recipient_unique_id",
-      "where": "parent_recipient_unique_id IS NOT NULL",
-      "columns": [{"name": "parent_recipient_unique_id"}]
-    }, {
-      "name": "date_signed",
-      "columns": [{"name": "date_signed", "order":  "DESC NULLS LAST"}]
     },{
       "name": "action_date",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
     }, {
-      "name": "last_modified_date",
-      "columns": [{"name": "last_modified_date", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "awarding_agency_id",
-      "where": "awarding_agency_id IS NOT NULL",
-      "columns": [{"name": "awarding_agency_id", "order": "ASC NULLS LAST"}]
-    }, {
       "name": "funding_agency_id",
       "where": "funding_agency_id IS NOT NULL",
       "columns": [{"name": "funding_agency_id", "order": "ASC NULLS LAST"}]
-    }, {
-      "name": "ordered_awarding_toptier_agency_name",
-      "columns": [{"name": "awarding_toptier_agency_name", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "ordered_awarding_subtier_agency_name",
-      "columns": [{"name": "awarding_subtier_agency_name", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "awarding_toptier_agency_name",
-      "where": "awarding_toptier_agency_name IS NOT NULL",
-      "columns": [{"name": "awarding_toptier_agency_name"}]
-    }, {
-      "name": "awarding_subtier_agency_name",
-      "where": "awarding_subtier_agency_name IS NOT NULL",
-      "columns": [{"name": "awarding_subtier_agency_name"}]
-    }, {
-      "name": "funding_toptier_agency_name",
-      "where": "funding_toptier_agency_name IS NOT NULL",
-      "columns": [{"name": "funding_toptier_agency_name"}]
-    }, {
-      "name": "funding_subtier_agency_name",
-      "where": "funding_subtier_agency_name IS NOT NULL",
-      "columns": [{"name": "funding_subtier_agency_name"}]
-    }, {
-      "name": "recipient_location_country_code",
-      "where": "recipient_location_country_code IS NOT NULL",
-      "columns": [{"name": "recipient_location_country_code"}]
     }, {
       "name": "recipient_location_state_code",
       "where": "recipient_location_state_code IS NOT NULL",
@@ -246,100 +181,9 @@
       "where": "recipient_location_county_code IS NOT NULL",
       "columns": [{"name": "recipient_location_county_code"}]
     }, {
-      "name": "recipient_location_zip5",
-      "where": "recipient_location_zip5 IS NOT NULL",
-      "columns": [{"name": "recipient_location_zip5"}]
-    }, {
       "name": "recipient_location_cong_code",
       "where": "recipient_location_congressional_code IS NOT NULL",
       "columns": [{"name": "recipient_location_congressional_code"}]
-    }, {
-      "name": "recipient_location_city_name",
-      "where": "recipient_location_city_name IS NOT NULL",
-      "columns": [{"name": "recipient_location_city_name"}]
-    }, {
-      "name": "pop_country_code",
-      "where": "pop_country_code IS NOT NULL",
-      "columns": [{"name": "pop_country_code"}]
-    }, {
-      "name": "pop_state_code",
-      "where": "pop_state_code IS NOT NULL",
-      "columns": [{"name": "pop_state_code"}]
-    }, {
-      "name": "pop_county_code",
-      "where": "pop_county_code IS NOT NULL",
-      "columns": [{"name": "pop_county_code"}]
-    }, {
-      "name": "pop_zip5",
-      "where": "pop_zip5 IS NOT NULL",
-      "columns": [{"name": "pop_zip5"}]
-    }, {
-      "name": "pop_congressional_code",
-      "where": "pop_congressional_code IS NOT NULL",
-      "columns": [{"name": "pop_congressional_code"}]
-    }, {
-      "name": "pop_city_name",
-      "where": "pop_city_name IS NOT NULL",
-      "columns": [{"name": "pop_city_name"}]
-    }, {
-      "name": "simple_pop_geolocation",
-      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL",
-      "columns": [{"name": "pop_state_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_pop_1",
-      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL",
-      "columns": [{"name": "pop_state_code"}, {"name": "pop_county_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_pop_2",
-      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL",
-      "columns": [{"name": "pop_state_code"}, {"name": "pop_congressional_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_pop_3",
-      "where": "pop_country_code = 'USA' AND pop_zip5 IS NOT NULL",
-      "columns": [{"name": "pop_zip5"}, {"name": "action_date"}]
-    }, {
-      "name": "simple_recipient_location_geolocation",
-      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL",
-      "columns": [{"name": "recipient_location_state_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_rl_1",
-      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL",
-      "columns": [{"name": "recipient_location_state_code"}, {"name": "recipient_location_county_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_rl_2",
-      "where": "recipient_location_country_code = 'USA' AND recipient_location_state_code IS NOT NULL",
-      "columns": [{"name": "recipient_location_state_code"}, {"name": "recipient_location_congressional_code"}, {"name": "action_date"}]
-    }, {
-      "name": "compound_geo_rl_3",
-      "where": "recipient_location_country_code = 'USA' AND recipient_location_zip5 IS NOT NULL",
-      "columns": [{"name": "recipient_location_zip5"}, {"name": "action_date"}]
-    }, {
-      "name": "cfda_number",
-      "where": "cfda_number IS NOT NULL",
-      "columns": [{"name": "cfda_number"}]
-    }, {
-      "name": "gin_business_categories",
-      "method": "GIN",
-      "columns": [{"name": "business_categories"}]
-    }, {
-      "name": "keyword_ts_vector",
-      "method": "GIN",
-      "columns": [{"name": "keyword_ts_vector"}]
-    }, {
-      "name": "award_ts_vector",
-      "method": "GIN",
-      "columns": [{"name": "award_ts_vector"}]
-    }, {
-      "name": "recipient_name_ts_vector",
-      "method": "GIN",
-      "columns": [{"name": "recipient_name_ts_vector"}]
-    }, {
-      "name": "treasury_account_identifiers",
-      "method": "GIN",
-      "columns": [{"name": "treasury_account_identifiers", "opclass": "gin__int_ops"}]
-    }, {
-      "name": "compound_cfda_action_date",
-      "columns": [{"name": "cfda_number"}, {"name": "action_date"}]
     }
   ]
 }

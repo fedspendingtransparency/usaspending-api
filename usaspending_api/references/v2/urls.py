@@ -7,6 +7,7 @@ from usaspending_api.references.v2.views import (
     glossary,
     award_types,
     def_codes,
+    submission_periods,
 )
 from usaspending_api.references.v2.views.filter_tree import naics, tas, psc
 
@@ -26,5 +27,6 @@ urlpatterns = [
     url(r"^glossary/$", glossary.GlossaryViewSet.as_view()),
     url(r"^naics/$", naics.NAICSViewSet.as_view()),
     url(r"^naics/(?P<requested_naics>[0-9]+)/$", naics.NAICSViewSet.as_view()),
+    url(r"^submission_periods/", submission_periods.SubmissionPeriodsViewSet.as_view()),
     url(r"^toptier_agencies/$", toptier_agencies.ToptierAgenciesViewSet.as_view()),
 ]

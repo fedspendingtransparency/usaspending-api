@@ -22,14 +22,13 @@ This endpoint provides geographical spending information from emergency/disaster
                 + `state`
                 + `county`
                 + `district`
-        + `geo_layer_filters` (required, array[string])
+        + `geo_layer_filters` (optional, array[string])
             Allows us to only request data for what is currently in view in the map
         + `spending_type` (required, enum[string])
-            + Default
-                + `obligations`
             + Members
-                + `obligations`
-                + `outlays`
+                + `obligation`
+                + `outlay`
+                + `face_value_of_loan`
 
     + Body
 
@@ -39,7 +38,7 @@ This endpoint provides geographical spending information from emergency/disaster
                 },
                 "geo_layer": "state",
                 "geo_layer_filters": ["NE", "WY", "CO", "IA", "IL", "MI", "IN", "TX"],
-                "spending_type": "obligations"
+                "spending_type": "obligation"
             }
 
 + Response 200 (application/json)
@@ -49,6 +48,11 @@ This endpoint provides geographical spending information from emergency/disaster
                 + `state`
                 + `county`
                 + `district`
+        + `spending_type` (required, enum[string])
+            + Members
+                + `obligation`
+                + `outlay`
+                + `face_value_of_loan`
         + `results` (array[GeographyTypeResult], fixed-type)
         + `messages` (optional, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -56,27 +60,31 @@ This endpoint provides geographical spending information from emergency/disaster
 
             {
                 "geo_layer": "state",
+                "spending_type": "obligation",
                 "results": [
                     {
                         "shape_code": "ND",
                         "amount": 4771026.93,
                         "display_name": "North Dakota",
                         "population": 762062,
-                        "per_capita": 6.26
+                        "per_capita": 6.26,
+                        "award_count": 185
                     },
                     {
                         "shape_code": "NV",
                         "amount": 26928552.59,
                         "display_name": "Nevada",
                         "population": 3080156,
-                        "per_capita": 8.74
+                        "per_capita": 8.74,
+                        "award_count": 124
                     },
                     {
                         "shape_code": "OH",
                         "amount": 187505278.16,
                         "display_name": "Ohio",
                         "population": 11689100,
-                        "per_capita": 16.04
+                        "per_capita": 16.04,
+                        "award_count": 134
                     }
                 ]
             }
@@ -85,6 +93,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
+    Return an award if an of the DEF Codes match the supplied filter since an Award can have multiple DEF Codes.
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
 
 ## GeographyTypeResult (object)
@@ -94,6 +103,7 @@ This endpoint provides geographical spending information from emergency/disaster
 + `shape_code` (required, string)
 + `population` (required, number, nullable)
 + `per_capita` (required, number, nullable)
++ `award_count` (required, number)
 
 
 ## DEFC (enum[string])

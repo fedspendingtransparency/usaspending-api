@@ -1,4 +1,5 @@
 from django.db import models
+from django_cte import CTEManager
 
 
 class DirectReimbursableConstants:
@@ -71,6 +72,8 @@ class ObjectClass(models.Model):
     direct_reimbursable_name = models.TextField(blank=True, null=True, choices=DIRECT_REIMBURSABLE.NAME_CHOICES)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    objects = CTEManager()
 
     class Meta:
         db_table = "object_class"

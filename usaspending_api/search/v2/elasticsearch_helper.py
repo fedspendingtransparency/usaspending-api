@@ -9,7 +9,7 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     INDEX_ALIASES_TO_AWARD_TYPES,
 )
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch, AwardSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 
@@ -154,16 +154,37 @@ def spending_by_transaction_sum_and_count(request_data):
     return get_sum_and_count_aggregation_results(request_data["filters"]["keywords"])
 
 
-def get_number_of_unique_terms(filter_query: ES_Q, field: str) -> int:
+def get_number_of_unique_terms_for_transactions(filter_query: ES_Q, field: str) -> int:
     """
     Returns the count for a specific filter_query.
-    NOTE: This will only work when the number of unique values is 40k or less. This is captured in the Elasticsearch
-    documentation for the cardinality aggregation:
-        "The maximum supported value is 40000, thresholds above this number will
-        have the same effect as a threshold of 40000"
+    NOTE: Counts below the precision_threshold are expected to be close to accurate (per the Elasticsearch
+          documentation). Since aggregations do not support more than 10k buckets this value is hard coded to
+          11k to ensure that endpoints using Elasticsearch do not cross the 10k threshold. Elasticsearch endpoints
+          should be implemented with a safeguard in case this count is above 10k.
     """
-    search = TransactionSearch().filter(filter_query)
-    cardinality_aggregation = A("cardinality", field=field)
+    return _get_number_of_unique_terms(TransactionSearch().filter(filter_query), field)
+
+
+def get_number_of_unique_terms_for_awards(filter_query: ES_Q, field: str) -> int:
+    """
+    Returns the count for a specific filter_query.
+    NOTE: Counts below the precision_threshold are expected to be close to accurate (per the Elasticsearch
+          documentation). Since aggregations do not support more than 10k buckets this value is hard coded to
+          11k to ensure that endpoints using Elasticsearch do not cross the 10k threshold. Elasticsearch endpoints
+          should be implemented with a safeguard in case this count is above 10k.
+    """
+    return _get_number_of_unique_terms(AwardSearch().filter(filter_query), field)
+
+
+def _get_number_of_unique_terms(search, field: str) -> int:
+    """
+    Returns the count for a specific filter_query.
+    NOTE: Counts below the precision_threshold are expected to be close to accurate (per the Elasticsearch
+          documentation). Since aggregations do not support more than 10k buckets this value is hard coded to
+          11k to ensure that endpoints using Elasticsearch do not cross the 10k threshold. Elasticsearch endpoints
+          should be implemented with a safeguard in case this count is above 10k.
+    """
+    cardinality_aggregation = A("cardinality", field=field, precision_threshold=11000)
     search.aggs.metric("field_count", cardinality_aggregation)
     response = search.handle_execute()
     response_dict = response.aggs.to_dict()

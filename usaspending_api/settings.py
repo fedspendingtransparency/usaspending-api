@@ -11,9 +11,9 @@ from django.utils.crypto import get_random_string
 from pathlib import Path
 from ddtrace import patch_all
 
-# All paths inside the project should be additive to BASE_DIR or APP_DIR
+# All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
-BASE_DIR = APP_DIR.parent
+REPO_DIR = APP_DIR.parent
 
 # Row-limited download limit
 MAX_DOWNLOAD_LIMIT = 500000
@@ -41,7 +41,8 @@ ENABLE_CARES_ACT_FEATURES = True
 SECRET_KEY = get_random_string()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# Defaults to False, unless DJANGO_DEBUG env var is set to a truthy value
+DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = "localhost:3000"
 ALLOWED_HOSTS = ["*"]
@@ -60,9 +61,9 @@ if not USASPENDING_AWS_REGION:
     USASPENDING_AWS_REGION = os.environ.get("USASPENDING_AWS_REGION")
 
 # AWS locations for CSV files
-CSV_LOCAL_PATH = str(BASE_DIR / "csv_downloads") + "/"
+CSV_LOCAL_PATH = str(REPO_DIR / "csv_downloads") + "/"
 DOWNLOAD_ENV = ""
-BULK_DOWNLOAD_LOCAL_PATH = str(BASE_DIR / "bulk_downloads") + "/"
+BULK_DOWNLOAD_LOCAL_PATH = str(REPO_DIR / "bulk_downloads") + "/"
 
 BULK_DOWNLOAD_S3_BUCKET_NAME = ""
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
@@ -102,6 +103,8 @@ DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/Data_Dictio
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
 ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "AssistanceSummary_download_readme.txt")
 CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_download_readme.txt")
+COVID19_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "COVID-19_download_readme.txt")
+COVID19_DOWNLOAD_FILENAME_PREFIX = "COVID-19_Profile"
 AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_codes.csv".format(
     "-nonprod" if DOWNLOAD_ENV != "production" else ""
 )
@@ -122,6 +125,7 @@ ES_AWARDS_QUERY_ALIAS_PREFIX = "award-query"
 ES_AWARDS_WRITE_ALIAS = "award-load-alias"
 ES_TIMEOUT = 90
 ES_REPOSITORY = ""
+ES_ROUTING_FIELD = "recipient_agg_key"
 
 # Application definition
 INSTALLED_APPS = [
@@ -354,6 +358,12 @@ LOGGING = {
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
     },
 }
+
+if DEBUG:
+    # make all loggers use the console when in debug
+    for logger in LOGGING["loggers"]:
+        if "console" not in LOGGING["loggers"][logger]["handlers"]:
+            LOGGING["loggers"][logger]["handlers"] += ["console"]
 
 
 # If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py

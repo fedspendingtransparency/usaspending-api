@@ -32,30 +32,34 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text of 090, for humans",
+                        "id": 121,
+                        "code": "485",
+                        "description": "Corporation for National and Community Service",
                         "children": [],
-                        "count": 54,
-                        "face_value_of_loan": 89.01
+                        "award_count": 1,
+                        "obligation": 16791.43,
+                        "outlay": 0.0,
+                        "face_value_of_loan": 0.0
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text of 012, for humans",
+                        "id": 118,
+                        "code": "514",
+                        "description": "U.S. Agency for Global Media",
                         "children": [],
-                        "count": 2,
-                        "face_value_of_loan": 50
+                        "award_count": 1,
+                        "obligation": 221438.82,
+                        "outlay": 0.0,
+                        "face_value_of_loan": 0.0
                     }
                 ],
                 "page_metadata": {
                     "page": 1,
+                    "total": 12,
+                    "limit": 2,
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
-                    "hasPrevious": false,
-                    "total": 23,
-                    "limit": 2
+                    "hasPrevious": false
                 }
             }
 
@@ -63,6 +67,20 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
++ `award_type_codes` (optional, array[enum[string]], fixed-type)
+    Only accepts loan award type `07` or `08` in the array, since this endpoint is specific to loans.
+
+    If ANY award type codes are provided, loan amounts will be summed for the distinct set of toptier agencies,
+    whose subtier agencies funded loan awards linked to `FinancialAccountsByAwards` records (which are derived from DABS File C).
+
+    If this parameter is not provided, loan amounts will be summed for a different set of agencies:
+    the distinct set of toptier agencies "owning" appropriations accounts used in funding _any_ award spending
+    for this disaster (i.e. from agencies "owning" Treasury Account Symbol (TAS) accounts on `FinancialAccountsByAwards`
+    records, which are derived from DABS File C).
+
+    + Members
+        + `07`
+        + `08`
 + `query` (optional, string)
     A "keyword" or "search term" to filter down results based on this text snippet
 
@@ -79,15 +97,26 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `award_count`
+        + `face_value_of_loan`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
 + `id` (required, string)
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
-+ `count` (required, number)
++ `award_count` (required, number)
++ `obligation` (required, number, nullable)
++ `outlay` (required, number, nullable)
 + `face_value_of_loan` (required, number, nullable)
 
 ## PageMetadata (object)

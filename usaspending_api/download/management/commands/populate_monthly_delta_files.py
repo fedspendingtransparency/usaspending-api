@@ -15,13 +15,14 @@ from django.db.models import Case, When, Value, CharField, F
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
+from usaspending_api.common.helpers.s3_helpers import multipart_upload
 from usaspending_api.download.filestreaming.download_generation import (
     apply_annotations_to_sql,
     _top_level_split,
+    split_and_zip_data_files,
 )
-from usaspending_api.download.filestreaming.download_generation import split_and_zip_data_files
 from usaspending_api.download.filestreaming.download_source import DownloadSource
-from usaspending_api.download.helpers import pull_modified_agencies_cgacs, multipart_upload
+from usaspending_api.download.helpers import pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
 

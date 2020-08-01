@@ -63,6 +63,13 @@ def generate_fiscal_quarter(date):
     return FiscalDate(date.year, date.month, date.day).quarter
 
 
+def generate_fiscal_year_and_month(date):
+    validate_date(date)
+    year = generate_fiscal_year(date)
+    month = generate_fiscal_month(date)
+    return year, month
+
+
 def generate_fiscal_year_and_quarter(date):
     validate_date(date)
     quarter = FiscalDate(date.year, date.month, date.day).quarter
@@ -212,6 +219,14 @@ def is_valid_year(year: int) -> bool:
 
 def is_final_period_of_quarter(period: int, quarter: int) -> bool:
     return is_valid_period(period) and is_valid_quarter(quarter) and period == get_final_period_of_quarter(quarter)
+
+
+def is_final_quarter(quarter: int) -> bool:
+    return quarter == 4
+
+
+def is_final_period(period: int) -> bool:
+    return period == 12
 
 
 def get_final_period_of_quarter(quarter: int) -> Optional[int]:

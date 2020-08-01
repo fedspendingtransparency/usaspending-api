@@ -24,11 +24,13 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
     + Attributes (object)
         + `obligation` (required, number)
         + `outlay` (required, number)
+        + `award_count` (required, number)
     + Body
 
             {
                 "obligation": 32984563875,
-                "outlay": 15484564321
+                "outlay": 15484564321,
+                "award_count": 42
             }
 
 
@@ -37,7 +39,15 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-    Defaults to all Award Type Codes. Applicable only when requested `award` spending.
+    When Award Type Codes are provided, results are only returned if the awards are linked between Financial Account by Awards and Awards (File C to File D linkage).
+    If this filter isn't provided then the results are File C (Financial Account by Awards) only
+    This is mutually exclusive from `award_type`
++ `award_type` (optional, enum[string], fixed-type)
+    When provided, it will return results limiting to the award type (Assistance or Procurment) based on Financial Account data.
+    This is mutually exclusive from `award_type_codes`
+    + Members
+        + procurement
+        + assistance
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing

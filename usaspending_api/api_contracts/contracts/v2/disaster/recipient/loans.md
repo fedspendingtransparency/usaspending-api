@@ -32,20 +32,22 @@ Returns loan spending details of recipients receiving supplemental funding budge
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text of 090, for humans",
-                        "children": [],
-                        "count": 54,
-                        "face_value_of_loan": 89.01
+                        "code": "987654321",
+                        "award_count": 2,
+                        "description": "RECIPIENT 3",
+                        "face_value_of_loan": 100.0,
+                        "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
+                        "obligation": 2200.0,
+                        "outlay": 1100.0
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text of 012, for humans",
-                        "children": [],
-                        "count": 2,
-                        "face_value_of_loan": 50
+                        "code": "456789123",
+                        "award_count": 1,
+                        "description": "RECIPIENT 2",
+                        "face_value_of_loan": 200.0,
+                        "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
+                        "obligation": 20.0,
+                        "outlay": 0.0
                     }
                 ],
                 "page_metadata": {
@@ -63,6 +65,12 @@ Returns loan spending details of recipients receiving supplemental funding budge
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
++ `award_type_codes` (optional, array[enum[string]], fixed-type)
+    Only accepts loan award type `07` or `08` in the array, since this endpoint is specific to loans
+    + Default: `["07", "08"]`
+    + Members
+        + `07`
+        + `08`
 + `query` (optional, string)
     A "keyword" or "search term" to filter down results based on this text snippet
 
@@ -79,16 +87,25 @@ Returns loan spending details of recipients receiving supplemental funding budge
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `description`
+    + Members
+        + `description`
+        + `award_count`
+        + `face_value_of_loan`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
-+ `id` (required, string)
++ `id` (required, array[string], fixed-type)
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
-+ `count` (required, number)
++ `award_count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
++ `obligation` (required, number, nullable)
++ `outlay` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)

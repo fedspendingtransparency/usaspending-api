@@ -111,6 +111,7 @@ VIEW_COLUMNS = [
     "tas_components",
     "federal_accounts",
     "business_categories",
+    "disaster_emergency_fund_codes",
 ]
 AWARD_VIEW_COLUMNS = [
     "award_id",
@@ -130,6 +131,7 @@ AWARD_VIEW_COLUMNS = [
     "update_date",
     "recipient_name",
     "recipient_hash",
+    "recipient_agg_key",
     "recipient_unique_id",
     "parent_recipient_unique_id",
     "business_categories",
@@ -152,6 +154,8 @@ AWARD_VIEW_COLUMNS = [
     "funding_toptier_agency_code",
     "awarding_subtier_agency_code",
     "funding_subtier_agency_code",
+    "funding_toptier_agency_agg_key",
+    "funding_subtier_agency_agg_key",
     "recipient_location_country_code",
     "recipient_location_country_name",
     "recipient_location_state_code",
@@ -160,6 +164,9 @@ AWARD_VIEW_COLUMNS = [
     "recipient_location_congressional_code",
     "recipient_location_zip5",
     "recipient_location_city_name",
+    "recipient_location_county_agg_key",
+    "recipient_location_congressional_agg_key",
+    "recipient_location_state_agg_key",
     "pop_country_code",
     "pop_country_name",
     "pop_state_code",
@@ -170,6 +177,8 @@ AWARD_VIEW_COLUMNS = [
     "pop_city_name",
     "pop_city_code",
     "cfda_number",
+    "cfda_title",
+    "cfda_agg_key",
     "sai_number",
     "type_of_contract_pricing",
     "extent_competed",
@@ -180,6 +189,9 @@ AWARD_VIEW_COLUMNS = [
     "naics_description",
     "tas_paths",
     "tas_components",
+    "disaster_emergency_fund_codes",
+    "total_covid_obligation",
+    "total_covid_outlay",
 ]
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
@@ -405,18 +417,18 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
         "tas_paths": convert_postgres_array_as_string_to_list,
         "tas_components": convert_postgres_array_as_string_to_list,
         "federal_accounts": convert_postgres_json_array_as_string_to_list,
+        "disaster_emergency_fund_codes": convert_postgres_array_as_string_to_list,
     }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
     dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
     for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
-        if load_type == "transactions":
-            # Route all transaction documents with the same recipient to the same shard
-            # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
-            # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
-            # and this is needed for performance
-            # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
-            file_df["routing"] = file_df["recipient_agg_key"]
+        # Route all documents with the same recipient to the same shard
+        # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
+        # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
+        # and this is needed for performance
+        # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
+        file_df["routing"] = file_df[settings.ES_ROUTING_FIELD]
         yield file_df.to_dict(orient="records")
 
 

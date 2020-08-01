@@ -72,10 +72,10 @@ This route returns object classes that the specified federal account has allotte
 # Data Structures
 
 ## MajorObjectClass (object)
-+ `id` (required, number)
++ `id` (required, string)
 + `name` (required, string)
 + `minor_object_class` (required, array[MinorObjectClass], fixed-type)
 
 ## MinorObjectClass (object)
-+ `id` (required, number)
++ `id` (required, string)
 + `name` (required, string)

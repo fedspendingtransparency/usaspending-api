@@ -111,4 +111,3 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 + `previous` (required, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
-+ `count` (required, number)

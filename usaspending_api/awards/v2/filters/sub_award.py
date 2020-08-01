@@ -2,10 +2,12 @@ import itertools
 import logging
 
 from django.db.models import Q
+
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
+from usaspending_api.search.filters.postgres.defc import DefCodes
 from usaspending_api.search.filters.postgres.psc import PSCCodes
 from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
@@ -58,6 +60,7 @@ def subaward_filter(filters, for_downloads=False):
             "extent_competed_type_codes",
             TasCodes.underscore_name,
             TreasuryAccounts.underscore_name,
+            "def_codes",
         ]
 
         if key not in key_list:
@@ -249,4 +252,7 @@ def subaward_filter(filters, for_downloads=False):
         elif key == TreasuryAccounts.underscore_name and TasCodes.underscore_name not in filters.keys():
             queryset = queryset.filter(TreasuryAccounts.build_tas_codes_filter(queryset, value))
 
+        elif key == "def_codes":
+            queryset = queryset.filter(DefCodes.build_def_codes_filter(queryset, value))
+            queryset = queryset.filter(action_date__gte="2020-04-01")
     return queryset

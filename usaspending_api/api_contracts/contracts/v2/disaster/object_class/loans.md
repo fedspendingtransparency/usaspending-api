@@ -36,16 +36,20 @@ Returns loan spending details of Object Classes receiving supplemental funding b
                         "code": "090",
                         "description": "Description text of 090, for humans",
                         "children": [],
-                        "count": 54,
-                        "face_value_of_loan": 89.01
+                        "award_count": 54,
+                        "face_value_of_loan": 89.01,
+                        "obligation": 4324,
+                        "outlay": 29
                     },
                     {
                         "id": "41",
                         "code": "012",
                         "description": "Description text of 012, for humans",
                         "children": [],
-                        "count": 2,
-                        "face_value_of_loan": 50
+                        "award_count": 2,
+                        "face_value_of_loan": 50,
+                        "obligation": 44323,
+                        "outlay": 746
                     }
                 ],
                 "page_metadata": {
@@ -79,16 +83,27 @@ Returns loan spending details of Object Classes receiving supplemental funding b
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `award_count`
+        + `face_value_of_loan`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
 + `id` (required, string)
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
-+ `count` (required, number)
++ `award_count` (required, number)
 + `face_value_of_loan` (required, number, nullable)
++ `obligation` (required, number, nullable)
++ `outlay` (required, number, nullable)
 
 ## PageMetadata (object)
 + `page` (required, number)

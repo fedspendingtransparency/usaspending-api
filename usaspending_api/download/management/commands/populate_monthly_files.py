@@ -9,9 +9,10 @@ from django.core.management.base import BaseCommand
 from usaspending_api.awards.v2.lookups.lookups import procurement_type_mapping, assistance_type_mapping
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
+from usaspending_api.common.helpers.s3_helpers import multipart_upload
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.filestreaming import download_generation
-from usaspending_api.download.helpers import multipart_upload, pull_modified_agencies_cgacs
+from usaspending_api.download.helpers import pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.request_validations import validate_award_request

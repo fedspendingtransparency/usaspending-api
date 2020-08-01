@@ -26,11 +26,27 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                 + `award`
         + `pagination` (optional, Pagination, fixed-type)
 
+    + Body
+
+            {
+                "filter": {
+                    "def_codes": [
+                        "L", "M", "N", "O", "P"
+                    ]
+                },
+                "spending_type": "total",
+                "pagination": {
+                    "page": 1,
+                    "limit": 2,
+                    "order": "desc",
+                    "sort": "id"
+                }
+            }
+
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
-
 
     + Body
 
@@ -40,8 +56,16 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                         "id": "43",
                         "code": "090",
                         "description": "Description text",
-                        "children": [],
-                        "count": 54,
+                        "children": [{
+                                "id": 78470,
+                                "code": "020-X-1894-000",
+                                "description": "Air Carrier Worker Support, Departmental Offices, Department of Treasury",
+                                "award_count": 1,
+                                "obligation": 49162967964.08,
+                                "outlay": 34401350618.2,
+                                "total_budgetary_resources": null
+                            }],
+                        "award_count": 54,
                         "obligation": 89.01,
                         "outlay": 70.98,
                         "total_budgetary_resources": null
@@ -50,8 +74,16 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                         "id": "41",
                         "code": "012",
                         "description": "Description text",
-                        "children": [],
-                        "count": 2,
+                        "children": [{
+                                "id": 78461,
+                                "code": "020-2020/2020-1892-000",
+                                "description": "Coronavirus Relief Fund, Departmental Offices, Treasury",
+                                "award_count": 1,
+                                "obligation": 293266617784.74,
+                                "outlay": 293266617784.74,
+                                "total_budgetary_resources": null
+                            }],
+                        "award_count": 2,
                         "obligation": 50,
                         "outlay": 10,
                         "total_budgetary_resources": null
@@ -59,14 +91,15 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                 ],
                 "page_metadata": {
                     "page": 1,
+                    "total": 915,
+                    "limit": 2,
                     "next": 2,
                     "previous": null,
                     "hasNext": true,
-                    "hasPrevious": false,
-                    "total": 23,
-                    "limit": 2
+                    "hasPrevious": false
                 }
             }
+
 
 # Data Structures
 
@@ -88,15 +121,24 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `id`
+    + Members
+        + `id`
+        + `code`
+        + `description`
+        + `award_count`
+        + `total_budgetary_resources`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
-+ `id` (required, string)
++ `id` (required, number)
 + `code` (required, string)
 + `description` (required, string)
 + `children` (optional, array[Result], fixed-type)
-+ `count` (required, number)
++ `award_count` (required, number, nullable)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 + `total_budgetary_resources` (required, number, nullable)

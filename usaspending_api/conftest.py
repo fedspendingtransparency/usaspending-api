@@ -152,7 +152,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
 
     broker_config_env_envvar = "integrationtest"
     broker_docker_image = "dataact-broker-backend:latest"
-    broker_src_dir_path_obj = settings.BASE_DIR.parent / "data-act-broker-backend"
+    broker_src_dir_path_obj = settings.REPO_DIR.parent / "data-act-broker-backend"
     broker_src_target = "/data-act/backend"
     broker_config_dir = "dataactcore"
     broker_config_copy_target = "/tmp/" + broker_config_dir + "/"

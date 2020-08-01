@@ -6,11 +6,13 @@ from usaspending_api.download.v2.download_status import DownloadStatusViewSet
 
 urlpatterns = [
     url(r"^accounts", views.AccountDownloadViewSet.as_view()),
-    url(r"^awards", views.RowLimitedAwardDownloadViewSet.as_view()),
-    url(r"^count", DownloadTransactionCountViewSet.as_view()),
-    url(r"^idv", views.RowLimitedIDVDownloadViewSet.as_view()),
-    url(r"^contract", views.RowLimitedContractDownloadViewSet.as_view()),
     url(r"^assistance", views.RowLimitedAssistanceDownloadViewSet.as_view()),
+    url(r"^awards", views.RowLimitedAwardDownloadViewSet.as_view()),
+    url(r"^contract", views.RowLimitedContractDownloadViewSet.as_view()),
+    url(r"^count", DownloadTransactionCountViewSet.as_view()),
+    url(r"^disaster/recipients", views.DisasterRecipientDownloadViewSet.as_view()),
+    url(r"^disaster", views.DisasterDownloadViewSet.as_view()),
+    url(r"^idv", views.RowLimitedIDVDownloadViewSet.as_view()),
     url(r"^status", DownloadStatusViewSet.as_view()),
     url(r"^transactions", views.RowLimitedTransactionDownloadViewSet.as_view()),
 ]

@@ -27,7 +27,7 @@ select
 from
     submission_window_schedule
 where
-    period_start >= '2020-07-17'
+    period_start >= '2020-05-15'
     and period != 1
 """
 

@@ -15,6 +15,8 @@ class Helpers:
             filters["def_codes"] = kwargs["def_codes"]
         if kwargs.get("query"):
             filters["query"] = kwargs["query"]
+        if kwargs.get("award_type_codes"):
+            filters["award_type_codes"] = kwargs["award_type_codes"]
 
         request_body["filter"] = filters
 
@@ -36,26 +38,41 @@ class Helpers:
         return resp
 
     @staticmethod
-    def post_for_count_endpoint(client, url, def_codes=None):
+    def post_for_count_endpoint(client, url, def_codes=None, award_type_codes=None):
+        filters = {}
+
+        if award_type_codes:
+            filters["award_type_codes"] = award_type_codes
         if def_codes:
-            request_body = json.dumps({"filter": {"def_codes": def_codes}})
-        else:
-            request_body = json.dumps({"filter": {}})
+            filters["def_codes"] = def_codes
+
+        request_body = json.dumps({"filter": filters})
         resp = client.post(url, content_type="application/json", data=request_body)
         return resp
 
     @staticmethod
+    def post_for_amount_endpoint(client, url, def_codes, award_type_codes=None, award_type=None):
+        filters = {}
+        if def_codes:
+            filters["def_codes"] = def_codes
+        if award_type_codes:
+            filters["award_type_codes"] = award_type_codes
+        if award_type:
+            filters["award_type"] = award_type
+        resp = client.post(url, content_type="application/json", data=json.dumps({"filter": filters}))
+        return resp
+
+    @staticmethod
     def patch_datetime_now(monkeypatch, year, month, day):
-        patched_datetime = datetime.datetime(year, month, day, tzinfo=datetime.timezone.utc)
+        def patched_datetime():
+            return datetime.datetime(year, month, day, tzinfo=datetime.timezone.utc)
 
-        class PatchedDatetime(datetime.datetime):
-            @classmethod
-            def now(cls, *args):
-                return patched_datetime
+        monkeypatch.setattr("usaspending_api.submissions.helpers.now", patched_datetime)
+        monkeypatch.setattr("usaspending_api.disaster.v2.views.disaster_base.now", patched_datetime)
 
-        monkeypatch.setattr("usaspending_api.submissions.helpers.datetime", PatchedDatetime)
-        monkeypatch.setattr("usaspending_api.disaster.v2.views.disaster_base.datetime", PatchedDatetime)
-        usaspending_api.common.helpers.fiscal_year_helpers.current_fiscal_year = lambda: year
+    @staticmethod
+    def reset_dabs_cache():
+        usaspending_api.disaster.v2.views.disaster_base.final_submissions_for_all_fy.cache_clear()
 
 
 @pytest.fixture

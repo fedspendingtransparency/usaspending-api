@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Spending Disaster/Emergency Funding [/api/v2/disaster/agency/spending/]
+# Recipient Spending Disaster/Emergency Funding [/api/v2/disaster/recipient/spending/]
 
 This endpoint provides insights on the Recipients which received disaster/emergency funding per the requested filters.
 
@@ -32,20 +32,20 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
             {
                 "results": [
                     {
-                        "id": "43",
-                        "code": "090",
-                        "description": "Description text",
-                        "count": 54,
-                        "obligation": 89.01,
-                        "outlay": 70.98
+                        "code": "987654321",
+                        "award_count": 2,
+                        "description": "RECIPIENT 3",
+                        "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
+                        "obligation": 2200.0,
+                        "outlay": 1100.0
                     },
                     {
-                        "id": "41",
-                        "code": "012",
-                        "description": "Description text",
-                        "count": 2,
-                        "obligation": 50,
-                        "outlay": 10
+                        "code": "456789123",
+                        "award_count": 1,
+                        "description": "RECIPIENT 2",
+                        "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
+                        "obligation": 20.0,
+                        "outlay": 0.0
                     }
                 ],
                 "page_metadata": {
@@ -63,6 +63,8 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
++ `query` (optional, string)
+    A "keyword" or "search term" to filter down results based on this text snippet
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
     Defaults to all Award Type Codes.
 
@@ -79,14 +81,20 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
     + Members
         + `desc`
         + `asc`
-+ `sort` (optional, string)
-    Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
++ `sort` (optional, enum[string])
+    Optional parameter indicating what value results should be sorted by
+    + Default: `description`
+    + Members
+        + `description`
+        + `award_count`
+        + `obligation`
+        + `outlay`
 
 ## Result (object)
-+ `id` (required, string)
++ `id` (required, array[string], fixed-type)
 + `code` (required, string)
 + `description` (required, string)
-+ `count` (required, number)
++ `award_count` (required, number)
 + `obligation` (required, number, nullable)
 + `outlay` (required, number, nullable)
 

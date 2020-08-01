@@ -26,6 +26,8 @@ List File C financial data for an IDV award's descendant contracts
             + Default: `reporting_fiscal_date`
             + Members
                 + `account_title`
+                + `disaster_emergency_fund_code`
+                + `gross_outlay_amount`
                 + `object_class`
                     Object class code, object class name
                 + `piid`
@@ -33,7 +35,7 @@ List File C financial data for an IDV award's descendant contracts
                     Program activity name, program activity code
                 + `reporting_agency_name`
                 + `reporting_fiscal_date`
-                    Reporting fiscal year, reporting fiscal period
+                    Reporting fiscal year, reporting fiscal month
                 + `transaction_obligated_amount`
         + `order` (optional, enum[string])
             The direction in which to order results. `asc` for ascending or `desc` for descending.
@@ -53,69 +55,58 @@ List File C financial data for an IDV award's descendant contracts
             {
                 "results": [
                     {
-                        "award_id": 5531118,
-                        "generated_unique_award_id": "CONT_AWD_15B30518FTM230002_1540_GS23F0170L_4730",
-                        "reporting_fiscal_year": 2019,
-                        "reporting_fiscal_quarter": 1,
-                        "piid": "15B30518FTM230002",
-                        "awarding_agency_id": 252,
-                        "awarding_agency_name": "Department of Justice",
-                        "funding_agency_id": 252,
-                        "funding_agency_name": "Department of Justice",
-                        "agency_id": "015",
-                        "main_account_code": "1060",
-                        "account_title": "Salaries and Expenses, Federal Prison System, Justice",
-                        "program_activity_code": "0002",
-                        "program_activity_name": "INSTITUTION SECURITY AND ADMINISTRATION",
-                        "object_class": "220",
-                        "object_class_name": "Transportation of things",
-                        "transaction_obligated_amount": -53.82
-                    },
-                    {
-                        "award_id": 5531118,
-                        "generated_unique_award_id": "CONT_AWD_15B30518FTM230002_1540_GS23F0170L_4730",
-                        "reporting_fiscal_year": 2018,
+                        "award_id": 9338979,
+                        "generated_unique_award_id": "CONT_AWD_AG3A94K160035_12G2_GS33FCA001_4732",
+                        "reporting_fiscal_year": 2017,
                         "reporting_fiscal_quarter": 4,
-                        "piid": "15B30518FTM230002",
-                        "awarding_agency_id": 252,
-                        "awarding_agency_name": "Department of Justice",
-                        "funding_agency_id": 252,
-                        "funding_agency_name": "Department of Justice",
-                        "agency_id": "015",
-                        "main_account_code": "1060",
-                        "account_title": "Salaries and Expenses, Federal Prison System, Justice",
-                        "program_activity_code": "0002",
-                        "program_activity_name": "INSTITUTION SECURITY AND ADMINISTRATION",
+                        "reporting_fiscal_month": 12,
+                        "is_quarterly_submission": true,
+                        "disaster_emergency_fund_code": null,
+                        "piid": "AG3A94K160035",
+                        "awarding_agency_id": 166,
+                        "awarding_agency_name": "Department of Agriculture",
+                        "funding_agency_id": 166,
+                        "funding_agency_name": "Department of Agriculture",
+                        "agency_id": "012",
+                        "main_account_code": "3700",
+                        "account_title": "Food Safety and Inspection Service, Agriculture",
+                        "program_activity_code": "0001",
+                        "program_activity_name": "SALARIES AND EXPENSES",
                         "object_class": "220",
                         "object_class_name": "Transportation of things",
-                        "transaction_obligated_amount": 251.16
+                        "transaction_obligated_amount": 680000.0,
+                        "gross_outlay_amount": 0.0
                     },
                     {
-                        "award_id": 5531118,
-                        "generated_unique_award_id": "CONT_AWD_15B30518FTM230002_1540_GS23F0170L_4730",
-                        "reporting_fiscal_year": 2018,
+                        "award_id": 9338979,
+                        "generated_unique_award_id": "CONT_AWD_AG3A94K160035_12G2_GS33FCA001_4732",
+                        "reporting_fiscal_year": 2017,
                         "reporting_fiscal_quarter": 3,
-                        "piid": "15B30518FTM230002",
-                        "awarding_agency_id": 252,
-                        "awarding_agency_name": "Department of Justice",
-                        "funding_agency_id": 252,
-                        "funding_agency_name": "Department of Justice",
-                        "agency_id": "015",
-                        "main_account_code": "1060",
-                        "account_title": "Salaries and Expenses, Federal Prison System, Justice",
-                        "program_activity_code": "0002",
-                        "program_activity_name": "INSTITUTION SECURITY AND ADMINISTRATION",
+                        "reporting_fiscal_month": 9,
+                        "is_quarterly_submission": true,
+                        "disaster_emergency_fund_code": null,
+                        "piid": "AG3A94K160035",
+                        "awarding_agency_id": 166,
+                        "awarding_agency_name": "Department of Agriculture",
+                        "funding_agency_id": 166,
+                        "funding_agency_name": "Department of Agriculture",
+                        "agency_id": "012",
+                        "main_account_code": "3700",
+                        "account_title": "Food Safety and Inspection Service, Agriculture",
+                        "program_activity_code": "0001",
+                        "program_activity_name": "SALARIES AND EXPENSES",
                         "object_class": "220",
                         "object_class_name": "Transportation of things",
-                        "transaction_obligated_amount": 193.96
+                        "transaction_obligated_amount": 680000.0,
+                        "gross_outlay_amount": 0.0
                     }
                 ],
                 "page_metadata": {
-                    "hasNext": false,
-                    "hasPrevious": false,
-                    "next": null,
                     "page": 1,
-                    "previous": null
+                    "next": 2,
+                    "previous": null,
+                    "hasNext": true,
+                    "hasPrevious": false
                 }
             }
 
@@ -137,6 +128,12 @@ List File C financial data for an IDV award's descendant contracts
     Fiscal year of the submission date.
 + `reporting_fiscal_quarter`: 3 (required, number, nullable)
     Fiscal quarter of the submission date.
++ `reporting_fiscal_month` (required, number, nullable)
+    Fiscal month of the submission date.
++ `is_quarterly_submission` (required, boolean, nullable)
+    True if the submission is quarterly.  False if the submission is monthly.
++ `disaster_emergency_fund_code` (required, boolean, nullable)
+    Code indicating whether or not the funding record is associated with a disaster.
 + `piid`: `15B30518FTM230002` (required, string, nullable)
     Procurement Instrument Identifier (PIID).
 + `awarding_agency_id`: 252 (required, number, nullable)
@@ -155,3 +152,4 @@ List File C financial data for an IDV award's descendant contracts
 + `object_class`: `220` (required, string, nullable)
 + `object_class_name`: `Transportation of things` (required, string, nullable)
 + `transaction_obligated_amount`: 193.96 (required, number, nullable)
++ `gross_outlay_amount`: 792.90 (required, number, nullable)

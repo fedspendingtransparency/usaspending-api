@@ -1,5 +1,5 @@
 {
-  "SELECT\n                fiscal_year,\n                period as fiscal_period,\n                COALESCE(SUM(CASE WHEN line IN (2190) THEN sf.amount ELSE 0 END), 0.0) AS obligations_incurred_total_cpe,\nCOALESCE(SUM(CASE WHEN line IN (1160,1180,1260,1280) THEN sf.amount ELSE 0 END), 0.0) AS budget_authority_appropriation_amount_cpe,\nCOALESCE(SUM(CASE WHEN line IN (1340,1440,1540,1640,1750,1850) THEN sf.amount ELSE 0 END), 0.0) AS other_budgetary_resources_amount_cpe,\nCOALESCE(SUM(CASE WHEN line IN (3020) THEN sf.amount ELSE 0 END), 0.0) AS gross_outlay_amount_by_tas_cpe,\nCOALESCE(SUM(CASE WHEN line IN (2490) THEN sf.amount ELSE 0 END), 0.0) AS unobligated_balance_cpe,\n                disaster_emergency_fund_code,\n                CONCAT(\n                    CASE WHEN sf.allocation_transfer_agency is not null THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END,\n                    sf.agency_identifier, '-',\n                    CASE WHEN sf.beginning_period_of_availa is not null THEN CONCAT(sf.beginning_period_of_availa, '/', sf.ending_period_of_availabil) ELSE sf.availability_type_code END,\n                    '-', sf.main_account_code, '-', sf.sub_account_code)\n                as tas_rendering_label\n            FROM\n                sf_133 sf\n            GROUP BY\n                fiscal_year,\n                fiscal_period,\n                disaster_emergency_fund_code,\n                tas_rendering_label\n            ORDER BY\n                fiscal_year,\n                fiscal_period;": [
+"SELECT\n                fiscal_year,\n                period as fiscal_period,\n                COALESCE(SUM(CASE WHEN line IN (2190) THEN sf.amount ELSE 0 END), 0.0) AS obligations_incurred_total_cpe,\nCOALESCE(SUM(CASE WHEN line IN (1160,1180,1260,1280) THEN sf.amount ELSE 0 END), 0.0) AS budget_authority_appropriation_amount_cpe,\nCOALESCE(SUM(CASE WHEN line IN (1340,1440,1540,1640,1750,1850) THEN sf.amount ELSE 0 END), 0.0) AS other_budgetary_resources_amount_cpe,\nCOALESCE(SUM(CASE WHEN line IN (2490) THEN sf.amount ELSE 0 END), 0.0) AS unobligated_balance_cpe,\nCOALESCE(SUM(CASE WHEN line IN (1910) THEN sf.amount ELSE 0 END), 0.0) AS total_budgetary_resources_cpe,COALESCE(SUM(CASE WHEN line IN (3020) THEN sf.amount * -1 ELSE 0 END), 0.0) AS gross_outlay_amount_by_tas_cpe,\n                disaster_emergency_fund_code,\n                CONCAT(\n                    CASE WHEN sf.allocation_transfer_agency is not null THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END,\n                    sf.agency_identifier, '-',\n                    CASE WHEN sf.beginning_period_of_availa is not null THEN CONCAT(sf.beginning_period_of_availa, '/', sf.ending_period_of_availabil) ELSE sf.availability_type_code END,\n                    '-', sf.main_account_code, '-', sf.sub_account_code)\n                as tas_rendering_label\n            FROM\n                sf_133 sf\n            GROUP BY\n                fiscal_year,\n                fiscal_period,\n                disaster_emergency_fund_code,\n                tas_rendering_label\n            ORDER BY\n                fiscal_year,\n                fiscal_period;": [
     {
       "fiscal_year": 1600,
       "fiscal_period": "-1",
@@ -8,6 +8,7 @@
       "other_budgetary_resources_amount_cpe": "-11",
       "gross_outlay_amount_by_tas_cpe": "-11",
       "unobligated_balance_cpe": "-11",
+      "total_budgetary_resources_cpe": "11",
       "disaster_emergency_fund_code": "A"
     },
     {
@@ -18,6 +19,7 @@
       "other_budgetary_resources_amount_cpe": "-12",
       "gross_outlay_amount_by_tas_cpe": "-12",
       "unobligated_balance_cpe": "-12",
+      "total_budgetary_resources_cpe": "12",
       "disaster_emergency_fund_code": "A"
     },
     {
@@ -28,6 +30,7 @@
       "other_budgetary_resources_amount_cpe": "-13",
       "gross_outlay_amount_by_tas_cpe": "-13",
       "unobligated_balance_cpe": "-13",
+      "total_budgetary_resources_cpe": "13",
       "disaster_emergency_fund_code": "A"
     }
   ]

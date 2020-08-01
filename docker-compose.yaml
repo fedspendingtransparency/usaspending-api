@@ -24,8 +24,9 @@ services:
      - .:/dockermount
     command: python3 -u manage.py shell
     environment:
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
-      ES_HOSTNAME: ${ES_HOSTNAME}
+      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
 
   usaspending-api:
@@ -34,13 +35,18 @@ services:
       - .:/dockermount
     ports:
       - 8000:8000
-    command: python3 -u manage.py runserver 0.0.0.0:8000
+    depends_on:
+      - usaspending-db
+    restart: on-failure:3 # 3 max attempt, and then it will stop restarting
+    # Must wait on postgres db to be up (~9s)
+    command: /bin/sh -c "sleep 9s; python3 -u manage.py runserver --verbosity 2 0.0.0.0:8000"
     environment:
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
       RUN_LOCAL_DOWNLOAD_IN_PROCESS: "False"
       DB_SOURCE: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       DB_R1: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
-      ES_HOSTNAME: ${ES_HOSTNAME}
+      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
 
   usaspending-bulk-download:
     build: .
@@ -49,6 +55,7 @@ services:
     - .:/dockermount
     command: python3 manage.py download_sqs_worker
     environment:
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
@@ -63,7 +70,14 @@ services:
         - bootstrap.memory_lock=true
         - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
       # Inject plugin install, then resume with orignial entrypoint command
-      command: /bin/sh -c "./bin/elasticsearch-plugin install mapper-murmur3 && /usr/local/bin/docker-entrypoint.sh"
+      command: >
+        /bin/sh -c "
+          if [ ! -d /usr/share/elasticsearch/plugins/mapper-murmur3 ]; then
+            # Certificate problem workaround when on VPN - wget without checking cert, then install from local filesystem
+            wget --no-check-certificate https://artifacts.elastic.co/downloads/elasticsearch-plugins/mapper-murmur3/mapper-murmur3-7.1.1.zip
+            ./bin/elasticsearch-plugin install file:///usr/share/elasticsearch/mapper-murmur3-7.1.1.zip
+          fi
+          /usr/local/bin/docker-entrypoint.sh"
       ulimits:
         memlock:
           soft: -1

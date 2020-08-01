@@ -15,15 +15,16 @@ from usaspending_api.common.validator.tinyshield import validate_post_request
 
 
 SORTABLE_COLUMNS = {
-    "federal_account": "federal_account",
-    "transaction_obligated_amount": "transaction_obligated_amount",
-    "agency": "funding_agency_name",
     "account_title": "fa.account_title",
+    "awarding_agency_name": "awarding_agency_name",
+    "disaster_emergency_fund_code": "disaster_emergency_fund_code",
+    "federal_account": "federal_account",
+    "funding_agency_name": "funding_agency_name",
+    "gross_outlay_amount": "gross_outlay_amount",
     "object_class": ["oc.object_class", "oc.object_class_name"],
     "program_activity": ["pa.program_activity_code", "pa.program_activity_name"],
-    "reporting_fiscal_date": ["sa.reporting_fiscal_year", "sa.reporting_fiscal_quarter"],
-    "funding_agency_name": "funding_agency_name",
-    "awarding_agency_name": "funding_agency_name",
+    "reporting_fiscal_date": ["sa.reporting_fiscal_year", "sa.reporting_fiscal_period"],
+    "transaction_obligated_amount": "transaction_obligated_amount",
 }
 
 
@@ -37,7 +38,9 @@ FUNDING_SQL = SQL(
         select  a.awarding_agency_id,
                 a.funding_agency_id,
                 faba.submission_id,
-                nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
+                faba.transaction_obligated_amount,
+                faba.gross_outlay_amount_by_award_cpe gross_outlay_amount,
+                faba.disaster_emergency_fund_code,
                 faba.treasury_account_id,
                 faba.object_class_id,
                 faba.program_activity_id
@@ -45,7 +48,9 @@ FUNDING_SQL = SQL(
                 inner join financial_accounts_by_awards as faba on faba.award_id = a.id
         where   a.{award_id_column} = {award_id}
     )
-    select  coalesce(gfaba.transaction_obligated_amount, 0.0)               transaction_obligated_amount,
+    select  gfaba.transaction_obligated_amount,
+            gfaba.gross_outlay_amount,
+            gfaba.disaster_emergency_fund_code,
             fa.federal_account_code                                         federal_account,
             fa.account_title,
             fta.name                                                        funding_agency_name,
@@ -57,7 +62,9 @@ FUNDING_SQL = SQL(
             pa.program_activity_code                                        program_activity_code,
             pa.program_activity_name                                        program_activity_name,
             sa.reporting_fiscal_year,
-            sa.reporting_fiscal_quarter
+            sa.reporting_fiscal_quarter,
+            sa.reporting_fiscal_period                                      reporting_fiscal_month,
+            sa.quarter_format_flag                                          is_quarterly_submission
     from    gather_financial_accounts_by_awards gfaba
             left outer join treasury_appropriation_account taa on
                 taa.treasury_account_identifier = gfaba.treasury_account_id

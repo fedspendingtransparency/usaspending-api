@@ -21,6 +21,7 @@ from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, ass
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
+from usaspending_api.common.helpers.s3_helpers import multipart_upload
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.download.download_utils import construct_data_date_range
@@ -28,11 +29,7 @@ from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
-from usaspending_api.download.helpers import (
-    verify_requested_columns_available,
-    multipart_upload,
-    write_to_download_log as write_to_log,
-)
+from usaspending_api.download.helpers import verify_requested_columns_available, write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
 from usaspending_api.download.models import DownloadJob
 
@@ -194,6 +191,20 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
             )
             download_sources.append(account_source)
 
+        elif VALUE_MAPPINGS[download_type]["source_type"] == "disaster":
+            # Disaster Page downloads
+            disaster_source = DownloadSource(
+                VALUE_MAPPINGS[download_type]["source_type"],
+                VALUE_MAPPINGS[download_type]["table_name"],
+                download_type,
+                agency_id,
+            )
+            disaster_source.award_category = json_request["award_category"]
+            disaster_source.queryset = filter_function(
+                json_request["filters"], VALUE_MAPPINGS[download_type]["base_fields"]
+            )
+            download_sources.append(disaster_source)
+
     verify_requested_columns_available(tuple(download_sources), json_request.get("columns", []))
 
     return download_sources
@@ -208,6 +219,7 @@ def build_data_file_name(source, download_job, piid, assistance_id):
         return strip_file_extension(download_job.file_name)
 
     file_name_pattern = VALUE_MAPPINGS[source.source_type]["download_name"]
+    timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
 
     if source.is_for_idv or source.is_for_contract:
         data_file_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
@@ -215,6 +227,8 @@ def build_data_file_name(source, download_job, piid, assistance_id):
         data_file_name = file_name_pattern.format(
             assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)
         )
+    elif source.source_type == "disaster_recipient":
+        data_file_name = file_name_pattern.format(award_category=source.award_category, timestamp=timestamp)
     else:
         if source.agency_code == "all":
             agency = "All"
@@ -227,7 +241,6 @@ def build_data_file_name(source, download_job, piid, assistance_id):
             agency = ""
         elif source.file_type not in ("treasury_account", "federal_account"):
             agency = f"{agency}_"
-        timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
 
         data_file_name = file_name_pattern.format(
             agency=agency,
@@ -307,24 +320,23 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
             file_path=source_path, delimiter=delim, row_limit=EXCEL_ROW_LIMIT, output_name_template=output_template
         )
 
-        if download_job:
-            msg = f"Partitioning data into {len(list_of_files)} files took {time.perf_counter() - log_time:.4f}s"
-            write_to_log(message=msg, download_job=download_job)
+        msg = f"Partitioning data into {len(list_of_files)} files took {time.perf_counter() - log_time:.4f}s"
+        write_to_log(message=msg, download_job=download_job)
 
         # Zip the split files into one zipfile
         write_to_log(message="Beginning zipping and compression", download_job=download_job)
         log_time = time.perf_counter()
         append_files_to_zip_file(list_of_files, zip_file_path)
 
-        if download_job:
-            write_to_log(
-                message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s", download_job=download_job
-            )
+        write_to_log(
+            message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s", download_job=download_job
+        )
 
     except Exception as e:
         message = "Exception while partitioning text file"
-        fail_download(download_job, e, message)
-        write_to_log(message=message, download_job=download_job, is_error=True)
+        if download_job:
+            fail_download(download_job, e, message)
+            write_to_log(message=message, download_job=download_job, is_error=True)
         logger.error(e)
         raise e
 
@@ -358,7 +370,11 @@ def wait_for_process(process, start_time, download_job):
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
     while process.is_alive():
-        if not download_job.monthly_download and (time.perf_counter() - start_time) > MAX_VISIBILITY_TIMEOUT:
+        if (
+            download_job
+            and not download_job.monthly_download
+            and (time.perf_counter() - start_time) > MAX_VISIBILITY_TIMEOUT
+        ):
             break
         if sleep_count < 10:
             time.sleep(WAIT_FOR_PROCESS_SLEEP / 5)
@@ -367,7 +383,7 @@ def wait_for_process(process, start_time, download_job):
         sleep_count += 1
 
     over_time = (time.perf_counter() - start_time) >= MAX_VISIBILITY_TIMEOUT
-    if (not download_job.monthly_download and over_time) or process.exitcode != 0:
+    if download_job and (not download_job.monthly_download and over_time) or process.exitcode != 0:
         if process.is_alive():
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
             write_to_log(
@@ -394,11 +410,13 @@ def generate_export_query(source_query, limit, source, columns, file_format):
     return r"\COPY ({}) TO STDOUT {}".format(query_annotated, options)
 
 
-def generate_export_query_temp_file(export_query, download_job):
-    write_to_log(message="Saving PSQL Query: {}".format(export_query), download_job=download_job, is_debug=True)
-
+def generate_export_query_temp_file(export_query, download_job, temp_dir=None):
+    write_to_log(message=f"Saving PSQL Query: {export_query}", download_job=download_job, is_debug=True)
+    dir_name = "/tmp"
+    if temp_dir:
+        dir_name = temp_dir
     # Create a unique temporary file to hold the raw query, using \copy
-    (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
+    (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir=dir_name)
 
     with open(temp_sql_file_path, "w") as file:
         file.write(export_query)

@@ -5,7 +5,7 @@ from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 
 
-def test_get_awards_csv_sources():
+def test_get_awards_csv_sources(db):
     original = VALUE_MAPPINGS["awards"]["filter_function"]
     VALUE_MAPPINGS["awards"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
@@ -19,7 +19,7 @@ def test_get_awards_csv_sources():
     assert csv_sources[1].source_type == "awards"
 
 
-def test_get_transactions_csv_sources():
+def test_get_transactions_csv_sources(db):
     original = VALUE_MAPPINGS["transactions"]["filter_function"]
     VALUE_MAPPINGS["transactions"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
@@ -33,7 +33,7 @@ def test_get_transactions_csv_sources():
     assert csv_sources[1].source_type == "transactions"
 
 
-def test_get_sub_awards_csv_sources():
+def test_get_sub_awards_csv_sources(db):
     original = VALUE_MAPPINGS["sub_awards"]["filter_function"]
     VALUE_MAPPINGS["sub_awards"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
@@ -83,7 +83,7 @@ def test_get_award_financial_csv_sources():
     assert csv_sources[0].source_type == "award_financial"
 
 
-def test_idv_orders_csv_sources():
+def test_idv_orders_csv_sources(db):
     original = VALUE_MAPPINGS["idv_orders"]["filter_function"]
     VALUE_MAPPINGS["idv_orders"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
@@ -98,7 +98,7 @@ def test_idv_orders_csv_sources():
     assert csv_sources[0].source_type == "idv_orders"
 
 
-def test_idv_transactions_csv_sources():
+def test_idv_transactions_csv_sources(db):
     original = VALUE_MAPPINGS["idv_transaction_history"]["filter_function"]
     VALUE_MAPPINGS["idv_transaction_history"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(

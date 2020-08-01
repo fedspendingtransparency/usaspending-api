@@ -1,227 +1,280 @@
 import logging
 
-from collections import namedtuple
-from django.conf import settings
+from datetime import timedelta
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
-from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
-from usaspending_api.common.helpers.sql_helpers import execute_sql_to_named_tuple
-from usaspending_api.etl.management.helpers.load_submission import (
-    calculate_load_submissions_since_datetime,
-    get_publish_history_table,
-)
+from django.db import transaction
+from django.db.models import Max
+from django.utils.crypto import get_random_string
+from usaspending_api.common.helpers.date_helper import now, datetime_command_line_argument_type
+from usaspending_api.etl.submission_loader_helpers.final_of_fy import populate_final_of_fy
+from usaspending_api.etl.submission_loader_helpers.submission_ids import get_new_or_updated_submission_ids
+from usaspending_api.submissions import dabs_loader_queue_helpers as dlqh
 from usaspending_api.submissions.models import SubmissionAttributes
+
 
 logger = logging.getLogger("script")
 
 
+DISPLAY_CAP = 100
+
+
 class Command(BaseCommand):
+    help = (
+        "The goal of this management command is coordinate the loading of multiple submissions "
+        "simultaneously using the load_submission single submission loader.  To load submissions "
+        "in parallel, kick off multiple runs at the same time.  Runs will be coordinated via the "
+        "dabs_loader_queue table in the database which allows loaders to be run from different "
+        "machines in different environments.  Using the database as the queue sidesteps the AWS "
+        "SQS 24 hour message lifespan limitation.  There is no hard cap on the number of jobs that "
+        "can be run simultaneously, but certainly there is a soft cap imposed by resource "
+        "contention.  During development, 8 were run in parallel without incident."
+    )
+
+    submission_ids = None
+    incremental = False
+    start_datetime = None
+    report_queue_status_only = False
+    processor_id = None
+    heartbeat_timer = None
+    file_c_chunk_size = 100000
+    do_not_retry = []
+
     def add_arguments(self, parser):
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
         mutually_exclusive_group.add_argument(
             "--submission-ids",
-            help=("Optionally supply one or more Broker submission_ids to be created or updated."),
+            help=(
+                "One or more Broker submission_ids to be reloaded.  These submissions are added to "
+                "the submission queue and processing begins on them immediately.  Due to the "
+                "asynchronous, multiprocessing nature of the submission queue, it is possible that "
+                "another loader might nab and/or complete one or more of these submissions before "
+                "we get to them.  This is just the nature of the beast.  The logs will document "
+                "when this happens.  Submissions loaded in this manner will be fully reloaded unless "
+                "another process is currently loading the submission."
+            ),
             nargs="+",
             type=int,
         )
         mutually_exclusive_group.add_argument(
-            "--incremental", action="store_true", help="Loads newly created or updated submissions.",
+            "--incremental",
+            action="store_true",
+            help=(
+                "Loads new or updated submissions in Broker since the most recently published "
+                "submission in USAspending.  Submissions loaded in this manner will be updated "
+                "where possible.  Otherwise they will be fully reloaded."
+            ),
         )
         mutually_exclusive_group.add_argument(
             "--start-datetime",
             type=datetime_command_line_argument_type(naive=True),  # Broker date/times are naive.
             help=(
-                "Manually set the date from which to start loading submissions.  This was originally designed "
-                "to be used for testing, but there are definitely real world usages for it... just be careful."
+                "Loads new or updated submissions in Broker since the timestamp provided.  This is "
+                "effectively the same as the --incremental option except the start date/time is "
+                "specified on the command line."
             ),
         )
-        parser.add_argument(
-            "--list-ids-only",
+        mutually_exclusive_group.add_argument(
+            "--report-queue-status-only",
             action="store_true",
-            help="Only list submissions to be loaded.  Do not actually load them.",
+            help="Just reports the queue status.  Nothing is loaded.",
+        )
+        parser.add_argument(
+            "--file-c-chunk-size",
+            type=int,
+            default=self.file_c_chunk_size,
+            help=(
+                f"Controls the number of File C records processed in a single batch.  Theoretically, "
+                f"bigger should be faster... right up until you run out of memory.  Balance carefully.  "
+                f"Default is {self.file_c_chunk_size:,}."
+            ),
+        )
+
+        parser.epilog = (
+            "And to answer your next question, yes this can be run standalone.  The parallelization "
+            "code is pretty minimal and should not add significant time to the overall run time of "
+            "serial submission loads."
         )
 
     def handle(self, *args, **options):
-        certified_only_submission_ids, load_submission_ids = self.get_submission_ids(
-            options.get("submission_ids"), options.get("start_datetime")
-        )
+        self.record_options(options)
 
-        if not certified_only_submission_ids and not load_submission_ids:
-            logger.info("There are no new or updated submissions.")
+        self.report_queue_status()
+        if self.report_queue_status_only:
             return
 
-        if options["list_ids_only"]:
-            logger.info("Exiting script before data load occurs in accordance with the --list-ids-only flag.")
-            return
+        self.reset_abandoned_locks()
 
-        self.process_submissions(certified_only_submission_ids, load_submission_ids)
-
-    def get_submission_ids(self, submission_ids, start_datetime):
-        if submission_ids:
-            certified_only_submission_ids, load_submission_ids = [], submission_ids
+        if self.submission_ids:
+            self.add_specific_submissions_to_queue()
+            processed_count = self.load_specific_submissions()
         else:
-            since_datetime = self.calculate_since_datetime(start_datetime)
-            certified_only_submission_ids, load_submission_ids = self.get_incremental_submission_ids(since_datetime)
+            since_datetime = self.start_datetime or self.calculate_load_submissions_since_datetime()
+            self.add_submissions_since_datetime_to_queue(since_datetime)
+            processed_count = self.load_incremental_submissions()
 
-        if certified_only_submission_ids:
-            msg = f"{len(certified_only_submission_ids):,} submissions will only receive certified_date updates"
-            if len(certified_only_submission_ids) <= 1000:
-                logger.info(f"The following {msg}: {[c.submission_id for c in certified_only_submission_ids]}")
-            else:
-                logger.info(f"{msg}.")
+        ready, in_progress, abandoned, failed, unrecognized = dlqh.get_queue_status()
+        failed_unrecognized_and_abandoned_count = len(failed) + len(unrecognized) + len(abandoned)
+        in_progress_count = len(in_progress)
 
-        if load_submission_ids:
-            msg = f"{len(load_submission_ids):,} submissions will be created or updated"
-            if len(load_submission_ids) <= 1000:
-                logger.info(f"The following {msg}: {load_submission_ids}")
-            else:
-                logger.info(f"{msg}.")
+        self.update_final_of_fy(processed_count, in_progress_count)
 
-        return certified_only_submission_ids, load_submission_ids
+        # Only return unstable state if something's in a bad state and we're the last one standing.
+        # Should cut down on Slack noise a bit.
+        if failed_unrecognized_and_abandoned_count > 0 and in_progress_count == 0:
+            raise SystemExit(3)
+
+    def record_options(self, options):
+        self.submission_ids = options.get("submission_ids")
+        self.incremental = options.get("incremental")
+        self.start_datetime = options.get("start_datetime")
+        self.report_queue_status_only = options.get("report_queue_status_only")
+        self.file_c_chunk_size = options.get("file_c_chunk_size")
+        self.processor_id = f"{now()}/{get_random_string()}"
+
+        logger.info(f'processor_id = "{self.processor_id}"')
 
     @staticmethod
-    def calculate_since_datetime(start_datetime):
-        since_datetime = start_datetime or calculate_load_submissions_since_datetime()
+    def report_queue_status():
+        """
+        Logs various information about the state of the submission queue.  Returns a count of failed
+        and unrecognized submissions so the caller can whine about it if they're so inclined.
+        """
+        ready, in_progress, abandoned, failed, unrecognized = dlqh.get_queue_status()
+        overall_count = sum(len(s) for s in (ready, in_progress, abandoned, failed, unrecognized))
+
+        msg = [
+            "The current queue status is as follows:\n",
+            f"There are {overall_count:,} total submissions in the queue.",
+            f"   {len(ready):,} are ready but have not yet started processing.",
+            f"   {len(in_progress):,} are in progress.",
+            f"   {len(abandoned):,} have been abandoned.",
+            f"   {len(failed):,} have FAILED.",
+            f"   {len(unrecognized):,} are in an unrecognized state.",
+        ]
+
+        def log_submission_ids(submissions, message):
+            if submissions:
+                caveat = f" (first {DISPLAY_CAP:,} shown)" if len(submissions) > DISPLAY_CAP else ""
+                submissions = ", ".join(str(s) for s in submissions[:DISPLAY_CAP])
+                msg.extend(["", f"The following submissions {message}{caveat}: {submissions}"])
+
+        log_submission_ids(in_progress, "are in progress")
+        log_submission_ids(abandoned, "have been abandoned")
+        log_submission_ids(failed, "have failed")
+        log_submission_ids(unrecognized, "are in an unrecognized state")
+
+        logger.info("\n".join(msg) + "\n")
+
+    @staticmethod
+    def reset_abandoned_locks():
+        count = dlqh.reset_abandoned_locks()
+        if count > 0:
+            logger.info(f"Reset {count:,} abandoned locks.")
+        return count
+
+    def add_specific_submissions_to_queue(self):
+        with transaction.atomic():
+            added = dlqh.add_submission_ids(self.submission_ids)
+            dlqh.mark_force_reload(self.submission_ids)
+        count = len(self.submission_ids)
+        logger.info(
+            f"Received {count:,} submission ids on the command line.  {added:,} were "
+            f"added to the queue.  {count - added:,} already existed."
+        )
+
+    def load_specific_submissions(self):
+        processed_count = 0
+        for submission_id in self.submission_ids:
+            count = dlqh.start_processing(submission_id, self.processor_id)
+            if count == 0:
+                logger.info(f"Submission {submission_id} has already been picked up by another processor.  Skipping.")
+            else:
+                self.load_submission(submission_id, force_reload=True)
+                processed_count += 1
+        return processed_count
+
+    @staticmethod
+    def add_submissions_since_datetime_to_queue(since_datetime):
         if since_datetime is None:
             logger.info("No records found in submission_attributes.  Performing a full load.")
         else:
             logger.info(f"Performing incremental load starting from {since_datetime}.")
-        return since_datetime
-
-    @staticmethod
-    def process_submissions(certified_only_submission_ids, load_submission_ids):
-        failed_submissions = []
-
-        for submission in certified_only_submission_ids:
-            try:
-                rows_affected = SubmissionAttributes.objects.filter(submission_id=submission.submission_id).update(
-                    certified_date=submission.new_certified_date
-                )
-                if rows_affected < 1:
-                    raise RuntimeError(f"No rows affected for {submission.submission_id} when update was executed.")
-            except (Exception, SystemExit):
-                logger.exception(f"Submission {submission.submission_id} failed to update")
-                failed_submissions.append(submission.submission_id)
-
-        for submission_id in load_submission_ids:
-            try:
-                call_command("load_submission", submission_id)
-            except (Exception, SystemExit):
-                logger.exception(f"Submission {submission_id} failed to load")
-                failed_submissions.append(submission_id)
-
-        if failed_submissions:
-            logger.error(
-                f"Script completed with the following {len(failed_submissions):,} "
-                f"submission failures: {failed_submissions}"
-            )
-            raise SystemExit(3)
-        else:
-            logger.info("Script completed with no failures.")
-
-    @staticmethod
-    def get_since_sql(since_datetime=None):
-        """
-        For performance reasons, we intentionally use updated_at here even though we're comparing against
-        published_date later.  submission.updated_at should always be greater than or equal to published_date.
-        """
-        if since_datetime is None:
-            return ""
-        return f"and s.updated_at >= ''{since_datetime}''::timestamp"
-
-    @classmethod
-    def get_incremental_submission_ids(cls, since_datetime=None):
-        """
-        Identifies Broker submissions that need to be created or updated in USAspending.  If supplied a
-        start_datetime, limits Broker rows to that date range.  If not, compares ALL Broker submissions.
-        Operates in two modes simultaneously:
-            MODE 1:  Detect when there are only changes in certification date.
-            MODE 2:  Detect when there are changes in any field other than certification date.
-        Certified-date-only changes do not require a full reload and thus provide us with a shortcut.
-        Note that this is designed to work with our conservative lookback period by filtering out rows
-        that haven't changed.  Look back as far as you want!
-
-        Returns two lists:
-            LIST 1:  Tuple of submission ids and new certified_date when only the certified_date has changed.
-            LIST 2:  Submission ids when anything other than just the certified_date has changed.
-        """
-        sql = f"""
-            select
-                submission_id, new_certified_date, anything_other_than_certified_date_has_changed
-            from (
-                    select
-                        bs.submission_id,
-                        bs.published_date,
-                        case
-                            when sa.certified_date::timestamp is distinct from bs.certified_date then bs.certified_date
-                        end as new_certified_date,
-                        (
-                            sa.published_date::timestamp is distinct from bs.published_date or
-                            sa.toptier_code is distinct from bs.toptier_code or
-                            sa.reporting_period_start is distinct from bs.reporting_start_date or
-                            sa.reporting_period_end is distinct from bs.reporting_end_date or
-                            sa.reporting_fiscal_year is distinct from bs.reporting_fiscal_year or
-                            sa.reporting_fiscal_period is distinct from bs.reporting_fiscal_period or
-                            sa.quarter_format_flag is distinct from bs.is_quarter_format
-                        ) as anything_other_than_certified_date_has_changed
-                    from
-                        dblink(
-                            '{settings.DATA_BROKER_DBLINK_NAME}',
-                            '
-                                select
-                                    s.submission_id,
-                                    (
-                                        select  max(updated_at)
-                                        from    {get_publish_history_table()}
-                                        where   submission_id = s.submission_id
-                                    ) as published_date,
-                                    (
-                                        select  max(updated_at)
-                                        from    certify_history
-                                        where   submission_id = s.submission_id
-                                    ) as certified_date,
-                                    coalesce(s.cgac_code, s.frec_code) as toptier_code,
-                                    s.reporting_start_date,
-                                    s.reporting_end_date,
-                                    s.reporting_fiscal_year,
-                                    s.reporting_fiscal_period,
-                                    s.is_quarter_format
-                                from
-                                    submission as s
-                                where
-                                    s.d2_submission is false and
-                                    s.publish_status_id in (2, 3)
-                                    {cls.get_since_sql(since_datetime)}
-                            '
-                        ) as bs (
-                            submission_id integer,
-                            published_date timestamp,
-                            certified_date timestamp,
-                            toptier_code text,
-                            reporting_start_date date,
-                            reporting_end_date date,
-                            reporting_fiscal_year integer,
-                            reporting_fiscal_period integer,
-                            is_quarter_format boolean
-                        )
-                        left outer join submission_attributes sa on
-                            sa.submission_id = bs.submission_id
-                ) t
-            where
-                new_certified_date is not null or
-                anything_other_than_certified_date_has_changed
-            order by
-                published_date,
-                submission_id
-        """
-
-        Submission = namedtuple("Submission", ["submission_id", "new_certified_date"])
-        rows = execute_sql_to_named_tuple(sql)
-        return (
-            [
-                Submission(r.submission_id, r.new_certified_date)
-                for r in rows
-                if r.new_certified_date and not r.anything_other_than_certified_date_has_changed
-            ],
-            [r.submission_id for r in rows if r.anything_other_than_certified_date_has_changed],
+        submission_ids = get_new_or_updated_submission_ids(since_datetime)
+        added = dlqh.add_submission_ids(submission_ids)
+        count = len(submission_ids)
+        logger.info(
+            f"Identified {count:,} new or updated submission ids in Broker.  {added:,} were "
+            f"added to the queue.  {count - added:,} already existed."
         )
+
+    def load_incremental_submissions(self):
+        processed_count = 0
+        while True:
+            submission_id, force_reload = dlqh.claim_next_available_submission(self.processor_id, self.do_not_retry)
+            if submission_id is None:
+                logger.info("No more available submissions in the queue.  Exiting.")
+                break
+            self.load_submission(submission_id, force_reload)
+            processed_count += 1
+        return processed_count
+
+    def cancel_heartbeat_timer(self):
+        if self.heartbeat_timer:
+            self.heartbeat_timer.cancel()
+            self.heartbeat_timer = None
+
+    def start_heartbeat_timer(self, submission_id):
+        if self.heartbeat_timer:
+            self.cancel_heartbeat_timer()
+        self.heartbeat_timer = dlqh.HeartbeatTimer(submission_id, self.processor_id)
+        self.heartbeat_timer.start()
+
+    def load_submission(self, submission_id, force_reload):
+        """
+        Accepts a locked/claimed submission id, spins up a heartbeat thread, loads the submission,
+        returns True if successful or False if not.
+        """
+        args = ["--file-c-chunk-size", self.file_c_chunk_size, "--skip-final-of-fy-calculation"]
+        if force_reload:
+            args.append("--force-reload")
+        self.start_heartbeat_timer(submission_id)
+        try:
+            call_command("load_submission", submission_id, *args)
+        except (Exception, SystemExit) as e:
+            self.cancel_heartbeat_timer()
+            logger.exception(f"Submission {submission_id} failed to load")
+            dlqh.fail_processing(submission_id, self.processor_id, e)
+            self.do_not_retry.append(submission_id)
+            self.report_queue_status()
+            return False
+        self.cancel_heartbeat_timer()
+        dlqh.complete_processing(submission_id, self.processor_id)
+        self.report_queue_status()
+        return True
+
+    @staticmethod
+    def calculate_load_submissions_since_datetime():
+        since = SubmissionAttributes.objects.all().aggregate(Max("published_date"))["published_date__max"]
+        if since:
+            # In order to prevent skips, we're just always going to look back 30 days.  Since submission is a
+            # relatively low volume table, this should not cause any noticeable performance issues.
+            since -= timedelta(days=30)
+        return since
+
+    @staticmethod
+    def update_final_of_fy(processed_count, in_progress_count):
+        """
+        For performance and deadlocking reasons, we only update final_of_fy once the last
+        submission is processed.  To this end, only update final_of_fy if any loads were
+        performed and there's nothing processable left in the queue.
+        """
+        if processed_count < 1:
+            logger.info("No work performed.  Not updating final_of_fy.")
+            return
+        if in_progress_count > 0:
+            logger.info("Submissions still in progress.  Not updating final_of_fy.")
+            return
+        logger.info("Updating final_of_fy")
+        populate_final_of_fy()
+        logger.info(f"Finished updating final_of_fy.")

@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, Count, F, Value, DecimalField, Case, When
+from django.db.models import Q, Sum, F, Value, DecimalField, Case, When, OuterRef, Subquery, Func, IntegerField
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
@@ -11,14 +11,18 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
     SpendingMixin,
+    FabaOutlayMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 
 
 def construct_response(results: list, pagination: Pagination):
     FederalAccounts = FedAcctResults()
     for row in results:
-        FA = FedAccount(id=row.pop("fa_id"), code=row.pop("fa_code"), description=row.pop("fa_description"))
+        FA = FedAccount(
+            id=row.pop("fa_id"), code=row.pop("fa_code"), award_count=0, description=row.pop("fa_description")
+        )
         FederalAccounts[FA].include(TAS(**row))
 
     return {
@@ -27,35 +31,8 @@ def construct_response(results: list, pagination: Pagination):
     }
 
 
-def submission_window_cutoff(min_date, monthly_sub, quarterly_sub):
-    sub_queries = []
-    if monthly_sub:
-        sub_queries.append(
-            Q(
-                Q(submission__quarter_format_flag=False)
-                & Q(submission__reporting_period_end__lte=monthly_sub["submission_reveal_date"])
-            )
-        )
-
-    sub_queries.append(
-        Q(
-            Q(submission__quarter_format_flag=True)
-            & Q(submission__reporting_period_end__lte=quarterly_sub["submission_reveal_date"])
-        )
-    )
-
-    sub_queryset = sub_queries.pop()
-    for query in sub_queries:
-        sub_queryset |= query
-
-    return [
-        Q(submission__reporting_period_start__gte=min_date),
-        Q(sub_queryset),
-    ]
-
-
-class Spending(PaginationMixin, SpendingMixin, DisasterBase):
-    """View to implement the API"""
+class SpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterBase):
+    """ Returns disaster spending by federal account. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
 
@@ -71,83 +48,28 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
     @property
     def total_queryset(self):
         filters = [
-            Q(
-                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
-                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
-            ),
-            Q(disaster_emergency_fund__in=self.def_codes),
+            self.is_in_provided_def_codes,
+            self.is_non_zero_total_spending,
+            self.all_closed_defc_submissions,
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
         ]
-        filters.extend(
-            submission_window_cutoff(
-                self.reporting_period_min,
-                self.last_closed_monthly_submission_dates,
-                self.last_closed_quarterly_submission_dates,
-            )
-        )
-        case_when_queries = []
-        if self.last_closed_monthly_submission_dates:
-            case_when_queries.extend(
-                [
-                    Q(
-                        submission__reporting_fiscal_year=self.last_closed_monthly_submission_dates[
-                            "submission_fiscal_year"
-                        ],
-                        submission__reporting_fiscal_period=self.last_closed_monthly_submission_dates[
-                            "submission_fiscal_month"
-                        ],
-                        submission__quarter_format_flag=False,
-                    ),
-                    Q(
-                        submission__reporting_fiscal_year__lte=self.last_closed_monthly_submission_dates[
-                            "submission_fiscal_year"
-                        ],
-                        submission__reporting_fiscal_period=12,
-                        submission__quarter_format_flag=False,
-                    ),
-                ]
-            )
-
-        case_when_queries.extend(
-            [
-                Q(
-                    submission__reporting_fiscal_year=self.last_closed_quarterly_submission_dates[
-                        "submission_fiscal_year"
-                    ],
-                    submission__reporting_fiscal_quarter=self.last_closed_quarterly_submission_dates[
-                        "submission_fiscal_quarter"
-                    ],
-                    submission__quarter_format_flag=True,
-                ),
-                Q(
-                    submission__reporting_fiscal_year__lte=self.last_closed_quarterly_submission_dates[
-                        "submission_fiscal_year"
-                    ],
-                    submission__reporting_fiscal_period=12,
-                    submission__quarter_format_flag=True,
-                ),
-            ]
-        )
-
-        case_when_query = case_when_queries.pop()
-        for query in case_when_queries:
-            case_when_query |= query
 
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "count": Count("treasury_account__tas_rendering_label", distinct=True),
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),
+            "award_count": Value(None, output_field=IntegerField()),
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Coalesce(
                 Sum(
                     Case(
-                        When(case_when_query, then=F("obligations_incurred_by_program_object_class_cpe")),
+                        When(
+                            self.final_period_submission_query_filters,
+                            then=F("obligations_incurred_by_program_object_class_cpe"),
+                        ),
                         default=Value(0),
                     )
                 ),
@@ -156,14 +78,28 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             "outlay": Coalesce(
                 Sum(
                     Case(
-                        When(case_when_query, then=F("gross_outlay_amount_by_program_object_class_cpe"),),
+                        When(
+                            self.final_period_submission_query_filters,
+                            then=F("gross_outlay_amount_by_program_object_class_cpe"),
+                        ),
                         default=Value(0),
                     )
                 ),
                 0,
             ),
             "total_budgetary_resources": Coalesce(
-                Sum("treasury_account__gtas__budget_authority_appropriation_amount_cpe"), 0
+                Subquery(
+                    GTASSF133Balances.objects.filter(
+                        disaster_emergency_fund_code__in=self.def_codes,
+                        fiscal_period=self.latest_reporting_period["submission_fiscal_month"],
+                        fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
+                        treasury_account_identifier=OuterRef("treasury_account"),
+                    )
+                    .annotate(amount=Func("total_budgetary_resources_cpe", function="Sum"))
+                    .values("amount"),
+                    output_field=DecimalField(),
+                ),
+                0,
             ),
         }
 
@@ -183,48 +119,15 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
     @property
     def award_queryset(self):
         filters = [
-            Q(disaster_emergency_fund__in=self.def_codes),
+            self.is_in_provided_def_codes,
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
+            self.all_closed_defc_submissions,
         ]
-        filters.extend(
-            submission_window_cutoff(
-                self.reporting_period_min,
-                self.last_closed_monthly_submission_dates,
-                self.last_closed_quarterly_submission_dates,
-            )
-        )
-        case_when_queries = []
-        if self.last_closed_monthly_submission_dates:
-            case_when_queries.append(
-                Q(
-                    submission__reporting_fiscal_year=self.last_closed_monthly_submission_dates[
-                        "submission_fiscal_year"
-                    ],
-                    submission__reporting_fiscal_period=self.last_closed_monthly_submission_dates[
-                        "submission_fiscal_month"
-                    ],
-                    submission__quarter_format_flag=False,
-                )
-            )
-
-        case_when_queries.append(
-            Q(
-                submission__reporting_fiscal_year=self.last_closed_quarterly_submission_dates["submission_fiscal_year"],
-                submission__reporting_fiscal_quarter=self.last_closed_quarterly_submission_dates[
-                    "submission_fiscal_quarter"
-                ],
-                submission__quarter_format_flag=True,
-            )
-        )
-
-        case_when_query = case_when_queries.pop()
-        for query in case_when_queries:
-            case_when_query |= query
 
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "count": Count("treasury_account__tas_rendering_label", distinct=True),
+            "award_count": self.unique_file_c_count(),
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),
@@ -232,7 +135,13 @@ class Spending(PaginationMixin, SpendingMixin, DisasterBase):
             "fa_id": F("treasury_account__federal_account_id"),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
-                Sum(Case(When(case_when_query, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0),)), 0,
+                Sum(
+                    Case(
+                        When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
+                        default=Value(0),
+                    )
+                ),
+                0,
             ),
             "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
         }

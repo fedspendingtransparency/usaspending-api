@@ -89,6 +89,7 @@ List of table columns
 - `Funding Agency`
 - `Funding Sub Agency`
 
+
 ## SpendingByAwardResponse (object)
 + `internal_id` (required, number)
 + `Award Amount` (optional, number)
@@ -123,6 +124,9 @@ List of table columns
 + `Place of Performance Country Code` (optional, string, nullable)
 + `Place of Performance State Code` (optional, number, nullable)
 + `Place of Performance Zip5` (optional, number)
++ `COVID-19 Outlays` (optional, number)
++ `COVID-19 Obligations` (optional, number)
++ `def_codes` (optional, array[string], fixed-type)
 + `Prime Award ID` (optional, string, nullable)
     Sub-Awards only, returns the ID (piid/fain/uri) of the prime award.
 + `Prime Recipient Name` (optional, string, nullable)
@@ -191,6 +195,7 @@ List of table columns
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
++ `def_codes` (optional, array[DEFC], fixed-type)
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -290,3 +295,29 @@ List of filterable award types
 - `IDV_C`
 - `IDV_D`
 - `IDV_E`
+
+## DEFC (enum[string])
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
+
+### Members
++ `A`
++ `B`
++ `C`
++ `D`
++ `E`
++ `F`
++ `G`
++ `H`
++ `I`
++ `J`
++ `K`
++ `L`
++ `M`
++ `N`
++ `O`
++ `P`
++ `Q`
++ `R`
++ `S`
++ `T`
++ `9`

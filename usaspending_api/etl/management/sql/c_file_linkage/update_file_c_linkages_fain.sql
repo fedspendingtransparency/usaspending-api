@@ -1,5 +1,6 @@
 -- When only FAIN is populated, update File C assistance records to link to a corresponding award if there is an exact
 -- match based on FAIN.
+with cte as (
 UPDATE financial_accounts_by_awards AS faba
 SET
 	award_id = (
@@ -28,4 +29,14 @@ WHERE
 				FROM awards AS aw_sub
 				WHERE UPPER(aw_sub.fain) = UPPER(faba_sub.fain)
 			) = 1
-	);
+            {submission_id_clause}
+	) RETURNING award_id
+)
+UPDATE
+	awards
+SET
+	update_date = NOW()
+FROM
+	cte
+WHERE
+	id = cte.award_id;

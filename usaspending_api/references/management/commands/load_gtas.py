@@ -13,8 +13,11 @@ DERIVED_COLUMNS = {
     "obligations_incurred_total_cpe": [2190],
     "budget_authority_appropriation_amount_cpe": [1160, 1180, 1260, 1280],
     "other_budgetary_resources_amount_cpe": [1340, 1440, 1540, 1640, 1750, 1850],
-    "gross_outlay_amount_by_tas_cpe": [3020],
     "unobligated_balance_cpe": [2490],
+    "total_budgetary_resources_cpe": [1910],
+}
+INVERTED_DERIVED_COLUMNS = {
+    "gross_outlay_amount_by_tas_cpe": [3020],
 }
 
 
@@ -73,6 +76,11 @@ class Command(mixins.ETLMixin, BaseCommand):
             [
                 f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount ELSE 0 END), 0.0) AS {key},"""
                 for key, val in DERIVED_COLUMNS.items()
+            ]
+        ) + "\n".join(
+            [
+                f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount * -1 ELSE 0 END), 0.0) AS {key},"""
+                for key, val in INVERTED_DERIVED_COLUMNS.items()
             ]
         )
 

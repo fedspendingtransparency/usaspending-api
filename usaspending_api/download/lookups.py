@@ -42,6 +42,7 @@ from usaspending_api.download.helpers.download_annotation_functions import (
     subaward_annotations,
     idv_order_annotations,
     idv_transaction_annotations,
+    disaster_recipient_annotations,
 )
 
 
@@ -231,6 +232,15 @@ VALUE_MAPPINGS = {
         "is_for_assistance": True,
         "annotations_function": idv_transaction_annotations,
     },
+    "disaster_recipient": {
+        "source_type": "disaster",
+        "table": AwardSearchView,
+        "table_name": "recipient",
+        "download_name": "COVID-19_Recipients_{award_category}_{timestamp}",
+        "filter_function": AwardsElasticsearchDownload.query,
+        "annotations_function": disaster_recipient_annotations,
+        "base_fields": ["recipient_name", "recipient_unique_id"],
+    },
 }
 
 # Bulk Download still uses "prime awards" instead of "transactions"
@@ -262,6 +272,7 @@ ROW_CONSTRAINT_FILTER_DEFAULTS = {
     "federal_account_ids": [],
     "object_class_ids": [],
     "program_activity_ids": [],
+    "def_codes": [],
 }
 ACCOUNT_FILTER_DEFAULTS = {
     "agency": "all",

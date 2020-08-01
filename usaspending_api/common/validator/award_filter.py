@@ -171,6 +171,7 @@ AWARD_FILTER = [
             STANDARD_FILTER_TREE_MODEL,
         ],
     },
+    {"name": "def_codes", "type": "array", "array_type": "text", "text_type": "search"},
 ]
 
 for a in AWARD_FILTER:

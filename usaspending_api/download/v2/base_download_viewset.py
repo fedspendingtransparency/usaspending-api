@@ -1,6 +1,7 @@
 import json
 
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Optional
 
 from django.conf import settings
@@ -19,29 +20,46 @@ from usaspending_api.download.helpers import write_to_download_log as write_to_l
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.request_validations import (
-    validate_award_request,
-    validate_idv_request,
     validate_account_request,
-    validate_contract_request,
     validate_assistance_request,
+    validate_award_request,
+    validate_contract_request,
+    validate_disaster_recipient_request,
+    validate_idv_request,
 )
+
+
+class DownloadRequestType(Enum):
+    ACCOUNT = {"name": "account", "validate_func": validate_account_request}
+    ASSISTANCE = {"name": "assistance", "validate_func": validate_assistance_request}
+    AWARD = {"name": "award", "validate_func": validate_award_request}
+    CONTRACT = {"name": "contract", "validate_func": validate_contract_request}
+    DISASTER = {"name": "disaster"}
+    DISASTER_RECIPIENT = {"name": "disaster_recipient", "validate_func": validate_disaster_recipient_request}
+    IDV = {"name": "idv", "validate_func": validate_idv_request}
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIView):
-    def post(self, request: Request, request_type: str = "award", origination: Optional[str] = None):
-        if request_type == "award":
-            json_request = validate_award_request(request.data)
-        elif request_type == "idv":
-            json_request = validate_idv_request(request.data)
-        elif request_type == "contract":
-            json_request = validate_contract_request(request.data)
-        elif request_type == "assistance":
-            json_request = validate_assistance_request(request.data)
-        else:
-            json_request = validate_account_request(request.data)
+    def post(
+        self,
+        request: Request,
+        request_type: DownloadRequestType = DownloadRequestType.AWARD,
+        origination: Optional[str] = None,
+    ):
+        if request_type == DownloadRequestType.DISASTER:
+            filename = (
+                DownloadJob.objects.filter(
+                    file_name__startswith=settings.COVID19_DOWNLOAD_FILENAME_PREFIX, error_message__isnull=True
+                )
+                .order_by("-update_date")
+                .values_list("file_name", flat=True)
+                .first()
+            )
+            return self.get_download_response(file_name=filename)
 
-        json_request["request_type"] = request_type
+        json_request = request_type.value["validate_func"](request.data)
+        json_request["request_type"] = request_type.value["name"]
         ordered_json_request = json.dumps(order_nested_object(json_request))
 
         # Check if the same request has been called today

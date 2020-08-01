@@ -26,6 +26,14 @@ query_paths = {
                 ("parent_award_agency_id", "award__latest_transaction__contract_data__referenced_idv_agency_iden"),
                 ("parent_award_agency_name", "award__latest_transaction__contract_data__referenced_idv_agency_desc"),
                 ("parent_award_id_piid", "award__parent_award_piid"),
+                ("disaster_emergency_fund_codes", None),  # Annotation is used to create this column
+                ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                (
+                    "award_latest_action_date",
+                    "award__latest_transaction__action_date",
+                ),  # Annotation is used to create this column
+                ("award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "award__total_obligation"),
                 ("current_total_value_of_award", "award__latest_transaction__contract_data__current_total_value_award"),
                 (
@@ -59,6 +67,8 @@ query_paths = {
                 ("funding_office_name", "award__latest_transaction__contract_data__funding_office_name"),
                 ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("foreign_funding", "award__latest_transaction__contract_data__foreign_funding"),
                 ("foreign_funding_description", "award__latest_transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "award__latest_transaction__contract_data__sam_exception"),
@@ -77,6 +87,7 @@ query_paths = {
                 ("recipient_address_line_1", "award__latest_transaction__contract_data__legal_entity_address_line1"),
                 ("recipient_address_line_2", "award__latest_transaction__contract_data__legal_entity_address_line2"),
                 ("recipient_city_name", "award__latest_transaction__contract_data__legal_entity_city_name"),
+                ("recipient_county_name", "award__latest_transaction__contract_data__legal_entity_county_name"),
                 ("recipient_state_code", "award__latest_transaction__contract_data__legal_entity_state_code"),
                 ("recipient_state_name", "award__latest_transaction__contract_data__legal_entity_state_descrip"),
                 ("recipient_zip_4_code", "award__latest_transaction__contract_data__legal_entity_zip4"),
@@ -591,6 +602,14 @@ query_paths = {
                 ("award_id_fain", "award__fain"),
                 ("award_id_uri", "award__uri"),
                 ("sai_number", "award__latest_transaction__assistance_data__sai_number"),
+                ("disaster_emergency_fund_codes", None),  # Annotation is used to create this column
+                ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                (
+                    "award_latest_action_date",
+                    "award__latest_transaction__action_date",
+                ),  # Annotation is used to create this column
+                ("award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "award__total_obligation"),
                 ("total_non_federal_funding_amount", "award__non_federal_funding_amount"),
                 ("total_funding_amount", "award__total_funding_amount"),
@@ -614,6 +633,8 @@ query_paths = {
                 ("funding_office_name", "award__latest_transaction__assistance_data__funding_office_name"),
                 ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
                 ("recipient_parent_duns", "award__latest_transaction__assistance_data__ultimate_parent_unique_ide"),
@@ -740,6 +761,15 @@ query_paths = {
                 ("current_total_value_of_award", "transaction__contract_data__current_total_value_award"),
                 ("base_and_all_options_value", "transaction__contract_data__base_and_all_options_value"),
                 ("potential_total_value_of_award", "transaction__contract_data__potential_total_value_awar"),
+                ("disaster_emergency_fund_codes_for_overall_award", None),  # Annotation is used to create this column
+                (
+                    "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
+                    None,
+                ),  # Annotation is used to create this column
                 ("action_date", "transaction__action_date"),
                 ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__contract_data__period_of_performance_star"),
@@ -761,6 +791,8 @@ query_paths = {
                 ("funding_office_name", "transaction__contract_data__funding_office_name"),
                 ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("foreign_funding", "transaction__contract_data__foreign_funding"),
                 ("foreign_funding_description", "transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "transaction__contract_data__sam_exception"),
@@ -776,6 +808,7 @@ query_paths = {
                 ("recipient_address_line_1", "transaction__contract_data__legal_entity_address_line1"),
                 ("recipient_address_line_2", "transaction__contract_data__legal_entity_address_line2"),
                 ("recipient_city_name", "transaction__contract_data__legal_entity_city_name"),
+                ("recipient_county_name", "transaction__contract_data__legal_entity_county_name"),
                 ("recipient_state_code", "transaction__contract_data__legal_entity_state_code"),
                 ("recipient_state_name", "transaction__contract_data__legal_entity_state_descrip"),
                 ("recipient_zip_4_code", "transaction__contract_data__legal_entity_zip4"),
@@ -1103,6 +1136,15 @@ query_paths = {
                 ("original_loan_subsidy_cost", "transaction__original_loan_subsidy_cost"),
                 ("total_face_value_of_loan", "transaction__award__total_loan_value"),
                 ("total_loan_subsidy_cost", "transaction__award__total_subsidy_cost"),
+                ("disaster_emergency_fund_codes_for_overall_award", None),  # Annotation is used to create this column
+                (
+                    "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
+                    None,
+                ),  # Annotation is used to create this column
                 ("action_date", "transaction__action_date"),
                 ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__period_of_performance_start_date"),
@@ -1121,6 +1163,8 @@ query_paths = {
                 ("funding_office_name", "transaction__assistance_data__funding_office_name"),
                 ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "transaction__assistance_data__awardee_or_recipient_legal"),
                 ("recipient_parent_duns", "transaction__assistance_data__ultimate_parent_unique_ide"),
@@ -1207,8 +1251,19 @@ query_paths = {
                 ("prime_award_piid", "broker_subaward__award_id"),
                 ("prime_award_parent_piid", "broker_subaward__parent_award_id"),
                 ("prime_award_amount", "broker_subaward__award_amount"),
+                ("prime_award_disaster_emergency_fund_codes", None),  # Annotation is used to create this column
+                (
+                    "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "broker_subaward__action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
+                ("prime_award_latest_action_date", "award__latest_transaction__action_date"),
+                ("prime_award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("period_of_performance_potential_end_date", None),  # Annotation is used to create this column
@@ -1226,6 +1281,8 @@ query_paths = {
                 ("prime_award_funding_office_name", "broker_subaward__funding_office_name"),
                 ("prime_award_treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
@@ -1235,6 +1292,7 @@ query_paths = {
                 ("prime_awardee_country_name", "broker_subaward__legal_entity_country_name"),
                 ("prime_awardee_address_line_1", "broker_subaward__legal_entity_address_line1"),
                 ("prime_awardee_city_name", "broker_subaward__legal_entity_city_name"),
+                ("prime_awardee_county_name", "award__latest_transaction__contract_data__legal_entity_county_name"),
                 ("prime_awardee_state_code", "broker_subaward__legal_entity_state_code"),
                 ("prime_awardee_state_name", "broker_subaward__legal_entity_state_name"),
                 ("prime_awardee_zip_code", "broker_subaward__legal_entity_zip"),
@@ -1335,8 +1393,19 @@ query_paths = {
                 ("prime_award_unique_key", "broker_subaward__unique_award_key"),
                 ("prime_award_fain", "broker_subaward__award_id"),
                 ("prime_award_amount", "broker_subaward__award_amount"),
+                ("prime_award_disaster_emergency_fund_codes", None),  # Annotation is used to create this column
+                (
+                    "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "broker_subaward__action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
+                ("prime_award_latest_action_date", "award__latest_transaction__action_date"),
+                ("prime_award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("prime_award_awarding_agency_code", "broker_subaward__awarding_agency_code"),
@@ -1353,6 +1422,8 @@ query_paths = {
                 ("prime_award_funding_office_name", "broker_subaward__funding_office_name"),
                 ("prime_award_treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_object_classes_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_award_program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
@@ -1362,6 +1433,7 @@ query_paths = {
                 ("prime_awardee_country_name", "broker_subaward__legal_entity_country_name"),
                 ("prime_awardee_address_line_1", "broker_subaward__legal_entity_address_line1"),
                 ("prime_awardee_city_name", "broker_subaward__legal_entity_city_name"),
+                ("prime_awardee_county_name", "award__latest_transaction__assistance_data__legal_entity_county_name"),
                 ("prime_awardee_state_code", "broker_subaward__legal_entity_state_code"),
                 ("prime_awardee_state_name", "broker_subaward__legal_entity_state_name"),
                 ("prime_awardee_zip_code", "broker_subaward__legal_entity_zip"),
@@ -1461,10 +1533,7 @@ query_paths = {
             [
                 ("owning_agency_name", "treasury_account_identifier__funding_toptier_agency__name"),
                 ("reporting_agency_name", "submission__reporting_agency_name"),
-                (
-                    "last_reported_submission_period",
-                    "last_reported_submission_period",
-                ),  # Column is annotated in account_download.py
+                ("submission_period", "submission_period",),  # Column is appended to in account_download.py
                 (
                     "allocation_transfer_agency_identifier_code",
                     "treasury_account_identifier__allocation_transfer_agency_id",
@@ -1509,7 +1578,7 @@ query_paths = {
                     "deobligations_recoveries_refunds_by_tas_cpe",
                 ),
                 ("unobligated_balance", "unobligated_balance_cpe"),
-                ("gross_outlay_amount", "gross_outlay_amount_by_tas_cpe"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total_cpe"),
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1521,10 +1590,7 @@ query_paths = {
             [
                 ("owning_agency_name", "treasury_account_identifier__federal_account__parent_toptier_agency__name"),
                 ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
-                (
-                    "last_reported_submission_period",
-                    "last_reported_submission_period",
-                ),  # Column is annotated in account_download.py
+                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
                 ("federal_account_symbol", "treasury_account_identifier__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
                 ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
@@ -1553,7 +1619,7 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                 ),
                 ("unobligated_balance", "unobligated_balance"),
-                ("gross_outlay_amount", "gross_outlay_amount"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total"),
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1567,10 +1633,7 @@ query_paths = {
             [
                 ("owning_agency_name", "treasury_account__funding_toptier_agency__name"),
                 ("reporting_agency_name", "submission__reporting_agency_name"),
-                (
-                    "last_reported_submission_period",
-                    "last_reported_submission_period",
-                ),  # Column is annotated in account_download.py
+                ("submission_period", "submission_period",),  # Column is annotated in account_download.py
                 ("allocation_transfer_agency_identifier_code", "treasury_account__allocation_transfer_agency_id"),
                 ("agency_identifier_code", "treasury_account__agency_id"),
                 ("beginning_period_of_availability", "treasury_account__beginning_period_of_availability"),
@@ -1601,7 +1664,7 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                     "deobligations_recoveries_refund_pri_program_object_class_cpe",
                 ),
-                ("gross_outlay_amount", "gross_outlay_amount_by_program_object_class_cpe"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1612,10 +1675,7 @@ query_paths = {
             [
                 ("owning_agency_name", "treasury_account__federal_account__parent_toptier_agency__name"),
                 ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
-                (
-                    "last_reported_submission_period",
-                    "last_reported_submission_period",
-                ),  # Column is annotated in account_download.py
+                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
                 ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
@@ -1633,7 +1693,7 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                 ),
-                ("gross_outlay_amount", "gross_outlay_amount"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1686,7 +1746,10 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
+                (
+                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_fyb_to_period_end",
+                ),  # Column is annotated in account_download.py
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
                 ("award_type", "award_type"),  # Column is annotated in account_download.py
@@ -1784,7 +1847,10 @@ query_paths = {
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
+                (
+                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_fyb_to_period_end",
+                ),  # Column is annotated in account_download.py
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
                 ("award_type", "award_type"),  # Column is annotated in account_download.py
@@ -1852,6 +1918,17 @@ query_paths = {
                 ),  # Column is annotated in account_download.py
             ]
         ),
+    },
+    "disaster": {
+        "recipient": OrderedDict(
+            [
+                ("recipient", "recipient_name"),
+                ("award_obligations", None),  # to be filled in by annotation
+                ("award_outlays", None),  # to be filled in by annotation
+                ("face_value_of_loans", None),  # to be filled in by annotation
+                ("number_of_awards", None),  # to be filled in by annotation
+            ]
+        )
     },
 }
 

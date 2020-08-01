@@ -17,7 +17,9 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 SORTABLE_COLUMNS = {
     "account_title": ["fa.account_title"],
     "awarding_agency_name": ["awarding_agency_name"],
+    "disaster_emergency_fund_code": ["disaster_emergency_fund_code"],
     "funding_agency_name": ["funding_agency_name"],
+    "gross_outlay_amount": ["gross_outlay_amount"],
     "object_class": ["oc.object_class_name", "oc.object_class"],
     "piid": ["gfaba.piid"],
     "program_activity": ["rpa.program_activity_code", "rpa.program_activity_name"],
@@ -31,10 +33,9 @@ for k, v in SORTABLE_COLUMNS.items():
 
 DEFAULT_SORT_COLUMN = "reporting_fiscal_date"
 
-# Get funding information for child and grandchild contracts of an IDV but
-# not the IDVs themselves.  As per direction from the product owner, agency
-# data is to be retrieved from the File D (awards) data not File C
-# (financial_accounts_by_awards).
+# Get funding information for the entire IDV hierarchy.  As per direction from
+# the product owner, agency data is to be retrieved from the File D (awards)
+# data not File C (financial_accounts_by_awards).
 GET_FUNDING_SQL = SQL(
     """
     with gather_award_ids as (
@@ -47,6 +48,15 @@ GET_FUNDING_SQL = SQL(
                 inner join parent_award cpa on cpa.parent_award_id = ppa.award_id
         where   ppa.{award_id_column} = {award_id}
     ), gather_awards as (
+        select  id award_id,
+                generated_unique_award_id,
+                piid,
+                awarding_agency_id,
+                funding_agency_id
+        from    awards
+        where   {awards_table_id_column} = {award_id} and
+                (piid = {piid} or {piid} is null)
+        union   all
         select  ca.id award_id,
                 ca.generated_unique_award_id,
                 ca.piid,
@@ -57,7 +67,6 @@ GET_FUNDING_SQL = SQL(
                 inner join awards ca on
                     ca.parent_award_piid = pa.piid and
                     ca.fpds_parent_agency_id = pa.fpds_agency_id and
-                    ca.type not like 'IDV%' and
                     (ca.piid = {piid} or {piid} is null)
     ), gather_financial_accounts_by_awards as (
         select  ga.award_id,
@@ -65,7 +74,9 @@ GET_FUNDING_SQL = SQL(
                 ga.piid,
                 ga.awarding_agency_id,
                 ga.funding_agency_id,
-                nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
+                faba.transaction_obligated_amount,
+                faba.gross_outlay_amount_by_award_cpe gross_outlay_amount,
+                faba.disaster_emergency_fund_code,
                 faba.financial_accounts_by_awards_id,
                 faba.submission_id,
                 faba.treasury_account_id,
@@ -79,6 +90,9 @@ GET_FUNDING_SQL = SQL(
         gfaba.generated_unique_award_id,
         sa.reporting_fiscal_year,
         sa.reporting_fiscal_quarter,
+        sa.reporting_fiscal_period          reporting_fiscal_month,
+        sa.quarter_format_flag              is_quarterly_submission,
+        gfaba.disaster_emergency_fund_code,
         gfaba.piid,
         aa.id                               awarding_agency_id,
         ata.name                            awarding_agency_name,
@@ -91,7 +105,8 @@ GET_FUNDING_SQL = SQL(
         rpa.program_activity_name,
         oc.object_class,
         oc.object_class_name,
-        gfaba.transaction_obligated_amount
+        gfaba.transaction_obligated_amount,
+        gfaba.gross_outlay_amount
     from
         gather_financial_accounts_by_awards gfaba
         left outer join submission_attributes sa on sa.submission_id = gfaba.submission_id
@@ -140,9 +155,11 @@ class IDVFundingViewSet(APIView):
         # integer or a generated award id that is a string.
         award_id = request_data["award_id"]
         award_id_column = "award_id" if type(award_id) is int else "generated_unique_award_id"
+        awards_table_id_column = "id" if type(award_id) is int else "generated_unique_award_id"
 
         sql = GET_FUNDING_SQL.format(
             award_id_column=Identifier(award_id_column),
+            awards_table_id_column=Identifier(awards_table_id_column),
             award_id=Literal(award_id),
             piid=Literal(request_data.get("piid")),
             order_by=build_composable_order_by(SORTABLE_COLUMNS[request_data["sort"]], request_data["order"]),
