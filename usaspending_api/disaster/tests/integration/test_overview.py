@@ -1,11 +1,37 @@
 import pytest
 
 from decimal import Decimal
-from usaspending_api.disaster.tests.fixtures.overview_data import EARLY_MONTH, LATE_MONTH, EARLY_YEAR, LATE_YEAR
+from usaspending_api.disaster.tests.fixtures.overview_data import (
+    EARLY_MONTH,
+    LATE_MONTH,
+    EARLY_YEAR,
+    LATE_YEAR,
+    LATE_GTAS_BUDGETARY_RESOURCES,
+    LATE_GTAS_OUTLAY,
+    EARLY_GTAS_BUDGETARY_RESOURCES,
+    EARLY_GTAS_OUTLAY,
+    LATE_GTAS_APPROPRIATION,
+    UNOBLIGATED_GTAS_BUDGETARY_RESOURCES,
+    YEAR_TWO_GTAS_BUDGETARY_RESOURCES,
+    YEAR_TWO_GTAS_UNOBLIGATED_BALANCE,
+    YEAR_TWO_OUTLAY,
+    LATE_GTAS_UNOBLIGATED_BALANCE,
+)
 
 OVERVIEW_URL = "/api/v2/disaster/overview/"
 
 BASIC_FUNDING = [{"amount": Decimal("0.20"), "def_code": "M"}]
+
+LATE_GTAS_BUDGETARY_RESOURCES = Decimal(f"{LATE_GTAS_BUDGETARY_RESOURCES}")
+LATE_GTAS_UNOBLIGATED_BALANCE = Decimal(f"{LATE_GTAS_UNOBLIGATED_BALANCE}")
+LATE_GTAS_APPROPRIATION = Decimal(f"{LATE_GTAS_APPROPRIATION}")
+LATE_GTAS_OUTLAY = Decimal(f"{LATE_GTAS_OUTLAY}")
+EARLY_GTAS_BUDGETARY_RESOURCES = Decimal(f"{EARLY_GTAS_BUDGETARY_RESOURCES}")
+EARLY_GTAS_OUTLAY = Decimal(f"{EARLY_GTAS_OUTLAY}")
+UNOBLIGATED_GTAS_BUDGETARY_RESOURCES = Decimal(f"{UNOBLIGATED_GTAS_BUDGETARY_RESOURCES}")
+YEAR_TWO_GTAS_BUDGETARY_RESOURCES = Decimal(f"{YEAR_TWO_GTAS_BUDGETARY_RESOURCES}")
+YEAR_TWO_GTAS_UNOBLIGATED_BALANCE = Decimal(f"{YEAR_TWO_GTAS_UNOBLIGATED_BALANCE}")
+YEAR_TWO_OUTLAY = Decimal(f"{YEAR_TWO_OUTLAY}")
 
 
 @pytest.mark.django_db
@@ -15,12 +41,12 @@ def test_basic_data_set(client, monkeypatch, helpers, defc_codes, basic_ref_data
     resp = client.get(OVERVIEW_URL)
     assert resp.data == {
         "funding": BASIC_FUNDING,
-        "total_budget_authority": Decimal("0.20"),
+        "total_budget_authority": EARLY_GTAS_BUDGETARY_RESOURCES,
         "spending": {
             "award_obligations": Decimal("0.0"),
             "award_outlays": Decimal("0"),
-            "total_obligations": Decimal("0.2"),
-            "total_outlays": Decimal("0.02"),
+            "total_obligations": EARLY_GTAS_BUDGETARY_RESOURCES,
+            "total_outlays": EARLY_GTAS_OUTLAY,
         },
     }
 
@@ -33,9 +59,9 @@ def test_using_only_latest_gtas(
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data["funding"] == [{"amount": Decimal("0.3"), "def_code": "M"}]
-    assert resp.data["total_budget_authority"] == Decimal("0.3")
-    assert resp.data["spending"]["total_obligations"] == Decimal("0.3")
-    assert resp.data["spending"]["total_outlays"] == Decimal("0.03")
+    assert resp.data["total_budget_authority"] == LATE_GTAS_BUDGETARY_RESOURCES
+    assert resp.data["spending"]["total_obligations"] == LATE_GTAS_BUDGETARY_RESOURCES
+    assert resp.data["spending"]["total_outlays"] == LATE_GTAS_OUTLAY
 
 
 @pytest.mark.django_db
@@ -54,7 +80,10 @@ def test_total_obligation_only_uses_current_year(
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["spending"]["total_obligations"] == Decimal("1.72")
+    assert (
+        resp.data["spending"]["total_obligations"]
+        == UNOBLIGATED_GTAS_BUDGETARY_RESOURCES + YEAR_TWO_GTAS_BUDGETARY_RESOURCES - YEAR_TWO_GTAS_UNOBLIGATED_BALANCE
+    )
 
 
 @pytest.mark.django_db
@@ -65,9 +94,9 @@ def test_exclude_gtas_for_incompleted_period(
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data["funding"] == [{"amount": Decimal("0.2"), "def_code": "M"}]
-    assert resp.data["total_budget_authority"] == Decimal("0.2")
-    assert resp.data["spending"]["total_obligations"] == Decimal("0.2")
-    assert resp.data["spending"]["total_outlays"] == Decimal("0.02")
+    assert resp.data["total_budget_authority"] == EARLY_GTAS_BUDGETARY_RESOURCES
+    assert resp.data["spending"]["total_obligations"] == EARLY_GTAS_BUDGETARY_RESOURCES
+    assert resp.data["spending"]["total_outlays"] == EARLY_GTAS_OUTLAY
 
 
 @pytest.mark.django_db
@@ -81,8 +110,11 @@ def test_exclude_non_selected_defc_for_gtas(
     assert resp.data["spending"]["total_outlays"] == Decimal("0.00")
 
     resp = client.get(OVERVIEW_URL + "?def_codes=M,A")
-    assert resp.data["spending"]["total_obligations"] == Decimal("0.22")
-    assert resp.data["spending"]["total_outlays"] == Decimal("0.07")
+    assert (
+        resp.data["spending"]["total_obligations"]
+        == YEAR_TWO_GTAS_BUDGETARY_RESOURCES - YEAR_TWO_GTAS_UNOBLIGATED_BALANCE
+    )
+    assert resp.data["spending"]["total_outlays"] == YEAR_TWO_OUTLAY
 
 
 @pytest.mark.django_db
@@ -92,10 +124,16 @@ def test_summing_multiple_years(
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["funding"] == [{"amount": Decimal("0.62"), "def_code": "M"}]
-    assert resp.data["total_budget_authority"] == Decimal("0.62")
-    assert resp.data["spending"]["total_obligations"] == Decimal("0.52")
-    assert resp.data["spending"]["total_outlays"] == Decimal("0.1")
+    assert resp.data["funding"] == [
+        {"amount": LATE_GTAS_BUDGETARY_RESOURCES + YEAR_TWO_GTAS_BUDGETARY_RESOURCES, "def_code": "M"}
+    ]
+    assert resp.data["total_budget_authority"] == LATE_GTAS_BUDGETARY_RESOURCES + YEAR_TWO_GTAS_BUDGETARY_RESOURCES
+    assert resp.data["spending"][
+        "total_obligations"
+    ] == LATE_GTAS_BUDGETARY_RESOURCES + YEAR_TWO_GTAS_BUDGETARY_RESOURCES - (
+        YEAR_TWO_GTAS_UNOBLIGATED_BALANCE + LATE_GTAS_UNOBLIGATED_BALANCE
+    )
+    assert resp.data["spending"]["total_outlays"] == YEAR_TWO_GTAS_UNOBLIGATED_BALANCE + LATE_GTAS_UNOBLIGATED_BALANCE
 
 
 @pytest.mark.django_db

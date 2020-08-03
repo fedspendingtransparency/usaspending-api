@@ -13,6 +13,21 @@ LATE_MONTH = 12
 EARLY_YEAR = 2021
 LATE_YEAR = 2022
 
+LATE_GTAS_BUDGETARY_RESOURCES = 0.3
+LATE_GTAS_UNOBLIGATED_BALANCE = 0.0
+LATE_GTAS_APPROPRIATION = 0.29
+LATE_GTAS_OUTLAY = 0.03
+
+EARLY_GTAS_BUDGETARY_RESOURCES = 0.20
+EARLY_GTAS_OUTLAY = 0.02
+
+UNOBLIGATED_GTAS_BUDGETARY_RESOURCES = 1.5
+
+YEAR_TWO_GTAS_BUDGETARY_RESOURCES = 0.32
+YEAR_TWO_GTAS_UNOBLIGATED_BALANCE = 0.1
+YEAR_TWO_GTAS_APPROPRIATION = 0.31
+YEAR_TWO_OUTLAY = 0.07
+
 
 @pytest.fixture
 def defc_codes():
@@ -42,10 +57,10 @@ def late_gtas(defc_codes):
         fiscal_period=LATE_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
-        total_budgetary_resources_cpe=0.3,
-        budget_authority_appropriation_amount_cpe=0.3,
+        total_budgetary_resources_cpe=LATE_GTAS_BUDGETARY_RESOURCES,
+        budget_authority_appropriation_amount_cpe=LATE_GTAS_APPROPRIATION,
         other_budgetary_resources_amount_cpe=0.1,
-        gross_outlay_amount_by_tas_cpe=0.03,
+        gross_outlay_amount_by_tas_cpe=LATE_GTAS_OUTLAY,
     )
 
 
@@ -73,7 +88,7 @@ def early_gtas(defc_codes):
         fiscal_period=EARLY_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
-        total_budgetary_resources_cpe=0.2,
+        total_budgetary_resources_cpe=EARLY_GTAS_BUDGETARY_RESOURCES,
         budget_authority_appropriation_amount_cpe=0.19,
         other_budgetary_resources_amount_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.02,
@@ -101,7 +116,7 @@ def unobligated_balance_gtas(defc_codes):
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
-        unobligated_balance_cpe=1.5,
+        unobligated_balance_cpe=UNOBLIGATED_GTAS_BUDGETARY_RESOURCES,
         disaster_emergency_fund_code="A",
         total_budgetary_resources_cpe=1.5,
         budget_authority_appropriation_amount_cpe=0.74,
@@ -146,12 +161,12 @@ def _year_2_gtas(code):
         "references.GTASSF133Balances",
         fiscal_year=LATE_YEAR,
         fiscal_period=EARLY_MONTH,
-        unobligated_balance_cpe=0.1,
+        unobligated_balance_cpe=YEAR_TWO_GTAS_UNOBLIGATED_BALANCE,
         disaster_emergency_fund_code=code,
-        total_budgetary_resources_cpe=0.32,
-        budget_authority_appropriation_amount_cpe=0.31,
+        total_budgetary_resources_cpe=YEAR_TWO_GTAS_BUDGETARY_RESOURCES,
+        budget_authority_appropriation_amount_cpe=YEAR_TWO_GTAS_APPROPRIATION,
         other_budgetary_resources_amount_cpe=0.0,
-        gross_outlay_amount_by_tas_cpe=0.07,
+        gross_outlay_amount_by_tas_cpe=YEAR_TWO_OUTLAY,
     )
 
 
