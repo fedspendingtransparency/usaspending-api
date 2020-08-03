@@ -156,27 +156,30 @@ def generic_account_data():
     )
     mommy.make(
         "references.GTASSF133Balances",
-        budget_authority_appropriation_amount_cpe=4358,
+        budget_authority_appropriation_amount_cpe=4358.0,
         fiscal_year=2022,
         fiscal_period=7,
         disaster_emergency_fund_code="M",
         treasury_account_identifier=tre_acct1,
+        total_budgetary_resources_cpe=43580.0,
     )
     mommy.make(
         "references.GTASSF133Balances",
-        budget_authority_appropriation_amount_cpe=109237,
+        budget_authority_appropriation_amount_cpe=109237.0,
         fiscal_year=2022,
         fiscal_period=7,
         disaster_emergency_fund_code="M",
         treasury_account_identifier=tre_acct2,
+        total_budgetary_resources_cpe=1092370.0,
     )
     mommy.make(
         "references.GTASSF133Balances",
-        budget_authority_appropriation_amount_cpe=39248,
+        budget_authority_appropriation_amount_cpe=39248.0,
         fiscal_year=2022,
         fiscal_period=7,
         disaster_emergency_fund_code="M",
         treasury_account_identifier=tre_acct3,
+        total_budgetary_resources_cpe=392480.0,
     )
 
 

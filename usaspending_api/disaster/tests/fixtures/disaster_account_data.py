@@ -539,6 +539,7 @@ def disaster_account_data():
         tas_rendering_label="003-X-0000-000",
         treasury_account_identifier=tas3,
         budget_authority_appropriation_amount_cpe=2398472389.78,
+        total_budgetary_resources_cpe=23984723890.78,
         fiscal_period=8,
         fiscal_year=2022,
     )
@@ -548,6 +549,7 @@ def disaster_account_data():
         tas_rendering_label="002-X-0000-000",
         treasury_account_identifier=tas2,
         budget_authority_appropriation_amount_cpe=892743123.12,
+        total_budgetary_resources_cpe=8927431230.12,
         fiscal_period=8,
         fiscal_year=2022,
     )

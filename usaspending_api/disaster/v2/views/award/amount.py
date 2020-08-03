@@ -51,8 +51,8 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
 
         fields = {
             "award_count": Count(count_field, distinct=True),
-            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
-            "outlay": self.outlay_field_annotation,
+            "obligation": Coalesce(Sum("total_obligation"), 0),
+            "outlay": Coalesce(Sum("total_outlay"), 0),
         }
 
         if self.award_type_codes:
@@ -61,5 +61,5 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             ).aggregate(**fields)
         else:
             return self.when_non_zero_award_spending(
-                FinancialAccountsByAwards.objects.filter(*filters).annotate(unique_c=count_field)
+                FinancialAccountsByAwards.objects.filter(*filters).annotate(unique_c=count_field).values("unique_c")
             ).aggregate(**fields)

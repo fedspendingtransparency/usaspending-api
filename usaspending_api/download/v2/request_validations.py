@@ -261,6 +261,9 @@ def validate_disaster_recipient_request(request_data):
     elif award_type_codes <= set(other_type_mapping.keys()):
         award_category = "Other-Financial-Assistance"
 
+    # Filter so that at least one of these has a nonzero value
+    filters["nonzero_fields"] = ["total_covid_obligation", "total_covid_outlay", "total_loan_value"]
+
     # Need to specify the field to use "query" filter on if present
     query_text = filters.pop("query", None)
     if query_text:
@@ -483,13 +486,13 @@ def _validate_and_bolster_requested_submission_window(
         # monthly submissions since there can be no closed quarter prior to P2 in the same year.
         # Finally, if P3 is requested and Q1 is closed then we will return P3 monthly and Q1 quarterly
         # submissions.  Man I hope that all made sense.
-        quarter = sub_helpers.get_last_closed_quarter_relative_to_period(fy, period)
+        quarter = sub_helpers.get_last_closed_quarter_relative_to_month(fy, period)
 
     else:
         # This is the same idea as above, the big difference being that we do not have monthly
         # submissions for earlier years so really this will either return the final period of
         # the quarter or None.
-        period = sub_helpers.get_last_closed_period_relative_to_quarter(fy, quarter)
+        period = sub_helpers.get_last_closed_month_relative_to_quarter(fy, quarter)
 
     return fy, quarter, period
 
