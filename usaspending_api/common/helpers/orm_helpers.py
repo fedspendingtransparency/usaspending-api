@@ -93,12 +93,12 @@ def get_fyp_notation(relation_name=None):
     Generates FYyyyyPpp syntax from submission table.  relation_name is the Django ORM
     relation name from the foreign key table to the submission table.
     """
-    relation_prefix = f"{relation_name}__" if relation_name else ""
+    prefix = f"{relation_name}__" if relation_name else ""
     return Concat(
         Value("FY"),
-        Cast(f"{relation_prefix}reporting_fiscal_year", output_field=CharField()),
+        Cast(f"{prefix}reporting_fiscal_year", output_field=CharField()),
         Value("P"),
-        LPad(Cast(f"{relation_prefix}reporting_fiscal_period", output_field=CharField()), 2, Value("0")),
+        LPad(Cast(f"{prefix}reporting_fiscal_period", output_field=CharField()), 2, Value("0")),
     )
 
 
@@ -107,12 +107,12 @@ def get_fyq_notation(relation_name=None):
     Generates FYyyyyPpp syntax from submission table.  relation_name is the Django ORM
     relation name from the foreign key table to the submission table.
     """
-    relation_prefix = f"{relation_name}__" if relation_name else ""
+    prefix = f"{relation_name}__" if relation_name else ""
     return Concat(
         Value("FY"),
-        Cast(f"{relation_prefix}reporting_fiscal_year", output_field=CharField()),
+        Cast(f"{prefix}reporting_fiscal_year", output_field=CharField()),
         Value("Q"),
-        Cast(f"{relation_prefix}reporting_fiscal_quarter", output_field=CharField()),
+        Cast(f"{prefix}reporting_fiscal_quarter", output_field=CharField()),
     )
 
 
@@ -121,9 +121,9 @@ def get_fyp_or_q_notation(relation_name=None):
     Generates FYyyyyQq or FYyyyyPpp syntax from submission table.  relation_name is the Django ORM
     relation name from the foreign key table to the submission table.
     """
-    relation_prefix = f"{relation_name}__" if relation_name else ""
+    prefix = f"{relation_name}__" if relation_name else ""
     return Case(
-        When(**{f"{relation_prefix}quarter_format_flag": True}, then=get_fyq_notation(relation_name)),
+        When(**{f"{prefix}quarter_format_flag": True}, then=get_fyq_notation(relation_name)),
         default=get_fyp_notation(relation_name),
     )
 

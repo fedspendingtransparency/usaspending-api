@@ -27,7 +27,7 @@ Account Breakdown by Award (C file):
         2. Group by Federal Account
 """
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Case, CharField, DateField, F, Func, Max, Sum, Value, When, Q
+from django.db.models import Case, CharField, DateField, DecimalField, F, Func, Max, Sum, Value, When, Q
 from django.db.models.functions import Cast, Coalesce, Concat
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -36,7 +36,11 @@ from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.settings import HOST
-
+from usaspending_api.submissions.helpers import (
+    ClosedPeriod,
+    get_last_closed_periods_per_year,
+    get_submission_ids_for_periods,
+)
 
 AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
 
@@ -68,77 +72,88 @@ def account_download_filter(account_type, download_table, filters, account_level
     if filters.get("budget_subfunction") and filters["budget_subfunction"] != "all":
         query_filters[f"{tas_id}__budget_subfunction_code"] = filters["budget_subfunction"]
 
-    if filters.get("fy"):
-        query_filters["submission__reporting_fiscal_year"] = filters["fy"]
-
-    period_and_quarter_filter = get_period_and_quarter_filter(account_type, filters)
+    submission_filter = get_submission_filter(account_type, filters)
 
     # Make derivations based on the account level
     if account_level == "treasury_account":
-        queryset = generate_treasury_account_query(download_table.objects, account_type, tas_id)
+        queryset = generate_treasury_account_query(download_table.objects, account_type, tas_id, filters)
     elif account_level == "federal_account":
-        queryset = generate_federal_account_query(download_table.objects, account_type, tas_id)
+        queryset = generate_federal_account_query(download_table.objects, account_type, tas_id, filters)
     else:
         raise InvalidParameterException(
-            'Invalid Parameter: account_level must be either "federal_account" or ' '"treasury_account"'
+            'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
         )
 
     # Apply filter and return
-    return queryset.filter(period_and_quarter_filter, **query_filters)
+    return queryset.filter(submission_filter, **query_filters)
 
 
-def get_period_and_quarter_filter(account_type, filters):
+def get_submission_filter(account_type, filters):
 
-    period_and_quarter_filter = Q()
+    filter_year = int(filters.get("fy") or -1)
+    filter_quarter = int(filters.get("quarter") or -1)
+    filter_month = int(filters.get("period") or -1)
+
+    submission_ids = get_submission_ids_for_periods(filter_year, filter_quarter, filter_month)
+    if submission_ids:
+        outlay_filter = Q(submission_id__in=submission_ids)
+    else:
+        outlay_filter = Q(submission_id__isnull=True)
 
     if account_type in ["account_balances", "object_class_program_activity"]:
-
-        # For Files A and B, we only care about the specific period or quarter requested; e.g. "get
-        # me Period 4 monthly submissions OR Quarter 1 quarterly submissions".  This is because
-        # monthly and quarterly submissions are on different tracks but both need to be included in
-        # the download file.
-        if filters.get("period"):
-            period_and_quarter_filter |= Q(
-                Q(submission__reporting_fiscal_period=filters["period"]) & Q(submission__quarter_format_flag=False)
-            )
-        if filters.get("quarter"):
-            period_and_quarter_filter |= Q(
-                Q(submission__reporting_fiscal_quarter=filters["quarter"]) & Q(submission__quarter_format_flag=True)
-            )
+        submission_filter = outlay_filter
 
     else:
-
-        # For File C, we include rows in the specific period or quarter requested AND rows from
-        # previous periods or quarters where the transaction_obligated_amount is non-zero.
-        if filters.get("period"):
-            period_and_quarter_filter |= Q(
-                Q(submission__quarter_format_flag=False)
-                & Q(
-                    Q(submission__reporting_fiscal_period=filters["period"])
-                    | Q(
-                        Q(submission__reporting_fiscal_period__lt=filters["period"])
-                        # Yes, this quirky syntax is due to a Django bug involving != 0 in aggregations.
-                        & (Q(transaction_obligated_amount__gt=0) | Q(transaction_obligated_amount__lt=0))
-                    )
+        # For File C, we want:
+        #   - outlays in the most recent agency submission period matching the filter criteria
+        #   - obligations in any period matching the filter criteria or earlier
+        obligation_filter = Q(
+            Q(
+                Q(Q(submission__reporting_fiscal_period__lte=filter_month) & Q(submission__quarter_format_flag=False))
+                | Q(
+                    Q(submission__reporting_fiscal_quarter__lte=filter_quarter)
+                    & Q(submission__quarter_format_flag=True)
                 )
             )
-        if filters.get("quarter"):
-            period_and_quarter_filter |= Q(
-                Q(submission__quarter_format_flag=True)
-                & Q(
-                    Q(submission__reporting_fiscal_quarter=filters["quarter"])
-                    | Q(
-                        Q(submission__reporting_fiscal_quarter__lt=filters["quarter"])
-                        # Yes, this quirky syntax is due to a Django bug involving != 0 in aggregations.
-                        & (Q(transaction_obligated_amount__gt=0) | Q(transaction_obligated_amount__lt=0))
-                    )
-                )
-            )
+            & Q(submission__reporting_fiscal_year=filter_year)
+        )
 
-    return period_and_quarter_filter
+        submission_filter = Q(
+            outlay_filter & (Q(gross_outlay_amount_by_award_cpe__gt=0) | Q(gross_outlay_amount_by_award_cpe__lt=0))
+        ) | Q(obligation_filter & Q(Q(transaction_obligated_amount__gt=0) | Q(transaction_obligated_amount__lt=0)))
+
+    return submission_filter
 
 
-def generate_treasury_account_query(queryset, account_type, tas_id):
+def generate_gross_outlay_amount_derived_field(filters, account_type):
+    column_name = {
+        "account_balances": "gross_outlay_amount_by_tas_cpe",
+        "object_class_program_activity": "gross_outlay_amount_by_program_object_class_cpe",
+        "award_financial": "gross_outlay_amount_by_award_cpe",
+    }[account_type]
+
+    filter_year = filters.get("fy")
+
+    closed_periods = get_last_closed_periods_per_year()
+
+    q = Q()
+    for closed_period in closed_periods:
+        if closed_period.fiscal_year == filter_year:
+            closed_period = ClosedPeriod(filter_year, filters.get("quarter"), filters.get("period"))
+        if closed_period.is_final:
+            q |= closed_period.build_period_q("submission")
+        else:
+            q |= closed_period.build_submission_id_q("submission")
+
+    if q:
+        return Case(
+            When(q, then=F(column_name)), default=Cast(Value(None), DecimalField(max_digits=23, decimal_places=2))
+        )
+
+    return Cast(Value(None), DecimalField(max_digits=23, decimal_places=2))
+
+
+def generate_treasury_account_query(queryset, account_type, tas_id, filters):
     """ Derive necessary fields for a treasury account-grouped query """
     derived_fields = {
         "allocation_transfer_agency_identifier_name": get_agency_name_annotation(
@@ -146,6 +161,8 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
         ),
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": get_fyp_or_q_notation("submission"),
+        "gross_outlay_amount": generate_gross_outlay_amount_derived_field(filters, account_type),
+        "gross_outlay_amount_fyb_to_period_end": generate_gross_outlay_amount_derived_field(filters, account_type),
     }
 
     lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
@@ -160,7 +177,7 @@ def generate_treasury_account_query(queryset, account_type, tas_id):
     return queryset.annotate(**derived_fields)
 
 
-def generate_federal_account_query(queryset, account_type, tas_id):
+def generate_federal_account_query(queryset, account_type, tas_id, filters):
     """ Group by federal account (and budget function/subfunction) and SUM all other fields """
     derived_fields = {
         "reporting_agency_name": StringAgg("submission__reporting_agency_name", "; ", distinct=True),
@@ -170,6 +187,8 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "last_modified_date"
         + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
+        "gross_outlay_amount": Sum(generate_gross_outlay_amount_derived_field(filters, account_type)),
+        "gross_outlay_amount_fyb_to_period_end": Sum(generate_gross_outlay_amount_derived_field(filters, account_type)),
     }
 
     if account_type == "award_financial":
@@ -190,7 +209,6 @@ def generate_federal_account_query(queryset, account_type, tas_id):
         "obligations_incurred",
         "deobligations_or_recoveries_or_refunds_from_prior_year",
         "unobligated_balance",
-        "gross_outlay_amount",
         "status_of_budgetary_resources_total",
         "transaction_obligated_amount",
     ]

@@ -15,7 +15,7 @@ from usaspending_api.etl.submission_loader_helpers.submission_attributes import 
     attempt_submission_update_only,
     get_submission_attributes,
 )
-
+from usaspending_api.references.helpers import retrive_agency_name_from_code
 
 logger = logging.getLogger("script")
 
@@ -74,10 +74,13 @@ class Command(load_base.Command):
         self.skip_final_of_fy_calculation = options["skip_final_of_fy_calculation"]
         self.db_cursor = db_cursor
 
+        logger.info(f"Starting processing for submission {self.submission_id}...")
+
         # This has to occur outside of the transaction so we don't hang up other loaders that may be
         # running in parallel.  Worst case scenario of running it outside of the main transaction is
         # that is that we load some program activities that are never used due to the submission failing
         # to load and then being deleted from Broker.
+        logger.info(f"Checking for new program activities created...")
         new_program_activities = update_program_activities(self.submission_id)
         logger.info(f"{new_program_activities:,} new program activities created")
 
@@ -95,8 +98,9 @@ class Command(load_base.Command):
         logger.info(f"Getting submission {self.submission_id} from Broker...")
         submission_data = self.get_broker_submission()
         logger.info(f"Finished getting submission {self.submission_id} from Broker")
-
         submission_data = self.validate_submission_data(submission_data)
+        agency_name = retrive_agency_name_from_code(submission_data["toptier_code"])
+        logger.info(f"Submission {self.submission_id} belongs to {agency_name}")
 
         if not self.force_reload and attempt_submission_update_only(submission_data):
             logger.info(f"{self.submission_id} did not require a full reload.  Updated.")
@@ -147,6 +151,8 @@ class Command(load_base.Command):
         # Once all the files have been processed, run any global cleanup/post-load tasks.
         # Cleanup not specific to this submission is run in the `.handle` method
         logger.info(f"Successfully loaded submission {self.submission_id}.")
+
+        logger.info("Committing transaction...")
 
     def get_broker_submission(self):
         self.db_cursor.execute(

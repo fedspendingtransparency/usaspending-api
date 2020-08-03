@@ -10,6 +10,26 @@ NOT_COVID_NAME = "not_covid_19"
 EARLY_MONTH = 3
 LATE_MONTH = 12
 
+EARLY_YEAR = 2021
+LATE_YEAR = 2022
+
+LATE_GTAS_BUDGETARY_RESOURCES = 0.3
+LATE_GTAS_UNOBLIGATED_BALANCE = 0.0
+LATE_GTAS_APPROPRIATION = 0.29
+LATE_GTAS_OUTLAY = 0.03
+
+QUARTERLY_GTAS_BUDGETARY_RESOURCES = 0.26
+
+EARLY_GTAS_BUDGETARY_RESOURCES = 0.20
+EARLY_GTAS_OUTLAY = 0.02
+
+UNOBLIGATED_GTAS_BUDGETARY_RESOURCES = 1.5
+
+YEAR_TWO_GTAS_BUDGETARY_RESOURCES = 0.32
+YEAR_TWO_GTAS_UNOBLIGATED_BALANCE = 0.1
+YEAR_TWO_GTAS_APPROPRIATION = 0.31
+YEAR_TWO_OUTLAY = 0.07
+
 
 @pytest.fixture
 def defc_codes():
@@ -28,34 +48,34 @@ def basic_ref_data():
 
 @pytest.fixture
 def partially_completed_year():
-    _incomplete_schedule_for_year(2021)
+    _incomplete_schedule_for_year(EARLY_YEAR)
 
 
 @pytest.fixture
 def late_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
-        fiscal_year=2021,
+        fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
-        total_budgetary_resources_cpe=0.3,
-        budget_authority_appropriation_amount_cpe=0.3,
+        total_budgetary_resources_cpe=LATE_GTAS_BUDGETARY_RESOURCES,
+        budget_authority_appropriation_amount_cpe=LATE_GTAS_APPROPRIATION,
         other_budgetary_resources_amount_cpe=0.1,
-        gross_outlay_amount_by_tas_cpe=0.03,
+        gross_outlay_amount_by_tas_cpe=LATE_GTAS_OUTLAY,
     )
 
 
 @pytest.fixture
 def quarterly_gtas(defc_codes):
-    _partial_quarterly_schedule_for_year(2021)
+    _partial_quarterly_schedule_for_year(EARLY_YEAR)
     mommy.make(
         "references.GTASSF133Balances",
-        fiscal_year=2021,
-        fiscal_period=9,
+        fiscal_year=EARLY_YEAR,
+        fiscal_period=LATE_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
-        total_budgetary_resources_cpe=0.26,
+        total_budgetary_resources_cpe=QUARTERLY_GTAS_BUDGETARY_RESOURCES,
         budget_authority_appropriation_amount_cpe=0.25,
         other_budgetary_resources_amount_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.02,
@@ -66,11 +86,11 @@ def quarterly_gtas(defc_codes):
 def early_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
-        fiscal_year=2021,
+        fiscal_year=EARLY_YEAR,
         fiscal_period=EARLY_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
-        total_budgetary_resources_cpe=0.2,
+        total_budgetary_resources_cpe=EARLY_GTAS_BUDGETARY_RESOURCES,
         budget_authority_appropriation_amount_cpe=0.19,
         other_budgetary_resources_amount_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.02,
@@ -81,7 +101,7 @@ def early_gtas(defc_codes):
 def non_covid_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
-        fiscal_year=2021,
+        fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="A",
@@ -96,9 +116,9 @@ def non_covid_gtas(defc_codes):
 def unobligated_balance_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
-        fiscal_year=2021,
+        fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
-        unobligated_balance_cpe=1.5,
+        unobligated_balance_cpe=UNOBLIGATED_GTAS_BUDGETARY_RESOURCES,
         disaster_emergency_fund_code="A",
         total_budgetary_resources_cpe=1.5,
         budget_authority_appropriation_amount_cpe=0.74,
@@ -111,7 +131,7 @@ def unobligated_balance_gtas(defc_codes):
 def other_budget_authority_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
-        fiscal_year=2021,
+        fiscal_year=EARLY_YEAR,
         fiscal_period=EARLY_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
@@ -141,21 +161,21 @@ def _year_2_gtas(code):
 
     mommy.make(
         "references.GTASSF133Balances",
-        fiscal_year=2022,
+        fiscal_year=LATE_YEAR,
         fiscal_period=EARLY_MONTH,
-        unobligated_balance_cpe=0.1,
+        unobligated_balance_cpe=YEAR_TWO_GTAS_UNOBLIGATED_BALANCE,
         disaster_emergency_fund_code=code,
-        total_budgetary_resources_cpe=0.32,
-        budget_authority_appropriation_amount_cpe=0.31,
+        total_budgetary_resources_cpe=YEAR_TWO_GTAS_BUDGETARY_RESOURCES,
+        budget_authority_appropriation_amount_cpe=YEAR_TWO_GTAS_APPROPRIATION,
         other_budgetary_resources_amount_cpe=0.0,
-        gross_outlay_amount_by_tas_cpe=0.07,
+        gross_outlay_amount_by_tas_cpe=YEAR_TWO_OUTLAY,
     )
 
 
 @pytest.fixture
 def basic_faba(defc_codes):
     submission = mommy.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=2021, reporting_fiscal_period=EARLY_MONTH
+        "submissions.SubmissionAttributes", reporting_fiscal_year=EARLY_YEAR, reporting_fiscal_period=EARLY_MONTH
     )
 
     mommy.make(
@@ -193,10 +213,10 @@ def multi_period_faba(defc_codes):
 def _year_1_faba(value, code):
     submission = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2021,
+        reporting_fiscal_year=EARLY_YEAR,
         reporting_fiscal_period=LATE_MONTH,
         quarter_format_flag=False,
-        reporting_period_start=date(2021, LATE_MONTH, 1),
+        reporting_period_start=date(EARLY_YEAR, LATE_MONTH, 1),
     )
 
     mommy.make(
@@ -211,10 +231,10 @@ def _year_1_faba(value, code):
 def _year_2_faba_with_value(value):
     submission = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2022,
+        reporting_fiscal_year=LATE_YEAR,
         reporting_fiscal_period=EARLY_MONTH,
         quarter_format_flag=False,
-        reporting_period_start=date(2022, EARLY_MONTH, 1),
+        reporting_period_start=date(LATE_YEAR, EARLY_MONTH, 1),
     )
 
     mommy.make(
@@ -229,10 +249,10 @@ def _year_2_faba_with_value(value):
 def _year_2_late_faba_with_value(value):
     submission = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2022,
+        reporting_fiscal_year=LATE_YEAR,
         reporting_fiscal_period=LATE_MONTH,
         quarter_format_flag=False,
-        reporting_period_start=date(2022, LATE_MONTH, 1),
+        reporting_period_start=date(LATE_YEAR, LATE_MONTH, 1),
     )
 
     mommy.make(
@@ -245,11 +265,11 @@ def _year_2_late_faba_with_value(value):
 
 
 def _fy_2021_schedule():
-    _full_schedule_for_year(2021)
+    _full_schedule_for_year(EARLY_YEAR)
 
 
 def _fy_2022_schedule():
-    _full_schedule_for_year(2022)
+    _full_schedule_for_year(LATE_YEAR)
 
 
 def _full_schedule_for_year(year):

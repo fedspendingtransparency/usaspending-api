@@ -49,10 +49,35 @@ def test_award_amount_no_award_type_success(
 
 
 @pytest.mark.django_db
+def test_award_amount_on_sum_non_zero_toa(client, monkeypatch, multiple_file_c_to_same_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
+
+    resp = helpers.post_for_amount_endpoint(client, url, ["M"], None)
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["award_count"] == 1
+    assert resp.data["outlay"] == 0.0
+    assert resp.data["obligation"] == 14.0
+
+
+@pytest.mark.django_db
+def test_award_amount_on_sum_non_zero_outlay(client, monkeypatch, multiple_outlay_file_c_to_same_award, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
+
+    resp = helpers.post_for_amount_endpoint(client, url, ["M"], None)
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["award_count"] == 1
+    assert resp.data["outlay"] == 14.0
+    assert resp.data["obligation"] == 0.0
+
+
+@pytest.mark.django_db
 def test_award_amount_on_sum_zero_toa(client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.reset_dabs_cache()
 
-    resp = helpers.post_for_amount_endpoint(client, url, ["N"], None)
+    resp = helpers.post_for_amount_endpoint(client, url, ["M"], None)
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["award_count"] == 0
     assert resp.data["outlay"] == 0.0
@@ -67,11 +92,10 @@ def test_award_amount_invalid_defc(client, monkeypatch, generic_account_data, he
     assert resp.data["detail"] == "Field 'filter|def_codes' is outside valid values ['9', 'A', 'L', 'M', 'N', 'O', 'P']"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
-def test_award_amount_exclusive_filters(client, helpers):
+def test_award_amount_exclusive_filters(client, generic_account_data, helpers):
     resp = helpers.post_for_amount_endpoint(
-        client, url, ["ZZ"], award_type_codes=["A", "09", "10"], award_type="procurement"
+        client, url, ["M"], award_type_codes=["A", "09", "10"], award_type="procurement"
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 

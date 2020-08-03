@@ -393,7 +393,7 @@ def test_download_success(client, monkeypatch, awards_and_transactions, elastics
 
     resp_json = resp.json()
     assert resp.status_code == status.HTTP_200_OK
-    assert re.match(r".*COVID-19_Profile_.*\.zip", resp_json["file_url"])
+    assert re.match(r".*COVID-19_Recipients_.*\.zip", resp_json["file_url"])
     assert resp_json["download_request"]["columns"] == [
         "recipient",
         "award_obligations",
@@ -409,7 +409,7 @@ def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elas
 
     resp_json = resp.json()
     assert resp.status_code == status.HTTP_200_OK
-    assert re.match(r".*COVID-19_Profile_.*\.zip", resp_json["file_url"])
+    assert re.match(r".*COVID-19_Recipients_.*\.zip", resp_json["file_url"])
     assert resp_json["download_request"]["columns"] == [
         "recipient",
         "award_obligations",
@@ -425,7 +425,7 @@ def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, el
 
     resp_json = resp.json()
     assert resp.status_code == status.HTTP_200_OK
-    assert re.match(r".*COVID-19_Profile_.*\.zip", resp_json["file_url"])
+    assert re.match(r".*COVID-19_Recipients_.*\.zip", resp_json["file_url"])
     assert resp_json["download_request"]["columns"] == [
         "recipient",
         "award_obligations",
