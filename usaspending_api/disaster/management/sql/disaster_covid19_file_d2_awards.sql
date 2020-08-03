@@ -115,7 +115,7 @@ INNER JOIN (
         AND sa.reporting_period_start >= '2020-04-01'
     INNER JOIN recent_submission ON (sa."reporting_fiscal_period" = "recent_submission"."submission_fiscal_month"
         AND sa."quarter_format_flag" = "recent_submission"."is_quarter"
-        AND sa."reporting_fiscal_year" = "recent_submission"."submission_fiscal_year" AND sa.published_date >= recent_submission.submission_reveal_date)
+        AND sa."reporting_fiscal_year" = "recent_submission"."submission_fiscal_year")
     LEFT JOIN (
         SELECT   submission_fiscal_year, is_quarter, max(submission_fiscal_month) AS submission_fiscal_month
         FROM     dabs_submission_window_schedule
