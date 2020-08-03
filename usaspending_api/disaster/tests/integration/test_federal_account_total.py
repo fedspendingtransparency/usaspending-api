@@ -25,7 +25,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                 }
             ],
             "code": "000-0000",
-            "award_count": None,
+            "award_count": 0,
             "description": "gifts",
             "id": 21,
             "obligation": 100.0,
@@ -69,7 +69,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                 },
             ],
             "code": "000-0000",
-            "award_count": None,
+            "award_count": 0,
             "description": "gifts",
             "id": 21,
             "obligation": 304.0,

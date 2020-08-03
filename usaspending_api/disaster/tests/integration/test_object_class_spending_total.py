@@ -18,7 +18,7 @@ def test_basic_object_class_spending_total_success(
             "id": "001",
             "code": "001",
             "description": "001 name",
-            "award_count": None,
+            "award_count": 0,
             "obligation": 9.0,
             "outlay": 0.0,
             "children": [
