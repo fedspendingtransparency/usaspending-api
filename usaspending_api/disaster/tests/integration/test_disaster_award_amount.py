@@ -67,11 +67,10 @@ def test_award_amount_invalid_defc(client, monkeypatch, generic_account_data, he
     assert resp.data["detail"] == "Field 'filter|def_codes' is outside valid values ['9', 'A', 'L', 'M', 'N', 'O', 'P']"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
-def test_award_amount_exclusive_filters(client, helpers):
+def test_award_amount_exclusive_filters(client, generic_account_data, helpers):
     resp = helpers.post_for_amount_endpoint(
-        client, url, ["ZZ"], award_type_codes=["A", "09", "10"], award_type="procurement"
+        client, url, ["M"], award_type_codes=["A", "09", "10"], award_type="procurement"
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
