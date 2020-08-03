@@ -18,6 +18,8 @@ LATE_GTAS_UNOBLIGATED_BALANCE = 0.0
 LATE_GTAS_APPROPRIATION = 0.29
 LATE_GTAS_OUTLAY = 0.03
 
+QUARTERLY_GTAS_BUDGETARY_RESOURCES = 0.26
+
 EARLY_GTAS_BUDGETARY_RESOURCES = 0.20
 EARLY_GTAS_OUTLAY = 0.02
 
@@ -70,10 +72,10 @@ def quarterly_gtas(defc_codes):
     mommy.make(
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
-        fiscal_period=9,
+        fiscal_period=LATE_MONTH,
         unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
-        total_budgetary_resources_cpe=0.26,
+        total_budgetary_resources_cpe=QUARTERLY_GTAS_BUDGETARY_RESOURCES,
         budget_authority_appropriation_amount_cpe=0.25,
         other_budgetary_resources_amount_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.02,
