@@ -47,7 +47,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
         if self.award_type_codes:
             count_field = "award_id"
         else:
-            count_field = self.unique_file_c
+            count_field = self.unique_file_c_awards
 
         fields = {
             "award_count": Count(count_field, distinct=True),

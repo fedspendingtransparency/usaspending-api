@@ -328,11 +328,15 @@ class FabaOutlayMixin:
         ).exclude(total_outlay=0, total_obligation=0)
 
     @property
-    def unique_file_c(self):
+    def unique_file_c_awards(self):
         return Concat("piid", "parent_award_id", "fain", "uri")
 
-    def unique_file_c_count(self):
-        return Count(self.unique_file_c, distinct=True)
+    def unique_file_c_award_count(self):
+        return Count(self.unique_file_c_awards, distinct=True)
+
+    @staticmethod
+    def unique_file_d_award_count():
+        return Count("award_id", distinct=True)
 
 
 class SpendingMixin:

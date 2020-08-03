@@ -27,7 +27,7 @@ class AwardCountViewSet(DisasterBase, FabaOutlayMixin, AwardTypeMixin):
         count = FinancialAccountsByAwards.objects.filter(*filters)
         if self.award_type_codes:
             count = count.values("award_id").filter(award__type__in=self.filters.get("award_type_codes"))
-        count = self.when_non_zero_award_spending(count.annotate(unique_c=self.unique_file_c)).aggregate(
+        count = self.when_non_zero_award_spending(count.annotate(unique_c=self.unique_file_c_awards)).aggregate(
             count=Count("unique_c", distinct=True)
         )["count"]
 

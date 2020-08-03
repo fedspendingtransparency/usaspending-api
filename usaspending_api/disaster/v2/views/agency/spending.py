@@ -160,24 +160,27 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
 
     @property
     def award_queryset(self):
+        cte = With(
+            ToptierAgency.objects.distinct("toptier_agency_id")
+            .filter(agency__isnull=False)
+            .annotate(agency_id=F("agency__id"), toptier_name=F("name"))
+            .values("toptier_agency_id", "agency_id", "toptier_code", "toptier_name")
+            .order_by("toptier_agency_id", "-agency__toptier_flag", "agency_id")
+        )
+
         filters = [
             self.is_in_provided_def_codes,
             self.all_closed_defc_submissions,
             Q(treasury_account__isnull=False),
-            Q(treasury_account__funding_toptier_agency__isnull=False),
         ]
 
         annotations = {
-            "id": Subquery(
-                Agency.objects.filter(toptier_agency=OuterRef("treasury_account__funding_toptier_agency"))
-                .order_by("-toptier_flag", "id")
-                .values("id")[:1]
-            ),
-            "code": F("treasury_account__funding_toptier_agency__toptier_code"),
-            "description": F("treasury_account__funding_toptier_agency__name"),
+            "id": cte.col.agency_id,
+            "code": cte.col.toptier_code,
+            "description": cte.col.toptier_name,
             # Currently, this endpoint can never have children.
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "award_count": self.unique_file_c_count(),
+            "award_count": self.unique_file_d_award_count(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
@@ -191,15 +194,16 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
             "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
         }
 
+        # Assuming it is more performant to fetch all rows once rather than
+        #  run a count query and fetch only a page's worth of results
         return (
-            FinancialAccountsByAwards.objects.filter(*filters)
-            .values(
-                "treasury_account__funding_toptier_agency",
-                "treasury_account__funding_toptier_agency__toptier_code",
-                "treasury_account__funding_toptier_agency__name",
-            )
+            cte.join(FinancialAccountsByAwards, treasury_account__funding_toptier_agency_id=cte.col.toptier_agency_id)
+            .with_cte(cte)
+            .filter(*filters)
+            .annotate(agency_id=cte.col.agency_id, toptier_code=cte.col.toptier_code, toptier_name=cte.col.toptier_name)
+            .values("agency_id", "toptier_code", "toptier_name")
             .annotate(**annotations)
-            .values(*annotations.keys())
+            .values(*annotations)
         )
 
 

@@ -116,7 +116,7 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin
                 ),
                 0,
             ),
-            "award_count": self.unique_file_c_count(),
+            "award_count": self.unique_file_d_award_count(),
         }
 
         # Assuming it is more performant to fetch all rows once rather than
