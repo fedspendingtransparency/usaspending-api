@@ -1,4 +1,5 @@
 from django.db import models
+from django_cte import CTEManager
 
 from usaspending_api.common.models import DataSourceTrackedModel
 
@@ -125,6 +126,8 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    objects = CTEManager()
 
     class Meta:
         managed = True
