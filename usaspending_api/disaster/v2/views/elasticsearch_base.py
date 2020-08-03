@@ -78,6 +78,7 @@ class ElasticsearchDisasterBase(DisasterBase):
         self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
 
         # Ensure that only non-zero values are taken into consideration
+        # TODO: Refactor to use new NonzeroFields filter in QueryWithFilters
         non_zero_queries = []
         for field in self.sum_column_mapping.values():
             non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))

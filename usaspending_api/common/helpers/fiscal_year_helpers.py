@@ -221,6 +221,14 @@ def is_final_period_of_quarter(period: int, quarter: int) -> bool:
     return is_valid_period(period) and is_valid_quarter(quarter) and period == get_final_period_of_quarter(quarter)
 
 
+def is_final_quarter(quarter: int) -> bool:
+    return quarter == 4
+
+
+def is_final_period(period: int) -> bool:
+    return period == 12
+
+
 def get_final_period_of_quarter(quarter: int) -> Optional[int]:
     return get_periods_in_quarter(quarter)[-1] if is_valid_quarter(quarter) else None
 

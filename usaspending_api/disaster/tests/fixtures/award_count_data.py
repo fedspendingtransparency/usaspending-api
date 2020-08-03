@@ -46,6 +46,14 @@ def multiple_file_c_to_same_award(award_count_sub_schedule, award_count_submissi
 
 
 @pytest.fixture
+def multiple_outlay_file_c_to_same_award(award_count_sub_schedule, award_count_submission, defc_codes):
+    award = _normal_award()
+
+    _faba_for_award(award, outlay_based=True)
+    _faba_for_award(award, outlay_based=True)
+
+
+@pytest.fixture
 def multiple_file_c_to_same_award_that_cancel_out(award_count_sub_schedule, award_count_submission, defc_codes):
     award = _normal_award()
 
@@ -153,7 +161,7 @@ def _normal_award():
     return mommy.make("awards.Award", type="A")
 
 
-def _faba_for_award(award, id=1, negative=False):
+def _faba_for_award(award, id=1, negative=False, outlay_based=False):
     mommy.make(
         "awards.FinancialAccountsByAwards",
         piid=f"piid {id}",
@@ -163,5 +171,6 @@ def _faba_for_award(award, id=1, negative=False):
         award=award,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
-        transaction_obligated_amount=-7 if negative else 7,
+        transaction_obligated_amount=(-7 if negative else 7) if not outlay_based else 0,
+        gross_outlay_amount_by_award_cpe=(-7 if negative else 7) if outlay_based else 0,
     )

@@ -409,9 +409,23 @@ class _QueryText(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: dict, query_type: _QueryType) -> ES_Q:
-        query_text = f"{es_sanitize(filter_values['text'])}*"
+        query_text = es_sanitize(filter_values["text"])
         query_fields = filter_values["fields"]
-        return ES_Q("simple_query_string", query=query_text, default_operator="AND", fields=query_fields)
+        return ES_Q("multi_match", query=query_text, type="phrase_prefix", fields=query_fields)
+
+
+class _NonzeroFields(_Filter):
+    """List of fields where at least one should have a nonzero value for each document"""
+
+    underscore_name = "nonzero_fields"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
+        non_zero_queries = []
+        for field in filter_values:
+            non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))
+            non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
+        return ES_Q("bool", should=non_zero_queries, minimum_should_match=1)
 
 
 class QueryWithFilters:
@@ -439,6 +453,7 @@ class QueryWithFilters:
         _ExtentCompetedTypeCodes.underscore_name: _ExtentCompetedTypeCodes,
         _DisasterEmergencyFundCodes.underscore_name: _DisasterEmergencyFundCodes,
         _QueryText.underscore_name: _QueryText,
+        _NonzeroFields.underscore_name: _NonzeroFields,
     }
 
     unsupported_filters = ["legal_entities"]

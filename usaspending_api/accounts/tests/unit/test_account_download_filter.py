@@ -117,6 +117,7 @@ def submissions(db):
         reporting_fiscal_quarter=1,
         reporting_fiscal_period=3,
         quarter_format_flag=True,
+        toptier_code="000",
     )
     mommy.make(
         "submissions.SubmissionAttributes",
@@ -125,6 +126,7 @@ def submissions(db):
         reporting_fiscal_quarter=2,
         reporting_fiscal_period=6,
         quarter_format_flag=True,
+        toptier_code="000",
     )
     mommy.make(
         "submissions.SubmissionAttributes",
@@ -133,14 +135,16 @@ def submissions(db):
         reporting_fiscal_quarter=3,
         reporting_fiscal_period=9,
         quarter_format_flag=True,
+        toptier_code="000",
     )
     mommy.make(
         "submissions.SubmissionAttributes",
         submission_id=4,
         reporting_fiscal_year=1700,
-        reporting_fiscal_quarter=2,
-        reporting_fiscal_period=6,
+        reporting_fiscal_quarter=4,
+        reporting_fiscal_period=12,
         quarter_format_flag=False,
+        toptier_code="000",
     )
 
 
@@ -153,7 +157,7 @@ def test_fyqp_filter(submissions):
     queryset = account_download_filter("account_balances", AppropriationAccountBalances, {"fy": 1700, "quarter": 1})
     assert queryset.count() == 1
 
-    queryset = account_download_filter("account_balances", AppropriationAccountBalances, {"fy": 1700, "period": 6})
+    queryset = account_download_filter("account_balances", AppropriationAccountBalances, {"fy": 1700, "period": 12})
     assert queryset.count() == 1
 
 
@@ -211,13 +215,14 @@ def test_tas_account_filter_later_qtr_award_financial(submissions):
     tas1 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fed_acct1, tas_rendering_label="1")
     tas2 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fed_acct2, tas_rendering_label="2")
 
-    # Create file A models
+    # Create file C models
     mommy.make(
         "awards.FinancialAccountsByAwards",
         treasury_account=tas1,
         program_activity=prog1,
         object_class=obj_cls1,
         submission_id=1,
+        transaction_obligated_amount=33,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -225,10 +230,11 @@ def test_tas_account_filter_later_qtr_award_financial(submissions):
         program_activity=prog2,
         object_class=obj_cls2,
         submission_id=3,
+        transaction_obligated_amount=33,
     )
 
     queryset = account_download_filter(
-        "award_financial", FinancialAccountsByAwards, {"fy": 1700, "quarter": 3}, "treasury_account"
+        "award_financial", FinancialAccountsByAwards, {"fy": 1700, "quarter": 1}, "treasury_account"
     )
     assert queryset.count() == 1
 
@@ -281,7 +287,7 @@ def test_tas_account_filter_duplciate_tas_financial_accounts_program_object(subm
     # Create TAS models
     tas1 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fed_acct1)
 
-    # Create file A models
+    # Create file B models
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account_id=tas1.treasury_account_identifier,
@@ -333,10 +339,16 @@ def test_budget_subfunction_filter(submissions):
 
     # Create file C models
     mommy.make(
-        "awards.FinancialAccountsByAwards", treasury_account_id=tas1.treasury_account_identifier, submission_id=1
+        "awards.FinancialAccountsByAwards",
+        treasury_account_id=tas1.treasury_account_identifier,
+        submission_id=1,
+        transaction_obligated_amount=11,
     )
     mommy.make(
-        "awards.FinancialAccountsByAwards", treasury_account_id=tas2.treasury_account_identifier, submission_id=1
+        "awards.FinancialAccountsByAwards",
+        treasury_account_id=tas2.treasury_account_identifier,
+        submission_id=1,
+        transaction_obligated_amount=22,
     )
 
     queryset = account_download_filter(
@@ -384,10 +396,16 @@ def test_frec_agency_filter(submissions):
 
     # Create file C models
     mommy.make(
-        "awards.FinancialAccountsByAwards", treasury_account_id=tas1.treasury_account_identifier, submission_id=1
+        "awards.FinancialAccountsByAwards",
+        treasury_account_id=tas1.treasury_account_identifier,
+        submission_id=1,
+        transaction_obligated_amount=11,
     )
     mommy.make(
-        "awards.FinancialAccountsByAwards", treasury_account_id=tas2.treasury_account_identifier, submission_id=1
+        "awards.FinancialAccountsByAwards",
+        treasury_account_id=tas2.treasury_account_identifier,
+        submission_id=1,
+        transaction_obligated_amount=22,
     )
 
     # Filter by ToptierAgency (FREC)
