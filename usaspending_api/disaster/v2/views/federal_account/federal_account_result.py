@@ -35,8 +35,10 @@ class FedAcctResults:
                     if child.total_budgetary_resources is not None
                     else None
                 )
-                if child.award_count:
+                if child.award_count is not None:
                     row.award_count += child.award_count
+                else:
+                    row.award_count = None
 
     def sort(self, field, direction):
         for row in self._federal_accounts:
