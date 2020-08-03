@@ -13,9 +13,6 @@ class TAS(Element):
 class FedAccount(Collation):
     """Renaming the original generic object to clearly be Federal Account"""
 
-    def __post_init__(self):
-        self.award_count = self.award_count or 0
-
 
 @dataclass_json
 @dataclass
