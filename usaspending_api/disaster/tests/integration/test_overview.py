@@ -171,33 +171,24 @@ def test_ignore_funding_for_unselected_defc(
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL + "?def_codes=M,A")
-    assert resp.data["funding"] == [{"amount": Decimal("0.32"), "def_code": "M"}]
-    assert resp.data["total_budget_authority"] == Decimal("0.32")
-    assert resp.data["spending"]["total_obligations"] == Decimal("0.22")
-    assert resp.data["spending"]["total_outlays"] == Decimal("0.07")
+    assert resp.data["funding"] == [{"amount": YEAR_TWO_GTAS_BUDGETARY_RESOURCES, "def_code": "M"}]
+    assert resp.data["total_budget_authority"] == YEAR_TWO_GTAS_BUDGETARY_RESOURCES
+    assert (
+        resp.data["spending"]["total_obligations"]
+        == YEAR_TWO_GTAS_BUDGETARY_RESOURCES - YEAR_TWO_GTAS_UNOBLIGATED_BALANCE
+    )
+    assert resp.data["spending"]["total_outlays"] == YEAR_TWO_OUTLAY
 
     resp = client.get(OVERVIEW_URL + "?def_codes=M,N")
     assert resp.data["funding"] == [
         {"amount": Decimal("0.32"), "def_code": "M"},
         {"amount": Decimal("0.32"), "def_code": "N"},
     ]
-    assert resp.data["total_budget_authority"] == Decimal("0.64")
-    assert resp.data["spending"]["total_obligations"] == Decimal("0.44")
-    assert resp.data["spending"]["total_outlays"] == Decimal("0.14")
-
-
-@pytest.mark.django_db
-def test_isolate_defc(client, monkeypatch, helpers, defc_codes, basic_ref_data, year_2_gtas_covid, year_2_gtas_covid_2):
-    helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
-    helpers.reset_dabs_cache()
-    resp = client.get(OVERVIEW_URL)
-    assert resp.data["funding"] == [
-        {"amount": Decimal("0.32"), "def_code": "M"},
-        {"amount": Decimal("0.32"), "def_code": "N"},
-    ]
-    assert resp.data["total_budget_authority"] == Decimal("0.64")
-    assert resp.data["spending"]["total_obligations"] == Decimal("0.44")
-    assert resp.data["spending"]["total_outlays"] == Decimal("0.14")
+    assert resp.data["total_budget_authority"] == YEAR_TWO_GTAS_BUDGETARY_RESOURCES * 2
+    assert resp.data["spending"]["total_obligations"] == YEAR_TWO_GTAS_BUDGETARY_RESOURCES * 2 - (
+        YEAR_TWO_GTAS_UNOBLIGATED_BALANCE * 2
+    )
+    assert resp.data["spending"]["total_outlays"] == YEAR_TWO_OUTLAY * 2
 
 
 @pytest.mark.django_db
