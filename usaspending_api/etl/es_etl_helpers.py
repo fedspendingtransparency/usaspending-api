@@ -211,7 +211,7 @@ WHERE {update_date}
 COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
-    WHERE {type_fy}fiscal_year={fy}{update_date}
+    WHERE {type_fy}fiscal_year={fy} AND {update_date}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
