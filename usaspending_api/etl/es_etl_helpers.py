@@ -194,18 +194,24 @@ AWARD_VIEW_COLUMNS = [
     "total_covid_outlay",
 ]
 
-UPDATE_DATE_SQL = " AND update_date >= '{}'"
+UPDATE_DATE_SQL = "update_date >= '{}'"
+
+COUNT_FY_SQL = """
+SELECT COUNT(*) AS count
+FROM {view}
+WHERE {type_fy}fiscal_year={fy} AND {update_date}
+"""
 
 COUNT_SQL = """
 SELECT COUNT(*) AS count
 FROM {view}
-WHERE {type_fy}fiscal_year={fy}{update_date}
+WHERE {update_date}
 """
 
 COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
-    WHERE {type_fy}fiscal_year={fy}{update_date}
+    WHERE {type_fy}fiscal_year={fy} AND {update_date}
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
@@ -317,7 +323,9 @@ def configure_sql_strings(config, filename, deleted_ids):
         fy=config["fiscal_year"], update_date=update_date_str, filename=filename, view=view_name, type_fy=type_fy
     )
 
-    count_sql = COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy)
+    count_sql = COUNT_FY_SQL.format(
+        fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy
+    )
     if deleted_ids and config["process_deletes"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
         id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"], type_fy=type_fy, view_type=view_type)
@@ -325,6 +333,19 @@ def configure_sql_strings(config, filename, deleted_ids):
         id_sql = None
 
     return copy_sql, id_sql, count_sql
+
+
+def get_updated_record_count(config):
+    update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
+
+    if config["load_type"] == "awards":
+        view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+    else:
+        view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+
+    count_sql = COUNT_SQL.format(update_date=update_date_str, view=view_name)
+
+    return execute_sql_statement(count_sql, True, config["verbose"])[0]["count"]
 
 
 def execute_sql_statement(cmd, results=False, verbose=False):
