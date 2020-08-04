@@ -391,22 +391,24 @@ def download_db_records(fetch_jobs, done_jobs, config):
 
 
 def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
-    if skip_counts:
-        count = None
-        printf({"msg": "Skipping count checks. Writing file: {}".format(filename), "job": job_id, "f": "Download"})
-    else:
-        count = execute_sql_statement(count_sql, True, verbose)[0]["count"]
-        printf({"msg": "Writing {} to this file: {}".format(count, filename), "job": job_id, "f": "Download"})
+
+    # Execute Copy SQL to download records to CSV
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
     subprocess.Popen("psql {} -c {}".format(get_database_dsn_string(), copy_sql), shell=True).wait()
+    download_count = count_rows_in_delimited_file(filename, has_header=True, safe=False)
+    printf({"msg": "Wrote {} to this file: {}".format(download_count, filename), "job": job_id, "f": "Download"})
 
+    # If --skip_counts is disabled, execute count_sql and compare this count to the download_count
     if not skip_counts:
-        download_count = count_rows_in_delimited_file(filename, has_header=True, safe=False)
-        if count != download_count:
+        sql_count = execute_sql_statement(count_sql, True, verbose)[0]["count"]
+        if sql_count != download_count:
             msg = "Mismatch between CSV and DB rows! Expected: {} | Actual {} in: {}"
-            printf({"msg": msg.format(count, download_count, filename), "job": job_id, "f": "Download"})
+            printf({"msg": msg.format(sql_count, download_count, filename), "job": job_id, "f": "Download"})
             raise SystemExit(1)
-    return count
+    else:
+        printf({"msg": "Skipping count comparison checks (sql vs download)", "job": job_id, "f": "Download"})
+
+    return download_count
 
 
 def csv_chunk_gen(filename, chunksize, job_id, load_type):
