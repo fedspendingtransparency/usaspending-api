@@ -323,7 +323,9 @@ def configure_sql_strings(config, filename, deleted_ids):
         fy=config["fiscal_year"], update_date=update_date_str, filename=filename, view=view_name, type_fy=type_fy
     )
 
-    count_sql = COUNT_FY_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy)
+    count_sql = COUNT_FY_SQL.format(
+        fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy
+    )
     if deleted_ids and config["process_deletes"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
         id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"], type_fy=type_fy, view_type=view_type)
