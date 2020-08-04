@@ -201,7 +201,9 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
             )
             disaster_source.award_category = json_request["award_category"]
             disaster_source.queryset = filter_function(
-                json_request["filters"], VALUE_MAPPINGS[download_type]["base_fields"]
+                filters=json_request["filters"],
+                values=VALUE_MAPPINGS[download_type]["base_fields"],
+                ignore_max_limit=True,
             )
             download_sources.append(disaster_source)
 

@@ -20,7 +20,9 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
     _search_type = None
 
     @classmethod
-    def _get_download_ids_generator(cls, search: Union[AwardSearch, TransactionSearch], size: int):
+    def _get_download_ids_generator(
+        cls, search: Union[AwardSearch, TransactionSearch], size: int, ignore_max_limit: bool = False
+    ):
         """
         Takes an AwardSearch or TransactionSearch object (that specifies the index, filter, and source) and returns
         a generator that yields list of IDs in chunksize SIZE.
@@ -30,9 +32,12 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         if total is None:
             logger.error("Error retrieving total results. Max number of attempts reached.")
             return
-        max_iterations = settings.MAX_DOWNLOAD_LIMIT // size
         req_iterations = (total // size) + 1
-        num_iterations = min(max(1, req_iterations), max_iterations)
+        if ignore_max_limit:
+            num_iterations = req_iterations
+        else:
+            max_iterations = settings.MAX_DOWNLOAD_LIMIT // size
+            num_iterations = min(req_iterations, max_iterations)
 
         # Setting the shard_size below works in this case because we are aggregating on a unique field. Otherwise, this
         # would not work due to the number of records. Other places this is set are in the different spending_by
@@ -58,13 +63,13 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             yield results
 
     @classmethod
-    def _get_download_ids(cls, filters: dict, size: int = 10000) -> QuerySet:
+    def _get_download_ids(cls, filters: dict, size: int = 10000, ignore_max_limit: bool = False) -> QuerySet:
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
         filter_query = cls._filter_query_func(filters)
         search = cls._search_type().filter(filter_query).source([cls._source_field])
-        ids = cls._get_download_ids_generator(search, size)
+        ids = cls._get_download_ids_generator(search, size, ignore_max_limit)
         flat_ids = list(itertools.chain.from_iterable(ids))
         logger.info(f"Found {len(flat_ids)} {cls._source_field} based on filters")
         return flat_ids
@@ -81,9 +86,9 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
     _search_type = AwardSearch
 
     @classmethod
-    def query(cls, filters: dict, values: List[str] = None) -> QuerySet:
+    def query(cls, filters: dict, values: List[str] = None, ignore_max_limit: bool = False) -> QuerySet:
         base_queryset = AwardSearchView.objects.all()
-        flat_ids = cls._get_download_ids(filters)
+        flat_ids = cls._get_download_ids(filters, ignore_max_limit=ignore_max_limit)
         queryset = base_queryset.extra(
             where=[f'"vw_award_search"."award_id" = ANY(SELECT UNNEST(ARRAY{flat_ids}::INTEGER[]))']
         )
