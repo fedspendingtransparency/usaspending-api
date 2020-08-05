@@ -285,7 +285,7 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
     for bucket in recipient_info_buckets:
         result = {}
         if children:
-            recipient_info = json.loads(bucket.get("key").encode('unicode_escape'))
+            recipient_info = json.loads(bucket.get("key").encode("unicode_escape"))
             hash_with_level = recipient_info.get("hash_with_level") or None
             result = {
                 "recipient_hash": hash_with_level[:-2] if hash_with_level else None,
