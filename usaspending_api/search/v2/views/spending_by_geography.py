@@ -345,7 +345,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         results = {}
         geo_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in geo_info_buckets:
-            geo_info = json.loads(bucket.get("key"))
+            geo_info = json.loads(bucket.get("key").encode('unicode_escape'))
 
             if self.geo_layer == GeoLayer.STATE:
                 display_name = geo_info.get("state_name").title()

@@ -34,7 +34,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
         results = []
         location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in location_info_buckets:
-            location_info = json.loads(bucket.get("key"))
+            location_info = json.loads(bucket.get("key").encode('unicode_escape'))
 
             if self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
                 if location_info.get("congressional_code") == "90":

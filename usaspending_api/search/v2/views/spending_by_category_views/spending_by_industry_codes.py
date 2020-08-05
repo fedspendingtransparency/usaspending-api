@@ -34,7 +34,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
         results = []
         industry_code_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in industry_code_info_buckets:
-            industry_code_info = json.loads(bucket.get("key"))
+            industry_code_info = json.loads(bucket.get("key").encode('unicode_escape'))
 
             results.append(
                 {

@@ -23,7 +23,7 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
         results = []
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in info_buckets:
-            info = json.loads(bucket.get("key"))
+            info = json.loads(bucket.get("key").encode('unicode_escape'))
             results.append(
                 {
                     "id": int(info.get("id")) if info.get("id") else None,

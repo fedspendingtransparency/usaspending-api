@@ -31,7 +31,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
         results = []
         agency_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in agency_info_buckets:
-            agency_info = json.loads(bucket.get("key"))
+            agency_info = json.loads(bucket.get("key").encode('unicode_escape'))
 
             results.append(
                 {
