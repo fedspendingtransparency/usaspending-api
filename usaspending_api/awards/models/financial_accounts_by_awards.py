@@ -132,3 +132,18 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     class Meta:
         managed = True
         db_table = "financial_accounts_by_awards"
+        index_together = [
+            # This index dramatically sped up disaster endpoint queries.  VERY IMPORTANT!  It needs
+            # to cover all of the fields being queried in order to eek out maximum performance.
+            [
+                "disaster_emergency_fund",
+                "submission",
+                "award",
+                "piid",
+                "fain",
+                "uri",
+                "parent_award_id",
+                "transaction_obligated_amount",
+                "gross_outlay_amount_by_award_cpe",
+            ]
+        ]
