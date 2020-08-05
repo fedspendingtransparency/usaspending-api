@@ -38,7 +38,7 @@
     "  awards.type_description,",
     "  awards.period_of_performance_start_date,",
     "  awards.period_of_performance_current_end_date,",
-    "  awards.fiscal_year as award_fiscal_year,",
+    "  awards.certified_date as award_certified_date,",
     "  COALESCE(transaction_normalized.federal_action_obligation, 0)::NUMERIC(23, 2) AS federal_action_obligation,",
     "  COALESCE(transaction_normalized.original_loan_subsidy_cost, 0)::NUMERIC(23, 2) AS original_loan_subsidy_cost,",
     "  COALESCE(transaction_normalized.face_value_loan_guarantee, 0)::NUMERIC(23, 2) AS face_value_loan_guarantee,",

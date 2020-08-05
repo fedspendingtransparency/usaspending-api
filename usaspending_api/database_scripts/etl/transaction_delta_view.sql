@@ -75,7 +75,7 @@ SELECT
   UTM.period_of_performance_current_end_date,
   UTM.ordering_period_end_date,
   UTM.fiscal_year AS transaction_fiscal_year,
-  UTM.award_fiscal_year,
+  FY(UTM.award_certified_date) as award_fiscal_year,
   UTM.award_amount,
   UTM.federal_action_obligation AS transaction_amount,
   UTM.face_value_loan_guarantee,
