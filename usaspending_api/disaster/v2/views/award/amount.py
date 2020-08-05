@@ -1,4 +1,5 @@
 from django.db.models import Count, F, Sum
+from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
@@ -66,6 +67,8 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             .exclude(inner_obligation=0, inner_outlay=0)
             .values(*all_annotations)
             .aggregate(
-                award_count=Count("award_identifier"), obligation=Sum("inner_obligation"), outlay=Sum("inner_outlay")
+                award_count=Count("award_identifier"),
+                obligation=Coalesce(Sum("inner_obligation"), 0),
+                outlay=Coalesce(Sum("inner_outlay"), 0),
             )
         )
