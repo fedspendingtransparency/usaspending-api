@@ -4,12 +4,12 @@ DROP VIEW IF EXISTS transaction_delta_view;
 CREATE VIEW transaction_delta_view AS
 SELECT
   UTM.transaction_id,
-  FPDS.detached_award_proc_unique,
-  FABS.afa_generated_unique,
+  UTM.detached_award_proc_unique,
+  UTM.afa_generated_unique,
 
   CASE
-    WHEN FPDS.detached_award_proc_unique IS NOT NULL THEN 'CONT_TX_' || UPPER(FPDS.detached_award_proc_unique)
-    WHEN FABS.afa_generated_unique IS NOT NULL THEN 'ASST_TX_' || UPPER(FABS.afa_generated_unique)
+    WHEN UTM.detached_award_proc_unique IS NOT NULL THEN 'CONT_TX_' || UPPER(UTM.detached_award_proc_unique)
+    WHEN UTM.afa_generated_unique IS NOT NULL THEN 'ASST_TX_' || UPPER(UTM.afa_generated_unique)
     ELSE NULL  -- if this happens: Activate Batsignal
   END AS generated_unique_transaction_id,
 
@@ -20,11 +20,11 @@ SELECT
   END AS display_award_id,
 
   CASE
-    WHEN AWD.update_date > TN.update_date THEN AWD.update_date
-    ELSE TN.update_date
+    WHEN UTM.award_update_date > UTM.update_date THEN UTM.award_update_date
+    ELSE UTM.update_date
   END AS update_date,
   UTM.modification_number,
-  AWD.generated_unique_award_id,
+  UTM.generated_unique_award_id,
   UTM.award_id,
   UTM.piid,
   UTM.fain,
@@ -48,7 +48,7 @@ SELECT
       THEN CONCAT('{"code":"', UTM.naics_code, '","description":"', UTM.naics_description, '"}')
     ELSE NULL
   END AS naics_agg_key,
-  AWD.type_description,
+  UTM.type_description,
   UTM.award_category,
 
   UTM.recipient_unique_id,
@@ -71,11 +71,11 @@ SELECT
 
   UTM.action_date,
   DATE(UTM.action_date + interval '3 months') AS fiscal_action_date,
-  AWD.period_of_performance_start_date,
-  AWD.period_of_performance_current_end_date,
-  FPDS.ordering_period_end_date,
+  UTM.period_of_performance_start_date,
+  UTM.period_of_performance_current_end_date,
+  UTM.ordering_period_end_date,
   UTM.fiscal_year AS transaction_fiscal_year,
-  AWD.fiscal_year AS award_fiscal_year,
+  UTM.award_fiscal_year,
   UTM.award_amount,
   UTM.federal_action_obligation AS transaction_amount,
   UTM.face_value_loan_guarantee,
@@ -115,7 +115,7 @@ SELECT
       THEN CONCAT(
         '{"name":"', UTM.awarding_subtier_agency_name,
         '","abbreviation":"', UTM.awarding_subtier_agency_abbreviation,
-        '","id":"', AA.id, '"}'
+        '","id":"', UTM.award_id, '"}'
       )
     ELSE NULL
   END AS awarding_subtier_agency_agg_key,
@@ -124,19 +124,19 @@ SELECT
       THEN CONCAT(
         '{"name":"', UTM.funding_subtier_agency_name,
         '","abbreviation":"', UTM.funding_subtier_agency_abbreviation,
-        '","id":"', FA.id, '"}'
+        '","id":"', UTM.funding_agency_id, '"}'
       )
     ELSE NULL
   END AS funding_subtier_agency_agg_key,
 
   UTM.cfda_number,
-  CFDA.program_title AS cfda_title,
+  UTM.cfda_title,
   CASE
     WHEN UTM.cfda_number IS NOT NULL
       THEN CONCAT(
         '{"code":"', UTM.cfda_number,
-        '","description":"', CFDA.program_title,
-        '","id":"', CFDA.id, '"}'
+        '","description":"', UTM.cfda_title,
+        '","id":"', UTM.cfda_id, '"}'
       )
     ELSE NULL
   END AS cfda_agg_key,
@@ -245,30 +245,21 @@ SELECT
   FEDERAL_ACCT.defc as disaster_emergency_fund_codes
 
 FROM universal_transaction_matview UTM
-INNER JOIN transaction_normalized TN ON (UTM.transaction_id = TN.id)
-INNER JOIN awards AWD ON (UTM.award_id = AWD.id)
-LEFT JOIN transaction_fpds FPDS ON (UTM.transaction_id = FPDS.transaction_id)
-LEFT JOIN transaction_fabs FABS ON (UTM.transaction_id = FABS.transaction_id)
 -- Similar joins are already performed on universal_transaction_matview, however, to avoid making the matview larger
 -- than needed they have been placed here. Feel free to phase out if the columns gained from the following joins are
 -- added to the universal_transaction_matview.
-LEFT JOIN agency AA on (TN.awarding_agency_id = AA.id)
 LEFT JOIN (
   SELECT a.id, a.toptier_agency_id, a.toptier_flag, ta.name, ta.abbreviation, ta.toptier_code
   FROM agency a
   INNER JOIN toptier_agency ta ON (a.toptier_agency_id = ta.toptier_agency_id)
   WHERE a.toptier_flag = TRUE
-) TAA ON (AA.toptier_agency_id = TAA.toptier_agency_id)
-LEFT JOIN subtier_agency SAA ON (AA.subtier_agency_id = SAA.subtier_agency_id)
-LEFT JOIN agency FA on (TN.funding_agency_id = FA.id)
+) TAA ON (UTM.toptier_agency_id = TAA.toptier_agency_id)
 LEFT JOIN (
   SELECT a.id, a.toptier_agency_id, a.toptier_flag, ta.name, ta.abbreviation, ta.toptier_code
   FROM agency a
   INNER JOIN toptier_agency ta ON (a.toptier_agency_id = ta.toptier_agency_id)
   WHERE a.toptier_flag = TRUE
-) TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
-LEFT JOIN subtier_agency SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
-LEFT JOIN references_cfda CFDA ON (FABS.cfda_number = CFDA.program_number)
+) TFA ON (UTM.funding_toptier_agency_id = TFA.toptier_agency_id)
 LEFT JOIN recipient_lookup PRL ON (PRL.duns = UTM.parent_recipient_unique_id AND UTM.parent_recipient_unique_id IS NOT NULL)
 LEFT JOIN LATERAL (
   SELECT   recipient_hash, recipient_level, recipient_unique_id
