@@ -194,7 +194,7 @@ AWARD_VIEW_COLUMNS = [
     "total_covid_outlay",
 ]
 
-UPDATE_DATE_SQL = "AND update_date >= '{}'"
+UPDATE_DATE_SQL = " AND update_date >= '{}'"
 
 COUNT_FY_SQL = """
 SELECT COUNT(*) AS count
