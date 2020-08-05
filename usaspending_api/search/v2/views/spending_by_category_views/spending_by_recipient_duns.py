@@ -64,7 +64,7 @@ class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
         results = []
         location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in location_info_buckets:
-            recipient_info = json.loads(bucket.get("key"))
+            recipient_info = json.loads(bucket.get("key").encode("unicode_escape"))
 
             results.append(
                 {

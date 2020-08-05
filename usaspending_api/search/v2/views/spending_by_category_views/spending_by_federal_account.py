@@ -27,7 +27,7 @@ class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMet
         results = []
         account_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in account_info_buckets:
-            account_info = json.loads(bucket.get("key"))
+            account_info = json.loads(bucket.get("key").encode("unicode_escape"))
             results.append(
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
