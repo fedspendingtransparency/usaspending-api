@@ -31,11 +31,7 @@ class Rapidloader:
 
         updated_record_count = get_updated_record_count(self.config)
         printf(
-            {
-                "msg": "Found {} new {} records to update in ElasticSearch".format(
-                    updated_record_count, self.config["load_type"]
-                )
-            }
+            {"msg": f"Found {updated_record_count:,} new {self.config['load_type']} records to add to ElasticSearch"}
         )
 
         job_number = 0
