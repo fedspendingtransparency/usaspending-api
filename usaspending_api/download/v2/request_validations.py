@@ -264,7 +264,7 @@ def validate_disaster_recipient_request(request_data):
     # Need to specify the field to use "query" filter on if present
     query_text = filters.pop("query", None)
     if query_text:
-        filters["query"] = {"text": str(query_text).upper(), "fields": ["recipient_name_ts_vector"]}
+        filters["query"] = {"text": query_text, "fields": ["recipient_name"]}
 
     json_request = {
         "award_category": award_category,

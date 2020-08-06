@@ -34,7 +34,7 @@ def disaster_filter_function(filters: dict, download_type: str, values: List[str
         query_text = query["text"]
         q = Q()
         for field in query["fields"]:
-            q |= Q(**{field: query_text})
+            q |= Q(**{f"{field}__icontains": query_text})
         award_filters.append(q)
     if award_type_codes:
         award_filters.append(Q(type__in=award_type_codes))
