@@ -1,4 +1,3 @@
-import json
 import logging
 import uuid
 
@@ -11,16 +10,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
-from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.models import UniversalTransactionView
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.recipient.models import RecipientProfile, RecipientLookup, DUNS
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters, get_duns_business_types_mapping
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode
+from usaspending_api.search.models import UniversalTransactionView
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_transactions,
@@ -285,7 +285,7 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
     for bucket in recipient_info_buckets:
         result = {}
         if children:
-            recipient_info = json.loads(bucket.get("key").encode("unicode_escape"))
+            recipient_info = json_str_to_dict(bucket.get("key"))
             hash_with_level = recipient_info.get("hash_with_level") or None
             result = {
                 "recipient_hash": hash_with_level[:-2] if hash_with_level else None,
