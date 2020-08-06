@@ -261,13 +261,10 @@ def validate_disaster_recipient_request(request_data):
     elif award_type_codes <= set(other_type_mapping.keys()):
         award_category = "Other-Financial-Assistance"
 
-    # Filter so that at least one of these has a nonzero value
-    filters["nonzero_fields"] = ["total_covid_obligation", "total_covid_outlay", "total_loan_value"]
-
     # Need to specify the field to use "query" filter on if present
     query_text = filters.pop("query", None)
     if query_text:
-        filters["query"] = {"text": query_text, "fields": ["recipient_name"]}
+        filters["query"] = {"text": str(query_text).upper(), "fields": ["recipient_name_ts_vector"]}
 
     json_request = {
         "award_category": award_category,
