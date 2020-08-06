@@ -117,7 +117,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
         return results
 
     def _build_json_result(self, bucket: dict):
-        info = json.loads(bucket.get("key"))
+        info = json.loads(bucket.get("key").encode("unicode_escape"))
         return {
             "id": int(info["id"]),
             "code": info["code"],

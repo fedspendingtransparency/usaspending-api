@@ -4,7 +4,6 @@ from usaspending_api.disaster.v2.views.agency.count import AgencyCountViewSet
 from usaspending_api.disaster.v2.views.agency.loans import route_agency_loans_backend
 from usaspending_api.disaster.v2.views.agency.spending import route_agency_spending_backend
 from usaspending_api.disaster.v2.views.award.amount import AmountViewSet
-from usaspending_api.disaster.v2.views.award.count import AwardCountViewSet
 from usaspending_api.disaster.v2.views.cfda.count import CfdaCountViewSet
 from usaspending_api.disaster.v2.views.cfda.loans import CfdaLoansViewSet
 from usaspending_api.disaster.v2.views.cfda.spending import CfdaSpendingViewSet
@@ -25,8 +24,8 @@ urlpatterns = [
     url(r"^agency/count/$", AgencyCountViewSet.as_view()),
     url(r"^agency/loans/$", route_agency_loans_backend()),
     url(r"^agency/spending/$", route_agency_spending_backend()),
-    url(r"^award/amount/$", AmountViewSet.as_view()),
-    url(r"^award/count/$", AwardCountViewSet.as_view()),
+    url(r"^award/amount/$", AmountViewSet.as_view(count_only=False)),
+    url(r"^award/count/$", AmountViewSet.as_view(count_only=True)),
     url(r"^cfda/count/$", CfdaCountViewSet.as_view()),
     url(r"^cfda/loans/$", CfdaLoansViewSet.as_view()),
     url(r"^cfda/spending/$", CfdaSpendingViewSet.as_view()),

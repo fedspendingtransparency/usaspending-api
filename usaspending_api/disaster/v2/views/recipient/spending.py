@@ -26,7 +26,7 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
         results = []
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in info_buckets:
-            info = json.loads(bucket.get("key"))
+            info = json.loads(bucket.get("key").encode("unicode_escape"))
 
             # Build a list of hash IDs to handle multiple levels
             recipient_hash = info.get("hash")
