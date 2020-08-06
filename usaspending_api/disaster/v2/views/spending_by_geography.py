@@ -1,4 +1,3 @@
-import json
 from decimal import Decimal
 from enum import Enum
 from typing import Optional, List, Dict
@@ -8,6 +7,7 @@ from rest_framework.response import Response
 from elasticsearch_dsl import A, Q as ES_Q
 
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
@@ -137,7 +137,7 @@ class SpendingByGeographyViewSet(DisasterBase):
         results = {}
         geo_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in geo_info_buckets:
-            geo_info = json.loads(bucket.get("key").encode("unicode_escape"))
+            geo_info = json_str_to_dict(bucket.get("key"))
 
             if self.geo_layer == GeoLayer.STATE:
                 display_name = geo_info.get("state_name").title()

@@ -1,8 +1,8 @@
-import json
 import re
 from decimal import Decimal
 from typing import List
 
+from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchLoansPaginationMixin,
@@ -26,7 +26,7 @@ class RecipientLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisa
         results = []
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in info_buckets:
-            info = json.loads(bucket.get("key").encode("unicode_escape"))
+            info = json_str_to_dict(bucket.get("key"))
 
             # Build a list of hash IDs to handle multiple levels
             recipient_hash = info.get("hash")

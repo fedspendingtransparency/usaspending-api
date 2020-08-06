@@ -1,5 +1,4 @@
 import copy
-import json
 import logging
 
 from decimal import Decimal
@@ -18,6 +17,7 @@ from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_fi
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -345,7 +345,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         results = {}
         geo_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in geo_info_buckets:
-            geo_info = json.loads(bucket.get("key").encode("unicode_escape"))
+            geo_info = json_str_to_dict(bucket.get("key"))
 
             if self.geo_layer == GeoLayer.STATE:
                 display_name = geo_info.get("state_name").title()
