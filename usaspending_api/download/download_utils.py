@@ -84,7 +84,7 @@ def construct_data_date_range(provided_filters: dict) -> str:
             string = f"FY{provided_filters.get('fy')}P01"
         if provided_filters.get("period") is not None and provided_filters.get("period") != 1:
             string += f"-P{provided_filters.get('period'):0>2}"
-        else:
+        elif provided_filters.get("period") is None:
             string += f"-Q{provided_filters.get('quarter')}"
     else:
         string = f"FY{provided_filters.get('fy')}Q1"
