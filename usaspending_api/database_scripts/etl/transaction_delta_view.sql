@@ -115,7 +115,7 @@ SELECT
       THEN CONCAT(
         '{"name":"', UTM.awarding_subtier_agency_name,
         '","abbreviation":"', UTM.awarding_subtier_agency_abbreviation,
-        '","id":"', UTM.award_id, '"}'
+        '","id":"', UTM.awarding_agency_id, '"}'
       )
     ELSE NULL
   END AS awarding_subtier_agency_agg_key,
