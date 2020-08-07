@@ -1,7 +1,7 @@
 import datetime
 
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models.functions import Cast, Concat, Coalesce
+from django.db.models.functions import Cast, Concat
 from django.db.models import (
     Case,
     DateField,
@@ -16,7 +16,6 @@ from django.db.models import (
     TextField,
     Value,
     When,
-    Count,
 )
 
 from usaspending_api.common.helpers.orm_helpers import FiscalYear
@@ -515,7 +514,7 @@ def subaward_annotations():
     annotation_fields = {
         "subaward_action_date_fiscal_year": FiscalYear("subaward__action_date"),
         "prime_award_base_action_date_fiscal_year": FiscalYear("award__date_signed"),
-        "period_of_performance_potential_end_date": Cast(
+        "prime_award_period_of_performance_potential_end_date": Cast(
             F("award__latest_transaction__contract_data__period_of_perf_potential_e"), DateField()
         ),
         "prime_award_treasury_accounts_funding_this_award": Subquery(
@@ -638,49 +637,4 @@ def subaward_annotations():
         ),
         "prime_award_latest_action_date_fiscal_year": FiscalYear("award__latest_transaction__action_date"),
     }
-    return annotation_fields
-
-
-def disaster_recipient_annotations():
-    annotation_fields = {
-        "award_obligations": Coalesce(
-            Sum(
-                "award__financial_set__transaction_obligated_amount",
-                filter=Q(
-                    filter_limit_to_closed_periods("award__financial_set__"),
-                    award__financial_set__disaster_emergency_fund__group_name="covid_19",
-                    award__financial_set__submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
-                ),
-                output_field=DecimalField(),
-            ),
-            0,
-        ),
-        "award_outlays": Coalesce(
-            Sum(
-                "award__financial_set__gross_outlay_amount_by_award_cpe",
-                filter=Q(
-                    filter_by_latest_closed_periods("award__financial_set__"),
-                    award__financial_set__disaster_emergency_fund__group_name="covid_19",
-                    award__financial_set__submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
-                ),
-                output_field=DecimalField(),
-            ),
-            0,
-        ),
-        # Hacky way to get the Sum "total_loan_value" from each unique Award
-        "face_value_of_loans": Coalesce(
-            Sum(
-                Subquery(
-                    Award.objects.filter(financial_set__award_id=OuterRef("award_id"))
-                    .annotate(loan_value_fraction=F("total_loan_value") / Count("id", output_field=DecimalField()))
-                    .values("loan_value_fraction"),
-                    output_field=DecimalField(),
-                ),
-                output_field=DecimalField(),
-            ),
-            0,
-        ),
-        "number_of_awards": Count("award_id", distinct=True),
-    }
-
     return annotation_fields

@@ -15,6 +15,7 @@ from usaspending_api.etl.es_etl_helpers import (
     set_final_index_config,
     swap_aliases,
     take_snapshot,
+    get_updated_record_count,
 )
 
 
@@ -27,6 +28,11 @@ class Rapidloader:
     def run_load_steps(self) -> None:
         download_queue = Queue()  # Queue for jobs which need a csv downloaded
         es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
+
+        updated_record_count = get_updated_record_count(self.config)
+        printf(
+            {"msg": f"Found {updated_record_count:,} new {self.config['load_type']} records to add to ElasticSearch"}
+        )
 
         job_number = 0
         for fiscal_year in self.config["fiscal_years"]:

@@ -1,4 +1,5 @@
 from django.db import models
+from django_cte import CTEManager
 
 from usaspending_api.common.models import DataSourceTrackedModel
 
@@ -126,6 +127,23 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
+    objects = CTEManager()
+
     class Meta:
         managed = True
         db_table = "financial_accounts_by_awards"
+        index_together = [
+            # This index dramatically sped up disaster endpoint queries.  VERY IMPORTANT!  It needs
+            # to cover all of the fields being queried in order to eek out maximum performance.
+            [
+                "disaster_emergency_fund",
+                "submission",
+                "award",
+                "piid",
+                "fain",
+                "uri",
+                "parent_award_id",
+                "transaction_obligated_amount",
+                "gross_outlay_amount_by_award_cpe",
+            ]
+        ]
