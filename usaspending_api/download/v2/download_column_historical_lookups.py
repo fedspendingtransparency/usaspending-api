@@ -1923,10 +1923,10 @@ query_paths = {
         "recipient": OrderedDict(
             [
                 ("recipient", "recipient_name"),
-                ("award_obligations", None),  # to be filled in by annotation
-                ("award_outlays", None),  # to be filled in by annotation
-                ("face_value_of_loans", None),  # to be filled in by annotation
-                ("number_of_awards", None),  # to be filled in by annotation
+                ("award_obligations", "award_obligations"),
+                ("award_outlays", "award_outlays"),
+                ("face_value_of_loans", "face_value_of_loans"),
+                ("number_of_awards", "number_of_awards"),
             ]
         )
     },
