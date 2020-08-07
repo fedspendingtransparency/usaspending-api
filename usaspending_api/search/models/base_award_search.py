@@ -1,5 +1,4 @@
 from django.contrib.postgres.fields import ArrayField
-from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 
 from usaspending_api.awards.models import Award
