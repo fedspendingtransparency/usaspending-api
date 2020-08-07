@@ -78,6 +78,16 @@ class BoolOr(Aggregate):
     name = "BoolOr"
 
 
+class ConcatAll(Func):
+    """
+    Postgres only!  By default, Django's Concat function breaks concatenations down into pairs
+    which, for large concatenations, can add significant time to queries.  This flavor stuffs
+    all of the fields into a single CONCAT statement.
+    """
+
+    function = "CONCAT"
+
+
 def get_agency_name_annotation(relation_name: str, cgac_column_name: str) -> Subquery:
     """
     Accepts the Django foreign key relation name for the outer queryset to TreasuryAppropriationAccount

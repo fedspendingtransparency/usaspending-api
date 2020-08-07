@@ -31,8 +31,7 @@ class ObjectClassResults:
                 row.outlay += child.outlay
                 row.obligation += child.obligation
                 row.total_budgetary_resources += child.total_budgetary_resources
-
-                if child.award_count:
+                if child.award_count is not None:
                     row.award_count += child.award_count
                 else:
                     row.award_count = None

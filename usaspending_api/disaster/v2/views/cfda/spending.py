@@ -1,7 +1,7 @@
-import json
 from decimal import Decimal
 from typing import List
 
+from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
@@ -23,7 +23,7 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
         results = []
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in info_buckets:
-            info = json.loads(bucket.get("key"))
+            info = json_str_to_dict(bucket.get("key"))
             results.append(
                 {
                     "id": int(info.get("id")) if info.get("id") else None,

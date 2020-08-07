@@ -196,10 +196,16 @@ AWARD_VIEW_COLUMNS = [
 
 UPDATE_DATE_SQL = " AND update_date >= '{}'"
 
-COUNT_SQL = """
+COUNT_FY_SQL = """
 SELECT COUNT(*) AS count
 FROM {view}
 WHERE {type_fy}fiscal_year={fy}{update_date}
+"""
+
+COUNT_SQL = """
+SELECT COUNT(*) AS count
+FROM {view}
+WHERE update_date >= '{update_date}'
 """
 
 COPY_SQL = """"COPY (
@@ -317,7 +323,9 @@ def configure_sql_strings(config, filename, deleted_ids):
         fy=config["fiscal_year"], update_date=update_date_str, filename=filename, view=view_name, type_fy=type_fy
     )
 
-    count_sql = COUNT_SQL.format(fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy)
+    count_sql = COUNT_FY_SQL.format(
+        fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy
+    )
     if deleted_ids and config["process_deletes"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
         id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"], type_fy=type_fy, view_type=view_type)
@@ -325,6 +333,19 @@ def configure_sql_strings(config, filename, deleted_ids):
         id_sql = None
 
     return copy_sql, id_sql, count_sql
+
+
+def get_updated_record_count(config):
+    update_date = config["starting_date"].strftime("%Y-%m-%d")
+
+    if config["load_type"] == "awards":
+        view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+    else:
+        view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+
+    count_sql = COUNT_SQL.format(update_date=update_date, view=view_name)
+
+    return execute_sql_statement(count_sql, True, config["verbose"])[0]["count"]
 
 
 def execute_sql_statement(cmd, results=False, verbose=False):
@@ -391,22 +412,24 @@ def download_db_records(fetch_jobs, done_jobs, config):
 
 
 def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
-    if skip_counts:
-        count = None
-        printf({"msg": "Skipping count checks. Writing file: {}".format(filename), "job": job_id, "f": "Download"})
-    else:
-        count = execute_sql_statement(count_sql, True, verbose)[0]["count"]
-        printf({"msg": "Writing {} to this file: {}".format(count, filename), "job": job_id, "f": "Download"})
+
+    # Execute Copy SQL to download records to CSV
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
     subprocess.Popen("psql {} -c {}".format(get_database_dsn_string(), copy_sql), shell=True).wait()
+    download_count = count_rows_in_delimited_file(filename, has_header=True, safe=False)
+    printf({"msg": "Wrote {} to this file: {}".format(download_count, filename), "job": job_id, "f": "Download"})
 
+    # If --skip_counts is disabled, execute count_sql and compare this count to the download_count
     if not skip_counts:
-        download_count = count_rows_in_delimited_file(filename, has_header=True, safe=False)
-        if count != download_count:
+        sql_count = execute_sql_statement(count_sql, True, verbose)[0]["count"]
+        if sql_count != download_count:
             msg = "Mismatch between CSV and DB rows! Expected: {} | Actual {} in: {}"
-            printf({"msg": msg.format(count, download_count, filename), "job": job_id, "f": "Download"})
+            printf({"msg": msg.format(sql_count, download_count, filename), "job": job_id, "f": "Download"})
             raise SystemExit(1)
-    return count
+    else:
+        printf({"msg": "Skipping count comparison checks (sql vs download)", "job": job_id, "f": "Download"})
+
+    return download_count
 
 
 def csv_chunk_gen(filename, chunksize, job_id, load_type):

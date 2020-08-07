@@ -1,11 +1,10 @@
-import json
 from abc import ABCMeta
 from decimal import Decimal
+from django.db.models import QuerySet, F
 from enum import Enum
 from typing import List
 
-from django.db.models import QuerySet, F
-
+from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.search.helpers.spending_by_category_helpers import fetch_agency_tier_id_by_agency
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
@@ -31,7 +30,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
         results = []
         agency_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in agency_info_buckets:
-            agency_info = json.loads(bucket.get("key"))
+            agency_info = json_str_to_dict(bucket.get("key"))
 
             results.append(
                 {

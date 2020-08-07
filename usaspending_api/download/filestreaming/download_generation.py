@@ -3,7 +3,7 @@ import logging
 import multiprocessing
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple, List
 
 import psutil as ps
 import re
@@ -201,7 +201,7 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
             )
             disaster_source.award_category = json_request["award_category"]
             disaster_source.queryset = filter_function(
-                json_request["filters"], VALUE_MAPPINGS[download_type]["base_fields"]
+                json_request["filters"], download_type, VALUE_MAPPINGS[download_type]["base_fields"]
             )
             download_sources.append(disaster_source)
 
@@ -431,7 +431,7 @@ def apply_annotations_to_sql(raw_query, aliases):
     function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
 
-    select_statements = _select_columns(raw_query)
+    cte_sql, select_statements = _select_columns(raw_query)
 
     DIRECT_SELECT_QUERY_REGEX = r'^[^ ]*\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
     # Create a list from the non-derived values between SELECT and FROM
@@ -454,6 +454,9 @@ def apply_annotations_to_sql(raw_query, aliases):
 
     sql = raw_query.replace(_top_level_split(raw_query, "FROM")[0], "SELECT " + ", ".join(values_list), 1)
 
+    if cte_sql:
+        sql = f"{cte_sql} {sql}"
+
     # Now that we've converted the queryset to SQL, cleaned up aliasing for non-annotated fields, and sorted
     # the SELECT columns, there's one final step.  The Django ORM does now allow alias names to conflict with
     # column/field names on the underlying model.  For annotated fields, naming conflict exceptions occur at
@@ -464,10 +467,12 @@ def apply_annotations_to_sql(raw_query, aliases):
     return sql.replace(NAMING_CONFLICT_DISCRIMINATOR, "")
 
 
-def _select_columns(sql):
+def _select_columns(sql: str) -> Tuple[str, List[str]]:
     in_quotes = False
+    in_cte = False
     parens_depth = 0
     last_processed_index = 0
+    cte_sql = None
     retval = []
 
     for index, char in enumerate(sql):
@@ -477,23 +482,32 @@ def _select_columns(sql):
             continue
         if char == "(":
             parens_depth = parens_depth + 1
+            if in_cte:
+                continue
         if char == ")":
             parens_depth = parens_depth - 1
+            if in_cte and parens_depth == 0:
+                in_cte = False
+                cte_sql = sql[: index + 1]
+                last_processed_index = index
 
-        if parens_depth == 0:
+        if parens_depth == 0 and not in_cte:
+            # Set flag to ignore the CTE
+            if sql[index : index + 5] == "WITH ":
+                in_cte = True
             # Ignore the SELECT statement
             if sql[index : index + 6] == "SELECT":
-                last_processed_index = last_processed_index + 6
+                last_processed_index = index + 6
             # If there is a FROM at the bottom level, we have all the values we need and can return
             if sql[index : index + 4] == "FROM":
                 retval.append(sql[last_processed_index:index].strip())
-                return retval
+                return cte_sql, retval
             # If there is a comma on the bottom level, add another select value and start parsing a new one
             if char == ",":
                 retval.append(sql[last_processed_index:index].strip())
                 last_processed_index = index + 1  # skips the comma by design
 
-    return retval  # this will almost certainly error out later.
+    return cte_sql, retval  # this will almost certainly error out later.
 
 
 def _top_level_split(sql, splitter):
