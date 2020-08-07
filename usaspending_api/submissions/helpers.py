@@ -132,10 +132,14 @@ def get_submission_ids_for_periods(
                     from    submission_attributes
                     where   reporting_fiscal_year = %(fiscal_year)s and
                             (
-                                (reporting_fiscal_quarter = %(fiscal_quarter)s and quarter_format_flag is true) or
-                                (reporting_fiscal_period = %(fiscal_month)s and quarter_format_flag is false)
+                                (reporting_fiscal_quarter <= %(fiscal_quarter)s and quarter_format_flag is true) or
+                                (reporting_fiscal_period <= %(fiscal_month)s and quarter_format_flag is false)
                             )
                     order   by toptier_code, reporting_fiscal_period desc
+                ) and
+                (
+                    (reporting_fiscal_quarter = %(fiscal_quarter)s and quarter_format_flag is true) or
+                    (reporting_fiscal_period = %(fiscal_month)s and quarter_format_flag is false)
                 )
     """
     with connection.cursor() as cursor:

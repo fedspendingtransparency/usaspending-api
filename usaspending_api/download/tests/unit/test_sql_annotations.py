@@ -36,11 +36,16 @@ def test_top_level_split_unsplittable():
 
 def test_select_columns_nesting_logic():
     basic_sql = "SELECT steve,jimmy,bob FROM the bench"
-    assert _select_columns(basic_sql) == ["steve", "jimmy", "bob"]
+    assert _select_columns(basic_sql) == (None, ["steve", "jimmy", "bob"])
     nested_sql = (
         "SELECT (SELECT things FROM a place), stuff , (things FROM stuff) FROM otherstuff SELECT FROM FROM SELECT"
     )
-    assert _select_columns(nested_sql) == ["(SELECT things FROM a place)", "stuff", "(things FROM stuff)"]
+    assert _select_columns(nested_sql) == (None, ["(SELECT things FROM a place)", "stuff", "(things FROM stuff)"])
+    cte_sql = (
+        "WITH cte AS (SELECT inner_things FROM a inner_place) SELECT things FROM a_place "
+        "INNER JOIN cte ON cte.inner_things = a_place.things"
+    )
+    assert _select_columns(cte_sql) == ("WITH cte AS (SELECT inner_things FROM a inner_place)", ["things"])
 
 
 def test_apply_annotations_to_sql():
