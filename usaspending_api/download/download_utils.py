@@ -77,7 +77,17 @@ def log_new_download_job(request, download_job):
 
 
 def construct_data_date_range(provided_filters: dict) -> str:
-    string = f"FY{provided_filters.get('fy')}Q1"
-    if provided_filters.get("quarter") != 1:
-        string += f"-Q{provided_filters.get('quarter')}"
+    if provided_filters.get("fy") is not None and provided_filters.get("fy") > 2019:
+        if provided_filters.get("fy") == 2020:
+            string = f"FY{provided_filters.get('fy')}Q1"
+        else:
+            string = f"FY{provided_filters.get('fy')}P01"
+        if provided_filters.get("period") is not None and provided_filters.get("period") != 1:
+            string += f"-P{provided_filters.get('period'):0>2}"
+        elif provided_filters.get("period") is None:
+            string += f"-Q{provided_filters.get('quarter')}"
+    else:
+        string = f"FY{provided_filters.get('fy')}Q1"
+        if provided_filters.get("quarter") != 1:
+            string += f"-Q{provided_filters.get('quarter')}"
     return string
