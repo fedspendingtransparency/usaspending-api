@@ -24,7 +24,7 @@ class Command(BaseCommand):
                 for sub in options["submission_ids"]:
                     self.run_sql(sub)
             else:
-                self.run_sql
+                self.run_sql()
 
     def run_sql(self, submission=None):
         for link_type in self.LINKAGE_TYPES:
