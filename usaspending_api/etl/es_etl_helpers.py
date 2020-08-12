@@ -480,7 +480,7 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
 def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None):
     success, failed = 0, 0
     try:
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name):
+        for ok, item in helpers.parallel_bulk(client, chunk, index=index_name):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
