@@ -1,8 +1,8 @@
+from django.conf import settings
 from multiprocessing import Process, Queue
 from pathlib import Path
 from time import sleep
 
-from django.conf import settings
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.etl.es_etl_helpers import (
     DataJob,
@@ -30,7 +30,7 @@ class Rapidloader:
         es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
 
         updated_record_count = get_updated_record_count(self.config)
-        printf({"msg": f"Found {updated_record_count:,} {self.config['load_type']} to index"})
+        printf({"msg": f"Found {updated_record_count:,} {self.config['load_type']} records to index"})
 
         for job_number, fiscal_year in enumerate(self.config["fiscal_years"], start=1):
             if updated_record_count == 0:

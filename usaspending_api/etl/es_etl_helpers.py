@@ -1,5 +1,3 @@
-from typing import Optional
-
 import json
 import os
 import pandas as pd
@@ -12,6 +10,7 @@ from django.conf import settings
 from django.core.management import call_command
 from elasticsearch import helpers, TransportError
 from time import perf_counter, sleep
+from typing import Optional
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
@@ -194,12 +193,10 @@ AWARD_VIEW_COLUMNS = [
     "total_covid_outlay",
 ]
 
-UPDATE_DATE_SQL = " AND update_date >= '{}'"
-
 COUNT_FY_SQL = """
 SELECT COUNT(*) AS count
 FROM {view}
-WHERE {type_fy}fiscal_year={fy}{update_date}
+WHERE {type_fy}fiscal_year={fy} AND update_date >= '{update_date}'
 """
 
 COUNT_SQL = """
@@ -211,7 +208,7 @@ WHERE update_date >= '{update_date}'
 COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
-    WHERE {type_fy}fiscal_year={fy}{update_date}
+    WHERE {type_fy}fiscal_year={fy} AND update_date >= '{update_date}'
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
@@ -296,8 +293,7 @@ def process_guarddog(process_list):
     for proc in process_list:
         # If exitcode is None, process is still running. exit code 0 is normal
         if proc.exitcode not in (None, 0):
-            msg = f"TERMINATING ALL PROCESSES AND QUITTING!!! {proc.name} exited with error. Returned {proc.exitcode}"
-            printf({"msg": msg})
+            printf({"msg": f"TERMINATING ALL PROCESSES AND QUITTING!!! {proc.name} exited with error {proc.exitcode}"})
             [x.terminate() for x in process_list]
             return True
     return False
@@ -307,22 +303,21 @@ def configure_sql_strings(config, filename, deleted_ids):
     """
     Populates the formatted strings defined globally in this file to create the desired SQL
     """
-    update_date_str = UPDATE_DATE_SQL.format(config["starting_date"])
     if config["load_type"] == "awards":
-        view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+        view = settings.ES_AWARDS_ETL_VIEW_NAME
         view_type = "award"
         type_fy = ""
     else:
-        view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+        view = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
         view_type = "transaction"
         type_fy = "transaction_"
 
     copy_sql = COPY_SQL.format(
-        fy=config["fiscal_year"], update_date=update_date_str, filename=filename, view=view_name, type_fy=type_fy
+        fy=config["fiscal_year"], update_date=config["starting_date"], filename=filename, view=view, type_fy=type_fy,
     )
 
     count_sql = COUNT_FY_SQL.format(
-        fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy
+        fy=config["fiscal_year"], update_date=config["starting_date"], view=view, type_fy=type_fy
     )
     if deleted_ids and config["process_deletes"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
@@ -486,7 +481,7 @@ def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None)
         print(f"Fatal error: \n\n{str(e)[:5000]}...\n\n{'*' * 80}")
         raise SystemExit(1)
 
-    printf({"msg": f"Success: {success:,} | Fails: {failed:,}", "job": job_id, "f": "ES Index"})
+    printf({"msg": f"Success: {success:,} | Fail: {failed:,}", "job": job_id, "f": "ES Index"})
     return success, failed
 
 
@@ -586,9 +581,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
 
         iteration = perf_counter()
         current_rows = f"({count * chunksize + 1:,}-{count * chunksize + len(chunk):,})"
-        printf(
-            {"msg": f"ES Stream #{count} rows [{current_rows}/{job.count:,}]", "job": job.name, "f": "ES Index",}
-        )
+        printf({"msg": f"ES Stream #{count} rows [{current_rows}/{job.count:,}]", "job": job.name, "f": "ES Index"})
         streaming_post_to_es(client, chunk, job.index, config["load_type"], job.name)
         printf(
             {
@@ -598,9 +591,7 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             }
         )
 
-    printf(
-        {"msg": f"Elasticsearch Index loading took {perf_counter() - start:.2f}s", "job": job.name, "f": "ES Index",}
-    )
+    printf({"msg": f"Elasticsearch Index loading took {perf_counter() - start:.2f}s", "job": job.name, "f": "ES Index"})
 
 
 def deleted_transactions(client, config):
