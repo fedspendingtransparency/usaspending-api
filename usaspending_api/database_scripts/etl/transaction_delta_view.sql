@@ -245,9 +245,6 @@ SELECT
   FEDERAL_ACCT.defc as disaster_emergency_fund_codes
 
 FROM universal_transaction_matview UTM
--- Similar joins are already performed on universal_transaction_matview, however, to avoid making the matview larger
--- than needed they have been placed here. Feel free to phase out if the columns gained from the following joins are
--- added to the universal_transaction_matview.
 LEFT JOIN (
   SELECT a.id, a.toptier_agency_id, a.toptier_flag, ta.name, ta.abbreviation, ta.toptier_code
   FROM agency a
