@@ -253,7 +253,7 @@ LEFT JOIN (
   FROM agency a
   INNER JOIN toptier_agency ta ON (a.toptier_agency_id = ta.toptier_agency_id)
   WHERE a.toptier_flag = TRUE
-) TAA ON (UTM.toptier_agency_id = TAA.toptier_agency_id)
+) TAA ON (UTM.awarding_toptier_agency_id = TAA.toptier_agency_id)
 LEFT JOIN (
   SELECT a.id, a.toptier_agency_id, a.toptier_flag, ta.name, ta.abbreviation, ta.toptier_code
   FROM agency a

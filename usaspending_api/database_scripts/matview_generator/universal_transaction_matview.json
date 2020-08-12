@@ -81,10 +81,8 @@
     "",
     "  transaction_normalized.awarding_agency_id,",
     "  transaction_normalized.funding_agency_id,",
-    "  AA.toptier_agency_id AS toptier_agency_id,",
-    "  AA.subtier_agency_id AS subtier_agency_id,",
+    "  AA.toptier_agency_id AS awarding_toptier_agency_id,",
     "  FA.toptier_agency_id AS funding_toptier_agency_id,",
-    "  FA.subtier_agency_id AS funding_subtier_agency_id,",
     "  TAA.name AS awarding_toptier_agency_name,",
     "  TFA.name AS funding_toptier_agency_name,",
     "  SAA.name AS awarding_subtier_agency_name,",
@@ -155,9 +153,7 @@
     "      rl_country_lookup.country_code = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code, 'USA')",
     "      OR rl_country_lookup.country_name = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code))",
     "WHERE",
-    "  transaction_normalized.action_date >= '2000-10-01'",
-    "ORDER BY",
-    "  transaction_normalized.action_date DESC"
+    "  transaction_normalized.action_date >= '2000-10-01'"
   ],
   "indexes": [
     {

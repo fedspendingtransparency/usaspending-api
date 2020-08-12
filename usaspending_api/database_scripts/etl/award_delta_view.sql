@@ -46,7 +46,7 @@ SELECT
   vw_es_award_search.business_categories,
 
   vw_es_award_search.action_date,
-  vw_es_award_search.fiscal_year,
+  FY(a.award_certified_date) as fiscal_year,
   vw_es_award_search.last_modified_date,
   vw_es_award_search.period_of_performance_start_date,
   vw_es_award_search.period_of_performance_current_end_date,

@@ -71,10 +71,8 @@ class UniversalTransactionView(models.Model):
 
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()
-    toptier_agency_id = models.IntegerField()
-    subtier_agency_id = models.IntegerField()
+    awarding_toptier_agency_id = models.IntegerField()
     funding_toptier_agency_id = models.IntegerField()
-    funding_subtier_agency_id = models.IntegerField()
     awarding_toptier_agency_name = models.TextField()
     funding_toptier_agency_name = models.TextField()
     awarding_subtier_agency_name = models.TextField()
