@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.logging import get_remote_addr
 from usaspending_api.download.helpers import write_to_download_log
@@ -18,7 +19,7 @@ def create_unique_filename(json_request, origination=None):
         slug_text = slugify_text_for_file_names(json_request.get("assistance_id"), "UNKNOWN", 50)
         download_name = f"ASST_{slug_text}_{timestamp}.zip"
     elif json_request["request_type"] == "disaster_recipient":
-        download_name = f"COVID-19_Profile_{timestamp}.zip"
+        download_name = f"COVID-19_Recipients_{json_request['award_category']}_{timestamp}.zip"
     elif json_request["request_type"] == "account":
         file_name_template = obtain_zip_filename_format(json_request["download_types"])
         agency = obtain_filename_prefix_from_agency_id(request_agency)
@@ -76,7 +77,17 @@ def log_new_download_job(request, download_job):
 
 
 def construct_data_date_range(provided_filters: dict) -> str:
-    string = f"FY{provided_filters.get('fy')}Q1"
-    if provided_filters.get("quarter") != 1:
-        string += f"-Q{provided_filters.get('quarter')}"
+    if provided_filters.get("fy") is not None and provided_filters.get("fy") > 2019:
+        if provided_filters.get("fy") == 2020:
+            string = f"FY{provided_filters.get('fy')}Q1"
+        else:
+            string = f"FY{provided_filters.get('fy')}P01"
+        if provided_filters.get("period") is not None and provided_filters.get("period") != 1:
+            string += f"-P{provided_filters.get('period'):0>2}"
+        elif provided_filters.get("period") is None:
+            string += f"-Q{provided_filters.get('quarter')}"
+    else:
+        string = f"FY{provided_filters.get('fy')}Q1"
+        if provided_filters.get("quarter") != 1:
+            string += f"-Q{provided_filters.get('quarter')}"
     return string

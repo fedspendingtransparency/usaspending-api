@@ -1266,7 +1266,10 @@ query_paths = {
                 ("prime_award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
-                ("period_of_performance_potential_end_date", None),  # Annotation is used to create this column
+                (
+                    "prime_award_period_of_performance_potential_end_date",
+                    None,
+                ),  # Annotation is used to create this column
                 ("prime_award_awarding_agency_code", "broker_subaward__awarding_agency_code"),
                 ("prime_award_awarding_agency_name", "broker_subaward__awarding_agency_name"),
                 ("prime_award_awarding_sub_agency_code", "broker_subaward__awarding_sub_tier_agency_c"),
@@ -1322,8 +1325,14 @@ query_paths = {
                 ("prime_award_project_title", "broker_subaward__program_title"),
                 ("prime_award_naics_code", "broker_subaward__naics"),
                 ("prime_award_naics_description", "broker_subaward__naics_description"),
-                ("national_interest_action_code", "award__latest_transaction__contract_data__national_interest_action"),
-                ("national_interest_action", "award__latest_transaction__contract_data__national_interest_desc"),
+                (
+                    "prime_award_national_interest_action_code",
+                    "award__latest_transaction__contract_data__national_interest_action",
+                ),
+                (
+                    "prime_award_national_interest_action",
+                    "award__latest_transaction__contract_data__national_interest_desc",
+                ),
                 ("subaward_type", "broker_subaward__subaward_type"),
                 ("subaward_fsrs_report_id", "broker_subaward__internal_id"),
                 ("subaward_fsrs_report_year", "broker_subaward__subaward_report_year"),
@@ -1578,7 +1587,7 @@ query_paths = {
                     "deobligations_recoveries_refunds_by_tas_cpe",
                 ),
                 ("unobligated_balance", "unobligated_balance_cpe"),
-                ("gross_outlay_amount", "gross_outlay_amount_by_tas_cpe"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total_cpe"),
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1619,7 +1628,7 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                 ),
                 ("unobligated_balance", "unobligated_balance"),
-                ("gross_outlay_amount", "gross_outlay_amount"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total"),
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1664,7 +1673,7 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                     "deobligations_recoveries_refund_pri_program_object_class_cpe",
                 ),
-                ("gross_outlay_amount", "gross_outlay_amount_by_program_object_class_cpe"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1693,7 +1702,7 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                 ),
-                ("gross_outlay_amount", "gross_outlay_amount"),
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1733,6 +1742,12 @@ query_paths = {
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
                 ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
+                ("transaction_obligated_amount", "transaction_obligated_amount"),
+                (
+                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_fyb_to_period_end",
+                ),  # Column is annotated in account_download.py
+                ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_id_piid", "piid"),
                 ("parent_award_id_piid", "parent_award_id"),
                 ("award_id_fain", "fain"),
@@ -1742,12 +1757,14 @@ query_paths = {
                     "award_base_action_date_fiscal_year",
                     "award_base_action_date_fiscal_year",
                 ),  # Column is annotated in account_download.py
+                ("award_latest_action_date", "award__certified_date"),
+                (
+                    "award_latest_action_date_fiscal_year",
+                    "award_latest_action_date_fiscal_year",
+                ),  # Column is annotated in account_download.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
-                ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
-                ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
                 ("award_type", "award_type"),  # Column is annotated in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
@@ -1831,6 +1848,12 @@ query_paths = {
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
                 ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
+                ("transaction_obligated_amount", "transaction_obligated_amount"),
+                (
+                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_fyb_to_period_end",
+                ),  # Column is annotated in account_download.py
+                ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_id_piid", "piid"),
                 ("parent_award_id_piid", "parent_award_id"),
                 ("award_id_fain", "fain"),
@@ -1840,12 +1863,14 @@ query_paths = {
                     "award_base_action_date_fiscal_year",
                     "award_base_action_date_fiscal_year",
                 ),  # Column is annotated in account_download.py
+                ("award_latest_action_date", "award__certified_date"),
+                (
+                    "award_latest_action_date_fiscal_year",
+                    "award_latest_action_date_fiscal_year",
+                ),  # Column is annotated in account_download.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
-                ("transaction_obligated_amount", "transaction_obligated_amount"),
-                ("gross_outlay_amount_fyb_to_period_end", "gross_outlay_amount_by_award_cpe"),
-                ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
                 ("award_type", "award_type"),  # Column is annotated in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
@@ -1917,10 +1942,10 @@ query_paths = {
         "recipient": OrderedDict(
             [
                 ("recipient", "recipient_name"),
-                ("award_obligations", None),  # to be filled in by annotation
-                ("award_outlays", None),  # to be filled in by annotation
-                ("face_value_of_loans", None),  # to be filled in by annotation
-                ("number_of_awards", None),  # to be filled in by annotation
+                ("award_obligations", "award_obligations"),
+                ("award_outlays", "award_outlays"),
+                ("face_value_of_loans", "face_value_of_loans"),
+                ("number_of_awards", "number_of_awards"),
             ]
         )
     },

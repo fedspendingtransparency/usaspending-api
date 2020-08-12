@@ -1,4 +1,3 @@
-import json
 import logging
 from decimal import Decimal
 from typing import List
@@ -12,6 +11,7 @@ from rest_framework.response import Response
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
@@ -68,14 +68,12 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
         else:
             results = self.total_queryset
 
+        results = list(results.order_by(*self.pagination.robust_order_by_fields))
+
         return Response(
             {
-                "results": list(
-                    results.order_by(*self.pagination.robust_order_by_fields)[
-                        self.pagination.lower_limit : self.pagination.upper_limit
-                    ]
-                ),
-                "page_metadata": get_pagination_metadata(results.count(), self.pagination.limit, self.pagination.page),
+                "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
+                "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
         )
 
@@ -145,7 +143,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
                         fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
                         treasury_account_identifier__funding_toptier_agency_id=OuterRef("toptier_agency_id"),
                     )
-                    .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
+                    .annotate(amount=Func("total_budgetary_resources_cpe", function="Sum"))
                     .values("amount"),
                     output_field=DecimalField(),
                 ),
@@ -162,24 +160,27 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
 
     @property
     def award_queryset(self):
+        cte = With(
+            ToptierAgency.objects.distinct("toptier_agency_id")
+            .filter(agency__isnull=False)
+            .annotate(agency_id=F("agency__id"), toptier_name=F("name"))
+            .values("toptier_agency_id", "agency_id", "toptier_code", "toptier_name")
+            .order_by("toptier_agency_id", "-agency__toptier_flag", "agency_id")
+        )
+
         filters = [
             self.is_in_provided_def_codes,
             self.all_closed_defc_submissions,
             Q(treasury_account__isnull=False),
-            Q(treasury_account__funding_toptier_agency__isnull=False),
         ]
 
         annotations = {
-            "id": Subquery(
-                Agency.objects.filter(toptier_agency=OuterRef("treasury_account__funding_toptier_agency"))
-                .order_by("-toptier_flag", "id")
-                .values("id")[:1]
-            ),
-            "code": F("treasury_account__funding_toptier_agency__toptier_code"),
-            "description": F("treasury_account__funding_toptier_agency__name"),
+            "id": cte.col.agency_id,
+            "code": cte.col.toptier_code,
+            "description": cte.col.toptier_name,
             # Currently, this endpoint can never have children.
             "children": Value([], output_field=ArrayField(IntegerField())),
-            "award_count": self.unique_file_c_count(),
+            "award_count": self.unique_file_d_award_count(),
             "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
             "outlay": Coalesce(
                 Sum(
@@ -193,15 +194,16 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
             "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
         }
 
+        # Assuming it is more performant to fetch all rows once rather than
+        #  run a count query and fetch only a page's worth of results
         return (
-            FinancialAccountsByAwards.objects.filter(*filters)
-            .values(
-                "treasury_account__funding_toptier_agency",
-                "treasury_account__funding_toptier_agency__toptier_code",
-                "treasury_account__funding_toptier_agency__name",
-            )
+            cte.join(FinancialAccountsByAwards, treasury_account__funding_toptier_agency_id=cte.col.toptier_agency_id)
+            .with_cte(cte)
+            .filter(*filters)
+            .annotate(agency_id=cte.col.agency_id, toptier_code=cte.col.toptier_code, toptier_name=cte.col.toptier_name)
+            .values("agency_id", "toptier_code", "toptier_name")
             .annotate(**annotations)
-            .values(*annotations.keys())
+            .values(*annotations)
         )
 
 
@@ -233,7 +235,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
         return results
 
     def _build_json_result(self, bucket: dict):
-        info = json.loads(bucket.get("key"))
+        info = json_str_to_dict(bucket.get("key"))
         return {
             "id": int(info["id"]),
             "code": info["code"],

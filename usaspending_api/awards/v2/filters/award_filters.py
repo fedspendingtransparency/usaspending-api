@@ -33,7 +33,7 @@ def awards_treasury_account_funding_filter(account_type, download_table, filters
         raise InvalidParameterException("Only treasury level account reporting is supported at this time")
     award_id = _get_award_id(filters)
     queryset = download_table.objects.filter(award_id=award_id)
-    queryset = generate_treasury_account_query(queryset, "award_financial", account_level)
+    queryset = generate_treasury_account_query(queryset, "award_financial", account_level, filters)
     return queryset
 
 

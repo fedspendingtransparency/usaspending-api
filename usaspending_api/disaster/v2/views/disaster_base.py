@@ -1,8 +1,8 @@
 import json
 
-from datetime import datetime, timezone, date
+from datetime import date
 from django.db.models import Max, Q, F, Value, Case, When, Sum, Count
-from django.db.models.functions import Coalesce, Concat
+from django.db.models.functions import Coalesce
 from django.http import HttpRequest
 from django.utils.functional import cached_property
 from django_cte import With
@@ -14,7 +14,9 @@ from usaspending_api.awards.models.financial_accounts_by_awards import Financial
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping, assistance_type_mapping
 from usaspending_api.common.containers import Bunch
 from usaspending_api.common.data_classes import Pagination
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_month
+from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
@@ -86,7 +88,7 @@ def final_submissions_for_all_fy() -> List[tuple]:
         fiscal year IF it is "closed" aka ready for display on USAspending.gov
     """
     return (
-        DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=datetime.now(timezone.utc))
+        DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=now())
         .values("submission_fiscal_year", "is_quarter")
         .annotate(fiscal_year=F("submission_fiscal_year"), fiscal_period=Max("submission_fiscal_month"))
         .values_list("fiscal_year", "is_quarter", "fiscal_period", named=True)
@@ -213,7 +215,7 @@ class DisasterBase(APIView):
         if self.filters.get("award_type_codes"):
             return Q(award__type__in=self.filters.get("award_type_codes")) & Q(award__isnull=False)
         else:
-            return ~Q(pk=None)  # always true; if types are not provided we don't check types
+            return Q()
 
     @property
     def has_award_of_classification(self):
@@ -221,7 +223,7 @@ class DisasterBase(APIView):
             # Simple check: if "procurement" then piid cannot be null, otherwise piid must be null
             return Q(piid__isnull=bool(self.filters["award_type"] == "assistance"))
         else:
-            return ~Q(pk=None)  # always true; if types are not provided we don't check types
+            return Q()
 
     def construct_loan_queryset(self, faba_grouping_column, base_model, base_model_column):
         grouping_key = F(faba_grouping_column) if isinstance(faba_grouping_column, str) else faba_grouping_column
@@ -321,17 +323,26 @@ class FabaOutlayMixin:
             0,
         )
 
+    @property
+    def obligated_field_annotation(self):
+        return Coalesce(Sum("transaction_obligated_amount"), 0)
+
     def when_non_zero_award_spending(self, query):
         return query.annotate(
-            total_outlay=self.outlay_field_annotation, total_obligation=Sum("transaction_obligated_amount")
+            total_outlay=self.outlay_field_annotation, total_obligation=self.obligated_field_annotation
         ).exclude(total_outlay=0, total_obligation=0)
 
     @property
-    def unique_file_c(self):
-        return Concat("piid", "parent_award_id", "fain", "uri")
+    def unique_file_c_awards(self):
+        delimiter = Value("|")
+        return ConcatAll("piid", delimiter, "parent_award_id", delimiter, "fain", delimiter, "uri")
 
-    def unique_file_c_count(self):
-        return Count(self.unique_file_c, distinct=True)
+    def unique_file_c_award_count(self):
+        return Count(self.unique_file_c_awards, distinct=True)
+
+    @staticmethod
+    def unique_file_d_award_count():
+        return Count("award_id", distinct=True)
 
 
 class SpendingMixin:

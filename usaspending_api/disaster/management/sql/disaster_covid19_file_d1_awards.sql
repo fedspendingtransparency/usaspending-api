@@ -1,3 +1,13 @@
+WITH closed_submissions AS (
+    SELECT
+        "dabs_submission_window_schedule"."submission_reveal_date",
+        "dabs_submission_window_schedule"."submission_fiscal_year",
+        "dabs_submission_window_schedule"."is_quarter",
+        "dabs_submission_window_schedule"."submission_fiscal_month"
+    FROM "dabs_submission_window_schedule"
+    WHERE
+        "dabs_submission_window_schedule"."submission_reveal_date" <= now()
+)
 SELECT
     "awards"."generated_unique_award_id" AS "contract_award_unique_key",
     "awards"."piid" AS "award_id_piid",
@@ -33,8 +43,8 @@ SELECT
     "transaction_fpds"."funding_office_name" AS "funding_office_name",
     (SELECT STRING_AGG (DISTINCT U2."tas_rendering_label", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1. "treasury_account_id" = U2. "treasury_account_identifier") WHERE U0. "id" = ("awards"."id") GROUP BY U0. "id") AS "treasury_accounts_funding_this_award",
     (SELECT STRING_AGG (DISTINCT U3."federal_account_code", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1. "treasury_account_id" = U2. "treasury_account_identifier") LEFT OUTER JOIN "federal_account" U3 ON (U2. "federal_account_id" = U3. "id") WHERE U0. "id" = ("awards"."id") GROUP BY U0. "id") AS "federal_accounts_funding_this_award",
-    (SELECT STRING_AGG(DISTINCT CONCAT(U2."object_class", ':', U2.object_class_name), ';')FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "object_class" U2 ON (U1. "object_class_id" = U2. "id") WHERE U0. "id" = ("awards"."id") and U1.object_class_id is not null GROUP BY U0. "id")AS "object_classes_funding_this_award",
-    (SELECT STRING_AGG(DISTINCT CONCAT(U2."program_activity_code", ':', U2.program_activity_name), ';') FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") LEFT OUTER JOIN "ref_program_activity" U2 ON (U1. "program_activity_id" = U2. "id") WHERE U0. "id" = ("awards"."id") and U1.program_activity_id is not null GROUP BY U0. "id") AS "program_activities_funding_this_award",
+    (SELECT STRING_AGG(DISTINCT CONCAT(U2."object_class", ':', U2.object_class_name), ';')FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") INNER JOIN "object_class" U2 ON (U1. "object_class_id" = U2. "id") WHERE U0. "id" = ("awards"."id") and U1.object_class_id is not null GROUP BY U0. "id")AS "object_classes_funding_this_award",
+    (SELECT STRING_AGG(DISTINCT CONCAT(U2."program_activity_code", ':', U2.program_activity_name), ';') FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "id" = U1. "award_id") INNER JOIN "ref_program_activity" U2 ON (U1. "program_activity_id" = U2. "id") WHERE U0. "id" = ("awards"."id") and U1.program_activity_id is not null GROUP BY U0. "id") AS "program_activities_funding_this_award",
     "transaction_fpds"."foreign_funding" AS "foreign_funding",
     "transaction_fpds"."foreign_funding_desc" AS "foreign_funding_description",
     "transaction_fpds"."sam_exception" AS "sam_exception",
@@ -289,6 +299,9 @@ INNER JOIN (
     INNER JOIN submission_attributes sa
         ON faba.submission_id = sa.submission_id
         AND sa.reporting_period_start >= '2020-04-01'
+    INNER JOIN closed_submissions ON (sa."reporting_fiscal_period" = "closed_submissions"."submission_fiscal_month"
+        AND sa."quarter_format_flag" = "closed_submissions"."is_quarter"
+        AND sa."reporting_fiscal_year" = "closed_submissions"."submission_fiscal_year")
     LEFT JOIN (
         SELECT   submission_fiscal_year, is_quarter, max(submission_fiscal_month) AS submission_fiscal_month
         FROM     dabs_submission_window_schedule

@@ -107,6 +107,7 @@ def generic_account_data():
         "awards.FinancialAccountsByAwards",
         submission=sub1,
         piid="0wefjwe",
+        award_id=111,
         parent_award_id="3443r",
         transaction_obligated_amount=100,
         gross_outlay_amount_by_award_cpe=111,
@@ -118,6 +119,7 @@ def generic_account_data():
         submission=sub1,
         award=award1,
         piid="0wefjwe",
+        award_id=111,
         parent_award_id="3443r",
         transaction_obligated_amount=200,
         gross_outlay_amount_by_award_cpe=222,
@@ -129,6 +131,7 @@ def generic_account_data():
         submission=sub1,
         award=award2,
         uri="3298rhed",
+        award_id=222,
         transaction_obligated_amount=2,
         gross_outlay_amount_by_award_cpe=2,
         disaster_emergency_fund__code="9",
@@ -139,6 +142,7 @@ def generic_account_data():
         submission=sub1,
         award=award3,
         fain="43tgfvdvfv",
+        award_id=333,
         transaction_obligated_amount=1,
         gross_outlay_amount_by_award_cpe=1,
         disaster_emergency_fund__code="O",
@@ -149,6 +153,7 @@ def generic_account_data():
         submission=sub1,
         award=award4,
         fain="woefhowe",
+        award_id=444,
         transaction_obligated_amount=3,
         gross_outlay_amount_by_award_cpe=333,
         disaster_emergency_fund__code="N",
@@ -156,27 +161,30 @@ def generic_account_data():
     )
     mommy.make(
         "references.GTASSF133Balances",
-        budget_authority_appropriation_amount_cpe=4358,
+        budget_authority_appropriation_amount_cpe=4358.0,
         fiscal_year=2022,
         fiscal_period=7,
         disaster_emergency_fund_code="M",
         treasury_account_identifier=tre_acct1,
+        total_budgetary_resources_cpe=43580.0,
     )
     mommy.make(
         "references.GTASSF133Balances",
-        budget_authority_appropriation_amount_cpe=109237,
+        budget_authority_appropriation_amount_cpe=109237.0,
         fiscal_year=2022,
         fiscal_period=7,
         disaster_emergency_fund_code="M",
         treasury_account_identifier=tre_acct2,
+        total_budgetary_resources_cpe=1092370.0,
     )
     mommy.make(
         "references.GTASSF133Balances",
-        budget_authority_appropriation_amount_cpe=39248,
+        budget_authority_appropriation_amount_cpe=39248.0,
         fiscal_year=2022,
         fiscal_period=7,
         disaster_emergency_fund_code="M",
         treasury_account_identifier=tre_acct3,
+        total_budgetary_resources_cpe=392480.0,
     )
 
 

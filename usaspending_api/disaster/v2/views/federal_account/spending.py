@@ -95,7 +95,7 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterB
                         fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
                         treasury_account_identifier=OuterRef("treasury_account"),
                     )
-                    .annotate(amount=Func("budget_authority_appropriation_amount_cpe", function="Sum"))
+                    .annotate(amount=Func("total_budgetary_resources_cpe", function="Sum"))
                     .values("amount"),
                     output_field=DecimalField(),
                 ),
@@ -127,7 +127,7 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterB
 
         annotations = {
             "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "award_count": self.unique_file_c_count(),
+            "award_count": self.unique_file_d_award_count(),
             "description": F("treasury_account__account_title"),
             "code": F("treasury_account__tas_rendering_label"),
             "id": F("treasury_account__treasury_account_identifier"),

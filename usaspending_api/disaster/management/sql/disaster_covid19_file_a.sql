@@ -67,7 +67,7 @@ SELECT
 
     gtas."budget_authority_appropriation_amount_cpe" AS "budget_authority_appropriated_amount",
     gtas."other_budgetary_resources_amount_cpe" AS "total_other_budgetary_resources_amount",
-    (COALESCE(gtas."budget_authority_appropriation_amount_cpe", 0) + COALESCE(gtas."other_budgetary_resources_amount_cpe", 0)) AS "total_budgetary_resources",
+    gtas."total_budgetary_resources_cpe" AS "total_budgetary_resources",
     gtas."obligations_incurred_total_cpe" AS "obligations_incurred",
     gtas."unobligated_balance_cpe" AS "unobligated_balance",
     gtas."gross_outlay_amount_by_tas_cpe" AS "gross_outlay_amount"

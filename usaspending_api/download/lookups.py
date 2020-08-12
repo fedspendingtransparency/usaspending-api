@@ -17,6 +17,7 @@ from usaspending_api.download.helpers.elasticsearch_download_functions import (
     AwardsElasticsearchDownload,
     TransactionsElasticsearchDownload,
 )
+from usaspending_api.download.helpers.disaster_filter_functions import disaster_filter_function
 from usaspending_api.search.models import AwardSearchView, UniversalTransactionView, SubawardView
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
@@ -42,7 +43,6 @@ from usaspending_api.download.helpers.download_annotation_functions import (
     subaward_annotations,
     idv_order_annotations,
     idv_transaction_annotations,
-    disaster_recipient_annotations,
 )
 
 
@@ -236,9 +236,8 @@ VALUE_MAPPINGS = {
         "source_type": "disaster",
         "table": AwardSearchView,
         "table_name": "recipient",
-        "download_name": "COVID-19-Recipients_{award_category}_{timestamp}",
-        "filter_function": AwardsElasticsearchDownload.query,
-        "annotations_function": disaster_recipient_annotations,
+        "download_name": "COVID-19_Recipients_{award_category}_{timestamp}",
+        "filter_function": disaster_filter_function,
         "base_fields": ["recipient_name", "recipient_unique_id"],
     },
 }

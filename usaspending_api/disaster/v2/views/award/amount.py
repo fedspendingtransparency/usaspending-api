@@ -1,7 +1,6 @@
-from django.db.models import Sum, Count
+from django.db.models import Count, F, Sum
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
-
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import UnprocessableEntityException
@@ -13,6 +12,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
     """Returns aggregated values of obligation, outlay, and count of Award records"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/award/amount.md"
+    count_only = False
 
     @cache_response()
     def post(self, request):
@@ -33,7 +33,11 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
 
         if all(x in self.filters for x in ["award_type_codes", "award_type"]):
             raise UnprocessableEntityException("Cannot provide both 'award_type_codes' and 'award_type'")
-        return Response(self.queryset)
+
+        if self.count_only:
+            return Response({"count": self.queryset["award_count"]})
+        else:
+            return Response(self.queryset)
 
     @property
     def queryset(self):
@@ -44,22 +48,27 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             self.is_in_provided_def_codes,
         ]
 
-        if self.award_type_codes:
-            count_field = "award_id"
-        else:
-            count_field = self.unique_file_c
-
-        fields = {
-            "award_count": Count(count_field, distinct=True),
-            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
-            "outlay": self.outlay_field_annotation,
+        group_by_annotations = {
+            "award_identifier": F("award_id") if self.award_type_codes else self.unique_file_c_awards
         }
 
-        if self.award_type_codes:
-            return self.when_non_zero_award_spending(
-                FinancialAccountsByAwards.objects.filter(*filters).values(count_field)
-            ).aggregate(**fields)
-        else:
-            return self.when_non_zero_award_spending(
-                FinancialAccountsByAwards.objects.filter(*filters).annotate(unique_c=count_field)
-            ).aggregate(**fields)
+        dollar_annotations = {
+            "inner_obligation": self.obligated_field_annotation,
+            "inner_outlay": self.outlay_field_annotation,
+        }
+
+        all_annotations = {**group_by_annotations, **dollar_annotations}
+
+        return (
+            FinancialAccountsByAwards.objects.filter(*filters)
+            .annotate(**group_by_annotations)
+            .values(*group_by_annotations)
+            .annotate(**dollar_annotations)
+            .exclude(inner_obligation=0, inner_outlay=0)
+            .values(*all_annotations)
+            .aggregate(
+                award_count=Count("award_identifier"),
+                obligation=Coalesce(Sum("inner_obligation"), 0),
+                outlay=Coalesce(Sum("inner_outlay"), 0),
+            )
+        )
