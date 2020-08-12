@@ -296,9 +296,7 @@ def process_guarddog(process_list):
     for proc in process_list:
         # If exitcode is None, process is still running. exit code 0 is normal
         if proc.exitcode not in (None, 0):
-            msg = "TERMINATING ALL PROCESSES AND QUITTING!!! " + "{} exited with error. Returned {}".format(
-                proc.name, proc.exitcode
-            )
+            msg = f"TERMINATING ALL PROCESSES AND QUITTING!!! {proc.name} exited with error. Returned {proc.exitcode}"
             printf({"msg": msg})
             [x.terminate() for x in process_list]
             return True
@@ -309,7 +307,7 @@ def configure_sql_strings(config, filename, deleted_ids):
     """
     Populates the formatted strings defined globally in this file to create the desired SQL
     """
-    update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
+    update_date_str = UPDATE_DATE_SQL.format(config["starting_date"])
     if config["load_type"] == "awards":
         view_name = settings.ES_AWARDS_ETL_VIEW_NAME
         view_type = "award"
@@ -336,14 +334,12 @@ def configure_sql_strings(config, filename, deleted_ids):
 
 
 def get_updated_record_count(config):
-    update_date = config["starting_date"].strftime("%Y-%m-%d")
-
     if config["load_type"] == "awards":
         view_name = settings.ES_AWARDS_ETL_VIEW_NAME
     else:
         view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
 
-    count_sql = COUNT_SQL.format(update_date=update_date, view=view_name)
+    count_sql = COUNT_SQL.format(update_date=config["starting_date"], view=view_name)
 
     return execute_sql_statement(count_sql, True, config["verbose"])[0]["count"]
 
@@ -371,9 +367,9 @@ def db_rows_to_dict(cursor):
 
 def download_db_records(fetch_jobs, done_jobs, config):
     # There has been a recurring issue with .empty() returning true when the queue actually
-    # contains multiple jobs. Wait a few seconds before starting to see if it helps
+    # contains multiple jobs. Most like a race condition, pause for a few seconds before starting
     sleep(5)
-    printf({"msg": "Queue has items: {}".format(not fetch_jobs.empty()), "f": "Download"})
+    printf({"msg": f"Queue has items: {not fetch_jobs.empty()}", "f": "Download"})
     while not fetch_jobs.empty():
         if done_jobs.full():
             printf({"msg": "Paused downloading new CSVs so ES indexing can catch up", "f": "Download"})
@@ -381,7 +377,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
         else:
             start = perf_counter()
             job = fetch_jobs.get_nowait()
-            printf({"msg": 'Preparing to download "{}"'.format(job.csv), "job": job.name, "f": "Download"})
+            printf({"msg": f'Preparing to download "{job.csv}"', "job": job.name, "f": "Download"})
 
             sql_config = {
                 "starting_date": config["starting_date"],
@@ -433,7 +429,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
 
 
 def csv_chunk_gen(filename, chunksize, job_id, load_type):
-    printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
+    printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Index"})
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
     converters = {
         "business_categories": convert_postgres_array_as_string_to_list,
@@ -452,28 +448,30 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
         # and this is needed for performance
         # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
         file_df["routing"] = file_df[settings.ES_ROUTING_FIELD]
+
+        file_df["_id"] = file_df[f"{'award' if load_type == 'awards' else 'transaction'}_id"]
         yield file_df.to_dict(orient="records")
 
 
 def es_data_loader(client, fetch_jobs, done_jobs, config):
     if config["create_new_index"]:
         # ensure template for index is present and the latest version
-        call_command("es_configure", "--template-only", "--load_type={}".format(config["load_type"]))
+        call_command("es_configure", "--template-only", "--load-type={}".format(config["load_type"]))
     while True:
         if not done_jobs.empty():
             job = done_jobs.get_nowait()
             if job.name is None:
                 break
 
-            printf({"msg": "Starting new job", "job": job.name, "f": "ES Ingest"})
+            printf({"msg": "Starting new job", "job": job.name, "f": "ES Index"})
             post_to_elasticsearch(client, job, config)
             if os.path.exists(job.csv):
                 os.remove(job.csv)
         else:
-            printf({"msg": "No Job. Sleeping 45s", "f": "ES Ingest"})
-            sleep(45)
+            printf({"msg": f"No Job. Sleeping {config['ingest_wait']}s", "f": "ES Index"})
+            sleep(int(config["ingest_wait"]))
 
-    printf({"msg": "Completed Elasticsearch data load", "f": "ES Ingest"})
+    printf({"msg": "Completed Elasticsearch data load", "f": "ES Index"})
     return
 
 
@@ -488,7 +486,7 @@ def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None)
         print("Fatal error: \n\n{}...\n\n{}".format(str(e)[:5000], "*" * 80))
         raise SystemExit(1)
 
-    printf({"msg": "Success: {}, Fails: {}".format(success, failed), "job": job_id, "f": "ES Ingest"})
+    printf({"msg": "Success: {}, Fails: {}".format(success, failed), "job": job_id, "f": "ES Index"})
     return success, failed
 
 
@@ -566,7 +564,7 @@ def swap_aliases(client, index, load_type):
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
-    printf({"msg": 'Populating ES Index "{}"'.format(job.index), "job": job.name, "f": "ES Ingest"})
+    printf({"msg": 'Populating ES Index "{}"'.format(job.index), "job": job.name, "f": "ES Index"})
     start = perf_counter()
     try:
         does_index_exist = client.indices.exists(job.index)
@@ -574,32 +572,23 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         print(e)
         raise SystemExit(1)
     if not does_index_exist:
-        printf({"msg": 'Creating index "{}"'.format(job.index), "job": job.name, "f": "ES Ingest"})
+        printf({"msg": 'Creating index "{}"'.format(job.index), "job": job.name, "f": "ES Index"})
         client.indices.create(index=job.index)
         client.indices.refresh(job.index)
 
     csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["load_type"])
     for count, chunk in enumerate(csv_generator):
         if len(chunk) == 0:
-            printf({"msg": "No documents to add/delete for chunk #{}".format(count), "f": "ES Ingest", "job": job.name})
+            printf({"msg": "No documents to add/delete for chunk #{}".format(count), "f": "ES Index", "job": job.name})
             continue
-        iteration = perf_counter()
-        if config["process_deletes"]:
-            if config["load_type"] == "awards":
-                id_list = [{"key": c[UNIVERSAL_AWARD_ID_NAME], "col": UNIVERSAL_AWARD_ID_NAME} for c in chunk]
-                delete_from_es(client, id_list, job.name, config, job.index)
-            else:
-                id_list = [
-                    {"key": c[UNIVERSAL_TRANSACTION_ID_NAME], "col": UNIVERSAL_TRANSACTION_ID_NAME} for c in chunk
-                ]
-                delete_from_es(client, id_list, job.name, config, job.index)
 
+        iteration = perf_counter()
         current_rows = "({}-{})".format(count * chunksize + 1, count * chunksize + len(chunk))
         printf(
             {
-                "msg": "Streaming to ES #{} rows [{}/{}]".format(count, current_rows, job.count),
+                "msg": "ES Stream #{} rows [{}/{}]".format(count, current_rows, job.count),
                 "job": job.name,
-                "f": "ES Ingest",
+                "f": "ES Index",
             }
         )
         streaming_post_to_es(client, chunk, job.index, config["load_type"], job.name)
@@ -607,14 +596,15 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             {
                 "msg": "Iteration group #{} took {}s".format(count, perf_counter() - iteration),
                 "job": job.name,
-                "f": "ES Ingest",
+                "f": "ES Index",
             }
         )
+
     printf(
         {
             "msg": "Elasticsearch Index loading took {}s".format(perf_counter() - start),
             "job": job.name,
-            "f": "ES Ingest",
+            "f": "ES Index",
         }
     )
 

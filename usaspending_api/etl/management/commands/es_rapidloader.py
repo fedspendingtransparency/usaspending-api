@@ -41,13 +41,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--load_type",
-            type=str,
-            help="Select which type of load to perform, current options are transactions or awards.",
-            choices=["transactions", "awards"],
-            default="transactions",
-        )
-        parser.add_argument(
             "fiscal_years",
             nargs="+",
             type=str,
@@ -99,13 +92,26 @@ class Command(BaseCommand):
             help="When creating a new index skip the step that deletes the old indexes and swaps the aliases. "
             "Only used when --create-new-index is provided.",
         )
+        parser.add_argument(
+            "--load-type",
+            type=str,
+            help="Select which type of load to perform, current options are transactions or awards.",
+            choices=["transactions", "awards"],
+            default="transactions",
+        )
+        parser.add_argument(
+            "--idle-wait-time",
+            type=int,
+            help="Time in seconds the ES index process should wait before looking for a new CSV data file.",
+            default=45,
+        )
 
     def handle(self, *args, **options):
         elasticsearch_client = instantiate_elasticsearch_client()
         config = process_cli_parameters(options, elasticsearch_client)
 
         start = perf_counter()
-        printf({"msg": "Starting script\n{}".format("=" * 56)})
+        printf({"msg": f"Starting script\n{'=' * 56}"})
         start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
         printf({"msg": start_msg.format(**config)})
 
@@ -119,12 +125,12 @@ class Command(BaseCommand):
         loader.complete_process()
 
         printf({"msg": "---------------------------------------------------------------"})
-        printf({"msg": "Script completed in {} seconds".format(perf_counter() - start)})
+        printf({"msg": f"Script completed in {perf_counter() - start:.2f}s"})
         printf({"msg": "---------------------------------------------------------------"})
 
 
 def process_cli_parameters(options: dict, es_client) -> dict:
-    default_datetime = datetime.strptime("{}+0000".format(settings.API_SEARCH_MIN_DATE), "%Y-%m-%d%z")
+    default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
     simple_args = (
         "skip_delete_index",
         "process_deletes",
@@ -157,7 +163,7 @@ def process_cli_parameters(options: dict, es_client) -> dict:
         #      - The earliest records in S3.
         #      - When all transaction records in the USAspending SQL database were updated.
         #   And keep it timezone-award for S3
-        config["starting_date"] = get_last_load_date("es_{}".format(options["load_type"]), default=default_datetime)
+        config["starting_date"] = get_last_load_date(f"es_{options['load_type']}", default=default_datetime)
 
     config["max_query_size"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
     if options["load_type"] == "awards":
@@ -172,11 +178,10 @@ def process_cli_parameters(options: dict, es_client) -> dict:
         if config["load_type"] == "awards":
             write_alias = settings.ES_AWARDS_WRITE_ALIAS
         if config["index_name"]:
-            msg = "Ignoring provided index name, using alias '{}' for incremental load"
-            printf({"msg": msg.format(write_alias)})
+            printf({"msg": f"Ignoring provided index name, using alias '{write_alias}' for incremental load"})
         config["index_name"] = write_alias
         if not es_client.cat.aliases(name=write_alias):
-            printf({"msg": "Fatal error: write alias '{}' is missing".format(write_alias)})
+            printf({"msg": f"Fatal error: write alias '{write_alias}' is missing"})
             raise SystemExit(1)
     else:
         if es_client.indices.exists(config["index_name"]):
@@ -187,11 +192,13 @@ def process_cli_parameters(options: dict, es_client) -> dict:
         printf({"msg": "Fatal error: provided directory does not exist"})
         raise SystemExit(1)
     elif config["starting_date"] < default_datetime:
-        printf({"msg": "Fatal error: --start-datetime is too early. Set no earlier than {}".format(default_datetime)})
+        printf({"msg": f"Fatal error: --start-datetime is too early. Set no earlier than {default_datetime}"})
         raise SystemExit(1)
     elif not config["is_incremental_load"] and config["process_deletes"]:
         printf({"msg": "Skipping deletions for ths load, --deleted overwritten to False"})
         config["process_deletes"] = False
+
+    config["ingest_wait"] = 15
 
     return config
 
@@ -221,4 +228,4 @@ def fiscal_years_for_processing(options: list) -> list:
 
 def check_new_index_name_is_ok(provided_name: str, suffix: str) -> None:
     if not provided_name.endswith(suffix):
-        raise SystemExit("new index name doesn't end with the expected pattern: '{}'".format(suffix))
+        raise SystemExit(f"new index name doesn't end with the expected pattern: '{suffix}'")
