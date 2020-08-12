@@ -103,7 +103,7 @@ class Command(BaseCommand):
             "--idle-wait-time",
             type=int,
             help="Time in seconds the ES index process should wait before looking for a new CSV data file.",
-            default=45,
+            default=60,
         )
 
     def handle(self, *args, **options):
@@ -198,7 +198,7 @@ def process_cli_parameters(options: dict, es_client) -> dict:
         printf({"msg": "Skipping deletions for ths load, --deleted overwritten to False"})
         config["process_deletes"] = False
 
-    config["ingest_wait"] = 15
+    config["ingest_wait"] = options["idle_wait_time"]
 
     return config
 
