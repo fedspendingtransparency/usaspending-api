@@ -4,7 +4,7 @@ from datetime import datetime, timezone, date
 from decimal import Decimal
 from django.core.management import call_command, CommandError
 from django.db import connections, DEFAULT_DB_ALIAS, ProgrammingError
-from django.test import override_settings, TransactionTestCase
+from django.test import TransactionTestCase
 from model_mommy import mommy
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import FinancialAccountsByAwards

@@ -13,7 +13,6 @@ tail -n +3 'usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D2-Award (Financ
 d2_columns.csv
 """
 from collections import OrderedDict
-from django.conf import settings
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 
 
