@@ -390,10 +390,17 @@ class _DisasterEmergencyFundCodes(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
         def_codes_query = []
+        amounts_query = [
+            ES_Q("bool", must_not=ES_Q("match", total_covid_obligation=0)),
+            ES_Q("bool", must_not=ES_Q("match", total_covid_outlay=0)),
+        ]
         for v in filter_values:
             def_codes_query.append(ES_Q("match", disaster_emergency_fund_codes=v))
         if query_type == _QueryType.AWARDS:
-            return ES_Q("bool", should=def_codes_query, minimum_should_match=1,)
+            return [
+                ES_Q("bool", should=def_codes_query, minimum_should_match=1),
+                ES_Q("bool", should=amounts_query, minimum_should_match=1),
+            ]
         return ES_Q(
             "bool",
             should=def_codes_query,
