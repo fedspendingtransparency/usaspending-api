@@ -184,7 +184,6 @@ def spending_by_award_test_data():
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award_id=2,
-        treasury_account_id=1,
         transaction_obligated_amount=0,
         gross_outlay_amount_by_award_cpe=0,
         disaster_emergency_fund=defc,
