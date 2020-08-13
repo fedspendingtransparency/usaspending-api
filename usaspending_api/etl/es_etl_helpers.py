@@ -293,7 +293,8 @@ def process_guarddog(process_list):
     for proc in process_list:
         # If exitcode is None, process is still running. exit code 0 is normal
         if proc.exitcode not in (None, 0):
-            printf({"msg": f"TERMINATING ALL PROCESSES AND QUITTING!!! {proc.name} exited with error {proc.exitcode}"})
+            msg = f"Script proccess failed!!! {proc.name} exited with error {proc.exitcode}. Terminating all processes."
+            printf({"msg": msg, "error": True})
             [x.terminate() for x in process_list]
             return True
     return False
@@ -361,8 +362,10 @@ def db_rows_to_dict(cursor):
 
 
 def download_db_records(fetch_jobs, done_jobs, config):
-    # There has been a recurring issue with .empty() returning true when the queue actually
-    # contains multiple jobs. Most like a race condition, pause for a few seconds before starting
+    # There was recurring issue with .empty() returning true when the queue
+    #  actually contained multiple jobs. Potentially caused by a race condition
+    #  Funny story: adding the log statement was enough to prevent the issue
+    #  Decided to be safe and added short pause to guarentee no race condition
     sleep(5)
     printf({"msg": f"Queue has items: {not fetch_jobs.empty()}", "f": "Download"})
     while not fetch_jobs.empty():

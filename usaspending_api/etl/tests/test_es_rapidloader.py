@@ -61,6 +61,7 @@ def award_data_fixture(db):
         date_signed="2010-10-1",
         awarding_agency_id=1,
         funding_agency_id=1,
+        update_date="2012-05-19",
     )
     mommy.make(
         "awards.Award",
@@ -72,6 +73,7 @@ def award_data_fixture(db):
         fain="P063P100612",
         total_obligation=1000000.00,
         date_signed="2016-10-1",
+        update_date="2014-07-21",
     )
     mommy.make("accounts.FederalAccount", id=1)
     mommy.make(
@@ -108,9 +110,7 @@ config = {
     "process_deletes": False,
     "directory": Path(__file__).resolve().parent,
     "skip_counts": False,
-    "index_name": "test-{}-{}".format(
-        datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
-    ),
+    "index_name": f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}-{generate_random_string()}",
     "create_new_index": True,
     "snapshot": False,
     "fiscal_years": [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
