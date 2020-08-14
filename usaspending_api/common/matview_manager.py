@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from django.conf import settings
 
+from usaspending_api.awards.models import CovidFinancialAccountMatview
 from usaspending_api.search.models import TASAutocompleteMatview
 
 import usaspending_api.search.models as mv
@@ -28,6 +29,14 @@ MATERIALIZED_VIEWS = OrderedDict(
             "mv_contract_award_search",
             {
                 "model": mv.ContractAwardSearchMatview,
+                "json_filepath": str(JSON_DIR / "mv_covid_financial_account.json"),
+                "sql_filename": "mv_covid_financial_account.sql",
+            },
+        ),
+        (
+            "mv_covid_financial_account",
+            {
+                "model": CovidFinancialAccountMatview,
                 "json_filepath": str(JSON_DIR / "mv_contract_award_search.json"),
                 "sql_filename": "mv_contract_award_search.sql",
             },

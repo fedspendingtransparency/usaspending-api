@@ -104,7 +104,7 @@ def fabs_award_with_old_submission(defc_codes, award_count_sub_schedule):
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
         submission_fiscal_month=3,
-        submission_reveal_date="2022-5-15",
+        submission_reveal_date="2020-5-15",
     )
     old_submission = mommy.make(
         "submissions.SubmissionAttributes",
