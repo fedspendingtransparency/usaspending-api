@@ -46,7 +46,7 @@ SELECT
   vw_es_award_search.business_categories,
 
   vw_es_award_search.action_date,
-  vw_es_award_search.fiscal_year as fiscal_year,
+  vw_es_award_search.fiscal_year,
   vw_es_award_search.last_modified_date,
   vw_es_award_search.period_of_performance_start_date,
   vw_es_award_search.period_of_performance_current_end_date,
@@ -167,15 +167,15 @@ SELECT
 
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
-  DEFC.disaster_emergency_fund_codes as disaster_emergency_fund_codes,
-  DEFC.gross_outlay_amount_by_award_cpe as total_covid_outlay,
-  DEFC.transaction_obligated_amount as total_covid_obligation
+  DEFC.disaster_emergency_fund_codes AS disaster_emergency_fund_codes,
+  DEFC.gross_outlay_amount_by_award_cpe AS total_covid_outlay,
+  DEFC.transaction_obligated_amount AS total_covid_obligation
 FROM vw_es_award_search
 INNER JOIN awards a ON (a.id = vw_es_award_search.award_id)
 LEFT JOIN transaction_fabs fabs ON (fabs.transaction_id = a.latest_transaction_id)
 LEFT JOIN references_cfda cfda ON (cfda.program_number = fabs.cfda_number)
 LEFT JOIN LATERAL (
-  SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) as recipient_levels
+  SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) AS recipient_levels
   FROM     recipient_profile
   WHERE    (recipient_hash = vw_es_award_search.recipient_hash OR recipient_unique_id = vw_es_award_search.recipient_unique_id) and
            recipient_name NOT IN (

@@ -8,8 +8,8 @@ SELECT
   UTM.afa_generated_unique,
 
   CASE
-    WHEN UTM.detached_award_proc_unique IS NOT NULL THEN 'CONT_TX_' || UPPER(UTM.detached_award_proc_unique)
-    WHEN UTM.afa_generated_unique IS NOT NULL THEN 'ASST_TX_' || UPPER(UTM.afa_generated_unique)
+    WHEN UTM.detached_award_proc_unique IS NOT NULL THEN 'CONT_TX_' || UTM.detached_award_proc_unique
+    WHEN UTM.afa_generated_unique IS NOT NULL THEN 'ASST_TX_' || UTM.afa_generated_unique
     ELSE NULL  -- if this happens: Activate Batsignal
   END AS generated_unique_transaction_id,
 
@@ -19,10 +19,7 @@ SELECT
     ELSE UTM.uri
   END AS display_award_id,
 
-  CASE
-    WHEN UTM.award_update_date > UTM.update_date THEN UTM.award_update_date
-    ELSE UTM.update_date
-  END AS update_date,
+  GREATEST(UTM.update_date, UTM.award_update_date) AS update_date,
   UTM.modification_number,
   UTM.generated_unique_award_id,
   UTM.award_id,
@@ -70,12 +67,12 @@ SELECT
   PRL.recipient_hash AS parent_recipient_hash,
 
   UTM.action_date,
-  DATE(UTM.action_date + interval '3 months') AS fiscal_action_date,
+  UTM.fiscal_action_date,
   UTM.period_of_performance_start_date,
   UTM.period_of_performance_current_end_date,
   UTM.ordering_period_end_date,
   UTM.fiscal_year AS transaction_fiscal_year,
-  FY(UTM.award_certified_date) as award_fiscal_year,
+  UTM.award_fiscal_year,
   UTM.award_amount,
   UTM.federal_action_obligation AS transaction_amount,
   UTM.face_value_loan_guarantee,
@@ -242,7 +239,7 @@ SELECT
   TREASURY_ACCT.tas_components,
   FEDERAL_ACCT.federal_accounts,
   UTM.business_categories,
-  FEDERAL_ACCT.defc as disaster_emergency_fund_codes
+  FEDERAL_ACCT.defc AS disaster_emergency_fund_codes
 
 FROM universal_transaction_matview UTM
 LEFT JOIN (
