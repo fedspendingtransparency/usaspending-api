@@ -291,7 +291,7 @@ def configure_sql_strings(config, filename, deleted_ids):
     """
     Populates the formatted strings defined globally in this file to create the desired SQL
     """
-    update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
+    update_date_str = UPDATE_DATE_SQL.format(config["starting_date"])
     if config["load_type"] == "awards":
         view_name = settings.ES_AWARDS_ETL_VIEW_NAME
         view_type = "award"
