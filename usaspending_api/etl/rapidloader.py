@@ -2,6 +2,7 @@ from django.conf import settings
 from multiprocessing import Process, Queue
 from pathlib import Path
 from time import sleep
+from typing import Tuple
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.etl.es_etl_helpers import (
@@ -32,20 +33,12 @@ class Rapidloader:
         updated_record_count = get_updated_record_count(self.config)
         printf({"msg": f"Found {updated_record_count:,} {self.config['load_type']} records to index"})
 
-        for job_number, fiscal_year in enumerate(self.config["fiscal_years"], start=1):
-            if updated_record_count == 0:
-                job_number = 0
-                continue
-            index = self.config["index_name"]
-            filename = str(self.config["directory"] / f"{fiscal_year}_{self.config['load_type']}.csv")
+        if updated_record_count == 0:
+            jobs = 0
+        else:
+            download_queue, jobs = self.create_download_jobs()
 
-            new_job = DataJob(job_number, index, fiscal_year, filename)
-
-            if Path(filename).exists():
-                Path(filename).unlink()
-            download_queue.put(new_job)
-
-        printf({"msg": f"There are {job_number} jobs to process"})
+        printf({"msg": f"There are {jobs} jobs to process"})
 
         process_list = [
             Process(
@@ -60,7 +53,7 @@ class Rapidloader:
             ),
         ]
 
-        if updated_record_count != 0:
+        if updated_record_count != 0:  # only run if there are data to process
             process_list[0].start()  # Start Download process
 
         if self.config["process_deletes"]:
@@ -74,7 +67,7 @@ class Rapidloader:
             process_list[-1].start()  # start S3 csv fetch proces
             while process_list[-1].is_alive():
                 printf({"msg": "Waiting to start ES ingest until S3 deletes are complete"})
-                sleep(7)
+                sleep(7)  # add a brief pause to make sure the deletes are processed in ES
 
         if updated_record_count != 0:
             process_list[1].start()  # start ES ingest process
@@ -86,6 +79,19 @@ class Rapidloader:
             elif all([not x.is_alive() for x in process_list]):
                 printf({"msg": "All ETL processes completed execution with no error codes"})
                 break
+
+    def create_download_jobs(self) -> Tuple[Queue, int]:
+        download_queue = Queue()
+        for job_number, fiscal_year in enumerate(self.config["fiscal_years"], start=1):
+            index = self.config["index_name"]
+            filename = str(self.config["directory"] / f"{fiscal_year}_{self.config['load_type']}.csv")
+
+            new_job = DataJob(job_number, index, fiscal_year, filename)
+
+            if Path(filename).exists():
+                Path(filename).unlink()
+            download_queue.put(new_job)
+        return download_queue, job_number
 
     def complete_process(self) -> None:
         if self.config["create_new_index"]:

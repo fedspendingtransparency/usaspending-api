@@ -447,6 +447,8 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
         # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
         file_df["routing"] = file_df[settings.ES_ROUTING_FIELD]
 
+        # Explicitly setting the ES _id field to match the postgres PK value allows
+        # bulk index operations to be upserts without creating duplicate documents
         file_df["_id"] = file_df[f"{'award' if load_type == 'awards' else 'transaction'}_id"]
         yield file_df.to_dict(orient="records")
 
