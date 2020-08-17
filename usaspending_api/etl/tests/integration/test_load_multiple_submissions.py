@@ -262,6 +262,26 @@ class TestWithMultipleDatabases(TransactionTestCase):
     def tearDown(self):
         self._nuke_broker_data()
 
+        connection = connections["data_broker"]
+        with connection.cursor() as cursor:
+
+            # ENABLE_CARES_ACT_FEATURES: Once disaster_emergency_fund_code has rolled out in Broker, remove this
+            # hack.  It just removes the column if we added it in setUp.  Once rolled out in Broker this
+            # should no longer be necessary.
+            if self._added_file_b_defc:
+                cursor.execute(
+                    "alter table certified_object_class_program_activity drop column disaster_emergency_fund_code"
+                )
+
+            if self._added_file_c_defc:
+                cursor.execute("alter table certified_award_financial drop column disaster_emergency_fund_code")
+
+            # ENABLE_CARES_ACT_FEATURES: Once publish_history has rolled out in Broker, remove this
+            # hack.  It just removes the table if we added it in setUp.  Once rolled out in Broker this
+            # should no longer be necessary.
+            if self._added_publish_history:
+                cursor.execute("drop table publish_history")
+
     def test_all_the_things(self):
         """
         Because we are using TransactionTestCase we're going to run all of our tests in one method to
