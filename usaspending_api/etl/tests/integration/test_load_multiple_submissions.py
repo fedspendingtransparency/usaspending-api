@@ -261,9 +261,9 @@ class TestWithMultipleDatabases(TransactionTestCase):
 
     def tearDown(self):
         self._nuke_broker_data()
-
-        connection = connections["data_broker"]
-        with connection.cursor() as cursor:
+        #
+        # connection = connections["data_broker"]
+        # with connection.cursor() as cursor:
 
             # ENABLE_CARES_ACT_FEATURES: Once disaster_emergency_fund_code has rolled out in Broker, remove this
             # hack.  It just removes the column if we added it in setUp.  Once rolled out in Broker this
