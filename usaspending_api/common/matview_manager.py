@@ -29,16 +29,16 @@ MATERIALIZED_VIEWS = OrderedDict(
             "mv_contract_award_search",
             {
                 "model": mv.ContractAwardSearchMatview,
-                "json_filepath": str(JSON_DIR / "mv_covid_financial_account.json"),
-                "sql_filename": "mv_covid_financial_account.sql",
+                "json_filepath": str(JSON_DIR / "mv_contract_award_search.json"),
+                "sql_filename": "mv_contract_award_search.sql",
             },
         ),
         (
             "mv_covid_financial_account",
             {
                 "model": CovidFinancialAccountMatview,
-                "json_filepath": str(JSON_DIR / "mv_contract_award_search.json"),
-                "sql_filename": "mv_contract_award_search.sql",
+                "json_filepath": str(JSON_DIR / "mv_covid_financial_account.json"),
+                "sql_filename": "mv_covid_financial_account.sql",
             },
         ),
         (
