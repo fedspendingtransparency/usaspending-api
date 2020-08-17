@@ -1,7 +1,8 @@
-from django.db.models import Count, F, Sum
-from django.db.models.functions import Coalesce
+from django.contrib.postgres.fields import ArrayField
+from django.db.models import Count, Sum, TextField
+from django.db.models.functions import Coalesce, Cast
 from rest_framework.response import Response
-from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.awards.models import FinancialAccountsByAwards, CovidFinancialAccountMatview
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.validator import TinyShield
@@ -41,16 +42,28 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
 
     @property
     def queryset(self):
+        return self._file_d_queryset() if self.award_type_codes else self._file_c_queryset()
+
+    def _file_d_queryset(self):
+        return (
+            CovidFinancialAccountMatview.objects.annotate(cast_def_codes=Cast("def_codes", ArrayField(TextField())))
+            .filter(type__in=self.award_type_codes, cast_def_codes__overlap=self.def_codes)
+            .values("award_id")
+            .aggregate(
+                award_count=Count("award_id"),
+                obligation=Coalesce(Sum("obligation"), 0),
+                outlay=Coalesce(Sum("outlay"), 0),
+            )
+        )
+
+    def _file_c_queryset(self):
         filters = [
             self.all_closed_defc_submissions,
             self.has_award_of_classification,
-            self.has_award_of_provided_type,
             self.is_in_provided_def_codes,
         ]
 
-        group_by_annotations = {
-            "award_identifier": F("award_id") if self.award_type_codes else self.unique_file_c_awards
-        }
+        group_by_annotations = {"award_identifier": self.unique_file_c_awards}
 
         dollar_annotations = {
             "inner_obligation": self.obligated_field_annotation,

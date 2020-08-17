@@ -2,6 +2,8 @@ import pytest
 
 from model_mommy import mommy
 
+from usaspending_api.references.models.disaster_emergency_fund_code import DisasterEmergencyFundCode
+
 
 @pytest.fixture
 def generic_account_data():
@@ -11,7 +13,8 @@ def generic_account_data():
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
         submission_fiscal_month=7,
-        submission_reveal_date="2022-6-15",
+        submission_reveal_date="2020-06-15",
+        period_start_date="2022-04-01",
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -19,10 +22,14 @@ def generic_account_data():
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
         submission_fiscal_month=7,
-        submission_reveal_date="2022-6-15",
+        submission_reveal_date="2020-06-15",
+        period_start_date="2022-04-01",
     )
-    mommy.make("references.DisasterEmergencyFundCode", code="P")
-    mommy.make("references.DisasterEmergencyFundCode", code="A")
+    defc_l = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    defc_m = mommy.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19")
+    defc_n = mommy.make("references.DisasterEmergencyFundCode", code="N", group_name="covid_19")
+    defc_o = mommy.make("references.DisasterEmergencyFundCode", code="O", group_name="covid_19")
+    defc_9 = mommy.make("references.DisasterEmergencyFundCode", code="9")
     award1 = mommy.make("awards.Award", id=111, total_loan_value=1111, type="A")
     award2 = mommy.make("awards.Award", id=222, total_loan_value=2222, type="A")
     award3 = mommy.make("awards.Award", id=333, total_loan_value=3333, type="07")
@@ -64,7 +71,7 @@ def generic_account_data():
         final_of_fy=True,
         obligations_incurred_by_program_object_class_cpe=100,
         gross_outlay_amount_by_program_object_class_cpe=111,
-        disaster_emergency_fund__code="M",
+        disaster_emergency_fund=defc_m,
         treasury_account=tre_acct1,
     )
     mommy.make(
@@ -73,7 +80,7 @@ def generic_account_data():
         final_of_fy=True,
         obligations_incurred_by_program_object_class_cpe=200,
         gross_outlay_amount_by_program_object_class_cpe=222,
-        disaster_emergency_fund__code="L",
+        disaster_emergency_fund=defc_l,
         treasury_account=tre_acct2,
     )
     mommy.make(
@@ -82,7 +89,7 @@ def generic_account_data():
         final_of_fy=True,
         obligations_incurred_by_program_object_class_cpe=2,
         gross_outlay_amount_by_program_object_class_cpe=2,
-        disaster_emergency_fund__code="9",
+        disaster_emergency_fund=defc_9,
         treasury_account=tre_acct2,
     )
     mommy.make(
@@ -91,7 +98,7 @@ def generic_account_data():
         final_of_fy=True,
         obligations_incurred_by_program_object_class_cpe=1,
         gross_outlay_amount_by_program_object_class_cpe=1,
-        disaster_emergency_fund__code="O",
+        disaster_emergency_fund=defc_o,
         treasury_account=tre_acct2,
     )
     mommy.make(
@@ -100,7 +107,7 @@ def generic_account_data():
         final_of_fy=True,
         obligations_incurred_by_program_object_class_cpe=3,
         gross_outlay_amount_by_program_object_class_cpe=333,
-        disaster_emergency_fund__code="N",
+        disaster_emergency_fund=defc_n,
         treasury_account=tre_acct3,
     )
     mommy.make(
@@ -111,7 +118,7 @@ def generic_account_data():
         parent_award_id="3443r",
         transaction_obligated_amount=100,
         gross_outlay_amount_by_award_cpe=111,
-        disaster_emergency_fund__code="M",
+        disaster_emergency_fund=defc_m,
         treasury_account=tre_acct1,
     )
     mommy.make(
@@ -123,7 +130,7 @@ def generic_account_data():
         parent_award_id="3443r",
         transaction_obligated_amount=200,
         gross_outlay_amount_by_award_cpe=222,
-        disaster_emergency_fund__code="L",
+        disaster_emergency_fund=defc_l,
         treasury_account=tre_acct2,
     )
     mommy.make(
@@ -134,7 +141,7 @@ def generic_account_data():
         award_id=222,
         transaction_obligated_amount=2,
         gross_outlay_amount_by_award_cpe=2,
-        disaster_emergency_fund__code="9",
+        disaster_emergency_fund=defc_9,
         treasury_account=tre_acct2,
     )
     mommy.make(
@@ -145,7 +152,7 @@ def generic_account_data():
         award_id=333,
         transaction_obligated_amount=1,
         gross_outlay_amount_by_award_cpe=1,
-        disaster_emergency_fund__code="O",
+        disaster_emergency_fund=defc_o,
         treasury_account=tre_acct2,
     )
     mommy.make(
@@ -156,7 +163,7 @@ def generic_account_data():
         award_id=444,
         transaction_obligated_amount=3,
         gross_outlay_amount_by_award_cpe=333,
-        disaster_emergency_fund__code="N",
+        disaster_emergency_fund=defc_n,
         treasury_account=tre_acct3,
     )
     mommy.make(
@@ -214,7 +221,7 @@ def unlinked_faba_account_data():
         piid="weuf",
         transaction_obligated_amount=999999,
         gross_outlay_amount_by_award_cpe=9999999,
-        disaster_emergency_fund__code="N",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.get(code="N"),
         treasury_account=tre_acct,
     )
     mommy.make(
@@ -224,7 +231,7 @@ def unlinked_faba_account_data():
         parent_award_id="weuf22",
         transaction_obligated_amount=88888,
         gross_outlay_amount_by_award_cpe=888888,
-        disaster_emergency_fund__code="N",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.get(code="N"),
         treasury_account=tre_acct,
     )
     mommy.make(
@@ -233,7 +240,7 @@ def unlinked_faba_account_data():
         piid="0iwnff",
         transaction_obligated_amount=5,
         gross_outlay_amount_by_award_cpe=555,
-        disaster_emergency_fund__code="L",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.get(code="L"),
         treasury_account=tre_acct,
     )
     mommy.make(
@@ -242,6 +249,6 @@ def unlinked_faba_account_data():
         fain="howeusd",
         transaction_obligated_amount=8,
         gross_outlay_amount_by_award_cpe=888,
-        disaster_emergency_fund__code="N",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.get(code="N"),
         treasury_account=tre_acct,
     )
