@@ -25,6 +25,8 @@ def generic_account_data():
         submission_reveal_date="2020-06-15",
         period_start_date="2022-04-01",
     )
+    mommy.make("references.DisasterEmergencyFundCode", code="P")
+    mommy.make("references.DisasterEmergencyFundCode", code="A")
     defc_l = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
     defc_m = mommy.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19")
     defc_n = mommy.make("references.DisasterEmergencyFundCode", code="N", group_name="covid_19")
