@@ -41,7 +41,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--load_type",
+            "--load-type",
             type=str,
             help="Select which type of load to perform, current options are transactions or awards.",
             choices=["transactions", "awards"],

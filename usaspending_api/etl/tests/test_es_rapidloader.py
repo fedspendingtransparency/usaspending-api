@@ -148,13 +148,13 @@ def test_configure_sql_strings():
     copy_sql = """"COPY (
     SELECT *
     FROM award_delta_view
-    WHERE fiscal_year=2019 AND update_date >= '2007-10-01'
+    WHERE fiscal_year=2019 AND update_date >= '2007-10-01 00:00:00+00:00'
 ) TO STDOUT DELIMITER ',' CSV HEADER" > 'filename'
 """
     count_sql = """
 SELECT COUNT(*) AS count
 FROM award_delta_view
-WHERE fiscal_year=2019 AND update_date >= '2007-10-01'
+WHERE fiscal_year=2019 AND update_date >= '2007-10-01 00:00:00+00:00'
 """
     assert copy == copy_sql
     assert count == count_sql
