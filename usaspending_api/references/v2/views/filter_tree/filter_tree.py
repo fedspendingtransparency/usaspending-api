@@ -54,7 +54,7 @@ class FilterTree(metaclass=ABCMeta):
         raw_children = self.raw_search(ancestor_array + [retval.id])
         temp_children = [
             self._linked_node_from_data(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
-            for elem in raw_children
+            for elem in raw_children if self.matches_filter(Node(**elem, count=0, children=None, ancestors=None), filter_string)
         ]
         if child_layers:
             children = temp_children
@@ -91,6 +91,7 @@ class FilterTree(metaclass=ABCMeta):
         pass
 
     def matches_filter(self, node: Node, filter_string) -> bool:
+
         if (filter_string.lower() in node.id.lower()) or (filter_string.lower() in node.description.lower()):
             return True
         if node.children:
