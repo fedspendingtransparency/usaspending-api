@@ -87,7 +87,7 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         self.bucket_count = get_number_of_unique_terms_for_awards(self.filter_query, f"{self.agg_key}.hash")
 
-        results = self.query_elasticsearch()
+        response = self.query_elasticsearch()
 
         messages = []
         if self.pagination.sort_key in ("id", "code"):
@@ -106,10 +106,10 @@ class ElasticsearchDisasterBase(DisasterBase):
                 )
             )
 
-        response = {
-            "results": results[: self.pagination.limit],
-            "page_metadata": get_pagination_metadata(self.bucket_count, self.pagination.limit, self.pagination.page),
-        }
+        print(response)
+        response["page_metadata"] = get_pagination_metadata(
+            self.bucket_count, self.pagination.limit, self.pagination.page
+        )
         if messages:
             response["messages"] = messages
 
@@ -179,6 +179,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         for field, sum_aggregations in sum_aggregations.items():
             search.aggs[self.agg_group_name].metric(field, sum_aggregations["sum_field"])
         search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
+        search.aggs.pipeline("obligation_sum", A("sum", field="total_covid_obligation"))
+        search.aggs.pipeline("outlay_sum", A("sum", field="total_covid_outlay"))
 
         # If provided, break down primary bucket aggregation into sub-aggregations based on a sub_agg_key
         if self.sub_agg_key:
@@ -229,10 +231,11 @@ class ElasticsearchDisasterBase(DisasterBase):
         for field, sum_aggregations in sum_aggregations.items():
             search.aggs[self.agg_group_name].aggs[self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
 
-    def query_elasticsearch(self) -> list:
+    def query_elasticsearch(self) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
         if search is None:
-            return []
+            return {"total": {"obligations": 0, "outlay": 0}, "results": []}
         response = search.handle_execute()
+        total = self.total_result(response.aggs.to_dict())
         results = self.build_elasticsearch_result(response.aggs.to_dict())
-        return results
+        return {"total": total, "results": results[: self.pagination.limit]}

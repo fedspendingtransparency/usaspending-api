@@ -116,6 +116,12 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
 
         return results
 
+    def total_result(self, response: dict) -> dict:
+        return {
+            "obligations": response.get("obligation_sum", {})["value"],
+            "outlay": response.get("outlay_sum", {})["value"],
+        }
+
     def _build_json_result(self, bucket: dict):
         info = json_str_to_dict(bucket.get("key"))
         return {

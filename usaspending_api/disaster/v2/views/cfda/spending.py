@@ -19,6 +19,12 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
     query_fields = ["cfda_title", "cfda_number"]
     agg_key = "cfda_agg_key"
 
+    def total_result(self, response: dict) -> dict:
+        return {
+            "obligations": response.get("obligation_sum", {})["value"],
+            "outlay": response.get("outlay_sum", {})["value"],
+        }
+
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])

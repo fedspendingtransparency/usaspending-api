@@ -22,6 +22,12 @@ class RecipientLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisa
 
     sum_column_mapping: List[str]  # Set in the pagination mixin
 
+    def total_result(self, response: dict) -> dict:
+        return {
+            "obligations": response.get("obligation_sum", {})["value"],
+            "outlay": response.get("outlay_sum", {})["value"],
+        }
+
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])

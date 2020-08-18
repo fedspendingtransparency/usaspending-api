@@ -220,6 +220,12 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
 
+    def total_result(self, response: dict) -> dict:
+        return {
+            "obligations": response.get("obligation_sum", {})["value"],
+            "outlay": response.get("outlay_sum", {})["value"],
+        }
+
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
         info_buckets = response.get(self.agg_group_name, {}).get("buckets", [])
