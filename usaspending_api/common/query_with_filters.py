@@ -504,8 +504,8 @@ class QueryWithFilters:
 
     @classmethod
     def _handle_defc_query(cls, filters: dict, query_type: _QueryType) -> list:
+        queries = []
         if filters.get(_DisasterEmergencyFundCodes.underscore_name):
-            queries = []
             queries.append(
                 _DisasterEmergencyFundCodes.generate_elasticsearch_query(
                     filters[_DisasterEmergencyFundCodes.underscore_name], query_type
