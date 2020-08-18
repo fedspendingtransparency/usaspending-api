@@ -511,7 +511,7 @@ class QueryWithFilters:
                     filters[_DisasterEmergencyFundCodes.underscore_name], query_type
                 )
             )
-            if query_type ==_QueryType.AWARDS:
+            if query_type == _QueryType.AWARDS:
                 queries.append(
                     _NonzeroFields.generate_elasticsearch_query(
                         ["total_covid_outlay", "total_covid_obligation"], query_type
