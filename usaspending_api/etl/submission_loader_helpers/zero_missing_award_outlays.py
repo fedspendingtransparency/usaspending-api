@@ -15,7 +15,7 @@ sql_query = """
 WITH closed_covid_periods AS (
     SELECT submission_fiscal_year, submission_fiscal_month, is_quarter
     FROM dabs_submission_window_schedule
-    WHERE period_start_date >= '2020-04-01' 
+    WHERE period_start_date >= '2020-04-01'
     AND submission_reveal_date < now()
 ),
 quarterlies_from_monthly_submitters AS (
@@ -60,12 +60,12 @@ latest_covid_submissions AS (
 ),
 covid_awards_from_covid_submissions AS (
     SELECT
-        DISTINCT ON (faba.award_id) faba.award_id, 
-        faba.submission_id, 
+        DISTINCT ON (faba.award_id) faba.award_id,
+        faba.submission_id,
         covid_submissions.reporting_fiscal_year,
         covid_submissions.reporting_fiscal_period,
         covid_submissions.quarter_format_flag,
-        covid_submissions.toptier_code, 
+        covid_submissions.toptier_code,
         covid_submissions.reporting_agency_name
     FROM financial_accounts_by_awards faba
     INNER JOIN disaster_emergency_fund_code defc
@@ -77,12 +77,12 @@ covid_awards_from_covid_submissions AS (
 ),
 covid_awards_from_latest_covid_submisions AS (
     SELECT
-        DISTINCT ON (faba.award_id) faba.award_id, 
-        faba.submission_id, 
+        DISTINCT ON (faba.award_id) faba.award_id,
+        faba.submission_id,
         latest_covid_submissions.reporting_fiscal_year,
         latest_covid_submissions.reporting_fiscal_period,
         latest_covid_submissions.quarter_format_flag,
-        latest_covid_submissions.toptier_code, 
+        latest_covid_submissions.toptier_code,
         latest_covid_submissions.reporting_agency_name
     FROM financial_accounts_by_awards faba
     INNER JOIN disaster_emergency_fund_code defc
@@ -92,14 +92,14 @@ covid_awards_from_latest_covid_submisions AS (
     WHERE faba.award_id IS NOT NULL
     ORDER BY faba.award_id, faba.submission_id DESC
 )
--- Awards linked in prior COVID submissions, 
+-- Awards linked in prior COVID submissions,
 -- that are not linked in any Agencies' submissions for the latest closed periods (up to one monthly and one quarterly period)
 SELECT
     awards.generated_unique_award_id,
-    dropped_awards.award_id, 
-    dropped_awards.toptier_code, 
+    dropped_awards.award_id,
+    dropped_awards.toptier_code,
     dropped_awards.reporting_agency_name,
-    dropped_awards.submission_id as last_reported_submission_id, 
+    dropped_awards.submission_id as last_reported_submission_id,
     dropped_awards.reporting_fiscal_year,
     dropped_awards.reporting_fiscal_period,
     dropped_awards.quarter_format_flag
