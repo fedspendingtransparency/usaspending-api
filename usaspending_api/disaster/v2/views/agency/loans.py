@@ -2,7 +2,7 @@ import logging
 
 from decimal import Decimal
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import F, Value, IntegerField, Subquery, OuterRef
+from django.db.models import F, Value, IntegerField, Subquery, OuterRef, Sum
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from typing import List
@@ -55,10 +55,16 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
     @cache_response()
     def post(self, request):
 
-        results = list(self.queryset.order_by(*self.pagination.robust_order_by_fields))
+        results = self.queryset
         return Response(
             {
-                "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
+                "totals": {
+                    "obligation": results["totals"]["obligation_sum"],
+                    "outlay": results["totals"]["outlay_sum"],
+                },
+                "results": list(results["results"].order_by(*self.pagination.robust_order_by_fields))[
+                    self.pagination.lower_limit : self.pagination.upper_limit
+                ],
                 "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
         )
@@ -86,7 +92,12 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
             "face_value_of_loan": query.face_value_of_loan_column,
         }
 
-        return query.queryset.annotate(**annotations).values(*annotations)
+        aggregations = {"obligation_sum": Sum(query.obligation_column), "outlay_sum": Sum(query.outlay_column)}
+
+        return {
+            "results": query.queryset.annotate(**annotations).values(*annotations),
+            "totals": query.queryset.annotate(**annotations).aggregate(**aggregations),
+        }
 
 
 class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterBase):
@@ -118,7 +129,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
 
     def total_result(self, response: dict) -> dict:
         return {
-            "obligations": response.get("obligation_sum", {})["value"],
+            "obligation": response.get("obligation_sum", {})["value"],
             "outlay": response.get("outlay_sum", {})["value"],
         }
 

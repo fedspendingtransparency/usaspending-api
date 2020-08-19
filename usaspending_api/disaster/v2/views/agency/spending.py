@@ -68,12 +68,18 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
         else:
             results = self.total_queryset
 
-        results = list(results.order_by(*self.pagination.robust_order_by_fields))
+        results_list = list(results["results"].order_by(*self.pagination.robust_order_by_fields))
 
         return Response(
             {
-                "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
-                "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
+                "totals": {
+                    "obligation": results["totals"]["obligation_sum"],
+                    "outlay": results["totals"]["outlay_sum"],
+                },
+                "results": results_list[self.pagination.lower_limit : self.pagination.upper_limit],
+                "page_metadata": get_pagination_metadata(
+                    len(results_list), self.pagination.limit, self.pagination.page
+                ),
             }
         )
 
@@ -151,12 +157,17 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
             ),
         }
 
-        return (
-            cte.join(ToptierAgency, toptier_agency_id=cte.col.funding_toptier_agency_id)
-            .with_cte(cte)
-            .annotate(**annotations)
-            .values(*annotations)
-        )
+        aggregations = {
+            "obligation_sum": Sum(cte.col.obligation),
+            "outlay_sum": Sum(cte.col.outlay),
+        }
+
+        queryset = cte.join(ToptierAgency, toptier_agency_id=cte.col.funding_toptier_agency_id).with_cte(cte)
+
+        return {
+            "results": queryset.annotate(**annotations).values(*annotations),
+            "totals": queryset.annotate(**annotations).aggregate(**aggregations),
+        }
 
     @property
     def award_queryset(self):
@@ -194,17 +205,23 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
             "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
         }
 
-        # Assuming it is more performant to fetch all rows once rather than
-        #  run a count query and fetch only a page's worth of results
-        return (
+        aggregations = {
+            "obligation_sum": Sum("obligation"),
+            "outlay_sum": Sum("outlay"),
+        }
+
+        query = (
             cte.join(FinancialAccountsByAwards, treasury_account__funding_toptier_agency_id=cte.col.toptier_agency_id)
             .with_cte(cte)
             .filter(*filters)
             .annotate(agency_id=cte.col.agency_id, toptier_code=cte.col.toptier_code, toptier_name=cte.col.toptier_name)
             .values("agency_id", "toptier_code", "toptier_name")
             .annotate(**annotations)
-            .values(*annotations)
         )
+
+        # Assuming it is more performant to fetch all rows once rather than
+        #  run a count query and fetch only a page's worth of results
+        return {"totals": query.values(*annotations).aggregate(**aggregations), "results": query.values(*annotations)}
 
 
 class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):
@@ -222,7 +239,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
 
     def total_result(self, response: dict) -> dict:
         return {
-            "obligations": response.get("obligation_sum", {})["value"],
+            "obligation": response.get("obligation_sum", {})["value"],
             "outlay": response.get("outlay_sum", {})["value"],
         }
 

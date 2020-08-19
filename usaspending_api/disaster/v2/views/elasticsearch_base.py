@@ -106,7 +106,6 @@ class ElasticsearchDisasterBase(DisasterBase):
                 )
             )
 
-        print(response)
         response["page_metadata"] = get_pagination_metadata(
             self.bucket_count, self.pagination.limit, self.pagination.page
         )
@@ -234,8 +233,8 @@ class ElasticsearchDisasterBase(DisasterBase):
     def query_elasticsearch(self) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
         if search is None:
-            return {"total": {"obligations": 0, "outlay": 0}, "results": []}
+            return {"totals": {"obligation": 0, "outlay": 0}, "results": []}
         response = search.handle_execute()
         total = self.total_result(response.aggs.to_dict())
         results = self.build_elasticsearch_result(response.aggs.to_dict())
-        return {"total": total, "results": results[: self.pagination.limit]}
+        return {"totals": total, "results": results[: self.pagination.limit]}

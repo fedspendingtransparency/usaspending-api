@@ -22,7 +22,7 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
 
     def total_result(self, response: dict) -> dict:
         return {
-            "obligations": response.get("obligation_sum", {})["value"],
+            "obligation": response.get("obligation_sum", {})["value"],
             "outlay": response.get("outlay_sum", {})["value"],
         }
 
