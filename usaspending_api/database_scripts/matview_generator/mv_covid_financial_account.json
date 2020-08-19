@@ -84,5 +84,11 @@
     "  OR financial_account_records.obligation != 0",
     "  OR awards.total_loan_value != 0"
   ],
-  "indexes": []
+  "indexes": [
+    {
+      "name": "award_id",
+      "unique": true,
+      "columns": [{"name": "award_id"}]
+    }
+  ]
 }
