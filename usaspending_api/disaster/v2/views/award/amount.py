@@ -36,15 +36,15 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             raise UnprocessableEntityException("Cannot provide both 'award_type_codes' and 'award_type'")
 
         if self.count_only:
-            return Response({"count": self.queryset["award_count"]})
+            return Response({"count": self.aggregation["award_count"]})
         else:
-            return Response(self.queryset)
+            return Response(self.aggregation)
 
     @property
-    def queryset(self):
-        return self._file_d_queryset() if self.award_type_codes else self._file_c_queryset()
+    def aggregation(self):
+        return self._file_d_aggregation() if self.award_type_codes else self._file_c_aggregation()
 
-    def _file_d_queryset(self):
+    def _file_d_aggregation(self):
         return (
             CovidFinancialAccountMatview.objects.annotate(cast_def_codes=Cast("def_codes", ArrayField(TextField())))
             .filter(type__in=self.award_type_codes, cast_def_codes__overlap=self.def_codes)
@@ -56,7 +56,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             )
         )
 
-    def _file_c_queryset(self):
+    def _file_c_aggregation(self):
         filters = [
             self.all_closed_defc_submissions,
             self.has_award_of_classification,
