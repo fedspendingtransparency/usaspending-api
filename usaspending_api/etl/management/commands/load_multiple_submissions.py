@@ -9,6 +9,7 @@ from django.utils.crypto import get_random_string
 from usaspending_api.common.helpers.date_helper import now, datetime_command_line_argument_type
 from usaspending_api.etl.submission_loader_helpers.final_of_fy import populate_final_of_fy
 from usaspending_api.etl.submission_loader_helpers.submission_ids import get_new_or_updated_submission_ids
+from usaspending_api.etl.submission_loader_helpers.zero_missing_award_outlays import set_missing_award_outlays_to_zero
 from usaspending_api.submissions import dabs_loader_queue_helpers as dlqh
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -34,6 +35,7 @@ class Command(BaseCommand):
     submission_ids = None
     incremental = False
     start_datetime = None
+    zero_missing_award_outlays = False
     report_queue_status_only = False
     processor_id = None
     heartbeat_timer = None
@@ -75,6 +77,14 @@ class Command(BaseCommand):
             ),
         )
         mutually_exclusive_group.add_argument(
+            "--zero-missing-award-outlays",
+            action="store_true",
+            help=(
+                "Sets outlays in Elasticsearch to zero for awards not included in most recent File "
+                "C submission."
+            ),
+        )
+        mutually_exclusive_group.add_argument(
             "--report-queue-status-only",
             action="store_true",
             help="Just reports the queue status.  Nothing is loaded.",
@@ -108,6 +118,10 @@ class Command(BaseCommand):
         if self.submission_ids:
             self.add_specific_submissions_to_queue()
             processed_count = self.load_specific_submissions()
+        elif self.zero_missing_award_outlays:
+            processed_count = 0
+            set_missing_award_outlays_to_zero()
+            logger.info("Ready to zero outlays")
         else:
             since_datetime = self.start_datetime or self.calculate_load_submissions_since_datetime()
             self.add_submissions_since_datetime_to_queue(since_datetime)
@@ -128,6 +142,7 @@ class Command(BaseCommand):
         self.submission_ids = options.get("submission_ids")
         self.incremental = options.get("incremental")
         self.start_datetime = options.get("start_datetime")
+        self.zero_missing_award_outlays = options.get("zero_missing_award_outlays")
         self.report_queue_status_only = options.get("report_queue_status_only")
         self.file_c_chunk_size = options.get("file_c_chunk_size")
         self.processor_id = f"{now()}/{get_random_string()}"
