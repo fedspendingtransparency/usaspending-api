@@ -23,6 +23,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
 
@@ -30,6 +31,10 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
     + Body
 
             {
+                "totals": {
+                    "obligation": 364037369840.58,
+                    "outlay": 290416885040.71
+                },
                 "results": [
                     {
                         "id": 121,
@@ -108,6 +113,9 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
         + `face_value_of_loan`
         + `obligation`
         + `outlay`
+
+## Totals (object)
++ 
 
 ## Result (object)
 + `id` (required, string)

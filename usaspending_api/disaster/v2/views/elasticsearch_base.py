@@ -236,5 +236,6 @@ class ElasticsearchDisasterBase(DisasterBase):
             return {"totals": {"obligation": 0, "outlay": 0}, "results": []}
         response = search.handle_execute()
         total = self.total_result(response.aggs.to_dict())
+        total["awards"] = search.count()
         results = self.build_elasticsearch_result(response.aggs.to_dict())
         return {"totals": total, "results": results[: self.pagination.limit]}

@@ -2,7 +2,7 @@ import logging
 
 from decimal import Decimal
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import F, Value, IntegerField, Subquery, OuterRef, Sum
+from django.db.models import F, Value, IntegerField, Subquery, OuterRef, Sum, Count
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from typing import List
@@ -59,6 +59,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
         return Response(
             {
                 "totals": {
+                    "awards": results["totals"]["award_count"],
                     "obligation": results["totals"]["obligation_sum"],
                     "outlay": results["totals"]["outlay_sum"],
                 },
@@ -92,7 +93,11 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
             "face_value_of_loan": query.face_value_of_loan_column,
         }
 
-        aggregations = {"obligation_sum": Sum(query.obligation_column), "outlay_sum": Sum(query.outlay_column)}
+        aggregations = {
+            "award_count": Count("id"),
+            "obligation_sum": Sum(query.obligation_column),
+            "outlay_sum": Sum(query.outlay_column),
+        }
 
         return {
             "results": query.queryset.annotate(**annotations).values(*annotations),

@@ -30,6 +30,10 @@ Returns loan spending details of recipients receiving supplemental funding budge
     + Body
 
             {
+                "totals": {
+                    "obligation": 364037369840.58,
+                    "outlay": 290416885040.71
+                },
                 "results": [
                     {
                         "code": "987654321",

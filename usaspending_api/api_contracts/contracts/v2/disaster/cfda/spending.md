@@ -35,6 +35,10 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
     + Body
 
             {
+                "totals": {
+                    "obligation": 364037369840.58,
+                    "outlay": 290416885040.71
+                },
                 "results": [
                     {
                         "code": "20.200",

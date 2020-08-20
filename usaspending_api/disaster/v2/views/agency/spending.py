@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func
+from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func, Count
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from django_cte import With
@@ -73,6 +73,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
         return Response(
             {
                 "totals": {
+                    "awards": results["totals"]["award_count"],
                     "obligation": results["totals"]["obligation_sum"],
                     "outlay": results["totals"]["outlay_sum"],
                 },
@@ -158,6 +159,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
         }
 
         aggregations = {
+            "award_count": Count("id"),
             "obligation_sum": Sum(cte.col.obligation),
             "outlay_sum": Sum(cte.col.outlay),
         }
@@ -206,6 +208,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
         }
 
         aggregations = {
+            "award_count": Count("id"),
             "obligation_sum": Sum("obligation"),
             "outlay_sum": Sum("outlay"),
         }

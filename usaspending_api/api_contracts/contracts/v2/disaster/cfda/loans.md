@@ -30,6 +30,10 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
     + Body
 
             {
+                "totals": {
+                    "obligation": 364037369840.58,
+                    "outlay": 290416885040.71
+                },
                 "results": [
                     {
                         "code": "20.200",

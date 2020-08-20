@@ -35,6 +35,10 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
     + Body
 
             {
+                "totals": {
+                    "obligation": 364037369840.58,
+                    "outlay": 290416885040.71
+                },
                 "results": [
                     {
                         "id": 168,
