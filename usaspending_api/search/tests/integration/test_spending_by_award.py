@@ -1330,3 +1330,32 @@ def test_search_after(client, monkeypatch, spending_by_award_test_data, elastics
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
     assert resp.json().get("results") == expected_result, "Award Type Code filter does not match expected result"
+
+
+@pytest.mark.django_db
+def test_no_0_covid_amounts(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "def_codes": ["L"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "desc",
+                "subawards": False,
+            }
+        ),
+    )
+    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results") == expected_result, "DEFC filter does not match expected result"
