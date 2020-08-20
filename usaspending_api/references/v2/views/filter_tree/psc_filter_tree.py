@@ -24,7 +24,7 @@ class PSCFilterTree(FilterTree):
         if len(tiered_keys) == 0:
             return self._toptier_search()
         elif len(tiered_keys) == 1:
-            return self._psc_from_group(tiered_keys[0], filter_string)
+            return self._psc_from_group(tiered_keys[0])
         else:
             return self._psc_from_parent(tiered_keys[-1], filter_string)
 
@@ -40,7 +40,7 @@ class PSCFilterTree(FilterTree):
     def _toptier_search(self):
         return PSC_GROUPS.keys()
 
-    def _psc_from_group(self, group, filter_string: str):
+    def _psc_from_group(self, group):
         # The default regex value will match nothing
         filters = [Q(code__iregex=PSC_GROUPS.get(group, {}).get("pattern") or "(?!)")]
         return [{"id": object.code, "description": object.description} for object in PSC.objects.filter(*filters)]
