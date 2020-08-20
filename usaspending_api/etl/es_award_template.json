@@ -329,6 +329,7 @@
         "recipient_location_county_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
+          "null_value": "NULL",
           "fields": {
             "hash": {
               "type": "murmur3"
@@ -338,6 +339,7 @@
         "recipient_location_congressional_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
+          "null_value": "NULL",
           "fields": {
             "hash": {
               "type": "murmur3"
@@ -347,6 +349,7 @@
         "recipient_location_state_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
+          "null_value": "NULL",
           "fields": {
             "hash": {
               "type": "murmur3"
@@ -402,6 +405,36 @@
           "fields": {
             "keyword": {
               "type": "keyword"
+            }
+          }
+        },
+        "pop_county_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "null_value": "NULL",
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
+        "pop_congressional_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "null_value": "NULL",
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
+        "pop_state_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "null_value": "NULL",
+          "fields": {
+            "hash": {
+              "type": "murmur3"
             }
           }
         },

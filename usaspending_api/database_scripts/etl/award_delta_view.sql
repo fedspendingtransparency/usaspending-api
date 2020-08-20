@@ -165,6 +165,40 @@ SELECT
     ELSE NULL
   END AS recipient_location_state_agg_key,
 
+  CASE
+    WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_county_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', vw_es_award_search.pop_country_code,
+        '","state_code":"', vw_es_award_search.pop_state_code,
+        '","state_fips":"', POP_STATE_LOOKUP.fips,
+        '","county_code":"', vw_es_award_search.pop_county_code,
+        '","county_name":"', vw_es_award_search.pop_county_name,
+        '","population":"', POP_COUNTY_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS pop_county_agg_key,
+  CASE
+    WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_congressional_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', vw_es_award_search.pop_country_code,
+        '","state_code":"', vw_es_award_search.pop_state_code,
+        '","state_fips":"', POP_STATE_LOOKUP.fips,
+        '","congressional_code":"', vw_es_award_search.pop_congressional_code,
+        '","population":"', POP_DISTRICT_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS pop_congressional_agg_key,
+  CASE
+    WHEN vw_es_award_search.pop_state_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', vw_es_award_search.pop_country_code,
+        '","state_code":"', vw_es_award_search.pop_state_code,
+         '","state_name":"', POP_STATE_LOOKUP.name,
+        '","population":"', POP_STATE_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS pop_state_agg_key,
+
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
   DEFC.disaster_emergency_fund_codes as disaster_emergency_fund_codes,
@@ -190,6 +224,14 @@ LEFT JOIN LATERAL (
   GROUP BY recipient_hash, recipient_unique_id
   LIMIT 1
 ) recipient_profile ON TRUE
+LEFT JOIN (
+  SELECT   code, name, fips, MAX(id)
+  FROM     state_data
+  GROUP BY code, name, fips
+) POP_STATE_LOOKUP ON (POP_STATE_LOOKUP.code = vw_es_award_search.pop_state_code)
+LEFT JOIN ref_population_county POP_STATE_POPULATION ON (POP_STATE_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_STATE_POPULATION.county_number = '000')
+LEFT JOIN ref_population_county POP_COUNTY_POPULATION ON (POP_COUNTY_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_COUNTY_POPULATION.county_number = vw_es_award_search.pop_county_code)
+LEFT JOIN ref_population_cong_district POP_DISTRICT_POPULATION ON (POP_DISTRICT_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_DISTRICT_POPULATION.congressional_district = vw_es_award_search.pop_congressional_code)
 LEFT JOIN (
   SELECT   code, name, fips, MAX(id)
   FROM     state_data

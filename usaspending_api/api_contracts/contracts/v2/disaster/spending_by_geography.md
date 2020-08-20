@@ -29,6 +29,12 @@ This endpoint provides geographical spending information from emergency/disaster
                 + `obligation`
                 + `outlay`
                 + `face_value_of_loan`
+        + `scope` (optional, enum[string])
+            When fetching transactions, use the primary place of performance or recipient location
+            + Default: `recipient_location`
+            + Members
+                + `place_of_performance`
+                + `recipient_location`
 
     + Body
 
@@ -54,8 +60,6 @@ This endpoint provides geographical spending information from emergency/disaster
                 + `outlay`
                 + `face_value_of_loan`
         + `results` (array[GeographyTypeResult], fixed-type)
-        + `messages` (optional, array[string], fixed-type)
-            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
             {
