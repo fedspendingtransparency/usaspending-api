@@ -21,6 +21,7 @@ def store_ids_in_file(id_iter: List, file_name: str = "temp_file", is_numeric: b
                 id_characters = regex(r"\d+", str(id_string)).group()
             elif isinstance(id_string, list):
                 id_characters = "\n".join([str(id) for id in id_string])
+                total_ids += len(id_string) - 1  # count all ids in the list, minus the 1 already added above
             else:
                 id_characters = id_string
             f.writelines("{}\n".format(id_characters))

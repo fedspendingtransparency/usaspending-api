@@ -181,6 +181,14 @@ def spending_by_award_test_data():
         disaster_emergency_fund=defc,
         submission=sa2,
     )
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=2,
+        transaction_obligated_amount=0,
+        gross_outlay_amount_by_award_cpe=0,
+        disaster_emergency_fund=defc,
+        submission=sa2,
+    )
 
     # Subtier Agency
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
