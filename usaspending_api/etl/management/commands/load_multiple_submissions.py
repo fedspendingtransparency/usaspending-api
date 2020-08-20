@@ -79,10 +79,7 @@ class Command(BaseCommand):
         mutually_exclusive_group.add_argument(
             "--zero-missing-award-outlays",
             action="store_true",
-            help=(
-                "Sets outlays in Elasticsearch to zero for awards not included in most recent File "
-                "C submission."
-            ),
+            help=("Sets outlays in Elasticsearch to zero for awards not included in most recent File " "C submission."),
         )
         mutually_exclusive_group.add_argument(
             "--report-queue-status-only",
