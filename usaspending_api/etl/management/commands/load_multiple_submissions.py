@@ -34,7 +34,6 @@ class Command(BaseCommand):
     submission_ids = None
     incremental = False
     start_datetime = None
-    zero_missing_award_outlays = False
     report_queue_status_only = False
     processor_id = None
     heartbeat_timer = None
@@ -129,7 +128,6 @@ class Command(BaseCommand):
         self.submission_ids = options.get("submission_ids")
         self.incremental = options.get("incremental")
         self.start_datetime = options.get("start_datetime")
-        self.zero_missing_award_outlays = options.get("zero_missing_award_outlays")
         self.report_queue_status_only = options.get("report_queue_status_only")
         self.file_c_chunk_size = options.get("file_c_chunk_size")
         self.processor_id = f"{now()}/{get_random_string()}"
