@@ -11,7 +11,7 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 UNREPORTED_DATA_NAME = "Unreported Data"
 VALID_UNREPORTED_DATA_TYPES = ["agency", "budget_function", "object_class"]
-VALID_UNREPORTED_FILTERS = ["fy", "quarter"]
+VALID_UNREPORTED_FILTERS = ["fy", "quarter", "period"]
 
 
 def get_unreported_data_obj(
@@ -103,8 +103,10 @@ def type_filter(_type, filters, limit=None):
     if "fy" not in filters:
         raise InvalidParameterException('Missing required parameter "fy".')
 
-    if "quarter" not in filters:
-        raise InvalidParameterException('Missing required parameter "quarter".')
+    if "quarter" not in filters and "period" not in filters:
+        raise InvalidParameterException('Missing required parameter, provide either "period" or "quarter".')
+
+    time_unit = "quarter" if "quarter" in filters else "period"
 
     try:
         fiscal_year = int(filters["fy"])
@@ -113,25 +115,65 @@ def type_filter(_type, filters, limit=None):
     except ValueError:
         raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
 
-    if filters["quarter"] not in ("1", "2", "3", "4", 1, 2, 3, 4):
+    if time_unit == "quarter" and filters["quarter"] not in ("1", "2", "3", "4", 1, 2, 3, 4):
         raise InvalidParameterException("Incorrect value provided for quarter parameter. Must be between 1 and 4")
-    fiscal_quarter = int(filters["quarter"])
 
-    submission_window = DABSSubmissionWindowSchedule.objects.filter(
-        submission_fiscal_year=fiscal_year,
-        submission_fiscal_quarter=fiscal_quarter,
-        is_quarter=True,
-        submission_reveal_date__lte=datetime.now(timezone.utc),
-    ).first()
+    if time_unit == "period" and filters["period"] not in (
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+    ):
+        raise InvalidParameterException("Incorrect value provided for period parameter. Must be between 1 and 12")
+
+    if time_unit == "period":
+        fiscal_unit = int(filters["period"])
+    else:
+        fiscal_unit = int(filters["quarter"])
+
+    if time_unit == "quarter":
+        submission_window = DABSSubmissionWindowSchedule.objects.filter(
+            submission_fiscal_year=fiscal_year,
+            submission_fiscal_quarter=fiscal_unit,
+            is_quarter=True,
+            submission_reveal_date__lte=datetime.now(timezone.utc),
+        ).first()
+    else:
+        submission_window = DABSSubmissionWindowSchedule.objects.filter(
+            submission_fiscal_year=fiscal_year,
+            submission_fiscal_month=fiscal_unit,
+            submission_reveal_date__lte=datetime.now(timezone.utc),
+        ).first()
     if submission_window is None:
         return {"total": None}
 
     fiscal_date = submission_window.period_end_date
     fiscal_period = submission_window.submission_fiscal_month
+    # fiscal_quarter = submission_window.submission_fiscal_quarter
 
     # transaction_obligated_amount is summed across all periods in the year up to and including the requested quarter.
     alt_set = FinancialAccountsByAwards.objects.filter(
-        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_quarter__lte=fiscal_quarter,
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period__lte=fiscal_period,
     ).annotate(amount=Sum("transaction_obligated_amount"))
 
     # obligations_incurred_by_program_object_class_cpe is picked from the final period of the quarter.
