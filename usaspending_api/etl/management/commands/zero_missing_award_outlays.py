@@ -120,8 +120,8 @@ class Command(BaseCommand):
 
     help = (
         "This command checks for awards with Covid data that are not present in the latest "
-        "File C submissions or are present without a Covid DEFC. The outlay for these awards "
-        "is then set to zero in Elasticsearch."
+        "File C submissions or are present without a Covid DEFC. The Covid outlay for these "
+        "awards is then set to zero in Elasticsearch."
     )
 
     def handle(self, *args, **options):
