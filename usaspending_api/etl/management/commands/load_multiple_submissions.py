@@ -9,7 +9,6 @@ from django.utils.crypto import get_random_string
 from usaspending_api.common.helpers.date_helper import now, datetime_command_line_argument_type
 from usaspending_api.etl.submission_loader_helpers.final_of_fy import populate_final_of_fy
 from usaspending_api.etl.submission_loader_helpers.submission_ids import get_new_or_updated_submission_ids
-from usaspending_api.etl.submission_loader_helpers.zero_missing_award_outlays import set_missing_award_outlays_to_zero
 from usaspending_api.submissions import dabs_loader_queue_helpers as dlqh
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -77,11 +76,6 @@ class Command(BaseCommand):
             ),
         )
         mutually_exclusive_group.add_argument(
-            "--zero-missing-award-outlays",
-            action="store_true",
-            help=("Sets outlays in Elasticsearch to zero for awards not included in most recent File " "C submission."),
-        )
-        mutually_exclusive_group.add_argument(
             "--report-queue-status-only",
             action="store_true",
             help="Just reports the queue status.  Nothing is loaded.",
@@ -105,10 +99,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.record_options(options)
-
-        if self.zero_missing_award_outlays:
-            set_missing_award_outlays_to_zero()
-            return
 
         self.report_queue_status()
         if self.report_queue_status_only:

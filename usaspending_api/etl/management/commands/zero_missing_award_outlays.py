@@ -2,6 +2,7 @@ import logging
 
 from django.db import connection
 from django.conf import settings
+from django.core.management.base import BaseCommand
 from elasticsearch_dsl import UpdateByQuery, Q as ES_Q
 
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
@@ -112,53 +113,58 @@ ORDER BY dropped_awards.toptier_code, dropped_awards.submission_id DESC
 ;
 """
 
-FETCH_COUNT = 50000
 
+class Command(BaseCommand):
 
-def set_missing_award_outlays_to_zero():
-    """
-    This method checks for awards with Covid data that are not present in the latest
-    File C submissions. The outlay for these awards is then set to zero in elasticsearch.
-    """
+    FETCH_COUNT = 50000
 
-    # Initialize client to connect to Elasticsearch
-    es_client = instantiate_elasticsearch_client()
-
-    # Open connection to database
-    with connection.cursor() as cursor:
-
-        # Queries for Covid Awards not present in latest File C Submission
-        cursor.execute(MISSING_COVID_AWARD_SQL)
-
-        logger.info("Found {} Covid awards without entry in latest File C Submission".format(cursor.rowcount))
-
-        rows = cursor.fetchmany(FETCH_COUNT)
-        while len(rows) > 0:
-            award_ids = [row[1] for row in rows]
-
-            # Sets the outlays of these awards to zero in Elasticsearch
-            set_elasticsearch_covid_outlays_to_zero(es_client, award_ids)
-            rows = cursor.fetchmany(FETCH_COUNT)
-
-
-def set_elasticsearch_covid_outlays_to_zero(es_client, award_ids: list):
-    """
-    Sets 'total_covid_outlay' to zero in Elasticsearch (when not zero) for a provided
-    list of award_ids.
-    :param es_client: Client used to connect to Elasticsearch
-    :param award_ids: List of award_ids to set outlays to zero in Elasticsearch
-    """
-
-    # Creates an Elasticsearch Query criteria for the UpdateByQuery call
-    query = (
-        ES_Q("range", **{"total_covid_outlay": {"gt": 0}}) | ES_Q("range", **{"total_covid_outlay": {"lt": 0}})
-    ) & ES_Q("terms", **{"award_id": award_ids})
-
-    # Sets total_covid_outlay to zero based on the above Query criteria
-    ubq = (
-        UpdateByQuery(using=es_client, index=settings.ES_AWARDS_WRITE_ALIAS)
-        .script(source="ctx._source['total_covid_outlay'] = 0", lang="painless")
-        .query(query)
+    help = (
+        "This command checks for awards with Covid data that are not present in the latest "
+        "File C submissions or are present without a Covid DEFC. The outlay for these awards "
+        "is then set to zero in Elasticsearch."
     )
-    response = ubq.execute()
-    logger.info("Updated {} Awards in Elasticsearch, setting 'total_covid_outlay' to zero".format(response["updated"]))
+
+    def handle(self, *args, **options):
+
+        # Initialize client to connect to Elasticsearch
+        es_client = instantiate_elasticsearch_client()
+
+        # Open connection to database
+        with connection.cursor() as cursor:
+
+            # Queries for Covid Awards not present in latest File C Submission
+            cursor.execute(MISSING_COVID_AWARD_SQL)
+
+            logger.info("Found {} Covid awards without entry in latest File C Submission".format(cursor.rowcount))
+
+            rows = cursor.fetchmany(self.FETCH_COUNT)
+            while len(rows) > 0:
+                award_ids = [row[1] for row in rows]
+
+                # Sets the outlays of these awards to zero in Elasticsearch
+                self.set_elasticsearch_covid_outlays_to_zero(es_client, award_ids)
+                rows = cursor.fetchmany(self.FETCH_COUNT)
+
+    def set_elasticsearch_covid_outlays_to_zero(self, es_client, award_ids: list):
+        """
+        Sets 'total_covid_outlay' to zero in Elasticsearch (when not zero) for a provided
+        list of award_ids.
+        :param es_client: Client used to connect to Elasticsearch
+        :param award_ids: List of award_ids to set outlays to zero in Elasticsearch
+        """
+
+        # Creates an Elasticsearch Query criteria for the UpdateByQuery call
+        query = (
+            ES_Q("range", **{"total_covid_outlay": {"gt": 0}}) | ES_Q("range", **{"total_covid_outlay": {"lt": 0}})
+        ) & ES_Q("terms", **{"award_id": award_ids})
+
+        # Sets total_covid_outlay to zero based on the above Query criteria
+        ubq = (
+            UpdateByQuery(using=es_client, index=settings.ES_AWARDS_WRITE_ALIAS)
+            .script(source="ctx._source['total_covid_outlay'] = 0", lang="painless")
+            .query(query)
+        )
+        response = ubq.execute()
+        logger.info(
+            "Updated {} Awards in Elasticsearch, setting 'total_covid_outlay' to zero".format(response["updated"])
+        )
