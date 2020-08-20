@@ -109,6 +109,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.record_options(options)
 
+        if self.zero_missing_award_outlays:
+            set_missing_award_outlays_to_zero()
+            return
+
         self.report_queue_status()
         if self.report_queue_status_only:
             return
@@ -118,10 +122,6 @@ class Command(BaseCommand):
         if self.submission_ids:
             self.add_specific_submissions_to_queue()
             processed_count = self.load_specific_submissions()
-        elif self.zero_missing_award_outlays:
-            processed_count = 0
-            set_missing_award_outlays_to_zero()
-            logger.info("Ready to zero outlays")
         else:
             since_datetime = self.start_datetime or self.calculate_load_submissions_since_datetime()
             self.add_submissions_since_datetime_to_queue(since_datetime)

@@ -6,9 +6,9 @@ from elasticsearch_dsl import UpdateByQuery, Q as ES_Q
 
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("script")
 
-sql_query = """
+MISSING_COVID_AWARD_SQL = """
 -- Find ALL/ANY award_id of awards linked to File C records since COVID began (2020-04-01)
 -- Of those, keep the ones that are NOT linked to any File C record in the latest closed periods
 -- ... so that we can explicitly update their Outlay to $0 in Elasticsearch
@@ -128,7 +128,7 @@ def set_missing_award_outlays_to_zero():
     with connection.cursor() as cursor:
 
         # Queries for Covid Awards not present in latest File C Submission
-        cursor.execute(sql_query)
+        cursor.execute(MISSING_COVID_AWARD_SQL)
 
         logger.info("Found {} Covid awards without entry in latest File C Submission".format(cursor.rowcount))
 
@@ -137,11 +137,17 @@ def set_missing_award_outlays_to_zero():
             award_ids = [row[1] for row in rows]
 
             # Sets the outlays of these awards to zero in Elasticsearch
-            update_elasticsearch_outlays(es_client, award_ids)
+            set_elasticsearch_covid_outlays_to_zero(es_client, award_ids)
             rows = cursor.fetchmany(FETCH_COUNT)
 
 
-def update_elasticsearch_outlays(es_client, award_ids: list):
+def set_elasticsearch_covid_outlays_to_zero(es_client, award_ids: list):
+    """
+    Sets 'total_covid_outlay' to zero in Elasticsearch (when not zero) for a provided
+    list of award_ids.
+    :param es_client: Client used to connect to Elasticsearch
+    :param award_ids: List of award_ids to set outlays to zero in Elasticsearch
+    """
 
     # Creates an Elasticsearch Query criteria for the UpdateByQuery call
     query = (
