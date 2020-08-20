@@ -161,4 +161,4 @@ def set_elasticsearch_covid_outlays_to_zero(es_client, award_ids: list):
         .query(query)
     )
     response = ubq.execute()
-    logger.info("Updated {} Awards in Elasticsearch, setting 'total_covid_outlay' to zero".format(response['updated']))
+    logger.info("Updated {} Awards in Elasticsearch, setting 'total_covid_outlay' to zero".format(response["updated"]))
