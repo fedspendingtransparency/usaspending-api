@@ -29,7 +29,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--load_type",
+            "--load-type",
             type=str,
             help="Select which type of index to configure, current options are awards or transactions",
             choices=["transactions", "awards"],
