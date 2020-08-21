@@ -3,8 +3,8 @@ import pytest
 from datetime import datetime, timezone, date
 from decimal import Decimal
 from django.core.management import call_command, CommandError
-from django.db import connections, DEFAULT_DB_ALIAS, ProgrammingError
-from django.test import override_settings, TransactionTestCase
+from django.db import connections, DEFAULT_DB_ALIAS
+from django.test import TransactionTestCase
 from model_mommy import mommy
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -15,7 +15,6 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 
 @pytest.mark.usefixtures("broker_db_setup", "broker_server_dblink_setup")
-@override_settings(ENABLE_CARES_ACT_FEATURES=True)
 class TestWithMultipleDatabases(TransactionTestCase):
     """
     Super unfortunate, but because we're using a dblink these data will need to actually be committed to
@@ -62,33 +61,6 @@ class TestWithMultipleDatabases(TransactionTestCase):
 
         connection = connections["data_broker"]
         with connection.cursor() as cursor:
-
-            # ENABLE_CARES_ACT_FEATURES: Once disaster_emergency_fund_code has rolled out in Broker, remove this
-            # hack.  It just ensures the column exists for USAspending tests.  Once rolled out in Broker this
-            # should no longer be necessary.
-            try:
-                cursor.execute(
-                    "alter table certified_object_class_program_activity add column disaster_emergency_fund_code text"
-                )
-                self._added_file_b_defc = True
-            except ProgrammingError:
-                self._added_file_b_defc = False
-
-            try:
-                cursor.execute("alter table certified_award_financial add column disaster_emergency_fund_code text")
-                self._added_file_c_defc = True
-            except ProgrammingError:
-                self._added_file_c_defc = False
-
-            # ENABLE_CARES_ACT_FEATURES: Once publish_history has rolled out in Broker, remove this
-            # hack.  It just ensures the table exists for USAspending tests.  Once rolled out in Broker this
-            # should no longer be necessary.
-            try:
-                cursor.execute("create table publish_history as select * from certify_history")
-                cursor.execute("alter table publish_history rename column certify_history_id to publish_history_id")
-                self._added_publish_history = True
-            except ProgrammingError:
-                self._added_publish_history = False
 
             self._nuke_broker_data()
 
@@ -283,25 +255,6 @@ class TestWithMultipleDatabases(TransactionTestCase):
 
     def tearDown(self):
         self._nuke_broker_data()
-        connection = connections["data_broker"]
-        with connection.cursor() as cursor:
-
-            # ENABLE_CARES_ACT_FEATURES: Once disaster_emergency_fund_code has rolled out in Broker, remove this
-            # hack.  It just removes the column if we added it in setUp.  Once rolled out in Broker this
-            # should no longer be necessary.
-            if self._added_file_b_defc:
-                cursor.execute(
-                    "alter table certified_object_class_program_activity drop column disaster_emergency_fund_code"
-                )
-
-            if self._added_file_c_defc:
-                cursor.execute("alter table certified_award_financial drop column disaster_emergency_fund_code")
-
-            # ENABLE_CARES_ACT_FEATURES: Once publish_history has rolled out in Broker, remove this
-            # hack.  It just removes the table if we added it in setUp.  Once rolled out in Broker this
-            # should no longer be necessary.
-            if self._added_publish_history:
-                cursor.execute("drop table publish_history")
 
     def test_all_the_things(self):
         """

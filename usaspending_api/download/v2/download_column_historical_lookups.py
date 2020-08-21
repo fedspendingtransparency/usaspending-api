@@ -13,7 +13,6 @@ tail -n +3 'usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D2-Award (Financ
 d2_columns.csv
 """
 from collections import OrderedDict
-from django.conf import settings
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 
 
@@ -1950,22 +1949,6 @@ query_paths = {
         )
     },
 }
-
-# check the ENABLE_CARES_ACT_FEATURES and delete keys if necessary DEV-5180
-if settings.ENABLE_CARES_ACT_FEATURES is False:
-    query_paths["object_class_program_activity"]["treasury_account"].pop("disaster_emergency_fund_code")
-    query_paths["object_class_program_activity"]["treasury_account"].pop("disaster_emergency_fund_name")
-
-    query_paths["object_class_program_activity"]["federal_account"].pop("disaster_emergency_fund_code")
-    query_paths["object_class_program_activity"]["federal_account"].pop("disaster_emergency_fund_name")
-
-    query_paths["award_financial"]["treasury_account"].pop("disaster_emergency_fund_code")
-    query_paths["award_financial"]["treasury_account"].pop("disaster_emergency_fund_name")
-    query_paths["award_financial"]["treasury_account"].pop("gross_outlay_amount_fyb_to_period_end")
-
-    query_paths["award_financial"]["federal_account"].pop("disaster_emergency_fund_code")
-    query_paths["award_financial"]["federal_account"].pop("disaster_emergency_fund_name")
-    query_paths["award_financial"]["federal_account"].pop("gross_outlay_amount_fyb_to_period_end")
 
 
 # IDV Orders are nearly identical to awards but start from the Awards table
