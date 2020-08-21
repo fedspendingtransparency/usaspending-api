@@ -12,7 +12,7 @@ class TASFilterTree(FilterTree):
         if len(tiered_keys) == 1:
             return self._fa_given_agency(tiered_keys[0], filter_search)
         if len(tiered_keys) == 2:
-            return self._tas_given_fa(tiered_keys[0], tiered_keys[1])
+            return self._tas_given_fa(tiered_keys[0], tiered_keys[1], filter_search)
         return []
 
     def _toptier_search(self):
@@ -37,20 +37,24 @@ class TASFilterTree(FilterTree):
 
     def _fa_given_agency(self, agency, filter_string: str):
         filters = [Q(has_faba=True), Q(parent_toptier_agency__toptier_code=agency)]
-        if filter_string:
-            filters.append(
-                Q(Q(federal_account_code__icontains=filter_string) | Q(account_title__icontains=filter_string))
-            )
+        # if filter_string:
+        #     filters.append(
+        #         Q(Q(federal_account_code__icontains=filter_string) | Q(account_title__icontains=filter_string))
+        #     )
         return FederalAccount.objects.annotate(
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk")))
         ).filter(*filters)
 
-    def _tas_given_fa(self, agency, fed_account):
+    def _tas_given_fa(self, agency, fed_account, filter_string: str):
         filters = [
             Q(has_faba=True),
             Q(federal_account__federal_account_code=fed_account),
             Q(federal_account__parent_toptier_agency__toptier_code=agency),
         ]
+        if filter_string:
+            filters.append(
+                Q(Q(tas_rendering_label__icontains=filter_string) | Q(account_title__icontains=filter_string))
+            )
         return TreasuryAppropriationAccount.objects.annotate(
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
         ).filter(*filters)

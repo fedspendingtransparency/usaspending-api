@@ -56,7 +56,6 @@ class FilterTree(metaclass=ABCMeta):
             self._linked_node_from_data(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
             for elem in raw_children
         ]
-
         if child_layers:
             children = temp_children
         else:

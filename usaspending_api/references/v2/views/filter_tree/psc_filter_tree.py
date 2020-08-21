@@ -2,7 +2,6 @@ import re
 
 from django.db.models import Q
 from string import ascii_uppercase, digits
-
 from usaspending_api.references.models import PSC
 from usaspending_api.references.v2.views.filter_tree.filter_tree import UnlinkedNode, FilterTree
 
@@ -21,6 +20,7 @@ class PSCFilterTree(FilterTree):
     def raw_search(self, tiered_keys, filter_string=None):
         if not self._path_is_valid(tiered_keys):
             return []
+
         if len(tiered_keys) == 0:
             return self._toptier_search()
         elif len(tiered_keys) == 1:
