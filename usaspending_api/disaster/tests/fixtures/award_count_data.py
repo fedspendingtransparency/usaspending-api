@@ -145,7 +145,7 @@ def award_count_sub_schedule():
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
         submission_fiscal_month=8,
-        submission_reveal_date="2022-5-15",
+        submission_reveal_date="2020-5-15",
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -153,7 +153,7 @@ def award_count_sub_schedule():
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
         submission_fiscal_month=8,
-        submission_reveal_date="2022-5-15",
+        submission_reveal_date="2020-5-15",
     )
 
 
