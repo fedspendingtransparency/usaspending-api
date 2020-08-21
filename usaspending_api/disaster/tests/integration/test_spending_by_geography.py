@@ -4,12 +4,15 @@ import pytest
 from rest_framework import status
 
 from usaspending_api.awards.v2.lookups.lookups import grant_type_mapping, contract_type_mapping, loan_type_mapping
-from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 def _get_shape_code_for_sort(result_dict):
     return result_dict["shape_code"]
+
+
+def _get_amount_for_sort(result_dict):
+    return result_dict["amount"]
 
 
 def post(client, **kwargs):
@@ -30,6 +33,8 @@ def post(client, **kwargs):
         request_body["geo_layer_filters"] = kwargs["geo_layer_filters"]
     if kwargs.get("spending_type"):
         request_body["spending_type"] = kwargs["spending_type"]
+    if kwargs.get("scope"):
+        request_body["scope"] = kwargs["scope"]
 
     resp = client.post(url, content_type="application/json", data=json.dumps(request_body))
     return resp
@@ -66,7 +71,7 @@ def test_spending_by_geography_failure_with_invalid_fields(
     # Test invalid "geo_layer" string
     resp = post(client, def_codes=["L"], geo_layer="NOT VALID", geo_layer_filters=["SC-01"], spending_type="obligation")
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp.data["detail"] == "Field 'geo_layer' is outside valid values ['state', 'county', 'district']"
+    assert resp.data["detail"] == "Field 'geo_layer' is outside valid values ['county', 'district', 'state']"
 
     # Test invalid "spending_type" string
     resp = post(client, def_codes=["L"], geo_layer="state", geo_layer_filters=["SC-01"], spending_type="NOT VALID")
@@ -88,6 +93,11 @@ def test_spending_by_geography_failure_with_invalid_fields(
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert "Field 'filter|award_type_codes' is outside valid values " in resp.data["detail"]
 
+    # Test invalid "scope" string
+    resp = post(client, def_codes=["L"], geo_layer="state", spending_type="obligation", scope="NOT VALID")
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.data["detail"] == "Field 'scope' is outside valid values ['place_of_performance', 'recipient_location']"
+
 
 @pytest.mark.django_db
 def test_correct_response_with_different_geo_filters(
@@ -96,25 +106,147 @@ def test_correct_response_with_different_geo_filters(
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     test_cases = [
-        _test_correct_response_for_county,
-        _test_correct_response_for_district,
-        _test_correct_response_for_state,
+        _test_correct_response_for_pop_county,
+        _test_correct_response_for_pop_district,
+        _test_correct_response_for_pop_state,
+        _test_correct_response_for_recipient_location_county,
+        _test_correct_response_for_recipient_location_district,
+        _test_correct_response_for_recipient_location_state,
     ]
 
     for test in test_cases:
         test(client)
 
 
-def _test_correct_response_for_county(client):
+def _test_correct_response_for_pop_county(client):
     resp = post(
         client,
         def_codes=["L", "M"],
         geo_layer="county",
         geo_layer_filters=["45001", "45005"],
         spending_type="obligation",
+        scope="place_of_performance",
     )
     expected_response = {
         "geo_layer": "county",
+        "scope": "place_of_performance",
+        "spending_type": "obligation",
+        "results": [
+            {
+                "amount": 2202000.0,
+                "award_count": 3,
+                "display_name": "Charleston",
+                "per_capita": 2202000.0,
+                "population": 1,
+                "shape_code": "45001",
+            },
+            {
+                "amount": 20.0,
+                "award_count": 1,
+                "display_name": "Test Name",
+                "per_capita": 2.0,
+                "population": 10,
+                "shape_code": "45005",
+            },
+        ],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+
+def _test_correct_response_for_pop_district(client):
+    resp = post(
+        client,
+        def_codes=["L", "M"],
+        geo_layer="district",
+        geo_layer_filters=["4510", "4550", "5350"],
+        spending_type="obligation",
+        scope="place_of_performance",
+    )
+    expected_response = {
+        "geo_layer": "district",
+        "scope": "place_of_performance",
+        "spending_type": "obligation",
+        "results": [
+            {
+                "amount": 2000.0,
+                "award_count": 1,
+                "display_name": "SC-10",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "4510",
+            },
+            {
+                "amount": 20.0,
+                "award_count": 1,
+                "display_name": "SC-50",
+                "per_capita": 0.2,
+                "population": 100,
+                "shape_code": "4550",
+            },
+            {
+                "amount": 20200.0,
+                "award_count": 2,
+                "display_name": "WA-50",
+                "per_capita": 20.2,
+                "population": 1000,
+                "shape_code": "5350",
+            },
+        ],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+
+def _test_correct_response_for_pop_state(client):
+    resp = post(
+        client,
+        def_codes=["L", "M"],
+        geo_layer="state",
+        geo_layer_filters=["WA"],
+        spending_type="obligation",
+        scope="place_of_performance",
+    )
+    expected_response = {
+        "geo_layer": "state",
+        "scope": "place_of_performance",
+        "spending_type": "obligation",
+        "results": [
+            {
+                "amount": 20200.0,
+                "display_name": "Washington",
+                "per_capita": 2.02,
+                "population": 10000,
+                "shape_code": "WA",
+                "award_count": 2,
+            },
+        ],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+
+def _test_correct_response_for_recipient_location_county(client):
+    resp = post(
+        client,
+        def_codes=["L", "M"],
+        geo_layer="county",
+        geo_layer_filters=["45001", "45005"],
+        spending_type="obligation",
+        scope="recipient_location",
+    )
+    expected_response = {
+        "geo_layer": "county",
+        "scope": "recipient_location",
         "spending_type": "obligation",
         "results": [
             {
@@ -134,7 +266,6 @@ def _test_correct_response_for_county(client):
                 "award_count": 1,
             },
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -143,16 +274,18 @@ def _test_correct_response_for_county(client):
     assert resp_json == expected_response
 
 
-def _test_correct_response_for_district(client):
+def _test_correct_response_for_recipient_location_district(client):
     resp = post(
         client,
         def_codes=["L", "M"],
         geo_layer="district",
         geo_layer_filters=["4510", "4550", "5350"],
         spending_type="obligation",
+        scope="recipient_location",
     )
     expected_response = {
         "geo_layer": "district",
+        "scope": "recipient_location",
         "spending_type": "obligation",
         "results": [
             {
@@ -180,7 +313,6 @@ def _test_correct_response_for_district(client):
                 "award_count": 2,
             },
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -189,22 +321,29 @@ def _test_correct_response_for_district(client):
     assert resp_json == expected_response
 
 
-def _test_correct_response_for_state(client):
-    resp = post(client, def_codes=["L", "M"], geo_layer="state", geo_layer_filters=["WA"], spending_type="obligation",)
+def _test_correct_response_for_recipient_location_state(client):
+    resp = post(
+        client,
+        def_codes=["L", "M"],
+        geo_layer="state",
+        geo_layer_filters=["WA"],
+        spending_type="obligation",
+        scope="recipient_location",
+    )
     expected_response = {
         "geo_layer": "state",
+        "scope": "recipient_location",
         "spending_type": "obligation",
         "results": [
             {
                 "amount": 22000.0,
+                "award_count": 2,
                 "display_name": "Washington",
                 "per_capita": 2.2,
                 "population": 10000,
                 "shape_code": "WA",
-                "award_count": 2,
-            },
+            }
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -235,6 +374,7 @@ def _test_correct_response_for_obligation(client):
     )
     expected_response = {
         "geo_layer": "state",
+        "scope": "recipient_location",
         "spending_type": "obligation",
         "results": [
             {
@@ -254,7 +394,6 @@ def _test_correct_response_for_obligation(client):
                 "award_count": 2,
             },
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -269,6 +408,7 @@ def _test_correct_response_for_outlay(client):
     )
     expected_response = {
         "geo_layer": "state",
+        "scope": "recipient_location",
         "spending_type": "outlay",
         "results": [
             {
@@ -288,7 +428,6 @@ def _test_correct_response_for_outlay(client):
                 "award_count": 2,
             },
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -307,6 +446,7 @@ def _test_correct_response_for_face_value_of_loan(client):
     )
     expected_response = {
         "geo_layer": "state",
+        "scope": "recipient_location",
         "spending_type": "face_value_of_loan",
         "results": [
             {
@@ -326,7 +466,6 @@ def _test_correct_response_for_face_value_of_loan(client):
                 "award_count": 2,
             },
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -359,6 +498,7 @@ def _test_correct_response_of_loans(client):
     )
     expected_response = {
         "geo_layer": "county",
+        "scope": "recipient_location",
         "spending_type": "obligation",
         "results": [
             {
@@ -370,7 +510,6 @@ def _test_correct_response_of_loans(client):
                 "award_count": 2,
             }
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -390,6 +529,7 @@ def _test_correct_response_of_contracts(client):
     )
     expected_response = {
         "geo_layer": "district",
+        "scope": "recipient_location",
         "spending_type": "obligation",
         "results": [
             {
@@ -417,7 +557,6 @@ def _test_correct_response_of_contracts(client):
                 "award_count": 2,
             },
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -437,9 +576,9 @@ def _test_correct_response_of_grants(client):
     )
     expected_response = {
         "geo_layer": "state",
+        "scope": "recipient_location",
         "spending_type": "obligation",
         "results": [],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -467,9 +606,9 @@ def _test_correct_response_of_empty_list_for_county(client):
     )
     expected_response = {
         "geo_layer": "county",
+        "scope": "recipient_location",
         "spending_type": "obligation",
         "results": [],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -485,9 +624,9 @@ def _test_correct_response_of_empty_list_for_district(client):
     )
     expected_response = {
         "geo_layer": "district",
+        "scope": "recipient_location",
         "spending_type": "obligation",
         "results": [],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -497,9 +636,9 @@ def _test_correct_response_of_empty_list_for_state(client):
     resp = post(client, def_codes=["N"], geo_layer="state", geo_layer_filters=["WA"], spending_type="obligation")
     expected_response = {
         "geo_layer": "state",
+        "scope": "recipient_location",
         "spending_type": "obligation",
         "results": [],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -510,28 +649,190 @@ def test_correct_response_without_geo_filters(client, monkeypatch, elasticsearch
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     test_cases = [
-        _test_correct_response_for_county_without_geo_filters,
-        _test_correct_response_for_district_without_geo_filters,
-        _test_correct_response_for_state_without_geo_filters,
+        _test_correct_response_for_pop_county_without_geo_filters,
+        _test_correct_response_for_pop_district_without_geo_filters,
+        _test_correct_response_for_pop_state_without_geo_filters,
+        _test_correct_response_for_recipient_location_county_without_geo_filters,
+        _test_correct_response_for_recipient_location_district_without_geo_filters,
+        _test_correct_response_for_recipient_location_state_without_geo_filters,
     ]
 
     for test in test_cases:
         test(client)
 
 
-def _test_correct_response_for_county_without_geo_filters(client):
-    resp = post(client, def_codes=["L", "M"], geo_layer="county", spending_type="obligation",)
+def _test_correct_response_for_pop_county_without_geo_filters(client):
+    resp = post(
+        client, def_codes=["L", "M"], geo_layer="county", spending_type="obligation", scope="place_of_performance"
+    )
     expected_response = {
-        "spending_type": "obligation",
         "geo_layer": "county",
+        "scope": "place_of_performance",
+        "spending_type": "obligation",
         "results": [
             {
-                "amount": 2000220.0,
+                "amount": 2.0,
+                "award_count": 1,
+                "display_name": None,
+                "per_capita": None,
+                "population": None,
+                "shape_code": None,
+            },
+            {
+                "amount": 20.0,
+                "award_count": 1,
+                "display_name": "Test Name",
+                "per_capita": 2.0,
+                "population": 10,
+                "shape_code": "45005",
+            },
+            {
+                "amount": 20200.0,
+                "award_count": 2,
+                "display_name": "Test Name",
+                "per_capita": 202.0,
+                "population": 100,
+                "shape_code": "53005",
+            },
+            {
+                "amount": 2202000.0,
                 "award_count": 3,
                 "display_name": "Charleston",
-                "per_capita": 2000220.0,
+                "per_capita": 2202000.0,
                 "population": 1,
                 "shape_code": "45001",
+            },
+        ],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_amount_for_sort)
+    assert resp_json == expected_response
+
+
+def _test_correct_response_for_pop_district_without_geo_filters(client):
+    resp = post(
+        client, def_codes=["L", "M"], geo_layer="district", spending_type="obligation", scope="place_of_performance"
+    )
+    expected_response = {
+        "geo_layer": "district",
+        "scope": "place_of_performance",
+        "spending_type": "obligation",
+        "results": [
+            {
+                "amount": 2.0,
+                "award_count": 1,
+                "display_name": None,
+                "per_capita": None,
+                "population": None,
+                "shape_code": None,
+            },
+            {
+                "amount": 20.0,
+                "award_count": 1,
+                "display_name": "SC-50",
+                "per_capita": 0.2,
+                "population": 100,
+                "shape_code": "4550",
+            },
+            {
+                "amount": 2000.0,
+                "award_count": 1,
+                "display_name": "SC-10",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "4510",
+            },
+            {
+                "amount": 20200.0,
+                "award_count": 2,
+                "display_name": "WA-50",
+                "per_capita": 20.2,
+                "population": 1000,
+                "shape_code": "5350",
+            },
+            {
+                "amount": 2200000.0,
+                "award_count": 2,
+                "display_name": "SC-90",
+                "per_capita": 2200000.0,
+                "population": 1,
+                "shape_code": "4590",
+            },
+        ],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_amount_for_sort)
+    assert resp_json == expected_response
+
+
+def _test_correct_response_for_pop_state_without_geo_filters(client):
+    resp = post(
+        client, def_codes=["L", "M"], geo_layer="state", spending_type="obligation", scope="place_of_performance"
+    )
+    expected_response = {
+        "geo_layer": "state",
+        "scope": "place_of_performance",
+        "spending_type": "obligation",
+        "results": [
+            {
+                "amount": 2.0,
+                "award_count": 1,
+                "display_name": None,
+                "per_capita": None,
+                "population": None,
+                "shape_code": None,
+            },
+            {
+                "amount": 20200.0,
+                "award_count": 2,
+                "display_name": "Washington",
+                "per_capita": 2.02,
+                "population": 10000,
+                "shape_code": "WA",
+            },
+            {
+                "amount": 2202020.0,
+                "award_count": 4,
+                "display_name": "South Carolina",
+                "per_capita": 2202.02,
+                "population": 1000,
+                "shape_code": "SC",
+            },
+        ],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_amount_for_sort)
+    assert resp_json == expected_response
+
+
+def _test_correct_response_for_recipient_location_county_without_geo_filters(client):
+    resp = post(client, def_codes=["L", "M"], geo_layer="county", spending_type="obligation",)
+    expected_response = {
+        "geo_layer": "county",
+        "scope": "recipient_location",
+        "spending_type": "obligation",
+        "results": [
+            {
+                "amount": 2.0,
+                "award_count": 1,
+                "display_name": None,
+                "per_capita": None,
+                "population": None,
+                "shape_code": None,
+            },
+            {
+                "amount": 22000.0,
+                "award_count": 2,
+                "display_name": "Test Name",
+                "per_capita": 220.0,
+                "population": 100,
+                "shape_code": "53005",
             },
             {
                 "amount": 200000.0,
@@ -542,44 +843,36 @@ def _test_correct_response_for_county_without_geo_filters(client):
                 "shape_code": "45005",
             },
             {
-                "amount": 22000.0,
-                "award_count": 2,
-                "display_name": "Test Name",
-                "per_capita": 220.0,
-                "population": 100,
-                "shape_code": "53005",
+                "amount": 2000220.0,
+                "award_count": 3,
+                "display_name": "Charleston",
+                "per_capita": 2000220.0,
+                "population": 1,
+                "shape_code": "45001",
             },
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
     resp_json = resp.json()
-    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    resp_json["results"].sort(key=_get_amount_for_sort)
     assert resp_json == expected_response
 
 
-def _test_correct_response_for_district_without_geo_filters(client):
+def _test_correct_response_for_recipient_location_district_without_geo_filters(client):
     resp = post(client, def_codes=["L", "M"], geo_layer="district", spending_type="obligation",)
     expected_response = {
-        "spending_type": "obligation",
         "geo_layer": "district",
+        "scope": "recipient_location",
+        "spending_type": "obligation",
         "results": [
             {
-                "amount": 2000000.0,
+                "amount": 2.0,
                 "award_count": 1,
-                "display_name": "SC-10",
+                "display_name": None,
                 "per_capita": None,
                 "population": None,
-                "shape_code": "4510",
-            },
-            {
-                "amount": 200200.0,
-                "award_count": 2,
-                "display_name": "SC-50",
-                "per_capita": 2002.0,
-                "population": 100,
-                "shape_code": "4550",
+                "shape_code": None,
             },
             {
                 "amount": 20.0,
@@ -597,29 +890,45 @@ def _test_correct_response_for_district_without_geo_filters(client):
                 "population": 1000,
                 "shape_code": "5350",
             },
+            {
+                "amount": 200200.0,
+                "award_count": 2,
+                "display_name": "SC-50",
+                "per_capita": 2002.0,
+                "population": 100,
+                "shape_code": "4550",
+            },
+            {
+                "amount": 2000000.0,
+                "award_count": 1,
+                "display_name": "SC-10",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "4510",
+            },
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
     resp_json = resp.json()
-    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    resp_json["results"].sort(key=_get_amount_for_sort)
     assert resp_json == expected_response
 
 
-def _test_correct_response_for_state_without_geo_filters(client):
+def _test_correct_response_for_recipient_location_state_without_geo_filters(client):
     resp = post(client, def_codes=["L", "M"], geo_layer="state", spending_type="obligation",)
     expected_response = {
-        "spending_type": "obligation",
         "geo_layer": "state",
+        "scope": "recipient_location",
+        "spending_type": "obligation",
         "results": [
             {
-                "amount": 2200220.0,
-                "award_count": 4,
-                "display_name": "South Carolina",
-                "per_capita": 2200.22,
-                "population": 1000,
-                "shape_code": "SC",
+                "amount": 2.0,
+                "award_count": 1,
+                "display_name": None,
+                "per_capita": None,
+                "population": None,
+                "shape_code": None,
             },
             {
                 "amount": 22000.0,
@@ -629,11 +938,18 @@ def _test_correct_response_for_state_without_geo_filters(client):
                 "population": 10000,
                 "shape_code": "WA",
             },
+            {
+                "amount": 2200220.0,
+                "award_count": 4,
+                "display_name": "South Carolina",
+                "per_capita": 2200.22,
+                "population": 1000,
+                "shape_code": "SC",
+            },
         ],
-        "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
     resp_json = resp.json()
-    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    resp_json["results"].sort(key=_get_amount_for_sort)
     assert resp_json == expected_response
