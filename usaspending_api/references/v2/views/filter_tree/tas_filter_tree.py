@@ -10,7 +10,7 @@ class TASFilterTree(FilterTree):
         if len(tiered_keys) == 0:
             return self._toptier_search()
         if len(tiered_keys) == 1:
-            return self._fa_given_agency(tiered_keys[0])
+            return self._fa_given_agency(tiered_keys[0], filter_search)
         if len(tiered_keys) == 2:
             return self._tas_given_fa(tiered_keys[0], tiered_keys[1], filter_search)
         return []
@@ -35,8 +35,12 @@ class TASFilterTree(FilterTree):
     def _dictionary_from_agency(self, agency):
         return {"toptier_code": agency["toptier_code"], "name": agency["name"], "abbreviation": agency["abbreviation"]}
 
-    def _fa_given_agency(self, agency):
+    def _fa_given_agency(self, agency, filter_string):
         filters = [Q(has_faba=True), Q(parent_toptier_agency__toptier_code=agency)]
+        if filter_string:
+            filters.append(
+                Q(Q(federal_account_code__icontains=filter_string) | Q(account_title__icontains=filter_string))
+            )
         return FederalAccount.objects.annotate(
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk")))
         ).filter(*filters)
