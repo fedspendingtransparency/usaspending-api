@@ -11,7 +11,7 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 UNREPORTED_DATA_NAME = "Unreported Data"
 VALID_UNREPORTED_DATA_TYPES = ["agency", "budget_function", "object_class"]
-VALID_UNREPORTED_FILTERS = ["fy", "quarter", "period"]
+VALID_UNREPORTED_FILTERS = ["fy", "quarter", "python"]
 
 
 def get_unreported_data_obj(
@@ -53,8 +53,7 @@ def get_unreported_data_obj(
         .values("obligations_incurred_total_cpe__sum")
     )
     expected_total = gtas[0]["obligations_incurred_total_cpe__sum"] if gtas else None
-
-    if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()) == set(VALID_UNREPORTED_FILTERS):
+    if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()).issubset(set(VALID_UNREPORTED_FILTERS)):
         unreported_obj = {"id": None, "code": None, "type": spending_type, "name": UNREPORTED_DATA_NAME, "amount": None}
 
         # if both values are actually available, then calculate the amount, otherwise leave it as the default of None
@@ -118,19 +117,7 @@ def type_filter(_type, filters, limit=None):
     if time_unit == "quarter" and filters["quarter"] not in ("1", "2", "3", "4", 1, 2, 3, 4):
         raise InvalidParameterException("Incorrect value provided for quarter parameter. Must be between 1 and 4")
 
-    if time_unit == "period" and filters["period"] not in (
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "10",
-        "11",
-        "12",
+    valid_periods = [
         1,
         2,
         3,
@@ -143,7 +130,8 @@ def type_filter(_type, filters, limit=None):
         10,
         11,
         12,
-    ):
+    ]
+    if time_unit == "period" and int(filters["period"]) not in valid_periods:
         raise InvalidParameterException("Incorrect value provided for period parameter. Must be between 1 and 12")
 
     if time_unit == "period":
