@@ -241,7 +241,7 @@ def awards_and_transactions():
         legal_entity_county_code="001",
         legal_entity_county_name="CHARLESTON",
         legal_entity_congressional="50",
-        awardee_or_recipient_legal="RECIPIENT 3",
+        awardee_or_recipient_legal="RECIPIENT, 3",
         awardee_or_recipient_uniqu="987654321",
     )
 
@@ -392,14 +392,14 @@ def awards_and_transactions():
     )
     mommy.make(
         "recipient.RecipientProfile",
-        recipient_name="RECIPIENT 3",
+        recipient_name="RECIPIENT, 3",
         recipient_level="P",
         recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
         recipient_unique_id="987654321",
     )
     mommy.make(
         "recipient.RecipientProfile",
-        recipient_name="RECIPIENT 3",
+        recipient_name="RECIPIENT, 3",
         recipient_level="C",
         recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
         recipient_unique_id="987654321",
@@ -413,7 +413,7 @@ def awards_and_transactions():
     )
     mommy.make(
         "recipient.RecipientProfile",
-        recipient_name="RECIPIENT 3",
+        recipient_name="RECIPIENT, 3",
         recipient_level="R",
         recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
         recipient_unique_id="987654321",
@@ -422,7 +422,7 @@ def awards_and_transactions():
     # Recipient Lookup
     mommy.make(
         "recipient.RecipientLookup",
-        legal_business_name="RECIPIENT 3",
+        legal_business_name="RECIPIENT, 3",
         recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
         duns="987654321",
     )
