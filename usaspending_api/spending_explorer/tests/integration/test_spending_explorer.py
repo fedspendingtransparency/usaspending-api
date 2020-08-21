@@ -606,6 +606,7 @@ def test_object_budget_match(client):
     json_response_2 = response.json()
     assert json_response_1["results"][0]["amount"] == json_response_2["results"][0]["amount"]
 
+
 @pytest.mark.django_db
 def test_period(client):
 

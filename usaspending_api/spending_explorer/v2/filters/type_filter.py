@@ -11,7 +11,7 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 UNREPORTED_DATA_NAME = "Unreported Data"
 VALID_UNREPORTED_DATA_TYPES = ["agency", "budget_function", "object_class"]
-VALID_UNREPORTED_FILTERS = ["fy", "quarter", "python"]
+VALID_UNREPORTED_FILTERS = ["fy", "quarter", "period"]
 
 
 def get_unreported_data_obj(
@@ -117,27 +117,10 @@ def type_filter(_type, filters, limit=None):
     if time_unit == "quarter" and filters["quarter"] not in ("1", "2", "3", "4", 1, 2, 3, 4):
         raise InvalidParameterException("Incorrect value provided for quarter parameter. Must be between 1 and 4")
 
-    valid_periods = [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-    ]
-    if time_unit == "period" and int(filters["period"]) not in valid_periods:
+    if time_unit == "period" and int(filters["period"]) not in range(1, 13):
         raise InvalidParameterException("Incorrect value provided for period parameter. Must be between 1 and 12")
 
-    if time_unit == "period":
-        fiscal_unit = int(filters["period"])
-    else:
-        fiscal_unit = int(filters["quarter"])
+    fiscal_unit = int(filters[time_unit])
 
     if time_unit == "quarter":
         submission_window = DABSSubmissionWindowSchedule.objects.filter(
@@ -157,7 +140,6 @@ def type_filter(_type, filters, limit=None):
 
     fiscal_date = submission_window.period_end_date
     fiscal_period = submission_window.submission_fiscal_month
-    # fiscal_quarter = submission_window.submission_fiscal_quarter
 
     # transaction_obligated_amount is summed across all periods in the year up to and including the requested quarter.
     alt_set = FinancialAccountsByAwards.objects.filter(
