@@ -48,7 +48,9 @@ This endpoint returns a count of Agencies
     If this parameter is not provided count will be calculated from the distinct set of toptier agencies "owning" appropriations accounts used in funding this disaster (from FinancialAccountsByProgramActivityObjectClass records, which are derived from DABS File B). 
 
 ## DEFC (enum[string])
-List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
+When filtering on `award_type_codes` this will filter on File D records that have at least one File C with the provided DEFC
+and belong to CARES Act DEFC.
 
 ### Members
 + `A`

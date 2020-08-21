@@ -1,8 +1,9 @@
+from django.conf import settings
 from multiprocessing import Process, Queue
 from pathlib import Path
 from time import sleep
+from typing import Tuple
 
-from django.conf import settings
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.etl.es_etl_helpers import (
     DataJob,
@@ -30,25 +31,14 @@ class Rapidloader:
         es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
 
         updated_record_count = get_updated_record_count(self.config)
-        printf(
-            {"msg": f"Found {updated_record_count:,} new {self.config['load_type']} records to add to ElasticSearch"}
-        )
+        printf({"msg": f"Found {updated_record_count:,} {self.config['load_type']} records to index"})
 
-        job_number = 0
-        for fiscal_year in self.config["fiscal_years"]:
-            job_number += 1
-            index = self.config["index_name"]
-            filename = str(
-                self.config["directory"] / "{fy}_{type}.csv".format(fy=fiscal_year, type=self.config["load_type"])
-            )
+        if updated_record_count == 0:
+            jobs = 0
+        else:
+            download_queue, jobs = self.create_download_jobs()
 
-            new_job = DataJob(job_number, index, fiscal_year, filename)
-
-            if Path(filename).exists():
-                Path(filename).unlink()
-            download_queue.put(new_job)
-
-        printf({"msg": "There are {} jobs to process".format(job_number)})
+        printf({"msg": f"There are {jobs} jobs to process"})
 
         process_list = [
             Process(
@@ -63,7 +53,8 @@ class Rapidloader:
             ),
         ]
 
-        process_list[0].start()  # Start Download process
+        if updated_record_count != 0:  # only run if there are data to process
+            process_list[0].start()  # Start Download process
 
         if self.config["process_deletes"]:
             process_list.append(
@@ -76,9 +67,10 @@ class Rapidloader:
             process_list[-1].start()  # start S3 csv fetch proces
             while process_list[-1].is_alive():
                 printf({"msg": "Waiting to start ES ingest until S3 deletes are complete"})
-                sleep(7)
+                sleep(7)  # add a brief pause to make sure the deletes are processed in ES
 
-        process_list[1].start()  # start ES ingest process
+        if updated_record_count != 0:
+            process_list[1].start()  # start ES ingest process
 
         while True:
             sleep(10)
@@ -87,6 +79,19 @@ class Rapidloader:
             elif all([not x.is_alive() for x in process_list]):
                 printf({"msg": "All ETL processes completed execution with no error codes"})
                 break
+
+    def create_download_jobs(self) -> Tuple[Queue, int]:
+        download_queue = Queue()
+        for job_number, fiscal_year in enumerate(self.config["fiscal_years"], start=1):
+            index = self.config["index_name"]
+            filename = str(self.config["directory"] / f"{fiscal_year}_{self.config['load_type']}.csv")
+
+            new_job = DataJob(job_number, index, fiscal_year, filename)
+
+            if Path(filename).exists():
+                Path(filename).unlink()
+            download_queue.put(new_job)
+        return download_queue, job_number
 
     def complete_process(self) -> None:
         if self.config["create_new_index"]:
@@ -102,6 +107,5 @@ class Rapidloader:
             take_snapshot(self.elasticsearch_client, self.config["index_name"], settings.ES_REPOSITORY)
 
         if self.config["is_incremental_load"]:
-            msg = "Storing datetime {} for next incremental load"
-            printf({"msg": msg.format(self.config["processing_start_datetime"])})
-            update_last_load_date("es_{}".format(self.config["load_type"]), self.config["processing_start_datetime"])
+            printf({"msg": f"Storing datetime {self.config['processing_start_datetime']} for next incremental load"})
+            update_last_load_date(f"es_{self.config['load_type']}", self.config["processing_start_datetime"])
