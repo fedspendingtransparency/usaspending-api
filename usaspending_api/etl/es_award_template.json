@@ -12,6 +12,13 @@
     },
     "analysis": {
       "analyzer": {
+        "contains_analyzer": {
+          "type": "custom",
+          "tokenizer": "ngram",
+          "filter": [
+            "uppercase"
+          ]
+        },
         "stemmer_analyzer": {
           "tokenizer": "standard",
           "filter": ["lowercase", "singular_stemmer"]
@@ -108,6 +115,10 @@
         "recipient_name": {
           "type": "text",
           "fields": {
+            "contains": {
+              "type": "text",
+              "analyzer": "contains_analyzer"
+            },
             "keyword": {
               "type": "keyword"
             }
@@ -211,6 +222,10 @@
         "funding_toptier_agency_name": {
           "type": "text",
           "fields": {
+            "contains": {
+              "type": "text",
+              "analyzer": "contains_analyzer"
+            },
             "keyword": {
               "type": "keyword"
             }
@@ -441,6 +456,10 @@
         "cfda_number": {
           "type": "text",
           "fields": {
+            "contains": {
+              "type": "text",
+              "analyzer": "contains_analyzer"
+            },
             "keyword": {
               "type": "keyword"
             }
@@ -449,6 +468,10 @@
         "cfda_title": {
           "type": "text",
           "fields": {
+            "contains": {
+              "type": "text",
+              "analyzer": "contains_analyzer"
+            },
             "keyword": {
               "type": "keyword"
             }
