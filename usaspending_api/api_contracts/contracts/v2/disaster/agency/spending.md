@@ -35,7 +35,8 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
     + Body
 
             {
-                "totals": {
+               "totals": {
+                    "awards": 4574,
                     "obligation": 364037369840.58,
                     "outlay": 290416885040.71
                 },
@@ -113,6 +114,11 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
         + `total_budgetary_resources`
         + `obligation`
         + `outlay`
+
+## Totals (object)
++ `awards` (required, number)
++ `obligation` (required, number)
++ `outlay` (required, number)
 
 ## Result (object)
 + `id` (required, string)

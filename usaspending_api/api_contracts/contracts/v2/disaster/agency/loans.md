@@ -32,6 +32,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 
             {
                 "totals": {
+                    "awards": 4574,
                     "obligation": 364037369840.58,
                     "outlay": 290416885040.71
                 },
@@ -115,7 +116,9 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
         + `outlay`
 
 ## Totals (object)
-+ 
++ `awards` (required, number)
++ `obligation` (required, number)
++ `outlay` (required, number)
 
 ## Result (object)
 + `id` (required, string)
