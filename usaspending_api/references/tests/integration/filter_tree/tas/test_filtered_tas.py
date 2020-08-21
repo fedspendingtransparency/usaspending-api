@@ -6,7 +6,7 @@ base_query = "/api/v2/references/filter_tree/tas/"
 def test_basic_matching_toptier(client, basic_agency):
     resp = _call_and_expect_200(client, base_query + "?filter=agency")
     assert resp.json() == {
-        "results": [{"id": "001", "ancestors": [], "description": "Agency 001 (001)", "count": 0, "children": None}]
+        "results": [{"id": "001", "ancestors": [], "description": "Agency 001 (001)", "count": 1, "children": None}]
     }
 
 
