@@ -177,6 +177,7 @@ def validate_assistance_request(request_data):
 
 def validate_account_request(request_data):
     json_request = {"columns": request_data.get("columns", []), "filters": {}}
+    print(json_request)
 
     _validate_required_parameters(request_data, ["account_level", "filters"])
     json_request["account_level"] = _validate_account_level(request_data, ["federal_account", "treasury_account"])

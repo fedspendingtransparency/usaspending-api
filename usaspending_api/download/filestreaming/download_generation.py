@@ -140,7 +140,7 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
     download_sources = []
     for download_type in json_request["download_types"]:
         agency_id = json_request.get("agency", "all")
-        filter_function = VALUE_MAPPINGS[download_type]["filter_function"]
+        filter_function = VALUE_MAPPINGS[download_type]["filter_function"] #dev-5865
         download_type_table = VALUE_MAPPINGS[download_type]["table"]
 
         if VALUE_MAPPINGS[download_type]["source_type"] == "award":
@@ -178,7 +178,7 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
                 download_sources.append(d2_source)
 
-        elif VALUE_MAPPINGS[download_type]["source_type"] == "account":
+        elif VALUE_MAPPINGS[download_type]["source_type"] == "account": #dev-5865
             # Account downloads
             account_source = DownloadSource(
                 VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
