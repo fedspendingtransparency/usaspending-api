@@ -29,11 +29,6 @@ API_MAX_DATE = "2024-09-30"  # End of FY2024
 API_MIN_DATE = "2000-10-01"  # Beginning of FY2001
 API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 
-# This flag is used to control dark release features for the CARES Act initiative.  Set this to True
-# for testing and once the CARES Act features go live.  Remove all references to this global once
-# we have finished fully rolling out all CARES Act features.
-ENABLE_CARES_ACT_FEATURES = True
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
