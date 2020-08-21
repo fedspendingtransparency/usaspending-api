@@ -16,7 +16,7 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/cfda/loans.md"
 
     required_filters = ["def_codes", "query", "_loan_award_type_codes"]
-    query_fields = ["cfda_title", "cfda_number"]
+    query_fields = ["cfda_title.contains", "cfda_number.contains"]
     agg_key = "cfda_agg_key"
     is_loans = True
 
