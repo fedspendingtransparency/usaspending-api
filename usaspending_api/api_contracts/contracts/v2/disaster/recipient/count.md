@@ -45,30 +45,15 @@ This endpoint returns a count of Recipients
     Defaults to all Award Type Codes.
 
 ## DEFC (enum[string])
-List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing that are used for CARES Act.
+Will filter on File D records that have at least one File C with the provided DEFC.
 
 ### Members
-+ `A`
-+ `B`
-+ `C`
-+ `D`
-+ `E`
-+ `F`
-+ `G`
-+ `H`
-+ `I`
-+ `J`
-+ `K`
 + `L`
 + `M`
 + `N`
 + `O`
 + `P`
-+ `Q`
-+ `R`
-+ `S`
-+ `T`
-+ `9`
 
 ## AwardTypeCodes (enum[string])
 List of procurement and assistance award type codes supported by USAspending.gov
