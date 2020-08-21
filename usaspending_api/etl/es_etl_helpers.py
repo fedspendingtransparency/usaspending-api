@@ -1,5 +1,3 @@
-from typing import Optional
-
 import json
 import os
 import pandas as pd
@@ -12,6 +10,7 @@ from django.conf import settings
 from django.core.management import call_command
 from elasticsearch import helpers, TransportError
 from time import perf_counter, sleep
+from typing import Optional
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
@@ -197,12 +196,10 @@ AWARD_VIEW_COLUMNS = [
     "total_covid_outlay",
 ]
 
-UPDATE_DATE_SQL = " AND update_date >= '{}'"
-
 COUNT_FY_SQL = """
 SELECT COUNT(*) AS count
 FROM {view}
-WHERE {type_fy}fiscal_year={fy}{update_date}
+WHERE {type_fy}fiscal_year={fy} AND update_date >= '{update_date}'
 """
 
 COUNT_SQL = """
@@ -214,7 +211,7 @@ WHERE update_date >= '{update_date}'
 COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
-    WHERE {type_fy}fiscal_year={fy}{update_date}
+    WHERE {type_fy}fiscal_year={fy} AND update_date >= '{update_date}'
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
@@ -299,10 +296,8 @@ def process_guarddog(process_list):
     for proc in process_list:
         # If exitcode is None, process is still running. exit code 0 is normal
         if proc.exitcode not in (None, 0):
-            msg = "TERMINATING ALL PROCESSES AND QUITTING!!! " + "{} exited with error. Returned {}".format(
-                proc.name, proc.exitcode
-            )
-            printf({"msg": msg})
+            msg = f"Script proccess failed!!! {proc.name} exited with error {proc.exitcode}. Terminating all processes."
+            printf({"msg": msg, "error": True})
             [x.terminate() for x in process_list]
             return True
     return False
@@ -312,22 +307,21 @@ def configure_sql_strings(config, filename, deleted_ids):
     """
     Populates the formatted strings defined globally in this file to create the desired SQL
     """
-    update_date_str = UPDATE_DATE_SQL.format(config["starting_date"].strftime("%Y-%m-%d"))
     if config["load_type"] == "awards":
-        view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+        view = settings.ES_AWARDS_ETL_VIEW_NAME
         view_type = "award"
         type_fy = ""
     else:
-        view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+        view = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
         view_type = "transaction"
         type_fy = "transaction_"
 
     copy_sql = COPY_SQL.format(
-        fy=config["fiscal_year"], update_date=update_date_str, filename=filename, view=view_name, type_fy=type_fy
+        fy=config["fiscal_year"], update_date=config["starting_date"], filename=filename, view=view, type_fy=type_fy,
     )
 
     count_sql = COUNT_FY_SQL.format(
-        fy=config["fiscal_year"], update_date=update_date_str, view=view_name, type_fy=type_fy
+        fy=config["fiscal_year"], update_date=config["starting_date"], view=view, type_fy=type_fy
     )
     if deleted_ids and config["process_deletes"]:
         id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
@@ -339,14 +333,12 @@ def configure_sql_strings(config, filename, deleted_ids):
 
 
 def get_updated_record_count(config):
-    update_date = config["starting_date"].strftime("%Y-%m-%d")
-
     if config["load_type"] == "awards":
         view_name = settings.ES_AWARDS_ETL_VIEW_NAME
     else:
         view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
 
-    count_sql = COUNT_SQL.format(update_date=update_date, view=view_name)
+    count_sql = COUNT_SQL.format(update_date=config["starting_date"], view=view_name)
 
     return execute_sql_statement(count_sql, True, config["verbose"])[0]["count"]
 
@@ -373,10 +365,12 @@ def db_rows_to_dict(cursor):
 
 
 def download_db_records(fetch_jobs, done_jobs, config):
-    # There has been a recurring issue with .empty() returning true when the queue actually
-    # contains multiple jobs. Wait a few seconds before starting to see if it helps
+    # There was recurring issue with .empty() returning true when the queue
+    #  actually contained multiple jobs. Potentially caused by a race condition
+    #  Funny story: adding the log statement was enough to prevent the issue
+    #  Decided to be safe and added short pause to guarentee no race condition
     sleep(5)
-    printf({"msg": "Queue has items: {}".format(not fetch_jobs.empty()), "f": "Download"})
+    printf({"msg": f"Queue has items: {not fetch_jobs.empty()}", "f": "Download"})
     while not fetch_jobs.empty():
         if done_jobs.full():
             printf({"msg": "Paused downloading new CSVs so ES indexing can catch up", "f": "Download"})
@@ -384,7 +378,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
         else:
             start = perf_counter()
             job = fetch_jobs.get_nowait()
-            printf({"msg": 'Preparing to download "{}"'.format(job.csv), "job": job.name, "f": "Download"})
+            printf({"msg": f'Preparing to download "{job.csv}"', "job": job.name, "f": "Download"})
 
             sql_config = {
                 "starting_date": config["starting_date"],
@@ -401,7 +395,7 @@ def download_db_records(fetch_jobs, done_jobs, config):
             done_jobs.put(job)
             printf(
                 {
-                    "msg": 'CSV "{}" copy took {} seconds'.format(job.csv, perf_counter() - start),
+                    "msg": f'CSV "{job.csv}" copy took {perf_counter() - start:.2f} seconds',
                     "job": job.name,
                     "f": "Download",
                 }
@@ -418,16 +412,16 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
 
     # Execute Copy SQL to download records to CSV
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
-    subprocess.Popen("psql {} -c {}".format(get_database_dsn_string(), copy_sql), shell=True).wait()
+    subprocess.Popen(f"psql {get_database_dsn_string()} -c {copy_sql}", shell=True).wait()
     download_count = count_rows_in_delimited_file(filename, has_header=True, safe=False)
-    printf({"msg": "Wrote {} to this file: {}".format(download_count, filename), "job": job_id, "f": "Download"})
+    printf({"msg": f"Wrote {download_count:,} to this file: {filename}", "job": job_id, "f": "Download"})
 
     # If --skip_counts is disabled, execute count_sql and compare this count to the download_count
     if not skip_counts:
         sql_count = execute_sql_statement(count_sql, True, verbose)[0]["count"]
         if sql_count != download_count:
-            msg = "Mismatch between CSV and DB rows! Expected: {} | Actual {} in: {}"
-            printf({"msg": msg.format(sql_count, download_count, filename), "job": job_id, "f": "Download"})
+            msg = f'Mismatch between CSV "{filename}" and DB!!! Expected: {sql_count:,} | Actual: {download_count:,}'
+            printf({"msg": msg, "job": job_id, "f": "Download"})
             raise SystemExit(1)
     else:
         printf({"msg": "Skipping count comparison checks (sql vs download)", "job": job_id, "f": "Download"})
@@ -436,7 +430,7 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
 
 
 def csv_chunk_gen(filename, chunksize, job_id, load_type):
-    printf({"msg": "Opening {} (batch size = {})".format(filename, chunksize), "job": job_id, "f": "ES Ingest"})
+    printf({"msg": f"Opening {filename} (batch size = {chunksize:,})", "job": job_id, "f": "ES Index"})
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
     converters = {
         "business_categories": convert_postgres_array_as_string_to_list,
@@ -455,43 +449,47 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
         # and this is needed for performance
         # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
         file_df["routing"] = file_df[settings.ES_ROUTING_FIELD]
+
+        # Explicitly setting the ES _id field to match the postgres PK value allows
+        # bulk index operations to be upserts without creating duplicate documents
+        file_df["_id"] = file_df[f"{'award' if load_type == 'awards' else 'transaction'}_id"]
         yield file_df.to_dict(orient="records")
 
 
 def es_data_loader(client, fetch_jobs, done_jobs, config):
     if config["create_new_index"]:
         # ensure template for index is present and the latest version
-        call_command("es_configure", "--template-only", "--load_type={}".format(config["load_type"]))
+        call_command("es_configure", "--template-only", f"--load-type={config['load_type']}")
     while True:
         if not done_jobs.empty():
             job = done_jobs.get_nowait()
             if job.name is None:
                 break
 
-            printf({"msg": "Starting new job", "job": job.name, "f": "ES Ingest"})
+            printf({"msg": "Starting new job", "job": job.name, "f": "ES Index"})
             post_to_elasticsearch(client, job, config)
             if os.path.exists(job.csv):
                 os.remove(job.csv)
         else:
-            printf({"msg": "No Job. Sleeping 45s", "f": "ES Ingest"})
-            sleep(45)
+            printf({"msg": f"No Job. Sleeping {config['ingest_wait']}s", "f": "ES Index"})
+            sleep(int(config["ingest_wait"]))
 
-    printf({"msg": "Completed Elasticsearch data load", "f": "ES Ingest"})
+    printf({"msg": "Completed Elasticsearch data load", "f": "ES Index"})
     return
 
 
 def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None):
     success, failed = 0, 0
     try:
-        for ok, item in helpers.streaming_bulk(client, chunk, index=index_name):
+        for ok, item in helpers.parallel_bulk(client, chunk, index=index_name):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
 
     except Exception as e:
-        print("Fatal error: \n\n{}...\n\n{}".format(str(e)[:5000], "*" * 80))
+        print(f"Fatal error: \n\n{str(e)[:5000]}...\n\n{'*' * 80}")
         raise SystemExit(1)
 
-    printf({"msg": "Success: {}, Fails: {}".format(success, failed), "job": job_id, "f": "ES Ingest"})
+    printf({"msg": f"Success: {success:,} | Fail: {failed:,}", "job": job_id, "f": "ES Index"})
     return success, failed
 
 
@@ -502,13 +500,15 @@ def put_alias(client, index, alias_name, alias_body):
 def create_aliases(client, index, load_type, silent=False):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
         if load_type == "awards":
-            alias_name = "{}-{}".format(settings.ES_AWARDS_QUERY_ALIAS_PREFIX, award_type)
+            prefix = settings.ES_AWARDS_QUERY_ALIAS_PREFIX
         else:
-            alias_name = "{}-{}".format(settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX, award_type)
+            prefix = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX
+
+        alias_name = f"{prefix}-{award_type}"
         if silent is False:
             printf(
                 {
-                    "msg": "Putting alias '{}' on {} with award codes {}".format(alias_name, index, award_type_codes),
+                    "msg": f"Putting alias '{alias_name}' on {index} with award codes {award_type_codes}",
                     "job": None,
                     "f": "ES Alias Put",
                 }
@@ -519,7 +519,7 @@ def create_aliases(client, index, load_type, silent=False):
     # ensure the new index is added to the alias used for incremental loads.
     # If the alias is on multiple indexes, the loads will fail!
     write_alias = settings.ES_AWARDS_WRITE_ALIAS if load_type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS
-    printf({"msg": "Putting alias '{}' on {}".format(write_alias, index), "job": None, "f": "ES Alias Put"})
+    printf({"msg": f"Putting alias '{write_alias}' on {index}", "job": None, "f": "ES Alias Put"})
     put_alias(
         client, index, write_alias, {},
     )
@@ -536,13 +536,13 @@ def set_final_index_config(client, index):
     client.indices.put_settings(final_index_settings, index)
     client.indices.refresh(index)
     for setting, value in final_index_settings.items():
-        message = 'Changing "{}" from {} to {}'.format(setting, current_settings.get(setting), value)
-        printf({"msg": message, "job": None, "f": "ES Settings Put"})
+        message = f'Changing "{setting}" from {current_settings.get(setting)} to {value}'
+        printf({"msg": message, "job": None, "f": "ES Settings"})
 
 
 def swap_aliases(client, index, load_type):
     if client.indices.get_alias(index, "*"):
-        printf({"msg": 'Removing old aliases for index "{}"'.format(index), "job": None, "f": "ES Alias Drop"})
+        printf({"msg": f'Removing old aliases for index "{index}"', "job": None, "f": "ES Alias Drop"})
         client.indices.delete_alias(index, "_all")
     if load_type == "awards":
         alias_patterns = settings.ES_AWARDS_QUERY_ALIAS_PREFIX + "*"
@@ -554,22 +554,22 @@ def swap_aliases(client, index, load_type):
         old_indexes = list(client.indices.get_alias("*", alias_patterns).keys())
         for old_index in old_indexes:
             client.indices.delete_alias(old_index, "_all")
-            printf({"msg": 'Removing aliases from "{}"'.format(old_index), "job": None, "f": "ES Alias Drop"})
+            printf({"msg": f'Removing aliases from "{old_index}"', "job": None, "f": "ES Alias Drop"})
     except Exception:
-        printf({"msg": "ERROR: no aliases found for {}".format(alias_patterns), "f": "ES Alias Drop"})
+        printf({"msg": f"ERROR: no aliases found for {alias_patterns}", "f": "ES Alias Drop"})
 
     create_aliases(client, index, load_type=load_type)
 
     try:
         if old_indexes:
             client.indices.delete(index=old_indexes, ignore_unavailable=False)
-            printf({"msg": 'Deleted index(es) "{}"'.format(old_indexes), "job": None, "f": "ES Alias Drop"})
+            printf({"msg": f'Deleted index(es) "{old_indexes}"', "job": None, "f": "ES Alias Drop"})
     except Exception:
-        printf({"msg": "ERROR: Unable to delete indexes: {}".format(old_indexes), "f": "ES Alias Drop"})
+        printf({"msg": f"ERROR: Unable to delete indexes: {old_indexes}", "f": "ES Alias Drop"})
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
-    printf({"msg": 'Populating ES Index "{}"'.format(job.index), "job": job.name, "f": "ES Ingest"})
+    printf({"msg": f'Populating ES Index "{job.index}"', "job": job.name, "f": "ES Index"})
     start = perf_counter()
     try:
         does_index_exist = client.indices.exists(job.index)
@@ -577,49 +577,29 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         print(e)
         raise SystemExit(1)
     if not does_index_exist:
-        printf({"msg": 'Creating index "{}"'.format(job.index), "job": job.name, "f": "ES Ingest"})
+        printf({"msg": f'Creating index "{job.index}"', "job": job.name, "f": "ES Index"})
         client.indices.create(index=job.index)
         client.indices.refresh(job.index)
 
     csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["load_type"])
     for count, chunk in enumerate(csv_generator):
         if len(chunk) == 0:
-            printf({"msg": "No documents to add/delete for chunk #{}".format(count), "f": "ES Ingest", "job": job.name})
+            printf({"msg": f"No documents to add/delete for chunk #{count}", "f": "ES Index", "job": job.name})
             continue
-        iteration = perf_counter()
-        if config["process_deletes"]:
-            if config["load_type"] == "awards":
-                id_list = [{"key": c[UNIVERSAL_AWARD_ID_NAME], "col": UNIVERSAL_AWARD_ID_NAME} for c in chunk]
-                delete_from_es(client, id_list, job.name, config, job.index)
-            else:
-                id_list = [
-                    {"key": c[UNIVERSAL_TRANSACTION_ID_NAME], "col": UNIVERSAL_TRANSACTION_ID_NAME} for c in chunk
-                ]
-                delete_from_es(client, id_list, job.name, config, job.index)
 
-        current_rows = "({}-{})".format(count * chunksize + 1, count * chunksize + len(chunk))
-        printf(
-            {
-                "msg": "Streaming to ES #{} rows [{}/{}]".format(count, current_rows, job.count),
-                "job": job.name,
-                "f": "ES Ingest",
-            }
-        )
+        iteration = perf_counter()
+        current_rows = f"({count * chunksize + 1:,}-{count * chunksize + len(chunk):,})"
+        printf({"msg": f"ES Stream #{count} rows [{current_rows}/{job.count:,}]", "job": job.name, "f": "ES Index"})
         streaming_post_to_es(client, chunk, job.index, config["load_type"], job.name)
         printf(
             {
-                "msg": "Iteration group #{} took {}s".format(count, perf_counter() - iteration),
+                "msg": f"Iteration group #{count} took {perf_counter() - iteration:.2f}s",
                 "job": job.name,
-                "f": "ES Ingest",
+                "f": "ES Index",
             }
         )
-    printf(
-        {
-            "msg": "Elasticsearch Index loading took {}s".format(perf_counter() - start),
-            "job": job.name,
-            "f": "ES Ingest",
-        }
-    )
+
+    printf({"msg": f"Elasticsearch Index loading took {perf_counter() - start:.2f}s", "job": job.name, "f": "ES Index"})
 
 
 def deleted_transactions(client, config):
@@ -652,17 +632,17 @@ def deleted_awards(client, config):
 
 
 def take_snapshot(client, index, repository):
-    snapshot_name = "{}-{}".format(index, str(datetime.now().date()))
+    snapshot_name = f"{index}-{str(datetime.now().date())}"
     try:
         client.snapshot.create(repository, snapshot_name, body={"indices": index})
         printf(
             {
-                "msg": 'Taking snapshot INDEX: "{}" SNAPSHOT: "{}" REPO: "{}"'.format(index, snapshot_name, repository),
+                "msg": f'Taking snapshot INDEX: "{index}" SNAPSHOT: "{snapshot_name}" REPO: "{repository}"',
                 "f": "ES Snapshot",
             }
         )
     except TransportError as e:
-        printf({"msg": 'SNAPSHOT "{}" FAILED'.format(str(e)), "f": "ES Snapshot"})
+        printf({"msg": f'SNAPSHOT "{str(e)}" FAILED', "f": "ES Snapshot"})
         raise SystemExit(1)
 
 
@@ -717,9 +697,9 @@ def gather_deleted_ids(config):
 
     if config["verbose"]:
         for uid, deleted_dict in deleted_ids.items():
-            printf({"msg": "id: {} last modified: {}".format(uid, str(deleted_dict["timestamp"]))})
+            printf({"msg": f"id: {uid} last modified: {deleted_dict['timestamp']}"})
 
-    printf({"msg": "Gathering {} deleted transactions took {}s".format(len(deleted_ids), perf_counter() - start)})
+    printf({"msg": f"Gathering {len(deleted_ids):,} deleted transactions took {perf_counter() - start:.2f}s"})
     return deleted_ids
 
 
@@ -750,18 +730,18 @@ def delete_from_es(client, id_list, job_id, config, index=None):
     """
     start = perf_counter()
 
-    printf({"msg": "Deleting up to {} document(s)".format(len(id_list)), "f": "ES Delete", "job": job_id})
+    printf({"msg": f"Deleting up to {len(id_list):,} document(s)", "f": "ES Delete", "job": job_id})
 
     if index is None:
-        index = "{}-*".format(config["root_index"])
+        index = f"{config['root_index']}-*"
     start_ = client.count(index=index)["count"]
-    printf({"msg": "Starting amount of indices ----- {}".format(start_), "f": "ES Delete", "job": job_id})
+    printf({"msg": f"Starting amount of indices ----- {start_:,}", "f": "ES Delete", "job": job_id})
     col_to_items_dict = defaultdict(list)
     for l in id_list:
         col_to_items_dict[l["col"]].append(l["key"])
 
     for column, values in col_to_items_dict.items():
-        printf({"msg": 'Deleting {} of "{}"'.format(len(values), column), "f": "ES Delete", "job": job_id})
+        printf({"msg": f'Deleting {len(values):,} of "{column}"', "f": "ES Delete", "job": job_id})
         values_generator = chunks(values, 1000)
         for v in values_generator:
             # IMPORTANT: This delete routine looks at just 1 index at a time. If there are duplicate records across
@@ -775,12 +755,11 @@ def delete_from_es(client, id_list, job_id, config, index=None):
                     index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
                 )
             except Exception as e:
-                printf({"msg": "[ERROR][ERROR][ERROR]\n{}".format(str(e)), "f": "ES Delete", "job": job_id})
+                printf({"msg": f"[ERROR][ERROR][ERROR]\n{str(e)}", "f": "ES Delete", "job": job_id})
     end_ = client.count(index=index)["count"]
 
-    t = perf_counter() - start
-    total = str(start_ - end_)
-    printf({"msg": "ES Deletes took {}s. Deleted {} records".format(t, total), "f": "ES Delete", "job": job_id})
+    msg = f"ES Deletes took {perf_counter() - start:.2f}s. Deleted {start_ - end_:,} records"
+    printf({"msg": msg, "f": "ES Delete", "job": job_id})
     return
 
 
@@ -791,7 +770,7 @@ def get_deleted_award_ids(client, id_list, config, index=None):
                    ...]
      """
     if index is None:
-        index = "{}-*".format(config["root_index"])
+        index = f"{config['root_index']}-*"
     col_to_items_dict = defaultdict(list)
     for l in id_list:
         col_to_items_dict[l["col"]].append(l["key"])
