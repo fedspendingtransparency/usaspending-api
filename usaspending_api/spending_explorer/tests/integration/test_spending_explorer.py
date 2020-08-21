@@ -605,3 +605,175 @@ def test_object_budget_match(client):
     response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
     json_response_2 = response.json()
     assert json_response_1["results"][0]["amount"] == json_response_2["results"][0]["amount"]
+
+
+@pytest.mark.django_db
+def test_period(client):
+
+    # Test for Object Class Results
+    resp = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps({"type": "agency", "filters": {"fy": "2017", "quarter": 1}}),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    resp2 = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps({"type": "agency", "filters": {"fy": "2017", "period": 3}}),
+    )
+    assert resp2.status_code == status.HTTP_200_OK
+    assert resp.json() == resp2.json()
+
+    # Test for Object Class Results
+    resp = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps({"type": "agency", "filters": {"fy": "2017", "quarter": "3"}}),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    resp2 = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps({"type": "agency", "filters": {"fy": "2017", "period": "9"}}),
+    )
+    assert resp2.status_code == status.HTTP_200_OK
+    assert resp.json() == resp2.json()
+
+    # Test for Agency Results
+    resp = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps({"type": "federal_account", "filters": {"fy": "2017", "quarter": 1}}),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    resp2 = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps({"type": "federal_account", "filters": {"fy": "2017", "period": 3}}),
+    )
+    assert resp2.status_code == status.HTTP_200_OK
+    assert resp.json() == resp2.json()
+
+    # Test for Federal Account Results
+    resp = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps({"type": "program_activity", "filters": {"fy": "2017", "quarter": 1, "federal_account": 1500}}),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    resp2 = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps({"type": "program_activity", "filters": {"fy": "2017", "period": 3, "federal_account": 1500}}),
+    )
+    assert resp2.status_code == status.HTTP_200_OK
+    assert resp.json() == resp2.json()
+
+    # Test for Program Activity Results
+    resp = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "type": "object_class",
+                "filters": {"fy": "2017", "quarter": 1, "federal_account": 1500, "program_activity": 12697},
+            }
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    resp2 = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "type": "object_class",
+                "filters": {"fy": "2017", "period": 3, "federal_account": 1500, "program_activity": 12697},
+            }
+        ),
+    )
+    assert resp2.status_code == status.HTTP_200_OK
+    assert resp.json() == resp2.json()
+
+    # Test for Recipient Results
+    resp = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "type": "recipient",
+                "filters": {
+                    "fy": "2017",
+                    "quarter": 1,
+                    "federal_account": 1500,
+                    "program_activity": 12697,
+                    "object_class": "40",
+                },
+            }
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    resp2 = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "type": "recipient",
+                "filters": {
+                    "fy": "2017",
+                    "period": 3,
+                    "federal_account": 1500,
+                    "program_activity": 12697,
+                    "object_class": "40",
+                },
+            }
+        ),
+    )
+    assert resp2.status_code == status.HTTP_200_OK
+    assert resp.json() == resp2.json()
+
+    # Test for Award Results
+    resp = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "type": "award",
+                "filters": {
+                    "fy": "2017",
+                    "quarter": 1,
+                    "federal_account": 1500,
+                    "program_activity": 12697,
+                    "object_class": "40",
+                    "recipient": 792917,
+                },
+            }
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+    resp2 = client.post(
+        "/api/v2/spending/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "type": "award",
+                "filters": {
+                    "fy": "2017",
+                    "period": 3,
+                    "federal_account": 1500,
+                    "program_activity": 12697,
+                    "object_class": "40",
+                    "recipient": 792917,
+                },
+            }
+        ),
+    )
+    assert resp2.status_code == status.HTTP_200_OK
+    assert resp.json() == resp2.json()
