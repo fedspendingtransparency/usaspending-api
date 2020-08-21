@@ -624,7 +624,7 @@ def test_period(client):
         data=json.dumps({"type": "agency", "filters": {"fy": "2017", "period": 3}}),
     )
     assert resp2.status_code == status.HTTP_200_OK
-    assert resp.json()["results"] == resp2.json()["results"]
+    assert resp.json() == resp2.json()
 
     # Test for Object Class Results
     resp = client.post(
@@ -640,7 +640,7 @@ def test_period(client):
         data=json.dumps({"type": "agency", "filters": {"fy": "2017", "period": "9"}}),
     )
     assert resp2.status_code == status.HTTP_200_OK
-    assert resp.json()["results"] == resp2.json()["results"]
+    assert resp.json() == resp2.json()
 
     # Test for Agency Results
     resp = client.post(
@@ -656,7 +656,7 @@ def test_period(client):
         data=json.dumps({"type": "federal_account", "filters": {"fy": "2017", "period": 3}}),
     )
     assert resp2.status_code == status.HTTP_200_OK
-    assert resp.json()["results"] == resp2.json()["results"]
+    assert resp.json() == resp2.json()
 
     # Test for Federal Account Results
     resp = client.post(
@@ -672,7 +672,7 @@ def test_period(client):
         data=json.dumps({"type": "program_activity", "filters": {"fy": "2017", "period": 3, "federal_account": 1500}}),
     )
     assert resp2.status_code == status.HTTP_200_OK
-    assert resp.json()["results"] == resp2.json()["results"]
+    assert resp.json() == resp2.json()
 
     # Test for Program Activity Results
     resp = client.post(
@@ -698,7 +698,7 @@ def test_period(client):
         ),
     )
     assert resp2.status_code == status.HTTP_200_OK
-    assert resp.json()["results"] == resp2.json()["results"]
+    assert resp.json() == resp2.json()
 
     # Test for Recipient Results
     resp = client.post(
@@ -736,7 +736,7 @@ def test_period(client):
         ),
     )
     assert resp2.status_code == status.HTTP_200_OK
-    assert resp.json()["results"] == resp2.json()["results"]
+    assert resp.json() == resp2.json()
 
     # Test for Award Results
     resp = client.post(
@@ -776,4 +776,4 @@ def test_period(client):
         ),
     )
     assert resp2.status_code == status.HTTP_200_OK
-    assert resp.json()["results"] == resp2.json()["results"]
+    assert resp.json() == resp2.json()
