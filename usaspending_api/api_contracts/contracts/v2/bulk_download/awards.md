@@ -91,7 +91,7 @@ This route sends a request to the backend to begin generating a zipfile of award
 
 ### Filters (object)
 + `agency` (required, string)
-    Agency database id to include, 'all' is also an option to include all agencies
+Agency internal database id. If you wish to include all agencies, use 'all' instead of a specific number. The three-digit agency AID/CGAC should not be used;   instead, make a request to the [/api/v2/bulk_download/list_agencies/](https://github.com/fedspendingtransparency/usaspending-api/blob/master/usaspending_api/api_contracts/contracts/v2/bulk_download/list_agencies.md) endpoint and find the toptier_agency_id (the internal database id) of the agency of interest.
 + `prime_award_types` (optional, array[enum[string]])
     + Members
         + `IDV_A`
