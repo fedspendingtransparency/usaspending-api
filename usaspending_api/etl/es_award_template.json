@@ -12,6 +12,13 @@
     },
     "analysis": {
       "analyzer": {
+        "contains_analyzer": {
+          "type": "custom",
+          "tokenizer": "ngram",
+          "filter": [
+            "uppercase"
+          ]
+        },
         "stemmer_analyzer": {
           "tokenizer": "standard",
           "filter": ["lowercase", "singular_stemmer"]
@@ -108,6 +115,10 @@
         "recipient_name": {
           "type": "text",
           "fields": {
+            "contains": {
+              "type": "text",
+              "analyzer": "contains_analyzer"
+            },
             "keyword": {
               "type": "keyword"
             }
@@ -211,6 +222,10 @@
         "funding_toptier_agency_name": {
           "type": "text",
           "fields": {
+            "contains": {
+              "type": "text",
+              "analyzer": "contains_analyzer"
+            },
             "keyword": {
               "type": "keyword"
             }
@@ -329,6 +344,7 @@
         "recipient_location_county_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
+          "null_value": "NULL",
           "fields": {
             "hash": {
               "type": "murmur3"
@@ -338,6 +354,7 @@
         "recipient_location_congressional_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
+          "null_value": "NULL",
           "fields": {
             "hash": {
               "type": "murmur3"
@@ -347,6 +364,7 @@
         "recipient_location_state_agg_key": {
           "type": "keyword",
           "eager_global_ordinals": true,
+          "null_value": "NULL",
           "fields": {
             "hash": {
               "type": "murmur3"
@@ -405,9 +423,43 @@
             }
           }
         },
+        "pop_county_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "null_value": "NULL",
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
+        "pop_congressional_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "null_value": "NULL",
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
+        "pop_state_agg_key": {
+          "type": "keyword",
+          "eager_global_ordinals": true,
+          "null_value": "NULL",
+          "fields": {
+            "hash": {
+              "type": "murmur3"
+            }
+          }
+        },
         "cfda_number": {
           "type": "text",
           "fields": {
+            "contains": {
+              "type": "text",
+              "analyzer": "contains_analyzer"
+            },
             "keyword": {
               "type": "keyword"
             }
@@ -416,6 +468,10 @@
         "cfda_title": {
           "type": "text",
           "fields": {
+            "contains": {
+              "type": "text",
+              "analyzer": "contains_analyzer"
+            },
             "keyword": {
               "type": "keyword"
             }
