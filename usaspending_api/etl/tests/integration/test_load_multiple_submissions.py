@@ -353,6 +353,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 "reporting_fiscal_period": 4,
                 "quarter_format_flag": True,
                 "reporting_agency_name": None,
+                "is_final_balances_for_fy": False,
                 "published_date": datetime(2000, 1, 1, 0, 0, tzinfo=timezone.utc),
             }
 
