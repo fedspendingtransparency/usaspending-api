@@ -190,6 +190,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "usaspending_api.common.logging.LoggingMiddleware",
+    "usaspending_api.common.datadog.add_headers",
 ]
 
 ROOT_URLCONF = "usaspending_api.urls"
