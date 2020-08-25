@@ -5,7 +5,7 @@ from django.db import connection
 
 logger = logging.getLogger("script")
 
-POPULATE_FINAL_BALANCES_OF_FY_SQL = """
+POPULATE_FINAL_BALANCES_FOR_FY_SQL = """
 UPDATE
     submission_attributes
 SET
@@ -52,5 +52,5 @@ class Command(BaseCommand):
         # Open connection to database
         with connection.cursor() as cursor:
 
-            # Queries to populate 'is_final_balances_of_fy' field in 'submission_attributes' table
-            cursor.execute(POPULATE_FINAL_BALANCES_OF_FY_SQL)
+            # Queries to populate 'is_final_balances_for_fy' field in 'submission_attributes' table
+            cursor.execute(POPULATE_FINAL_BALANCES_FOR_FY_SQL)

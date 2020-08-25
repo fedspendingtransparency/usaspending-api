@@ -193,7 +193,7 @@ def test_no_final_balances_for_agency():
     """
     This unit test demonstrates that if an agency has made submissions, but none of
     those submissions are associated with the latest closed periods, the submissions
-    it has made, won't be flagged as 'is_final_balances_of_fy'
+    it has made, won't be flagged as 'is_final_balances_for_fy'
     """
 
     # WINDOW - Period 8
