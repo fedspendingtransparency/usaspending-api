@@ -393,7 +393,8 @@ class _DisasterEmergencyFundCodes(_Filter):
         for v in filter_values:
             def_codes_query.append(ES_Q("match", disaster_emergency_fund_codes=v))
         if query_type == _QueryType.AWARDS:
-            return ES_Q("bool", should=def_codes_query, minimum_should_match=1,)
+            return ES_Q("bool", should=def_codes_query, minimum_should_match=1)
+
         return ES_Q(
             "bool",
             should=def_codes_query,
@@ -409,7 +410,7 @@ class _QueryText(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: dict, query_type: _QueryType) -> ES_Q:
-        query_text = es_sanitize(filter_values["text"])
+        query_text = filter_values["text"]
         query_fields = filter_values["fields"]
         return ES_Q("multi_match", query=query_text, type="phrase_prefix", fields=query_fields)
 
@@ -464,7 +465,7 @@ class QueryWithFilters:
 
         # tas_codes are unique in that the same query is spread across two keys
         must_queries = cls._handle_tas_query(must_queries, filters, query_type)
-
+        must_queries.extend(cls._handle_defc_query(filters, query_type))
         for filter_type, filter_values in filters.items():
             # Validate the filters
             if filter_type in cls.unsupported_filters:
@@ -500,6 +501,24 @@ class QueryWithFilters:
             filters.pop(TreasuryAccounts.underscore_name, None)
             filters.pop(TasCodes.underscore_name, None)
         return must_queries
+
+    @classmethod
+    def _handle_defc_query(cls, filters: dict, query_type: _QueryType) -> list:
+        queries = []
+        if filters.get(_DisasterEmergencyFundCodes.underscore_name):
+            queries.append(
+                _DisasterEmergencyFundCodes.generate_elasticsearch_query(
+                    filters[_DisasterEmergencyFundCodes.underscore_name], query_type
+                )
+            )
+            if query_type == _QueryType.AWARDS:
+                queries.append(
+                    _NonzeroFields.generate_elasticsearch_query(
+                        ["total_covid_outlay", "total_covid_obligation"], query_type
+                    )
+                )
+            filters.pop(_DisasterEmergencyFundCodes.underscore_name, None)
+        return queries
 
     @classmethod
     def generate_awards_elasticsearch_query(cls, filters: dict) -> ES_Q:
