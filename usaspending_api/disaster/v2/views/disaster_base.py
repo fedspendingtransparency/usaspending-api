@@ -88,9 +88,9 @@ def final_submissions_for_all_fy() -> List[tuple]:
         fiscal year IF it is "closed" aka ready for display on USAspending.gov
     """
     return (
-        DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=now())
+        DABSSubmissionWindowSchedule.objects.filter(is_final_balances_for_fy=True)
         .values("submission_fiscal_year", "is_quarter")
-        .annotate(fiscal_year=F("submission_fiscal_year"), fiscal_period=Max("submission_fiscal_month"))
+        .annotate(fiscal_year=F("submission_fiscal_year"), fiscal_period=F("submission_fiscal_month"))
         .values_list("fiscal_year", "is_quarter", "fiscal_period", named=True)
     )
 

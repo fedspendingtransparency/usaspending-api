@@ -218,10 +218,9 @@ LEFT JOIN (
         ON faba.submission_id = sa.submission_id
         AND sa.reporting_period_start >= '2020-04-01'
     LEFT JOIN (
-        SELECT   submission_fiscal_year, is_quarter, max(submission_fiscal_month) AS submission_fiscal_month
+        SELECT   submission_fiscal_year, is_quarter, submission_fiscal_month
         FROM     dabs_submission_window_schedule
-        WHERE    submission_reveal_date < now() AND period_start_date >= '2020-04-01'
-        GROUP BY submission_fiscal_year, is_quarter
+        WHERE    is_final_balances_for_fy = TRUE
     ) AS latest_closed_period_per_fy
         ON latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year
         AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period

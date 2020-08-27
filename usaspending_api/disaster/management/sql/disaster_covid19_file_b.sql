@@ -48,9 +48,6 @@ SELECT
 FROM "financial_accounts_by_program_activity_object_class"
 LEFT OUTER JOIN "treasury_appropriation_account" ON ("financial_accounts_by_program_activity_object_class"."treasury_account_id" = "treasury_appropriation_account"."treasury_account_identifier")
 INNER JOIN "submission_attributes" ON ("financial_accounts_by_program_activity_object_class"."submission_id" = "submission_attributes"."submission_id")
-INNER JOIN "recent_submission" ON ("submission_attributes"."reporting_fiscal_period" = "recent_submission"."submission_fiscal_month"
-    AND "submission_attributes"."quarter_format_flag" = "recent_submission"."is_quarter"
-    AND "submission_attributes"."reporting_fiscal_year" = "recent_submission"."submission_fiscal_year")
 INNER JOIN "disaster_emergency_fund_code" ON ("financial_accounts_by_program_activity_object_class"."disaster_emergency_fund_code" = "disaster_emergency_fund_code"."code")
 INNER JOIN "ref_program_activity" ON ("financial_accounts_by_program_activity_object_class"."program_activity_id" = "ref_program_activity"."id")
 INNER JOIN "object_class" ON ("financial_accounts_by_program_activity_object_class"."object_class_id" = "object_class"."id")
@@ -58,6 +55,7 @@ LEFT OUTER JOIN "toptier_agency" ON ("treasury_appropriation_account"."funding_t
 INNER JOIN "federal_account" ON ("treasury_appropriation_account"."federal_account_id" = "federal_account"."id")
 WHERE (
     "disaster_emergency_fund_code"."group_name" = 'covid_19'
+    AND "submission_attributes"."is_final_balances_for_fy" = TRUE
 )
 GROUP BY
     "financial_accounts_by_program_activity_object_class"."financial_accounts_by_program_activity_object_class_id",
