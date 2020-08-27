@@ -514,7 +514,7 @@ def subaward_annotations():
     annotation_fields = {
         "subaward_action_date_fiscal_year": FiscalYear("subaward__action_date"),
         "prime_award_base_action_date_fiscal_year": FiscalYear("award__date_signed"),
-        "period_of_performance_potential_end_date": Cast(
+        "prime_award_period_of_performance_potential_end_date": Cast(
             F("award__latest_transaction__contract_data__period_of_perf_potential_e"), DateField()
         ),
         "prime_award_treasury_accounts_funding_this_award": Subquery(

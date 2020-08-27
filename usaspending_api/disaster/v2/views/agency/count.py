@@ -1,8 +1,10 @@
-from django.db.models import OuterRef, Q, Exists, Count
+from django.contrib.postgres.fields import ArrayField
+from django.db.models import OuterRef, Q, Exists, TextField
+from django.db.models.functions import Cast
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.awards.models import CovidFinancialAccountMatview
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.disaster.v2.views.disaster_base import AwardTypeMixin
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, FabaOutlayMixin
@@ -26,9 +28,13 @@ class AgencyCountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
         ]
 
         if self.award_type_codes:
-            count = self.when_non_zero_award_spending(
-                FinancialAccountsByAwards.objects.filter(*filters).values("award__funding_agency__toptier_agency")
-            ).aggregate(count=Count("award__funding_agency__toptier_agency", distinct=True))["count"]
+            count = (
+                CovidFinancialAccountMatview.objects.annotate(cast_def_codes=Cast("def_codes", ArrayField(TextField())))
+                .filter(type__in=self.award_type_codes, cast_def_codes__overlap=self.def_codes)
+                .values("award__funding_agency__toptier_agency")
+                .distinct()
+                .count()
+            )
 
         else:
             filters.extend(

@@ -211,6 +211,14 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name='CovidFinancialAccountMatview',
+            fields=[],
+            options={
+                'db_table': 'mv_covid_financial_account',
+                'managed': False,
+            },
+        ),
+        migrations.CreateModel(
             name='FinancialAccountsByAwards',
             fields=[
                 ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
