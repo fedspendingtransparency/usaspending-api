@@ -48,14 +48,7 @@ def latest_faba_of_each_year_queryset() -> FinancialAccountsByAwards:
 
 def filter_by_latest_closed_periods(submission_query_path: str = "") -> Q:
     """Return Django Q for all latest closed submissions (quarterly and monthly)"""
-    q = Q()
-    for sub in final_submissions_for_all_fy():
-        q |= (
-            Q(**{f"{submission_query_path}submission__reporting_fiscal_year": sub.fiscal_year})
-            & Q(**{f"{submission_query_path}submission__quarter_format_flag": sub.is_quarter})
-            & Q(**{f"{submission_query_path}submission__reporting_fiscal_period": sub.fiscal_period})
-        )
-    return q
+    return Q(**{f"{submission_query_path}submission__is_final_balances_for_fy": True})
 
 
 def filter_by_defc_closed_periods() -> Q:
@@ -88,9 +81,9 @@ def final_submissions_for_all_fy() -> List[tuple]:
         fiscal year IF it is "closed" aka ready for display on USAspending.gov
     """
     return (
-        DABSSubmissionWindowSchedule.objects.filter(is_final_balances_for_fy=True)
+        DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=now())
         .values("submission_fiscal_year", "is_quarter")
-        .annotate(fiscal_year=F("submission_fiscal_year"), fiscal_period=F("submission_fiscal_month"))
+        .annotate(fiscal_year=F("submission_fiscal_year"), fiscal_period=Max("submission_fiscal_month"))
         .values_list("fiscal_year", "is_quarter", "fiscal_period", named=True)
     )
 
