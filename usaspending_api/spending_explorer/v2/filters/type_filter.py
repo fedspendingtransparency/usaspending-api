@@ -45,7 +45,6 @@ def get_unreported_data_obj(
         for key in result_keys:
             condensed_entry[key] = entry[key] if key != "id" else str(entry[key])
         result_set.append(condensed_entry)
-
     gtas = (
         GTASSF133Balances.objects.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
         .values("fiscal_year", "fiscal_period")
@@ -55,7 +54,6 @@ def get_unreported_data_obj(
     expected_total = gtas[0]["obligations_incurred_total_cpe__sum"] if gtas else None
     if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()).issubset(set(VALID_UNREPORTED_FILTERS)):
         unreported_obj = {"id": None, "code": None, "type": spending_type, "name": UNREPORTED_DATA_NAME, "amount": None}
-
         # if both values are actually available, then calculate the amount, otherwise leave it as the default of None
         if not (actual_total is None or expected_total is None):
             unreported_obj["amount"] = expected_total - actual_total
@@ -164,7 +162,6 @@ def type_filter(_type, filters, limit=None):
             alt_set = exp.award()
         if _type == "award_category":
             alt_set = exp.award_category()
-
         # Total value of filtered results
         actual_total = 0
 
@@ -183,9 +180,21 @@ def type_filter(_type, filters, limit=None):
                     award["name"] = code
             actual_total += award["total"]
 
-        alt_set = alt_set[:limit] if _type == "award" else alt_set
+        result_set = list(alt_set)
 
-        results = {"total": actual_total, "end_date": fiscal_date, "results": list(alt_set)}
+        # we need to get the File B data for the same set of filters, so we re-run the spending_filter but without setting the _type to any of the alt keys.
+        alt_set2, queryset2 = spending_filter(alt_set, queryset, filters, "")
+        expected_total = queryset2.aggregate(total=Sum("amount"))["total"]
+        unreported_obj = {"id": None, "code": None, "type": _type, "name": UNREPORTED_DATA_NAME, "amount": None}
+        if not (actual_total is None or expected_total is None):
+            unreported_obj["amount"] = expected_total - actual_total
+            result_set.append(unreported_obj)
+            actual_total = expected_total
+            result_set = sorted(result_set, key=lambda k: k["amount"], reverse=True)
+
+        result_set = result_set[:limit] if _type == "award" else result_set
+
+        results = {"total": actual_total, "end_date": fiscal_date, "results": result_set}
 
     else:
         # Annotate and get explorer _type filtered results
@@ -203,10 +212,8 @@ def type_filter(_type, filters, limit=None):
             queryset = exp.object_class()
         if _type == "agency":
             queryset = exp.agency()
-
         # Actual total value of filtered results
         actual_total = queryset.aggregate(total=Sum("amount"))["total"]
-
         result_set, expected_total = get_unreported_data_obj(
             queryset=queryset,
             filters=filters,
