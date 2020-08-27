@@ -350,7 +350,7 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction__assistance_data__place_of_performance_zip4a",
     )
     derived_fields["award_base_action_date_fiscal_year"] = FiscalYear("award__date_signed")
-
+    derived_fields["award_latest_action_date_fiscal_year"] = FiscalYear("award__certified_date")
     derived_fields["usaspending_permalink"] = Case(
         When(
             **{
