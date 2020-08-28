@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func, Count
+from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from django_cte import With
@@ -65,22 +65,18 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
     def post(self, request):
         if self.spending_type == "award":
             results = self.award_queryset
+            include_award_count = True
         else:
             results = self.total_queryset
+            include_award_count = False
 
-        results_list = list(results["results"].order_by(*self.pagination.robust_order_by_fields))
+        results = list(results.order_by(*self.pagination.robust_order_by_fields))
 
         return Response(
             {
-                "totals": {
-                    "awards": results["totals"]["award_count"],
-                    "obligation": results["totals"]["obligation_sum"],
-                    "outlay": results["totals"]["outlay_sum"],
-                },
-                "results": results_list[self.pagination.lower_limit : self.pagination.upper_limit],
-                "page_metadata": get_pagination_metadata(
-                    len(results_list), self.pagination.limit, self.pagination.page
-                ),
+                "totals": self.accumulate_total_values(results, include_award_count),
+                "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
+                "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
         )
 
@@ -158,18 +154,12 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
             ),
         }
 
-        aggregations = {
-            "award_count": Count("id"),
-            "obligation_sum": Sum(cte.col.obligation),
-            "outlay_sum": Sum(cte.col.outlay),
-        }
-
-        queryset = cte.join(ToptierAgency, toptier_agency_id=cte.col.funding_toptier_agency_id).with_cte(cte)
-
-        return {
-            "results": queryset.annotate(**annotations).values(*annotations),
-            "totals": queryset.annotate(**annotations).aggregate(**aggregations),
-        }
+        return (
+            cte.join(ToptierAgency, toptier_agency_id=cte.col.funding_toptier_agency_id)
+            .with_cte(cte)
+            .annotate(**annotations)
+            .values(*annotations)
+        )
 
     @property
     def award_queryset(self):
@@ -207,24 +197,17 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
             "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
         }
 
-        aggregations = {
-            "award_count": Count("id"),
-            "obligation_sum": Sum("obligation"),
-            "outlay_sum": Sum("outlay"),
-        }
-
-        query = (
+        # Assuming it is more performant to fetch all rows once rather than
+        #  run a count query and fetch only a page's worth of results
+        return (
             cte.join(FinancialAccountsByAwards, treasury_account__funding_toptier_agency_id=cte.col.toptier_agency_id)
             .with_cte(cte)
             .filter(*filters)
             .annotate(agency_id=cte.col.agency_id, toptier_code=cte.col.toptier_code, toptier_name=cte.col.toptier_name)
             .values("agency_id", "toptier_code", "toptier_name")
             .annotate(**annotations)
+            .values(*annotations)
         )
-
-        # Assuming it is more performant to fetch all rows once rather than
-        #  run a count query and fetch only a page's worth of results
-        return {"totals": query.values(*annotations).aggregate(**aggregations), "results": query.values(*annotations)}
 
 
 class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):

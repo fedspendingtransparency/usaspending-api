@@ -27,12 +27,12 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
 
-
     + Body
 
             {
                 "totals": {
-                    "awards": 4574,
+                    "award_count": 4574,
+                    "face_value_of_loan": 290416885040.71
                     "obligation": 364037369840.58,
                     "outlay": 290416885040.71
                 },
@@ -116,7 +116,8 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
         + `outlay`
 
 ## Totals (object)
-+ `awards` (required, number)
++ `award_count` (required, number, nullable)
++ `face_value_of_loan` (required, number)
 + `obligation` (required, number)
 + `outlay` (required, number)
 

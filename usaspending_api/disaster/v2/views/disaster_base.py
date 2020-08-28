@@ -300,6 +300,22 @@ class DisasterBase(APIView):
             .with_cte(aggregate_awards),
         )
 
+    @staticmethod
+    def accumulate_total_values(results: List[dict], include_awards: bool = True, include_loans: bool = False) -> dict:
+        totals = {"obligation": 0, "outlay": 0}
+
+        if include_awards:
+            totals["award_count"] = 0
+
+        if include_loans:
+            totals["face_value_of_loan"] = 0
+
+        for res in results:
+            for key in totals.keys():
+                totals[key] += res.get(key) or 0
+
+        return totals
+
 
 class AwardTypeMixin:
     required_filters = ["def_codes", "award_type_codes"]
