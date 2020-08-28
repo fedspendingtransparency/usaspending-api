@@ -67,6 +67,7 @@ SET
   awarding_agency_id                      = l.awarding_agency_id,
   category                                = l.category,
   certified_date                          = l.action_date,
+  fiscal_year                             = fy(l.action_date),
   funding_agency_id                       = l.funding_agency_id,
   last_modified_date                      = l.last_modified_date,
   period_of_performance_current_end_date  = l.period_of_performance_current_end_date,
@@ -94,6 +95,7 @@ WHERE
     OR a.awarding_agency_id                      IS DISTINCT FROM l.awarding_agency_id
     OR a.category                                IS DISTINCT FROM l.category
     OR a.certified_date                          IS DISTINCT FROM l.action_date
+    OR a.fiscal_year                             IS DISTINCT FROM fy(l.action_date)
     OR a.funding_agency_id                       IS DISTINCT FROM l.funding_agency_id
     OR a.last_modified_date                      IS DISTINCT FROM l.last_modified_date
     OR a.period_of_performance_current_end_date  IS DISTINCT FROM l.period_of_performance_current_end_date

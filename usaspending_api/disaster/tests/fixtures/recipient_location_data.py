@@ -215,7 +215,12 @@ def awards_and_transactions():
         "awards.TransactionFABS",
         transaction_id=10,
         cfda_number="10.100",
-        legal_entity_country_code="USA",
+        place_of_perform_country_c="USA",
+        place_of_perfor_state_code=None,
+        place_of_perform_county_co=None,
+        place_of_perform_county_na=None,
+        place_of_performance_congr=None,
+        legal_entity_country_code=None,
         legal_entity_state_code=None,
         legal_entity_county_code=None,
         legal_entity_county_name=None,
@@ -227,6 +232,11 @@ def awards_and_transactions():
         "awards.TransactionFABS",
         transaction_id=20,
         cfda_number="20.200",
+        place_of_perform_country_c="USA",
+        place_of_perfor_state_code="SC",
+        place_of_perform_county_co="005",
+        place_of_perform_county_na="TEST NAME",
+        place_of_performance_congr="50",
         legal_entity_country_code="USA",
         legal_entity_state_code="SC",
         legal_entity_county_code="001",
@@ -239,12 +249,17 @@ def awards_and_transactions():
         "awards.TransactionFABS",
         transaction_id=30,
         cfda_number="20.200",
+        place_of_perform_country_c="USA",
+        place_of_perfor_state_code="WA",
+        place_of_perform_county_co="005",
+        place_of_perform_county_na="TEST NAME",
+        place_of_performance_congr="50",
         legal_entity_country_code="USA",
         legal_entity_state_code="SC",
         legal_entity_county_code="001",
         legal_entity_county_name="CHARLESTON",
         legal_entity_congressional="50",
-        awardee_or_recipient_legal="RECIPIENT 3",
+        awardee_or_recipient_legal="RECIPIENT, 3",
         awardee_or_recipient_uniqu="987654321",
     )
 
@@ -252,6 +267,11 @@ def awards_and_transactions():
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=40,
+        place_of_perform_country_c="USA",
+        place_of_performance_state="WA",
+        place_of_perform_county_co="005",
+        place_of_perform_county_na="TEST NAME",
+        place_of_performance_congr="50",
         legal_entity_country_code="USA",
         legal_entity_state_code="WA",
         legal_entity_county_code="005",
@@ -263,6 +283,11 @@ def awards_and_transactions():
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=50,
+        place_of_perform_country_c="USA",
+        place_of_performance_state="SC",
+        place_of_perform_county_co="001",
+        place_of_perform_county_na="CHARLESTON",
+        place_of_performance_congr="10",
         legal_entity_country_code="USA",
         legal_entity_state_code="WA",
         legal_entity_county_code="005",
@@ -274,6 +299,11 @@ def awards_and_transactions():
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=60,
+        place_of_perform_country_c="USA",
+        place_of_performance_state="SC",
+        place_of_perform_county_co="001",
+        place_of_perform_county_na="CHARLESTON",
+        place_of_performance_congr="90",
         legal_entity_country_code="USA",
         legal_entity_state_code="SC",
         legal_entity_county_code="005",
@@ -285,6 +315,11 @@ def awards_and_transactions():
     mommy.make(
         "awards.TransactionFPDS",
         transaction_id=70,
+        place_of_perform_country_c="USA",
+        place_of_performance_state="SC",
+        place_of_perform_county_co="001",
+        place_of_perform_county_na="CHARLESTON",
+        place_of_performance_congr="90",
         legal_entity_country_code="USA",
         legal_entity_state_code="SC",
         legal_entity_county_code="01",
@@ -395,14 +430,14 @@ def awards_and_transactions():
     )
     mommy.make(
         "recipient.RecipientProfile",
-        recipient_name="RECIPIENT 3",
+        recipient_name="RECIPIENT, 3",
         recipient_level="P",
         recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
         recipient_unique_id="987654321",
     )
     mommy.make(
         "recipient.RecipientProfile",
-        recipient_name="RECIPIENT 3",
+        recipient_name="RECIPIENT, 3",
         recipient_level="C",
         recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
         recipient_unique_id="987654321",
@@ -416,7 +451,7 @@ def awards_and_transactions():
     )
     mommy.make(
         "recipient.RecipientProfile",
-        recipient_name="RECIPIENT 3",
+        recipient_name="RECIPIENT, 3",
         recipient_level="R",
         recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
         recipient_unique_id="987654321",
@@ -425,7 +460,7 @@ def awards_and_transactions():
     # Recipient Lookup
     mommy.make(
         "recipient.RecipientLookup",
-        legal_business_name="RECIPIENT 3",
+        legal_business_name="RECIPIENT, 3",
         recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
         duns="987654321",
     )
