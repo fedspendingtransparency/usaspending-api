@@ -883,17 +883,9 @@ def test_unreported_file_c(client):
         mommy.make(entry.pop("model"), **entry)
 
     json_request = {"type": "recipient", "filters": {"agency": "-1", "fy": "1600", "quarter": "1"}}
-    resp = client.post(
-        "/api/v2/spending/",
-        content_type="application/json",
-        data=json_request
-    )
+    resp = client.post("/api/v2/spending/", content_type="application/json", data=json_request)
     json_request2 = {"type": "object_class", "filters": {"agency": "-1", "fy": "1600", "quarter": "1"}}
-    resp2 = client.post(
-        "/api/v2/spending/",
-        content_type="application/json",
-        data=json_request2
-    )
+    resp2 = client.post("/api/v2/spending/", content_type="application/json", data=json_request2)
     assert resp.status_code == status.HTTP_200_OK
     assert resp2.status_code == status.HTTP_200_OK
     response = resp.json()
@@ -901,7 +893,7 @@ def test_unreported_file_c(client):
     expected_results = {
         "total": -15,
         "agencies": ["random_recipient_name_2", "random_recipient_name_1", "Unreported Data"],
-        "amounts": [-3, -9, -2],
+        "amounts": [-3, -9, -3],
     }
 
     actual_results = {
