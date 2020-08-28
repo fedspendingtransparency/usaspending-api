@@ -289,7 +289,7 @@ INNER JOIN (
     SELECT
         faba.award_id,
         STRING_AGG(DISTINCT CONCAT(disaster_emergency_fund_code, ': ', public_law), '; ' ORDER BY CONCAT(disaster_emergency_fund_code, ': ', public_law)) AS disaster_emergency_funds,
-        COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
         COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
     FROM
         financial_accounts_by_awards faba
@@ -302,19 +302,10 @@ INNER JOIN (
     INNER JOIN closed_submissions ON (sa."reporting_fiscal_period" = "closed_submissions"."submission_fiscal_month"
         AND sa."quarter_format_flag" = "closed_submissions"."is_quarter"
         AND sa."reporting_fiscal_year" = "closed_submissions"."submission_fiscal_year")
-    LEFT JOIN (
-        SELECT   submission_fiscal_year, is_quarter, max(submission_fiscal_month) AS submission_fiscal_month
-        FROM     dabs_submission_window_schedule
-        WHERE    submission_reveal_date < now() AND period_start_date >= '2020-04-01'
-        GROUP BY submission_fiscal_year, is_quarter
-    ) AS latest_closed_period_per_fy
-        ON latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year
-        AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period
-        AND latest_closed_period_per_fy.is_quarter = sa.quarter_format_flag
     WHERE faba.award_id IS NOT NULL
     GROUP BY
         faba.award_id
     HAVING
-        COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
 ) DEFC ON (DEFC.award_id = awards.id)

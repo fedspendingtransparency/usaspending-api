@@ -99,6 +99,7 @@ def award_count_submission():
         reporting_fiscal_year=2022,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
+        is_final_balances_for_fy=True,
         reporting_period_start="2022-04-01",
     )
 
@@ -133,6 +134,7 @@ def award_count_quarterly_submission():
         reporting_fiscal_quarter=3,
         reporting_fiscal_period=8,
         quarter_format_flag=True,
+        is_final_balances_for_fy=True,
         reporting_period_start="2022-04-01",
     )
 
