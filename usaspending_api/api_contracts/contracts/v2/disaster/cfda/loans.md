@@ -39,7 +39,12 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                         "id": 200,
                         "obligation": 220.0,
                         "outlay": 100.0,
-                        "resource_link": "www.example.com/200"
+                        "resource_link": "www.example.com/200",
+                        "cfda_federal_agency": "OFFICE OF FEDERAL STUDENT AID, EDUCATION, DEPARTMENT OF",
+                        "cfda_objectives": "To provide loan capital directly from the Federal government",
+                        "cfda_website": "http://www.ifap.ed.gov/.",
+                        "applicant_eligibility": "The applicant must be a U.S. citizen, national, or",
+                        "beneficiary_eligibility": "Vocational, undergraduate, and graduate"
                     },
                     {
                         "code": "10.100",
@@ -49,7 +54,12 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
                         "id": 100,
                         "obligation": 2.0,
                         "outlay": 0.0,
-                        "resource_link": null
+                        "resource_link": null,
+                        "cfda_federal_agency": "OFFICE OF FEDERAL STUDENT AID, EDUCATION, DEPARTMENT OF",
+                        "cfda_objectives": "To provide loan capital directly from the Federal government",
+                        "cfda_website": "http://www.ifap.ed.gov/.",
+                        "applicant_eligibility": "The applicant must be a U.S. citizen, national, or",
+                        "beneficiary_eligibility": "Vocational, undergraduate, and graduate"
                     }
                 ],
                 "page_metadata": {
@@ -111,6 +121,12 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
 + `outlay` (required, number, nullable)
 + `resource_link` (required, string, nullable)
     Link to an external website with more information about this result.
++ `cfda_federal_agency` (required, string)
++ `cfda_objectives` (required, string)
++ `cfda_website` (required, string, nullable)
+    Link to an external website with more information about this program.
++ `applicant_eligibility` (required, string)
++ `beneficiary_eligibility` (required, string)
 
 
 ## PageMetadata (object)
