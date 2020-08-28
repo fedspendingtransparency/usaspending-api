@@ -11,7 +11,7 @@ Returns opportunity totals for a CFDA or all opportunity totals.
 
 + Request (application/json)
     + Parameters
-        + `cfda_code` (optional, CFDACode, fixed-type)
+        + `cfda_code`: `12.012` (optional, string)
             A CFDA code to limit results to.
 
 + Response 200 (application/json)
@@ -51,6 +51,3 @@ Returns opportunity totals for a CFDA or all opportunity totals.
     Number of programs archived
 + `forecasted` (required, number, nullable)
     Number of programs forecasted
-
-## CFDACode (string)
-A CFDA Code
