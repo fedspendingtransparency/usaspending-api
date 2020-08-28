@@ -213,7 +213,7 @@ def type_filter(_type, filters, limit=None):
         if _type == "agency":
             queryset = exp.agency()
         # Actual total value of filtered results
-        actual_total = queryset.aggregate(total=Sum("amount"))["total"]
+        actual_total = queryset.aggregate(total=Sum("amount"))["total"] or 0
         result_set, expected_total = get_unreported_data_obj(
             queryset=queryset,
             filters=filters,
