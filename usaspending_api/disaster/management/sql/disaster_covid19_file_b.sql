@@ -1,15 +1,3 @@
-WITH recent_submission AS (
-    SELECT
-        "dabs_submission_window_schedule"."submission_fiscal_year",
-        "dabs_submission_window_schedule"."is_quarter",
-        "dabs_submission_window_schedule"."submission_fiscal_month"
-    FROM "dabs_submission_window_schedule"
-    WHERE
-        "dabs_submission_window_schedule"."submission_reveal_date" <= now()
-        AND "dabs_submission_window_schedule"."is_quarter" = False
-    ORDER BY "dabs_submission_window_schedule"."submission_fiscal_year" DESC, "dabs_submission_window_schedule"."submission_fiscal_month" DESC
-    LIMIT 1
-)
 SELECT
     "toptier_agency"."name" AS "owning_agency_name",
     "submission_attributes"."reporting_agency_name" AS "reporting_agency_name",
