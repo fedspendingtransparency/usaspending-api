@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func
+from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func, Exists
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from django_cte import With
@@ -25,7 +25,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
-
+from usaspending_api.submissions.models import SubmissionAttributes
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,10 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
             results = self.total_queryset
 
         results = list(results.order_by(*self.pagination.robust_order_by_fields))
-
+        for item in results: # we're checking for items that do not have an agency profile page
+            if not item["link"]:
+                item["id"] = None # if they don't have a page (means they have no submission), we don't send the id
+            item.pop("link")
         return Response(
             {
                 "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
@@ -148,6 +151,9 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
                     output_field=DecimalField(),
                 ),
                 0,
+            ),
+            "link": Exists(
+                SubmissionAttributes.objects.filter(toptier_code=OuterRef("toptier_code"))
             ),
         }
 
