@@ -177,7 +177,6 @@ def validate_assistance_request(request_data):
 
 def validate_account_request(request_data):
     json_request = {"columns": request_data.get("columns", []), "filters": {}}
-    print(json_request)
 
     _validate_required_parameters(request_data, ["account_level", "filters"])
     json_request["account_level"] = _validate_account_level(request_data, ["federal_account", "treasury_account"])
@@ -191,12 +190,14 @@ def validate_account_request(request_data):
     fy = _validate_fiscal_year(filters)
     quarter = _validate_fiscal_quarter(filters)
     period = _validate_fiscal_period(filters)
+    defCodes = _validate_defCodes(filters) #dev-5865
 
     fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
 
     json_request["filters"]["fy"] = fy
     json_request["filters"]["quarter"] = quarter
     json_request["filters"]["period"] = period
+    json_request["filters"]["defCodes"] = defCodes #dev-5865
 
     _validate_submission_type(filters)
 
@@ -459,6 +460,12 @@ def _validate_fiscal_period(filters: dict) -> Optional[int]:
 
     return period
 
+# dev-5865
+def _validate_defCodes(filters: dict):
+    if "defCodes" not in filters:
+        return None
+
+    return filters["defCodes"]
 
 def _validate_and_bolster_requested_submission_window(
     fy: int, quarter: Optional[int], period: Optional[int]

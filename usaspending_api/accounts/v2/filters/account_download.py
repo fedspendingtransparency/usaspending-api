@@ -72,7 +72,7 @@ def account_download_filter(account_type, download_table, filters, account_level
         query_filters[f"{tas_id}__budget_subfunction_code"] = filters["budget_subfunction"]
 
     # dev-5865
-    
+    # if filters.get("defCodes"):
 
     submission_filter = get_submission_filter(account_type, filters)
 
@@ -87,6 +87,7 @@ def account_download_filter(account_type, download_table, filters, account_level
         )
 
     # Apply filter and return
+    # data = queryset.filter(submission_filter, **query_filters)
     return queryset.filter(submission_filter, **query_filters)
 
 
