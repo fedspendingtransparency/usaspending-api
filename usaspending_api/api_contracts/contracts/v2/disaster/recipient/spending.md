@@ -31,7 +31,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 
             {
                 "totals": {
-                    "awards": 4574,
+                    "award_count": 4574,
                     "obligation": 364037369840.58,
                     "outlay": 290416885040.71
                 },
@@ -96,7 +96,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
         + `outlay`
 
 ## Totals (object)
-+ `awards` (required, number)
++ `award_count` (required, number)
 + `obligation` (required, number)
 + `outlay` (required, number)
 

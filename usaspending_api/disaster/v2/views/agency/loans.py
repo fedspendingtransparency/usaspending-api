@@ -1,6 +1,5 @@
 import logging
 
-from decimal import Decimal
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import F, Value, IntegerField, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
@@ -20,6 +19,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchLoansPaginationMixin,
 )
 from usaspending_api.references.models import Agency, ToptierAgency
+from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 logger = logging.getLogger(__name__)
 
@@ -117,12 +117,6 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
 
         return results
 
-    def total_result(self, response: dict) -> dict:
-        return {
-            "obligation": response.get("obligation_sum", {})["value"],
-            "outlay": response.get("outlay_sum", {})["value"],
-        }
-
     def _build_json_result(self, bucket: dict):
         info = json_str_to_dict(bucket.get("key"))
         return {
@@ -132,7 +126,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
-                column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
+                column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
                 for column in self.sum_column_mapping
             },
         }

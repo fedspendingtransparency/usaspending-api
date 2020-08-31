@@ -31,12 +31,11 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
 
-
     + Body
 
             {
                 "totals": {
-                    "awards": 4574,
+                    "award_count": 4574,
                     "obligation": 364037369840.58,
                     "outlay": 290416885040.71
                 },
@@ -105,7 +104,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
         + `outlay`
 
 ## Totals (object)
-+ `awards` (required, number)
++ `award_count` (required, number)
 + `obligation` (required, number)
 + `outlay` (required, number)
 

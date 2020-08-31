@@ -22,15 +22,17 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `award_count` (required, number)
+        + `face_value_of_loan` (optional, number)
         + `obligation` (required, number)
         + `outlay` (required, number)
-        + `award_count` (required, number)
+        
     + Body
 
             {
+                "award_count": 42,
                 "obligation": 32984563875,
-                "outlay": 15484564321,
-                "award_count": 42
+                "outlay": 15484564321
             }
 
 

@@ -31,7 +31,8 @@ Returns loan spending details of recipients receiving supplemental funding budge
 
             {
                 "totals": {
-                    "awards": 4574,
+                    "award_count": 4574,
+                    "face_value_of_laon": "37369840.0",
                     "obligation": 364037369840.58,
                     "outlay": 290416885040.71
                 },
@@ -103,7 +104,8 @@ Returns loan spending details of recipients receiving supplemental funding budge
         + `outlay`
 
 ## Totals (object)
-+ `awards` (required, number)
++ `award_count` (required, number)
++ `face_value_of_laon` (required, number)
 + `obligation` (required, number)
 + `outlay` (required, number)
 

@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import List
 
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
@@ -6,6 +5,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchLoansPaginationMixin,
 )
 from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
+from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 
 class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterBase):
@@ -20,12 +20,6 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
     agg_key = "cfda_agg_key"
     is_loans = True
 
-    def total_result(self, response: dict) -> dict:
-        return {
-            "obligation": response.get("obligation_sum", {})["value"],
-            "outlay": response.get("outlay_sum", {})["value"],
-        }
-
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
@@ -39,7 +33,7 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
                     "award_count": int(bucket.get("doc_count", 0)),
                     "resource_link": info.get("url") or None,
                     **{
-                        column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
+                        column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
                         for column in self.sum_column_mapping
                     },
                 }

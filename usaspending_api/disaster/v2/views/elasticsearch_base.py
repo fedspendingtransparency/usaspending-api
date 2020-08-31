@@ -17,6 +17,7 @@ from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, _BaseP
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_awards,
+    get_summed_value_as_float,
 )
 
 
@@ -177,9 +178,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         search.aggs.bucket(self.agg_group_name, group_by_agg_key)
         for field, sum_aggregations in sum_aggregations.items():
             search.aggs[self.agg_group_name].metric(field, sum_aggregations["sum_field"])
+            search.aggs.pipeline(f"{field}_sum", sum_aggregations["sum_field"])
         search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
-        search.aggs.pipeline("obligation_sum", A("sum", field="total_covid_obligation"))
-        search.aggs.pipeline("outlay_sum", A("sum", field="total_covid_outlay"))
 
         # If provided, break down primary bucket aggregation into sub-aggregations based on a sub_agg_key
         if self.sub_agg_key:
@@ -230,12 +230,30 @@ class ElasticsearchDisasterBase(DisasterBase):
         for field, sum_aggregations in sum_aggregations.items():
             search.aggs[self.agg_group_name].aggs[self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
 
+    def build_totals(self, response: Optional[dict], for_empty_result: bool = False) -> dict:
+        totals = {}
+
+        for key, value in self.sum_column_mapping.items():
+            if for_empty_result:
+                totals[key] = 0
+            else:
+                totals[key] = get_summed_value_as_float(response, f"{value}_sum")
+
+        return totals
+
     def query_elasticsearch(self) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
         if search is None:
-            return {"totals": {"obligation": 0, "outlay": 0}, "results": []}
+            totals = self.build_totals(response=None, for_empty_result=True)
+            totals["award_count"] = 0
+            return {"totals": totals, "results": []}
+
         response = search.handle_execute()
-        total = self.total_result(response.aggs.to_dict())
-        total["awards"] = search.count()
-        results = self.build_elasticsearch_result(response.aggs.to_dict())
-        return {"totals": total, "results": results[: self.pagination.limit]}
+        response_as_dict = response.aggs.to_dict()
+
+        totals = self.build_totals(response_as_dict)
+        totals["award_count"] = search.handle_count()
+
+        results = self.build_elasticsearch_result(response_as_dict)
+
+        return {"totals": totals, "results": results[: self.pagination.limit]}

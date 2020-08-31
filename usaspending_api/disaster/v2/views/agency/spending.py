@@ -1,6 +1,4 @@
 import logging
-from decimal import Decimal
-from typing import List
 
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func
@@ -8,6 +6,7 @@ from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from django_cte import With
 from rest_framework.response import Response
+from typing import List
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
@@ -25,7 +24,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
-
+from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 logger = logging.getLogger(__name__)
 
@@ -223,12 +222,6 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
 
-    def total_result(self, response: dict) -> dict:
-        return {
-            "obligation": response.get("obligation_sum", {})["value"],
-            "outlay": response.get("outlay_sum", {})["value"],
-        }
-
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
         info_buckets = response.get(self.agg_group_name, {}).get("buckets", [])
@@ -252,7 +245,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
-                column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
+                column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
                 for column in self.sum_column_mapping
             },
         }
