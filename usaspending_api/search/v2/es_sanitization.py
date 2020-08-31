@@ -19,12 +19,13 @@ def concat_if_array(data):
 
 def es_sanitize(input_string):
     """ Escapes reserved elasticsearch characters and removes when necessary """
-    processed_string = re.sub(r'([&|{}()*?:\\"+\[\]<>])', "", input_string)
+    processed_string = re.sub(r'([|{}()*?:\\"+\[\]<>])', "", input_string)
     processed_string = re.sub(r"[\-]", r"\-", processed_string)
     processed_string = re.sub(r"[\^]", r"\^", processed_string)
     processed_string = re.sub(r"[~]", r"\~", processed_string)
     processed_string = re.sub(r"[/]", r"\/", processed_string)
     processed_string = re.sub(r"[!]", r"\!", processed_string)
+    processed_string = re.sub(r"[&]", r"\&", processed_string)
     if len(processed_string) != len(input_string):
         msg = "Stripped characters from input string New: '{}' Original: '{}'"
         logger.info(msg.format(processed_string, input_string))
@@ -40,6 +41,7 @@ def es_minimal_sanitize(keyword):
     processed_string = re.sub(r"[~]", r"\~", processed_string)
     processed_string = re.sub(r"[/]", r"\/", processed_string)
     processed_string = re.sub(r"[!]", r"\!", processed_string)
+    processed_string = re.sub(r"[&]", r"\&", processed_string)
     if len(processed_string) != len(keyword):
         msg = "Stripped characters from ES keyword search string New: '{}' Original: '{}'"
         logger.info(msg.format(processed_string, keyword))
