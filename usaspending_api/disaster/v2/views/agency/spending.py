@@ -70,8 +70,9 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
 
         results = list(results.order_by(*self.pagination.robust_order_by_fields))
         for item in results:  # we're checking for items that do not have an agency profile page
-            if item.get("link") is not None and not item["link"]:
-                item["id"] = None  # if they don't have a page (means they have no submission), we don't send the id
+            if item.get("link") is not None:
+                if not item["link"]:
+                    item["id"] = None  # if they don't have a page (means they have no submission), we don't send the id
                 item.pop("link")
         return Response(
             {
