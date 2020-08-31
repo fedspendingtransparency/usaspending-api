@@ -42,7 +42,7 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             )
 
         # Validate other parameters previously required by the Bulk Download endpoint
-        for required_param in ["agency", "date_type", "date_range"]:
+        for required_param in ["date_type", "date_range"]:
             if required_param not in filters:
                 raise InvalidParameterException(f"Missing one or more required body parameters: {required_param}")
 
@@ -77,23 +77,24 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         del filters["date_type"]
 
         # Replacing agency with agencies
-        if filters["agency"] != "all":
-            toptier_name = ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).values("name")
-            if not toptier_name:
-                raise InvalidParameterException("Toptier ID not found: {}".format(filters["agency"]))
-            toptier_name = toptier_name[0]["name"]
-            if "sub_agency" in filters:
-                if filters["sub_agency"]:
-                    filters["agencies"] = [
-                        {
-                            "type": "awarding",
-                            "tier": "subtier",
-                            "name": filters["sub_agency"],
-                            "toptier_name": toptier_name,
-                        }
-                    ]
-                del filters["sub_agency"]
-            else:
-                filters["agencies"] = [{"type": "awarding", "tier": "toptier", "name": toptier_name}]
+        if filters.get("agency"):
+            if filters["agency"] != "all":
+                toptier_name = ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).values("name")
+                if not toptier_name:
+                    raise InvalidParameterException("Toptier ID not found: {}".format(filters["agency"]))
+                toptier_name = toptier_name[0]["name"]
+                if "sub_agency" in filters:
+                    if filters["sub_agency"]:
+                        filters["agencies"] = [
+                            {
+                                "type": "awarding",
+                                "tier": "subtier",
+                                "name": filters["sub_agency"],
+                                "toptier_name": toptier_name,
+                            }
+                        ]
+                    del filters["sub_agency"]
+                else:
+                    filters["agencies"] = [{"type": "awarding", "tier": "toptier", "name": toptier_name}]
 
         request_data["filters"] = filters
