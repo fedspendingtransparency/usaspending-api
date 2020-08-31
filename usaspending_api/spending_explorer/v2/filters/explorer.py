@@ -8,10 +8,17 @@ from usaspending_api.submissions.models import SubmissionAttributes
 class Explorer(object):
     def __init__(self, alt_set, queryset):
         # Moving agency mapping outside function to reduce response time
-        agency_queryet = Agency.objects.filter(toptier_flag=True).values("id", "toptier_agency__toptier_code").annotate(link=Exists(
-                SubmissionAttributes.objects.filter(toptier_code=OuterRef("toptier_agency__toptier_code"))
-            ))
-        self.agency_ids = {agency["toptier_agency__toptier_code"]: {"id":agency["id"], "link": agency["link"]} for agency in agency_queryet}
+        agency_queryet = (
+            Agency.objects.filter(toptier_flag=True)
+            .values("id", "toptier_agency__toptier_code")
+            .annotate(
+                link=Exists(SubmissionAttributes.objects.filter(toptier_code=OuterRef("toptier_agency__toptier_code")))
+            )
+        )
+        self.agency_ids = {
+            agency["toptier_agency__toptier_code"]: {"id": agency["id"], "link": agency["link"]}
+            for agency in agency_queryet
+        }
         self.alt_set = alt_set
         self.queryset = queryset
 

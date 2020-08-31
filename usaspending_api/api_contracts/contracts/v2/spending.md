@@ -268,6 +268,8 @@ Using the response from the general Spending Explorer, you can drill down to mor
 + `amount` (required, number)
 + `account_number` (optional, string)
     The response includes `account_number` when the requested `type` was `federal_account`.
++ `link` (optional, string)
+    The response includes `link` when the requested `type` was `agency`
 
 ## SpendingExplorerGeneralUnreportedResponse (object)
 + `code` (optional, nullable)
