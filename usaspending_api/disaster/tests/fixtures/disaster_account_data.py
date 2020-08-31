@@ -26,6 +26,7 @@ def disaster_account_data():
         reporting_fiscal_period=7,
         quarter_format_flag=True,
         reporting_period_start="2022-04-01",
+        toptier_code="007",
     )
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -33,6 +34,7 @@ def disaster_account_data():
         reporting_fiscal_period=8,
         quarter_format_flag=False,
         reporting_period_start="2022-05-01",
+        toptier_code="008",
     )
     sub3 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -40,6 +42,7 @@ def disaster_account_data():
         reporting_fiscal_period=7,
         quarter_format_flag=True,
         reporting_period_start="2022-04-01",
+        toptier_code="009"
     )
     sub4 = mommy.make(
         "submissions.SubmissionAttributes",
