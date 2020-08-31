@@ -339,7 +339,17 @@ def test_award_keyword(award_data_fixture, elasticsearch_award_index):
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
     assert response["hits"]["total"]["value"] == 1
     query = {
-        "query": {"bool": {"filter": {"dis_max": {"queries": [{"query_string": {"query": "jonathan simms"}}]}}}},
+        "query": {
+            "bool": {
+                "filter": {
+                    "dis_max": {
+                        "queries": [
+                            {"query_string": {"query": "jonathan simms", "fields": ["description", "recipient_name"]}}
+                        ]
+                    }
+                }
+            }
+        },
         "_source": ["award_id"],
     }
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
