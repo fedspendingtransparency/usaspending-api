@@ -63,7 +63,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             self.is_in_provided_def_codes,
         ]
 
-        group_by_annotations = {"award_identifier": self.unique_file_c_awards}
+        group_by_annotations = {"award_identifier": "distinct_award_key"}
 
         dollar_annotations = {
             "inner_obligation": self.obligated_field_annotation,
