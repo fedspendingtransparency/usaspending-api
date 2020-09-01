@@ -10,6 +10,7 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
 UNREPORTED_DATA_NAME = "Unreported Data"
+UNREPORTED_FILE_C_NAME = "Non-Award Spending"
 VALID_UNREPORTED_DATA_TYPES = ["agency", "budget_function", "object_class"]
 VALID_UNREPORTED_FILTERS = ["fy", "quarter", "period"]
 
@@ -185,12 +186,12 @@ def type_filter(_type, filters, limit=None):
         # we need to get the File B data for the same set of filters, so we re-run the spending_filter but without setting the _type to any of the alt keys.
         alt_set2, queryset2 = spending_filter(alt_set, queryset, filters, "")
         expected_total = queryset2.aggregate(total=Sum("amount"))["total"]
-        unreported_obj = {"id": None, "code": None, "type": _type, "name": UNREPORTED_DATA_NAME, "amount": None}
+        unreported_obj = {"id": None, "code": None, "type": _type, "name": UNREPORTED_FILE_C_NAME, "amount": None}
         if not (actual_total is None or expected_total is None):
             unreported_obj["amount"] = expected_total - actual_total
             result_set.append(unreported_obj)
             actual_total = expected_total
-            result_set = sorted(result_set, key=lambda k: k["amount"], reverse=True)
+            result_set.sort(key=lambda k: k["amount"], reverse=True)
 
         result_set = result_set[:limit] if _type == "award" else result_set
 
