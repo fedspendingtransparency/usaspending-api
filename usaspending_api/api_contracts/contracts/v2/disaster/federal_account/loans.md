@@ -32,7 +32,7 @@ Returns loan spending details of Federal Accounts receiving supplemental funding
             {
                 "totals": {
                     "award_count": 4574,
-                    "face_value_of_loan": 290416885040.71
+                    "face_value_of_loan": 290416885040.71,
                     "obligation": 364037369840.58,
                     "outlay": 290416885040.71
                 },

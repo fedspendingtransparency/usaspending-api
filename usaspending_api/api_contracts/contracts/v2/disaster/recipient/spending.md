@@ -26,7 +26,6 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
 
-
     + Body
 
             {

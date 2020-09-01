@@ -31,6 +31,7 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
 
             {
                 "award_count": 42,
+                "face_value_of_loan": 984563875,
                 "obligation": 32984563875,
                 "outlay": 15484564321
             }

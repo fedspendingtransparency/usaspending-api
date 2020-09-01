@@ -26,7 +26,6 @@ Returns loan spending details of recipients receiving supplemental funding budge
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
 
-
     + Body
 
             {
