@@ -190,14 +190,14 @@ def validate_account_request(request_data):
     fy = _validate_fiscal_year(filters)
     quarter = _validate_fiscal_quarter(filters)
     period = _validate_fiscal_period(filters)
-    defCodes = _validate_defCodes(filters) #dev-5865
+    def_codes = _validate_def_codes(filters) #-5865
 
     fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
 
     json_request["filters"]["fy"] = fy
     json_request["filters"]["quarter"] = quarter
     json_request["filters"]["period"] = period
-    json_request["filters"]["defCodes"] = defCodes #dev-5865
+    json_request["filters"]["def_codes"] = def_codes #dev-5865
 
     _validate_submission_type(filters)
 
@@ -461,11 +461,15 @@ def _validate_fiscal_period(filters: dict) -> Optional[int]:
     return period
 
 # dev-5865
-def _validate_defCodes(filters: dict):
-    if "defCodes" not in filters:
+def _validate_def_codes(filters: dict):
+    valid_codes = {"L", "M", "N", "O", "P"}
+    if "def_codes" not in filters:
         return None
+    for code in filters["def_codes"]:
+        if code not in valid_codes:
+            return None
 
-    return filters["defCodes"]
+    return filters["def_codes"]
 
 def _validate_and_bolster_requested_submission_window(
     fy: int, quarter: Optional[int], period: Optional[int]
