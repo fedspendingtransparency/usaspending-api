@@ -4,6 +4,8 @@ from requests import post
 from time import sleep
 from django.conf import settings
 
+ALL_CFDAS = None
+
 
 class CFDAViewSet(APIView):
     """
@@ -16,21 +18,28 @@ class CFDAViewSet(APIView):
         """
         Return the view's queryset.
         """
-        response = self._request_from_grants_api()
-
-        #  grants API is brittle in practice, so if we don't get results retry at a polite rate
-        while not response:
-            sleep(2)
-            response = self._request_from_grants_api()
-
-        results = response.values()
+        self._populate_cfdas_if_needed()
 
         if cfda:
-            results = [result for result in results if result["cfda"] == cfda]
+            results = [result for result in ALL_CFDAS if result["cfda"] == cfda]
+        else:
+            results = ALL_CFDAS
 
         response = {"results": results}
 
         return Response(response)
+
+    def _populate_cfdas_if_needed(self):
+        global ALL_CFDAS
+        if not ALL_CFDAS:
+            response = self._request_from_grants_api()
+
+            #  grants API is brittle in practice, so if we don't get results retry at a polite rate
+            while not response:
+                sleep(2)
+                response = self._request_from_grants_api()
+
+            ALL_CFDAS = response.values()
 
     def _request_from_grants_api(self):
         return post(
