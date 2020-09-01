@@ -6,6 +6,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchLoansPaginationMixin,
 )
 from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
+from usaspending_api.references.models import Cfda
 
 
 class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterBase):
@@ -25,6 +26,7 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in info_buckets:
             info = json_str_to_dict(bucket.get("key"))
+            cfda = Cfda.objects.filter(program_number=info.get("code")).first()
             results.append(
                 {
                     "id": int(info.get("id")) if info.get("id") else None,
@@ -32,6 +34,11 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
                     "description": info.get("description") or None,
                     "award_count": int(bucket.get("doc_count", 0)),
                     "resource_link": info.get("url") or None,
+                    "cfda_federal_agency": cfda.federal_agency,
+                    "cfda_objectives": cfda.objectives,
+                    "cfda_website": cfda.url,
+                    "applicant_eligibility": cfda.applicant_eligibility,
+                    "beneficiary_eligibility": cfda.beneficiary_eligibility,
                     **{
                         column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
                         for column in self.sum_column_mapping
