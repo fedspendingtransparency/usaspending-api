@@ -2,6 +2,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from requests import post
 from time import sleep
+from django.conf import settings
 
 
 class CFDAViewSet(APIView):
@@ -32,9 +33,7 @@ class CFDAViewSet(APIView):
         return Response(response)
 
     def _request_from_grants_api(self):
-        # DO NOT PUT THIS IN THE CODEBASE!!!!!
-        VERYMUCHTEMPORARYKEY = ""
         return post(
             "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals",
-            headers={"Authorization": f"APIKEY={VERYMUCHTEMPORARYKEY}"},
+            headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
         ).json()["cfdas"]

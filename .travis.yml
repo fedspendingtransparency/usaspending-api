@@ -35,6 +35,7 @@ env:
   - BROKER_REPO_BRANCH=$(if [ "${TRAVIS_EVENT_TYPE}" = "pull_request" ] && [ ! -z "`git ls-remote --heads ${BROKER_REPO_URL} ${TRAVIS_BRANCH}`" ]; then echo "${TRAVIS_BRANCH}"; else echo "development"; fi;)
   - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
   - BROKER_DOCKER_IMAGE=dataact-broker-backend
+  - GRANTS_API_KEY=${GRANTS_API_KEY}
 
 before_install:
   - npm install --global dredd@11.2.19
