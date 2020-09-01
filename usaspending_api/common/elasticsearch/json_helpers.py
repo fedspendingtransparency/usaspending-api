@@ -13,7 +13,7 @@ def json_str_to_dict(string: str) -> dict:
 
     try:
         return json.loads(string.encode("unicode_escape"))
-    except json.decoder.JSONDecodeError as e:
+    except json.decoder.JSONDecodeError:
 
         # Try to parse the string with Regex before throwing error
         key_count_regex = r"\"[^\"]*\"\s?:"
@@ -30,4 +30,4 @@ def json_str_to_dict(string: str) -> dict:
         ):
             return {key: value for key, value in grouping_matches}
         else:
-            return e  # Return the JSONDecodeError since we couldn't salvage with regex
+            raise json.decoder.JSONDecodeError(f"Unable to parse '{string}' even using regex")
