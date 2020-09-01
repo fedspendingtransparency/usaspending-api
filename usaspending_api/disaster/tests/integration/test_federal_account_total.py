@@ -80,6 +80,9 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
+    expected_totals = {"obligation": 304.0, "outlay": 667.0, "total_budgetary_resources": 1528430.0}
+    assert resp.json()["totals"] == expected_totals
+
 
 @pytest.mark.django_db
 def test_federal_account_empty(client, monkeypatch, helpers, generic_account_data):
