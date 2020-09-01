@@ -67,7 +67,7 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             "pop_state_code": row["pop_state_code"],
             "total": row["total"],
             "count": len(set(row["distinct_awards"].split(","))),
-            "face_value_loan_guarantee": row["face_value_loan_guarantee"]
+            "face_value_loan_guarantee": row["face_value_loan_guarantee"],
         }
         return result
     except IndexError:
