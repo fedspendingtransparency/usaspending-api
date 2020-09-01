@@ -28,6 +28,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
 

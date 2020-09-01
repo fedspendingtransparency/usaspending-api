@@ -103,9 +103,8 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
 
-    def build_elasticsearch_result(self, response: dict) -> List[dict]:
+    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
-        info_buckets = response.get(self.agg_group_name, {}).get("buckets", [])
         for bucket in info_buckets:
             result = self._build_json_result(bucket)
             child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])

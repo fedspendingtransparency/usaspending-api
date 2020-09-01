@@ -19,9 +19,8 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
     query_fields = ["cfda_title.contains", "cfda_number.contains"]
     agg_key = "cfda_agg_key"
 
-    def build_elasticsearch_result(self, response: dict) -> List[dict]:
+    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
-        info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in info_buckets:
             info = json_str_to_dict(bucket.get("key"))
             results.append(

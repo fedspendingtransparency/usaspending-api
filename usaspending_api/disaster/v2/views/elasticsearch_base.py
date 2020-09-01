@@ -88,8 +88,6 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         self.bucket_count = get_number_of_unique_terms_for_awards(self.filter_query, f"{self.agg_key}.hash")
 
-        response = self.query_elasticsearch()
-
         messages = []
         if self.pagination.sort_key in ("id", "code"):
             messages.append(
@@ -107,6 +105,7 @@ class ElasticsearchDisasterBase(DisasterBase):
                 )
             )
 
+        response = self.query_elasticsearch()
         response["page_metadata"] = get_pagination_metadata(
             self.bucket_count, self.pagination.limit, self.pagination.page
         )
@@ -116,7 +115,7 @@ class ElasticsearchDisasterBase(DisasterBase):
         return Response(response)
 
     @abstractmethod
-    def build_elasticsearch_result(self, response: dict) -> List[dict]:
+    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         pass
 
     def build_elasticsearch_search_with_aggregations(self) -> Optional[AwardSearch]:
@@ -126,16 +125,13 @@ class ElasticsearchDisasterBase(DisasterBase):
         # Create the initial search using filters
         search = AwardSearch().filter(self.filter_query)
 
-        pagination_values = {
-            "from": (self.pagination.page - 1) * self.pagination.limit,
-            "size": self.pagination.limit + 1,
-        }
-
         # As of writing this the value of settings.ES_ROUTING_FIELD is the only high cardinality aggregation that
         # we support. Since the Elasticsearch clusters are routed by this field we don't care to get a count of
         # unique buckets, but instead we use the upper_limit and don't allow an upper_limit > 10k.
-        if self.agg_key == settings.ES_ROUTING_FIELD:
-            size = self.pagination.upper_limit
+        if self.bucket_count == 0:
+            return None
+        elif self.agg_key == settings.ES_ROUTING_FIELD:
+            size = self.bucket_count
             shard_size = size
             group_by_agg_key_values = {
                 "order": [
@@ -143,21 +139,17 @@ class ElasticsearchDisasterBase(DisasterBase):
                     {self.sort_column_mapping["id"]: self.pagination.sort_order},
                 ]
             }
-            bucket_sort_values = {**pagination_values}
+            bucket_sort_values = None
         else:
-            if self.bucket_count == 0:
-                return None
-            else:
-                size = self.bucket_count
-                shard_size = self.bucket_count + 100
-                group_by_agg_key_values = {}
-                bucket_sort_values = {
-                    "sort": [
-                        {self.sort_column_mapping[self.pagination.sort_key]: {"order": self.pagination.sort_order}},
-                        {self.sort_column_mapping["id"]: {"order": self.pagination.sort_order}},
-                    ],
-                    **pagination_values,
-                }
+            size = self.bucket_count
+            shard_size = self.bucket_count + 100
+            group_by_agg_key_values = {}
+            bucket_sort_values = {
+                "sort": [
+                    {self.sort_column_mapping[self.pagination.sort_key]: {"order": self.pagination.sort_order}},
+                    {self.sort_column_mapping["id"]: {"order": self.pagination.sort_order}},
+                ]
+            }
 
         if shard_size > 10000:
             raise ForbiddenException(
@@ -168,18 +160,18 @@ class ElasticsearchDisasterBase(DisasterBase):
         group_by_agg_key_values.update({"field": self.agg_key, "size": size, "shard_size": shard_size})
         group_by_agg_key = A("terms", **group_by_agg_key_values)
 
-        bucket_sort_aggregation = A("bucket_sort", **bucket_sort_values)
         sum_aggregations = {
             mapping: get_scaled_sum_aggregations(mapping, self.pagination)
             for mapping in self.sum_column_mapping.values()
         }
 
-        # Define all aggregations needed to build the response
         search.aggs.bucket(self.agg_group_name, group_by_agg_key)
         for field, sum_aggregations in sum_aggregations.items():
             search.aggs[self.agg_group_name].metric(field, sum_aggregations["sum_field"])
-            search.aggs.pipeline(f"{field}_sum", sum_aggregations["sum_field"])
-        search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
+
+        if bucket_sort_values:
+            bucket_sort_aggregation = A("bucket_sort", **bucket_sort_values)
+            search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
 
         # If provided, break down primary bucket aggregation into sub-aggregations based on a sub_agg_key
         if self.sub_agg_key:
@@ -230,30 +222,31 @@ class ElasticsearchDisasterBase(DisasterBase):
         for field, sum_aggregations in sum_aggregations.items():
             search.aggs[self.agg_group_name].aggs[self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
 
-    def build_totals(self, response: Optional[dict], for_empty_result: bool = False) -> dict:
-        totals = {}
+    def build_totals(self, response: List[dict]) -> dict:
+        totals = {key: 0 for key in self.sum_column_mapping.keys()}
+        award_count = 0
 
-        for key, value in self.sum_column_mapping.items():
-            if for_empty_result:
-                totals[key] = 0
-            else:
-                totals[key] = get_summed_value_as_float(response, f"{value}_sum")
+        for bucket in response:
+            for key in totals.keys():
+                totals[key] += get_summed_value_as_float(bucket, self.sum_column_mapping[key])
+            award_count += int(bucket.get("doc_count", 0))
+
+        totals["award_count"] = award_count
 
         return totals
 
     def query_elasticsearch(self) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
         if search is None:
-            totals = self.build_totals(response=None, for_empty_result=True)
-            totals["award_count"] = 0
+            totals = self.build_totals(response=[])
             return {"totals": totals, "results": []}
 
         response = search.handle_execute()
-        response_as_dict = response.aggs.to_dict()
+        response = response.aggs.to_dict()
+        buckets = response.get("group_by_agg_key", {}).get("buckets", [])
 
-        totals = self.build_totals(response_as_dict)
-        totals["award_count"] = search.handle_count()
+        totals = self.build_totals(buckets)
 
-        results = self.build_elasticsearch_result(response_as_dict)
+        results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
 
-        return {"totals": totals, "results": results[: self.pagination.limit]}
+        return {"totals": totals, "results": results}

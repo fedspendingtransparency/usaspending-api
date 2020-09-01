@@ -23,6 +23,7 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
 
