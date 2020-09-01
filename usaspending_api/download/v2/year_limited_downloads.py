@@ -46,6 +46,9 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             if required_param not in filters:
                 raise InvalidParameterException(f"Missing one or more required body parameters: {required_param}")
 
+        if "agency" not in filters and "agencies" not in filters:
+            raise InvalidParameterException(f"Request must include either 'agency' or 'agencies'")
+
         # Creating new filter for custom award download to keep Prime and Sub Awards separate;
         # Also adding award levels based on filters passed
         request_data["award_levels"] = []
