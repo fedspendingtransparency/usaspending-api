@@ -26,24 +26,40 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in info_buckets:
             info = json_str_to_dict(bucket.get("key"))
+            toAdd = {
+                "id": int(info.get("id")) if info.get("id") else None,
+                "code": info.get("code") or None,
+                "description": info.get("description") or None,
+                "award_count": int(bucket.get("doc_count", 0)),
+                "resource_link": info.get("url") or None,
+                **{
+                    column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
+                    for column in self.sum_column_mapping
+                },
+            }
+
             cfda = Cfda.objects.filter(program_number=info.get("code")).first()
-            results.append(
-                {
-                    "id": int(info.get("id")) if info.get("id") else None,
-                    "code": info.get("code") or None,
-                    "description": info.get("description") or None,
-                    "award_count": int(bucket.get("doc_count", 0)),
-                    "resource_link": info.get("url") or None,
-                    "cfda_federal_agency": cfda.federal_agency,
-                    "cfda_objectives": cfda.objectives,
-                    "cfda_website": cfda.url,
-                    "applicant_eligibility": cfda.applicant_eligibility,
-                    "beneficiary_eligibility": cfda.beneficiary_eligibility,
-                    **{
-                        column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
-                        for column in self.sum_column_mapping
-                    },
-                }
-            )
+            if cfda:
+                toAdd.update(
+                    {
+                        "cfda_federal_agency": cfda.federal_agency,
+                        "cfda_objectives": cfda.objectives,
+                        "cfda_website": cfda.url,
+                        "applicant_eligibility": cfda.applicant_eligibility,
+                        "beneficiary_eligibility": cfda.beneficiary_eligibility,
+                    }
+                )
+            else:
+                toAdd.update(
+                    {
+                        "cfda_federal_agency": None,
+                        "cfda_objectives": None,
+                        "cfda_website": None,
+                        "applicant_eligibility": None,
+                        "beneficiary_eligibility": None,
+                    }
+                )
+
+            results.append(toAdd)
 
         return results
