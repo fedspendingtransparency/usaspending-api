@@ -892,7 +892,7 @@ def test_unreported_file_c(client):
     response2 = resp2.json()
     expected_results = {
         "total": -15,
-        "agencies": ["random_recipient_name_2", "Unreported Data", "random_recipient_name_1"],
+        "agencies": ["random_recipient_name_2", "Non-Award Spending", "random_recipient_name_1"],
         "amounts": [-3, -3, -9],
     }
 

@@ -179,7 +179,11 @@ def type_filter(_type, filters, limit=None):
                 award["code"] = code
                 if _type == "award":
                     award["name"] = code
-            actual_total += award["total"]
+            if award["amount"] is None:
+                award["amount"] = 0
+            if award["name"] is None:
+                award["name"] = "Blank {}".format(_type.capitalize().replace("_", " "))
+            actual_total += award["total"] or 0
 
         result_set = list(alt_set)
 
