@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Opportunity Totals by CFDA [/api/v2/references/cfda/opportunities/totals/{?cfda_code}/]
+# Opportunity Totals by CFDA [/api/v2/references/cfda/totals/{?cfda_code}/]
 
-This endpoint provides insights on the opportunity totals for CFDA's.
+This endpoint provides total values for requested CFDAs.
 
 ## GET
 
@@ -12,16 +12,16 @@ Returns opportunity totals for a CFDA or all opportunity totals.
 + Request (application/json)
     + Parameters
         + `cfda_code`: `12.012` (optional, string)
-            A CFDA code to limit results to.
+            A CFDA code to limit results to. If no value is provided, all CFDAs will be returned.
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `cfdas` (required, array[CFDAS], fixed-type)
+        + `results` (required, array[CFDA], fixed-type)
 
     + Body
 
             {
-                "cfdas": [
+                "results": [
                     {
                         "cfda": "00.000",
                         "posted": 442,
@@ -40,7 +40,7 @@ Returns opportunity totals for a CFDA or all opportunity totals.
             }
 
 # Data Structures
-## CFDAS (object)
+## CFDA (object)
 + `cfda` (required, string, nullable)
     CFDA Code
 + `posted` (required, number, nullable)
