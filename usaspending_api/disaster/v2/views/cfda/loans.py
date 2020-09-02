@@ -24,6 +24,10 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
         info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
+
+        cfda_prefetch_pks = [json_str_to_dict(bucket.get("key")).get("code") for bucket in info_buckets]
+        prefetched_cfdas = Cfda.objects.filter(program_number__in=cfda_prefetch_pks)
+
         for bucket in info_buckets:
             info = json_str_to_dict(bucket.get("key"))
             toAdd = {
@@ -38,15 +42,15 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
                 },
             }
 
-            cfda = Cfda.objects.filter(program_number=info.get("code")).first()
+            cfda = [cfda for cfda in prefetched_cfdas if cfda.program_number == info.get("code")]
             if cfda:
                 toAdd.update(
                     {
-                        "cfda_federal_agency": cfda.federal_agency,
-                        "cfda_objectives": cfda.objectives,
-                        "cfda_website": cfda.url,
-                        "applicant_eligibility": cfda.applicant_eligibility,
-                        "beneficiary_eligibility": cfda.beneficiary_eligibility,
+                        "cfda_federal_agency": cfda[0].federal_agency,
+                        "cfda_objectives": cfda[0].objectives,
+                        "cfda_website": cfda[0].url,
+                        "applicant_eligibility": cfda[0].applicant_eligibility,
+                        "beneficiary_eligibility": cfda[0].beneficiary_eligibility,
                     }
                 )
             else:
