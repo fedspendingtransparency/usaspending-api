@@ -23,13 +23,19 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
-
 
     + Body
 
             {
+                "totals": {
+                    "award_count": 4574,
+                    "face_value_of_loan": 325642345.0,
+                    "obligation": 364037369840.58,
+                    "outlay": 290416885040.71
+                },
                 "results": [
                     {
                         "code": "20.200",
@@ -100,6 +106,12 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
         + `face_value_of_loan`
         + `obligation`
         + `outlay`
+
+## Totals (object)
++ `award_count` (required, number)
++ `face_value_of_loan` (required, number)
++ `obligation` (required, number)
++ `outlay` (required, number)
 
 ## Result (object)
 + `id` (required, string)

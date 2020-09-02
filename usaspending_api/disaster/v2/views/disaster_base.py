@@ -199,14 +199,13 @@ class DisasterBase(APIView):
             | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
         )
 
-    @property
-    def is_provided_award_type(self):
-        return Q(type__in=self.filters.get("award_type_codes"))
-
-    @property
-    def has_award_of_provided_type(self):
-        if self.filters.get("award_type_codes"):
-            return Q(award__type__in=self.filters.get("award_type_codes")) & Q(award__isnull=False)
+    def has_award_of_provided_type(self, should_join_awards: bool = True) -> Q:
+        award_type_codes = self.filters.get("award_type_codes")
+        if award_type_codes is not None:
+            if should_join_awards:
+                return Q(award__type__in=award_type_codes) & Q(award__isnull=False)
+            else:
+                return Q(type__in=award_type_codes)
         else:
             return Q()
 
@@ -292,6 +291,22 @@ class DisasterBase(APIView):
             .with_cte(distinct_awards)
             .with_cte(aggregate_awards),
         )
+
+    @staticmethod
+    def accumulate_total_values(results: List[dict], include_awards: bool = True, include_loans: bool = False) -> dict:
+        totals = {"obligation": 0, "outlay": 0}
+
+        if include_awards:
+            totals["award_count"] = 0
+
+        if include_loans:
+            totals["face_value_of_loan"] = 0
+
+        for res in results:
+            for key in totals.keys():
+                totals[key] += res.get(key) or 0
+
+        return totals
 
 
 class AwardTypeMixin:

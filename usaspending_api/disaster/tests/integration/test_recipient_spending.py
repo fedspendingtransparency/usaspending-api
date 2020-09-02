@@ -241,6 +241,7 @@ def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_a
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1)
     expected_results = {
+        "totals": {"award_count": 7, "obligation": 2222222.0, "outlay": 1111111.0},
         "results": [
             {
                 "code": "456789123",
