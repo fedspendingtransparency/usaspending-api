@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from requests import post
 from time import sleep
 from django.conf import settings
+from usaspending_api.common.cache_decorator import cache_response
 
 ALL_CFDAS = None
 
@@ -14,6 +15,7 @@ class CFDAViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/cfda/totals.md"
 
+    @cache_response()
     def get(self, request, cfda=None):
         """
         Return the view's queryset.
@@ -35,9 +37,13 @@ class CFDAViewSet(APIView):
             response = self._request_from_grants_api()
 
             #  grants API is brittle in practice, so if we don't get results retry at a polite rate
+            remaining_tries = 30  # 30 attempts two seconds apart gives the max wait time for the API
             while not response:
+                if remaining_tries == 0:
+                    raise Exception("Failed to get successful response from Grants API!")
                 sleep(2)
                 response = self._request_from_grants_api()
+                remaining_tries = remaining_tries - 1
 
             ALL_CFDAS = response.values()
 
