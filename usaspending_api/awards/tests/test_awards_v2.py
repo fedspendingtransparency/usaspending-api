@@ -1099,6 +1099,7 @@ def test_file_c_data(client, awards_and_transactions):
         reporting_fiscal_year=2019,
         reporting_period_end="2019-06-30",
         quarter_format_flag=False,
+        is_final_balances_for_fy=False,
         reporting_period_start="2020-04-01",
     )
     mommy.make(
@@ -1123,6 +1124,7 @@ def test_file_c_data(client, awards_and_transactions):
         reporting_fiscal_year=2020,
         reporting_period_end="2020-06-30",
         quarter_format_flag=True,
+        is_final_balances_for_fy=True,
         reporting_period_start="2020-04-01",
     )
     mommy.make(
@@ -1147,6 +1149,7 @@ def test_file_c_data(client, awards_and_transactions):
         reporting_fiscal_year=2018,
         reporting_period_end="2019-06-30",
         quarter_format_flag=False,
+        is_final_balances_for_fy=False,
         reporting_period_start="2020-04-01",
     )
     mommy.make(
@@ -1171,6 +1174,7 @@ def test_file_c_data(client, awards_and_transactions):
         reporting_fiscal_year=2018,
         reporting_period_end="2020-06-30",
         quarter_format_flag=True,
+        is_final_balances_for_fy=True,
         reporting_period_start="2020-04-01",
     )
     mommy.make(
@@ -1193,6 +1197,7 @@ def test_file_c_data(client, awards_and_transactions):
         pk=5,
         reporting_fiscal_period=12,
         reporting_fiscal_year=2019,
+        is_final_balances_for_fy=True,
         reporting_period_end="2020-06-30",
         quarter_format_flag=True,
     )
