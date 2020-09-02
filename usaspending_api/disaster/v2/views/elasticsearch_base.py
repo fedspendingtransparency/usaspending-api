@@ -2,11 +2,15 @@ from abc import abstractmethod
 from typing import List, Optional, Dict
 
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
+from django.db.models import Sum, Count, TextField, Q
+from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 from elasticsearch_dsl import Q as ES_Q, A
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from usaspending_api.awards.models import CovidFinancialAccountMatview
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
@@ -223,6 +227,31 @@ class ElasticsearchDisasterBase(DisasterBase):
             search.aggs[self.agg_group_name].aggs[self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
 
     def build_totals(self, response: List[dict]) -> dict:
+        # Need to use a Postgres in this case since we only look at the first 10k results for Elasticsearch.
+        # Since the endpoint is performing aggregations on the entire matview with no grouping or joins
+        # the query takes minimal time to complete.
+        if self.agg_key == settings.ES_ROUTING_FIELD:
+            annotations = {"cast_def_codes": Cast("def_codes", ArrayField(TextField()))}
+            filters = [Q(cast_def_codes__overlap=self.def_codes), self.is_provided_award_type]
+            aggregations = {
+                "face_value_of_loan": Sum("total_loan_value"),
+                "obligation": Sum("obligation"),
+                "outlay": Sum("outlay"),
+            }
+            aggregations = {col: aggregations[col] for col in self.sum_column_mapping.keys()}
+            aggregations["award_count"] = Count("award_id")
+
+            if self.filters.get("query"):
+                filters.append(Q(recipient_name__icontains=self.filters["query"]["text"]))
+
+            totals = (
+                CovidFinancialAccountMatview.objects.annotate(**annotations)
+                .filter(*filters)
+                .values()
+                .aggregate(**aggregations)
+            )
+            return totals
+
         totals = {key: 0 for key in self.sum_column_mapping.keys()}
         award_count = 0
 

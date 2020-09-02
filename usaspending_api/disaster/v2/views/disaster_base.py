@@ -208,7 +208,9 @@ class DisasterBase(APIView):
 
     @property
     def is_provided_award_type(self):
-        return Q(type__in=self.filters.get("award_type_codes"))
+        if self.filters.get("award_type_codes"):
+            return Q(type__in=self.filters.get("award_type_codes"))
+        return Q()
 
     @property
     def has_award_of_provided_type(self):
