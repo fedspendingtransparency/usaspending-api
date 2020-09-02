@@ -41,13 +41,13 @@ Returns opportunity totals for a CFDA or all opportunity totals.
 
 # Data Structures
 ## CFDA (object)
-+ `cfda` (required, string, nullable)
++ `cfda` (required, string)
     CFDA Code
-+ `posted` (required, number, nullable)
++ `posted` (required, number)
     Number of programs posted
-+ `closed` (required, number, nullable)
++ `closed` (required, number)
     Number of programs closed
-+ `archived` (required, number, nullable)
++ `archived` (required, number)
     Number of programs archived
-+ `forecasted` (required, number, nullable)
++ `forecasted` (required, number)
     Number of programs forecasted

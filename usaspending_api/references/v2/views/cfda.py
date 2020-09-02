@@ -12,7 +12,7 @@ class CFDAViewSet(APIView):
     Return an agency name and active fy.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/agency/id.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/cfda/totals.md"
 
     def get(self, request, cfda=None):
         """
