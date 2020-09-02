@@ -83,7 +83,7 @@ with Timer() as overall_timer:
         connection.autocommit = True
         with connection.cursor() as cursor:
             with Timer() as t:
-                cursor.execute(SQL.replace('\n', ' '))
+                cursor.execute(SQL.replace("\n", " "))
 
 
 print(f"Finished. {TOTAL_UPDATES:,} rows with overall run time: {overall_timer.elapsed_as_string}")

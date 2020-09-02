@@ -50,14 +50,16 @@ def get_submission_attributes(submission_id, submission_data):
     dabs_window = DABSSubmissionWindowSchedule.objects.filter(
         submission_fiscal_year=submission_data["reporting_fiscal_year"],
         submission_fiscal_month=submission_data["reporting_fiscal_period"],
-        is_quarter=submission_data["is_quarter_format"]
+        is_quarter=submission_data["is_quarter_format"],
     ).first()
 
     if not dabs_window:
         raise RuntimeError(f"Missing DABS Window record necessary for {submission_id}")
 
     # check if we already have an entry for this submission id; if not, create one
-    submission_attributes, created = SubmissionAttributes.objects.get_or_create(submission_id=submission_id, defaults={"submission_window": dabs_window})
+    submission_attributes, created = SubmissionAttributes.objects.get_or_create(
+        submission_id=submission_id, defaults={"submission_window": dabs_window}
+    )
 
     if created:
         # this is the first time we're loading this submission
