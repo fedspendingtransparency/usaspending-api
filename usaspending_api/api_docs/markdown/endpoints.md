@@ -122,6 +122,8 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/recipient/state/awards/<FIPS\>/](/api/v2/recipient/state/awards/51/)|GET| Returns award breakdown based on FIPS |
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency |
 |[/api/v2/references/award_types/](/api/v2/references/award_types/)|GET| Returns a map of award types by award grouping. |
+|[/api/v2/references/cfda/totals/](/api/v2/cfda/totals/)|GET| Provides total values for all CFDAs |
+|[/api/v2/references/cfda/totals/<CFDA/>/](/api/v2/cfda/totals/10.555/)|GET| Provides total values for provided CFDA |
 |[/api/v2/references/data_dictionary/](/api/v2/references/data_dictionary/)|GET| Returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary |
 |[/api/v2/references/def_codes/](/api/v2/references/def_codes/)|GET| Returns an object of Disaster Emergency Fund (DEF) Codes (DEFC) and titles |
 |[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/<PSC\>/](/api/v2/references/filter_tree/psc/Service/C/C1/)|GET| Returns a list of PSC under the provided path |
