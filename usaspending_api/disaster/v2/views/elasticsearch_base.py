@@ -232,7 +232,10 @@ class ElasticsearchDisasterBase(DisasterBase):
         # the query takes minimal time to complete.
         if self.agg_key == settings.ES_ROUTING_FIELD:
             annotations = {"cast_def_codes": Cast("def_codes", ArrayField(TextField()))}
-            filters = [Q(cast_def_codes__overlap=self.def_codes), self.is_provided_award_type]
+            filters = [
+                Q(cast_def_codes__overlap=self.def_codes),
+                self.has_award_of_provided_type(should_join_awards=False),
+            ]
             aggregations = {
                 "face_value_of_loan": Sum("total_loan_value"),
                 "obligation": Sum("obligation"),

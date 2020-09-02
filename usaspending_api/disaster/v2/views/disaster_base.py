@@ -206,16 +206,13 @@ class DisasterBase(APIView):
             | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
         )
 
-    @property
-    def is_provided_award_type(self):
-        if self.filters.get("award_type_codes"):
-            return Q(type__in=self.filters.get("award_type_codes"))
-        return Q()
-
-    @property
-    def has_award_of_provided_type(self):
-        if self.filters.get("award_type_codes"):
-            return Q(award__type__in=self.filters.get("award_type_codes")) & Q(award__isnull=False)
+    def has_award_of_provided_type(self, should_join_awards: bool = True) -> Q:
+        award_type_codes = self.filters.get("award_type_codes")
+        if award_type_codes is not None:
+            if should_join_awards:
+                return Q(award__type__in=award_type_codes) & Q(award__isnull=False)
+            else:
+                return Q(type__in=award_type_codes)
         else:
             return Q()
 
