@@ -192,4 +192,5 @@ def _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped
 
 
 def create_distinct_award_key(row):
-    return f"{row.get('piid') or ''}|{row.get('parent_award_id') or ''}|{row.get('fain') or ''}|{row.get('uri') or ''}"
+    parent_award_id = row.get("parent_award_id") or ""
+    return f"{row.get('piid') or ''}|{parent_award_id}|{row.get('fain') or ''}|{row.get('uri') or ''}".upper()

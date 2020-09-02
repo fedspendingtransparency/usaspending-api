@@ -31,9 +31,9 @@ TOTAL_UPDATES = 0
 SQLS = [
     """
 update  financial_accounts_by_awards
-set     distinct_award_key = concat(piid, '|', parent_award_id, '|', fain, '|', uri)
+set     distinct_award_key = upper(concat(piid, '|', parent_award_id, '|', fain, '|', uri))
 where   financial_accounts_by_awards_id between {minid} and {maxid}
-    and distinct_award_key is distinct from concat(piid, '|', parent_award_id, '|', fain, '|', uri)
+    and distinct_award_key is distinct from upper(concat(piid, '|', parent_award_id, '|', fain, '|', uri))
 """,
 ]
 
