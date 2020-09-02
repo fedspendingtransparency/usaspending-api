@@ -28,10 +28,11 @@ Returns opportunity totals for a CFDA or all opportunity totals.
             Number of programs forecasted
 
     + Body
-        {
-            "cfda": "00.000",
-            "posted": 442,
-            "closed": 234,
-            "archived": 1685,
-            "forecasted": 208
-        }
+    
+            {
+                "cfda": "00.000",
+                "posted": 442,
+                "closed": 234,
+                "archived": 1685,
+                "forecasted": 208
+            }
