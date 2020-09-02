@@ -7,7 +7,9 @@ WITH recent_submission AS (
     WHERE
         "dabs_submission_window_schedule"."submission_reveal_date" <= now()
         AND "dabs_submission_window_schedule"."is_quarter" = False
-    ORDER BY "dabs_submission_window_schedule"."submission_fiscal_year" DESC, "dabs_submission_window_schedule"."submission_fiscal_month" DESC
+    ORDER BY
+        "dabs_submission_window_schedule"."submission_fiscal_year" DESC,
+        "dabs_submission_window_schedule"."submission_fiscal_month" DESC
     LIMIT 1
 )
 
