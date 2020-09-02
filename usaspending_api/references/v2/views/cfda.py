@@ -5,7 +5,7 @@ from time import sleep
 from django.conf import settings
 from usaspending_api.common.cache_decorator import cache_response
 
-ALL_CFDAS = None
+CFDA_DICTIONARY = None
 
 
 class CFDAViewSet(APIView):
@@ -23,17 +23,26 @@ class CFDAViewSet(APIView):
         self._populate_cfdas_if_needed()
 
         if cfda:
-            results = [result for result in ALL_CFDAS if result["cfda"] == cfda]
-        else:
-            results = ALL_CFDAS
+            result = CFDA_DICTIONARY.get(cfda)
 
-        response = {"results": results}
+            if not result:
+                return Response(status=404)
+
+            response = {
+                "cfda": result["cfda"],
+                "posted": result["posted"],
+                "closed": result["closed"],
+                "archived": result["archived"],
+                "forecasted": result["forecasted"],
+            }
+        else:
+            response = {"results": CFDA_DICTIONARY.values()}
 
         return Response(response)
 
     def _populate_cfdas_if_needed(self):
-        global ALL_CFDAS
-        if not ALL_CFDAS:
+        global CFDA_DICTIONARY
+        if not CFDA_DICTIONARY:
             response = self._request_from_grants_api()
 
             #  grants API is brittle in practice, so if we don't get results retry at a polite rate
@@ -45,7 +54,7 @@ class CFDAViewSet(APIView):
                 response = self._request_from_grants_api()
                 remaining_tries = remaining_tries - 1
 
-            ALL_CFDAS = response.values()
+            CFDA_DICTIONARY = response
 
     def _request_from_grants_api(self):
         return post(
