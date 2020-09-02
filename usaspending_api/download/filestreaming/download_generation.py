@@ -411,7 +411,7 @@ def generate_export_query(source_query, limit, source, columns, file_format):
 
 
 def generate_export_query_temp_file(export_query, download_job, temp_dir=None):
-    write_to_log(message=f"Saving PSQL Query: {export_query}", download_job=download_job, is_debug=True)
+    write_to_log(message=f"Saving PSQL Query: {export_query}", download_job=download_job) #dev-5865
     dir_name = "/tmp"
     if temp_dir:
         dir_name = temp_dir

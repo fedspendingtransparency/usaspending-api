@@ -40,7 +40,8 @@ Generate files and return metadata using filters on custom account
                 "filters": {
                     "fy": "2018",
                     "quarter": "1",
-                    "submission_types": ["account_balances", "award_financial"]
+                    "submission_types": ["account_balances", "award_financial"],
+                    "def_codes": ["L", "M", "O"]
                 }
             }
 
@@ -115,3 +116,7 @@ Generate files and return metadata using filters on custom account
         + `10`
         + `11`
         + `12`
++ `def_codes` (optional, array[string])
+    The Disaster Emergency Fund Code 
+    
+    

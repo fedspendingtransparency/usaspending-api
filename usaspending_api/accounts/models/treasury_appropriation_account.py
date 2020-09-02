@@ -11,7 +11,7 @@ from usaspending_api.common.exceptions import UnprocessableEntityException
 class TreasuryAppropriationAccount(DataSourceTrackedModel):
     """Represents a single Treasury Account Symbol (TAS)."""
 
-    treasury_account_identifier = models.AutoField(primary_key=True)
+    treasury_account_identifier = models.AutoField(primary_key=True) #dev-5865
     federal_account = models.ForeignKey("FederalAccount", models.DO_NOTHING, null=True)
     tas_rendering_label = models.TextField(blank=True, null=True)
     allocation_transfer_agency_id = models.TextField(blank=True, null=True)
