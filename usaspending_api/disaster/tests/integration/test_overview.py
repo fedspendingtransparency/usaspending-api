@@ -246,9 +246,9 @@ def test_award_outlays_doesnt_sum_multiple_periods(
 
 @pytest.mark.django_db
 def test_award_outlays_ignores_future_faba(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, early_gtas, multi_period_faba
+    client, monkeypatch, helpers, defc_codes, basic_ref_data, early_gtas, multi_period_faba_with_future
 ):
-    helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
+    helpers.patch_datetime_now(monkeypatch, LATE_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data["spending"]["award_outlays"] == Decimal("0.35")

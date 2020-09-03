@@ -43,6 +43,7 @@ def awards_and_transactions():
         reporting_fiscal_year=2022,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
+        is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
     )
     sub2 = mommy.make(
@@ -50,6 +51,7 @@ def awards_and_transactions():
         reporting_fiscal_year=2022,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
+        is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
     )
     sub3 = mommy.make(
@@ -57,6 +59,7 @@ def awards_and_transactions():
         reporting_fiscal_year=2022,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
+        is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
     )
 

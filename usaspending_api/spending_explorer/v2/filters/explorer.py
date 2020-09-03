@@ -98,10 +98,6 @@ class Explorer(object):
         # Recipients Queryset
         alt_set = (
             self.alt_set.filter(~Q(transaction_obligated_amount=Decimal("NaN")))
-            .filter(
-                Q(award__latest_transaction__contract_data__awardee_or_recipient_legal__isnull=False)
-                | Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal__isnull=False)
-            )
             .annotate(
                 id=Coalesce(
                     "award__latest_transaction__contract_data__awardee_or_recipient_legal",

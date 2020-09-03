@@ -30,7 +30,7 @@ class RecipientCountViewSet(FabaOutlayMixin, AwardTypeMixin, DisasterBase):
                 default=Cast(F("recipient_hash"), output_field=TextField()),
             ),
         }
-        filters = [Q(cast_def_codes__overlap=self.def_codes), self.has_award_of_provided_type]
+        filters = [Q(cast_def_codes__overlap=self.def_codes), self.has_award_of_provided_type(should_join_awards=False)]
 
         recipients = (
             CovidFinancialAccountMatview.objects.annotate(**annotations)

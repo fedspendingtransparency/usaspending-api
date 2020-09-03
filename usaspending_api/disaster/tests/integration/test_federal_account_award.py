@@ -80,6 +80,9 @@ def test_federal_account_award_success(client, generic_account_data, monkeypatch
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
+    expected_totals = {"award_count": 4, "obligation": 304.0, "outlay": 667.0}
+    assert resp.json()["totals"] == expected_totals
+
 
 @pytest.mark.django_db
 def test_federal_account_award_empty(client, monkeypatch, helpers, generic_account_data):
