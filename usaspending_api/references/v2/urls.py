@@ -8,12 +8,15 @@ from usaspending_api.references.v2.views import (
     award_types,
     def_codes,
     submission_periods,
+    cfda,
 )
 from usaspending_api.references.v2.views.filter_tree import naics, tas, psc
 
 urlpatterns = [
     url(r"^agency/(?P<pk>[0-9]+)/$", agency.AgencyViewSet.as_view()),
     url(r"^award_types/$", award_types.AwardTypeGroups.as_view()),
+    url(r"^cfda/totals/$", cfda.CFDAViewSet.as_view()),
+    url(r"^cfda/totals/(?P<cfda>[0-9]+\.[0-9]+)/$", cfda.CFDAViewSet.as_view()),
     url(r"^data_dictionary/$", data_dictionary.DataDictionaryViewSet.as_view()),
     url(r"^def_codes/$", def_codes.DEFCodesViewSet.as_view()),
     url(r"^filter_tree/psc/$", psc.PSCViewSet.as_view()),
