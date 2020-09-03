@@ -254,6 +254,7 @@ def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_a
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1, sort="description")
     expected_results = {
+        "totals": {"award_count": 3, "face_value_of_loan": 333.0, "obligation": 222.0, "outlay": 111.0},
         "results": [
             {
                 "code": "456789123",
@@ -299,6 +300,7 @@ def test_correct_response_with_award_type_codes(
         client, url, award_type_codes=["07"], def_codes=["L", "M"], sort="description"
     )
     expected_results = {
+        "totals": {"award_count": 2, "face_value_of_loan": 33.0, "obligation": 22.0, "outlay": 11.0},
         "results": [
             {
                 "code": "456789123",
@@ -337,6 +339,7 @@ def test_correct_response_with_award_type_codes(
         client, url, award_type_codes=["08"], def_codes=["L", "M"], sort="description"
     )
     expected_results = {
+        "totals": {"award_count": 1, "face_value_of_loan": 300.0, "obligation": 200.0, "outlay": 100.0},
         "results": [
             {
                 "code": "987654321",

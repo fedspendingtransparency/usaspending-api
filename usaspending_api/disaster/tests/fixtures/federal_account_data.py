@@ -65,6 +65,7 @@ def generic_account_data():
         reporting_fiscal_year=2022,
         reporting_fiscal_quarter=3,
         reporting_fiscal_period=7,
+        is_final_balances_for_fy=True,
         quarter_format_flag=False,
     )
     mommy.make(
@@ -215,6 +216,7 @@ def unlinked_faba_account_data():
         reporting_fiscal_year=2022,
         reporting_fiscal_quarter=3,
         reporting_fiscal_period=7,
+        is_final_balances_for_fy=True,
         quarter_format_flag=False,
     )
     mommy.make(
