@@ -47,7 +47,6 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
                     {
                         "cfda_federal_agency": cfda[0].federal_agency,
                         "cfda_objectives": cfda[0].objectives,
-                        "cfda_website": cfda[0].url,
                         "applicant_eligibility": cfda[0].applicant_eligibility,
                         "beneficiary_eligibility": cfda[0].beneficiary_eligibility,
                     }
