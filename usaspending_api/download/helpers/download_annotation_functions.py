@@ -1,7 +1,7 @@
 import datetime
 
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models.functions import Cast, Concat
+from django.db.models.functions import Cast
 from django.db.models import (
     Case,
     DateField,
@@ -17,8 +17,7 @@ from django.db.models import (
     Value,
     When,
 )
-
-from usaspending_api.common.helpers.orm_helpers import FiscalYear
+from usaspending_api.common.helpers.orm_helpers import FiscalYear, ConcatAll
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.disaster.v2.views.disaster_base import (
     filter_by_latest_closed_periods,
@@ -63,7 +62,7 @@ def universal_transaction_matview_annotations():
             .values("value"),
             output_field=TextField(),
         ),
-        "usaspending_permalink": Concat(
+        "usaspending_permalink": ConcatAll(
             Value(AWARD_URL), Func(F("transaction__award__generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "disaster_emergency_fund_codes_for_overall_award": Case(
@@ -78,7 +77,7 @@ def universal_transaction_matview_annotations():
                             Case(
                                 When(
                                     disaster_emergency_fund__code__isnull=False,
-                                    then=Concat(
+                                    then=ConcatAll(
                                         F("disaster_emergency_fund__code"),
                                         Value(": "),
                                         F("disaster_emergency_fund__public_law"),
@@ -137,7 +136,7 @@ def universal_transaction_matview_annotations():
             )
             .annotate(
                 value=ExpressionWrapper(
-                    Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
                     output_field=TextField(),
                 )
             )
@@ -152,7 +151,7 @@ def universal_transaction_matview_annotations():
             )
             .annotate(
                 value=ExpressionWrapper(
-                    Concat(
+                    ConcatAll(
                         F("program_activity__program_activity_code"),
                         Value(": "),
                         F("program_activity__program_activity_name"),
@@ -188,7 +187,7 @@ def universal_award_matview_annotations():
             .values("value"),
             output_field=TextField(),
         ),
-        "usaspending_permalink": Concat(
+        "usaspending_permalink": ConcatAll(
             Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "disaster_emergency_fund_codes": Subquery(
@@ -198,7 +197,7 @@ def universal_award_matview_annotations():
                     Case(
                         When(
                             disaster_emergency_fund__code__isnull=False,
-                            then=Concat(
+                            then=ConcatAll(
                                 F("disaster_emergency_fund__code"),
                                 Value(": "),
                                 F("disaster_emergency_fund__public_law"),
@@ -245,7 +244,7 @@ def universal_award_matview_annotations():
             )
             .annotate(
                 value=ExpressionWrapper(
-                    Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
                     output_field=TextField(),
                 )
             )
@@ -260,7 +259,7 @@ def universal_award_matview_annotations():
             )
             .annotate(
                 value=ExpressionWrapper(
-                    Concat(
+                    ConcatAll(
                         F("program_activity__program_activity_code"),
                         Value(": "),
                         F("program_activity__program_activity_name"),
@@ -297,7 +296,7 @@ def idv_order_annotations():
             .values("value"),
             output_field=TextField(),
         ),
-        "usaspending_permalink": Concat(
+        "usaspending_permalink": ConcatAll(
             Value(AWARD_URL), Func(F("generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "disaster_emergency_fund_codes": Subquery(
@@ -307,7 +306,7 @@ def idv_order_annotations():
                     Case(
                         When(
                             disaster_emergency_fund__code__isnull=False,
-                            then=Concat(
+                            then=ConcatAll(
                                 F("disaster_emergency_fund__code"),
                                 Value(": "),
                                 F("disaster_emergency_fund__public_law"),
@@ -353,7 +352,7 @@ def idv_order_annotations():
             FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("id"))
             .annotate(
                 value=ExpressionWrapper(
-                    Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
                     output_field=TextField(),
                 )
             )
@@ -368,7 +367,7 @@ def idv_order_annotations():
             )
             .annotate(
                 value=ExpressionWrapper(
-                    Concat(
+                    ConcatAll(
                         F("program_activity__program_activity_code"),
                         Value(": "),
                         F("program_activity__program_activity_name"),
@@ -404,7 +403,7 @@ def idv_transaction_annotations():
             .values("value"),
             output_field=TextField(),
         ),
-        "usaspending_permalink": Concat(
+        "usaspending_permalink": ConcatAll(
             Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "disaster_emergency_fund_codes_for_overall_award": Case(
@@ -419,7 +418,7 @@ def idv_transaction_annotations():
                             Case(
                                 When(
                                     disaster_emergency_fund__code__isnull=False,
-                                    then=Concat(
+                                    then=ConcatAll(
                                         F("disaster_emergency_fund__code"),
                                         Value(": "),
                                         F("disaster_emergency_fund__public_law"),
@@ -478,7 +477,7 @@ def idv_transaction_annotations():
             )
             .annotate(
                 value=ExpressionWrapper(
-                    Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
                     output_field=TextField(),
                 )
             )
@@ -493,7 +492,7 @@ def idv_transaction_annotations():
             )
             .annotate(
                 value=ExpressionWrapper(
-                    Concat(
+                    ConcatAll(
                         F("program_activity__program_activity_code"),
                         Value(": "),
                         F("program_activity__program_activity_name"),
@@ -533,7 +532,7 @@ def subaward_annotations():
             .values("value"),
             output_field=TextField(),
         ),
-        "usaspending_permalink": Concat(
+        "usaspending_permalink": ConcatAll(
             Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "prime_award_object_classes_funding_this_award": Subquery(
@@ -542,7 +541,7 @@ def subaward_annotations():
             )
             .annotate(
                 value=ExpressionWrapper(
-                    Concat(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
                     output_field=TextField(),
                 )
             )
@@ -557,7 +556,7 @@ def subaward_annotations():
             )
             .annotate(
                 value=ExpressionWrapper(
-                    Concat(
+                    ConcatAll(
                         F("program_activity__program_activity_code"),
                         Value(": "),
                         F("program_activity__program_activity_name"),
@@ -582,7 +581,7 @@ def subaward_annotations():
                             Case(
                                 When(
                                     disaster_emergency_fund__code__isnull=False,
-                                    then=Concat(
+                                    then=ConcatAll(
                                         F("disaster_emergency_fund__code"),
                                         Value(": "),
                                         F("disaster_emergency_fund__public_law"),
