@@ -1,5 +1,5 @@
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Count, Sum, TextField
+from django.db.models import Count, Sum, TextField, F
 from django.db.models.functions import Coalesce, Cast
 from rest_framework.response import Response
 from usaspending_api.awards.models import FinancialAccountsByAwards, CovidFinancialAccountMatview
@@ -69,7 +69,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             self.is_in_provided_def_codes,
         ]
 
-        group_by_annotations = {"award_identifier": self.unique_file_c_awards}
+        group_by_annotations = {"award_identifier": F("distinct_award_key")}
 
         dollar_annotations = {
             "inner_obligation": self.obligated_field_annotation,
