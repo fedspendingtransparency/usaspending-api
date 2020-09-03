@@ -211,6 +211,7 @@ def test_pagination_page_and_limit(
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1, sort="description")
     expected_results = {
+        "totals": {"award_count": 4, "obligation": 2222.0, "outlay": 1100.0},
         "results": [
             {
                 "code": "20.200",
