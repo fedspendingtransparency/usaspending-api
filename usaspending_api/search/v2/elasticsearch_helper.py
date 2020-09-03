@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from typing import Dict, Optional
 
 from django.conf import settings
@@ -219,3 +220,13 @@ def get_scaled_sum_aggregations(field_to_sum: str, pagination: Optional[Paginati
         return {"sum_field": sum_field, "sum_bucket_sort": sum_bucket_sort, "sum_bucket_truncate": sum_bucket_truncate}
     else:
         return {"sum_field": sum_field}
+
+
+def get_summed_value_as_float(bucket: dict, field: str) -> float:
+    """
+    Elasticsearch commonly has problems handling the sum of floating point numbers (even if they are stored as
+    "Scaled Float" type). Due to that the Elasticsearch sum aggregations handle the Scaled Floats as integers
+    and then our API converts those integers to a float with up to two decimal places.
+    """
+    value = bucket.get(field, {"value": 0})["value"]
+    return int(value) / Decimal("100")

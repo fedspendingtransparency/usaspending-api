@@ -28,6 +28,13 @@ def test_award_amount_success(client, monkeypatch, generic_account_data, unlinke
     assert resp.data["outlay"] == 0
     assert resp.data["obligation"] == 0
 
+    resp = helpers.post_for_amount_endpoint(client, url, ["L", "M", "N", "O", "P"], ["07", "08"])
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["award_count"] == 2
+    assert resp.data["outlay"] == 334
+    assert resp.data["obligation"] == 4
+    assert resp.data["face_value_of_loan"] == 7777.0
+
 
 @pytest.mark.django_db
 def test_award_amount_no_award_type_success(

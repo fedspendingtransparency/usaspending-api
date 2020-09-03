@@ -171,23 +171,6 @@ def _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped
             update_skipped_tas(row, tas_rendering_label, skipped_tas)
             continue
 
-        # Find a matching transaction record, so we can use its subtier agency information to match to (or create) an
-        # Award record.
-
-        # Find the award that this award transaction belongs to. If it doesn't exist, create it.
-        filters = {}
-        if row.get("piid"):
-            filters["piid"] = row.get("piid")
-            filters["parent_piid"] = row.get("parent_award_id")
-        else:
-            if row.get("fain") and not row.get("uri"):
-                filters["fain"] = row.get("fain")
-            elif row.get("uri") and not row.get("fain"):
-                filters["uri"] = row.get("uri")
-            else:
-                filters["fain"] = row.get("fain")
-                filters["uri"] = row.get("uri")
-
         award_financial_data = FinancialAccountsByAwards()
 
         value_map_faba = {
@@ -198,6 +181,7 @@ def _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped
             "object_class": row.get("object_class"),
             "program_activity": row.get("program_activity"),
             "disaster_emergency_fund": get_disaster_emergency_fund(row),
+            "distinct_award_key": create_distinct_award_key(row),
         }
 
         save_manager.append(
@@ -205,3 +189,8 @@ def _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped
         )
 
     save_manager.save_stragglers()
+
+
+def create_distinct_award_key(row):
+    parent_award_id = row.get("parent_award_id") or ""
+    return f"{row.get('piid') or ''}|{parent_award_id}|{row.get('fain') or ''}|{row.get('uri') or ''}".upper()
