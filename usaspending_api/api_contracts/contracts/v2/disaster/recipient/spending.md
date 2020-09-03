@@ -23,13 +23,18 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
-
 
     + Body
 
             {
+                "totals": {
+                    "award_count": 4574,
+                    "obligation": 364037369840.58,
+                    "outlay": 290416885040.71
+                },
                 "results": [
                     {
                         "code": "987654321",
@@ -89,6 +94,11 @@ Returns spending details of Recipients receiving supplemental funding budgetary 
         + `award_count`
         + `obligation`
         + `outlay`
+
+## Totals (object)
++ `award_count` (required, number)
++ `obligation` (required, number)
++ `outlay` (required, number)
 
 ## Result (object)
 + `id` (required, array[string], fixed-type)
