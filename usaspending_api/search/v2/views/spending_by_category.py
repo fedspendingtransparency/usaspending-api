@@ -70,7 +70,15 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
-        models.extend(copy.deepcopy(PAGINATION))
+
+        # Set pagination limit to 9,999. Any more would require querything Elasticsearch
+        # with buckets (10,000 and greater)
+        overriden_pagination = copy.deepcopy(PAGINATION)
+        for pagination_option in overriden_pagination:
+            if pagination_option["name"] == "limit":
+                pagination_option["max"] = 9999
+
+        models.extend(overriden_pagination)
 
         # Apply/enforce POST body schema and data validation in request
         original_filters = request.data.get("filters")
