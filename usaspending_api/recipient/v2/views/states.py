@@ -53,8 +53,12 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
         queryset = (
             matview_search_filter(filters, SummaryStateView)
             .values("pop_state_code")
-            .annotate(total=Sum("generated_pragmatic_obligation"), distinct_awards=StringAgg("distinct_awards", ","))
-            .values("distinct_awards", "pop_state_code", "total")
+            .annotate(
+                total=Sum("generated_pragmatic_obligation"),
+                distinct_awards=StringAgg("distinct_awards", ","),
+                total_face_value_loan_amount=Sum("face_value_loan_guarantee"),
+            )
+            .values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount")
         )
 
     try:
@@ -63,12 +67,19 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             "pop_state_code": row["pop_state_code"],
             "total": row["total"],
             "count": len(set(row["distinct_awards"].split(","))),
+            "total_face_value_loan_amount": row["total_face_value_loan_amount"],
         }
         return result
     except IndexError:
         # would prefer to catch an index error gracefully if the SQL query produces 0 rows
         logger.warning("No results found for FIPS {} with filters: {}".format(fips, filters))
-    return {"count": 0, "pop_state_code": None, "total": 0}
+
+    return {
+        "count": 0,
+        "pop_state_code": None,
+        "total": 0,
+        "total_face_value_loan_amount": 0,
+    }
 
 
 def get_all_states(year=None, award_type_codes=None, subawards=False):
@@ -132,6 +143,8 @@ class StateMetaDataViewSet(APIView):
         state_mhi_data = self.get_state_data(state_data_results, "median_household_income", year)
 
         state_aggregates = obtain_state_totals(fips, year=year)
+        state_loans = obtain_state_totals(fips, year=year, award_type_codes=all_award_types_mappings["loans"])
+
         if year == "all" or (year and year.isdigit() and int(year) == generate_fiscal_year(datetime.now())):
             amt_per_capita = None
         else:
@@ -152,6 +165,8 @@ class StateMetaDataViewSet(APIView):
             "mhi_source": state_mhi_data["mhi_source"],
             "total_prime_amount": state_aggregates["total"],
             "total_prime_awards": state_aggregates["count"],
+            "total_face_value_loan_amount": state_aggregates["total_face_value_loan_amount"],
+            "total_face_value_loan_prime_awards": state_loans["count"],
             "award_amount_per_capita": amt_per_capita,
             # Commented out for now
             # 'total_subaward_amount': total_subaward_amount,
