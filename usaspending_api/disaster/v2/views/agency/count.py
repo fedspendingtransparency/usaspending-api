@@ -23,7 +23,7 @@ class AgencyCountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
     def post(self, request: Request) -> Response:
         filters = [
             self.all_closed_defc_submissions,
-            self.has_award_of_provided_type,
+            self.has_award_of_provided_type(),
             self.is_in_provided_def_codes,
         ]
 

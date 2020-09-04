@@ -201,7 +201,7 @@ def faba_with_non_covid_values(defc_codes):
 @pytest.fixture
 def multi_year_faba(defc_codes):
     _year_1_faba(1.6, "M")
-    _year_2_faba_with_value(0.7)
+    _year_2_late_faba_with_value(0.7)
 
 
 @pytest.fixture
@@ -210,12 +210,19 @@ def multi_period_faba(defc_codes):
     _year_2_faba_with_value(0.7)
 
 
+@pytest.fixture
+def multi_period_faba_with_future(defc_codes):
+    _year_2_late_faba_with_value(0.7)
+    _year_3_faba_with_value(2.2)
+
+
 def _year_1_faba(value, code):
     submission = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=EARLY_YEAR,
         reporting_fiscal_period=LATE_MONTH,
         quarter_format_flag=False,
+        is_final_balances_for_fy=True,
         reporting_period_start=date(EARLY_YEAR, LATE_MONTH, 1),
     )
 
@@ -234,6 +241,7 @@ def _year_2_faba_with_value(value):
         reporting_fiscal_year=LATE_YEAR,
         reporting_fiscal_period=EARLY_MONTH,
         quarter_format_flag=False,
+        is_final_balances_for_fy=False,
         reporting_period_start=date(LATE_YEAR, EARLY_MONTH, 1),
     )
 
@@ -252,7 +260,27 @@ def _year_2_late_faba_with_value(value):
         reporting_fiscal_year=LATE_YEAR,
         reporting_fiscal_period=LATE_MONTH,
         quarter_format_flag=False,
+        is_final_balances_for_fy=True,
         reporting_period_start=date(LATE_YEAR, LATE_MONTH, 1),
+    )
+
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
+        transaction_obligated_amount=value,
+        gross_outlay_amount_by_award_cpe=value / 2.0,
+        submission=submission,
+    )
+
+
+def _year_3_faba_with_value(value):
+    submission = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=LATE_YEAR + 1,
+        reporting_fiscal_period=EARLY_MONTH,
+        quarter_format_flag=False,
+        is_final_balances_for_fy=False,
+        reporting_period_start=date(LATE_YEAR + 1, EARLY_MONTH, 1),
     )
 
     mommy.make(
