@@ -34,6 +34,10 @@ def test_correct_response_single_defc(
             "obligation": 2000.0,
             "outlay": 1000.0,
             "resource_link": "www.example.com/300",
+            "applicant_eligibility": "AE3",
+            "beneficiary_eligibility": "BE3",
+            "cfda_federal_agency": "Agency 3",
+            "cfda_objectives": "objectives 3",
         },
         {
             "code": "20.200",
@@ -43,6 +47,10 @@ def test_correct_response_single_defc(
             "obligation": 20.0,
             "outlay": 0.0,
             "resource_link": "www.example.com/200",
+            "applicant_eligibility": "AE2",
+            "beneficiary_eligibility": "BE2",
+            "cfda_federal_agency": "Agency 2",
+            "cfda_objectives": "objectives 2",
         },
         {
             "code": "10.100",
@@ -52,6 +60,10 @@ def test_correct_response_single_defc(
             "obligation": 2.0,
             "outlay": 0.0,
             "resource_link": None,
+            "applicant_eligibility": "AE1",
+            "beneficiary_eligibility": "BE1",
+            "cfda_federal_agency": "Agency 1",
+            "cfda_objectives": "objectives 1",
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -74,6 +86,10 @@ def test_correct_response_multiple_defc(
             "obligation": 2000.0,
             "outlay": 1000.0,
             "resource_link": "www.example.com/300",
+            "applicant_eligibility": "AE3",
+            "beneficiary_eligibility": "BE3",
+            "cfda_federal_agency": "Agency 3",
+            "cfda_objectives": "objectives 3",
         },
         {
             "code": "20.200",
@@ -83,6 +99,10 @@ def test_correct_response_multiple_defc(
             "obligation": 220.0,
             "outlay": 100.0,
             "resource_link": "www.example.com/200",
+            "applicant_eligibility": "AE2",
+            "beneficiary_eligibility": "BE2",
+            "cfda_federal_agency": "Agency 2",
+            "cfda_objectives": "objectives 2",
         },
         {
             "code": "10.100",
@@ -92,6 +112,10 @@ def test_correct_response_multiple_defc(
             "obligation": 2.0,
             "outlay": 0.0,
             "resource_link": None,
+            "applicant_eligibility": "AE1",
+            "beneficiary_eligibility": "BE1",
+            "cfda_federal_agency": "Agency 1",
+            "cfda_objectives": "objectives 1",
         },
     ]
 
@@ -120,6 +144,10 @@ def test_correct_response_with_query(
             "obligation": 2000.0,
             "outlay": 1000.0,
             "resource_link": "www.example.com/300",
+            "applicant_eligibility": "AE3",
+            "beneficiary_eligibility": "BE3",
+            "cfda_federal_agency": "Agency 3",
+            "cfda_objectives": "objectives 3",
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -147,6 +175,10 @@ def test_correct_response_with_award_type_codes(
             "obligation": 20.0,
             "outlay": 0.0,
             "resource_link": "www.example.com/200",
+            "applicant_eligibility": "AE2",
+            "beneficiary_eligibility": "BE2",
+            "cfda_federal_agency": "Agency 2",
+            "cfda_objectives": "objectives 2",
         },
         {
             "code": "10.100",
@@ -156,6 +188,10 @@ def test_correct_response_with_award_type_codes(
             "obligation": 2.0,
             "outlay": 0.0,
             "resource_link": None,
+            "applicant_eligibility": "AE1",
+            "beneficiary_eligibility": "BE1",
+            "cfda_federal_agency": "Agency 1",
+            "cfda_objectives": "objectives 1",
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -211,6 +247,7 @@ def test_pagination_page_and_limit(
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1, sort="description")
     expected_results = {
+        "totals": {"award_count": 4, "obligation": 2222.0, "outlay": 1100.0},
         "results": [
             {
                 "code": "20.200",
@@ -220,6 +257,10 @@ def test_pagination_page_and_limit(
                 "obligation": 220.0,
                 "outlay": 100.0,
                 "resource_link": "www.example.com/200",
+                "applicant_eligibility": "AE2",
+                "beneficiary_eligibility": "BE2",
+                "cfda_federal_agency": "Agency 2",
+                "cfda_objectives": "objectives 2",
             }
         ],
         "page_metadata": {

@@ -16,7 +16,6 @@ from usaspending_api.common.containers import Bunch
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_month
-from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
@@ -199,14 +198,13 @@ class DisasterBase(APIView):
             | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
         )
 
-    @property
-    def is_provided_award_type(self):
-        return Q(type__in=self.filters.get("award_type_codes"))
-
-    @property
-    def has_award_of_provided_type(self):
-        if self.filters.get("award_type_codes"):
-            return Q(award__type__in=self.filters.get("award_type_codes")) & Q(award__isnull=False)
+    def has_award_of_provided_type(self, should_join_awards: bool = True) -> Q:
+        award_type_codes = self.filters.get("award_type_codes")
+        if award_type_codes is not None:
+            if should_join_awards:
+                return Q(award__type__in=award_type_codes) & Q(award__isnull=False)
+            else:
+                return Q(type__in=award_type_codes)
         else:
             return Q()
 
@@ -293,6 +291,22 @@ class DisasterBase(APIView):
             .with_cte(aggregate_awards),
         )
 
+    @staticmethod
+    def accumulate_total_values(results: List[dict], include_awards: bool = True, include_loans: bool = False) -> dict:
+        totals = {"obligation": 0, "outlay": 0}
+
+        if include_awards:
+            totals["award_count"] = 0
+
+        if include_loans:
+            totals["face_value_of_loan"] = 0
+
+        for res in results:
+            for key in totals.keys():
+                totals[key] += res.get(key) or 0
+
+        return totals
+
 
 class AwardTypeMixin:
     required_filters = ["def_codes", "award_type_codes"]
@@ -325,13 +339,8 @@ class FabaOutlayMixin:
             total_outlay=self.outlay_field_annotation, total_obligation=self.obligated_field_annotation
         ).exclude(total_outlay=0, total_obligation=0)
 
-    @property
-    def unique_file_c_awards(self):
-        delimiter = Value("|")
-        return ConcatAll("piid", delimiter, "parent_award_id", delimiter, "fain", delimiter, "uri")
-
     def unique_file_c_award_count(self):
-        return Count(self.unique_file_c_awards, distinct=True)
+        return Count("distinct_award_key", distinct=True)
 
     @staticmethod
     def unique_file_d_award_count():
