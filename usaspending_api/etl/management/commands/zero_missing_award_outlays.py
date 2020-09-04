@@ -11,7 +11,7 @@ logger = logging.getLogger("script")
 
 """
 WARNING: This SQL will only correctly identify awards during the first fiscal
-year of Covid submissions. A flaw has been found that will cause some awards in 
+year of Covid submissions. A flaw has been found that will cause some awards in
 FY 21 to be incorrectly identified. This should be replaced before the close of
 the Fiscal Year
 """
