@@ -56,12 +56,12 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             .annotate(
                 total=Sum("generated_pragmatic_obligation"),
                 distinct_awards=StringAgg("distinct_awards", ","),
-                face_value_of_loan_guarantee=Sum("face_value_loan_guarantee"),
+                total_face_value_loan_amount=Sum("face_value_loan_guarantee"),
             )
-            .values("distinct_awards", "pop_state_code", "total", "face_value_loan_guarantee")
+            .values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount")
         )
 
-        loan_count = queryset.filter(type__in=['07', '08']).count()
+        total_face_value_loan_prime_awards = queryset.filter(type__in=["07", "08"]).count()
 
     try:
         row = list(queryset)[0]
@@ -69,14 +69,20 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             "pop_state_code": row["pop_state_code"],
             "total": row["total"],
             "count": len(set(row["distinct_awards"].split(","))),
-            "face_value_loan_guarantee": row["face_value_loan_guarantee"],
-            "loan_count": loan_count
+            "total_face_value_loan_amount": row["total_face_value_loan_amount"],
+            "total_face_value_loan_prime_awards": total_face_value_loan_prime_awards,
         }
         return result
     except IndexError:
         # would prefer to catch an index error gracefully if the SQL query produces 0 rows
         logger.warning("No results found for FIPS {} with filters: {}".format(fips, filters))
-    return {"count": 0, "pop_state_code": None, "total": 0, "face_value_loan_guarantee": 0, "loan_count": 0}
+    return {
+        "count": 0,
+        "pop_state_code": None,
+        "total": 0,
+        "total_face_value_loan_amount": 0,
+        "total_face_value_loan_prime_awards": 0,
+    }
 
 
 def get_all_states(year=None, award_type_codes=None, subawards=False):
@@ -160,8 +166,8 @@ class StateMetaDataViewSet(APIView):
             "mhi_source": state_mhi_data["mhi_source"],
             "total_prime_amount": state_aggregates["total"],
             "total_prime_awards": state_aggregates["count"],
-            "face_value_loan_guarantee": state_aggregates["face_value_loan_guarantee"],
-            "loan_count": state_aggregates["loan_count"],
+            "total_face_value_loan_amount": state_aggregates["total_face_value_loan_amount"],
+            "total_face_value_loan_prime_awards": state_aggregates["total_face_value_loan_prime_awards"],
             "award_amount_per_capita": amt_per_capita,
             # Commented out for now
             # 'total_subaward_amount': total_subaward_amount,
