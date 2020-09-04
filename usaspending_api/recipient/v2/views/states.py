@@ -50,15 +50,16 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
     filters = reshape_filters(state_code=VALID_FIPS[fips]["code"], year=year, award_type_codes=award_type_codes)
 
     if not subawards:
-        queryset = matview_search_filter(filters, SummaryStateView).values("pop_state_code")
-
-        total_face_value_loan_prime_awards = queryset.filter(type__in=["07", "08"]).count()
-
-        queryset = queryset.annotate(
-            total=Sum("generated_pragmatic_obligation"),
-            distinct_awards=StringAgg("distinct_awards", ","),
-            total_face_value_loan_amount=Sum("face_value_loan_guarantee"),
-        ).values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount")
+        queryset = (
+            matview_search_filter(filters, SummaryStateView)
+            .values("pop_state_code")
+            .annotate(
+                total=Sum("generated_pragmatic_obligation"),
+                distinct_awards=StringAgg("distinct_awards", ","),
+                total_face_value_loan_amount=Sum("face_value_loan_guarantee"),
+            )
+            .values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount")
+        )
 
     try:
         row = list(queryset)[0]
@@ -67,7 +68,6 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             "total": row["total"],
             "count": len(set(row["distinct_awards"].split(","))),
             "total_face_value_loan_amount": row["total_face_value_loan_amount"],
-            "total_face_value_loan_prime_awards": total_face_value_loan_prime_awards,
         }
         return result
     except IndexError:
@@ -79,7 +79,6 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
         "pop_state_code": None,
         "total": 0,
         "total_face_value_loan_amount": 0,
-        "total_face_value_loan_prime_awards": 0,
     }
 
 
@@ -144,6 +143,8 @@ class StateMetaDataViewSet(APIView):
         state_mhi_data = self.get_state_data(state_data_results, "median_household_income", year)
 
         state_aggregates = obtain_state_totals(fips, year=year)
+        state_loans = obtain_state_totals(fips, year=year, award_type_codes=all_award_types_mappings["loans"])
+
         if year == "all" or (year and year.isdigit() and int(year) == generate_fiscal_year(datetime.now())):
             amt_per_capita = None
         else:
@@ -165,7 +166,7 @@ class StateMetaDataViewSet(APIView):
             "total_prime_amount": state_aggregates["total"],
             "total_prime_awards": state_aggregates["count"],
             "total_face_value_loan_amount": state_aggregates["total_face_value_loan_amount"],
-            "total_face_value_loan_prime_awards": state_aggregates["total_face_value_loan_prime_awards"],
+            "total_face_value_loan_prime_awards": state_loans["count"],
             "award_amount_per_capita": amt_per_capita,
             # Commented out for now
             # 'total_subaward_amount': total_subaward_amount,

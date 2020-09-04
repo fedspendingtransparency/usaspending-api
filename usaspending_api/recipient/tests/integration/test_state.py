@@ -394,7 +394,6 @@ def test_obtain_state_totals(state_view_data):
         "total": 10,
         "count": 1,
         "total_face_value_loan_amount": 0,
-        "total_face_value_loan_prime_awards": 0,
     }
     assert result == expected
 
@@ -407,7 +406,6 @@ def test_obtain_state_totals_loan_agg(state_view_loan_data):
         "total": 25,
         "count": 2,
         "total_face_value_loan_amount": 1511,
-        "total_face_value_loan_prime_awards": 2,
     }
     assert result == expected
 
@@ -421,7 +419,6 @@ def test_obtain_state_totals_none(state_view_data, monkeypatch):
         "total": 0,
         "count": 0,
         "total_face_value_loan_amount": 0,
-        "total_face_value_loan_prime_awards": 0,
     }
 
     assert result == expected
