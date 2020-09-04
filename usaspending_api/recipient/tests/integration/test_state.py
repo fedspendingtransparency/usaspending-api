@@ -31,6 +31,7 @@ EXPECTED_STATE = {
     "mhi_source": "Census 2010 MHI",
     "total_prime_amount": 100000,
     "total_prime_awards": 1,
+    "face_value_loan_guarantee": 0,
     "award_amount_per_capita": 1,
 }
 EXPECTED_DISTRICT = EXPECTED_STATE.copy()
@@ -45,6 +46,7 @@ EXPECTED_DISTRICT.update(
         "population": 5000,
         "total_prime_amount": 1000,
         "total_prime_awards": 1,
+        "face_value_loan_guarantee": 0,
         "award_amount_per_capita": round(decimal.Decimal(0.20), 2),
     }
 )
@@ -60,6 +62,7 @@ EXPECTED_TERRITORY.update(
         "population": 5000,
         "total_prime_amount": 1000,
         "total_prime_awards": 1,
+        "face_value_loan_guarantee": 0,
         "award_amount_per_capita": round(decimal.Decimal(0.20), 2),
     }
 )

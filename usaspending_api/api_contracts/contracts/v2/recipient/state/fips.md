@@ -37,4 +37,5 @@ This endpoint returns a high-level overview of a specific state or territory, gi
 + `total_prime_amount`: 300200000000 (required, number)
 + `total_prime_awards`: 327721 (required, number)
 + `face_value_loan_guarantee`: 88888.0 (required, number)
++ `loan_count`: 10 (required, number)
 + `award_amount_per_capita`: 916023.08 (required, number)
