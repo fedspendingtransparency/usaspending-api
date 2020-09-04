@@ -40,6 +40,7 @@ def cfda_awards_and_transactions(db):
         reporting_fiscal_year=2022,
         reporting_fiscal_period=7,
         quarter_format_flag=False,
+        is_final_balances_for_fy=False,
         reporting_period_start="2022-04-01",
     )
     sub2 = mommy.make(
@@ -47,6 +48,7 @@ def cfda_awards_and_transactions(db):
         reporting_fiscal_year=2022,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
+        is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
     )
     sub3 = mommy.make(
@@ -54,6 +56,7 @@ def cfda_awards_and_transactions(db):
         reporting_fiscal_year=2022,
         reporting_fiscal_period=7,
         quarter_format_flag=False,
+        is_final_balances_for_fy=False,
         reporting_period_start="2022-04-01",
     )
     sub4 = mommy.make(
@@ -61,6 +64,7 @@ def cfda_awards_and_transactions(db):
         reporting_fiscal_year=9999,
         reporting_fiscal_period=7,
         quarter_format_flag=False,
+        is_final_balances_for_fy=False,
         reporting_period_start="9999-04-01",
     )
 
@@ -237,6 +241,39 @@ def cfda_awards_and_transactions(db):
     )
 
     # References CFDA
-    mommy.make("references.Cfda", id=100, program_number="10.100", program_title="CFDA 1", url="None;")
-    mommy.make("references.Cfda", id=200, program_number="20.200", program_title="CFDA 2", url="www.example.com/200")
-    mommy.make("references.Cfda", id=300, program_number="30.300", program_title="CFDA 3", url="www.example.com/300")
+    mommy.make(
+        "references.Cfda",
+        id=100,
+        federal_agency="Agency 1",
+        objectives="objectives 1",
+        applicant_eligibility="AE1",
+        beneficiary_eligibility="BE1",
+        program_number="10.100",
+        program_title="CFDA 1",
+        url="None;",
+        website_address=None,
+    )
+    mommy.make(
+        "references.Cfda",
+        id=200,
+        federal_agency="Agency 2",
+        objectives="objectives 2",
+        applicant_eligibility="AE2",
+        beneficiary_eligibility="BE2",
+        program_number="20.200",
+        program_title="CFDA 2",
+        url="www.example.com/200",
+        website_address="www.example.com/cfda_website/200",
+    )
+    mommy.make(
+        "references.Cfda",
+        id=300,
+        federal_agency="Agency 3",
+        objectives="objectives 3",
+        applicant_eligibility="AE3",
+        beneficiary_eligibility="BE3",
+        program_number="30.300",
+        program_title="CFDA 3",
+        url="www.example.com/300",
+        website_address="www.example.com/cfda_website/300",
+    )

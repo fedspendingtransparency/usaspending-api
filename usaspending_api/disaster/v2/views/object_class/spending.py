@@ -44,10 +44,15 @@ class ObjectClassSpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin
     def post(self, request):
         if self.spending_type == "award":
             results = list(self.award_queryset)
+            include_award_count = True
         else:
             results = list(self.total_queryset)
+            include_award_count = False
 
-        return Response(construct_response(results, self.pagination))
+        response = construct_response(results, self.pagination)
+        response["totals"] = self.accumulate_total_values(results, include_award_count)
+
+        return Response(response)
 
     @property
     def total_queryset(self):

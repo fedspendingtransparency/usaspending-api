@@ -65,6 +65,7 @@ def generic_account_data():
         reporting_fiscal_year=2022,
         reporting_fiscal_quarter=3,
         reporting_fiscal_period=7,
+        is_final_balances_for_fy=True,
         quarter_format_flag=False,
     )
     mommy.make(
@@ -122,6 +123,7 @@ def generic_account_data():
         gross_outlay_amount_by_award_cpe=111,
         disaster_emergency_fund=defc_m,
         treasury_account=tre_acct1,
+        distinct_award_key="0wefjwe|3443r||",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -134,6 +136,7 @@ def generic_account_data():
         gross_outlay_amount_by_award_cpe=222,
         disaster_emergency_fund=defc_l,
         treasury_account=tre_acct2,
+        distinct_award_key="0wefjwe|3443r||",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -145,6 +148,7 @@ def generic_account_data():
         gross_outlay_amount_by_award_cpe=2,
         disaster_emergency_fund=defc_9,
         treasury_account=tre_acct2,
+        distinct_award_key="|||3298rhed",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -156,6 +160,7 @@ def generic_account_data():
         gross_outlay_amount_by_award_cpe=1,
         disaster_emergency_fund=defc_o,
         treasury_account=tre_acct2,
+        distinct_award_key="||43tgfvdvfv|",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -167,6 +172,7 @@ def generic_account_data():
         gross_outlay_amount_by_award_cpe=333,
         disaster_emergency_fund=defc_n,
         treasury_account=tre_acct3,
+        distinct_award_key="||woefhowe|",
     )
     mommy.make(
         "references.GTASSF133Balances",
@@ -215,6 +221,7 @@ def unlinked_faba_account_data():
         reporting_fiscal_year=2022,
         reporting_fiscal_quarter=3,
         reporting_fiscal_period=7,
+        is_final_balances_for_fy=True,
         quarter_format_flag=False,
     )
     mommy.make(
@@ -225,6 +232,7 @@ def unlinked_faba_account_data():
         gross_outlay_amount_by_award_cpe=9999999,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.get(code="N"),
         treasury_account=tre_acct,
+        distinct_award_key="weuf|||",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -235,6 +243,7 @@ def unlinked_faba_account_data():
         gross_outlay_amount_by_award_cpe=888888,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.get(code="N"),
         treasury_account=tre_acct,
+        distinct_award_key="weuf|weuf22||",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -244,6 +253,7 @@ def unlinked_faba_account_data():
         gross_outlay_amount_by_award_cpe=555,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.get(code="L"),
         treasury_account=tre_acct,
+        distinct_award_key="0iwnff|||",
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -253,4 +263,5 @@ def unlinked_faba_account_data():
         gross_outlay_amount_by_award_cpe=888,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.get(code="N"),
         treasury_account=tre_acct,
+        distinct_award_key="||howeusd|",
     )
