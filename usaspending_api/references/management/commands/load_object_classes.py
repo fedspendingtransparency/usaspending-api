@@ -169,6 +169,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 object_class = raw_object_class.object_class
 
             major_object_class = object_class[0] + "0"
+            object_class = "{:0>4.1f}".format(int(object_class) / 10)
 
             return FullObjectClass(
                 row_number=raw_object_class.row_number,
