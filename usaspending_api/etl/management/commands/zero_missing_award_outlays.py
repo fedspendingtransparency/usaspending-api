@@ -11,22 +11,37 @@ logger = logging.getLogger("script")
 
 MISSING_COVID_AWARD_SQL = """
 SELECT
-    DISTINCT ON
-    (faba.award_id) faba.award_id
+    award_id
 FROM
-    financial_accounts_by_awards faba
-INNER JOIN disaster_emergency_fund_code defc ON
-    defc.code = faba.disaster_emergency_fund_code
-    AND defc.group_name = 'covid_19'
-INNER JOIN submission_attributes sa ON
-    faba.submission_id = sa.submission_id
+    (
+        SELECT
+            DISTINCT ON
+            (faba.award_id) faba.award_id,
+            sa.submission_id,
+            sa.is_final_balances_for_fy,
+            sa.reporting_fiscal_year,
+            sa.reporting_fiscal_period,
+            sa.quarter_format_flag
+        FROM
+            financial_accounts_by_awards faba
+        INNER JOIN disaster_emergency_fund_code defc ON
+            defc.code = faba.disaster_emergency_fund_code
+            AND defc.group_name = 'covid_19'
+        INNER JOIN submission_attributes sa ON
+            faba.submission_id = sa.submission_id
+        WHERE
+            faba.award_id IS NOT NULL
+            AND sa.reporting_period_start >= '2020-04-01'
+        ORDER BY
+            faba.award_id, sa.reporting_period_end DESC
+    ) AS covid_awards
+INNER JOIN dabs_submission_window_schedule dabs ON
+    dabs.submission_fiscal_year = covid_awards.reporting_fiscal_year
+    AND dabs.submission_fiscal_month = covid_awards.reporting_fiscal_period
+    AND dabs.is_quarter = covid_awards.quarter_format_flag
+    AND dabs.submission_reveal_date <= now()
 WHERE
-    faba.award_id IS NOT NULL
-    AND sa.is_final_balances_for_fy = FALSE
-    AND sa.reporting_period_start >= '2020-04-01'
-ORDER BY
-    faba.award_id,
-    faba.submission_id DESC;
+    covid_awards.is_final_balances_for_fy = FALSE;
 """
 
 
