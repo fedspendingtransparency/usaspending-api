@@ -56,7 +56,7 @@ This endpoint returns a list of the top results of specific categories sorted by
     + Attributes (object)
         + `category` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
-        + `limit` (required, number)
+        + `limit` (required, number) Maximum - 9,999
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
