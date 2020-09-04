@@ -50,18 +50,15 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
     filters = reshape_filters(state_code=VALID_FIPS[fips]["code"], year=year, award_type_codes=award_type_codes)
 
     if not subawards:
-        queryset = (
-            matview_search_filter(filters, SummaryStateView)
-            .values("pop_state_code")
-            .annotate(
-                total=Sum("generated_pragmatic_obligation"),
-                distinct_awards=StringAgg("distinct_awards", ","),
-                total_face_value_loan_amount=Sum("face_value_loan_guarantee"),
-            )
-            .values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount")
-        )
+        queryset = matview_search_filter(filters, SummaryStateView).values("pop_state_code")
 
         total_face_value_loan_prime_awards = queryset.filter(type__in=["07", "08"]).count()
+
+        queryset = queryset.annotate(
+            total=Sum("generated_pragmatic_obligation"),
+            distinct_awards=StringAgg("distinct_awards", ","),
+            total_face_value_loan_amount=Sum("face_value_loan_guarantee"),
+        ).values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount")
 
     try:
         row = list(queryset)[0]
@@ -76,6 +73,7 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
     except IndexError:
         # would prefer to catch an index error gracefully if the SQL query produces 0 rows
         logger.warning("No results found for FIPS {} with filters: {}".format(fips, filters))
+
     return {
         "count": 0,
         "pop_state_code": None,
