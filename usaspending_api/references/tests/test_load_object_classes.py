@@ -2,7 +2,6 @@ import csv
 import pytest
 
 from django.core.management import call_command
-from django.core.management.base import CommandError
 from pathlib import Path
 from usaspending_api.references.models import ObjectClass
 
@@ -59,26 +58,26 @@ def test_happy_path(remove_csv_file):
 
     # Load all the things.
     mock_data(GOOD_SAMPLE)
-    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
 
     # We should have 6 records; the three we added plus the three default "000" object classes.
     assert ObjectClass.objects.count() == 6
 
     # Perform two deep dives; one for the records we just added and one for a "000" object class.
-    oc = ObjectClass.objects.get(object_class="100", direct_reimbursable="D")
+    oc = ObjectClass.objects.get(object_class="10.0", direct_reimbursable="D")
     assert oc.major_object_class == "10"
     assert oc.major_object_class_name == "Personnel compensation and benefits"
-    assert oc.object_class == "100"
+    assert oc.object_class == "10.0"
     assert oc.object_class_name == "Test 1100"
     assert oc.direct_reimbursable == "D"
     assert oc.direct_reimbursable_name == "Direct"
     assert oc.create_date is not None
     assert oc.update_date is not None
 
-    oc = ObjectClass.objects.get(object_class="000", direct_reimbursable=None)
+    oc = ObjectClass.objects.get(object_class="00.0", direct_reimbursable=None)
     assert oc.major_object_class == "00"
     assert oc.major_object_class_name == "Unknown"
-    assert oc.object_class == "000"
+    assert oc.object_class == "00.0"
     assert oc.object_class_name == "Unknown"
     assert oc.direct_reimbursable is None
     assert oc.direct_reimbursable_name is None
@@ -86,20 +85,12 @@ def test_happy_path(remove_csv_file):
     assert oc.update_date is not None
 
     # These will blow up if a record is missing.
-    ObjectClass.objects.get(object_class="000", direct_reimbursable=None)
-    ObjectClass.objects.get(object_class="000", direct_reimbursable="D")
-    ObjectClass.objects.get(object_class="000", direct_reimbursable="R")
-    ObjectClass.objects.get(object_class="100", direct_reimbursable=None)
-    ObjectClass.objects.get(object_class="100", direct_reimbursable="D")
-    ObjectClass.objects.get(object_class="100", direct_reimbursable="R")
-
-
-@pytest.mark.django_db
-def test_no_file_provided():
-
-    # This should error since file is required.
-    with pytest.raises(CommandError):
-        call_command("load_object_classes")
+    ObjectClass.objects.get(object_class="00.0", direct_reimbursable=None)
+    ObjectClass.objects.get(object_class="00.0", direct_reimbursable="D")
+    ObjectClass.objects.get(object_class="00.0", direct_reimbursable="R")
+    ObjectClass.objects.get(object_class="10.0", direct_reimbursable=None)
+    ObjectClass.objects.get(object_class="10.0", direct_reimbursable="D")
+    ObjectClass.objects.get(object_class="10.0", direct_reimbursable="R")
 
 
 @pytest.mark.django_db
@@ -107,7 +98,7 @@ def test_ignore_blanks(disable_vacuuming, remove_csv_file):
 
     assert ObjectClass.objects.count() == 0
     mock_data(IGNORE_BLANK_SAMPLE)
-    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
     assert ObjectClass.objects.count() == 6
 
 
@@ -116,10 +107,10 @@ def test_adding_rows(disable_vacuuming, remove_csv_file):
 
     assert ObjectClass.objects.count() == 0
     mock_data(GOOD_SAMPLE)
-    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
     assert ObjectClass.objects.count() == 6
     mock_data(ADDITIONAL_SAMPLE)
-    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
     assert ObjectClass.objects.count() == 9
 
 
@@ -128,13 +119,13 @@ def test_updating_rows(disable_vacuuming, remove_csv_file):
 
     assert ObjectClass.objects.count() == 0
     mock_data(GOOD_SAMPLE)
-    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
     assert ObjectClass.objects.count() == 6
     mock_data(UPDATE_SAMPLE)
-    call_command("load_object_classes", OBJECT_CLASS_FILE)
+    call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
     assert ObjectClass.objects.count() == 6
 
-    oc = ObjectClass.objects.get(object_class="100", direct_reimbursable="D")
+    oc = ObjectClass.objects.get(object_class="10.0", direct_reimbursable="D")
     assert oc.object_class_name == "Test 1100 update"
 
 
@@ -143,10 +134,10 @@ def test_leading_trailing_spaces(disable_vacuuming, remove_csv_file):
 
     assert ObjectClass.objects.count() == 0
     mock_data(LEADING_TRAILING_SPACES_SAMPLE)
-    call_command("load_object_classes", OBJECT_CLASS_FILE)
-    assert ObjectClass.objects.get(object_class="100", direct_reimbursable=None).object_class_name == "Test 100"
-    assert ObjectClass.objects.get(object_class="100", direct_reimbursable="D").object_class_name == "Test 1100"
-    assert ObjectClass.objects.get(object_class="100", direct_reimbursable="R").object_class_name == "Test 2100"
+    call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
+    assert ObjectClass.objects.get(object_class="10.0", direct_reimbursable=None).object_class_name == "Test 100"
+    assert ObjectClass.objects.get(object_class="10.0", direct_reimbursable="D").object_class_name == "Test 1100"
+    assert ObjectClass.objects.get(object_class="10.0", direct_reimbursable="R").object_class_name == "Test 2100"
 
 
 @pytest.mark.django_db
@@ -156,18 +147,18 @@ def test_bad_data(remove_csv_file):
 
     mock_data(NON_DIGIT_SAMPLE)
     with pytest.raises(RuntimeError):
-        call_command("load_object_classes", OBJECT_CLASS_FILE)
+        call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
 
     mock_data(TOO_MANY_DIGITS_SAMPLE)
     with pytest.raises(RuntimeError):
-        call_command("load_object_classes", OBJECT_CLASS_FILE)
+        call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
 
     mock_data(BAD_DR_DIGIT_SAMPLE)
     with pytest.raises(RuntimeError):
-        call_command("load_object_classes", OBJECT_CLASS_FILE)
+        call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
 
     mock_data(MISSING_NAME_SAMPLE)
     with pytest.raises(RuntimeError):
-        call_command("load_object_classes", OBJECT_CLASS_FILE)
+        call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
 
     assert ObjectClass.objects.count() == 0
