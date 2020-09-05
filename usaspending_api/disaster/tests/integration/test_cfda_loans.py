@@ -39,6 +39,7 @@ def test_correct_response_single_defc(
             "beneficiary_eligibility": "BE2",
             "cfda_federal_agency": "Agency 2",
             "cfda_objectives": "objectives 2",
+            "cfda_website": "www.example.com/cfda_website/200",
         },
         {
             "code": "10.100",
@@ -53,6 +54,7 @@ def test_correct_response_single_defc(
             "beneficiary_eligibility": "BE1",
             "cfda_federal_agency": "Agency 1",
             "cfda_objectives": "objectives 1",
+            "cfda_website": None,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -80,6 +82,7 @@ def test_correct_response_multiple_defc(
             "beneficiary_eligibility": "BE2",
             "cfda_federal_agency": "Agency 2",
             "cfda_objectives": "objectives 2",
+            "cfda_website": "www.example.com/cfda_website/200",
         },
         {
             "code": "10.100",
@@ -94,6 +97,7 @@ def test_correct_response_multiple_defc(
             "beneficiary_eligibility": "BE1",
             "cfda_federal_agency": "Agency 1",
             "cfda_objectives": "objectives 1",
+            "cfda_website": None,
         },
     ]
 
@@ -127,6 +131,7 @@ def test_correct_response_with_query(
             "beneficiary_eligibility": "BE2",
             "cfda_federal_agency": "Agency 2",
             "cfda_objectives": "objectives 2",
+            "cfda_website": "www.example.com/cfda_website/200",
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -183,6 +188,7 @@ def test_pagination_page_and_limit(
                 "beneficiary_eligibility": "BE1",
                 "cfda_federal_agency": "Agency 1",
                 "cfda_objectives": "objectives 1",
+                "cfda_website": None,
             }
         ],
         "page_metadata": {
@@ -241,6 +247,7 @@ def test_correct_response_with_award_type_codes(
                 "beneficiary_eligibility": "BE2",
                 "cfda_federal_agency": "Agency 2",
                 "cfda_objectives": "objectives 2",
+                "cfda_website": "www.example.com/cfda_website/200",
             },
             {
                 "code": "10.100",
@@ -255,6 +262,7 @@ def test_correct_response_with_award_type_codes(
                 "beneficiary_eligibility": "BE1",
                 "cfda_federal_agency": "Agency 1",
                 "cfda_objectives": "objectives 1",
+                "cfda_website": None,
             },
         ],
         "page_metadata": {
@@ -290,6 +298,7 @@ def test_correct_response_with_award_type_codes(
                 "beneficiary_eligibility": "BE2",
                 "cfda_federal_agency": "Agency 2",
                 "cfda_objectives": "objectives 2",
+                "cfda_website": "www.example.com/cfda_website/200",
             }
         ],
         "page_metadata": {

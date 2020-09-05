@@ -66,10 +66,10 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
     def post(self, request):
         if self.spending_type == "award":
             results = self.award_queryset
-            include_award_count = True
+            extra_columns = ["award_count"]
         else:
             results = self.total_queryset
-            include_award_count = False
+            extra_columns = ["total_budgetary_resources"]
 
         results = list(results.order_by(*self.pagination.robust_order_by_fields))
         for item in results:  # we're checking for items that do not have an agency profile page
@@ -79,7 +79,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
                 item.pop("link")
         return Response(
             {
-                "totals": self.accumulate_total_values(results, include_award_count),
+                "totals": self.accumulate_total_values(results, extra_columns),
                 "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
                 "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }

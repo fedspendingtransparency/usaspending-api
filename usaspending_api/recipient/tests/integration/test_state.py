@@ -31,6 +31,8 @@ EXPECTED_STATE = {
     "mhi_source": "Census 2010 MHI",
     "total_prime_amount": 100000,
     "total_prime_awards": 1,
+    "total_face_value_loan_amount": 0,
+    "total_face_value_loan_prime_awards": 0,
     "award_amount_per_capita": 1,
 }
 EXPECTED_DISTRICT = EXPECTED_STATE.copy()
@@ -45,6 +47,8 @@ EXPECTED_DISTRICT.update(
         "population": 5000,
         "total_prime_amount": 1000,
         "total_prime_awards": 1,
+        "total_face_value_loan_amount": 0,
+        "total_face_value_loan_prime_awards": 0,
         "award_amount_per_capita": round(decimal.Decimal(0.20), 2),
     }
 )
@@ -60,6 +64,8 @@ EXPECTED_TERRITORY.update(
         "population": 5000,
         "total_prime_amount": 1000,
         "total_prime_awards": 1,
+        "total_face_value_loan_amount": 0,
+        "total_face_value_loan_prime_awards": 0,
         "award_amount_per_capita": round(decimal.Decimal(0.20), 2),
     }
 )
@@ -200,6 +206,55 @@ def state_view_data(db, monkeypatch):
     mommy.make("awards.TransactionFPDS", transaction=trans_cur)
 
 
+@pytest.fixture
+def state_view_loan_data(db, monkeypatch):
+    monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"01": {"code": "AB"}})
+
+    award_old = mommy.make("awards.Award", type="07")
+    award_old2 = mommy.make("awards.Award", type="08")
+    award_cur = mommy.make("awards.Award", type="07")
+
+    trans_old = mommy.make(
+        "awards.TransactionNormalized",
+        award=award_old,
+        type="07",
+        assistance_data__place_of_perfor_state_code="AB",
+        assistance_data__place_of_perform_country_c="USA",
+        original_loan_subsidy_cost=10,
+        fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
+        face_value_loan_guarantee=1500,
+        action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
+    )
+
+    trans_old2 = mommy.make(
+        "awards.TransactionNormalized",
+        award=award_old2,
+        type="08",
+        assistance_data__place_of_perfor_state_code="AB",
+        assistance_data__place_of_perform_country_c="USA",
+        original_loan_subsidy_cost=15,
+        fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
+        face_value_loan_guarantee=11,
+        action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
+    )
+
+    trans_cur = mommy.make(
+        "awards.TransactionNormalized",
+        award=award_cur,
+        type="A",
+        assistance_data__place_of_perfor_state_code="AB",
+        assistance_data__place_of_perform_country_c="USA",
+        federal_action_obligation=100,
+        fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
+        face_value_loan_guarantee=2000,
+        action_date=TODAY.strftime("%Y-%m-%d"),
+    )
+
+    mommy.make("awards.TransactionFPDS", transaction=trans_old)
+    mommy.make("awards.TransactionFPDS", transaction=trans_old2)
+    mommy.make("awards.TransactionFPDS", transaction=trans_cur)
+
+
 @pytest.fixture()
 def state_breakdown_result():
     expected_result = [
@@ -334,7 +389,24 @@ def test_state_metadata_failure(client, state_data):
 @pytest.mark.django_db
 def test_obtain_state_totals(state_view_data):
     result = obtain_state_totals("01", str(generate_fiscal_year(OUTSIDE_OF_LATEST)), ["A"])
-    expected = {"pop_state_code": "AB", "total": 10, "count": 1}
+    expected = {
+        "pop_state_code": "AB",
+        "total": 10,
+        "count": 1,
+        "total_face_value_loan_amount": 0,
+    }
+    assert result == expected
+
+
+@pytest.mark.django_db
+def test_obtain_state_totals_loan_agg(state_view_loan_data):
+    result = obtain_state_totals("01", str(generate_fiscal_year(OUTSIDE_OF_LATEST)))
+    expected = {
+        "pop_state_code": "AB",
+        "total": 25,
+        "count": 2,
+        "total_face_value_loan_amount": 1511,
+    }
     assert result == expected
 
 
@@ -342,7 +414,12 @@ def test_obtain_state_totals(state_view_data):
 def test_obtain_state_totals_none(state_view_data, monkeypatch):
     monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"02": {"code": "No State"}})
     result = obtain_state_totals("02")
-    expected = {"pop_state_code": None, "total": 0, "count": 0}
+    expected = {
+        "pop_state_code": None,
+        "total": 0,
+        "count": 0,
+        "total_face_value_loan_amount": 0,
+    }
 
     assert result == expected
 

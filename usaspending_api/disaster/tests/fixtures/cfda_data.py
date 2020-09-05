@@ -251,6 +251,7 @@ def cfda_awards_and_transactions(db):
         program_number="10.100",
         program_title="CFDA 1",
         url="None;",
+        website_address=None,
     )
     mommy.make(
         "references.Cfda",
@@ -262,6 +263,7 @@ def cfda_awards_and_transactions(db):
         program_number="20.200",
         program_title="CFDA 2",
         url="www.example.com/200",
+        website_address="www.example.com/cfda_website/200",
     )
     mommy.make(
         "references.Cfda",
@@ -273,4 +275,5 @@ def cfda_awards_and_transactions(db):
         program_number="30.300",
         program_title="CFDA 3",
         url="www.example.com/300",
+        website_address="www.example.com/cfda_website/300",
     )

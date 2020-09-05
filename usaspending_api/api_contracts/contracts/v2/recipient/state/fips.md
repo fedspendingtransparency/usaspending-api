@@ -36,4 +36,6 @@ This endpoint returns a high-level overview of a specific state or territory, gi
     The year the median household income is based on.
 + `total_prime_amount`: 300200000000 (required, number)
 + `total_prime_awards`: 327721 (required, number)
++ `total_face_value_loan_amount`: 88888.0 (required, number) The aggregate face value loan guarantee value of all prime awards associated with this state for the given time period.
++ `total_face_value_loan_prime_awards`: 10 (required, number) The number of prime awards associated with this state for the given time period and face value loan guarantee.
 + `award_amount_per_capita`: 916023.08 (required, number)
