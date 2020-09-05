@@ -141,6 +141,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
 
 ## Totals (object)
 + `award_count` (optional, number)
++ `total_budgetary_resources` (optional, number)
 + `obligation` (required, number)
 + `outlay` (required, number)
 

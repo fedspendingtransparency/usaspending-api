@@ -58,7 +58,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
         results = list(self.queryset.order_by(*self.pagination.robust_order_by_fields))
         return Response(
             {
-                "totals": self.accumulate_total_values(results, include_loans=True),
+                "totals": self.accumulate_total_values(results, ["award_count", "face_value_of_loan"]),
                 "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
                 "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
