@@ -161,6 +161,7 @@ This route sends a request to the backend to begin generating a zipfile of trans
     + Members
         + `funding`
         + `awarding`
++ `toptier_name` (optional, string)
 
 ### TimePeriod (object)
 + `start_date` (required, string)
