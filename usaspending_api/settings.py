@@ -411,6 +411,6 @@ SPAGHETTI_SAUCE = {
     "show_proxy": False,
 }
 
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 CSRF_COOKIE_SECURE = True
