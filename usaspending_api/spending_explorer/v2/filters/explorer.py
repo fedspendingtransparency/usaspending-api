@@ -1,15 +1,24 @@
 from decimal import Decimal
-from django.db.models import F, Sum, Value, CharField, Q
+from django.db.models import F, Sum, Value, CharField, Q, OuterRef, Exists
 from django.db.models.functions import Coalesce
 from usaspending_api.references.models import Agency
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class Explorer(object):
     def __init__(self, alt_set, queryset):
         # Moving agency mapping outside function to reduce response time
-        agency_queryet = Agency.objects.filter(toptier_flag=True).values("id", "toptier_agency__toptier_code")
-        self.agency_ids = {agency["toptier_agency__toptier_code"]: agency["id"] for agency in agency_queryet}
-
+        agency_queryet = (
+            Agency.objects.filter(toptier_flag=True)
+            .values("id", "toptier_agency__toptier_code")
+            .annotate(
+                link=Exists(SubmissionAttributes.objects.filter(toptier_code=OuterRef("toptier_agency__toptier_code")))
+            )
+        )
+        self.agency_ids = {
+            agency["toptier_agency__toptier_code"]: {"id": agency["id"], "link": agency["link"]}
+            for agency in agency_queryet
+        }
         self.alt_set = alt_set
         self.queryset = queryset
 
@@ -98,10 +107,6 @@ class Explorer(object):
         # Recipients Queryset
         alt_set = (
             self.alt_set.filter(~Q(transaction_obligated_amount=Decimal("NaN")))
-            .filter(
-                Q(award__latest_transaction__contract_data__awardee_or_recipient_legal__isnull=False)
-                | Q(award__latest_transaction__assistance_data__awardee_or_recipient_legal__isnull=False)
-            )
             .annotate(
                 id=Coalesce(
                     "award__latest_transaction__contract_data__awardee_or_recipient_legal",
@@ -139,8 +144,8 @@ class Explorer(object):
         )
 
         for element in queryset:
-            element["id"] = self.agency_ids[element["code"]]
-
+            element["id"] = self.agency_ids[element["code"]]["id"]
+            element["link"] = self.agency_ids[element["code"]]["link"]
         return queryset
 
     def award_category(self):
