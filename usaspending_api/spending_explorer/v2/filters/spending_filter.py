@@ -27,6 +27,7 @@ def spending_filter(alt_set, queryset, filters, _type):
             "agency_type",
             "fy",
             "quarter",
+            "period",
         ]
 
         if key not in key_list:
@@ -34,7 +35,7 @@ def spending_filter(alt_set, queryset, filters, _type):
                 key + " filter does not exist. "
                 "Valid Filters: budget_function, budget_subfunction, federal_account,"
                 "program_activity, object_class, recipient, award, award_category,"
-                "agency, agency_type, fy, quarter."
+                "agency, agency_type, fy, quarter, period."
             )
 
         # Check _type to filter on correct set (alt_set or queryset)

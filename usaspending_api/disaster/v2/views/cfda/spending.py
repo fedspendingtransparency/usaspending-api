@@ -16,7 +16,7 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/cfda/spending.md"
 
     required_filters = ["def_codes", "_assistance_award_type_codes", "query"]
-    query_fields = ["cfda_title", "cfda_number"]
+    query_fields = ["cfda_title.contains", "cfda_number.contains"]
     agg_key = "cfda_agg_key"
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:

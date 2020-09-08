@@ -31,7 +31,12 @@ from django.db.models import Case, CharField, DateField, DecimalField, F, Func, 
 from django.db.models.functions import Cast, Coalesce, Concat
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.orm_helpers import FiscalYear, get_agency_name_annotation, get_fyp_or_q_notation
+from usaspending_api.common.helpers.orm_helpers import (
+    ConcatAll,
+    FiscalYear,
+    get_agency_name_annotation,
+    get_fyp_or_q_notation,
+)
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import ToptierAgency
@@ -355,7 +360,7 @@ def award_financial_derivations(derived_fields):
         When(
             **{
                 "award__generated_unique_award_id__isnull": False,
-                "then": Concat(
+                "then": ConcatAll(
                     Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
                 ),
             }

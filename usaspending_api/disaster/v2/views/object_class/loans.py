@@ -1,7 +1,8 @@
 from django.db.models import F, Value, TextField, Min
-from django.db.models.functions import Cast, Concat
+from django.db.models.functions import Cast
 from rest_framework.response import Response
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansPaginationMixin,
@@ -38,8 +39,8 @@ class ObjectClassLoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin,
     @property
     def queryset(self):
         query = self.construct_loan_queryset(
-            Concat("object_class__major_object_class", Value(":"), "object_class__object_class"),
-            ObjectClass.objects.annotate(join_key=Concat("major_object_class", Value(":"), "object_class")),
+            ConcatAll("object_class__major_object_class", Value(":"), "object_class__object_class"),
+            ObjectClass.objects.annotate(join_key=ConcatAll("major_object_class", Value(":"), "object_class")),
             "join_key",
         )
 
