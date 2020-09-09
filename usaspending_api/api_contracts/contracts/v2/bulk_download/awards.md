@@ -162,3 +162,4 @@ This route sends a request to the backend to begin generating a zipfile of award
         + `funding`
         + `awarding`
 + `toptier_name` (optional, string)
+    Required if and only if `tier`=`subtier`
