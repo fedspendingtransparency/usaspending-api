@@ -72,7 +72,6 @@ def account_download_filter(account_type, download_table, filters, account_level
         query_filters[f"{tas_id}__budget_subfunction_code"] = filters["budget_subfunction"]
 
     # dev-5865
-    # TODO: change defCodes -> def_codes everywhere and force uppercase to
     if filters.get("def_codes"):
         query_filters["disaster_emergency_fund__code__in"] = filters["def_codes"]
 
