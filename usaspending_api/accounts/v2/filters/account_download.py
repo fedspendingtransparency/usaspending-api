@@ -72,8 +72,9 @@ def account_download_filter(account_type, download_table, filters, account_level
         query_filters[f"{tas_id}__budget_subfunction_code"] = filters["budget_subfunction"]
 
     # dev-5865
-    if filters.get("def_codes"):
-        query_filters["disaster_emergency_fund__code__in"] = filters["def_codes"]
+    if account_type is not "account_balances": # file A does not have DEFC field so we do not attempt to filter
+        if filters.get("def_codes"):
+            query_filters["disaster_emergency_fund__code__in"] = filters["def_codes"]
 
     submission_filter = get_submission_filter(account_type, filters)
 
@@ -86,7 +87,8 @@ def account_download_filter(account_type, download_table, filters, account_level
         raise InvalidParameterException(
             'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
         )
-
+    print("***********************!!!!!!!!!!!!!!!!!!!*************************")
+    print(queryset.filter(submission_filter, **query_filters).query)
     # Apply filter and return
     # queryset.filter(submission_filter, **query_filters)
     return queryset.filter(submission_filter, **query_filters)
