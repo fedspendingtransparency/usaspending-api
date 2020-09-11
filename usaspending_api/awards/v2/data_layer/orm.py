@@ -68,7 +68,6 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
 
-
     return delete_keys_from_dict(response)
 
 
@@ -112,7 +111,6 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
         response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
     if transaction["naics"]:
         response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
-
 
     return delete_keys_from_dict(response)
 
@@ -165,7 +163,6 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
         response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
     if transaction["naics"]:
         response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
-
 
     return delete_keys_from_dict(response)
 

@@ -1327,7 +1327,6 @@ expected_response_asst = {
     "account_outlays_by_defc": [],
     "total_account_obligation": 0,
     "total_account_outlay": 0,
-    "disaster_emergency_fund_codes": [],
 }
 
 
@@ -1515,7 +1514,6 @@ expected_response_cont = {
     "account_outlays_by_defc": [],
     "total_account_obligation": 0,
     "total_account_outlay": 0,
-    "disaster_emergency_fund_codes": [],
 }
 
 expected_contract_award_parent = {
