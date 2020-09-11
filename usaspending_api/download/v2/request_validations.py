@@ -460,10 +460,10 @@ def _validate_fiscal_period(filters: dict) -> Optional[int]:
 
     return period
 
-# dev-5865
+
 def _validate_def_codes(filters: dict):
     valid_codes = {"L", "M", "N", "O", "P"}
-    valid_codes_lowercase = {"l", "m", "n", "o", "p"} # we accept lowercase letters for codes but convert them
+    valid_codes_lowercase = {"l", "m", "n", "o", "p"}  # we accept lowercase letters for codes but convert them
     return_array = []
 
     # case when the whole def_codes object is missing from filters
@@ -471,14 +471,15 @@ def _validate_def_codes(filters: dict):
         return None
 
     for code in filters["def_codes"]:
-        if code in valid_codes: # code is valid code
+        if code in valid_codes:  # code is valid code
             return_array.append(code)
-        if code in valid_codes_lowercase: # code is valid but lowercase so we convert to uppercase so other functions can accept it
+        if code in valid_codes_lowercase:  # code is valid but lowercase so we convert to uppercase so other functions can accept it
             return_array.append(code.upper())
         if code not in valid_codes and code not in valid_codes_lowercase: # stop validation if we get an invalid code
             return None
 
     return return_array
+
 
 def _validate_and_bolster_requested_submission_window(
     fy: int, quarter: Optional[int], period: Optional[int]
