@@ -568,54 +568,6 @@ def fetch_psc_hierarchy(psc_code: str) -> dict:
     return results
 
 
-def fetch_disaster_emergency_fund_codes_for_award(award_id):
-    return list(
-        FinancialAccountsByAwards.objects.filter(award_id=award_id, disaster_emergency_fund__isnull=False)
-        .distinct()
-        .values_list("disaster_emergency_fund__code", flat=True)
-        .order_by("disaster_emergency_fund__code")
-    )
-
-
-def fetch_disaster_emergency_fund_codes_for_idv(award_id):
-    # Get distinct DEF codes from all File C records in the hierarchy of this idv.
-    sql = f"""
-        with gather_idv_award_ids as (
-            select      award_id
-            from        parent_award
-            where       award_id = {award_id}
-            union all
-            select      cpa.award_id
-            from        parent_award ppa
-                        inner join parent_award cpa on
-                            cpa.parent_award_id = ppa.award_id
-            where       ppa.award_id = {award_id}
-        ), gather_all_award_ids as (
-            select  ca.id
-            from    gather_idv_award_ids g
-                    inner join awards pa on
-                        pa.id = g.award_id
-                    inner join awards ca on
-                        ca.parent_award_piid = pa.piid and
-                        ca.fpds_parent_agency_id = pa.fpds_agency_id
-            union   all
-            select  {award_id}
-        )
-        select distinct
-            faba.disaster_emergency_fund_code
-        from
-            gather_all_award_ids a
-            inner join financial_accounts_by_awards faba on faba.award_id = a.id
-        where
-            faba.disaster_emergency_fund_code is not null
-        order by
-            faba.disaster_emergency_fund_code
-    """
-    with connection.cursor() as cursor:
-        cursor.execute(sql)
-        return [row[0] for row in cursor.fetchall()]
-
-
 def fetch_naics_hierarchy(naics: str) -> dict:
     codes = [naics, naics[:4], naics[:2]]
     toptier_code = {}
