@@ -24,7 +24,7 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
         models.CASCADE,
         db_column="treasury_account_identifier",
         related_name="account_balances",
-    ) #dev-5865 join to treasury appropriation account and then again to financial accounts by awards
+    )
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True

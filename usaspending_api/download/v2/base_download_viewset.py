@@ -58,12 +58,7 @@ class BaseDownloadViewSet(APIView):
             )
             return self.get_download_response(file_name=filename)
 
-
-
         json_request = request_type.value["validate_func"](request.data)
-        # dev-5865
-        # print("-----------------")
-        # print(json_request)
         json_request["request_type"] = request_type.value["name"]
         ordered_json_request = json.dumps(order_nested_object(json_request))
 

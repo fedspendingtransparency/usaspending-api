@@ -140,7 +140,7 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
     download_sources = []
     for download_type in json_request["download_types"]:
         agency_id = json_request.get("agency", "all")
-        filter_function = VALUE_MAPPINGS[download_type]["filter_function"] #dev-5865
+        filter_function = VALUE_MAPPINGS[download_type]["filter_function"]
         download_type_table = VALUE_MAPPINGS[download_type]["table"]
 
         if VALUE_MAPPINGS[download_type]["source_type"] == "award":
@@ -178,7 +178,7 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
                 download_sources.append(d2_source)
 
-        elif VALUE_MAPPINGS[download_type]["source_type"] == "account": #dev-5865
+        elif VALUE_MAPPINGS[download_type]["source_type"] == "account":
             # Account downloads
             account_source = DownloadSource(
                 VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
@@ -411,7 +411,7 @@ def generate_export_query(source_query, limit, source, columns, file_format):
 
 
 def generate_export_query_temp_file(export_query, download_job, temp_dir=None):
-    write_to_log(message=f"Saving PSQL Query: {export_query}", download_job=download_job) #dev-5865
+    write_to_log(message=f"Saving PSQL Query: {export_query}", download_job=download_job, is_debug=True)
     dir_name = "/tmp"
     if temp_dir:
         dir_name = temp_dir

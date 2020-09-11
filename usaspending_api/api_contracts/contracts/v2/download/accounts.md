@@ -72,7 +72,8 @@ Generate files and return metadata using filters on custom account
                     "file_format": "csv",
                     "filters": {
                         "fy": 2018,
-                        "quarter": 1
+                        "quarter": 1,
+                        "def_codes": ["L", "M", "O"]
                     },
                     "request_type": "account"
                 }
@@ -117,6 +118,11 @@ Generate files and return metadata using filters on custom account
         + `11`
         + `12`
 + `def_codes` (optional, array[string])
-    The Disaster Emergency Fund Code 
-    
-    
+    The Disaster Emergency Fund Code (def_codes) filter is optional. If no def_codes are provided the request will return records associated with all def_codes. If an array of valid members is provided the request will return records associated with only the def_codes provided.
+    + Members
+        + `L`
+        + `M`
+        + `N`
+        + `O`
+        + `P`
+

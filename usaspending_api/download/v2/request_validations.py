@@ -190,14 +190,14 @@ def validate_account_request(request_data):
     fy = _validate_fiscal_year(filters)
     quarter = _validate_fiscal_quarter(filters)
     period = _validate_fiscal_period(filters)
-    def_codes = _validate_def_codes(filters) #-5865
+    def_codes = _validate_def_codes(filters)
 
     fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
 
     json_request["filters"]["fy"] = fy
     json_request["filters"]["quarter"] = quarter
     json_request["filters"]["period"] = period
-    json_request["filters"]["def_codes"] = def_codes #dev-5865
+    json_request["filters"]["def_codes"] = def_codes
 
     _validate_submission_type(filters)
 
