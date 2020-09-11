@@ -475,7 +475,7 @@ def _validate_def_codes(filters: dict):
             return_array.append(code)
         if code in valid_codes_lowercase:  # code is valid but lowercase so we convert to uppercase so other functions can accept it
             return_array.append(code.upper())
-        if code not in valid_codes and code not in valid_codes_lowercase: # stop validation if we get an invalid code
+        if code not in valid_codes and code not in valid_codes_lowercase:  # stop validation if we get an invalid code
             return None
 
     return return_array
