@@ -3,7 +3,6 @@ import logging
 
 from collections import OrderedDict
 from decimal import Decimal
-from django.db import connection
 from django.db.models import Sum, F, Subquery
 from typing import Optional
 
