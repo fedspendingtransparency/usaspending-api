@@ -72,9 +72,13 @@ class TASFilterTree(FilterTree):
                 Q(has_faba=True),
                 Q(agency_id=id),
             ]
-            taa_count = TreasuryAppropriationAccount.objects.annotate(
-                has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
-            ).filter(*taa_filters).count()
+            taa_count = (
+                TreasuryAppropriationAccount.objects.annotate(
+                    has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
+                )
+                .filter(*taa_filters)
+                .count()
+            )
             return taa_count
         if len(tiered_keys) == 1:
             x = id.split("-")
@@ -84,9 +88,13 @@ class TASFilterTree(FilterTree):
                 Q(agency_id=x[0]),
                 Q(main_account_code=x[1]),
             ]
-            taa_count = TreasuryAppropriationAccount.objects.annotate(
-                has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
-            ).filter(*taa_filters).count()
+            taa_count = (
+                TreasuryAppropriationAccount.objects.annotate(
+                    has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
+                )
+                .filter(*taa_filters)
+                .count()
+            )
             print(taa_count)
             return taa_count
         if len(tiered_keys) == 2:

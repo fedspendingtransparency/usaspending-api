@@ -15,12 +15,23 @@ PSC_GROUPS = {
     "Product": {"pattern": r"^\d\d$", "expanded_terms": [[digit] for digit in digits]},
 }
 
+PSC_GROUPS_COUNT = {
+    # A
+    "Research and Development": {"pattern": r"^A...$", "expanded_terms": [["A"]]},
+    # B - Z
+    "Service": {
+        "pattern": r"^[B-Z][A-Z0-9]..$",
+        "expanded_terms": [[letter] for letter in ascii_uppercase if letter != "A"],
+    },
+    # 0 - 9
+    "Product": {"pattern": r"^\d\d\d\d$", "expanded_terms": [[digit] for digit in digits]},
+}
+
 
 class PSCFilterTree(FilterTree):
     def raw_search(self, tiered_keys):
         if not self._path_is_valid(tiered_keys):
             return []
-
         if len(tiered_keys) == 0:
             return self._toptier_search()
         elif len(tiered_keys) == 1:
@@ -47,7 +58,7 @@ class PSCFilterTree(FilterTree):
 
     def _psc_from_parent(self, parent):
         # two out of three branches of the PSC tree "jump" over 3 character codes
-        desired_len = len(parent) + 2 if len(parent) == 2 and parent[0] != "A" else len(parent) + 1
+        desired_len = len(parent) + 2 if len(parent) == 2 and (parent[0] != "A" or parent == "AU") else len(parent) + 1
         filters = [
             Q(length=desired_len),
             Q(code__startswith=parent),
@@ -62,15 +73,11 @@ class PSCFilterTree(FilterTree):
 
     def get_count(self, tiered_keys: list, id) -> int:
         if len(tiered_keys) == 0:
-            filters = [Q(code__iregex=PSC_GROUPS.get(group, {}).get("pattern") or "(?!)")]
-            PSC.objects.filter(*filters).count()
-        if len(tiered_keys) == 1:
-            desired_len = len(parent) + 2 if len(parent) == 2 and parent[0] != "A" else len(parent) + 1
+            filters = [Q(code__iregex=PSC_GROUPS_COUNT.get(id, {}).get("pattern") or "(?!)")]
+            return PSC.objects.filter(*filters).count()
+        else:
             filters = [
-                Q(length=desired_len),
-                Q(code__startswith=parent),
+                Q(length=4),
+                Q(code__startswith=id),
             ]
-            PSC.objects.filter(*filters).count()
-        if len(tiered_keys) == 2:
-            return 1
-        return 0
+            return PSC.objects.filter(*filters).count()

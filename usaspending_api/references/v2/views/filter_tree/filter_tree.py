@@ -68,17 +68,12 @@ class FilterTree(metaclass=ABCMeta):
             count = self.get_count(ancestor_array, retval.id)
 
         return Node(
-            id=retval.id,
-            ancestors=retval.ancestors,
-            description=retval.description,
-            count=count,
-            children=children,
+            id=retval.id, ancestors=retval.ancestors, description=retval.description, count=count, children=children,
         )
 
     @abstractmethod
     def get_count(self, tiered_keys: list, id) -> list:
         pass
-
 
     @abstractmethod
     def raw_search(self, tiered_keys: list) -> list:
