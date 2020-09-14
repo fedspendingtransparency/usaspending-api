@@ -43,7 +43,7 @@ class FilterTree(metaclass=ABCMeta):
 
         retval = [
             self._linked_node_from_data(ancestor_array, elem, filter_string, child_layers)
-            for elem in self.raw_search(ancestor_array, filter_string)
+            for elem in self.raw_search(ancestor_array)
         ]
         if filter_string:
             retval = [elem for elem in retval if self.matches_filter(elem, filter_string)]
@@ -51,26 +51,37 @@ class FilterTree(metaclass=ABCMeta):
 
     def _linked_node_from_data(self, ancestor_array, data, filter_string, child_layers):
         retval = self.unlinked_node_from_data(ancestor_array, data)
-        raw_children = self.raw_search(ancestor_array + [retval.id], filter_string)
-        temp_children = [
-            self._linked_node_from_data(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
-            for elem in raw_children
-        ]
         if child_layers:
-            children = temp_children
+            raw_children = self.raw_search(ancestor_array + [retval.id])
+            temp_children = [
+                self._linked_node_from_data(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
+                for elem in raw_children
+            ]
+            children = (
+                [child for child in temp_children if self.matches_filter(child, filter_string)]
+                if filter_string
+                else temp_children
+            )
+            count = sum([node.count if node.count else 1 for node in temp_children])
         else:
             children = None
+            count = self.get_count(ancestor_array, retval.id)
 
         return Node(
             id=retval.id,
             ancestors=retval.ancestors,
             description=retval.description,
-            count=sum([node.count if node.count else 1 for node in temp_children]),
+            count=count,
             children=children,
         )
 
     @abstractmethod
-    def raw_search(self, tiered_keys: list, filter_string: str) -> list:
+    def get_count(self, tiered_keys: list, id) -> list:
+        pass
+
+
+    @abstractmethod
+    def raw_search(self, tiered_keys: list) -> list:
         """
         Basic unit of searching, given the path to the parent and the filter string. Output can be a list of any type, and is
         only used by the unlinked_node_from_data abstract function.
