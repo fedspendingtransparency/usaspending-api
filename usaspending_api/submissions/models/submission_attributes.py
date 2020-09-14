@@ -13,6 +13,7 @@ class SubmissionAttributes(models.Model):
     reporting_fiscal_quarter = models.IntegerField(blank=True, null=True)
     reporting_fiscal_period = models.IntegerField(blank=True, null=True)
     quarter_format_flag = models.BooleanField(default=True)
+    is_final_balances_for_fy = models.BooleanField(default=False)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 

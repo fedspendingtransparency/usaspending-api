@@ -97,13 +97,6 @@ def load_data_into_model(model_instance, data, **kwargs):
         if field == "data_source" and field not in value_map:
             store_value(mod, field, "DBR", reverse)
 
-        # ENABLE_CARES_ACT_FEATURES: disaster_emergency_fund_code is being added as part of the CARES
-        # Act initiative.  For backward compatibility, we will provide a default of None if the field
-        # does not exist in the source record.  Once CARES Act has fully rolled out in both Broker and
-        # USAspending, remove this hack.
-        if field == "disaster_emergency_fund_code" and "disaster_emergency_fund_code" not in data:
-            data["disaster_emergency_fund_code"] = None
-
         broker_field = field
         # If our field is the 'long form' field, we need to get what it maps to
         # in the broker so we can map the data properly

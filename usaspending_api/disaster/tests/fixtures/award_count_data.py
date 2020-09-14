@@ -99,6 +99,7 @@ def award_count_submission():
         reporting_fiscal_year=2022,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
+        is_final_balances_for_fy=True,
         reporting_period_start="2022-04-01",
     )
 
@@ -133,6 +134,7 @@ def award_count_quarterly_submission():
         reporting_fiscal_quarter=3,
         reporting_fiscal_period=8,
         quarter_format_flag=True,
+        is_final_balances_for_fy=True,
         reporting_period_start="2022-04-01",
     )
 
@@ -145,7 +147,7 @@ def award_count_sub_schedule():
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
         submission_fiscal_month=8,
-        submission_reveal_date="2022-5-15",
+        submission_reveal_date="2020-5-15",
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -153,7 +155,7 @@ def award_count_sub_schedule():
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
         submission_fiscal_month=8,
-        submission_reveal_date="2022-5-15",
+        submission_reveal_date="2020-5-15",
     )
 
 
@@ -173,4 +175,5 @@ def _faba_for_award(award, id=1, negative=False, outlay_based=False):
         submission=SubmissionAttributes.objects.all().first(),
         transaction_obligated_amount=(-7 if negative else 7) if not outlay_based else 0,
         gross_outlay_amount_by_award_cpe=(-7 if negative else 7) if outlay_based else 0,
+        distinct_award_key=f"piid {id}|same parent award|fain {id}|uri {id}".upper(),
     )

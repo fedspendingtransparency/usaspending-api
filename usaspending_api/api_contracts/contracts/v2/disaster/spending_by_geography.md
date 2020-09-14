@@ -24,6 +24,12 @@ This endpoint provides geographical spending information from emergency/disaster
                 + `district`
         + `geo_layer_filters` (optional, array[string])
             Allows us to only request data for what is currently in view in the map
+        + `scope` (optional, enum[string])
+            When fetching awards, use the primary place of performance or recipient location
+            + Default: `recipient_location`
+            + Members
+                + `place_of_performance`
+                + `recipient_location`
         + `spending_type` (required, enum[string])
             + Members
                 + `obligation`
@@ -38,6 +44,7 @@ This endpoint provides geographical spending information from emergency/disaster
                 },
                 "geo_layer": "state",
                 "geo_layer_filters": ["NE", "WY", "CO", "IA", "IL", "MI", "IN", "TX"],
+                "scope": "recipient_location",
                 "spending_type": "obligation"
             }
 
@@ -48,18 +55,22 @@ This endpoint provides geographical spending information from emergency/disaster
                 + `state`
                 + `county`
                 + `district`
+        + `scope` (required, enum[string])
+            When fetching transactions, use the primary place of performance or recipient location
+            + Members
+                + `place_of_performance`
+                + `recipient_location`
         + `spending_type` (required, enum[string])
             + Members
                 + `obligation`
                 + `outlay`
                 + `face_value_of_loan`
         + `results` (array[GeographyTypeResult], fixed-type)
-        + `messages` (optional, array[string], fixed-type)
-            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
             {
                 "geo_layer": "state",
+                "scope": "recipient_location",
                 "spending_type": "obligation",
                 "results": [
                     {

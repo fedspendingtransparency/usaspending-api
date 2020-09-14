@@ -217,12 +217,26 @@ Using the response from the general Spending Explorer, you can drill down to mor
 
 ## DetailedFilter (object)
 + `fy`: `2019` (required, string)
-+ `quarter` (required, enum[string])
++ `quarter` (optional, enum[string])
     + Members
         + `1`
         + `2`
         + `3`
         + `4`
++ `period` (optional, enum[string])
+    + Members
+        + `1`
+        + `2`
+        + `3`
+        + `4`
+        + `5`
+        + `6`
+        + `7`
+        + `8`
+        + `9`
+        + `10`
+        + `11`
+        + `12`
 + `agency` (optional, number)
     This value is the `id` returned in the general Spending Explorer response.
 + `federal_account` (optional, number)
@@ -254,6 +268,8 @@ Using the response from the general Spending Explorer, you can drill down to mor
 + `amount` (required, number)
 + `account_number` (optional, string)
     The response includes `account_number` when the requested `type` was `federal_account`.
++ `link` (optional, string)
+    The response includes `link` when the requested `type` was `agency`
 
 ## SpendingExplorerGeneralUnreportedResponse (object)
 + `code` (optional, nullable)

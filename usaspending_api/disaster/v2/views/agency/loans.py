@@ -1,6 +1,5 @@
 import logging
 
-from decimal import Decimal
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import F, Value, IntegerField, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
@@ -20,6 +19,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchLoansPaginationMixin,
 )
 from usaspending_api.references.models import Agency, ToptierAgency
+from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +58,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, Di
         results = list(self.queryset.order_by(*self.pagination.robust_order_by_fields))
         return Response(
             {
+                "totals": self.accumulate_total_values(results, ["award_count", "face_value_of_loan"]),
                 "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
                 "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
@@ -98,13 +99,12 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
 
     required_filters = ["def_codes", "_loan_award_type_codes", "query"]
-    query_fields = ["funding_toptier_agency_name"]
+    query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
 
-    def build_elasticsearch_result(self, response: dict) -> List[dict]:
+    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
-        info_buckets = response.get(self.agg_group_name, {}).get("buckets", [])
         for bucket in info_buckets:
             result = self._build_json_result(bucket)
             child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
@@ -125,7 +125,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
-                column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
+                column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
                 for column in self.sum_column_mapping
             },
         }

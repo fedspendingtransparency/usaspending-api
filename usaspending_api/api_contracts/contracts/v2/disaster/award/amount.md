@@ -22,15 +22,18 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `award_count` (required, number)
+        + `face_value_of_loan` (optional, number)
         + `obligation` (required, number)
         + `outlay` (required, number)
-        + `award_count` (required, number)
+        
     + Body
 
             {
+                "award_count": 42,
+                "face_value_of_loan": 984563875,
                 "obligation": 32984563875,
-                "outlay": 15484564321,
-                "award_count": 42
+                "outlay": 15484564321
             }
 
 
@@ -50,7 +53,9 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
         + assistance
 
 ## DEFC (enum[string])
-List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
+When filtering on `award_type_codes` this will filter on File D records that have at least one File C with the provided DEFC
+and belong to CARES Act DEFC.
 
 ### Members
 + `A`

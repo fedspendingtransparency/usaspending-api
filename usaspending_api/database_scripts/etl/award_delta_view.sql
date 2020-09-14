@@ -165,6 +165,40 @@ SELECT
     ELSE NULL
   END AS recipient_location_state_agg_key,
 
+  CASE
+    WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_county_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', vw_es_award_search.pop_country_code,
+        '","state_code":"', vw_es_award_search.pop_state_code,
+        '","state_fips":"', POP_STATE_LOOKUP.fips,
+        '","county_code":"', vw_es_award_search.pop_county_code,
+        '","county_name":"', vw_es_award_search.pop_county_name,
+        '","population":"', POP_COUNTY_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS pop_county_agg_key,
+  CASE
+    WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_congressional_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', vw_es_award_search.pop_country_code,
+        '","state_code":"', vw_es_award_search.pop_state_code,
+        '","state_fips":"', POP_STATE_LOOKUP.fips,
+        '","congressional_code":"', vw_es_award_search.pop_congressional_code,
+        '","population":"', POP_DISTRICT_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS pop_congressional_agg_key,
+  CASE
+    WHEN vw_es_award_search.pop_state_code IS NOT NULL
+      THEN CONCAT(
+        '{"country_code":"', vw_es_award_search.pop_country_code,
+        '","state_code":"', vw_es_award_search.pop_state_code,
+         '","state_name":"', POP_STATE_LOOKUP.name,
+        '","population":"', POP_STATE_POPULATION.latest_population, '"}'
+      )
+    ELSE NULL
+  END AS pop_state_agg_key,
+
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
   DEFC.disaster_emergency_fund_codes AS disaster_emergency_fund_codes,
@@ -194,6 +228,14 @@ LEFT JOIN (
   SELECT   code, name, fips, MAX(id)
   FROM     state_data
   GROUP BY code, name, fips
+) POP_STATE_LOOKUP ON (POP_STATE_LOOKUP.code = vw_es_award_search.pop_state_code)
+LEFT JOIN ref_population_county POP_STATE_POPULATION ON (POP_STATE_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_STATE_POPULATION.county_number = '000')
+LEFT JOIN ref_population_county POP_COUNTY_POPULATION ON (POP_COUNTY_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_COUNTY_POPULATION.county_number = vw_es_award_search.pop_county_code)
+LEFT JOIN ref_population_cong_district POP_DISTRICT_POPULATION ON (POP_DISTRICT_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_DISTRICT_POPULATION.congressional_district = vw_es_award_search.pop_congressional_code)
+LEFT JOIN (
+  SELECT   code, name, fips, MAX(id)
+  FROM     state_data
+  GROUP BY code, name, fips
 ) RL_STATE_LOOKUP ON (RL_STATE_LOOKUP.code = vw_es_award_search.recipient_location_state_code)
 LEFT JOIN ref_population_county RL_STATE_POPULATION ON (RL_STATE_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_STATE_POPULATION.county_number = '000')
 LEFT JOIN ref_population_county RL_COUNTY_POPULATION ON (RL_COUNTY_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_COUNTY_POPULATION.county_number = vw_es_award_search.recipient_location_county_code)
@@ -207,7 +249,7 @@ LEFT JOIN (
     SELECT
         faba.award_id,
         ARRAY_AGG(DISTINCT disaster_emergency_fund_code ORDER BY disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
-        COALESCE(SUM(CASE WHEN latest_closed_period_per_fy.is_quarter IS NOT NULL THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
         COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
     FROM
         financial_accounts_by_awards faba
@@ -217,15 +259,6 @@ LEFT JOIN (
     INNER JOIN submission_attributes sa
         ON faba.submission_id = sa.submission_id
         AND sa.reporting_period_start >= '2020-04-01'
-    LEFT JOIN (
-        SELECT   submission_fiscal_year, is_quarter, max(submission_fiscal_month) AS submission_fiscal_month
-        FROM     dabs_submission_window_schedule
-        WHERE    submission_reveal_date < now() AND period_start_date >= '2020-04-01'
-        GROUP BY submission_fiscal_year, is_quarter
-    ) AS latest_closed_period_per_fy
-        ON latest_closed_period_per_fy.submission_fiscal_year = sa.reporting_fiscal_year
-        AND latest_closed_period_per_fy.submission_fiscal_month = sa.reporting_fiscal_period
-        AND latest_closed_period_per_fy.is_quarter = sa.quarter_format_flag
     INNER JOIN dabs_submission_window_schedule AS closed_periods
         ON   closed_periods.period_start_date >= '2020-04-01' AND closed_periods.submission_reveal_date < now()
         AND  sa.reporting_fiscal_year = closed_periods.submission_fiscal_year

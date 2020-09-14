@@ -10,8 +10,9 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
 UNREPORTED_DATA_NAME = "Unreported Data"
+UNREPORTED_FILE_C_NAME = "Non-Award Spending"
 VALID_UNREPORTED_DATA_TYPES = ["agency", "budget_function", "object_class"]
-VALID_UNREPORTED_FILTERS = ["fy", "quarter"]
+VALID_UNREPORTED_FILTERS = ["fy", "quarter", "period"]
 
 
 def get_unreported_data_obj(
@@ -34,10 +35,12 @@ def get_unreported_data_obj(
             expected_total: total calculated from GTAS
     """
 
-    queryset = queryset[:limit] if type == "award" else queryset
+    queryset = queryset[:limit] if spending_type == "award" else queryset
 
     result_set = []
     result_keys = ["id", "code", "type", "name", "amount"]
+    if spending_type == "agency":
+        result_keys.append("link")
     if spending_type == "federal_account":
         result_keys.append("account_number")
     for entry in queryset:
@@ -45,7 +48,6 @@ def get_unreported_data_obj(
         for key in result_keys:
             condensed_entry[key] = entry[key] if key != "id" else str(entry[key])
         result_set.append(condensed_entry)
-
     gtas = (
         GTASSF133Balances.objects.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
         .values("fiscal_year", "fiscal_period")
@@ -53,10 +55,8 @@ def get_unreported_data_obj(
         .values("obligations_incurred_total_cpe__sum")
     )
     expected_total = gtas[0]["obligations_incurred_total_cpe__sum"] if gtas else None
-
-    if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()) == set(VALID_UNREPORTED_FILTERS):
+    if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()).issubset(set(VALID_UNREPORTED_FILTERS)):
         unreported_obj = {"id": None, "code": None, "type": spending_type, "name": UNREPORTED_DATA_NAME, "amount": None}
-
         # if both values are actually available, then calculate the amount, otherwise leave it as the default of None
         if not (actual_total is None or expected_total is None):
             unreported_obj["amount"] = expected_total - actual_total
@@ -103,8 +103,10 @@ def type_filter(_type, filters, limit=None):
     if "fy" not in filters:
         raise InvalidParameterException('Missing required parameter "fy".')
 
-    if "quarter" not in filters:
-        raise InvalidParameterException('Missing required parameter "quarter".')
+    if "quarter" not in filters and "period" not in filters:
+        raise InvalidParameterException('Missing required parameter, provide either "period" or "quarter".')
+
+    time_unit = "quarter" if "quarter" in filters else "period"
 
     try:
         fiscal_year = int(filters["fy"])
@@ -113,16 +115,27 @@ def type_filter(_type, filters, limit=None):
     except ValueError:
         raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
 
-    if filters["quarter"] not in ("1", "2", "3", "4", 1, 2, 3, 4):
+    if time_unit == "quarter" and filters["quarter"] not in ("1", "2", "3", "4", 1, 2, 3, 4):
         raise InvalidParameterException("Incorrect value provided for quarter parameter. Must be between 1 and 4")
-    fiscal_quarter = int(filters["quarter"])
 
-    submission_window = DABSSubmissionWindowSchedule.objects.filter(
-        submission_fiscal_year=fiscal_year,
-        submission_fiscal_quarter=fiscal_quarter,
-        is_quarter=True,
-        submission_reveal_date__lte=datetime.now(timezone.utc),
-    ).first()
+    if time_unit == "period" and int(filters["period"]) not in range(1, 13):
+        raise InvalidParameterException("Incorrect value provided for period parameter. Must be between 1 and 12")
+
+    fiscal_unit = int(filters[time_unit])
+
+    if time_unit == "quarter":
+        submission_window = DABSSubmissionWindowSchedule.objects.filter(
+            submission_fiscal_year=fiscal_year,
+            submission_fiscal_quarter=fiscal_unit,
+            is_quarter=True,
+            submission_reveal_date__lte=datetime.now(timezone.utc),
+        ).first()
+    else:
+        submission_window = DABSSubmissionWindowSchedule.objects.filter(
+            submission_fiscal_year=fiscal_year,
+            submission_fiscal_month=fiscal_unit,
+            submission_reveal_date__lte=datetime.now(timezone.utc),
+        ).first()
     if submission_window is None:
         return {"total": None}
 
@@ -131,7 +144,7 @@ def type_filter(_type, filters, limit=None):
 
     # transaction_obligated_amount is summed across all periods in the year up to and including the requested quarter.
     alt_set = FinancialAccountsByAwards.objects.filter(
-        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_quarter__lte=fiscal_quarter,
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period__lte=fiscal_period,
     ).annotate(amount=Sum("transaction_obligated_amount"))
 
     # obligations_incurred_by_program_object_class_cpe is picked from the final period of the quarter.
@@ -152,7 +165,6 @@ def type_filter(_type, filters, limit=None):
             alt_set = exp.award()
         if _type == "award_category":
             alt_set = exp.award_category()
-
         # Total value of filtered results
         actual_total = 0
 
@@ -169,11 +181,27 @@ def type_filter(_type, filters, limit=None):
                 award["code"] = code
                 if _type == "award":
                     award["name"] = code
-            actual_total += award["total"]
+            if award["amount"] is None:
+                award["amount"] = 0
+            if award["name"] is None:
+                award["name"] = "Blank {}".format(_type.capitalize().replace("_", " "))
+            actual_total += award["total"] or 0
 
-        alt_set = alt_set[:limit] if _type == "award" else alt_set
+        result_set = list(alt_set)
 
-        results = {"total": actual_total, "end_date": fiscal_date, "results": list(alt_set)}
+        # we need to get the File B data for the same set of filters, so we re-run the spending_filter but without setting the _type to any of the alt keys.
+        alt_set2, queryset2 = spending_filter(alt_set, queryset, filters, "")
+        expected_total = queryset2.aggregate(total=Sum("amount"))["total"]
+        unreported_obj = {"id": None, "code": None, "type": _type, "name": UNREPORTED_FILE_C_NAME, "amount": None}
+        if not (actual_total is None or expected_total is None):
+            unreported_obj["amount"] = expected_total - actual_total
+            result_set.append(unreported_obj)
+            actual_total = expected_total
+            result_set.sort(key=lambda k: k["amount"], reverse=True)
+
+        result_set = result_set[:limit] if _type == "award" else result_set
+
+        results = {"total": actual_total, "end_date": fiscal_date, "results": result_set}
 
     else:
         # Annotate and get explorer _type filtered results
@@ -191,10 +219,8 @@ def type_filter(_type, filters, limit=None):
             queryset = exp.object_class()
         if _type == "agency":
             queryset = exp.agency()
-
         # Actual total value of filtered results
-        actual_total = queryset.aggregate(total=Sum("amount"))["total"]
-
+        actual_total = queryset.aggregate(total=Sum("amount"))["total"] or 0
         result_set, expected_total = get_unreported_data_obj(
             queryset=queryset,
             filters=filters,

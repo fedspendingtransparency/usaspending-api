@@ -1,13 +1,12 @@
 import logging
-from decimal import Decimal
-from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func
+from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func, Exists
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from django_cte import With
 from rest_framework.response import Response
+from typing import List
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
@@ -25,6 +24,8 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
+from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 
 logger = logging.getLogger(__name__)
@@ -65,13 +66,20 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
     def post(self, request):
         if self.spending_type == "award":
             results = self.award_queryset
+            extra_columns = ["award_count"]
         else:
             results = self.total_queryset
+            extra_columns = ["total_budgetary_resources"]
 
         results = list(results.order_by(*self.pagination.robust_order_by_fields))
-
+        for item in results:  # we're checking for items that do not have an agency profile page
+            if item.get("link") is not None:
+                if not item["link"]:
+                    item["id"] = None  # if they don't have a page (means they have no submission), we don't send the id
+                item.pop("link")
         return Response(
             {
+                "totals": self.accumulate_total_values(results, extra_columns),
                 "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
                 "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
@@ -149,6 +157,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
                 ),
                 0,
             ),
+            "link": Exists(SubmissionAttributes.objects.filter(toptier_code=OuterRef("toptier_code"))),
         }
 
         return (
@@ -216,13 +225,12 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
 
     required_filters = ["def_codes", "award_type_codes", "query"]
-    query_fields = ["funding_toptier_agency_name"]
+    query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
 
-    def build_elasticsearch_result(self, response: dict) -> List[dict]:
+    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
-        info_buckets = response.get(self.agg_group_name, {}).get("buckets", [])
         for bucket in info_buckets:
             result = self._build_json_result(bucket)
             child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
@@ -243,7 +251,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
-                column: int(bucket.get(self.sum_column_mapping[column], {"value": 0})["value"]) / Decimal("100")
+                column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
                 for column in self.sum_column_mapping
             },
         }

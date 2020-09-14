@@ -27,7 +27,7 @@ def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearc
         {
             "code": "987654321",
             "award_count": 2,
-            "description": "RECIPIENT 3",
+            "description": "RECIPIENT, 3",
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
             "obligation": 2200.0,
             "outlay": 1100.0,
@@ -64,7 +64,7 @@ def test_correct_response_multiple_defc(
         {
             "code": "987654321",
             "award_count": 3,
-            "description": "RECIPIENT 3",
+            "description": "RECIPIENT, 3",
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
             "obligation": 202200.0,
             "outlay": 101100.0,
@@ -120,7 +120,35 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
         {
             "code": "987654321",
             "award_count": 3,
-            "description": "RECIPIENT 3",
+            "description": "RECIPIENT, 3",
+            "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
+            "obligation": 202200.0,
+            "outlay": 101100.0,
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="ENT, 3")
+    expected_results = [
+        {
+            "code": "987654321",
+            "award_count": 3,
+            "description": "RECIPIENT, 3",
+            "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
+            "obligation": 202200.0,
+            "outlay": 101100.0,
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="ReCiPiEnT,")
+    expected_results = [
+        {
+            "code": "987654321",
+            "award_count": 3,
+            "description": "RECIPIENT, 3",
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
             "obligation": 202200.0,
             "outlay": 101100.0,
@@ -146,7 +174,7 @@ def test_correct_response_with_award_type_codes(
         {
             "code": "987654321",
             "award_count": 1,
-            "description": "RECIPIENT 3",
+            "description": "RECIPIENT, 3",
             "id": ["d2894d22-67fc-f9cb-4005-33fa6a29ef86-C", "d2894d22-67fc-f9cb-4005-33fa6a29ef86-R"],
             "obligation": 2000.0,
             "outlay": 1000.0,
@@ -213,6 +241,7 @@ def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_a
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1)
     expected_results = {
+        "totals": {"award_count": 7, "obligation": 2222222.0, "outlay": 1111111.0},
         "results": [
             {
                 "code": "456789123",

@@ -33,7 +33,7 @@ class TestWithMultipleDatabases(TestCase):
             tas_rendering_label="1004-1002-1003-1007-1008",
         )
         mommy.make(
-            "references.ObjectClass", id=0, major_object_class="00", object_class="000", direct_reimbursable=None
+            "references.ObjectClass", id=0, major_object_class="00", object_class="00.0", direct_reimbursable=None
         )
 
         # Setup default data in Broker Test DB
@@ -304,7 +304,7 @@ def _assemble_broker_submission_records() -> list:
         "reporting_fiscal_period": 0,
         "reporting_fiscal_year": 0,
         "d2_submission": False,
-        "certifying_user_id": None,
+        "publishing_user_id": None,
         "frec_code": None,
     }
 

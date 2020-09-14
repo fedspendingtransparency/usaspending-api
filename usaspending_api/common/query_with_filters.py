@@ -1,3 +1,4 @@
+import copy
 import logging
 
 from django.conf import settings
@@ -410,7 +411,7 @@ class _QueryText(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: dict, query_type: _QueryType) -> ES_Q:
-        query_text = es_sanitize(filter_values["text"])
+        query_text = filter_values["text"]
         query_fields = filter_values["fields"]
         return ES_Q("multi_match", query=query_text, type="phrase_prefix", fields=query_fields)
 
@@ -463,10 +464,14 @@ class QueryWithFilters:
     def _generate_elasticsearch_query(cls, filters: dict, query_type: _QueryType) -> ES_Q:
         must_queries = []
 
+        # Create a copy of the filters so that manipulating the filters for the purpose of building the ES query
+        # does not affect the source dictionary
+        filters_copy = copy.deepcopy(filters)
+
         # tas_codes are unique in that the same query is spread across two keys
-        must_queries = cls._handle_tas_query(must_queries, filters, query_type)
-        must_queries.extend(cls._handle_defc_query(filters, query_type))
-        for filter_type, filter_values in filters.items():
+        must_queries = cls._handle_tas_query(must_queries, filters_copy, query_type)
+        must_queries.extend(cls._handle_defc_query(filters_copy, query_type))
+        for filter_type, filter_values in filters_copy.items():
             # Validate the filters
             if filter_type in cls.unsupported_filters:
                 msg = "API request included '{}' key. No filtering will occur with provided value '{}'"
