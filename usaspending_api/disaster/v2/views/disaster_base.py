@@ -292,14 +292,11 @@ class DisasterBase(APIView):
         )
 
     @staticmethod
-    def accumulate_total_values(results: List[dict], include_awards: bool = True, include_loans: bool = False) -> dict:
+    def accumulate_total_values(results: List[dict], extra_columns: List[str]) -> dict:
         totals = {"obligation": 0, "outlay": 0}
 
-        if include_awards:
-            totals["award_count"] = 0
-
-        if include_loans:
-            totals["face_value_of_loan"] = 0
+        for col in extra_columns:
+            totals[col] = 0
 
         for res in results:
             for key in totals.keys():
