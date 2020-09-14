@@ -122,6 +122,9 @@ ES_TIMEOUT = 90
 ES_REPOSITORY = ""
 ES_ROUTING_FIELD = "recipient_agg_key"
 
+# Grants API
+GRANTS_API_KEY = os.environ.get("GRANTS_API_KEY")
+
 # Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
