@@ -117,6 +117,7 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
 
 ## Totals (object)
 + `award_count` (optional, number)
++ `total_budgetary_resources` (optional, number)
 + `obligation` (required, number)
 + `outlay` (required, number)
 

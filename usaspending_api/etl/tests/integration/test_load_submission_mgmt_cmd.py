@@ -33,7 +33,7 @@ class TestWithMultipleDatabases(TestCase):
             tas_rendering_label="1004-1002-1003-1007-1008",
         )
         mommy.make(
-            "references.ObjectClass", id=0, major_object_class="00", object_class="000", direct_reimbursable=None
+            "references.ObjectClass", id=0, major_object_class="00", object_class="00.0", direct_reimbursable=None
         )
 
         # Setup default data in Broker Test DB

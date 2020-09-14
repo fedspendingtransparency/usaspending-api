@@ -6,6 +6,7 @@ from usaspending_api.common.models import DataSourceTrackedModel
 
 class FinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
+    distinct_award_key = models.TextField(db_index=True)
     treasury_account = models.ForeignKey("accounts.TreasuryAppropriationAccount", models.CASCADE, null=True)
     submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
     award = models.ForeignKey("awards.Award", models.CASCADE, null=True, related_name="financial_set")

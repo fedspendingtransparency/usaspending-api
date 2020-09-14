@@ -1,7 +1,7 @@
 import logging
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func
+from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func, Exists
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from django_cte import With
@@ -24,7 +24,9 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
+from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
+
 
 logger = logging.getLogger(__name__)
 
@@ -64,16 +66,20 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
     def post(self, request):
         if self.spending_type == "award":
             results = self.award_queryset
-            include_award_count = True
+            extra_columns = ["award_count"]
         else:
             results = self.total_queryset
-            include_award_count = False
+            extra_columns = ["total_budgetary_resources"]
 
         results = list(results.order_by(*self.pagination.robust_order_by_fields))
-
+        for item in results:  # we're checking for items that do not have an agency profile page
+            if item.get("link") is not None:
+                if not item["link"]:
+                    item["id"] = None  # if they don't have a page (means they have no submission), we don't send the id
+                item.pop("link")
         return Response(
             {
-                "totals": self.accumulate_total_values(results, include_award_count),
+                "totals": self.accumulate_total_values(results, extra_columns),
                 "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
                 "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
@@ -151,6 +157,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
                 ),
                 0,
             ),
+            "link": Exists(SubmissionAttributes.objects.filter(toptier_code=OuterRef("toptier_code"))),
         }
 
         return (

@@ -56,6 +56,8 @@ def get_object_class_row(row):
             # and I don't have a better one.
             direct_reimbursable = None
 
+    object_class = f"{object_class[:2]}.{object_class[2:]}"
+
     # This will throw an exception if the object class does not exist which is the new desired behavior.
     try:
         return OBJECT_CLASSES[(object_class, direct_reimbursable)]

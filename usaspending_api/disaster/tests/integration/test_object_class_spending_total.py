@@ -34,10 +34,11 @@ def test_basic_object_class_spending_total_success(
         }
     ]
 
-    print(resp.json()["results"])
-
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
+
+    expected_totals = {"obligation": 9.0, "outlay": 0}
+    assert resp.json()["totals"] == expected_totals
 
 
 @pytest.mark.django_db

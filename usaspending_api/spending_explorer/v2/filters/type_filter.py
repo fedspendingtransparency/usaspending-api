@@ -35,10 +35,12 @@ def get_unreported_data_obj(
             expected_total: total calculated from GTAS
     """
 
-    queryset = queryset[:limit] if type == "award" else queryset
+    queryset = queryset[:limit] if spending_type == "award" else queryset
 
     result_set = []
     result_keys = ["id", "code", "type", "name", "amount"]
+    if spending_type == "agency":
+        result_keys.append("link")
     if spending_type == "federal_account":
         result_keys.append("account_number")
     for entry in queryset:
