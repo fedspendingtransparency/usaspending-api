@@ -24,7 +24,6 @@ This route sends a request to the backend to begin generating a zipfile of award
 
             {
                 "filters": {
-                    "agency": 50,
                     "prime_award_types": ["02", "03", "04", "05", "A", "B", "C", "D"],
                     "sub_award_types": ["procurement"],
                     "date_range": {
@@ -54,7 +53,6 @@ This route sends a request to the backend to begin generating a zipfile of award
                 "file_name": "534_PrimeTransactionsAndSubawards_2020-01-13_H21M04S54995657.zip",
                 "file_url": "/csv_downloads/534_PrimeTransactionsAndSubawards_2020-01-13_H21M04S54995657.zip",
                 "download_request": {
-                    "agency": 50,
                     "columns": [],
                     "download_types": [
                         "prime_awards",

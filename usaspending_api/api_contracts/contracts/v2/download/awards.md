@@ -60,7 +60,6 @@ This route sends a request to the backend to begin generating a zipfile of award
                 "file_name": "PrimeAwardSummariesAndSubawards_2020-01-13_H21M05S48397603.zip",
                 "file_url": "/csv_downloads/PrimeAwardSummariesAndSubawards_2020-01-13_H21M05S48397603.zip",
                 "download_request": {
-                    "agency": "all",
                     "columns": [
                         "assistance_award_unique_key",
                         "award_id_fain",
