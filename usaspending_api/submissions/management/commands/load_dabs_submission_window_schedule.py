@@ -1,10 +1,12 @@
 import logging
+from pathlib import Path
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
+from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
 
 logger = logging.getLogger("script")
 
@@ -59,6 +61,21 @@ class Command(BaseCommand):
 
     @transaction.atomic()
     def handle(self, *args, **options):
+
+        logger.info("Deleting existing DABS Submission Window Schedule")
+        DABSSubmissionWindowSchedule.objects.all().delete()
+
+        if "data_broker" in connections:
+            logger.info("Connection to broker exists. Generating schedule from broker.")
+            self.generate_schedules_from_broker()
+        else:
+            logger.info("No connection to broker exists. Reading schedule from file.")
+            self.read_schedules_from_csv()
+
+        logger.info("DABS Submission Window Schedule loader finished successfully!")
+
+    def generate_schedules_from_broker(self):
+
         logger.info("Creating broker cursor")
         broker_cursor = connections["data_broker"].cursor()
 
@@ -74,12 +91,15 @@ class Command(BaseCommand):
         logger.info("Getting quarter schedule values from cursor")
         quarter_schedule_values = dictfetchall(broker_cursor)
 
-        logger.info("Deleting existing DABS Submission Window Schedule")
-        DABSSubmissionWindowSchedule.objects.all().delete()
-
         logger.info("Inserting DABS Submission Window Schedule into website")
         submission_schedule_objs = [DABSSubmissionWindowSchedule(**values) for values in month_schedule_values]
         submission_schedule_objs += [DABSSubmissionWindowSchedule(**values) for values in quarter_schedule_values]
+
         DABSSubmissionWindowSchedule.objects.bulk_create(submission_schedule_objs)
 
-        logger.info("DABS Submission Window Schedule loader finished successfully!")
+    def read_schedules_from_csv(self):
+        project_root = Path(__name__).resolve().parent
+        file_path = str(project_root / "usaspending_api" / "data" / "dabs_submission_window_schedule.csv")
+
+        loader = ThreadedDataLoader(model_class=DABSSubmissionWindowSchedule, collision_behavior="update")
+        loader.load_from_file(file_path)
