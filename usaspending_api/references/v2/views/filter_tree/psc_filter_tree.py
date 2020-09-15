@@ -29,7 +29,7 @@ PSC_GROUPS_COUNT = {
 
 
 class PSCFilterTree(FilterTree):
-    def raw_search(self, tiered_keys):
+    def raw_search(self, tiered_keys, filter_string):
         if not self._path_is_valid(tiered_keys):
             return []
         if len(tiered_keys) == 0:
@@ -37,7 +37,7 @@ class PSCFilterTree(FilterTree):
         elif len(tiered_keys) == 1:
             return self._psc_from_group(tiered_keys[0])
         else:
-            return self._psc_from_parent(tiered_keys[-1])
+            return self._psc_from_parent(tiered_keys[-1], filter_string)
 
     def _path_is_valid(self, path: list) -> bool:
         if len(path) > 1:
@@ -56,13 +56,15 @@ class PSCFilterTree(FilterTree):
         filters = [Q(code__iregex=PSC_GROUPS.get(group, {}).get("pattern") or "(?!)")]
         return [{"id": object.code, "description": object.description} for object in PSC.objects.filter(*filters)]
 
-    def _psc_from_parent(self, parent):
+    def _psc_from_parent(self, parent, filter_string):
         # two out of three branches of the PSC tree "jump" over 3 character codes
         desired_len = len(parent) + 2 if len(parent) == 2 and (parent[0] != "A" or parent == "AU") else len(parent) + 1
         filters = [
             Q(length=desired_len),
             Q(code__startswith=parent),
         ]
+        # if filter_string and desired_len == 4:
+        #     filters.append(Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string)))
         return [{"id": object.code, "description": object.description} for object in PSC.objects.filter(*filters)]
 
     def unlinked_node_from_data(self, ancestors: list, data) -> UnlinkedNode:

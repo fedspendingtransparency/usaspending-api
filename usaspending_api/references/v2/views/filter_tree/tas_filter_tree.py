@@ -6,13 +6,13 @@ from django.db.models import Exists, OuterRef, Q
 
 
 class TASFilterTree(FilterTree):
-    def raw_search(self, tiered_keys):
+    def raw_search(self, tiered_keys, filter_string):
         if len(tiered_keys) == 0:
             return self._toptier_search()
         if len(tiered_keys) == 1:
             return self._fa_given_agency(tiered_keys[0])
         if len(tiered_keys) == 2:
-            return self._tas_given_fa(tiered_keys[0], tiered_keys[1])
+            return self._tas_given_fa(tiered_keys[0], tiered_keys[1], filter_string)
         return []
 
     def _toptier_search(self):
@@ -40,15 +40,21 @@ class TASFilterTree(FilterTree):
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk")))
         ).filter(*filters)
 
-    def _tas_given_fa(self, agency, fed_account):
+    def _tas_given_fa(self, agency, fed_account, filter_string):
         filters = [
             Q(has_faba=True),
             Q(main_account_code=fed_account),
             Q(agency_id=agency),
         ]
-        return TreasuryAppropriationAccount.objects.annotate(
+        # if filter_string:
+        #     filters.append(
+        #         Q(Q(tas_rendering_label__icontains=filter_string) | Q(account_title__icontains=filter_string))
+        #     )
+        retval= TreasuryAppropriationAccount.objects.annotate(
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
         ).filter(*filters)
+        print(retval)
+        return retval
 
     def unlinked_node_from_data(self, ancestors: list, data) -> UnlinkedNode:
         if len(ancestors) == 0:  # A tier zero search is returning an agency dictionary
@@ -67,6 +73,7 @@ class TASFilterTree(FilterTree):
         return UnlinkedNode(id=data.federal_account_code, ancestors=ancestors, description=data.account_title)
 
     def get_count(self, tiered_keys: list, id) -> int:
+        print("get_count")
         if len(tiered_keys) == 0:
             taa_filters = [
                 Q(has_faba=True),
@@ -81,8 +88,10 @@ class TASFilterTree(FilterTree):
             )
             return taa_count
         if len(tiered_keys) == 1:
+            print(id)
             x = id.split("-")
-            print(x)
+            if len(x) < 2:
+                x = [tiered_keys[0], id]
             taa_filters = [
                 Q(has_faba=True),
                 Q(agency_id=x[0]),
@@ -95,7 +104,6 @@ class TASFilterTree(FilterTree):
                 .filter(*taa_filters)
                 .count()
             )
-            print(taa_count)
             return taa_count
         if len(tiered_keys) == 2:
             return 1
