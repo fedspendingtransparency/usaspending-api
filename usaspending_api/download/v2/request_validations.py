@@ -33,6 +33,8 @@ from usaspending_api.download.lookups import (
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions import helpers as sub_helpers
 
+all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
+
 
 def validate_award_request(request_data: dict):
     """Analyze request and raise any formatting errors as Exceptions"""
@@ -197,6 +199,7 @@ def validate_account_request(request_data):
     json_request["filters"]["fy"] = fy
     json_request["filters"]["quarter"] = quarter
     json_request["filters"]["period"] = period
+    # json_request["filters"]["def_codes"] = def_codes
     json_request["filters"]["def_codes"] = def_codes
 
     _validate_submission_type(filters)
@@ -212,7 +215,7 @@ def validate_account_request(request_data):
 
 def validate_disaster_recipient_request(request_data):
     _validate_required_parameters(request_data, ["filters"])
-    all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
+    # all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
     model = [
         {
             "key": "filters|def_codes",
@@ -462,25 +465,19 @@ def _validate_fiscal_period(filters: dict) -> Optional[int]:
 
 
 def _validate_def_codes(filters: dict):
-    valid_codes = {"L", "M", "N", "O", "P"}
-    valid_codes_lowercase = {"l", "m", "n", "o", "p"}  # we accept lowercase letters for codes but convert them
-    return_array = []
+
+    provided_codes = set([str(code).upper() for code in filters["def_codes"]])  # accept lowercase def_codes
 
     # case when the whole def_codes object is missing from filters
     if "def_codes" not in filters:
         return None
 
-    for code in filters["def_codes"]:
-        if code in valid_codes:  # code is valid code
-            return_array.append(code)
-        if (
-            code in valid_codes_lowercase
-        ):  # code is valid but lowercase so we convert to uppercase so other functions can accept it
-            return_array.append(code.upper())
-        if code not in valid_codes and code not in valid_codes_lowercase:  # stop validation if we get an invalid code
-            return None
+    if not provided_codes.issubset(all_def_codes):
+        raise Exception(
+            f"provide codes {filters['def_codes']} contain non-valid DEF Codes. List of valid DEFC {','.join([x for x in all_def_codes])}"
+        )
 
-    return return_array
+    return list(provided_codes)  # return converted lowercase def_codes
 
 
 def _validate_and_bolster_requested_submission_window(
