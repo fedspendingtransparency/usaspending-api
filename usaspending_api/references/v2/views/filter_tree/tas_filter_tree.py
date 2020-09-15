@@ -6,16 +6,39 @@ from django.db.models import Exists, OuterRef, Q
 
 
 class TASFilterTree(FilterTree):
-    def raw_search(self, tiered_keys, filter_string):
+    def raw_search(self, tiered_keys, child_layers, filter_string):
         if len(tiered_keys) == 0:
-            return self._toptier_search()
-        if len(tiered_keys) == 1:
-            return self._fa_given_agency(tiered_keys[0])
-        if len(tiered_keys) == 2:
-            return self._tas_given_fa(tiered_keys[0], tiered_keys[1], filter_string)
-        return []
+            if child_layers != 0:
+                tier2_nodes = self.tier_2_search(tiered_keys, filter_string)
+                tier1_nodes = self.tier_1_search(tiered_keys, filter_string, tier2_nodes)
+                tier1_nodes = self._combine_nodes(tier1_nodes, tier2_nodes)
+                toptier_nodes = self.toptier_search(tier1_nodes)
+                toptier_nodes = self._combine_nodes(toptier_nodes, tier1_nodes)
+            return toptier_nodes
+        elif len(tiered_keys) == 1:
+            tier1_nodes = self.tier_1_search(tiered_keys, filter_string)
+            if child_layers != 0:
+                tier2_nodes = self.tier_2_search(tiered_keys, filter_string)
+                tier1_nodes = self._combine_nodes(tier1_nodes, tier2_nodes)
+            return tier1_nodes
+        elif len(tiered_keys) == 2:
+            return self.tier_2_search(tiered_keys, filter_string)
 
-    def _toptier_search(self):
+    def _combine_nodes(self, upper_tier, lower_tier):
+        for node in upper_tier:
+            for node1 in lower_tier:
+                if node["id"] in node1["ancestors"]:
+                    node["children"].append(node1)
+            sorted(node["children"], key=lambda x: x["id"])
+        return upper_tier
+
+    def toptier_search(self, tier1_nodes=None):
+        filters = [
+            Q(has_faba=True),
+        ]
+        if tier1_nodes:
+            agency_ids = [node["ancestors"][0] for node in tier1_nodes]
+            filters.append(Q(toptier_code__in=agency_ids))
         agency_set = (
             ToptierAgency.objects.annotate(
                 has_faba=Exists(
@@ -24,12 +47,87 @@ class TASFilterTree(FilterTree):
                     )
                 )
             )
-            .filter(has_faba=True)
+            .filter(*filters)
             .values("toptier_code", "name", "abbreviation")
         )
         agency_dictionaries = [self._dictionary_from_agency(agency) for agency in agency_set]
         cfo_sort_results = cfo_presentation_order(agency_dictionaries)
-        return cfo_sort_results["cfo_agencies"] + cfo_sort_results["other_agencies"]
+        agencies = cfo_sort_results["cfo_agencies"] + cfo_sort_results["other_agencies"]
+        return [
+            {
+                "id": agency["toptier_code"],
+                "ancestors": [],
+                "description": agency["name"] + " (" + agency["abbreviation"] + ")",
+                "count": self.get_count([], agency["toptier_code"]),
+                "children": [],
+            }
+            for agency in agencies
+        ]
+
+    def tier_3_search(self, ancestor_array, filter_string) -> list:
+        return []
+
+    def tier_2_search(self, ancestor_array, filter_string,) -> list:
+        filters = [
+            Q(has_faba=True),
+        ]
+        if len(ancestor_array) > 0:
+            agency = ancestor_array[0]
+            filters.append(Q(agency_id=agency))
+        if len(ancestor_array) > 1:
+            fed_account = ancestor_array[1]
+            filters.append(Q(federal_account__federal_account_code=fed_account))
+        if filter_string:
+            filters.append(
+                Q(Q(tas_rendering_label__icontains=filter_string) | Q(account_title__icontains=filter_string))
+            )
+        data = TreasuryAppropriationAccount.objects.annotate(
+            has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
+        ).filter(*filters)
+        retval = []
+        for item in data:
+            ancestor_array = [item.agency_id, item.agency_id + "-" + item.main_account_code]
+            retval.append(
+                {
+                    "id": item.tas_rendering_label,
+                    "ancestors": ancestor_array,
+                    "description": item.account_title,
+                    "count": 0,
+                    "children": [],
+                }
+            )
+        return retval
+
+    def tier_1_search(self, ancestor_array, filter_string, tier2_nodes=None) -> list:
+        filters = [
+            Q(has_faba=True),
+        ]
+        if tier2_nodes:
+            fed_account = [node["ancestors"][1] for node in tier2_nodes]
+            filters.append(Q(federal_account_code__in=fed_account))
+        if len(ancestor_array):
+            agency = ancestor_array[0]
+            filters.append(Q(parent_toptier_agency__toptier_code=agency))
+        if filter_string:
+            filters.append(
+                Q(Q(federal_account_code__icontains=filter_string) | Q(account_title__icontains=filter_string))
+            )
+        data = FederalAccount.objects.annotate(
+            has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk")))
+        ).filter(*filters)
+        retval = []
+        for item in data:
+            ancestor_array = [item.agency_identifier]
+            retval.append(
+                {
+                    "id": item.federal_account_code,
+                    "ancestors": ancestor_array,
+                    "description": item.account_title,
+                    "count": self.get_count(ancestor_array, item.federal_account_code),
+                    "children": [],
+                }
+            )
+        return retval
 
     def _dictionary_from_agency(self, agency):
         return {"toptier_code": agency["toptier_code"], "name": agency["name"], "abbreviation": agency["abbreviation"]}
@@ -40,21 +138,11 @@ class TASFilterTree(FilterTree):
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk")))
         ).filter(*filters)
 
-    def _tas_given_fa(self, agency, fed_account, filter_string):
-        filters = [
-            Q(has_faba=True),
-            Q(main_account_code=fed_account),
-            Q(agency_id=agency),
-        ]
-        # if filter_string:
-        #     filters.append(
-        #         Q(Q(tas_rendering_label__icontains=filter_string) | Q(account_title__icontains=filter_string))
-        #     )
-        retval= TreasuryAppropriationAccount.objects.annotate(
+    def _tas_given_fa(self, agency, fed_account):
+        filters = [Q(has_faba=True), Q(main_account_code=fed_account), Q(agency_id=agency)]
+        return TreasuryAppropriationAccount.objects.annotate(
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
         ).filter(*filters)
-        print(retval)
-        return retval
 
     def unlinked_node_from_data(self, ancestors: list, data) -> UnlinkedNode:
         if len(ancestors) == 0:  # A tier zero search is returning an agency dictionary
@@ -73,7 +161,6 @@ class TASFilterTree(FilterTree):
         return UnlinkedNode(id=data.federal_account_code, ancestors=ancestors, description=data.account_title)
 
     def get_count(self, tiered_keys: list, id) -> int:
-        print("get_count")
         if len(tiered_keys) == 0:
             taa_filters = [
                 Q(has_faba=True),
@@ -88,7 +175,6 @@ class TASFilterTree(FilterTree):
             )
             return taa_count
         if len(tiered_keys) == 1:
-            print(id)
             x = id.split("-")
             if len(x) < 2:
                 x = [tiered_keys[0], id]

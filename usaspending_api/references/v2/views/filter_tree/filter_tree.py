@@ -41,13 +41,30 @@ class FilterTree(metaclass=ABCMeta):
         else:
             ancestor_array = []
 
-        retval = [
-            self._linked_node_from_data(ancestor_array, elem, filter_string, child_layers)
-            for elem in self.raw_search(ancestor_array, filter_string)
-        ]
-        if filter_string:
-            retval = [elem for elem in retval if self.matches_filter(elem, filter_string)]
+        retval = self.raw_search(ancestor_array, child_layers, filter_string)
         return retval
+        # retval = [
+        #     self._linked_node_from_data(ancestor_array, elem, filter_string, child_layers)
+        #     for elem in self.raw_search(ancestor_array, filter_string)
+        # ]
+        # if filter_string:
+        #     retval = [elem for elem in retval if self.matches_filter(elem, filter_string)]
+
+    @abstractmethod
+    def tier_3_search(self) -> list:
+        pass
+
+    @abstractmethod
+    def tier_2_search(self) -> list:
+        pass
+
+    @abstractmethod
+    def tier_1_search(self) -> list:
+        pass
+
+    @abstractmethod
+    def toptier_search(self) -> list:
+        pass
 
     def _linked_node_from_data(self, ancestor_array, data, filter_string, child_layers):
         retval = self.unlinked_node_from_data(ancestor_array, data)
