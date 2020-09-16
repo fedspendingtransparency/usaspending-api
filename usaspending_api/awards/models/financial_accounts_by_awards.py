@@ -151,7 +151,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
         ]
         indexes = [
             models.Index(
-                fields=['submission','distinct_award_key', 'transaction_obligated_amount','gross_outlay_amount_by_award_cpe'],
+                fields=['submission', 'distinct_award_key', 'transaction_obligated_amount', 'gross_outlay_amount_by_award_cpe'],
                 name='faba_subid_awardkey_sums_idx',
-                condition=Q(disaster_emergency_fund__in=['L','M','N','O','P']))
+                condition=Q(disaster_emergency_fund__in=['L', 'M', 'N', 'O', 'P']))
         ]
