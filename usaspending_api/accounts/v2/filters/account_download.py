@@ -78,10 +78,10 @@ def account_download_filter(account_type, download_table, filters, account_level
         query_filters[f"{tas_id}__budget_subfunction_code"] = filters["budget_subfunction"]
 
     if account_type != "account_balances":  # file A does not have DEFC field so we do not attempt to filter
-        if len(filters.get("def_codes", 0)) > 0:
+        if len(filters.get("def_codes", [])) > 0:
             query_filters["disaster_emergency_fund__code__in"] = filters[
                 "def_codes"
-            ]  # we must join "disaster_emergency_fund" from "financial_accounts_by_awards" Django generated table on the "code" field from "disaster_emergency_fund" see line 19 financial_accounts_by_awards.py
+            ]  # we must join "disaster_emergency_fund" from "financial_accounts_by_awards" django model
 
     submission_filter = get_submission_filter(account_type, filters)
 

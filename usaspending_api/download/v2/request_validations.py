@@ -192,20 +192,20 @@ def validate_account_request(request_data):
     fy = _validate_fiscal_year(filters)
     quarter = _validate_fiscal_quarter(filters)
     period = _validate_fiscal_period(filters)
-    def_codes = _validate_def_codes(filters)
 
     fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
 
     json_request["filters"]["fy"] = fy
     json_request["filters"]["quarter"] = quarter
     json_request["filters"]["period"] = period
-    # json_request["filters"]["def_codes"] = def_codes
-    json_request["filters"]["def_codes"] = def_codes
 
     _validate_submission_type(filters)
 
     json_request["download_types"] = request_data["filters"]["submission_types"]
     json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
+
+    def_codes = _validate_def_codes(filters)
+    json_request["filters"]["def_codes"] = def_codes
 
     # Validate the rest of the filters
     check_types_and_assign_defaults(filters, json_request["filters"], ACCOUNT_FILTER_DEFAULTS)
@@ -215,7 +215,6 @@ def validate_account_request(request_data):
 
 def validate_disaster_recipient_request(request_data):
     _validate_required_parameters(request_data, ["filters"])
-    # all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
     model = [
         {
             "key": "filters|def_codes",
@@ -466,11 +465,11 @@ def _validate_fiscal_period(filters: dict) -> Optional[int]:
 
 def _validate_def_codes(filters: dict):
 
-    provided_codes = set([str(code).upper() for code in filters["def_codes"]])  # accept lowercase def_codes
-
     # case when the whole def_codes object is missing from filters
     if "def_codes" not in filters:
-        return None
+        raise InvalidParameterException("def_codes property not provided in the request's filter object")
+
+    provided_codes = set([str(code).upper() for code in filters["def_codes"]])  # accept lowercase def_code
 
     if not provided_codes.issubset(all_def_codes):
         raise Exception(
