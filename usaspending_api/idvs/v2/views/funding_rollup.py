@@ -37,12 +37,26 @@ ROLLUP_SQL = SQL(
                     ca.fpds_parent_agency_id = pa.fpds_agency_id and
                     ca.type not like 'IDV%'
     ), gather_financial_accounts_by_awards as (
+        WITH closed_submissions AS (
+            SELECT
+                "dabs_submission_window_schedule"."submission_reveal_date",
+                "dabs_submission_window_schedule"."submission_fiscal_year",
+                "dabs_submission_window_schedule"."is_quarter",
+                "dabs_submission_window_schedule"."submission_fiscal_month"
+            FROM "dabs_submission_window_schedule"
+            WHERE
+                "dabs_submission_window_schedule"."submission_reveal_date" <= now()
+        )
         select  ga.awarding_agency_id,
                 ga.funding_agency_id,
                 nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
                 faba.treasury_account_id
         from    gather_awards ga
                 inner join financial_accounts_by_awards faba on faba.award_id = ga.award_id
+                INNER JOIN submission_attributes sa ON faba.submission_id = sa.submission_id
+                INNER JOIN closed_submissions ON (sa."reporting_fiscal_period" = "closed_submissions"."submission_fiscal_month"
+                    AND sa."quarter_format_flag" = "closed_submissions"."is_quarter"
+                    AND sa."reporting_fiscal_year" = "closed_submissions"."submission_fiscal_year")
     )
     select
         coalesce(sum(gfaba.transaction_obligated_amount), 0.0)          total_transaction_obligated_amount,

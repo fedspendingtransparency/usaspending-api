@@ -14,12 +14,26 @@ from usaspending_api.common.validator.tinyshield import validate_post_request
 ROLLUP_SQL = SQL(
     """
     with gather_financial_accounts_by_awards as (
+        WITH closed_submissions AS (
+            SELECT
+                "dabs_submission_window_schedule"."submission_reveal_date",
+                "dabs_submission_window_schedule"."submission_fiscal_year",
+                "dabs_submission_window_schedule"."is_quarter",
+                "dabs_submission_window_schedule"."submission_fiscal_month"
+            FROM "dabs_submission_window_schedule"
+            WHERE
+                "dabs_submission_window_schedule"."submission_reveal_date" <= now()
+        )
         select  a.awarding_agency_id,
                 a.funding_agency_id,
                 nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
                 faba.treasury_account_id
         from    awards a
                 inner join financial_accounts_by_awards faba on faba.award_id = a.id
+                INNER JOIN submission_attributes sa ON faba.submission_id = sa.submission_id
+                INNER JOIN closed_submissions ON (sa."reporting_fiscal_period" = "closed_submissions"."submission_fiscal_month"
+                    AND sa."quarter_format_flag" = "closed_submissions"."is_quarter"
+                    AND sa."reporting_fiscal_year" = "closed_submissions"."submission_fiscal_year")
         where   {award_id_column} = {award_id}
     )
     select
