@@ -32,6 +32,13 @@ This route sends a request to the backend to begin generating a zipfile of award
 
             {
                 "filters": {
+                    "agencies": [
+                        {
+                            "type": "awarding",
+                            "tier": "subtier",
+                            "name": "Department of Agriculture"
+                        }
+                    ],
                     "keywords": ["Defense"]
                 },
                 "columns": [
@@ -73,6 +80,13 @@ This route sends a request to the backend to begin generating a zipfile of award
                     ],
                     "file_format": "csv",
                     "filters": {
+                        "agencies": [
+                            {
+                                "type": "awarding",
+                                "tier": "subtier",
+                                "name": "Department of Agriculture"
+                            }
+                        ],
                         "award_type_codes": [
                             "02",
                             "03",
