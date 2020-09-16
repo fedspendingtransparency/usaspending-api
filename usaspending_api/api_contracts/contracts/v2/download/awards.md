@@ -35,7 +35,7 @@ This route sends a request to the backend to begin generating a zipfile of award
                     "agencies": [
                         {
                             "type": "awarding",
-                            "tier": "subtier",
+                            "tier": "toptier",
                             "name": "Department of Agriculture"
                         }
                     ],
@@ -83,7 +83,7 @@ This route sends a request to the backend to begin generating a zipfile of award
                         "agencies": [
                             {
                                 "type": "awarding",
-                                "tier": "subtier",
+                                "tier": "toptier",
                                 "name": "Department of Agriculture"
                             }
                         ],

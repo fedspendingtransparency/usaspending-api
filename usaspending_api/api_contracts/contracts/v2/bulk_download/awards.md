@@ -24,21 +24,48 @@ This route sends a request to the backend to begin generating a zipfile of award
 
             {
                 "filters": {
+                    "prime_award_types": [
+                        "A",
+                        "B",
+                        "C",
+                        "D",
+                        "IDV_A",
+                        "IDV_B",
+                        "IDV_B_A",
+                        "IDV_B_B",
+                        "IDV_B_C",
+                        "IDV_C",
+                        "IDV_D",
+                        "IDV_E",
+                        "02",
+                        "03",
+                        "04",
+                        "05",
+                        "10",
+                        "06",
+                        "07",
+                        "08",
+                        "09",
+                        "11"
+                    ],
+                    "sub_award_types": [],
+                    "sub_agency": "Animal and Plant Health Inspection Service",
+                    "date_type": "action_date",
+                    "date_range": {
+                        "start_date": "2019-10-01",
+                        "end_date": "2020-09-30"
+                    },
                     "agencies": [
                         {
-                            "type": "awarding",
+                            "type": "funding",
                             "tier": "subtier",
-                            "name": "Department of Agriculture"
+                            "name": "Animal and Plant Health Inspection Service",
+                            "toptier_name": "Department of Agriculture"
                         }
-                    ],
-                    "prime_award_types": ["02", "03", "04", "05", "A", "B", "C", "D"],
-                    "sub_award_types": ["procurement"],
-                    "date_range": {
-                        "start_date": "2019-01-01",
-                        "end_date": "2019-12-31"
-                    },
-                    "date_type": "action_date"
-                }
+                    ]
+                },
+                "columns": [],
+                "file_format": "csv"
             }
 
 
@@ -56,40 +83,57 @@ This route sends a request to the backend to begin generating a zipfile of award
     + Body
             
             {
-                "status_url": "http://localhost:8000/api/v2/download/status?file_name=534_PrimeTransactionsAndSubawards_2020-01-13_H21M04S54995657.zip",
-                "file_name": "534_PrimeTransactionsAndSubawards_2020-01-13_H21M04S54995657.zip",
-                "file_url": "/csv_downloads/534_PrimeTransactionsAndSubawards_2020-01-13_H21M04S54995657.zip",
+                "status_url": "https://api.usaspending.gov/api/v2/download/status?file_name=All_PrimeTransactions_2020-09-16_H15M20S52934397.zip",
+                "file_name": "All_PrimeTransactions_2020-09-16_H15M20S52934397.zip",
+                "file_url": "https://files.usaspending.gov/generated_downloads/dev/All_PrimeTransactions_2020-09-16_H15M20S52934397.zip",
                 "download_request": {
-                    "agencies": [
-                        {
-                            "type": "awarding",
-                            "tier": "subtier",
-                            "name": "Department of Agriculture"
-                        }
-                    ],
+                    "agency": "all",
                     "columns": [],
                     "download_types": [
-                        "prime_awards",
-                        "sub_awards"
+                        "prime_awards"
                     ],
                     "file_format": "csv",
                     "filters": {
                         "agencies": [
                             {
-                                "name": "Office of the Federal Coordinator for Alaska Natural Gas Transportation Projects",
-                                "tier": "toptier",
-                                "type": "awarding"
+                                "name": "Animal and Plant Health Inspection Service",
+                                "tier": "subtier",
+                                "toptier_name": "Department of Agriculture",
+                                "type": "funding"
                             }
                         ],
                         "prime_and_sub_award_types": {
-                            "prime_award_types": ["02", "03", "04", "05", "A", "B", "C", "D"],
-                            "sub_award_types": ["procurement"]
+                            "prime_awards": [
+                                "02",
+                                "03",
+                                "04",
+                                "05",
+                                "06",
+                                "07",
+                                "08",
+                                "09",
+                                "10",
+                                "11",
+                                "A",
+                                "B",
+                                "C",
+                                "D",
+                                "IDV_A",
+                                "IDV_B",
+                                "IDV_B_A",
+                                "IDV_B_B",
+                                "IDV_B_C",
+                                "IDV_C",
+                                "IDV_D",
+                                "IDV_E"
+                            ],
+                            "sub_awards": []
                         },
                         "time_period": [
                             {
                                 "date_type": "action_date",
-                                "end_date": "2019-12-31",
-                                "start_date": "2019-01-01"
+                                "end_date": "2020-09-30",
+                                "start_date": "2019-10-01"
                             }
                         ]
                     },
