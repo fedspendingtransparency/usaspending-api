@@ -1,4 +1,5 @@
 import logging
+import csv
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
@@ -6,11 +7,11 @@ from django.db import connections, transaction
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
-from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 logger = logging.getLogger("script")
 
-# SQL to create Month Period Schedules using broker table
+#  SQL to create Month Period Schedules using broker table
 # Use all periods after Period 9, Year 2020 from table
 # Submission Due Date comes from 'publish_deadline' column
 MONTH_SCHEDULE_SQL = """
@@ -57,20 +58,37 @@ where
 
 
 class Command(BaseCommand):
-    help = "Update DABS Submission Window Schedule table based on Broker"
+    """
+    This command will clear and repopulate the dabs_submission_window_schedule table.
+    If a csv file is provided with the --file argument, rows will be created based on
+    it. If no file is provided, rows will be generated based off of the broker. In
+    production, the broker method should be used.
+    """
+
+    help = "Update DABS Submission Window Schedule table based on a file or the broker"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--file", help="The file containing schdules. If not provided, schedules are generated based on broker."
+        )
 
     @transaction.atomic()
     def handle(self, *args, **options):
 
+        file_path = options["file"]
+
+        if file_path:
+            logger.info("Input file provided. Reading schedule from file.")
+            submission_schedule_objs = self.read_schedules_from_csv(file_path)
+        else:
+            logger.info("No input file provided. Generating schedule from broker.")
+            submission_schedule_objs = self.generate_schedules_from_broker()
+
         logger.info("Deleting existing DABS Submission Window Schedule")
         DABSSubmissionWindowSchedule.objects.all().delete()
 
-        if "data_broker" in connections:
-            logger.info("Connection to broker exists. Generating schedule from broker.")
-            self.generate_schedules_from_broker()
-        else:
-            logger.info("No connection to broker exists. Reading schedule from file.")
-            self.read_schedules_from_csv()
+        logger.info("Inserting DABS Submission Window Schedule into website")
+        DABSSubmissionWindowSchedule.objects.bulk_create(submission_schedule_objs)
 
         logger.info("DABS Submission Window Schedule loader finished successfully!")
 
@@ -91,15 +109,16 @@ class Command(BaseCommand):
         logger.info("Getting quarter schedule values from cursor")
         quarter_schedule_values = dictfetchall(broker_cursor)
 
-        logger.info("Inserting DABS Submission Window Schedule into website")
         submission_schedule_objs = [DABSSubmissionWindowSchedule(**values) for values in month_schedule_values]
         submission_schedule_objs += [DABSSubmissionWindowSchedule(**values) for values in quarter_schedule_values]
 
-        DABSSubmissionWindowSchedule.objects.bulk_create(submission_schedule_objs)
+        return submission_schedule_objs
 
-    def read_schedules_from_csv(self):
-        project_root = Path(__name__).resolve().parent
-        file_path = str(project_root / "usaspending_api" / "data" / "dabs_submission_window_schedule.csv")
+    def read_schedules_from_csv(self, file_path):
 
-        loader = ThreadedDataLoader(model_class=DABSSubmissionWindowSchedule, collision_behavior="update")
-        loader.load_from_file(file_path)
+        logger.info("Reading from file: {}".format(file_path))
+
+        with RetrieveFileFromUri(file_path).get_file_object(True) as file:
+            csv_reader = csv.DictReader(file)
+            submission_schedule_objs = [DABSSubmissionWindowSchedule(**values) for values in csv_reader]
+            return submission_schedule_objs
