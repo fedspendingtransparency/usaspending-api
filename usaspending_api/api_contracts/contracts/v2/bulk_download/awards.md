@@ -49,7 +49,6 @@ This route sends a request to the backend to begin generating a zipfile of award
                         "11"
                     ],
                     "sub_award_types": [],
-                    "sub_agency": "Animal and Plant Health Inspection Service",
                     "date_type": "action_date",
                     "date_range": {
                         "start_date": "2019-10-01",
@@ -188,8 +187,6 @@ This route sends a request to the backend to begin generating a zipfile of award
     + Members
         + `domestic`
         + `foreign`
-+ `sub_agency` (optional, string)
-    Sub-agency name to include (based on the agency filter)
 + `sub_award_types` (optional, array[enum[string]])
     + Members
         + `grant`
