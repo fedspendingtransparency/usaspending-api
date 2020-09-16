@@ -1,3 +1,5 @@
+from django.db.models.functions import Coalesce
+
 from usaspending_api.common.helpers.business_logic_helpers import cfo_presentation_order, faba_with_file_D_data
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from usaspending_api.references.v2.views.filter_tree.filter_tree import UnlinkedNode, FilterTree
@@ -73,7 +75,7 @@ class TASFilterTree(FilterTree):
         ]
         if len(ancestor_array) > 0:
             agency = ancestor_array[0]
-            filters.append(Q(agency_id=agency))
+            filters.append(Q(agency=agency))
         if len(ancestor_array) > 1:
             fed_account = ancestor_array[1]
             filters.append(Q(federal_account__federal_account_code=fed_account))
@@ -82,11 +84,12 @@ class TASFilterTree(FilterTree):
                 Q(Q(tas_rendering_label__icontains=filter_string) | Q(account_title__icontains=filter_string))
             )
         data = TreasuryAppropriationAccount.objects.annotate(
-            has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
+            has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk"))),
+            agency=Coalesce("federal_account__parent_toptier_agency__toptier_code", "agency_id"),
         ).filter(*filters)
         retval = []
         for item in data:
-            ancestor_array = [item.agency_id, item.agency_id + "-" + item.main_account_code]
+            ancestor_array = [item.agency, item.agency_id + "-" + item.main_account_code]
             retval.append(
                 {
                     "id": item.tas_rendering_label,
@@ -107,17 +110,18 @@ class TASFilterTree(FilterTree):
             filters.append(Q(federal_account_code__in=fed_account))
         if len(ancestor_array):
             agency = ancestor_array[0]
-            filters.append(Q(parent_toptier_agency__toptier_code=agency))
+            filters.append(Q(agency=agency))
         if filter_string:
             filters.append(
                 Q(Q(federal_account_code__icontains=filter_string) | Q(account_title__icontains=filter_string))
             )
         data = FederalAccount.objects.annotate(
-            has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk")))
+            has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk"))),
+            agency=Coalesce("parent_toptier_agency__toptier_code", "agency_identifier"),
         ).filter(*filters)
         retval = []
         for item in data:
-            ancestor_array = [item.agency_identifier]
+            ancestor_array = [item.agency]
             retval.append(
                 {
                     "id": item.federal_account_code,
