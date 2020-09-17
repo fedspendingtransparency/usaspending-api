@@ -71,9 +71,14 @@ class PSCFilterTree(FilterTree):
                 tier2_nodes = self._combine_nodes(tier2_nodes, tier4_nodes)
                 return tier2_nodes
             else:
-                tier4_nodes = self.tier_4_search(tiered_keys, filter_string)
-                tier3_nodes = self.tier_3_search(tiered_keys, filter_string)
-                return tier3_nodes or tier4_nodes
+                if tiered_keys[0] == "Service":
+                    return self.tier_2_search(tiered_keys, filter_string)
+                if tiered_keys[0] == "Research and Development":
+                    return self.tier_3_search(tiered_keys, filter_string) or self.tier_4_search(
+                        tiered_keys, filter_string
+                    )
+                return self.tier_4_search(tiered_keys, filter_string)
+
         elif len(tiered_keys) == 3:
             return self.tier_4_search(tiered_keys, filter_string)
 
@@ -131,7 +136,6 @@ class PSCFilterTree(FilterTree):
             filters.append(Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string)))
         retval = []
         results = PSC.objects.filter(*filters)
-        print(results.query)
         for object in results:
             ancestors = []
             if object.code.isdigit():

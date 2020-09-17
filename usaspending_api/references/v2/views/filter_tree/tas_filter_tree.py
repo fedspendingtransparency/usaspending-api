@@ -1,5 +1,3 @@
-from django.db.models.functions import Coalesce
-
 from usaspending_api.common.helpers.business_logic_helpers import cfo_presentation_order, faba_with_file_D_data
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from usaspending_api.references.v2.views.filter_tree.filter_tree import UnlinkedNode, FilterTree
@@ -10,6 +8,7 @@ from django.db.models import Exists, OuterRef, Q, F
 class TASFilterTree(FilterTree):
     def raw_search(self, tiered_keys, child_layers, filter_string):
         if len(tiered_keys) == 0:
+            tier1_nodes = None
             if child_layers != 0:
                 if child_layers == 2 or child_layers == -1:
                     tier2_nodes = self.tier_2_search(tiered_keys, filter_string)
@@ -64,7 +63,7 @@ class TASFilterTree(FilterTree):
         data = TreasuryAppropriationAccount.objects.annotate(
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk"))),
             agency=F("federal_account__parent_toptier_agency__toptier_code"),
-            fed_account=F("federal_account__federal_account_code")
+            fed_account=F("federal_account__federal_account_code"),
         ).filter(*filters)
         retval = []
         for item in data:
@@ -75,7 +74,7 @@ class TASFilterTree(FilterTree):
                     "ancestors": ancestor_array,
                     "description": item.account_title,
                     "count": 0,
-                    "children": [],
+                    "children": None,
                 }
             )
         return retval
