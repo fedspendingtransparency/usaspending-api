@@ -4,7 +4,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.spending_explorer.v2.filters.type_filter import type_filter
 
 # Limits the amount of results the spending explorer returns
-SPENDING_EXPLORER_LIMIT = 500
+SPENDING_EXPLORER_LIMIT = 1000
 
 
 class SpendingExplorerViewSet(APIView):
