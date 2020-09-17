@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('submissions', '0010_auto_20200623_1702'),
+        ('submissions', '0009_dabssubmissionwindowschedule'),
     ]
 
     operations = [
