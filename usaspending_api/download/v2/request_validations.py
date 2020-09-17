@@ -33,8 +33,6 @@ from usaspending_api.download.lookups import (
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions import helpers as sub_helpers
 
-all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
-
 
 def validate_award_request(request_data: dict):
     """Analyze request and raise any formatting errors as Exceptions"""
@@ -220,7 +218,7 @@ def validate_disaster_recipient_request(request_data):
             "name": "def_codes",
             "type": "array",
             "array_type": "enum",
-            "enum_values": all_def_codes,
+            "enum_values": sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True)),
             "allow_nulls": False,
             "optional": False,
         },
@@ -468,6 +466,7 @@ def _validate_def_codes(filters: dict) -> Optional[list]:
     if "def_codes" not in filters or filters["def_codes"] is None:
         return None
 
+    all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
     provided_codes = set([str(code).upper() for code in filters["def_codes"]])  # accept lowercase def_code
 
     if not provided_codes.issubset(all_def_codes):
