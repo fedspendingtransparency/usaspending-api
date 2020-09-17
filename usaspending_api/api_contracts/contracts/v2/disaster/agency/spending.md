@@ -28,13 +28,18 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
-
 
     + Body
 
             {
+                "totals": {
+                    "award_count": 4574,
+                    "obligation": 364037369840.58,
+                    "outlay": 290416885040.71
+                },
                 "results": [
                     {
                         "id": 168,
@@ -109,6 +114,12 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
         + `total_budgetary_resources`
         + `obligation`
         + `outlay`
+
+## Totals (object)
++ `award_count` (optional, number)
++ `total_budgetary_resources` (optional, number)
++ `obligation` (required, number)
++ `outlay` (required, number)
 
 ## Result (object)
 + `id` (required, string)

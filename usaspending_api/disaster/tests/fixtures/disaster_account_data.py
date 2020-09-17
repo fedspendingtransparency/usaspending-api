@@ -70,6 +70,7 @@ def disaster_account_data():
         quarter_format_flag=True,
         is_final_balances_for_fy=False,
         reporting_period_start="2022-04-01",
+        toptier_code="007",
         submission_window=dsws2,
     )
     sub2 = mommy.make(
@@ -79,6 +80,7 @@ def disaster_account_data():
         quarter_format_flag=False,
         is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
+        toptier_code="008",
         submission_window=dsws3,
     )
     sub3 = mommy.make(
@@ -88,6 +90,7 @@ def disaster_account_data():
         quarter_format_flag=True,
         is_final_balances_for_fy=False,
         reporting_period_start="2022-04-01",
+        toptier_code="009",
         submission_window=dsws2,
     )
     sub4 = mommy.make(

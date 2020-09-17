@@ -1,7 +1,7 @@
 import logging
-from ssl import CERT_NONE
 
-from typing import Optional, Union
+from ssl import CERT_NONE
+from typing import Optional, Union, Callable
 
 from django.conf import settings
 from elasticsearch.connection import create_ssl_context
@@ -46,13 +46,19 @@ class _Search(Search):
         except Exception as e:
             logger.error("Error creating the elasticsearch client: {}".format(e))
 
-    def _handle_execute_retry(self, retries: int, timeout: str) -> Optional[Union[Response, int]]:
+    def _execute(self, timeout: str):
+        return self.params(timeout=timeout).execute()
+
+    def _count(self, timeout: str):
+        return self.count()
+
+    def _handle_retry(self, func: Callable, retries: int, timeout: str) -> Optional[Union[Response, int]]:
         if retries > 20:
             retries = 20
         elif retries < 1:
             retries = 1
         for attempt in range(retries):
-            response = self.params(timeout=timeout).execute()
+            response = func(timeout)
             if response is None:
                 logger.info(f"Failure using these: Index='{self._index_name}', Body={self.to_dict()}")
             else:
@@ -60,10 +66,10 @@ class _Search(Search):
         logger.error(f"Unable to reach elasticsearch cluster. {retries} attempt(s) made.")
         return None
 
-    def _handle_execute_errors(self, retries: int, timeout: str) -> Response:
+    def _handle_errors(self, func: Callable, retries: int, timeout: str) -> Response:
         error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
         try:
-            result = self._handle_execute_retry(retries, timeout)
+            result = self._handle_retry(func, retries, timeout)
         except NameError as e:
             logger.error(error_template.format(type="Hostname", e=str(e)))
             raise
@@ -82,11 +88,10 @@ class _Search(Search):
         return result
 
     def handle_execute(self, retries: int = 5, timeout: str = "90s") -> Response:
-        return self._handle_execute_errors(retries, timeout)
+        return self._handle_errors(self._execute, retries, timeout)
 
-    def handle_count(self, retries: int = 5, timeout: str = "90s") -> int:
-        self._handle_execute_errors(retries, timeout)
-        return self.count()
+    def handle_count(self, retries: int = 5) -> int:
+        return self._handle_errors(self._count, retries, None)
 
 
 class TransactionSearch(_Search):

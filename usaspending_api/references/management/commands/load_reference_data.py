@@ -27,6 +27,9 @@ class Command(BaseCommand):
         self.logger.info("Loading state data")
         call_command("load_state_data")
 
+        self.logger.info("Loading object classes")
+        call_command("load_object_classes")
+
         # TAS's should only be loaded after agencies to ensure they can properly link to agencies
         self.logger.info("Loading TAS")
         if settings.IS_LOCAL:
@@ -79,5 +82,10 @@ class Command(BaseCommand):
         self.logger.info("Loading GTAS Total Obligation data")
         self.logger.warning("GTAS Total Obligation loader requires access to a broker database with the relevant data")
         call_command("load_gtas")
+
+        self.logger.info("Loading DABS Submission Schedule Windows")
+        call_command(
+            "load_dabs_submission_window_schedule", file="usaspending_api/data/dabs_submission_window_schedule.csv"
+        )
 
         self.logger.info("Reference data loaded.")

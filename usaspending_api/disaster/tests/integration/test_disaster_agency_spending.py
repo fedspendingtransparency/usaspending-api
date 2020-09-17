@@ -50,6 +50,9 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
+    expected_totals = {"obligation": 11001000.0, "outlay": 10011.0, "total_budgetary_resources": 32912155120.9}
+    assert resp.json()["totals"] == expected_totals
+
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "L"], spending_type="total")
     expected_results = [
         {
@@ -103,6 +106,10 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
+
+    expected_totals = {"award_count": 6, "obligation": 22222220.0, "outlay": 200020022.0}
+
+    assert resp.json()["totals"] == expected_totals
 
 
 @pytest.mark.django_db

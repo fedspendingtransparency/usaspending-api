@@ -9,24 +9,44 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 
 logger = logging.getLogger("script")
 
+"""
+WARNING: This SQL will only correctly identify awards during the first fiscal
+year of Covid submissions. A flaw has been found that will cause some awards in
+FY 21 to be incorrectly identified. This should be replaced before the close of
+the Fiscal Year
+"""
+
 MISSING_COVID_AWARD_SQL = """
-SELECT
-    DISTINCT ON
-    (faba.award_id) faba.award_id
-FROM
-    financial_accounts_by_awards faba
-INNER JOIN disaster_emergency_fund_code defc ON
-    defc.code = faba.disaster_emergency_fund_code
-    AND defc.group_name = 'covid_19'
-INNER JOIN submission_attributes sa ON
-    faba.submission_id = sa.submission_id
-WHERE
-    faba.award_id IS NOT NULL
-    AND sa.is_final_balances_for_fy = FALSE
-    AND sa.reporting_period_start >= '2020-04-01'
-ORDER BY
-    faba.award_id,
-    faba.submission_id DESC;
+SELECT award_id
+FROM (
+    SELECT
+        DISTINCT ON
+        (faba.award_id) faba.award_id,
+        sa.submission_id,
+        sa.is_final_balances_for_fy,
+        sa.reporting_fiscal_year,
+        sa.reporting_fiscal_period,
+        sa.quarter_format_flag
+    FROM
+        financial_accounts_by_awards faba
+    INNER JOIN disaster_emergency_fund_code defc ON
+        defc.code = faba.disaster_emergency_fund_code
+        AND defc.group_name = 'covid_19'
+    INNER JOIN submission_attributes sa ON
+        sa.reporting_period_start >= '2020-04-01'
+        AND faba.submission_id = sa.submission_id
+    INNER JOIN dabs_submission_window_schedule dabs ON
+        dabs.submission_fiscal_year = sa.reporting_fiscal_year
+        AND dabs.submission_fiscal_month = sa.reporting_fiscal_period
+        AND dabs.is_quarter = sa.quarter_format_flag
+        AND dabs.submission_reveal_date <= now()
+    WHERE
+        faba.award_id IS NOT NULL
+    ORDER BY
+        faba.award_id, submission_reveal_date DESC, is_quarter
+) AS covid_awards
+WHERE covid_awards.is_final_balances_for_fy = FALSE
+;
 """
 
 
