@@ -84,9 +84,8 @@ class Command(BaseCommand):
         call_command("load_gtas")
 
         self.logger.info("Loading DABS Submission Schedule Windows")
-        self.logger.warning(
-            "DABS Submission Schedule Windows loader requires access to a broker database with the relevant data"
+        call_command(
+            "load_dabs_submission_window_schedule", file="usaspending_api/data/dabs_submission_window_schedule.csv"
         )
-        call_command("load_dabs_submission_window_schedule")
 
         self.logger.info("Reference data loaded.")
