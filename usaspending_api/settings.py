@@ -413,3 +413,7 @@ SPAGHETTI_SAUCE = {
     "exclude": {},
     "show_proxy": False,
 }
+
+SESSION_COOKIE_SECURE = True
+
+CSRF_COOKIE_SECURE = True
