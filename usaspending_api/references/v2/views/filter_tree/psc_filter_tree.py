@@ -17,14 +17,14 @@ PSC_GROUPS = {
 
 PSC_GROUPS_COUNT = {
     # A
-    "Research and Development": {"pattern": r"^A...$", "expanded_terms": [["A"]]},
+    "Research and Development": {"pattern": r"^A...$", "expanded_terms": ["A"]},
     # B - Z
     "Service": {
         "pattern": r"^[B-Z][A-Z0-9][A-Z0-9][A-Z0-9]$",
-        "expanded_terms": [[letter] for letter in ascii_uppercase if letter != "A"],
+        "expanded_terms": [letter for letter in ascii_uppercase if letter != "A"],
     },
     # 0 - 9
-    "Product": {"pattern": r"^\d\d\d\d$", "expanded_terms": [[digit] for digit in digits]},
+    "Product": {"pattern": r"^\d\d\d\d$", "expanded_terms": [digit for digit in digits]},
 }
 
 
@@ -34,28 +34,26 @@ class PSCFilterTree(FilterTree):
             return []
         if len(tiered_keys) == 0:
             if child_layers != 0:
-                tier4_nodes = self.tier_4_search(tiered_keys, filter_string)
-                tier3_nodes = self.tier_3_search(tiered_keys, filter_string, tier4_nodes)
-                tier3_nodes = self._combine_nodes(tier3_nodes, tier4_nodes)
-                tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes + tier4_nodes)
-                tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
-                tier2_nodes = self._combine_nodes(tier2_nodes, tier4_nodes)
-                tier1_nodes = self.tier_1_search(tiered_keys, filter_string, tier2_nodes)
-                tier1_nodes = self._combine_nodes(tier1_nodes, tier2_nodes)
-                toptier_nodes = self.toptier_search(tier1_nodes + tier2_nodes)
+                if child_layers == 2 or child_layers == -1:
+                    tier3_nodes = self.tier_3_search(tiered_keys, filter_string)
+                    tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes)
+                    tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
+                    tier1_nodes = self.tier_1_search(tiered_keys, filter_string, tier2_nodes)
+                    tier1_nodes = self._combine_nodes(tier1_nodes, tier2_nodes)
+                    toptier_nodes = self.toptier_search(filter_string, tier1_nodes)
+                    toptier_nodes = self._combine_nodes(toptier_nodes, tier1_nodes)
+                else:
+                    tier1_nodes = self.tier_1_search(tiered_keys, filter_string)
+                    toptier_nodes = self.toptier_search(filter_string, tier1_nodes)
                 toptier_nodes = self._combine_nodes(toptier_nodes, tier1_nodes)
-                toptier_nodes = self._combine_nodes(toptier_nodes, tier2_nodes)
             else:
-                toptier_nodes = self.toptier_search()
+                toptier_nodes = self.toptier_search(filter_string)
             return toptier_nodes
         elif len(tiered_keys) == 1:
             if child_layers != 0:
-                tier4_nodes = self.tier_4_search(tiered_keys, filter_string)
-                tier3_nodes = self.tier_3_search(tiered_keys, filter_string, tier4_nodes)
-                tier3_nodes = self._combine_nodes(tier3_nodes, tier4_nodes)
-                tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes + tier4_nodes)
+                tier3_nodes = self.tier_3_search(tiered_keys, filter_string)
+                tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes)
                 tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
-                tier2_nodes = self._combine_nodes(tier2_nodes, tier4_nodes)
                 tier1_nodes = self.tier_1_search(tiered_keys, filter_string, tier2_nodes)
                 tier1_nodes = self._combine_nodes(tier1_nodes, tier2_nodes)
             else:
@@ -63,67 +61,16 @@ class PSCFilterTree(FilterTree):
             return tier1_nodes
         elif len(tiered_keys) == 2:
             if child_layers != 0:
-                tier4_nodes = self.tier_4_search(tiered_keys, filter_string)
-                tier3_nodes = self.tier_3_search(tiered_keys, filter_string, tier4_nodes)
-                tier3_nodes = self._combine_nodes(tier3_nodes, tier4_nodes)
-                tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes + tier4_nodes)
+                tier3_nodes = self.tier_3_search(tiered_keys, filter_string)
+                tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes)
                 tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
-                tier2_nodes = self._combine_nodes(tier2_nodes, tier4_nodes)
                 return tier2_nodes
             else:
-                if tiered_keys[0] == "Service":
-                    return self.tier_2_search(tiered_keys, filter_string)
-                if tiered_keys[0] == "Research and Development":
-                    return self.tier_3_search(tiered_keys, filter_string) or self.tier_4_search(
-                        tiered_keys, filter_string
-                    )
-                return self.tier_4_search(tiered_keys, filter_string)
+                return self.tier_2_search(tiered_keys, filter_string) or self.tier_3_search(tiered_keys, filter_string)
+        else:
+            return self.tier_3_search(tiered_keys, filter_string)
 
-        elif len(tiered_keys) == 3:
-            return self.tier_4_search(tiered_keys, filter_string)
-
-    # def lower_tier_search(self, ancestor_array, filter_string, lower_tier_nodes=None, desired_length=0):
-    #     filters = []
-    #     query = Q()
-    #     if ancestor_array:
-    #         parent = ancestor_array[-1]
-    #         desired_len = len(parent) + 2 if len(parent) == 2 and (parent[0] != "A" or parent == "AU") else len(parent) + 1
-    #         query |= Q(Q(code__startswith=parent) & Q(length=desired_len))
-    #     if filter_string:
-    #         query |= Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string))
-    #     if lower_tier_nodes:
-    #         query &= (Q(length=desired_length))
-    #         lower_tier_codes = [node["id"][:(desired_length-1)] for node in lower_tier_nodes]
-    #         for code in lower_tier_codes:
-    #             query |= Q(code=code)
-    #     retval = []
-    #     for object in PSC.objects.filter(query):
-    #         ancestors = []
-    #         if object.code.isdigit():
-    #             ancestors.append("Product")
-    #             ancestors.append([object.code[:1]])
-    #             ancestors.append([object.code[:2]])
-    #         elif object.code == "A":
-    #             ancestors.append("Research and Development")
-    #             ancestors.append([object.code[:2]])
-    #             ancestors.append([object.code[:3]])
-    #         else:
-    #             ancestors.append("Service")
-    #             ancestors.append([object.code[:1]])
-    #             ancestors.append([object.code[:2]])
-    #
-    #         retval.append(
-    #             {
-    #                 "id": object.code,
-    #                 "ancestors": ancestors,
-    #                 "description": object.description,
-    #                 "count": self.get_count(ancestor_array, object.code),
-    #                 "children": None,
-    #             }
-    #         )
-    #     return retval
-
-    def tier_4_search(self, ancestor_array, filter_string) -> list:
+    def tier_3_search(self, ancestor_array, filter_string) -> list:
         desired_len = 4
         filters = [Q(length=desired_len)]
         if ancestor_array:
@@ -161,42 +108,8 @@ class PSCFilterTree(FilterTree):
             )
         return retval
 
-    # this method will only ever return length = 3 PSCs, which will always be Research and Developement
-    def tier_3_search(self, ancestor_array, filter_string, lower_tier_nodes=None) -> list:
-        desired_len = 3
-        filters = [Q(length=desired_len)]
-        if ancestor_array:
-            parent = ancestor_array[-1]
-            if len(parent) > 3:
-                filters.append(Q(code__iregex=r"^A...$"))
-            else:
-                filters.append(Q(code__startswith=parent))
-        if filter_string:
-            filters.append(Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string)))
-        if lower_tier_nodes:
-            lower_tier_codes = [node["id"][:3] for node in lower_tier_nodes]
-            lower_tier_codes = list(dict.fromkeys(lower_tier_codes))
-            query = Q()
-            for code in lower_tier_codes:
-                query |= Q(code=code)
-            filters.append(query)
-        retval = []
-        for object in PSC.objects.filter(*filters):
-            ancestors = ["Research and Development", object.code[:2]]
-            retval.append(
-                {
-                    "id": object.code,
-                    "ancestors": ancestors,
-                    "description": object.description,
-                    "count": self.get_count(ancestor_array, object.code),
-                    "children": None,
-                }
-            )
-        return retval
-
     def tier_2_search(self, ancestor_array, filter_string, lower_tier_nodes=None) -> list:
-        desired_len = 2
-        filters = [Q(length=desired_len)]
+        filters = [Q(Q(Q(length=2) & ~Q(code__startswith="A")) | Q(Q(length=3) & Q(code__startswith="A")))]
         query = Q()
         if ancestor_array:
             parent = ancestor_array[-1]
@@ -205,7 +118,48 @@ class PSCFilterTree(FilterTree):
             else:
                 query |= Q(code__startswith=parent)
         if lower_tier_nodes:
-            lower_tier_codes = [node["id"][:2] for node in lower_tier_nodes]
+            lower_tier_codes = [
+                node["id"][:2] if node["id"][:2] == "AU" or node["id"][0] != "A" else node["id"][:3]
+                for node in lower_tier_nodes
+            ]
+            lower_tier_codes = list(dict.fromkeys(lower_tier_codes))
+            for code in lower_tier_codes:
+                query |= Q(code=code)
+        if filter_string:
+            query |= Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string))
+        if query != Q():
+            filters.append(query)
+        retval = []
+        for object in PSC.objects.filter(*filters):
+            ancestors = []
+            if object.code.isdigit():
+                ancestors.append("Product")
+            elif object.code[0] == "A":
+                ancestors.append("Research and Development")
+                ancestors.append(object.code[:2])
+
+            else:
+                ancestors.append("Service")
+                ancestors.append(object.code[:1])
+            retval.append(
+                {
+                    "id": object.code,
+                    "ancestors": ancestors,
+                    "description": object.description,
+                    "count": self.get_count([object.code], object.code),
+                    "children": None,
+                }
+            )
+        return retval
+
+    def tier_1_search(self, ancestor_array, filter_string, lower_tier_nodes=None) -> list:
+        filters = [Q(Q(Q(length=1) & ~Q(code="A")) | Q(length=2))]
+        query = Q()
+        if ancestor_array:
+            parent = ancestor_array[0]
+            filters.append(Q(code__iregex=PSC_GROUPS.get(parent, {}).get("pattern") or "(?!)"))
+        if lower_tier_nodes:
+            lower_tier_codes = [node["id"][:-1] for node in lower_tier_nodes]
             lower_tier_codes = list(dict.fromkeys(lower_tier_codes))
             for code in lower_tier_codes:
                 query |= Q(code=code)
@@ -222,74 +176,38 @@ class PSCFilterTree(FilterTree):
                 ancestors.append("Research and Development")
             else:
                 ancestors.append("Service")
-                ancestors.append(object.code[:1])
             retval.append(
                 {
                     "id": object.code,
                     "ancestors": ancestors,
                     "description": object.description,
-                    "count": self.get_count(ancestor_array, object.code),
+                    "count": self.get_count([object.code], object.code),
                     "children": None,
                 }
             )
         return retval
 
-    def tier_1_search(self, ancestor_array, filter_string, lower_tier_nodes=None) -> list:
-        query = Q()
-        filters = []
-        retval = []
-        if ancestor_array:
-            parent = ancestor_array[-1]
-            filters.append(Q(code__iregex=PSC_GROUPS.get(parent, {}).get("pattern") or "(?!)"))
-        if lower_tier_nodes:
-            lower_tier_codes = [node["id"][:1] for node in lower_tier_nodes if node["id"][0] != "A"]
-            for code in lower_tier_codes:
-                query |= Q(code=code)
-            retval = [node for node in lower_tier_nodes if node["id"][0] == "A"]
-        if filter_string:
-            query |= Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string))
-        if query != Q():
-            filters.append(query)
-        for object in PSC.objects.filter(*filters):
-            ancestors = []
-            if object.code.isdigit():
-                ancestors.append("Product")
-            elif object.code[0] == "A":
-                ancestors.append("Research and Development")
-            else:
-                ancestors.append("Service")
-            retval.append(
-                {
-                    "id": object.code,
-                    "ancestors": ancestors,
-                    "description": object.description,
-                    "count": self.get_count(ancestor_array, object.code),
-                    "children": None,
-                }
-            )
-
-        return retval
-
-    def toptier_search(self, tier1_nodes=None):
-        # if tier1_nodes:
-        #     toptier_codes = [node["id"][:1] for node in tier1_nodes]
-        #     retval = []
-        #     for code in toptier_codes:
-        #         for key in PSC_GROUPS.keys():
-        #             if [code] in PSC_GROUPS[key]["expanded_terms"]:
-        #                 retval.append(
-        #                     {
-        #                         "id": key,
-        #                         "ancestors": [],
-        #                         "description": "",
-        #                         "count": self.get_count([], key),
-        #                         "children": None,
-        #                     }
-        #                 )
-        #     return retval
+    def toptier_search(self, filter_string, tier1_nodes=None):
+        if tier1_nodes:
+            toptier_codes = [node["id"][:1] for node in tier1_nodes]
+            retval = []
+            for key in PSC_GROUPS.keys():
+                if set(toptier_codes).intersection(set(PSC_GROUPS_COUNT[key]["expanded_terms"])):
+                    if filter_string and filter_string.upper() in key.upper():
+                        retval.append(
+                            {
+                                "id": key,
+                                "ancestors": [],
+                                "description": "",
+                                "count": self.get_count([], key),
+                                "children": [],
+                            }
+                        )
+            return retval
         return [
             {"id": key, "ancestors": [], "description": "", "count": self.get_count([], key), "children": []}
             for key in PSC_GROUPS.keys()
+            if filter_string and filter_string.upper() in key.upper()
         ]
 
     def _combine_nodes(self, upper_tier, lower_tier):
