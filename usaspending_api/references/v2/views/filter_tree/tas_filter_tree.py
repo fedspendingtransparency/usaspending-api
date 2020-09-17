@@ -4,7 +4,7 @@ from usaspending_api.common.helpers.business_logic_helpers import cfo_presentati
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from usaspending_api.references.v2.views.filter_tree.filter_tree import UnlinkedNode, FilterTree
 from usaspending_api.references.models import ToptierAgency
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Exists, OuterRef, Q, F
 
 
 class TASFilterTree(FilterTree):
@@ -63,11 +63,12 @@ class TASFilterTree(FilterTree):
             )
         data = TreasuryAppropriationAccount.objects.annotate(
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk"))),
-            agency=Coalesce("federal_account__parent_toptier_agency__toptier_code", "agency_id"),
+            agency=F("federal_account__parent_toptier_agency__toptier_code"),
+            fed_account=F("federal_account__federal_account_code")
         ).filter(*filters)
         retval = []
         for item in data:
-            ancestor_array = [item.agency, item.agency_id + "-" + item.main_account_code]
+            ancestor_array = [item.agency, item.fed_account]
             retval.append(
                 {
                     "id": item.tas_rendering_label,
@@ -94,7 +95,7 @@ class TASFilterTree(FilterTree):
             filters.append(query)
         data = FederalAccount.objects.annotate(
             has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk"))),
-            agency=Coalesce("parent_toptier_agency__toptier_code", "agency_identifier"),
+            agency=F("parent_toptier_agency__toptier_code"),
         ).filter(*filters)
         retval = []
         for item in data:
