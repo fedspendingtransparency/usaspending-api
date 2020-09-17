@@ -465,7 +465,7 @@ def _validate_fiscal_period(filters: dict) -> Optional[int]:
 def _validate_def_codes(filters: dict) -> Optional[list]:
 
     # case when the whole def_codes object is missing from filters
-    if "def_codes" not in filters:
+    if "def_codes" not in filters or filters["def_codes"] is None:
         return None
 
     provided_codes = set([str(code).upper() for code in filters["def_codes"]])  # accept lowercase def_code

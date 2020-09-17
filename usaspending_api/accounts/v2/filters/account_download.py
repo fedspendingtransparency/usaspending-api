@@ -78,7 +78,7 @@ def account_download_filter(account_type, download_table, filters, account_level
         query_filters[f"{tas_id}__budget_subfunction_code"] = filters["budget_subfunction"]
 
     if account_type != "account_balances":  # file A does not have DEFC field so we do not attempt to filter
-        if len(filters.get("def_codes", [])) > 0:
+        if len(filters.get("def_codes") or []) > 0:
             # joining to disaster_emergency_fund_code table for observed performance benefits
             query_filters["disaster_emergency_fund__code__in"] = filters["def_codes"]
 
