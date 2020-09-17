@@ -144,6 +144,7 @@ class TASFilterTree(FilterTree):
             }
             for agency in agencies
         ]
+
     def _dictionary_from_agency(self, agency):
         return {"toptier_code": agency["toptier_code"], "name": agency["name"], "abbreviation": agency["abbreviation"]}
 
@@ -190,13 +191,9 @@ class TASFilterTree(FilterTree):
             )
             return taa_count
         if len(tiered_keys) == 1:
-            x = id.split("-")
-            if len(x) < 2:
-                x = [tiered_keys[0], id]
             taa_filters = [
                 Q(has_faba=True),
-                Q(federal_account__parent_toptier_agency__toptier_code=x[0]),
-                Q(main_account_code=x[1]),
+                Q(federal_account__federal_account_code=id),
             ]
             taa_count = (
                 TreasuryAppropriationAccount.objects.annotate(

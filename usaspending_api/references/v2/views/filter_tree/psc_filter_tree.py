@@ -150,8 +150,8 @@ class PSCFilterTree(FilterTree):
                     "id": object.code,
                     "ancestors": ancestors,
                     "description": object.description,
-                    "count": self.get_count(ancestor_array, object.code),
-                    "children": [],
+                    "count": 0,
+                    "children": None,
                 }
             )
         return retval
