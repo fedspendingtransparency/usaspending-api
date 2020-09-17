@@ -34,13 +34,10 @@ class PSCFilterTree(FilterTree):
             return []
         if len(tiered_keys) == 0:
             if child_layers != 0:
-                # tier4_nodes = tier3_nodes = tier2_nodes = tier1_nodes = None
-                # if child_layers == 2:
                 tier4_nodes = self.tier_4_search(tiered_keys, filter_string)
                 tier3_nodes = self.tier_3_search(tiered_keys, filter_string, tier4_nodes)
                 tier3_nodes = self._combine_nodes(tier3_nodes, tier4_nodes)
-                # if child_layers == 1:
-                tier2_nodes = self.tier_2_search(tiered_keys, filter_string)
+                tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes + tier4_nodes)
                 tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
                 tier2_nodes = self._combine_nodes(tier2_nodes, tier4_nodes)
                 tier1_nodes = self.tier_1_search(tiered_keys, filter_string, tier2_nodes)
@@ -187,7 +184,7 @@ class PSCFilterTree(FilterTree):
                     "ancestors": ancestors,
                     "description": object.description,
                     "count": self.get_count(ancestor_array, object.code),
-                    "children": [],
+                    "children": None,
                 }
             )
         return retval
@@ -227,7 +224,7 @@ class PSCFilterTree(FilterTree):
                     "ancestors": ancestors,
                     "description": object.description,
                     "count": self.get_count(ancestor_array, object.code),
-                    "children": [],
+                    "children": None,
                 }
             )
         return retval
@@ -262,7 +259,7 @@ class PSCFilterTree(FilterTree):
                     "ancestors": ancestors,
                     "description": object.description,
                     "count": self.get_count(ancestor_array, object.code),
-                    "children": [],
+                    "children": None,
                 }
             )
 
@@ -292,10 +289,13 @@ class PSCFilterTree(FilterTree):
 
     def _combine_nodes(self, upper_tier, lower_tier):
         for node in upper_tier:
+            children = []
             for node1 in lower_tier:
                 if node["id"] in node1["ancestors"]:
-                    node["children"].append(node1)
-            sorted(node["children"], key=lambda x: x["id"])
+                    children.append(node1)
+            sorted(children, key=lambda x: x["id"])
+            if children:
+                node["children"] = children
         return upper_tier
 
     def _path_is_valid(self, path: list) -> bool:
