@@ -60,10 +60,6 @@ class FilterTree(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_count(self, tiered_keys: list, id) -> list:
-        pass
-
-    @abstractmethod
     def raw_search(self, tiered_keys: list) -> list:
         """
         Basic unit of searching, given the path to the parent and the filter string. Output can be a list of any type, and is

@@ -1,8 +1,7 @@
 from usaspending_api.common.helpers.business_logic_helpers import cfo_presentation_order, faba_with_file_D_data
-from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.references.v2.views.filter_tree.filter_tree import FilterTree
-from usaspending_api.references.models import ToptierAgency
-from django.db.models import Exists, OuterRef, Q, F
+from django.db.models import Exists, OuterRef, Q, F, Count
 
 
 class TASFilterTree(FilterTree):
@@ -82,27 +81,35 @@ class TASFilterTree(FilterTree):
         query = Q()
         if tier2_nodes:
             fed_account = [node["ancestors"][1] for node in tier2_nodes]
-            query |= Q(federal_account_code__in=fed_account)
+            query |= Q(federal_account__federal_account_code__in=fed_account)
         if len(ancestor_array):
             agency = ancestor_array[0]
             filters.append(Q(agency=agency))
         if filter_string:
-            query |= Q(Q(federal_account_code__icontains=filter_string) | Q(account_title__icontains=filter_string))
+            query |= Q(
+                Q(federal_account__federal_account_code__icontains=filter_string)
+                | Q(federal_account__account_title__icontains=filter_string)
+            )
         if query != Q():
             filters.append(query)
-        data = FederalAccount.objects.annotate(
-            has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk"))),
-            agency=F("parent_toptier_agency__toptier_code"),
-        ).filter(*filters)
+        data = (
+            TreasuryAppropriationAccount.objects.annotate(
+                has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk"))),
+            )
+            .annotate(agency=F("federal_account__parent_toptier_agency__toptier_code"))
+            .filter(*filters)
+            .values("federal_account__federal_account_code", "federal_account__account_title", "agency")
+            .annotate(count=Count("treasury_account_identifier"))
+        )
         retval = []
         for item in data:
-            ancestor_array = [item.agency]
+            ancestor_array = [item["agency"]]
             retval.append(
                 {
-                    "id": item.federal_account_code,
+                    "id": item["federal_account__federal_account_code"],
                     "ancestors": ancestor_array,
-                    "description": item.account_title,
-                    "count": self.get_count(ancestor_array, item.federal_account_code),
+                    "description": item["federal_account__account_title"],
+                    "count": item["count"],
                     "children": None,
                 }
             )
@@ -119,15 +126,16 @@ class TASFilterTree(FilterTree):
         if query != Q():
             filters.append(query)
         agency_set = (
-            ToptierAgency.objects.annotate(
-                has_faba=Exists(
-                    faba_with_file_D_data().filter(
-                        treasury_account__federal_account__parent_toptier_agency=OuterRef("pk")
-                    )
-                )
+            TreasuryAppropriationAccount.objects.annotate(
+                has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk"))),
             )
-            .filter(*filters)
-            .values("toptier_code", "name", "abbreviation")
+            .filter(has_faba=True)
+            .values(
+                "federal_account__parent_toptier_agency__toptier_code",
+                "federal_account__parent_toptier_agency__name",
+                "federal_account__parent_toptier_agency__abbreviation",
+            )
+            .annotate(count=Count("treasury_account_identifier"))
         )
         agency_dictionaries = [self._dictionary_from_agency(agency) for agency in agency_set]
         cfo_sort_results = cfo_presentation_order(agency_dictionaries)
@@ -137,41 +145,16 @@ class TASFilterTree(FilterTree):
                 "id": agency["toptier_code"],
                 "ancestors": [],
                 "description": f"{agency['name']} ({agency['abbreviation']})",
-                "count": self.get_count([], agency["toptier_code"]),
+                "count": agency["count"],
                 "children": None,
             }
             for agency in agencies
         ]
 
     def _dictionary_from_agency(self, agency):
-        return {"toptier_code": agency["toptier_code"], "name": agency["name"], "abbreviation": agency["abbreviation"]}
-
-    def get_count(self, tiered_keys: list, id) -> int:
-        if len(tiered_keys) == 0:
-            taa_filters = [
-                Q(has_faba=True),
-                Q(federal_account__parent_toptier_agency__toptier_code=id),
-            ]
-            taa_count = (
-                TreasuryAppropriationAccount.objects.annotate(
-                    has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
-                )
-                .filter(*taa_filters)
-                .count()
-            )
-            return taa_count
-        if len(tiered_keys) == 1:
-            taa_filters = [
-                Q(has_faba=True),
-                Q(federal_account__federal_account_code=id),
-            ]
-            taa_count = (
-                TreasuryAppropriationAccount.objects.annotate(
-                    has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
-                )
-                .filter(*taa_filters)
-                .count()
-            )
-            return taa_count
-        else:
-            return 1
+        return {
+            "toptier_code": agency["federal_account__parent_toptier_agency__toptier_code"],
+            "name": agency["federal_account__parent_toptier_agency__name"],
+            "abbreviation": agency["federal_account__parent_toptier_agency__abbreviation"],
+            "count": agency["count"],
+        }
