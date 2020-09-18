@@ -36,9 +36,7 @@ FROM (
         sa.reporting_period_start >= '2020-04-01'
         AND faba.submission_id = sa.submission_id
     INNER JOIN dabs_submission_window_schedule dabs ON
-        dabs.submission_fiscal_year = sa.reporting_fiscal_year
-        AND dabs.submission_fiscal_month = sa.reporting_fiscal_period
-        AND dabs.is_quarter = sa.quarter_format_flag
+        dabs.id = sa.submission_window_id
         AND dabs.submission_reveal_date <= now()
     WHERE
         faba.award_id IS NOT NULL
