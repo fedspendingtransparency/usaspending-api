@@ -120,19 +120,22 @@ class TASFilterTree(FilterTree):
         query = Q()
         if tier1_nodes:
             agency_ids = [node["ancestors"][0] for node in tier1_nodes]
-            query |= Q(toptier_code__in=agency_ids)
+            query |= Q(federal_account__parent_toptier_agency__toptier_code__in=agency_ids)
         if filter_string:
-            query |= Q(Q(toptier_code__icontains=filter_string) | Q(name__icontains=filter_string))
+            query |= Q(
+                Q(federal_account__parent_toptier_agency__toptier_code__icontains=filter_string)
+                | Q(federal_account__parent_toptier_agency__toptier_code__icontains=filter_string)
+            )
         if query != Q():
             filters.append(query)
         agency_set = (
             TreasuryAppropriationAccount.objects.annotate(
                 has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk"))),
             )
-            .filter(has_faba=True)
+            .filter(*filters)
             .values(
                 "federal_account__parent_toptier_agency__toptier_code",
-                "federal_account__parent_toptier_agency__name",
+                "federal_account__parent_toptier_agency__toptier_code",
                 "federal_account__parent_toptier_agency__abbreviation",
             )
             .annotate(count=Count("treasury_account_identifier"))
