@@ -93,3 +93,25 @@ def test_null_agencies_accounts(client, monkeypatch, basic_idvs):
     response = client.post(AGGREGATE_ENDPOINT, {"award_id": 2})
     assert awarding_agency_count == response.data["awarding_agency_count"] + 1
     assert funding_agency_count == response.data["funding_agency_count"] + 1
+
+
+@pytest.mark.django_db
+def test_with_unrevealed_submissions(client, monkeypatch, idv_with_unreleased_submissions):
+    response = client.post(AGGREGATE_ENDPOINT, {"award_id": 2})
+    assert json.loads(response.content.decode("utf-8")) == {
+        "awarding_agency_count": 0,
+        "federal_account_count": 0,
+        "funding_agency_count": 0,
+        "total_transaction_obligated_amount": 0.0,
+    }
+
+
+@pytest.mark.django_db
+def test_with_revealed_submissions(client, monkeypatch, idv_with_released_submissions):
+    response = client.post(AGGREGATE_ENDPOINT, {"award_id": 2})
+    assert json.loads(response.content.decode("utf-8")) == {
+        "awarding_agency_count": 7,
+        "federal_account_count": 7,
+        "funding_agency_count": 7,
+        "total_transaction_obligated_amount": 1400084.0,
+    }
