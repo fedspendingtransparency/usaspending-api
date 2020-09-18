@@ -154,6 +154,7 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
                 fields=[
                     "submission",
                     "distinct_award_key",
+                    "piid",
                     "transaction_obligated_amount",
                     "gross_outlay_amount_by_award_cpe",
                 ],
