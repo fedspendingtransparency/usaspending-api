@@ -1,32 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass
 
 DEFAULT_CHILDREN = 0
-
-
-@dataclass
-class UnlinkedNode:
-    id: str
-    ancestors: list
-    description: str
-
-
-@dataclass
-class Node:
-    id: str
-    ancestors: list
-    description: str
-    count: int
-    children: list
-
-    def to_JSON(self):
-        return {
-            "id": self.id,
-            "ancestors": self.ancestors,
-            "description": self.description,
-            "count": self.count,
-            "children": [elem.to_JSON() for elem in self.children] if self.children is not None else None,
-        }
 
 
 class FilterTree(metaclass=ABCMeta):
@@ -42,22 +16,6 @@ class FilterTree(metaclass=ABCMeta):
 
         retval = self.raw_search(ancestor_array, child_layers, filter_string)
         return retval
-
-    @abstractmethod
-    def tier_3_search(self) -> list:
-        pass
-
-    @abstractmethod
-    def tier_2_search(self) -> list:
-        pass
-
-    @abstractmethod
-    def tier_1_search(self) -> list:
-        pass
-
-    @abstractmethod
-    def toptier_search(self) -> list:
-        pass
 
     @abstractmethod
     def raw_search(self, tiered_keys: list) -> list:
