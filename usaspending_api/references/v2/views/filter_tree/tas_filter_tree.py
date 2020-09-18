@@ -124,7 +124,7 @@ class TASFilterTree(FilterTree):
         if filter_string:
             query |= Q(
                 Q(federal_account__parent_toptier_agency__toptier_code__icontains=filter_string)
-                | Q(federal_account__parent_toptier_agency__toptier_code__icontains=filter_string)
+                | Q(federal_account__parent_toptier_agency__name__icontains=filter_string)
             )
         if query != Q():
             filters.append(query)
@@ -135,7 +135,7 @@ class TASFilterTree(FilterTree):
             .filter(*filters)
             .values(
                 "federal_account__parent_toptier_agency__toptier_code",
-                "federal_account__parent_toptier_agency__toptier_code",
+                "federal_account__parent_toptier_agency__name",
                 "federal_account__parent_toptier_agency__abbreviation",
             )
             .annotate(count=Count("treasury_account_identifier"))
