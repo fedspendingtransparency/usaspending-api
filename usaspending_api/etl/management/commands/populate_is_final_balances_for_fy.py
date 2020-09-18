@@ -19,7 +19,7 @@ WITH final_balance_submissions AS (
                 DISTINCT ON
                 (
                     is_quarter, submission_fiscal_year
-                ) submission_fiscal_year, submission_fiscal_month, is_quarter, submission_due_date
+                ) submission_fiscal_year, submission_fiscal_month, is_quarter, submission_due_date, id
             FROM
                 dabs_submission_window_schedule
             WHERE
@@ -27,9 +27,7 @@ WITH final_balance_submissions AS (
             ORDER BY
                 is_quarter, submission_fiscal_year DESC, submission_fiscal_month DESC
         ) AS latest_closed_periods_per_fy ON
-        sa.reporting_fiscal_year = latest_closed_periods_per_fy.submission_fiscal_year
-        AND sa.reporting_fiscal_period = latest_closed_periods_per_fy.submission_fiscal_month
-        AND sa.quarter_format_flag = latest_closed_periods_per_fy.is_quarter
+        sa.submission_window_id = latest_closed_periods_per_fy.id
     ORDER BY
         sa.toptier_code, sa.reporting_fiscal_year, latest_closed_periods_per_fy.submission_due_date DESC
 )

@@ -38,14 +38,14 @@ env:
   - GRANTS_API_KEY=${GRANTS_API_KEY}
 
 before_install:
-  - npm install --global dredd@11.2.19
+  - travis_retry npm install --global dredd@13.1.2
 
 install:
   - travis_retry pip install -r requirements/requirements.txt
   - travis_retry pip install coveralls
   # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
   - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
-  - git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
+  - travis_retry git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
 
 before_script:
   # Get dependencies to report code coverage to code climate

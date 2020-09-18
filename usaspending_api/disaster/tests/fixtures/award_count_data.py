@@ -101,6 +101,7 @@ def award_count_submission():
         quarter_format_flag=False,
         is_final_balances_for_fy=True,
         reporting_period_start="2022-04-01",
+        submission_window_id=20220800,
     )
 
 
@@ -110,6 +111,7 @@ def _award_count_early_submission():
     ):  # hack since in some environments these auto-populate
         mommy.make(
             "submissions.DABSSubmissionWindowSchedule",
+            id=20200700,
             is_quarter=False,
             submission_fiscal_year=2020,
             submission_fiscal_quarter=3,
@@ -123,6 +125,7 @@ def _award_count_early_submission():
         reporting_fiscal_period=7,
         quarter_format_flag=False,
         reporting_period_start="2020-04-01",
+        submission_window_id=20200700,
     )
 
 
@@ -136,6 +139,7 @@ def award_count_quarterly_submission():
         quarter_format_flag=True,
         is_final_balances_for_fy=True,
         reporting_period_start="2022-04-01",
+        submission_window_id=20220801,
     )
 
 
@@ -143,6 +147,7 @@ def award_count_quarterly_submission():
 def award_count_sub_schedule():
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=20220800,
         is_quarter=False,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
@@ -151,6 +156,7 @@ def award_count_sub_schedule():
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=20220801,
         is_quarter=True,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
