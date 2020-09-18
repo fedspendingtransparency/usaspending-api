@@ -1,3 +1,5 @@
+import logging
+
 from datetime import datetime, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -9,8 +11,10 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type, fy as parse_fiscal_year
 from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
-from usaspending_api.etl.es_etl_helpers import printf
+from usaspending_api.etl.es_etl_helpers import format_log
 from usaspending_api.etl.rapidloader import Rapidloader
+
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
@@ -110,9 +114,9 @@ class Command(BaseCommand):
         config = process_cli_parameters(options, elasticsearch_client)
 
         start = perf_counter()
-        printf({"msg": f"Starting script\n{'=' * 56}"})
+        logger.info(format_log(f"Starting script\n{'=' * 56}"))
         start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
-        printf({"msg": start_msg.format(**config)})
+        logger.info(format_log(start_msg.format(**config)))
 
         if config["load_type"] == "transactions":
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
@@ -123,9 +127,9 @@ class Command(BaseCommand):
         loader.run_load_steps()
         loader.complete_process()
 
-        printf({"msg": "---------------------------------------------------------------"})
-        printf({"msg": f"Script completed in {perf_counter() - start:.2f}s"})
-        printf({"msg": "---------------------------------------------------------------"})
+        logger.info(format_log("---------------------------------------------------------------"))
+        logger.info(format_log(f"Script completed in {perf_counter() - start:.2f}s"))
+        logger.info(format_log("---------------------------------------------------------------"))
 
 
 def process_cli_parameters(options: dict, es_client) -> dict:
@@ -177,24 +181,24 @@ def process_cli_parameters(options: dict, es_client) -> dict:
         if config["load_type"] == "awards":
             write_alias = settings.ES_AWARDS_WRITE_ALIAS
         if config["index_name"]:
-            printf({"msg": f"Ignoring provided index name, using alias '{write_alias}' for incremental load"})
+            logger.info(format_log(f"Ignoring provided index name, using alias '{write_alias}' for incremental load"))
         config["index_name"] = write_alias
         if not es_client.cat.aliases(name=write_alias):
-            printf({"msg": f"Fatal error: write alias '{write_alias}' is missing"})
+            logger.error(format_log(f"Write alias '{write_alias}' is missing"))
             raise SystemExit(1)
     else:
         if es_client.indices.exists(config["index_name"]):
-            printf({"msg": "Fatal error: data load into existing index. Change index name or run an incremental load"})
+            logger.error(format_log(f"Data load into existing index. Change index name or run an incremental load"))
             raise SystemExit(1)
 
     if not config["directory"].is_dir():
-        printf({"msg": "Fatal error: provided directory does not exist"})
+        logger.error(format_log(f"Provided directory does not exist"))
         raise SystemExit(1)
     elif config["starting_date"] < default_datetime:
-        printf({"msg": f"Fatal error: --start-datetime is too early. Set no earlier than {default_datetime}"})
+        logger.error(format_log(f"--start-datetime is too early. Set no earlier than {default_datetime}"))
         raise SystemExit(1)
     elif not config["is_incremental_load"] and config["process_deletes"]:
-        printf({"msg": "Skipping deletions for ths load, --deleted overwritten to False"})
+        logger.error(format_log("Skipping deletions for ths load, --deleted overwritten to False"))
         config["process_deletes"] = False
 
     config["ingest_wait"] = options["idle_wait_time"]
