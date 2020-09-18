@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.etl.transaction_loaders.cached_reference_data import subtier_agency_list
@@ -23,10 +22,6 @@ def _fetch_subtier_agency_id(code):
 
 def current_datetime(broker_input):
     return datetime.now(timezone.utc)
-
-
-def business_categories(broker_input):
-    return get_business_categories(broker_input, "fpds")
 
 
 def created_at(broker_input):
