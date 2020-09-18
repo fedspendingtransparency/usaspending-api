@@ -158,20 +158,21 @@ def test_configure_sql_strings():
     config["fiscal_year"] = 2019
     config["root_index"] = "award-query"
     config["load_type"] = "awards"
-    copy, id, count = configure_sql_strings(config, "filename", [1])
-    copy_sql = """"COPY (
+    copy_sql, count_sql = configure_sql_strings(config, "filename", [1])
+    expected_copy_sql = """"COPY (
     SELECT *
     FROM award_delta_view
     WHERE fiscal_year=2019 AND update_date >= '2007-10-01 00:00:00+00:00'
 ) TO STDOUT DELIMITER ',' CSV HEADER" > 'filename'
 """
-    count_sql = """
+    expected_count_sql = """
 SELECT COUNT(*) AS count
 FROM award_delta_view
 WHERE fiscal_year=2019 AND update_date >= '2007-10-01 00:00:00+00:00'
 """
-    assert copy == copy_sql
-    assert count == count_sql
+
+    assert expected_copy_sql == copy_sql
+    assert expected_count_sql == count_sql
 
 
 # SQL method is being mocked here since the `execute_sql_statement` used doesn't use the same DB connection to avoid multiprocessing errors
