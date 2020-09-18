@@ -3,7 +3,7 @@ import re
 from django.db.models import Q
 from string import ascii_uppercase, digits
 from usaspending_api.references.models import PSC
-from usaspending_api.references.v2.views.filter_tree.filter_tree import UnlinkedNode, FilterTree
+from usaspending_api.references.v2.views.filter_tree.filter_tree import FilterTree
 
 
 PSC_GROUPS = {
@@ -32,7 +32,6 @@ class PSCFilterTree(FilterTree):
     def raw_search(self, tiered_keys, child_layers, filter_string):
         if not self._path_is_valid(tiered_keys):
             return []
-        retval = []
         if len(tiered_keys) == 0:
             if child_layers != 0:
                 if child_layers == 2 or child_layers == -1:
@@ -107,7 +106,7 @@ class PSCFilterTree(FilterTree):
                     "ancestors": ancestors,
                     "description": object.description,
                     "count": 0,
-                    "children": [],
+                    "children": None,
                 }
             )
         return retval
@@ -118,7 +117,7 @@ class PSCFilterTree(FilterTree):
         if ancestor_array:
             parent = ancestor_array[-1]
             if len(parent) > 3:
-                filters.append(Q(code__iregex=PSC_GROUPS.get(parent, {}).get("pattern") or "(?!)"))
+                query |= Q(code__iregex=PSC_GROUPS.get(parent, {}).get("pattern") or "(?!)")
             else:
                 query |= Q(code__startswith=parent)
         if lower_tier_nodes:
@@ -131,8 +130,7 @@ class PSCFilterTree(FilterTree):
                 query |= Q(code=code)
         if filter_string:
             query |= Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string))
-        if query != Q():
-            filters.append(query)
+        filters.append(query)
         retval = []
         for object in PSC.objects.filter(*filters):
             ancestors = []
@@ -141,7 +139,6 @@ class PSCFilterTree(FilterTree):
             elif object.code[0] == "A":
                 ancestors.append("Research and Development")
                 ancestors.append(object.code[:2])
-
             else:
                 ancestors.append("Service")
                 ancestors.append(object.code[:1])
@@ -197,7 +194,6 @@ class PSCFilterTree(FilterTree):
             return [
                 {"id": key, "ancestors": [], "description": "", "count": self.get_count([], key), "children": []}
                 for key in PSC_GROUPS.keys()
-                if filter_string and filter_string.upper() in key.upper()
             ]
         if tier1_nodes:
             toptier_codes = [node["id"][:1] for node in tier1_nodes]
@@ -212,11 +208,11 @@ class PSCFilterTree(FilterTree):
                             "children": None,
                         }
                     )
-        for key in PSC_GROUPS.keys():
-            if filter_string and filter_string.upper() in key.upper():
-                retval.append(
-                    {"id": key, "ancestors": [], "description": "", "count": self.get_count([], key), "children": None,}
-                )
+        # for key in PSC_GROUPS.keys():
+        #     if filter_string and filter_string.upper() in key.upper():
+        #         retval.append(
+        #             {"id": key, "ancestors": [], "description": "", "count": self.get_count([], key), "children": None,}
+        #         )
         return retval
 
     def _combine_nodes(self, upper_tier, lower_tier):

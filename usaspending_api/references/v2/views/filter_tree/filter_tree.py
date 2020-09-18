@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Any
 
 DEFAULT_CHILDREN = 0
 

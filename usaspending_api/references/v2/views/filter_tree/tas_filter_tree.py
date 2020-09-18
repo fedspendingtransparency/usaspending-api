@@ -1,6 +1,6 @@
 from usaspending_api.common.helpers.business_logic_helpers import cfo_presentation_order, faba_with_file_D_data
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
-from usaspending_api.references.v2.views.filter_tree.filter_tree import UnlinkedNode, FilterTree
+from usaspending_api.references.v2.views.filter_tree.filter_tree import FilterTree
 from usaspending_api.references.models import ToptierAgency
 from django.db.models import Exists, OuterRef, Q, F
 
@@ -173,6 +173,5 @@ class TASFilterTree(FilterTree):
                 .count()
             )
             return taa_count
-        if len(tiered_keys) == 2:
+        else:
             return 1
-        return 0
