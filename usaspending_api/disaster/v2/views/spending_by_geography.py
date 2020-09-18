@@ -1,3 +1,5 @@
+import json
+
 from decimal import Decimal
 from enum import Enum
 from typing import Optional, List, Dict
@@ -7,7 +9,6 @@ from rest_framework.response import Response
 from elasticsearch_dsl import A, Q as ES_Q
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -156,7 +157,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                 shape_code = None
                 population = None
             else:
-                geo_info = json_str_to_dict(bucket.get("key"))
+                geo_info = json.loads(bucket.get("key"))
                 state_code = geo_info["state_code"]
                 population = int(geo_info["population"]) if geo_info["population"] else None
 

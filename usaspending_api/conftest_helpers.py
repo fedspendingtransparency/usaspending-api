@@ -68,10 +68,13 @@ class TestElasticSearchIndex:
 
         for transaction in transactions:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
-            routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
-            routing_value = transaction.get(routing_key)
             if self.index_type == "transactions":
                 transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
+            for key in transaction.keys():
+                if "agg_key" in key:
+                    transaction[key] = json.dumps(transaction[key], sort_keys=True)
+            routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
+            routing_value = transaction.get(routing_key)
             self.client.index(
                 index=self.index_name,
                 body=json.dumps(transaction, cls=DjangoJSONEncoder),

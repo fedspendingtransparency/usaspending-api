@@ -1,8 +1,7 @@
-import re
+import json
 
 from typing import List
 
-from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchLoansPaginationMixin,
@@ -26,11 +25,11 @@ class RecipientLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisa
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
         for bucket in info_buckets:
-            info = json_str_to_dict(bucket.get("key"))
+            info = json.loads(bucket.get("key"))
 
             # Build a list of hash IDs to handle multiple levels
             recipient_hash = info.get("hash")
-            recipient_levels = sorted(list(re.sub("[{},]", "", info.get("levels", ""))))
+            recipient_levels = sorted(info.get("levels", []))
             if recipient_hash and recipient_levels:
                 recipient_hash_list = [f"{recipient_hash}-{level}" for level in recipient_levels]
             else:

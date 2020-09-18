@@ -1,10 +1,11 @@
+import json
+
 from typing import List
 
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchLoansPaginationMixin,
 )
-from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.references.models import Cfda
 from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
@@ -24,11 +25,11 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
 
-        cfda_prefetch_pks = [json_str_to_dict(bucket.get("key")).get("code") for bucket in info_buckets]
+        cfda_prefetch_pks = [json.loads(bucket.get("key")).get("code") for bucket in info_buckets]
         prefetched_cfdas = Cfda.objects.filter(program_number__in=cfda_prefetch_pks)
 
         for bucket in info_buckets:
-            info = json_str_to_dict(bucket.get("key"))
+            info = json.loads(bucket.get("key"))
             toAdd = {
                 "id": int(info.get("id")) if info.get("id") else None,
                 "code": info.get("code") or None,

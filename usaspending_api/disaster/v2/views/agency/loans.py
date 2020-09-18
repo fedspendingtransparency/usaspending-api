@@ -1,3 +1,4 @@
+import json
 import logging
 
 from django.contrib.postgres.fields import ArrayField
@@ -6,7 +7,6 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from typing import List
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
@@ -117,7 +117,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
         return results
 
     def _build_json_result(self, bucket: dict):
-        info = json_str_to_dict(bucket.get("key"))
+        info = json.loads(bucket.get("key"))
         return {
             "id": int(info["id"]),
             "code": info["code"],

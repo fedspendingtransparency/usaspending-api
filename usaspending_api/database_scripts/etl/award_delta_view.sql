@@ -28,17 +28,18 @@ SELECT
   CASE
     WHEN recipient_profile.recipient_hash IS NULL or recipient_profile.recipient_levels IS NULL
       THEN
-        CONCAT(
-          '{"name":"', vw_es_award_search.recipient_name,
-          '","unique_id":"', vw_es_award_search.recipient_unique_id,
-          '","hash":"","levels":""}'
+        JSON_BUILD_OBJECT(
+          'name', vw_es_award_search.recipient_name,
+          'unique_id', vw_es_award_search.recipient_unique_id,
+          'hash','',
+          'levels',''
         )
     ELSE
-      CONCAT(
-        '{"name":"', vw_es_award_search.recipient_name,
-        '","unique_id":"', vw_es_award_search.recipient_unique_id,
-        '","hash":"', recipient_profile.recipient_hash,
-        '","levels":"', recipient_profile.recipient_levels, '"}'
+      JSON_BUILD_OBJECT(
+        'name', vw_es_award_search.recipient_name,
+        'unique_id', vw_es_award_search.recipient_unique_id,
+        'hash', recipient_profile.recipient_hash,
+        'levels', recipient_profile.recipient_levels
       )
   END AS recipient_agg_key,
 
@@ -68,19 +69,19 @@ SELECT
   vw_es_award_search.funding_subtier_agency_code,
   CASE
     WHEN vw_es_award_search.funding_toptier_agency_name IS NOT NULL
-      THEN CONCAT(
-        '{"name":"', vw_es_award_search.funding_toptier_agency_name,
-        '","code":"', vw_es_award_search.funding_toptier_agency_code,
-        '","id":"', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1), '"}'
+      THEN JSON_BUILD_OBJECT(
+        'name', vw_es_award_search.funding_toptier_agency_name,
+        'code', vw_es_award_search.funding_toptier_agency_code,
+        'id', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1)
       )
     ELSE NULL
   END AS funding_toptier_agency_agg_key,
   CASE
     WHEN vw_es_award_search.funding_subtier_agency_name IS NOT NULL
-      THEN CONCAT(
-        '{"name":"', vw_es_award_search.funding_subtier_agency_name,
-        '","code":"', vw_es_award_search.funding_subtier_agency_code,
-        '","id":"', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1), '"}'
+      THEN JSON_BUILD_OBJECT(
+        'name', vw_es_award_search.funding_subtier_agency_name,
+        'code', vw_es_award_search.funding_subtier_agency_code,
+        'id', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1)
       )
     ELSE NULL
   END AS funding_subtier_agency_agg_key,
@@ -108,11 +109,11 @@ SELECT
   cfda.program_title AS cfda_title,
   CASE
     WHEN vw_es_award_search.cfda_number IS NOT NULL
-      THEN CONCAT(
-        '{"code":"', vw_es_award_search.cfda_number,
-        '","description":"', cfda.program_title,
-        '","id":"', cfda.id,
-        '","url":"', CASE WHEN cfda.url = 'None;' THEN NULL ELSE cfda.url END, '"}'
+      THEN JSON_BUILD_OBJECT(
+        'code', vw_es_award_search.cfda_number,
+        'description', cfda.program_title,
+        'id', cfda.id,
+        'url', CASE WHEN cfda.url = 'None;' THEN NULL ELSE cfda.url END
       )
     ELSE NULL
   END AS cfda_agg_key,
@@ -131,13 +132,13 @@ SELECT
     WHEN
         vw_es_award_search.recipient_location_state_code IS NOT NULL
         AND vw_es_award_search.recipient_location_county_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.recipient_location_country_code,
-        '","state_code":"', vw_es_award_search.recipient_location_state_code,
-        '","state_fips":"', RL_STATE_LOOKUP.fips,
-        '","county_code":"', vw_es_award_search.recipient_location_county_code,
-        '","county_name":"', vw_es_award_search.recipient_location_county_name,
-        '","population":"', RL_COUNTY_POPULATION.latest_population, '"}'
+      THEN JSON_BUILD_OBJECT(
+        'country_code', vw_es_award_search.recipient_location_country_code,
+        'state_code', vw_es_award_search.recipient_location_state_code,
+        'state_fips', RL_STATE_LOOKUP.fips,
+        'county_code', vw_es_award_search.recipient_location_county_code,
+        'county_name', vw_es_award_search.recipient_location_county_name,
+        'population', RL_COUNTY_POPULATION.latest_population
       )
     ELSE NULL
   END AS recipient_location_county_agg_key,
@@ -145,56 +146,56 @@ SELECT
     WHEN
         vw_es_award_search.recipient_location_state_code IS NOT NULL
         AND vw_es_award_search.recipient_location_congressional_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.recipient_location_country_code,
-        '","state_code":"', vw_es_award_search.recipient_location_state_code,
-        '","state_fips":"', RL_STATE_LOOKUP.fips,
-        '","congressional_code":"', vw_es_award_search.recipient_location_congressional_code,
-        '","population":"', RL_DISTRICT_POPULATION.latest_population, '"}'
+      THEN JSON_BUILD_OBJECT(
+        'country_code', vw_es_award_search.recipient_location_country_code,
+        'state_code', vw_es_award_search.recipient_location_state_code,
+        'state_fips', RL_STATE_LOOKUP.fips,
+        'congressional_code', vw_es_award_search.recipient_location_congressional_code,
+        'population', RL_DISTRICT_POPULATION.latest_population
       )
     ELSE NULL
   END AS recipient_location_congressional_agg_key,
   CASE
     WHEN vw_es_award_search.recipient_location_state_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.recipient_location_country_code,
-        '","state_code":"', vw_es_award_search.recipient_location_state_code,
-        '","state_name":"', RL_STATE_LOOKUP.name,
-        '","population":"', RL_STATE_POPULATION.latest_population, '"}'
+      THEN JSON_BUILD_OBJECT(
+        'country_code', vw_es_award_search.recipient_location_country_code,
+        'state_code', vw_es_award_search.recipient_location_state_code,
+        'state_name', RL_STATE_LOOKUP.name,
+        'population', RL_STATE_POPULATION.latest_population
       )
     ELSE NULL
   END AS recipient_location_state_agg_key,
 
   CASE
     WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_county_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.pop_country_code,
-        '","state_code":"', vw_es_award_search.pop_state_code,
-        '","state_fips":"', POP_STATE_LOOKUP.fips,
-        '","county_code":"', vw_es_award_search.pop_county_code,
-        '","county_name":"', vw_es_award_search.pop_county_name,
-        '","population":"', POP_COUNTY_POPULATION.latest_population, '"}'
+      THEN JSON_BUILD_OBJECT(
+        'country_code', vw_es_award_search.pop_country_code,
+        'state_code', vw_es_award_search.pop_state_code,
+        'state_fips', POP_STATE_LOOKUP.fips,
+        'county_code', vw_es_award_search.pop_county_code,
+        'county_name', vw_es_award_search.pop_county_name,
+        'population', POP_COUNTY_POPULATION.latest_population
       )
     ELSE NULL
   END AS pop_county_agg_key,
   CASE
     WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_congressional_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.pop_country_code,
-        '","state_code":"', vw_es_award_search.pop_state_code,
-        '","state_fips":"', POP_STATE_LOOKUP.fips,
-        '","congressional_code":"', vw_es_award_search.pop_congressional_code,
-        '","population":"', POP_DISTRICT_POPULATION.latest_population, '"}'
+      THEN JSON_BUILD_OBJECT(
+        'country_code', vw_es_award_search.pop_country_code,
+        'state_code', vw_es_award_search.pop_state_code,
+        'state_fips', POP_STATE_LOOKUP.fips,
+        'congressional_code', vw_es_award_search.pop_congressional_code,
+        'population', POP_DISTRICT_POPULATION.latest_population
       )
     ELSE NULL
   END AS pop_congressional_agg_key,
   CASE
     WHEN vw_es_award_search.pop_state_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.pop_country_code,
-        '","state_code":"', vw_es_award_search.pop_state_code,
-         '","state_name":"', POP_STATE_LOOKUP.name,
-        '","population":"', POP_STATE_POPULATION.latest_population, '"}'
+      THEN JSON_BUILD_OBJECT(
+        'country_code', vw_es_award_search.pop_country_code,
+        'state_code', vw_es_award_search.pop_state_code,
+        'state_name', POP_STATE_LOOKUP.name,
+        'population', POP_STATE_POPULATION.latest_population
       )
     ELSE NULL
   END AS pop_state_agg_key,

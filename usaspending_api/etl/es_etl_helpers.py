@@ -212,7 +212,7 @@ COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
     WHERE {type_fy}fiscal_year={fy} AND update_date >= '{update_date}'
-) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
+) TO STDOUT WITH (DELIMITER ',', ESCAPE '\\', QUOTE '\\"', FORMAT CSV, HEADER)" > '{filename}'
 """
 
 CHECK_IDS_SQL = """
@@ -280,12 +280,31 @@ def convert_postgres_json_array_as_string_to_list(json_array_as_string: str) -> 
     if json_array_as_string is None or len(json_array_as_string) == 0:
         return None
     result = []
-    json_array = json.loads(json_array_as_string)
+    try:
+        json_array = json.loads(json_array_as_string)
+    except json.decoder.JSONDecodeError:
+        raise ValueError(f"Unable to parse {json_array_as_string}")
     for j in json_array:
         for key, value in j.items():
             j[key] = "" if value is None else str(j[key])
         result.append(json.dumps(j, sort_keys=True))
     return result
+
+
+def convert_postgres_json_as_string_to_sorted_json(json_as_string: str) -> Optional[dict]:
+    """
+        Postgres JSON are stored in CSVs as strings. Since we want to avoid nested types
+        in Elasticsearch the JSON arrays are converted to sorted dictionaries to make parsing easier
+        and then converted back into a formatted string.
+    """
+    if json_as_string is None or len(json_as_string) == 0:
+        return None
+    try:
+        sorted_json_string = json.dumps(json.loads(json_as_string), sort_keys=True)
+    except json.decoder.JSONDecodeError:
+        raise ValueError(f"Unable to parse {json_as_string}")
+
+    return sorted_json_string
 
 
 def process_guarddog(process_list):
@@ -439,9 +458,19 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
         "federal_accounts": convert_postgres_json_array_as_string_to_list,
         "disaster_emergency_fund_codes": convert_postgres_array_as_string_to_list,
     }
+    view_columns = AWARD_VIEW_COLUMNS if load_type == "awards" else VIEW_COLUMNS
+    converters.update({k: convert_postgres_json_as_string_to_sorted_json for k in view_columns if "agg_key" in k})
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
-    for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
+    dtype = {k: str for k in view_columns if k not in converters}
+    read_csv_arguments = {
+        "dtype": dtype,
+        "converters": converters,
+        "header": 0,
+        "chunksize": chunksize,
+        "escapechar": "\\",
+        "quotechar": '"',
+    }
+    for file_df in pd.read_csv(filename, **read_csv_arguments):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
         # Route all documents with the same recipient to the same shard
         # This allows for accuracy and early-termination of "top N" recipient category aggregation queries

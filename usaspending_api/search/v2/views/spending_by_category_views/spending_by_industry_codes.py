@@ -1,10 +1,11 @@
+import json
+
 from abc import ABCMeta
 from decimal import Decimal
 from django.db.models import QuerySet, F
 from enum import Enum
 from typing import List
 
-from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_cfda_id_title_by_number,
     fetch_psc_description_by_code,
@@ -33,7 +34,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
         results = []
         industry_code_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in industry_code_info_buckets:
-            industry_code_info = json_str_to_dict(bucket.get("key"))
+            industry_code_info = json.loads(bucket.get("key"))
 
             results.append(
                 {
