@@ -43,12 +43,6 @@ class FilterTree(metaclass=ABCMeta):
 
         retval = self.raw_search(ancestor_array, child_layers, filter_string)
         return retval
-        # retval = [
-        #     self._linked_node_from_data(ancestor_array, elem, filter_string, child_layers)
-        #     for elem in self.raw_search(ancestor_array, filter_string)
-        # ]
-        # if filter_string:
-        #     retval = [elem for elem in retval if self.matches_filter(elem, filter_string)]
 
     @abstractmethod
     def tier_3_search(self) -> list:
@@ -66,28 +60,6 @@ class FilterTree(metaclass=ABCMeta):
     def toptier_search(self) -> list:
         pass
 
-    def _linked_node_from_data(self, ancestor_array, data, filter_string, child_layers):
-        retval = self.unlinked_node_from_data(ancestor_array, data)
-        if child_layers:
-            raw_children = self.raw_search(ancestor_array + [retval.id], filter_string)
-            temp_children = [
-                self._linked_node_from_data(ancestor_array + [retval.id], elem, filter_string, child_layers - 1)
-                for elem in raw_children
-            ]
-            children = (
-                [child for child in temp_children if self.matches_filter(child, filter_string)]
-                if filter_string
-                else temp_children
-            )
-            count = sum([node.count if node.count else 1 for node in temp_children])
-        else:
-            children = None
-            count = self.get_count(ancestor_array, retval.id)
-
-        return Node(
-            id=retval.id, ancestors=retval.ancestors, description=retval.description, count=count, children=children,
-        )
-
     @abstractmethod
     def get_count(self, tiered_keys: list, id) -> list:
         pass
@@ -103,20 +75,3 @@ class FilterTree(metaclass=ABCMeta):
 
         """
         pass
-
-    @abstractmethod
-    def unlinked_node_from_data(self, ancestors: list, data: Any) -> UnlinkedNode:
-        """
-        :param ancestors: list
-        :param data: Single member of the list provided by raw_search
-        :return: Unlinked Node
-        """
-        pass
-
-    def matches_filter(self, node: Node, filter_string) -> bool:
-        if (filter_string.lower() in node.id.lower()) or (filter_string.lower() in node.description.lower()):
-            return True
-        if node.children:
-            node.children = [elem for elem in node.children if self.matches_filter(elem, filter_string)]
-            return len(node.children) > 0
-        return False

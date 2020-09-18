@@ -8,7 +8,6 @@ from django.db.models import Exists, OuterRef, Q, F
 class TASFilterTree(FilterTree):
     def raw_search(self, tiered_keys, child_layers, filter_string):
         if len(tiered_keys) == 0:
-            tier1_nodes = None
             if child_layers != 0:
                 if child_layers == 2 or child_layers == -1:
                     tier2_nodes = self.tier_2_search(tiered_keys, filter_string)
@@ -39,8 +38,7 @@ class TASFilterTree(FilterTree):
                 if node["id"] in node1["ancestors"]:
                     children.append(node1)
             sorted(children, key=lambda x: x["id"])
-            if children:
-                node["children"] = children
+            node["children"] = children
         return upper_tier
 
     def tier_3_search(self, ancestor_array, filter_string) -> list:
@@ -147,34 +145,6 @@ class TASFilterTree(FilterTree):
 
     def _dictionary_from_agency(self, agency):
         return {"toptier_code": agency["toptier_code"], "name": agency["name"], "abbreviation": agency["abbreviation"]}
-
-    # def _fa_given_agency(self, agency):
-    #     filters = [Q(has_faba=True), Q(parent_toptier_agency__toptier_code=agency)]
-    #     return FederalAccount.objects.annotate(
-    #         has_faba=Exists(faba_with_file_D_data().filter(treasury_account__federal_account=OuterRef("pk")))
-    #     ).filter(*filters)
-    #
-    # def _tas_given_fa(self, agency, fed_account):
-    #     filters = [Q(has_faba=True), Q(main_account_code=fed_account), Q(agency_id=agency)]
-    #     return TreasuryAppropriationAccount.objects.annotate(
-    #         has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk")))
-    #     ).filter(*filters)
-
-    def unlinked_node_from_data(self, ancestors: list, data) -> UnlinkedNode:
-        # if len(ancestors) == 0:  # A tier zero search is returning an agency dictionary
-        #     return self._generate_agency_node(ancestors, data)
-        # if len(ancestors) == 1:  # A tier one search is returning a FederalAccount object
-        #     return self._generate_federal_account_node(ancestors, data)
-        # if len(ancestors) == 2:  # A tier two search will be returning a TreasuryAppropriationAccount object
-        return UnlinkedNode(id=data.tas_rendering_label, ancestors=ancestors, description=data.account_title)
-
-    # def _generate_agency_node(self, ancestors, data):
-    #     return UnlinkedNode(
-    #         id=data["toptier_code"], ancestors=ancestors, description=f"{data['name']} ({data['abbreviation']})"
-    #     )
-    #
-    # def _generate_federal_account_node(self, ancestors, data):
-    #     return UnlinkedNode(id=data.federal_account_code, ancestors=ancestors, description=data.account_title)
 
     def get_count(self, tiered_keys: list, id) -> int:
         if len(tiered_keys) == 0:

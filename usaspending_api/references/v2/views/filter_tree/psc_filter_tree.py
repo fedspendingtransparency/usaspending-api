@@ -32,6 +32,7 @@ class PSCFilterTree(FilterTree):
     def raw_search(self, tiered_keys, child_layers, filter_string):
         if not self._path_is_valid(tiered_keys):
             return []
+        retval = []
         if len(tiered_keys) == 0:
             if child_layers != 0:
                 if child_layers == 2 or child_layers == -1:
@@ -48,7 +49,7 @@ class PSCFilterTree(FilterTree):
                 toptier_nodes = self._combine_nodes(toptier_nodes, tier1_nodes)
             else:
                 toptier_nodes = self.toptier_search(filter_string)
-            return toptier_nodes
+            retval = toptier_nodes
         elif len(tiered_keys) == 1:
             if child_layers != 0:
                 tier3_nodes = self.tier_3_search(tiered_keys, filter_string)
@@ -58,23 +59,24 @@ class PSCFilterTree(FilterTree):
                 tier1_nodes = self._combine_nodes(tier1_nodes, tier2_nodes)
             else:
                 tier1_nodes = self.tier_1_search(tiered_keys, filter_string)
-            return tier1_nodes
+            retval = tier1_nodes
         elif len(tiered_keys) == 2:
             if child_layers != 0:
                 tier3_nodes = self.tier_3_search(tiered_keys, filter_string)
                 tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes)
                 tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
-                return tier2_nodes
+                retval = tier2_nodes
             else:
                 if tiered_keys[0] == "Product":
-                    return self.tier_3_search(tiered_keys, filter_string)
-                return self.tier_2_search(tiered_keys, filter_string)
+                    retval = self.tier_3_search(tiered_keys, filter_string)
+                else:
+                    retval = self.tier_2_search(tiered_keys, filter_string)
         else:
-            return self.tier_3_search(tiered_keys, filter_string)
+            retval = self.tier_3_search(tiered_keys, filter_string)
+        return retval
 
     def tier_3_search(self, ancestor_array, filter_string) -> list:
-        desired_len = 4
-        filters = [Q(length=desired_len)]
+        filters = [Q(length=4)]
         if ancestor_array:
             parent = ancestor_array[-1]
             if len(parent) > 3:
@@ -105,7 +107,7 @@ class PSCFilterTree(FilterTree):
                     "ancestors": ancestors,
                     "description": object.description,
                     "count": 0,
-                    "children": None,
+                    "children": [],
                 }
             )
         return retval
@@ -191,45 +193,30 @@ class PSCFilterTree(FilterTree):
 
     def toptier_search(self, filter_string, tier1_nodes=None):
         retval = []
+        if not filter_string and not tier1_nodes:
+            return [
+                {"id": key, "ancestors": [], "description": "", "count": self.get_count([], key), "children": []}
+                for key in PSC_GROUPS.keys()
+                if filter_string and filter_string.upper() in key.upper()
+            ]
         if tier1_nodes:
             toptier_codes = [node["id"][:1] for node in tier1_nodes]
             for key in PSC_GROUPS.keys():
                 if set(toptier_codes).intersection(set(PSC_GROUPS_COUNT[key]["expanded_terms"])):
-                    if filter_string:
-                        if filter_string.upper() in key.upper():
-                            retval.append(
-                                {
-                                    "id": key,
-                                    "ancestors": [],
-                                    "description": "",
-                                    "count": self.get_count([], key),
-                                    "children": [],
-                                }
-                            )
-        else:
-            for key in PSC_GROUPS.keys():
-                if filter_string:
-                    if filter_string.upper() in key.upper():
-                        retval.append(
-                            {
-                                "id": key,
-                                "ancestors": [],
-                                "description": "",
-                                "count": self.get_count([], key),
-                                "children": [],
-                            }
-                        )
-                else:
-                    retval = [
+                    retval.append(
                         {
                             "id": key,
                             "ancestors": [],
                             "description": "",
                             "count": self.get_count([], key),
-                            "children": [],
+                            "children": None,
                         }
-                        for key in PSC_GROUPS.keys()
-                    ]
+                    )
+        for key in PSC_GROUPS.keys():
+            if filter_string and filter_string.upper() in key.upper():
+                retval.append(
+                    {"id": key, "ancestors": [], "description": "", "count": self.get_count([], key), "children": None,}
+                )
         return retval
 
     def _combine_nodes(self, upper_tier, lower_tier):
@@ -239,8 +226,7 @@ class PSCFilterTree(FilterTree):
                 if node["id"] in node1["ancestors"]:
                     children.append(node1)
             sorted(children, key=lambda x: x["id"])
-            if children:
-                node["children"] = children
+            node["children"] = children
         return upper_tier
 
     def _path_is_valid(self, path: list) -> bool:
@@ -251,26 +237,6 @@ class PSCFilterTree(FilterTree):
                 if not path[x + 1].startswith(path[x]):
                     return False
         return True
-
-    def _psc_from_group(self, group):
-        # The default regex value will match nothing
-        filters = [Q(code__iregex=PSC_GROUPS.get(group, {}).get("pattern") or "(?!)")]
-        return [{"id": object.code, "description": object.description} for object in PSC.objects.filter(*filters)]
-
-    def _psc_from_parent(self, parent, filter_string):
-        # two out of three branches of the PSC tree "jump" over 3 character codes
-        desired_len = len(parent) + 2 if len(parent) == 2 and (parent[0] != "A" or parent == "AU") else len(parent) + 1
-        filters = [
-            Q(length=desired_len),
-            Q(code__startswith=parent),
-        ]
-        return [{"id": object.code, "description": object.description} for object in PSC.objects.filter(*filters)]
-
-    def unlinked_node_from_data(self, ancestors: list, data) -> UnlinkedNode:
-        if len(ancestors) == 0:  # A tier zero search is returning an agency dictionary
-            return UnlinkedNode(id=data, ancestors=ancestors, description="")
-        else:
-            return UnlinkedNode(id=data["id"], ancestors=ancestors, description=data["description"])
 
     def get_count(self, tiered_keys: list, id) -> int:
         if len(tiered_keys) == 0:
