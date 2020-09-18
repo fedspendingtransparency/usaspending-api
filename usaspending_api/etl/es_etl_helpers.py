@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pandas as pd
 import psycopg2
@@ -17,9 +18,7 @@ from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
-# ==============================================================================
-# SQL Template Strings for Postgres Statements
-# ==============================================================================
+logger = logging.getLogger("script")
 
 VIEW_COLUMNS = [
     "transaction_id",
@@ -199,7 +198,7 @@ AWARD_VIEW_COLUMNS = [
 COUNT_FY_SQL = """
 SELECT COUNT(*) AS count
 FROM {view}
-WHERE {type_fy}fiscal_year={fy} AND update_date >= '{update_date}'
+WHERE {fiscal_year_field}={fy} AND update_date >= '{update_date}'
 """
 
 COUNT_SQL = """
@@ -211,24 +210,8 @@ WHERE update_date >= '{update_date}'
 COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
-    WHERE {type_fy}fiscal_year={fy} AND update_date >= '{update_date}'
+    WHERE {fiscal_year_field}={fy} AND update_date >= '{update_date}'
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
-"""
-
-CHECK_IDS_SQL = """
-WITH temp_{view_type}_ids AS (
-  SELECT *
-  FROM (VALUES {id_list}) AS unique_id_list (generated_unique_{view_type}_id)
-)
-SELECT {view_type}_id, generated_unique_{view_type}_id, update_date
-FROM {view}
-WHERE EXISTS (
-  SELECT *
-  FROM temp_{view_type}_ids
-  WHERE
-    {view}.generated_unique_{view_type}_id = temp_{view_type}_ids.generated_unique_{view_type}_id
-    AND {type_fy}fiscal_year={fy}
-)
 """
 
 # ==============================================================================
@@ -255,11 +238,6 @@ class DataJob:
         self.fy = args[2]
         self.csv = args[3]
         self.count = None
-
-
-# ==============================================================================
-# Helper functions for several Django management commands focused on ETL into a Elasticsearch cluster
-# ==============================================================================
 
 
 def convert_postgres_array_as_string_to_list(array_as_string: str) -> Optional[list]:
@@ -297,7 +275,7 @@ def process_guarddog(process_list):
         # If exitcode is None, process is still running. exit code 0 is normal
         if proc.exitcode not in (None, 0):
             msg = f"Script proccess failed!!! {proc.name} exited with error {proc.exitcode}. Terminating all processes."
-            printf({"msg": msg, "error": True})
+            logger.error(format_log(msg))
             [x.terminate() for x in process_list]
             return True
     return False
@@ -309,27 +287,24 @@ def configure_sql_strings(config, filename, deleted_ids):
     """
     if config["load_type"] == "awards":
         view = settings.ES_AWARDS_ETL_VIEW_NAME
-        view_type = "award"
-        type_fy = ""
+        fiscal_year_field = "fiscal_year"
     else:
         view = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
-        view_type = "transaction"
-        type_fy = "transaction_"
+        fiscal_year_field = "transaction_fiscal_year"
 
     copy_sql = COPY_SQL.format(
-        fy=config["fiscal_year"], update_date=config["starting_date"], filename=filename, view=view, type_fy=type_fy,
+        fy=config["fiscal_year"],
+        update_date=config["starting_date"],
+        filename=filename,
+        view=view,
+        fiscal_year_field=fiscal_year_field,
     )
 
     count_sql = COUNT_FY_SQL.format(
-        fy=config["fiscal_year"], update_date=config["starting_date"], view=view, type_fy=type_fy
+        fy=config["fiscal_year"], update_date=config["starting_date"], view=view, fiscal_year_field=fiscal_year_field
     )
-    if deleted_ids and config["process_deletes"]:
-        id_list = ",".join(["('{}')".format(x) for x in deleted_ids.keys()])
-        id_sql = CHECK_IDS_SQL.format(id_list=id_list, fy=config["fiscal_year"], type_fy=type_fy, view_type=view_type)
-    else:
-        id_sql = None
 
-    return copy_sql, id_sql, count_sql
+    return copy_sql, count_sql
 
 
 def get_updated_record_count(config):
@@ -370,15 +345,15 @@ def download_db_records(fetch_jobs, done_jobs, config):
     #  Funny story: adding the log statement was enough to prevent the issue
     #  Decided to be safe and added short pause to guarentee no race condition
     sleep(5)
-    printf({"msg": f"Queue has items: {not fetch_jobs.empty()}", "f": "Download"})
+    logger.info(format_log(f"Queue has items: {not fetch_jobs.empty()}", process="Download"))
     while not fetch_jobs.empty():
         if done_jobs.full():
-            printf({"msg": "Paused downloading new CSVs so ES indexing can catch up", "f": "Download"})
+            logger.info(format_log(f"Paused downloading new CSVs so ES indexing can catch up", process="Download"))
             sleep(60)
         else:
             start = perf_counter()
             job = fetch_jobs.get_nowait()
-            printf({"msg": f'Preparing to download "{job.csv}"', "job": job.name, "f": "Download"})
+            logger.info(format_log(f"Preparing to download '{job.csv}'", process="Download"))
 
             sql_config = {
                 "starting_date": config["starting_date"],
@@ -386,25 +361,21 @@ def download_db_records(fetch_jobs, done_jobs, config):
                 "process_deletes": config["process_deletes"],
                 "load_type": config["load_type"],
             }
-            copy_sql, _, count_sql = configure_sql_strings(sql_config, job.csv, [])
+            copy_sql, count_sql = configure_sql_strings(sql_config, job.csv, [])
 
             if os.path.isfile(job.csv):
                 os.remove(job.csv)
 
             job.count = download_csv(count_sql, copy_sql, job.csv, job.name, config["skip_counts"], config["verbose"])
             done_jobs.put(job)
-            printf(
-                {
-                    "msg": f'CSV "{job.csv}" copy took {perf_counter() - start:.2f} seconds',
-                    "job": job.name,
-                    "f": "Download",
-                }
+            logger.info(
+                format_log(f"CSV '{job.csv}' copy took {perf_counter() - start:.2f}s", job=job.name, process="Download")
             )
             sleep(1)
 
     # This "Null Job" is used to notify the other (ES data load) process this is the final job
     done_jobs.put(DataJob(None, None, None, None))
-    printf({"msg": "PostgreSQL COPY operations complete", "f": "Download"})
+    logger.info(format_log(f"PostgreSQL COPY operations complete", process="Download"))
     return
 
 
@@ -414,23 +385,23 @@ def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):
     # It is preferable to not use shell=True, but this command works. Limited user-input so risk is low
     subprocess.Popen(f"psql {get_database_dsn_string()} -c {copy_sql}", shell=True).wait()
     download_count = count_rows_in_delimited_file(filename, has_header=True, safe=False)
-    printf({"msg": f"Wrote {download_count:,} to this file: {filename}", "job": job_id, "f": "Download"})
+    logger.info(format_log(f"Wrote {download_count:,} to this file: {filename}", job=job_id, process="Download"))
 
     # If --skip_counts is disabled, execute count_sql and compare this count to the download_count
     if not skip_counts:
         sql_count = execute_sql_statement(count_sql, True, verbose)[0]["count"]
         if sql_count != download_count:
             msg = f'Mismatch between CSV "{filename}" and DB!!! Expected: {sql_count:,} | Actual: {download_count:,}'
-            printf({"msg": msg, "job": job_id, "f": "Download"})
+            logger.error(format_log(msg, job=job_id, process="Download"))
             raise SystemExit(1)
     else:
-        printf({"msg": "Skipping count comparison checks (sql vs download)", "job": job_id, "f": "Download"})
+        logger.info(format_log(f"Skipping count comparison checks (sql vs download)", job=job_id, process="Download"))
 
     return download_count
 
 
 def csv_chunk_gen(filename, chunksize, job_id, load_type):
-    printf({"msg": f"Opening {filename} (batch size = {chunksize:,})", "job": job_id, "f": "ES Index"})
+    logger.info(format_log(f"Opening {filename} (batch size = {chunksize:,})", job=job_id, process="ES Index"))
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
     converters = {
         "business_categories": convert_postgres_array_as_string_to_list,
@@ -440,7 +411,8 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
         "disaster_emergency_fund_codes": convert_postgres_array_as_string_to_list,
     }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    dtype = {k: str for k in VIEW_COLUMNS if k not in converters}
+    column_list = AWARD_VIEW_COLUMNS if load_type == "awards" else VIEW_COLUMNS
+    dtype = {k: str for k in column_list if k not in converters}
     for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
         # Route all documents with the same recipient to the same shard
@@ -466,15 +438,15 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
             if job.name is None:
                 break
 
-            printf({"msg": "Starting new job", "job": job.name, "f": "ES Index"})
+            logger.info(format_log(f"Starting new job", job=job.name, process="ES Index"))
             post_to_elasticsearch(client, job, config)
             if os.path.exists(job.csv):
                 os.remove(job.csv)
         else:
-            printf({"msg": f"No Job. Sleeping {config['ingest_wait']}s", "f": "ES Index"})
+            logger.info(format_log(f"No Job. Sleeping {config['ingest_wait']}s", process="ES Index"))
             sleep(int(config["ingest_wait"]))
 
-    printf({"msg": "Completed Elasticsearch data load", "f": "ES Index"})
+    logger.info(format_log(f"Completed Elasticsearch data load", process="ES Index"))
     return
 
 
@@ -486,10 +458,10 @@ def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None)
             failed = [failed + 1, failed][ok]
 
     except Exception as e:
-        print(f"Fatal error: \n\n{str(e)[:5000]}...\n\n{'*' * 80}")
+        logger.exception(f"Fatal error: \n\n{str(e)[:5000]}...\n\n{'*' * 80}")
         raise SystemExit(1)
 
-    printf({"msg": f"Success: {success:,} | Fail: {failed:,}", "job": job_id, "f": "ES Index"})
+    logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", job=job_id, process="ES Index"))
     return success, failed
 
 
@@ -506,12 +478,11 @@ def create_aliases(client, index, load_type, silent=False):
 
         alias_name = f"{prefix}-{award_type}"
         if silent is False:
-            printf(
-                {
-                    "msg": f"Putting alias '{alias_name}' on {index} with award codes {award_type_codes}",
-                    "job": None,
-                    "f": "ES Alias Put",
-                }
+            logger.info(
+                format_log(
+                    f"Putting alias '{alias_name}' on {index} with award codes {award_type_codes}",
+                    process="ES Alias Put",
+                )
             )
         alias_body = {"filter": {"terms": {"type": award_type_codes}}}
         put_alias(client, index, alias_name, alias_body)
@@ -519,7 +490,7 @@ def create_aliases(client, index, load_type, silent=False):
     # ensure the new index is added to the alias used for incremental loads.
     # If the alias is on multiple indexes, the loads will fail!
     write_alias = settings.ES_AWARDS_WRITE_ALIAS if load_type == "awards" else settings.ES_TRANSACTIONS_WRITE_ALIAS
-    printf({"msg": f"Putting alias '{write_alias}' on {index}", "job": None, "f": "ES Alias Put"})
+    logger.info(format_log(f"Putting alias '{write_alias}' on {index}", process="ES Alias Put"))
     put_alias(
         client, index, write_alias, {},
     )
@@ -537,12 +508,12 @@ def set_final_index_config(client, index):
     client.indices.refresh(index)
     for setting, value in final_index_settings.items():
         message = f'Changing "{setting}" from {current_settings.get(setting)} to {value}'
-        printf({"msg": message, "job": None, "f": "ES Settings"})
+        logger.info(format_log(message, process="ES Settings"))
 
 
 def swap_aliases(client, index, load_type):
     if client.indices.get_alias(index, "*"):
-        printf({"msg": f'Removing old aliases for index "{index}"', "job": None, "f": "ES Alias Drop"})
+        logger.info(format_log(f"Removing old aliases for index '{index}'", process="ES Alias Drop"))
         client.indices.delete_alias(index, "_all")
     if load_type == "awards":
         alias_patterns = settings.ES_AWARDS_QUERY_ALIAS_PREFIX + "*"
@@ -554,22 +525,22 @@ def swap_aliases(client, index, load_type):
         old_indexes = list(client.indices.get_alias("*", alias_patterns).keys())
         for old_index in old_indexes:
             client.indices.delete_alias(old_index, "_all")
-            printf({"msg": f'Removing aliases from "{old_index}"', "job": None, "f": "ES Alias Drop"})
+            logger.info(format_log(f"Removing aliases from '{old_index}'", process="ES Alias Drop"))
     except Exception:
-        printf({"msg": f"ERROR: no aliases found for {alias_patterns}", "f": "ES Alias Drop"})
+        logger.exception(format_log(f"No aliases found for {alias_patterns}", process="ES Alias Drop"))
 
     create_aliases(client, index, load_type=load_type)
 
     try:
         if old_indexes:
             client.indices.delete(index=old_indexes, ignore_unavailable=False)
-            printf({"msg": f'Deleted index(es) "{old_indexes}"', "job": None, "f": "ES Alias Drop"})
+            logger.info(format_log(f"Deleted index(es) '{old_indexes}'", process="ES Alias Drop"))
     except Exception:
-        printf({"msg": f"ERROR: Unable to delete indexes: {old_indexes}", "f": "ES Alias Drop"})
+        logger.exception(format_log(f"Unable to delete indexes: {old_indexes}", process="ES Alias Drop"))
 
 
 def post_to_elasticsearch(client, job, config, chunksize=250000):
-    printf({"msg": f'Populating ES Index "{job.index}"', "job": job.name, "f": "ES Index"})
+    logger.info(format_log(f"Populating ES Index '{job.index}'", job=job.name, process="ES Index"))
     start = perf_counter()
     try:
         does_index_exist = client.indices.exists(job.index)
@@ -577,29 +548,31 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         print(e)
         raise SystemExit(1)
     if not does_index_exist:
-        printf({"msg": f'Creating index "{job.index}"', "job": job.name, "f": "ES Index"})
+        logger.info(format_log(f"Creating index '{job.index}'", job=job.name, process="ES Index"))
         client.indices.create(index=job.index)
         client.indices.refresh(job.index)
 
     csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["load_type"])
     for count, chunk in enumerate(csv_generator):
         if len(chunk) == 0:
-            printf({"msg": f"No documents to add/delete for chunk #{count}", "f": "ES Index", "job": job.name})
+            logger.info(format_log(f"No documents to add/delete for chunk #{count}", job=job.name, process="ES Index"))
             continue
 
         iteration = perf_counter()
         current_rows = f"({count * chunksize + 1:,}-{count * chunksize + len(chunk):,})"
-        printf({"msg": f"ES Stream #{count} rows [{current_rows}/{job.count:,}]", "job": job.name, "f": "ES Index"})
+        logger.info(
+            format_log(f"ES Stream #{count} rows [{current_rows}/{job.count:,}]", job=job.name, process="ES Index")
+        )
         streaming_post_to_es(client, chunk, job.index, config["load_type"], job.name)
-        printf(
-            {
-                "msg": f"Iteration group #{count} took {perf_counter() - iteration:.2f}s",
-                "job": job.name,
-                "f": "ES Index",
-            }
+        logger.info(
+            format_log(
+                f"Iteration group #{count} took {perf_counter() - iteration:.2f}s", job=job.name, process="ES Index"
+            )
         )
 
-    printf({"msg": f"Elasticsearch Index loading took {perf_counter() - start:.2f}s", "job": job.name, "f": "ES Index"})
+    logger.info(
+        format_log(f"Elasticsearch Index loading took {perf_counter() - start:.2f}s", job=job.name, process="ES Index")
+    )
 
 
 def deleted_transactions(client, config):
@@ -617,7 +590,7 @@ def deleted_awards(client, config):
     id_list = [{"key": deleted_id, "col": UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
     award_ids = get_deleted_award_ids(client, id_list, config, settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*")
     if (len(award_ids)) == 0:
-        printf({"msg": "No related awards require deletion. ", "f": "ES Delete", "job": None})
+        logger.info(format_log(f"No related awards require deletion", process="ES Delete"))
         return
     deleted_award_ids = check_awards_for_deletes(award_ids)
     if len(deleted_award_ids) != 0:
@@ -627,7 +600,7 @@ def deleted_awards(client, config):
         ]
         delete_from_es(client, award_id_list, None, config, None)
     else:
-        printf({"msg": "No related awards require deletion. ", "f": "ES Delete", "job": None})
+        logger.info(format_log(f"No related awards require deletion", process="ES Delete"))
     return
 
 
@@ -635,14 +608,14 @@ def take_snapshot(client, index, repository):
     snapshot_name = f"{index}-{str(datetime.now().date())}"
     try:
         client.snapshot.create(repository, snapshot_name, body={"indices": index})
-        printf(
-            {
-                "msg": f'Taking snapshot INDEX: "{index}" SNAPSHOT: "{snapshot_name}" REPO: "{repository}"',
-                "f": "ES Snapshot",
-            }
+        logger.info(
+            format_log(
+                f"Taking snapshot INDEX: '{index}' SNAPSHOT: '{snapshot_name}' REPO: '{repository}'",
+                process="ES Snapshot",
+            )
         )
-    except TransportError as e:
-        printf({"msg": f'SNAPSHOT "{str(e)}" FAILED', "f": "ES Snapshot"})
+    except TransportError:
+        logger.exception(format_log(f"SNAPSHOT FAILED", process="ES Snapshot"))
         raise SystemExit(1)
 
 
@@ -653,16 +626,19 @@ def gather_deleted_ids(config):
     """
 
     if not config["process_deletes"]:
-        printf({"msg": "Skipping the S3 CSV fetch for deleted transactions"})
+        logger.info(format_log(f"Skipping the S3 CSV fetch for deleted transactions", process="ES Delete"))
         return
-    printf({"msg": "Gathering all deleted transactions from S3"})
+
+    logger.info(format_log(f"Gathering all deleted transactions from S3", process="ES Delete"))
     start = perf_counter()
 
     bucket_objects = retrieve_s3_bucket_object_list(bucket_name=config["s3_bucket"])
-    printf({"msg": f"{len(bucket_objects):,} files found in bucket '{config['s3_bucket']}'."})
+    logger.info(
+        format_log(f"{len(bucket_objects):,} files found in bucket '{config['s3_bucket']}'", process="ES Delete")
+    )
 
     if config["verbose"]:
-        printf({"msg": f"CSV data from {config['starting_date']} to now"})
+        logger.info(format_log(f"CSV data from {config['starting_date']} to now", process="ES Delete"))
 
     filtered_csv_list = [
         x
@@ -671,7 +647,7 @@ def gather_deleted_ids(config):
     ]
 
     if config["verbose"]:
-        printf({"msg": f"Found {len(filtered_csv_list)} csv files"})
+        logger.info(format_log(f"Found {len(filtered_csv_list)} csv files", process="ES Delete"))
 
     deleted_ids = {}
 
@@ -686,7 +662,7 @@ def gather_deleted_ids(config):
         elif "afa_generated_unique" in data:
             new_ids = ["ASST_TX_" + x.upper() for x in data["afa_generated_unique"].values]
         else:
-            printf({"msg": f"  [Missing valid col] in {obj.key}"})
+            logger.info(format_log(f"[Missing valid col] in {obj.key}", process="ES Delete"))
 
         for uid in new_ids:
             if uid in deleted_ids:
@@ -697,9 +673,14 @@ def gather_deleted_ids(config):
 
     if config["verbose"]:
         for uid, deleted_dict in deleted_ids.items():
-            printf({"msg": f"id: {uid} last modified: {deleted_dict['timestamp']}"})
+            logger.info(format_log(f"id: {uid} last modified: {deleted_dict['timestamp']}", process="ES Delete"))
 
-    printf({"msg": f"Gathering {len(deleted_ids):,} deleted transactions took {perf_counter() - start:.2f}s"})
+    logger.info(
+        format_log(
+            f"Gathering {len(deleted_ids):,} deleted transactions took {perf_counter() - start:.2f}s",
+            process="ES Delete",
+        )
+    )
     return deleted_ids
 
 
@@ -730,18 +711,18 @@ def delete_from_es(client, id_list, job_id, config, index=None):
     """
     start = perf_counter()
 
-    printf({"msg": f"Deleting up to {len(id_list):,} document(s)", "f": "ES Delete", "job": job_id})
+    logger.info(format_log(f"Deleting up to {len(id_list):,} document(s)", job=job_id, process="ES Delete"))
 
     if index is None:
         index = f"{config['root_index']}-*"
     start_ = client.count(index=index)["count"]
-    printf({"msg": f"Starting amount of indices ----- {start_:,}", "f": "ES Delete", "job": job_id})
+    logger.info(format_log(f"Starting amount of indices ----- {start_:,}", job=job_id, process="ES Delete"))
     col_to_items_dict = defaultdict(list)
     for l in id_list:
         col_to_items_dict[l["col"]].append(l["key"])
 
     for column, values in col_to_items_dict.items():
-        printf({"msg": f'Deleting {len(values):,} of "{column}"', "f": "ES Delete", "job": job_id})
+        logger.info(format_log(f"Deleting {len(values):,} of '{column}'", job=job_id, process="ES Delete"))
         values_generator = chunks(values, 1000)
         for v in values_generator:
             # IMPORTANT: This delete routine looks at just 1 index at a time. If there are duplicate records across
@@ -754,12 +735,12 @@ def delete_from_es(client, id_list, job_id, config, index=None):
                 client.delete_by_query(
                     index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
                 )
-            except Exception as e:
-                printf({"msg": f"[ERROR][ERROR][ERROR]\n{str(e)}", "f": "ES Delete", "job": job_id})
-    end_ = client.count(index=index)["count"]
+            except Exception:
+                logger.exception(format_log(f"", job=job_id, process="ES Delete"))
 
+    end_ = client.count(index=index)["count"]
     msg = f"ES Deletes took {perf_counter() - start:.2f}s. Deleted {start_ - end_:,} records"
-    printf({"msg": msg, "f": "ES Delete", "job": job_id})
+    logger.info(format_log(msg, job=job_id, process="ES Delete"))
     return
 
 
@@ -798,18 +779,6 @@ def check_awards_for_deletes(id_list):
     return results
 
 
-def printf(items):
-    t = datetime.utcnow().strftime("%H:%M:%S.%f")
-    msg = items["msg"]
-    if "error" in items:
-        template = "[{time}] [ERROR] {msg}"
-        print_msg = template.format(time=t, msg=msg)
-    else:
-        template = "[{time}] {complex:<20} | {msg}"
-        func = "[" + items.get("f", "main") + "]"
-        job = items.get("job", None)
-        j = ""
-        if job:
-            j = " (#{})".format(job)
-        print_msg = template.format(time=t, complex=func + j, msg=msg)
-    print(print_msg)
+def format_log(msg, process=None, job=None):
+    inner_str = f"[{process if process else 'main'}] {f'(#{job})' if job else ''}"
+    return f"{inner_str:<18} | {msg}"
