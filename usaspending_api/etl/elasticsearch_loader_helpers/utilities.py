@@ -18,6 +18,12 @@ class DataJob:
         self.count = None
 
 
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i : i + n]
+
+
 def convert_postgres_array_as_string_to_list(array_as_string: str) -> Optional[list]:
     """
         Postgres arrays are stored in CSVs as strings. Elasticsearch is able to handle lists of items, but needs to
@@ -80,10 +86,9 @@ def db_rows_to_dict(cursor):
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
-def chunks(l, n):
-    """Yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
-        yield l[i : i + n]
+def filter_query(column, values, query_type="match_phrase"):
+    queries = [{query_type: {column: str(i)}} for i in values]
+    return {"query": {"bool": {"should": [queries]}}}
 
 
 def format_log(msg, process=None, job=None):

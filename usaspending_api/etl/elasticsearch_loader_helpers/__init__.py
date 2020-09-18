@@ -1,17 +1,19 @@
 from usaspending_api.etl.elasticsearch_loader_helpers.fetching_data import (
+    configure_sql_strings,
     download_db_records,
     get_updated_record_count,
-    configure_sql_strings,
+)
+from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
+    check_awards_for_deletes,
+    deleted_awards,
+    deleted_transactions,
+    get_deleted_award_ids,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.indexing_data import (
     AWARD_VIEW_COLUMNS,
-    check_awards_for_deletes,
     create_aliases,
     csv_chunk_gen,
-    deleted_awards,
-    deleted_transactions,
     es_data_loader,
-    get_deleted_award_ids,
     set_final_index_config,
     swap_aliases,
     take_snapshot,

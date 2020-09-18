@@ -193,7 +193,7 @@ def mock_execute_sql(sql, results, verbosity=None):
 
 def test_award_delete_sql(award_data_fixture, monkeypatch, db):
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.indexing_data.execute_sql_statement", mock_execute_sql
+        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
     )
     id_list = ["CONT_AWD_IND12PB00323"]
     awards = check_awards_for_deletes(id_list)
