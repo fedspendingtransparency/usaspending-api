@@ -13,7 +13,7 @@ from typing import Optional
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
-from usaspending_api.etl.elasticsearch_loader_helpers.es_etl_utils import execute_sql_statement, format_log
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import execute_sql_statement, format_log
 
 logger = logging.getLogger("script")
 
@@ -635,8 +635,9 @@ def check_awards_for_deletes(id_list):
         formatted_value_ids += "('" + x + "'),"
 
     sql = """
-        SELECT x.generated_unique_award_id FROM (values {ids}) AS x(generated_unique_award_id)
+        SELECT x.generated_unique_award_id
+        FROM (values {ids}) AS x(generated_unique_award_id)
         LEFT JOIN awards a ON a.generated_unique_award_id = x.generated_unique_award_id
-        WHERE a.generated_unique_award_id is null"""
-    results = execute_sql_statement(sql.format(ids=formatted_value_ids[:-1]), results=True)
-    return results
+        WHERE a.generated_unique_award_id IS NULL"""
+
+    return execute_sql_statement(sql.format(ids=formatted_value_ids[:-1]), results=True)
