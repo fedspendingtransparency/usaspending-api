@@ -153,6 +153,7 @@ def spending_by_award_test_data():
         reporting_fiscal_period=8,
         quarter_format_flag=False,
         reporting_period_start="2022-05-01",
+        submission_window_id="2022080",
     )
     sa2 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -161,6 +162,7 @@ def spending_by_award_test_data():
         reporting_fiscal_year=9999,
         reporting_period_end="9999-06-30",
         reporting_period_start="9999-04-02",
+        submission_window_id="9999070",
     )
 
     mommy.make(
