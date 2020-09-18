@@ -43,7 +43,7 @@ def test_quarterly_followed_by_monthly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=10,
         quarter_format_flag=False,
-        submission_window_id=11
+        submission_window_id=11,
     )
 
     # SUBMISSION - Agency A - Quarter 3
@@ -54,7 +54,7 @@ def test_quarterly_followed_by_monthly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=9,
         quarter_format_flag=True,
-        submission_window_id=22
+        submission_window_id=22,
     )
 
     call_command("populate_is_final_balances_for_fy")
@@ -99,7 +99,7 @@ def test_monthly_followed_by_quarterly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=9,
         quarter_format_flag=False,
-        submission_window_id=11
+        submission_window_id=11,
     )
 
     # SUBMISSION - Agency A - Quarter 4
@@ -110,7 +110,7 @@ def test_monthly_followed_by_quarterly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=12,
         quarter_format_flag=True,
-        submission_window_id=22
+        submission_window_id=22,
     )
 
     call_command("populate_is_final_balances_for_fy")
@@ -166,7 +166,7 @@ def test_period_789_submissions():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=7,
         quarter_format_flag=False,
-        submission_window_id=11
+        submission_window_id=11,
     )
 
     # SUBMISSION - Agency A - Period 8
@@ -177,7 +177,7 @@ def test_period_789_submissions():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
-        submission_window_id=22
+        submission_window_id=22,
     )
 
     # SUBMISSION - Agency A - Period 9
@@ -188,7 +188,7 @@ def test_period_789_submissions():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=9,
         quarter_format_flag=False,
-        submission_window_id=33
+        submission_window_id=33,
     )
 
     call_command("populate_is_final_balances_for_fy")

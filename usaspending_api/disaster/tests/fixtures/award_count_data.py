@@ -101,7 +101,7 @@ def award_count_submission():
         quarter_format_flag=False,
         is_final_balances_for_fy=True,
         reporting_period_start="2022-04-01",
-        submission_window_id=20220800
+        submission_window_id=20220800,
     )
 
 
@@ -125,7 +125,7 @@ def _award_count_early_submission():
         reporting_fiscal_period=7,
         quarter_format_flag=False,
         reporting_period_start="2020-04-01",
-        submission_window_id=20200700
+        submission_window_id=20200700,
     )
 
 
