@@ -1,13 +1,3 @@
-WITH closed_submissions AS (
-    SELECT
-        "dabs_submission_window_schedule"."submission_reveal_date",
-        "dabs_submission_window_schedule"."submission_fiscal_year",
-        "dabs_submission_window_schedule"."is_quarter",
-        "dabs_submission_window_schedule"."submission_fiscal_month"
-    FROM "dabs_submission_window_schedule"
-    WHERE
-        "dabs_submission_window_schedule"."submission_reveal_date" <= now()
-)
 SELECT
     "broker_subaward"."unique_award_key" AS "prime_award_unique_key",
     "broker_subaward"."award_id" AS "prime_award_fain",
@@ -120,15 +110,18 @@ INNER JOIN (
         COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
     FROM
         financial_accounts_by_awards faba
-    INNER JOIN disaster_emergency_fund_code defc
-        ON defc.code = faba.disaster_emergency_fund_code
+    INNER JOIN disaster_emergency_fund_code defc ON (
+        defc.code = faba.disaster_emergency_fund_code
         AND defc.group_name = 'covid_19'
-    INNER JOIN submission_attributes sa
-        ON faba.submission_id = sa.submission_id
+    )
+    INNER JOIN submission_attributes sa ON (
+        faba.submission_id = sa.submission_id
         AND sa.reporting_period_start >= '2020-04-01'
-    INNER JOIN closed_submissions ON (sa."reporting_fiscal_period" = "closed_submissions"."submission_fiscal_month"
-        AND sa."quarter_format_flag" = "closed_submissions"."is_quarter"
-        AND sa."reporting_fiscal_year" = "closed_submissions"."submission_fiscal_year")
+    )
+    INNER JOIN dabs_submission_window_schedule ON (
+        sa."submission_window_id" = dabs_submission_window_schedule."id"
+        AND dabs_submission_window_schedule."submission_reveal_date" <= now()
+    )
     WHERE faba.award_id IS NOT NULL
     GROUP BY
         faba.award_id

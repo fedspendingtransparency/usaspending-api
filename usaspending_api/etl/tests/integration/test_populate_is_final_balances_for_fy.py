@@ -16,6 +16,7 @@ def test_quarterly_followed_by_monthly():
     # WINDOW - Period 10
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=11,
         submission_fiscal_year=2020,
         submission_fiscal_month=10,
         is_quarter=False,
@@ -26,6 +27,7 @@ def test_quarterly_followed_by_monthly():
     # WINDOW - Quarter 3
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=22,
         submission_fiscal_year=2020,
         submission_fiscal_month=9,
         is_quarter=True,
@@ -41,6 +43,7 @@ def test_quarterly_followed_by_monthly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=10,
         quarter_format_flag=False,
+        submission_window_id=11,
     )
 
     # SUBMISSION - Agency A - Quarter 3
@@ -51,6 +54,7 @@ def test_quarterly_followed_by_monthly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=9,
         quarter_format_flag=True,
+        submission_window_id=22,
     )
 
     call_command("populate_is_final_balances_for_fy")
@@ -68,6 +72,7 @@ def test_monthly_followed_by_quarterly():
     # WINDOW - Period 9
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=11,
         submission_fiscal_year=2020,
         submission_fiscal_month=9,
         is_quarter=False,
@@ -78,6 +83,7 @@ def test_monthly_followed_by_quarterly():
     # WINDOW - Quarter 4
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=22,
         submission_fiscal_year=2020,
         submission_fiscal_month=12,
         is_quarter=True,
@@ -93,6 +99,7 @@ def test_monthly_followed_by_quarterly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=9,
         quarter_format_flag=False,
+        submission_window_id=11,
     )
 
     # SUBMISSION - Agency A - Quarter 4
@@ -103,6 +110,7 @@ def test_monthly_followed_by_quarterly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=12,
         quarter_format_flag=True,
+        submission_window_id=22,
     )
 
     call_command("populate_is_final_balances_for_fy")
@@ -120,6 +128,7 @@ def test_period_789_submissions():
     # WINDOW - Period 7
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=11,
         submission_fiscal_year=2020,
         submission_fiscal_month=7,
         is_quarter=False,
@@ -130,6 +139,7 @@ def test_period_789_submissions():
     # WINDOW - Period 8
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=22,
         submission_fiscal_year=2020,
         submission_fiscal_month=8,
         is_quarter=False,
@@ -140,6 +150,7 @@ def test_period_789_submissions():
     # WINDOW - Period 9
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=33,
         submission_fiscal_year=2020,
         submission_fiscal_month=9,
         is_quarter=False,
@@ -155,6 +166,7 @@ def test_period_789_submissions():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=7,
         quarter_format_flag=False,
+        submission_window_id=11,
     )
 
     # SUBMISSION - Agency A - Period 8
@@ -165,6 +177,7 @@ def test_period_789_submissions():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
+        submission_window_id=22,
     )
 
     # SUBMISSION - Agency A - Period 9
@@ -175,6 +188,7 @@ def test_period_789_submissions():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=9,
         quarter_format_flag=False,
+        submission_window_id=33,
     )
 
     call_command("populate_is_final_balances_for_fy")
@@ -199,6 +213,7 @@ def test_no_final_balances_for_agency():
     # WINDOW - Period 8
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=11,
         submission_fiscal_year=2020,
         submission_fiscal_month=8,
         is_quarter=False,
@@ -209,6 +224,7 @@ def test_no_final_balances_for_agency():
     # WINDOW - Period 10
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=22,
         submission_fiscal_year=2020,
         submission_fiscal_month=10,
         is_quarter=False,
@@ -219,6 +235,7 @@ def test_no_final_balances_for_agency():
     # WINDOW - Quarter 3
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=33,
         submission_fiscal_year=2020,
         submission_fiscal_month=9,
         is_quarter=True,
@@ -229,6 +246,7 @@ def test_no_final_balances_for_agency():
     # WINDOW - Quarter 4
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=44,
         submission_fiscal_year=2020,
         submission_fiscal_month=12,
         is_quarter=True,
@@ -244,6 +262,7 @@ def test_no_final_balances_for_agency():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
+        submission_window_id=11,
     )
 
     # SUBMISSION - Agency A - Quarter 3
@@ -254,6 +273,7 @@ def test_no_final_balances_for_agency():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=9,
         quarter_format_flag=True,
+        submission_window_id=33,
     )
 
     call_command("populate_is_final_balances_for_fy")
@@ -275,6 +295,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     # WINDOW - Period 9
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=11,
         submission_fiscal_year=2020,
         submission_fiscal_month=9,
         is_quarter=False,
@@ -285,6 +306,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     # WINDOW - Period 10
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=22,
         submission_fiscal_year=2020,
         submission_fiscal_month=10,
         is_quarter=False,
@@ -295,6 +317,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     # WINDOW - Quarter 3
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=33,
         submission_fiscal_year=2020,
         submission_fiscal_month=9,
         is_quarter=True,
@@ -305,6 +328,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     # WINDOW - Quarter 4
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=44,
         submission_fiscal_year=2020,
         submission_fiscal_month=12,
         is_quarter=True,
@@ -320,6 +344,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=9,
         quarter_format_flag=True,
+        submission_window_id=33,
     )
 
     # SUBMISSION - Agency A - Quarter 4
@@ -330,6 +355,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=12,
         quarter_format_flag=True,
+        submission_window_id=44,
     )
 
     # SUBMISSION - Agency B - Period 10
@@ -340,6 +366,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=10,
         quarter_format_flag=False,
+        submission_window_id=22,
     )
 
     # SUBMISSION - Agency B - Quarter 3
@@ -350,6 +377,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=9,
         quarter_format_flag=True,
+        submission_window_id=33,
     )
 
     call_command("populate_is_final_balances_for_fy")
@@ -371,6 +399,7 @@ def test_agency_across_years():
     # WINDOW 2019 Period 9
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=11,
         submission_fiscal_year=2019,
         submission_fiscal_month=9,
         is_quarter=False,
@@ -381,6 +410,7 @@ def test_agency_across_years():
     # WINDOW 2020 Period 9
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=22,
         submission_fiscal_year=2020,
         submission_fiscal_month=9,
         is_quarter=False,
@@ -396,6 +426,7 @@ def test_agency_across_years():
         reporting_fiscal_year=2019,
         reporting_fiscal_period=9,
         quarter_format_flag=False,
+        submission_window_id=11,
     )
 
     # SUBMISSION - Agency A - 2020 Period 9
@@ -406,6 +437,7 @@ def test_agency_across_years():
         reporting_fiscal_year=2020,
         reporting_fiscal_period=9,
         quarter_format_flag=False,
+        submission_window_id=22,
     )
 
     call_command("populate_is_final_balances_for_fy")
