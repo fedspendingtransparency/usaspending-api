@@ -7,7 +7,7 @@ from time import sleep
 from typing import Tuple
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
-from usaspending_api.etl.es_etl_helpers import (
+from usaspending_api.etl.elasticsearch_loader_helpers.es_etl_helpers import (
     DataJob,
     deleted_transactions,
     deleted_awards,

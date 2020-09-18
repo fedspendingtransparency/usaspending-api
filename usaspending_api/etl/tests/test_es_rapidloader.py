@@ -7,8 +7,12 @@ from pathlib import Path
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.helpers.text_helpers import generate_random_string
-from usaspending_api.etl.es_etl_helpers import configure_sql_strings, check_awards_for_deletes, get_deleted_award_ids
-from usaspending_api.etl.rapidloader import Rapidloader
+from usaspending_api.etl.elasticsearch_loader_helpers.es_etl_helpers import (
+    configure_sql_strings,
+    check_awards_for_deletes,
+    get_deleted_award_ids,
+)
+from usaspending_api.etl.elasticsearch_loader_helpers.rapidloader import Rapidloader
 
 
 @pytest.fixture
@@ -98,8 +102,8 @@ def baby_sleeps(monkeypatch):
     def _sleep(seconds):
         sleep(0.001)
 
-    monkeypatch.setattr("usaspending_api.etl.es_etl_helpers.sleep", _sleep)
-    monkeypatch.setattr("usaspending_api.etl.rapidloader.sleep", _sleep)
+    monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.es_etl_helpers.sleep", _sleep)
+    monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.rapidloader.sleep", _sleep)
 
 
 config = {
@@ -132,7 +136,9 @@ config = {
 
 @pytest.mark.skip
 def test_es_award_loader_class(award_data_fixture, elasticsearch_award_index, baby_sleeps, monkeypatch):
-    monkeypatch.setattr("usaspending_api.etl.es_etl_helpers.execute_sql_statement", mock_execute_sql)
+    monkeypatch.setattr(
+        "usaspending_api.etl.elasticsearch_loader_helpers.es_etl_helpers.execute_sql_statement", mock_execute_sql
+    )
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = Rapidloader(config, elasticsearch_client)
     assert loader.__class__.__name__ == "Rapidloader"
@@ -143,7 +149,9 @@ def test_es_award_loader_class(award_data_fixture, elasticsearch_award_index, ba
 
 @pytest.mark.skip
 def test_es_transaction_loader_class(award_data_fixture, elasticsearch_transaction_index, baby_sleeps, monkeypatch):
-    monkeypatch.setattr("usaspending_api.etl.es_etl_helpers.execute_sql_statement", mock_execute_sql)
+    monkeypatch.setattr(
+        "usaspending_api.etl.elasticsearch_loader_helpers.es_etl_helpers.execute_sql_statement", mock_execute_sql
+    )
     config["root_index"] = "transaction-query"
     config["load_type"] = "transactions"
     elasticsearch_client = instantiate_elasticsearch_client()
@@ -175,13 +183,16 @@ WHERE fiscal_year=2019 AND update_date >= '2007-10-01 00:00:00+00:00'
     assert expected_count_sql == count_sql
 
 
-# SQL method is being mocked here since the `execute_sql_statement` used doesn't use the same DB connection to avoid multiprocessing errors
+# SQL method is being mocked here since the `execute_sql_statement` used
+#  doesn't use the same DB connection to avoid multiprocessing errors
 def mock_execute_sql(sql, results, verbosity=None):
     return execute_sql_to_ordered_dictionary(sql)
 
 
 def test_award_delete_sql(award_data_fixture, monkeypatch, db):
-    monkeypatch.setattr("usaspending_api.etl.es_etl_helpers.execute_sql_statement", mock_execute_sql)
+    monkeypatch.setattr(
+        "usaspending_api.etl.elasticsearch_loader_helpers.es_etl_helpers.execute_sql_statement", mock_execute_sql
+    )
     id_list = ["CONT_AWD_IND12PB00323"]
     awards = check_awards_for_deletes(id_list)
     assert awards == []
