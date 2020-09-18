@@ -65,3 +65,25 @@ def test_with_nonexistent_id(client, create_award_test_data):
 @pytest.mark.django_db
 def test_with_bogus_id(client, create_award_test_data):
     _test_post(client, {"award_id": "BOGUS_ID"}, (0,))
+
+
+@pytest.mark.django_db
+def test_with_unrevealed_submissions(client, monkeypatch, award_with_unreleased_submissions):
+    response = client.post(AGGREGATE_ENDPOINT, {"award_id": 1})
+    assert json.loads(response.content.decode("utf-8")) == {
+        "awarding_agency_count": 0,
+        "federal_account_count": 0,
+        "funding_agency_count": 0,
+        "total_transaction_obligated_amount": 0.0,
+    }
+
+
+@pytest.mark.django_db
+def test_with_revealed_submissions(client, monkeypatch, award_with_released_submissions):
+    response = client.post(AGGREGATE_ENDPOINT, {"award_id": 1})
+    assert json.loads(response.content.decode("utf-8")) == {
+        "awarding_agency_count": 1,
+        "federal_account_count": 1,
+        "funding_agency_count": 0,
+        "total_transaction_obligated_amount": 110011.0,
+    }

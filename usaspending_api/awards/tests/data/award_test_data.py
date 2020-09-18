@@ -30,6 +30,20 @@ def create_award_test_data():
         award_from_id(award_id)
 
 
+@pytest.fixture
+def award_with_unreleased_submissions():
+    standard_sub_window_schedule(DATE_IN_THE_FUTURE)
+
+    award_from_id(1)
+
+
+@pytest.fixture
+def award_with_released_submissions():
+    standard_sub_window_schedule(DATE_IN_THE_PAST)
+
+    award_from_id(1)
+
+
 def award_from_id(award_id):
     # This is intended to be grafted into strings so we will pad with
     # zeros in case there's any sorting going on.
