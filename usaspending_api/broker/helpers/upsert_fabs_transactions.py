@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from django.db import connection, transaction
 
 from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
-from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
@@ -109,7 +108,7 @@ def insert_new_fabs(to_insert):
             "last_modified_date": last_mod_date,
             "type_description": row["assistance_type_desc"],
             "transaction_unique_id": row["afa_generated_unique"],
-            "business_categories": get_business_categories(row=row, data_type="fabs"),
+            "business_categories": row['business_categories']
         }
 
         transaction_normalized_dict = load_data_into_model(
