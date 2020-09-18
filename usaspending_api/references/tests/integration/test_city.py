@@ -101,7 +101,7 @@ def test_city_search_special_characters(client, monkeypatch, award_data_fixture,
     elasticsearch_transaction_index.update_index()
     body = {
         "filter": {"country_code": "USA", "scope": "recipient_location"},
-        "search_text": 'arli+|()[]{}*?"<>\\',  # Once special characters are stripped, this should just be 'arl'
+        "search_text": 'arli+|()[]{}?"<>\\',  # Once special characters are stripped, this should just be 'arl'
         "limit": 20,
     }
     response = client.post("/api/v2/autocomplete/city", content_type="application/json", data=json.dumps(body))

@@ -1,12 +1,15 @@
 --------------------------------------------------------------------------------
 -- Step 1, create the temporary matview of recipients from transactions
 --------------------------------------------------------------------------------
+SELECT now() AS script_started_at;
+
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_recipients_from_transactions_view;
 DROP TABLE IF EXISTS public.temporary_restock_recipient_profile;
 DROP INDEX IF EXISTS public.idx_recipients_in_transactions_view;
 DROP INDEX IF EXISTS public.idx_recipient_profile_uniq_new;
 
 DO $$ BEGIN RAISE NOTICE 'Step 1: Creating temp materialized view'; END $$;
+
 CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
   SELECT
     MD5(UPPER(
@@ -328,10 +331,49 @@ DELETE FROM public.temporary_restock_recipient_profile WHERE unused = true;
 --------------------------------------------------------------------------------
 -- Step 10, Drop unnecessary relations and standup new table as final
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 10: restocking destination table'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 10: updating destination table'; END $$;
 
-BEGIN;
-DELETE FROM public.recipient_profile;
+DELETE FROM public.recipient_profile rp
+WHERE NOT EXISTS (
+    SELECT FROM public.temporary_restock_recipient_profile temp_p
+    WHERE rp.recipient_hash = temp_p.recipient_hash
+      AND rp.recipient_level = temp_p.recipient_level
+    )
+;
+
+UPDATE public.recipient_profile rp
+SET
+    recipient_unique_id = temp_p.recipient_unique_id,
+    recipient_name = temp_p.recipient_name,
+    recipient_affiliations = temp_p.recipient_affiliations,
+    award_types = temp_p.award_types,
+    last_12_months = temp_p.last_12_months,
+    last_12_contracts = temp_p.last_12_contracts,
+    last_12_loans = temp_p.last_12_loans,
+    last_12_grants = temp_p.last_12_grants,
+    last_12_direct_payments = temp_p.last_12_direct_payments,
+    last_12_other = temp_p.last_12_other,
+    last_12_months_count = temp_p.last_12_months_count
+FROM public.temporary_restock_recipient_profile temp_p
+WHERE
+    rp.recipient_hash = temp_p.recipient_hash
+    AND rp.recipient_level = temp_p.recipient_level
+    AND (
+        rp.recipient_unique_id IS DISTINCT FROM temp_p.recipient_unique_id
+        OR rp.recipient_name IS DISTINCT FROM temp_p.recipient_name
+        OR rp.recipient_affiliations IS DISTINCT FROM temp_p.recipient_affiliations
+        OR rp.award_types IS DISTINCT FROM temp_p.award_types
+        OR rp.last_12_months IS DISTINCT FROM temp_p.last_12_months
+        OR rp.last_12_contracts IS DISTINCT FROM temp_p.last_12_contracts
+        OR rp.last_12_loans IS DISTINCT FROM temp_p.last_12_loans
+        OR rp.last_12_grants IS DISTINCT FROM temp_p.last_12_grants
+        OR rp.last_12_direct_payments IS DISTINCT FROM temp_p.last_12_direct_payments
+        OR rp.last_12_other IS DISTINCT FROM temp_p.last_12_other
+        OR rp.last_12_months_count IS DISTINCT FROM temp_p.last_12_months_count
+    )
+;
+
+
 INSERT INTO public.recipient_profile (
     recipient_level, recipient_hash, recipient_unique_id,
     recipient_name, recipient_affiliations, award_types, last_12_months,
@@ -342,9 +384,10 @@ INSERT INTO public.recipient_profile (
     recipient_name, recipient_affiliations, award_types, last_12_months,
     last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
     last_12_months_count
-  FROM public.temporary_restock_recipient_profile;
+  FROM public.temporary_restock_recipient_profile
+  ON CONFLICT (recipient_hash,recipient_level) DO NOTHING;
+
 DROP TABLE public.temporary_restock_recipient_profile;
 DROP MATERIALIZED VIEW public.temporary_recipients_from_transactions_view;
-COMMIT;
 
-VACUUM ANALYZE public.recipient_profile;
+SELECT now() AS script_completed_at;
