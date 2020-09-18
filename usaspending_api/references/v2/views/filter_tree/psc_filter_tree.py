@@ -35,47 +35,35 @@ class PSCFilterTree(FilterTree):
     def raw_search(self, tiered_keys, child_layers, filter_string):
         if not self._path_is_valid(tiered_keys):
             return []
-        if len(tiered_keys) == 0:
-            if child_layers != 0:
-                if child_layers == 2 or child_layers == -1:
-                    tier3_nodes = self.tier_3_search(tiered_keys, filter_string)
-                    tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes)
-                    tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
-                    tier1_nodes = self.tier_1_search(tiered_keys, filter_string, tier2_nodes)
-                    tier1_nodes = self._combine_nodes(tier1_nodes, tier2_nodes)
-                    toptier_nodes = self.toptier_search(filter_string, tier1_nodes + tier2_nodes)
-                    toptier_nodes = self._combine_nodes(toptier_nodes, tier2_nodes)
-                    toptier_nodes = self._combine_nodes(toptier_nodes, tier1_nodes)
-                else:
-                    tier1_nodes = self.tier_1_search(tiered_keys, filter_string)
-                    toptier_nodes = self.toptier_search(filter_string, tier1_nodes)
-                toptier_nodes = self._combine_nodes(toptier_nodes, tier1_nodes)
-            else:
-                toptier_nodes = self.toptier_search(filter_string)
-            retval = toptier_nodes
-        elif len(tiered_keys) == 1:
-            if child_layers != 0:
-                tier3_nodes = self.tier_3_search(tiered_keys, filter_string)
-                tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes)
-                tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
-                tier1_nodes = self.tier_1_search(tiered_keys, filter_string, tier2_nodes)
-                tier1_nodes = self._combine_nodes(tier1_nodes, tier2_nodes)
-            else:
-                tier1_nodes = self.tier_1_search(tiered_keys, filter_string)
-            retval = tier1_nodes
-        elif len(tiered_keys) == 2:
-            if child_layers != 0:
-                tier3_nodes = self.tier_3_search(tiered_keys, filter_string)
-                tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes)
-                tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
-                retval = tier2_nodes
-            else:
+        top = len(tiered_keys)
+        bottom = (child_layers if child_layers != -1 else 3) + top
+        retval = tier3_nodes = tier2_nodes = tier1_nodes = []
+        if bottom >= 3 or (top == 2 and (tiered_keys[0] == "Product" or tiered_keys[1] == "AU")):
+            tier3_nodes = self.tier_3_search(tiered_keys, filter_string)
+        if bottom >= 2:
+            tier2_nodes = self.tier_2_search(tiered_keys, filter_string, tier3_nodes)
+        if bottom >= 1:
+            tier1_nodes = self.tier_1_search(tiered_keys, filter_string, tier2_nodes)
+
+        if top == 3:
+            retval = tier3_nodes
+        if top <= 2:
+            tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
+            if top == 2:
                 if tiered_keys[0] == "Product" or tiered_keys[1] == "AU":
-                    retval = self.tier_3_search(tiered_keys, filter_string)
+                    retval = tier3_nodes
                 else:
-                    retval = self.tier_2_search(tiered_keys, filter_string)
-        else:
-            retval = self.tier_3_search(tiered_keys, filter_string)
+                    retval = tier2_nodes
+        if top <= 1:
+            tier1_nodes = self._combine_nodes(tier1_nodes, tier2_nodes)
+            if top == 1:
+                retval = tier1_nodes
+        if top == 0:
+            toptier_nodes = self.toptier_search(filter_string, tier1_nodes + tier2_nodes)
+            toptier_nodes = self._combine_nodes(toptier_nodes, tier2_nodes)
+            toptier_nodes = self._combine_nodes(toptier_nodes, tier1_nodes)
+            retval = toptier_nodes
+
         return retval
 
     def tier_3_search(self, ancestor_array, filter_string) -> list:
@@ -230,7 +218,7 @@ class PSCFilterTree(FilterTree):
                 if node["id"] in node1["ancestors"] and node1["id"] not in node_ids:
                     children.append(node1)
             sorted(children, key=lambda x: x["id"])
-            if not node["children"] or len(node["children"]) == 0:
+            if len(children) > 0:
                 node["children"] = children
         return upper_tier
 
