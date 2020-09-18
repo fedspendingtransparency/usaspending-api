@@ -16,10 +16,7 @@ ROLLUP_SQL = SQL(
     with gather_financial_accounts_by_awards as (
         WITH closed_submissions AS (
             SELECT
-                "dabs_submission_window_schedule"."submission_reveal_date",
-                "dabs_submission_window_schedule"."submission_fiscal_year",
-                "dabs_submission_window_schedule"."is_quarter",
-                "dabs_submission_window_schedule"."submission_fiscal_month"
+                "dabs_submission_window_schedule"."id"
             FROM "dabs_submission_window_schedule"
             WHERE
                 "dabs_submission_window_schedule"."submission_reveal_date" <= now()
@@ -31,9 +28,7 @@ ROLLUP_SQL = SQL(
         from    awards a
                 inner join financial_accounts_by_awards faba on faba.award_id = a.id
                 INNER JOIN submission_attributes sa ON faba.submission_id = sa.submission_id
-                INNER JOIN closed_submissions ON (sa."reporting_fiscal_period" = "closed_submissions"."submission_fiscal_month"
-                    AND sa."quarter_format_flag" = "closed_submissions"."is_quarter"
-                    AND sa."reporting_fiscal_year" = "closed_submissions"."submission_fiscal_year")
+                INNER JOIN closed_submissions ON sa."submission_window_id" = "closed_submissions"."id"
         where   {award_id_column} = {award_id}
     )
     select

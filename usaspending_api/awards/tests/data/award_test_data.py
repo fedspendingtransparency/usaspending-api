@@ -7,6 +7,8 @@ the test_awards files found within /awards/tests/.
 from model_mommy import mommy
 import pytest
 
+from usaspending_api.submissions.models.dabs_submission_window_schedule import DABSSubmissionWindowSchedule
+
 AWARD_COUNT = 4
 RECIPIENT_HASH_PREFIX = "d0de516c-54af-4999-abda-428ce877"
 AGENCY_COUNT_BY_AWARD_ID = {
@@ -110,6 +112,9 @@ def award_from_id(award_id):
     submission_attributes = mommy.make(
         "submissions.SubmissionAttributes",
         submission_id=1000 + award_id,
+        submission_window=DABSSubmissionWindowSchedule.objects.filter(
+            submission_fiscal_month=award_id % 12 + 1
+        ).first(),
         reporting_fiscal_year=2100,
         reporting_fiscal_period=award_id % 12 + 1,
         reporting_fiscal_quarter=(award_id % 12 + 3) // 3,

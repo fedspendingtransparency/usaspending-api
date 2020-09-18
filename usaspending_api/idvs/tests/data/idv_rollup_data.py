@@ -16,6 +16,8 @@ in the IDV world but has been added for testing purposes.  Hope this helps.
 import pytest
 from model_mommy import mommy
 
+from usaspending_api.submissions.models.dabs_submission_window_schedule import DABSSubmissionWindowSchedule
+
 
 AWARD_COUNT = 15
 IDVS = (1, 2, 3, 4, 5, 7, 8)
@@ -111,6 +113,9 @@ def basic_idvs():
         submission_attributes = mommy.make(
             "submissions.SubmissionAttributes",
             submission_id=1000 + award_id,
+            submission_window=DABSSubmissionWindowSchedule.objects.filter(
+                submission_fiscal_month=award_id % 12 + 1
+            ).first(),
             reporting_fiscal_year=2100,
             reporting_fiscal_period=award_id % 12 + 1,
             reporting_fiscal_quarter=(award_id % 12 + 3) // 3,
@@ -292,6 +297,9 @@ def idv_from_award_id(award_id, defc):
     submission_attributes = mommy.make(
         "submissions.SubmissionAttributes",
         submission_id=1000 + award_id,
+        submission_window=DABSSubmissionWindowSchedule.objects.filter(
+            submission_fiscal_month=award_id % 12 + 1
+        ).first(),
         reporting_fiscal_year=2100,
         reporting_fiscal_period=award_id % 12 + 1,
         reporting_fiscal_quarter=(award_id % 12 + 3) // 3,
