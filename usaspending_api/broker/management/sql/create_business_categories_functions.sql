@@ -565,12 +565,12 @@ declare
 begin
 
 -- BUSINESS (FOR-PROFIT ORGANIZATION)
-    if business_types in ('R', '23')
+    if business_types ~ '(R|23)'
     then
         bc_arr := bc_arr || array['small_business'];
     end if;
 
-    if business_types in ('Q', '22')
+    if business_types ~ '(Q|22)'
     then
         bc_arr := bc_arr || array['other_than_small_business'];
     end if;
@@ -581,23 +581,23 @@ begin
     end if;
 
 -- NON-PROFIT
-    if business_types in ('M', 'N', '12')
+    if business_types ~ '(M|N|12)'
     then
         bc_arr := bc_arr || array['nonprofit'];
     end if;
 
 -- HIGHER EDUCATION
-    if business_types in ('H', '06')
+    if business_types ~ '(H|06)'
     then
         bc_arr := bc_arr || array['public_institution_of_higher_education'];
     end if;
 
-    if business_types in ('O', '20')
+    if business_types ~ '(O|20)'
     then
         bc_arr := bc_arr || array['private_institution_of_higher_education'];
     end if;
 
-    if business_types in ('T', 'U', 'V', 'S')
+    if business_types ~ '(T|U|V|S)'
     then
         bc_arr := bc_arr || array['minority_serving_institution_of_higher_education'];
     end if;
@@ -612,32 +612,32 @@ begin
     end if;
 
 -- GOVERNMENT
-    if business_types in ('A', '00')
+    if business_types ~ '(A|00)'
     then
         bc_arr := bc_arr || array['regional_and_state_government'];
     end if;
 
-    if business_types in ('E')
+    if business_types ~ '(E)'
     then
         bc_arr := bc_arr || array['regional_organization'];
     end if;
 
-    if business_types in ('F')
+    if business_types ~ '(F)'
     then
         bc_arr := bc_arr || array['us_territory_or_possession'];
     end if;
 
-    if business_types in ('B', 'C', 'D', 'G', '01', '02', '04', '05')
+    if business_types ~ '(B|C|D|G|01|02|04|05)'
     then
         bc_arr := bc_arr || array['local_government'];
     end if;
 
-    if business_types in ('I', 'J', 'K', '11')
+    if business_types ~ '(I|J|K|11)'
     then
         bc_arr := bc_arr || array['indian_native_american_tribal_government'];
     end if;
 
-    if business_types in ('L')
+    if business_types ~ '(L)'
     then
         bc_arr := bc_arr || array['authorities_and_commissions'];
     end if;
@@ -655,7 +655,7 @@ begin
     end if;
 
 -- INDIVIDUALS
-    if business_types in ('P', '21')
+    if business_types ~ '(P|21)'
     then
         bc_arr := bc_arr || array['individuals'];
     end if;
