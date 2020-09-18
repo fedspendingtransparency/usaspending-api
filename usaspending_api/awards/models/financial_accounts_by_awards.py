@@ -1,5 +1,6 @@
 from django.db import models
 from django_cte import CTEManager
+from django.db.models import Q
 
 from usaspending_api.common.models import DataSourceTrackedModel
 
@@ -147,4 +148,17 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
                 "transaction_obligated_amount",
                 "gross_outlay_amount_by_award_cpe",
             ]
+        ]
+        indexes = [
+            models.Index(
+                fields=[
+                    "submission",
+                    "distinct_award_key",
+                    "piid",
+                    "transaction_obligated_amount",
+                    "gross_outlay_amount_by_award_cpe",
+                ],
+                name="faba_subid_awardkey_sums_idx",
+                condition=Q(disaster_emergency_fund__in=["L", "M", "N", "O", "P"]),
+            )
         ]
