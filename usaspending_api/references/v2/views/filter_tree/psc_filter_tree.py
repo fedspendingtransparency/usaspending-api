@@ -66,7 +66,9 @@ class PSCFilterTree(FilterTree):
                 tier2_nodes = self._combine_nodes(tier2_nodes, tier3_nodes)
                 return tier2_nodes
             else:
-                return self.tier_2_search(tiered_keys, filter_string) or self.tier_3_search(tiered_keys, filter_string)
+                if tiered_keys[0] == "Product":
+                    return self.tier_3_search(tiered_keys, filter_string)
+                return self.tier_2_search(tiered_keys, filter_string)
         else:
             return self.tier_3_search(tiered_keys, filter_string)
 
@@ -188,12 +190,26 @@ class PSCFilterTree(FilterTree):
         return retval
 
     def toptier_search(self, filter_string, tier1_nodes=None):
+        retval = []
         if tier1_nodes:
             toptier_codes = [node["id"][:1] for node in tier1_nodes]
-            retval = []
             for key in PSC_GROUPS.keys():
                 if set(toptier_codes).intersection(set(PSC_GROUPS_COUNT[key]["expanded_terms"])):
-                    if filter_string and filter_string.upper() in key.upper():
+                    if filter_string:
+                        if filter_string.upper() in key.upper():
+                            retval.append(
+                                {
+                                    "id": key,
+                                    "ancestors": [],
+                                    "description": "",
+                                    "count": self.get_count([], key),
+                                    "children": [],
+                                }
+                            )
+        else:
+            for key in PSC_GROUPS.keys():
+                if filter_string:
+                    if filter_string.upper() in key.upper():
                         retval.append(
                             {
                                 "id": key,
@@ -203,12 +219,18 @@ class PSCFilterTree(FilterTree):
                                 "children": [],
                             }
                         )
-            return retval
-        return [
-            {"id": key, "ancestors": [], "description": "", "count": self.get_count([], key), "children": []}
-            for key in PSC_GROUPS.keys()
-            if filter_string and filter_string.upper() in key.upper()
-        ]
+                else:
+                    retval = [
+                        {
+                            "id": key,
+                            "ancestors": [],
+                            "description": "",
+                            "count": self.get_count([], key),
+                            "children": [],
+                        }
+                        for key in PSC_GROUPS.keys()
+                    ]
+        return retval
 
     def _combine_nodes(self, upper_tier, lower_tier):
         for node in upper_tier:
