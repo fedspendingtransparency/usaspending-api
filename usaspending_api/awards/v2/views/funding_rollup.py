@@ -21,8 +21,8 @@ ROLLUP_SQL = SQL(
         from    awards a
                 inner join financial_accounts_by_awards faba on faba.award_id = a.id
                 INNER JOIN submission_attributes sa ON faba.submission_id = sa.submission_id
-                INNER JOIN dabs_submission_window_schedule dabs ON sa.submission_window_id = dabs.id
-        where   {award_id_column} = {award_id} and dabs.submission_reveal_date <= now()
+                INNER JOIN dabs_submission_window_schedule dabs ON sa.submission_window_id = dabs.id and dabs.submission_reveal_date <= now()
+        where   {award_id_column} = {award_id}
     )
     select
         coalesce(sum(gfaba.transaction_obligated_amount), 0.0)          total_transaction_obligated_amount,
