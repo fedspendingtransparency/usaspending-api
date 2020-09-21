@@ -31,17 +31,14 @@ class TASFilterTree(FilterTree):
             return self.tier_2_search(tiered_keys, filter_string)
 
     def _combine_nodes(self, upper_tier, lower_tier):
-        for node in upper_tier:
+        for upper_node in upper_tier:
             children = []
-            for node1 in lower_tier:
-                if node["id"] in node1["ancestors"]:
-                    children.append(node1)
+            for lower_node in lower_tier:
+                if upper_node["id"] in lower_node["ancestors"]:
+                    children.append(lower_node)
             sorted(children, key=lambda x: x["id"])
-            node["children"] = children
+            upper_node["children"] = children
         return upper_tier
-
-    def tier_3_search(self, ancestor_array, filter_string) -> list:
-        return []
 
     def tier_2_search(self, ancestor_array, filter_string) -> list:
         filters = [

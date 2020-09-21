@@ -211,15 +211,15 @@ class PSCFilterTree(FilterTree):
         return retval
 
     def _combine_nodes(self, upper_tier, lower_tier):
-        for node in upper_tier:
+        for upper_node in upper_tier:
             children = []
-            node_ids = [x["id"] for x in node["children"]] if node["children"] is not None else []
-            for node1 in lower_tier:
-                if node["id"] in node1["ancestors"] and node1["id"] not in node_ids:
-                    children.append(node1)
+            node_ids = [x["id"] for x in upper_node["children"]] if upper_node["children"] is not None else []
+            for lower_node in lower_tier:
+                if upper_node["id"] in lower_node["ancestors"] and lower_node["id"] not in node_ids:
+                    children.append(lower_node)
             sorted(children, key=lambda x: x["id"])
             if len(children) > 0:
-                node["children"] = children
+                upper_node["children"] = children
         return upper_tier
 
     def _path_is_valid(self, path: list) -> bool:
