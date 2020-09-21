@@ -5,7 +5,7 @@ Jira Ticket Number(s): DEV-5943
 
 Expected CLI:
 
-    $ python3 usaspending_api/database_scripts/job_archive/backfill_faba_distinct_award_key.py
+    $ python3 usaspending_api/database_scripts/job_archive/backfill_submission_window_id.py
 
 Purpose:
 
