@@ -30,6 +30,8 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, DisasterBa
                 child["face_value_of_loan"] = child.pop("total_budgetary_resources")
             result["face_value_of_loan"] = result.pop("total_budgetary_resources")
 
+        results["totals"] = self.accumulate_total_values(results["results"], ["award_count", "face_value_of_loan"])
+
         return Response(results)
 
     @property

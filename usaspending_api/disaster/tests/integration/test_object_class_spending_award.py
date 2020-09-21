@@ -34,6 +34,9 @@ def test_basic_object_class_award_success(client, basic_faba_with_object_class, 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
+    expected_totals = {"award_count": 1, "obligation": 0, "outlay": 0}
+    assert resp.json()["totals"] == expected_totals
+
 
 @pytest.mark.django_db
 def test_object_class_counts_awards(client, faba_with_object_class_and_two_awards, monkeypatch, helpers):

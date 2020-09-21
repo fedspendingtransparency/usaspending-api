@@ -23,14 +23,18 @@ class AgencyCountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
     def post(self, request: Request) -> Response:
         filters = [
             self.all_closed_defc_submissions,
-            self.has_award_of_provided_type,
+            self.has_award_of_provided_type(),
             self.is_in_provided_def_codes,
         ]
 
         if self.award_type_codes:
             count = (
                 CovidFinancialAccountMatview.objects.annotate(cast_def_codes=Cast("def_codes", ArrayField(TextField())))
-                .filter(type__in=self.award_type_codes, cast_def_codes__overlap=self.def_codes)
+                .filter(
+                    type__in=self.award_type_codes,
+                    cast_def_codes__overlap=self.def_codes,
+                    award__funding_agency__toptier_agency__isnull=False,
+                )
                 .values("award__funding_agency__toptier_agency")
                 .distinct()
                 .count()
