@@ -16,6 +16,7 @@ from usaspending_api.references.tests.integration.filter_tree.psc.psc_data_fixtu
     product_with_branching_count_above_one,
     basic_service,
     no_data,
+    rnd_special,
 )
 
 __all__ = [
@@ -34,4 +35,5 @@ __all__ = [
     "product_with_branching_count_above_one",
     "basic_service",
     "no_data",
+    "rnd_special",
 ]
