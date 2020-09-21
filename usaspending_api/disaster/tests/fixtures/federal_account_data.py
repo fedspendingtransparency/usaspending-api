@@ -9,6 +9,7 @@ from usaspending_api.references.models.disaster_emergency_fund_code import Disas
 def generic_account_data():
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=11,
         is_quarter=False,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
@@ -18,6 +19,7 @@ def generic_account_data():
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=22,
         is_quarter=True,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
@@ -67,6 +69,7 @@ def generic_account_data():
         reporting_fiscal_period=7,
         is_final_balances_for_fy=True,
         quarter_format_flag=False,
+        submission_window_id=11,
     )
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -223,6 +226,7 @@ def unlinked_faba_account_data():
         reporting_fiscal_period=7,
         is_final_balances_for_fy=True,
         quarter_format_flag=False,
+        submission_window_id=11,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
