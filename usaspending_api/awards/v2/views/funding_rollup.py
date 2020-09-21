@@ -20,6 +20,8 @@ ROLLUP_SQL = SQL(
                 faba.treasury_account_id
         from    awards a
                 inner join financial_accounts_by_awards faba on faba.award_id = a.id
+                INNER JOIN submission_attributes sa ON faba.submission_id = sa.submission_id
+                INNER JOIN dabs_submission_window_schedule dabs ON sa.submission_window_id = dabs.id and dabs.submission_reveal_date <= now()
         where   {award_id_column} = {award_id}
     )
     select

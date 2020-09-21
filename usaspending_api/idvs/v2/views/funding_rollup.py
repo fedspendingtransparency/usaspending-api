@@ -43,6 +43,8 @@ ROLLUP_SQL = SQL(
                 faba.treasury_account_id
         from    gather_awards ga
                 inner join financial_accounts_by_awards faba on faba.award_id = ga.award_id
+                INNER JOIN submission_attributes sa ON faba.submission_id = sa.submission_id
+                INNER JOIN dabs_submission_window_schedule dabs ON sa.submission_window_id = dabs.id and dabs.submission_reveal_date <= now()
     )
     select
         coalesce(sum(gfaba.transaction_obligated_amount), 0.0)          total_transaction_obligated_amount,
