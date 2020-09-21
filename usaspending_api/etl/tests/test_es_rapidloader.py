@@ -12,7 +12,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     configure_sql_strings,
     check_awards_for_deletes,
     get_deleted_award_ids,
-    ElasticsearchRunner,
+    Controller,
 )
 
 
@@ -105,7 +105,7 @@ def baby_sleeps(monkeypatch):
 
     monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.fetching_data.sleep", _sleep)
     monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.indexing_data.sleep", _sleep)
-    monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.ElasticsearchRunner.sleep", _sleep)
+    monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.Controller.sleep", _sleep)
 
 
 config = {
@@ -142,8 +142,8 @@ def test_es_award_loader_class(award_data_fixture, elasticsearch_award_index, ba
         "usaspending_api.etl.elasticsearch_loader_helpers.utilities.execute_sql_statement", mock_execute_sql
     )
     elasticsearch_client = instantiate_elasticsearch_client()
-    loader = ElasticsearchRunner(config, elasticsearch_client)
-    assert loader.__class__.__name__ == "ElasticsearchRunner"
+    loader = Controller(config, elasticsearch_client)
+    assert loader.__class__.__name__ == "Controller"
     loader.run_load_steps()
     assert elasticsearch_client.indices.exists(config["index_name"])
     elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
@@ -157,8 +157,8 @@ def test_es_transaction_loader_class(award_data_fixture, elasticsearch_transacti
     config["root_index"] = "transaction-query"
     config["load_type"] = "transactions"
     elasticsearch_client = instantiate_elasticsearch_client()
-    loader = ElasticsearchRunner(config, elasticsearch_client)
-    assert loader.__class__.__name__ == "ElasticsearchRunner"
+    loader = Controller(config, elasticsearch_client)
+    assert loader.__class__.__name__ == "Controller"
     loader.run_load_steps()
     assert elasticsearch_client.indices.exists(config["index_name"])
     elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)

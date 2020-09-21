@@ -1,4 +1,4 @@
-from usaspending_api.etl.elasticsearch_loader_helpers.fetching_data import (
+from usaspending_api.etl.elasticsearch_loader_helpers.fetch_data import (
     configure_sql_strings,
     download_db_records,
     get_updated_record_count,
@@ -9,7 +9,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     deleted_transactions,
     get_deleted_award_ids,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.indexing_data import (
+from usaspending_api.etl.elasticsearch_loader_helpers.load_data import (
     AWARD_VIEW_COLUMNS,
     create_aliases,
     csv_chunk_gen,
@@ -26,13 +26,14 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     format_log,
     process_guarddog,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.elasticsearch_runner import ElasticsearchRunner
+from usaspending_api.etl.elasticsearch_loader_helpers.controller import Controller
 
 
 __all__ = [
     "AWARD_VIEW_COLUMNS",
     "check_awards_for_deletes",
     "configure_sql_strings",
+    "Controller",
     "convert_postgres_array_as_string_to_list",
     "create_aliases",
     "csv_chunk_gen",
@@ -40,7 +41,6 @@ __all__ = [
     "deleted_awards",
     "deleted_transactions",
     "download_db_records",
-    "ElasticsearchRunner",
     "es_data_loader",
     "execute_sql_statement",
     "format_log",

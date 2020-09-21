@@ -24,7 +24,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
 logger = logging.getLogger("script")
 
 
-class ElasticsearchRunner:
+class Controller:
     def __init__(self, config, elasticsearch_client):
         """Set values based on env vars and when the script started"""
         self.config = config

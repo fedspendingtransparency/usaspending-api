@@ -11,7 +11,7 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type, fy as parse_fiscal_year
 from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
-from usaspending_api.etl.elasticsearch_loader_helpers import format_log, ElasticsearchRunner
+from usaspending_api.etl.elasticsearch_loader_helpers import format_log, Controller
 
 logger = logging.getLogger("script")
 
@@ -122,7 +122,7 @@ class Command(BaseCommand):
         elif config["load_type"] == "awards":
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
 
-        loader = ElasticsearchRunner(config, elasticsearch_client)
+        loader = Controller(config, elasticsearch_client)
         loader.run_load_steps()
         loader.complete_process()
 
