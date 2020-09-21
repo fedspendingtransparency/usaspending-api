@@ -20,6 +20,49 @@ def disaster_account_data():
     ag3 = mommy.make("references.Agency", id=3, toptier_agency=ta2, subtier_agency=sa3)
     mommy.make("references.Agency", id=4, toptier_agency=ta3, subtier_agency=sa4, toptier_flag=True)
 
+    dsws1 = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        id=2019070,
+        is_quarter=False,
+        period_start_date="2022-04-01",
+        period_end_date="2022-04-30",
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="2020-4-15",
+    )
+    dsws2 = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        id=2022071,
+        is_quarter=True,
+        period_start_date="2022-04-01",
+        period_end_date="2022-04-30",
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=8,
+        submission_reveal_date="2022-4-15",
+    )
+    dsws3 = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        id=2022080,
+        is_quarter=False,
+        submission_fiscal_year=2022,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=8,
+        submission_reveal_date="2020-5-15",
+    )
+    # Unclosed submisssion window
+    dsws4 = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        id=9999070,
+        is_quarter=False,
+        period_start_date="9999-04-01",
+        period_end_date="9999-04-30",
+        submission_fiscal_year=9999,
+        submission_fiscal_quarter=3,
+        submission_fiscal_month=7,
+        submission_reveal_date="9999-4-15",
+    )
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
@@ -28,6 +71,7 @@ def disaster_account_data():
         is_final_balances_for_fy=False,
         reporting_period_start="2022-04-01",
         toptier_code="007",
+        submission_window=dsws2,
     )
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -37,6 +81,7 @@ def disaster_account_data():
         is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
         toptier_code="008",
+        submission_window=dsws3,
     )
     sub3 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -46,6 +91,7 @@ def disaster_account_data():
         is_final_balances_for_fy=False,
         reporting_period_start="2022-04-01",
         toptier_code="009",
+        submission_window=dsws2,
     )
     sub4 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -54,6 +100,7 @@ def disaster_account_data():
         quarter_format_flag=False,
         is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
+        submission_window=dsws3,
     )
     sub5 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -62,6 +109,7 @@ def disaster_account_data():
         quarter_format_flag=False,
         is_final_balances_for_fy=False,
         reporting_period_start="2019-04-01",
+        submission_window=dsws1,
     )
     sub6 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -70,48 +118,7 @@ def disaster_account_data():
         quarter_format_flag=False,
         is_final_balances_for_fy=False,
         reporting_period_start="9999-04-01",
-    )
-
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        id="2022070",
-        is_quarter=False,
-        period_start_date="2022-04-01",
-        period_end_date="2022-04-30",
-        submission_fiscal_year=2022,
-        submission_fiscal_quarter=3,
-        submission_fiscal_month=7,
-        submission_reveal_date="2020-4-15",
-    )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        id="2022080",
-        is_quarter=False,
-        submission_fiscal_year=2022,
-        submission_fiscal_quarter=3,
-        submission_fiscal_month=8,
-        submission_reveal_date="2020-5-15",
-    )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        id="2022081",
-        is_quarter=True,
-        submission_fiscal_year=2022,
-        submission_fiscal_quarter=3,
-        submission_fiscal_month=8,
-        submission_reveal_date="2020-5-15",
-    )
-    # Unclosed submisssion window
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        id="9999070",
-        is_quarter=True,
-        period_start_date="9999-04-01",
-        period_end_date="9999-04-30",
-        submission_fiscal_year=9999,
-        submission_fiscal_quarter=3,
-        submission_fiscal_month=7,
-        submission_reveal_date="9999-4-15",
+        submission_window=dsws4,
     )
 
     fa1 = mommy.make("accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1")
@@ -186,10 +193,10 @@ def disaster_account_data():
         tas_rendering_label="003-2017/2018-0000-000",
     )
 
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2)
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas3)
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas4)
+    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
+    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub2)
+    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas3, submission=sub4)
+    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas4, submission=sub5)
 
     pa1 = mommy.make("references.RefProgramActivity", program_activity_code="000", program_activity_name="NAME 1")
     pa2 = mommy.make("references.RefProgramActivity", program_activity_code="1000", program_activity_name="NAME 2")

@@ -4,7 +4,7 @@ from django.core.management import call_command
 from usaspending_api.etl.helpers import get_fiscal_quarter
 from usaspending_api.etl.management.load_base import load_data_into_model
 from usaspending_api.references.helpers import retrive_agency_name_from_code
-from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 
 logger = logging.getLogger("script")
@@ -46,8 +46,20 @@ def get_submission_attributes(submission_id, submission_data):
     For a specified broker submission, return the existing corresponding usaspending submission record or
     create and return a new one.
     """
+
+    dabs_window = DABSSubmissionWindowSchedule.objects.filter(
+        submission_fiscal_year=submission_data["reporting_fiscal_year"],
+        submission_fiscal_month=submission_data["reporting_fiscal_period"],
+        is_quarter=submission_data["is_quarter_format"],
+    ).first()
+
+    if not dabs_window:
+        raise RuntimeError(f"Missing DABS Window record necessary for {submission_id}")
+
     # check if we already have an entry for this submission id; if not, create one
-    submission_attributes, created = SubmissionAttributes.objects.get_or_create(submission_id=submission_id)
+    submission_attributes, created = SubmissionAttributes.objects.get_or_create(
+        submission_id=submission_id, defaults={"submission_window": dabs_window}
+    )
 
     if created:
         # this is the first time we're loading this submission
