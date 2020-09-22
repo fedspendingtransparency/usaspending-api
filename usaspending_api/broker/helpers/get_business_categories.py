@@ -1,5 +1,5 @@
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import build_business_categories_boolean_dict
-
+import re
 
 def get_business_categories(row, data_type):
     business_category_set = set()
@@ -7,27 +7,27 @@ def get_business_categories(row, data_type):
     if data_type == "fabs":
         # BUSINESS (FOR-PROFIT)
         business_types = row.get("business_types")
-        if business_types in ("R", "23"):
+        if re.findall("(R|23)", business_types):
             business_category_set.add("small_business")
 
-        if business_types in ("Q", "22"):
+        if re.findall("(Q|22)", business_types):
             business_category_set.add("other_than_small_business")
 
         if business_category_set & {"small_business", "other_than_small_business"}:
             business_category_set.add("category_business")
 
         # NON-PROFIT
-        if business_types in ("M", "N", "12"):
+        if re.findall("(M|N|12)", business_types):
             business_category_set.add("nonprofit")
 
         # HIGHER EDUCATION
-        if business_types in ("H", "06"):
+        if re.findall("(H|06)", business_types):
             business_category_set.add("public_institution_of_higher_education")
 
-        if business_types in ("O", "20"):
+        if re.findall("(O|20)", business_types):
             business_category_set.add("private_institution_of_higher_education")
 
-        if business_types in ("T", "U", "V", "S"):
+        if re.findall("(T|U|V|S)", business_types):
             business_category_set.add("minority_serving_institution_of_higher_education")
 
         if business_category_set & {
@@ -38,22 +38,22 @@ def get_business_categories(row, data_type):
             business_category_set.add("higher_education")
 
         # GOVERNMENT
-        if business_types in ("A", "00"):
+        if re.findall("(A|00)", business_types):
             business_category_set.add("regional_and_state_government")
 
-        if business_types == "E":
+        if re.findall("(E)", business_types):
             business_category_set.add("regional_organization")
 
-        if business_types == "F":
+        if re.findall("(F)", business_types):
             business_category_set.add("us_territory_or_possession")
 
-        if business_types in ("B", "C", "D", "G", "01", "02", "04", "05"):
+        if re.findall("(B|C|D|G|01|02|04|05)", business_types):
             business_category_set.add("local_government")
 
-        if business_types in ("I", "J", "K", "11"):
+        if re.findall("(I|J|K|11)", business_types):
             business_category_set.add("indian_native_american_tribal_government")
 
-        if business_types == "L":
+        if re.findall("(L)", business_types):
             business_category_set.add("authorities_and_commissions")
 
         if business_category_set & {
@@ -67,7 +67,7 @@ def get_business_categories(row, data_type):
             business_category_set.add("government")
 
         # INDIVIDUALS
-        if business_types in ("P", "21"):
+        if re.findall("(P|21)", business_types):
             business_category_set.add("individuals")
 
         return sorted(business_category_set)
