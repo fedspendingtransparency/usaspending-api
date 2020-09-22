@@ -70,9 +70,11 @@ def award_data_fixture(db):
         reporting_period_start="2020-04-21",
         reporting_period_end="2020-04-30",
         quarter_format_flag=True,
+        submission_window_id=2020121,
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=2020121,
         submission_fiscal_year=2020,
         submission_fiscal_month=12,
         is_quarter=True,

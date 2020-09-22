@@ -59,6 +59,49 @@ class TestWithMultipleDatabases(TransactionTestCase):
         mommy.make("references.DisasterEmergencyFundCode", code="L", title="LL")
         mommy.make("references.DisasterEmergencyFundCode", code="N", title="NN")
 
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            id="2000041",
+            submission_fiscal_year=2000,
+            submission_fiscal_month=4,
+            is_quarter=True,
+        )
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            id="2000040",
+            submission_fiscal_year=2000,
+            submission_fiscal_month=4,
+            is_quarter=False,
+        )
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            id="2000041",
+            submission_fiscal_year=2000,
+            submission_fiscal_month=4,
+            is_quarter=True,
+        )
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            id="2000050",
+            submission_fiscal_year=2000,
+            submission_fiscal_month=5,
+            is_quarter=False,
+        )
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            id="2000060",
+            submission_fiscal_year=2000,
+            submission_fiscal_month=6,
+            is_quarter=False,
+        )
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            id="2000091",
+            submission_fiscal_year=2000,
+            submission_fiscal_month=9,
+            is_quarter=True,
+        )
+
         connection = connections["data_broker"]
         with connection.cursor() as cursor:
 
@@ -308,6 +351,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 "reporting_agency_name": None,
                 "is_final_balances_for_fy": False,
                 "published_date": datetime(2000, 1, 1, 0, 0, tzinfo=timezone.utc),
+                "submission_window_id": 2000041,
             }
 
             cursor.execute(

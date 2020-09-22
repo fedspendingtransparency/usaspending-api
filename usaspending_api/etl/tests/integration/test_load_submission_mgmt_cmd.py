@@ -35,6 +35,13 @@ class TestWithMultipleDatabases(TestCase):
         mommy.make(
             "references.ObjectClass", id=0, major_object_class="00", object_class="00.0", direct_reimbursable=None
         )
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            id="2000060",
+            submission_fiscal_year=0,
+            submission_fiscal_month=0,
+            is_quarter=False,
+        )
 
         # Setup default data in Broker Test DB
         broker_objects_to_insert = {
