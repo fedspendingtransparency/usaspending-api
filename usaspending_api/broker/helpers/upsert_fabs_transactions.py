@@ -108,7 +108,7 @@ def insert_new_fabs(to_insert):
             "last_modified_date": last_mod_date,
             "type_description": row["assistance_type_desc"],
             "transaction_unique_id": row["afa_generated_unique"],
-            "business_categories": row['business_categories']
+            "business_categories": row["business_categories"],
         }
 
         transaction_normalized_dict = load_data_into_model(

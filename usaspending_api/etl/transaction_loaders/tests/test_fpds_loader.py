@@ -80,7 +80,7 @@ def _stub___extract_broker_objects(id_list):
         dummy_row["solicitation_date"] = "2010-01-01 00:00:00"
         dummy_row["created_at"] = datetime.datetime.fromtimestamp(0)
         dummy_row["updated_at"] = datetime.datetime.fromtimestamp(0)
-        dummy_row["business_categories"] = ['subchapter_s_corporation', 'category_business']
+        dummy_row["business_categories"] = ["subchapter_s_corporation", "category_business"]
         yield dummy_row
 
 
@@ -242,7 +242,7 @@ def test_load_transactions(mock__fetch_subtier_agency_id, mock_connection):
         mega_key_list[key] = datetime.datetime.fromtimestamp(0)
 
     for key in ["business_categories"]:
-        mega_key_list[key] = ['subchapter_s_corporation', 'category_business']
+        mega_key_list[key] = ["subchapter_s_corporation", "category_business"]
 
     mega_boolean_key_list = {}
     mega_boolean_key_list.update(transaction_fpds_boolean_columns)

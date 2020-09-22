@@ -357,7 +357,7 @@ transaction_normalized_functions = {
     "create_date": current_datetime,  # Data loader won't add this value if it's an update
     "update_date": current_datetime,
     "action_date": lambda broker: truncate_timestamp(broker["action_date"]),
-    "business_categories": lambda broker: broker['business_categories'],
+    "business_categories": lambda broker: broker["business_categories"],
 }
 
 # broker column name -> usaspending column name

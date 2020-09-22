@@ -1,6 +1,7 @@
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import build_business_categories_boolean_dict
 import re
 
+
 def get_business_categories(row, data_type):
     business_category_set = set()
 
