@@ -4,7 +4,6 @@ from usaspending_api.etl.transaction_loaders.derived_field_functions_fpds import
     calculate_awarding_agency,
     calculate_funding_agency,
     current_datetime,
-    business_categories,
     created_at,
     updated_at,
 )
