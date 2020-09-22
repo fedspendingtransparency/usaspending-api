@@ -82,7 +82,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/disaster/object_class/count/](/api/v2/disaster/object_class/count/)|POST| Dimension Count of Disaster/Emergency funding data |
 |[/api/v2/disaster/object_class/loans/](/api/v2/disaster/object_class/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension |
 |[/api/v2/disaster/object_class/spending/](/api/v2/disaster/object_class/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension |
-|[/api/v2/disaster/overview/](/api/v2/disaster/overview/)|POST| Overview of Disaster/Emergency funding and spending |
+|[/api/v2/disaster/overview/](/api/v2/disaster/overview/)|GET| Overview of Disaster/Emergency funding and spending |
 |[/api/v2/disaster/recipient/count/](/api/v2/disaster/recipient/count/)|POST| Dimension Count of Disaster/Emergency funding data |
 |[/api/v2/disaster/recipient/loans/](/api/v2/disaster/recipient/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension |
 |[/api/v2/disaster/recipient/spending/](/api/v2/disaster/recipient/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension |
