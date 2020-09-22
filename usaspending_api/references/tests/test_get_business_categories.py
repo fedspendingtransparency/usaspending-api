@@ -40,6 +40,30 @@ def test_update_business_type_categories_faads_format():
     assert "category_business" in business_categories
 
 
+def test_update_business_type_categories_multiple_types():
+    business_types = "01P"  # numbers then letter
+    business_categories = get_business_categories({"business_types": business_types}, "fabs")
+    assert "government" in business_categories
+    assert "local_government" in business_categories
+    assert "individuals" in business_categories
+
+    business_types = "L12"  # letters then number
+    business_categories = get_business_categories({"business_types": business_types}, "fabs")
+    assert "authorities_and_commissions" in business_categories
+    assert "government" in business_categories
+    assert "nonprofit" in business_categories
+
+    business_types = "MP"  # both letters
+    business_categories = get_business_categories({"business_types": business_types}, "fabs")
+    assert "nonprofit" in business_categories
+    assert "individuals" in business_categories
+
+    business_types = "1221"  # both numbers
+    business_categories = get_business_categories({"business_types": business_types}, "fabs")
+    assert "nonprofit" in business_categories
+    assert "individuals" in business_categories
+
+
 @pytest.mark.django_db
 def test_dev_2318_business_category_changes():
     """
