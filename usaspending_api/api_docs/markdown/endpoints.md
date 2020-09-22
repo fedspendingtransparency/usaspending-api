@@ -29,7 +29,7 @@ The currently available endpoints are listed in the following table.
 | Endpoint | Methods | Description |
 | -------- | ------- | ----------- |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/](/api/v2/agency/012/)|GET| Returns agency overview information for USAspending.gov's Agency Details page for agencies that have ever awarded |
-|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/](/api/v2/agency/012/budget_function/)|POST| Returns a list of Budget Functions and Budget Subfunctions for the agency in a single fiscal year |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/](/api/v2/agency/012/budget_function/)|GET| Returns a list of Budget Functions and Budget Subfunctions for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/count/](/api/v2/agency/012/budget_function/count/)|GET| Returns the count of Budget Functions for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budgetary_resources/](/api/v2/agency/012/budgetary_resources/)|GET| Returns budgetary resources and obligations for the agency and fiscal year requested |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/federal_account/](/api/v2/agency/012/federal_account/)|GET| Returns a list of Federal Accounts and Treasury Accounts for the agency in a single fiscal year |
@@ -72,7 +72,6 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/disaster/agency/loans/](/api/v2/disaster/agency/loans/)|POST| Returns insights on the Agencies awarding loans from disaster/emergency funding |
 |[/api/v2/disaster/agency/spending/](/api/v2/disaster/agency/spending/)|POST| Returns insights on the Agencies which received disaster/emergency funding |
 |[/api/v2/disaster/award/amount/](/api/v2/disaster/award/amount/)|POST| Returns account data obligation and outlay spending aggregations of all (File D) Awards which received disaster/emergency funding |
-|[/api/v2/disaster/award/count/](/api/v2/disaster/award/count/)|POST| Dimension Count of Disaster/Emergency funding data |
 |[/api/v2/disaster/cfda/count/](/api/v2/disaster/cfda/count/)|POST| Dimension Count of Disaster/Emergency funding data |
 |[/api/v2/disaster/cfda/loans/](/api/v2/disaster/cfda/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension |
 |[/api/v2/disaster/cfda/spending/](/api/v2/disaster/cfda/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension |
