@@ -43,6 +43,12 @@ def basic_service(db):
     _psc(db, service_tier_four())
 
 
+@pytest.fixture
+def rnd_special(db):
+    _psc(db, rnd_tier_two_special())
+    _psc(db, rnd_tier_four_special())
+
+
 def toptiers():
     return [
         {"id": "Research and Development", "description": "", "ancestors": [], "count": 1, "children": None},
@@ -75,6 +81,26 @@ def rnd_tier_four():
         "id": "AA90",
         "description": "tier four R&D",
         "ancestors": ["Research and Development", "AA", "AA9"],
+        "count": 0,
+        "children": None,
+    }
+
+
+def rnd_tier_two_special():
+    return {
+        "id": "AU",
+        "description": "tier two R&D",
+        "ancestors": ["Research and Development"],
+        "count": 1,
+        "children": None,
+    }
+
+
+def rnd_tier_four_special():
+    return {
+        "id": "AU10",
+        "description": "R&D-TRANS OF HAZARD MAT",
+        "ancestors": ["Research and Development", "AU"],
         "count": 0,
         "children": None,
     }
