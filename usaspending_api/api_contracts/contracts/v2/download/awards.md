@@ -175,6 +175,8 @@ This route sends a request to the backend to begin generating a zipfile of award
         + `funding`
         + `awarding`
 + `toptier_name` (optional, string)
+    Provided when the `name` belongs to a subtier agency
+
 
 ### TimePeriod (object)
 + `start_date` (required, string)
