@@ -44,7 +44,6 @@ def validate_award_request(request_data: dict):
     json_request = {"download_types": award_levels, "filters": {}}
 
     # Set defaults of non-required parameters
-    json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
     json_request["columns"] = request_data.get("columns", [])
     json_request["file_format"] = str(request_data.get("file_format", "csv")).lower()
 

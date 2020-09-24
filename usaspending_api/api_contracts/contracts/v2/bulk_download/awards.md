@@ -54,7 +54,6 @@ This route sends a request to the backend to begin generating a zipfile of award
                 "file_name": "534_PrimeTransactionsAndSubawards_2020-01-13_H21M04S54995657.zip",
                 "file_url": "/csv_downloads/534_PrimeTransactionsAndSubawards_2020-01-13_H21M04S54995657.zip",
                 "download_request": {
-                    "agency": 50,
                     "columns": [],
                     "download_types": [
                         "prime_awards",
@@ -164,3 +163,5 @@ Agency internal database id. If you wish to include all agencies, use 'all' inst
     + Members
         + `funding`
         + `awarding`
++ `toptier_name` (optional, string)
+    Provided when the `name` belongs to a subtier agency
