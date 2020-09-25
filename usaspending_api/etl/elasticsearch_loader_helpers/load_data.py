@@ -3,10 +3,9 @@ import logging
 import os
 import pandas as pd
 
-from datetime import datetime
 from django.conf import settings
 from django.core.management import call_command
-from elasticsearch import helpers, TransportError
+from elasticsearch import helpers
 from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
@@ -401,18 +400,3 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
     logger.info(
         format_log(f"Elasticsearch Index loading took {perf_counter() - start:.2f}s", job=job.name, process="ES Index")
     )
-
-
-def take_snapshot(client, index, repository):
-    snapshot_name = f"{index}-{str(datetime.now().date())}"
-    try:
-        client.snapshot.create(repository, snapshot_name, body={"indices": index})
-        logger.info(
-            format_log(
-                f"Taking snapshot INDEX: '{index}' SNAPSHOT: '{snapshot_name}' REPO: '{repository}'",
-                process="ES Snapshot",
-            )
-        )
-    except TransportError:
-        logger.exception(format_log(f"SNAPSHOT FAILED", process="ES Snapshot"))
-        raise SystemExit(1)

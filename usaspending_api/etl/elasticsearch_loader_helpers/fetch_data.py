@@ -23,11 +23,23 @@ FROM {view}
 WHERE update_date >= '{update_date}'
 """
 
+ID_SQL = """
+SELECT {id_col}
+FROM {view}
+WHERE update_date >= '{update_date}'
+"""
+
 COPY_SQL = """"COPY (
     SELECT *
     FROM {view}
     WHERE {fiscal_year_field}={fy} AND update_date >= '{update_date}'
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
+"""
+
+EXTRACT_SQL = """
+    SELECT *
+    FROM {view}
+    WHERE {id_col} IN {ids}
 """
 
 # ==============================================================================
@@ -82,6 +94,18 @@ def get_updated_record_count(config):
     count_sql = COUNT_SQL.format(update_date=config["starting_date"], view=view_name)
 
     return execute_sql_statement(count_sql, True, config["verbose"])[0]["count"]
+
+
+def obtain_all_ids_to_process(config):
+    if config["load_type"] == "awards":
+        view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+        id_col = "award_id"
+    else:
+        view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+        id_col = "transaction_id"
+
+    sql = ID_SQL.format(update_date=config["starting_date"], view=view_name, id_col=id_col)
+    return list([x[id_col] for x in execute_sql_statement(sql, True, config["verbose"])])
 
 
 def download_db_records(fetch_jobs, done_jobs, config):

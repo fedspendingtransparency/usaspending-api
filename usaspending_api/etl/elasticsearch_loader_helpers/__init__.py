@@ -2,6 +2,8 @@ from usaspending_api.etl.elasticsearch_loader_helpers.fetch_data import (
     configure_sql_strings,
     download_db_records,
     get_updated_record_count,
+    obtain_all_ids_to_process,
+    EXTRACT_SQL,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     check_awards_for_deletes,
@@ -16,7 +18,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers.load_data import (
     es_data_loader,
     set_final_index_config,
     swap_aliases,
-    take_snapshot,
     VIEW_COLUMNS,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
@@ -25,6 +26,9 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     execute_sql_statement,
     format_log,
     process_guarddog,
+    WorkerNode,
+    gen_random_name,
+    chunks,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import Controller
 
@@ -49,6 +53,10 @@ __all__ = [
     "process_guarddog",
     "set_final_index_config",
     "swap_aliases",
-    "take_snapshot",
     "VIEW_COLUMNS",
+    "obtain_all_ids_to_process",
+    "WorkerNode",
+    "gen_random_name",
+    "EXTRACT_SQL",
+    "chunks",
 ]

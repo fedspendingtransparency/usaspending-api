@@ -17,50 +17,16 @@ logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-    """ETL script for indexing transaction data into Elasticsearch
-
-    HIGHLEVEL PROCESS OVERVIEW
-         1. Generate the full list of fiscal years to process as jobs
-         2. Iterate by job
-           a. Download a CSV file by year (one at a time)
-               i. Continue to download a CSV file until all years are downloaded
-           b. Upload a CSV to Elasticsearch
-               i. Continue to upload a CSV file until all years are uploaded to ES
-           c. Delete CSV file
-    TO RELOAD ALL data:
-        python3 manage.py elasticsearch_indexer --index-name <NEW-INDEX-NAME> --create-new-index all
-
-        Running with --new-index will trigger several actions:
-        0. A view will be created in the source database for the ETL queries
-        1. A new index will be created from the value provided by --index-name (obviously)
-        2. A new index template will be loaded into the cluster to set mapping and index metadata
-        3. All aliases used by the API queries will be re-assigned to the new index
-        4. An alias for incremental indexes will be applied to the new index
-        5. If any previous indexes existed with the API aliases, they will be deleted.
-    """
+    """Parallelized ETL script for indexing SQL data into Elasticsearch"""
 
     help = """Hopefully the code comments are helpful enough to figure this out...."""
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "fiscal_years",
-            nargs="+",
-            type=str,
-            metavar="fiscal-years",
-            help="Provide a list of fiscal years to process. For convenience, provide 'all' for FY2008 to current FY",
-        )
-        parser.add_argument(
             "--process-deletes",
             action="store_true",
             help="When this flag is set, the script will include the process to "
             "obtain records of deleted transactions from S3 and remove from the index",
-        )
-        parser.add_argument(
-            "--dir",
-            default=str(Path(__file__).resolve().parent),
-            type=str,
-            help="Set for a custom location of output files",
-            dest="directory",
         )
         parser.add_argument(
             "--skip-counts",
@@ -71,6 +37,7 @@ class Command(BaseCommand):
             "--index-name",
             type=str,
             help="Provide name for new index about to be created. Only used when --create-new-index is provided",
+            metavar="",
         )
         parser.add_argument(
             "--create-new-index",
@@ -78,21 +45,17 @@ class Command(BaseCommand):
             help="It needs a new unique index name and set aliases used by API logic to the new index",
         )
         parser.add_argument(
-            "--snapshot",
-            action="store_true",
-            help="Create a new Elasticsearch snapshot of the current index state which is stored in S3",
-        )
-        parser.add_argument(
             "--start-datetime",
             type=datetime_command_line_argument_type(naive=False),
             help="Processes transactions updated on or after the UTC date/time provided. yyyy-mm-dd hh:mm:ss is always "
             "a safe format. Wrap in quotes if date/time contains spaces.",
+            metavar="",
         )
         parser.add_argument(
             "--skip-delete-index",
             action="store_true",
             help="When creating a new index skip the step that deletes the old indexes and swaps the aliases. "
-            "Only used when --create-new-index is provided.",
+            "Only applicable when --create-new-index is provided.",
         )
         parser.add_argument(
             "--load-type",
@@ -106,11 +69,27 @@ class Command(BaseCommand):
             type=int,
             help="Time in seconds the ES index process should wait before looking for a new CSV data file.",
             default=60,
+            metavar="(default: 60)",
+        )
+        parser.add_argument(
+            "--workers",
+            type=int,
+            help="Number of concurrent ETL workers",
+            default=10,
+            choices=range(1, 101),
+            metavar="[1-100]",
+        )
+        parser.add_argument(
+            "--batch-size",
+            type=int,
+            help="Batch size for one worker processing a full ETL pipe",
+            default=10000,
+            metavar="(default: 10,000)",
         )
 
     def handle(self, *args, **options):
         elasticsearch_client = instantiate_elasticsearch_client()
-        config = process_cli_parameters(options, elasticsearch_client)
+        config = parse_cli_args(options, elasticsearch_client)
 
         start = perf_counter()
         logger.info(format_log(f"Starting script\n{'=' * 56}"))
@@ -123,6 +102,7 @@ class Command(BaseCommand):
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
 
         loader = Controller(config, elasticsearch_client)
+        # loader.prepare_for_etl()
         loader.run_load_steps()
         loader.complete_process()
 
@@ -131,22 +111,22 @@ class Command(BaseCommand):
         logger.info(format_log("---------------------------------------------------------------"))
 
 
-def process_cli_parameters(options: dict, es_client) -> dict:
+def parse_cli_args(options: dict, es_client) -> dict:
     default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
     simple_args = (
         "skip_delete_index",
         "process_deletes",
         "create_new_index",
-        "snapshot",
         "index_name",
-        "directory",
         "skip_counts",
         "load_type",
+        "workers",
+        "batch_size",
     )
     config = set_config(simple_args, options)
 
     config["fiscal_years"] = fiscal_years_for_processing(options)
-    config["directory"] = Path(config["directory"]).resolve()
+    config["directory"] = Path().resolve()
 
     if config["create_new_index"] and not config["index_name"]:
         raise SystemExit("Fatal error: --create-new-index requires --index-name.")
@@ -164,7 +144,7 @@ def process_cli_parameters(options: dict, es_client) -> dict:
         #  `starting_date` needs to be present and a date before:
         #      - The earliest records in S3.
         #      - When all transaction records in the USAspending SQL database were updated.
-        #   And keep it timezone-award for S3
+        #   And keep it timezone-aware for S3
         config["starting_date"] = get_last_load_date(f"es_{options['load_type']}", default=default_datetime)
 
     config["max_query_size"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
@@ -223,9 +203,7 @@ def set_config(copy_args: list, arg_parse_options: dict) -> dict:
 
 
 def fiscal_years_for_processing(options: list) -> list:
-    if "all" in options["fiscal_years"]:
-        return create_fiscal_year_list(start_year=parse_fiscal_year(settings.API_SEARCH_MIN_DATE))
-    return [int(x) for x in options["fiscal_years"]]
+    return create_fiscal_year_list(start_year=parse_fiscal_year(settings.API_SEARCH_MIN_DATE))
 
 
 def check_new_index_name_is_ok(provided_name: str, suffix: str) -> None:

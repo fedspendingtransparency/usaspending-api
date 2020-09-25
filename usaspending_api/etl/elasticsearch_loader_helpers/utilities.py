@@ -2,7 +2,9 @@ import json
 import logging
 import psycopg2
 
-from typing import Optional
+from typing import Optional, List
+from dataclasses import dataclass, field
+from random import choice
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -16,6 +18,17 @@ class DataJob:
         self.fy = args[2]
         self.csv = args[3]
         self.count = None
+
+
+@dataclass
+class WorkerNode:
+    """Contains details for a worker node to perform micro ETL step"""
+
+    name: str
+    index: str
+    sql: str
+    ids: List[int] = field(default_factory=list)
+    transform_func: callable
 
 
 def chunks(l, n):
@@ -94,3 +107,65 @@ def filter_query(column, values, query_type="match_phrase"):
 def format_log(msg, process=None, job=None):
     inner_str = f"[{process if process else 'main'}] {f'(#{job})' if job else ''}"
     return f"{inner_str:<18} | {msg}"
+
+
+def gen_random_name():
+    """Generates up to 400 unique name strings, random order each run"""
+    previous_names = []
+
+    nouns = [
+        "Agent",
+        "Archer",
+        "Armadillo",
+        "Champion",
+        "Crusher",
+        "Defender",
+        "Enchanter",
+        "Falcon",
+        "Gargoyle",
+        "Hammer",
+        "Mantis",
+        "Mastermind",
+        "Omen",
+        "Phoenix",
+        "Puma",
+        "Seer",
+        "Shadow",
+        "Spectacle",
+        "Warrior",
+        "Wonder",
+    ]
+
+    prefix = [
+        "Black",
+        "Blue",
+        "Capped",
+        "Colossal",
+        "Commander",
+        "Dark",
+        "Doctor",
+        "Eager",
+        "Earth",
+        "Ethereal",
+        "Gentle",
+        "Giant",
+        "Grey",
+        "Heavy",
+        "Kind",
+        "Mighty",
+        "Professor",
+        "Red",
+        "Thunder",
+        "White",
+    ]
+
+    max_combinations = len(prefix) * len(nouns)
+
+    while True:
+        name = f"{choice(prefix)} {choice(nouns)}"
+        if name not in previous_names:
+            previous_names.append(name)
+            yield name
+
+        if len(previous_names) >= max_combinations:
+            break
