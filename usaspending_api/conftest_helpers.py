@@ -70,8 +70,8 @@ class TestElasticSearchIndex:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
             if self.index_type == "transactions":
                 transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
-            for key in transaction.keys():
-                if "agg_key" in key:
+            for key, val in transaction.items():
+                if val is not None and "agg_key" in key:
                     transaction[key] = json.dumps(transaction[key], sort_keys=True)
             routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
             routing_value = transaction.get(routing_key)
@@ -96,8 +96,6 @@ class TestElasticSearchIndex:
             return None
         result = []
         for j in json_array:
-            for key, value in j.items():
-                j[key] = "" if value is None else str(j[key])
             result.append(json.dumps(j, sort_keys=True))
         return result
 

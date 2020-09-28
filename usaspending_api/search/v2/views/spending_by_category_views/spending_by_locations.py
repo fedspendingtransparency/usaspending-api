@@ -40,8 +40,8 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
                 if location_info.get("congressional_code") == "90":
                     congressional_code = "MULTIPLE DISTRICTS"
                 else:
-                    congressional_code = location_info.get("congressional_code")
-                name = f"{location_info.get('state_code')}-{congressional_code}"
+                    congressional_code = location_info.get("congressional_code") or ""
+                name = f"{location_info.get('state_code') or ''}-{congressional_code}"
             else:
                 name = location_info.get(f"{self.location_type.value}_name")
 

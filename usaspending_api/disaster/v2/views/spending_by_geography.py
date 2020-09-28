@@ -158,7 +158,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                 population = None
             else:
                 geo_info = json.loads(bucket.get("key"))
-                state_code = geo_info["state_code"]
+                state_code = geo_info["state_code"] or ""
                 population = int(geo_info["population"]) if geo_info["population"] else None
 
                 if self.geo_layer == GeoLayer.STATE:
@@ -167,7 +167,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                     display_name = display_name.title()
                 elif self.geo_layer == GeoLayer.COUNTY:
                     state_fips = geo_info["state_fips"] or code_to_state.get(state_code, {}).get("fips", "")
-                    display_name = geo_info["county_name"].title()
+                    display_name = (geo_info["county_name"] or "").title()
                     shape_code = f"{state_fips}{geo_info['county_code']}"
                 else:
                     state_fips = geo_info["state_fips"] or code_to_state.get(state_code, {}).get("fips", "")

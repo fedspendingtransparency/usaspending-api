@@ -40,8 +40,8 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "code": industry_code_info.get("code"),
-                    "id": int(industry_code_info.get("id")) if industry_code_info.get("id") else None,
-                    "name": industry_code_info.get("description") or None,
+                    "id": industry_code_info.get("id"),
+                    "name": industry_code_info.get("description"),
                 }
             )
 

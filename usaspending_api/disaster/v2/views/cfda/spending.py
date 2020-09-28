@@ -31,11 +31,11 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
             info = json.loads(bucket.get("key"))
 
             toAdd = {
-                "id": int(info.get("id")) if info.get("id") else None,
-                "code": info.get("code") or None,
-                "description": info.get("description") or None,
+                "id": info["id"],
+                "code": info["code"],
+                "description": info["description"],
                 "award_count": int(bucket.get("doc_count", 0)),
-                "resource_link": info.get("url") or None,
+                "resource_link": info["url"],
                 **{
                     column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
                     for column in self.sum_column_mapping

@@ -348,18 +348,23 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             geo_info = json.loads(bucket.get("key"))
 
             if self.geo_layer == GeoLayer.STATE:
-                display_name = geo_info.get("state_name").title()
-                shape_code = geo_info.get("state_code").upper()
+                display_name = (geo_info.get("state_name") or "").title()
+                shape_code = (geo_info.get("state_code") or "").upper()
             elif self.geo_layer == GeoLayer.COUNTY:
-                display_name = geo_info["county_name"].title()
-                shape_code = f"{geo_info['state_fips']}{geo_info['county_code']}"
+                state_fips = geo_info.get("state_fips") or ""
+                county_code = geo_info.get("county_code") or ""
+                display_name = (geo_info.get("county_name") or "").title()
+                shape_code = f"{state_fips}{county_code}"
             else:
-                display_name = f"{geo_info['state_code']}-{geo_info['congressional_code']}".upper()
-                shape_code = f"{geo_info['state_fips']}{geo_info['congressional_code']}"
+                state_code = geo_info.get("state_code") or ""
+                state_fips = geo_info.get("state_fips") or ""
+                congressional_code = geo_info.get("congressional_code") or ""
+                display_name = f"{state_code}-{congressional_code}".upper()
+                shape_code = f"{state_fips}{congressional_code}"
 
             per_capita = None
             aggregated_amount = int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100")
-            population = int(geo_info["population"]) if geo_info["population"] else None
+            population = geo_info.get("population")
             if population:
                 per_capita = (Decimal(aggregated_amount) / Decimal(population)).quantize(Decimal(".01"))
 

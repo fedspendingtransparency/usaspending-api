@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.management import call_command
 from elasticsearch import helpers, TransportError
 from time import perf_counter, sleep
-from typing import Optional
+from typing import Optional, List
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
@@ -20,6 +20,8 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 # ==============================================================================
 # SQL Template Strings for Postgres Statements
 # ==============================================================================
+
+global TEST
 
 VIEW_COLUMNS = [
     "transaction_id",
@@ -271,7 +273,7 @@ def convert_postgres_array_as_string_to_list(array_as_string: str) -> Optional[l
     return array_as_string[1:-1].split(",") if len(array_as_string) > 2 else None
 
 
-def convert_postgres_json_array_as_string_to_list(json_array_as_string: str) -> Optional[dict]:
+def convert_postgres_json_array_as_string_to_list(json_array_as_string: str) -> Optional[List[dict]]:
     """
         Postgres JSON arrays (jsonb) are stored in CSVs as strings. Since we want to avoid nested types
         in Elasticsearch the JSON arrays are converted to dictionaries to make parsing easier and then
@@ -285,8 +287,6 @@ def convert_postgres_json_array_as_string_to_list(json_array_as_string: str) -> 
     except json.decoder.JSONDecodeError:
         raise ValueError(f"Unable to parse {json_array_as_string}")
     for j in json_array:
-        for key, value in j.items():
-            j[key] = "" if value is None else str(j[key])
         result.append(json.dumps(j, sort_keys=True))
     return result
 

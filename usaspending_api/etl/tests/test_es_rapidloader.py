@@ -163,7 +163,7 @@ def test_configure_sql_strings():
     SELECT *
     FROM award_delta_view
     WHERE fiscal_year=2019 AND update_date >= '2007-10-01 00:00:00+00:00'
-) TO STDOUT DELIMITER ',' CSV HEADER" > 'filename'
+) TO STDOUT WITH (DELIMITER ',', ESCAPE '\\', QUOTE '\\"', FORMAT CSV, HEADER)" > 'filename'
 """
     count_sql = """
 SELECT COUNT(*) AS count

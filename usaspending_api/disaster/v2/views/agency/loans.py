@@ -119,7 +119,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
     def _build_json_result(self, bucket: dict):
         info = json.loads(bucket.get("key"))
         return {
-            "id": int(info["id"]),
+            "id": info["id"],
             "code": info["code"],
             "description": info["name"],
             # the count of distinct awards contributing to the totals

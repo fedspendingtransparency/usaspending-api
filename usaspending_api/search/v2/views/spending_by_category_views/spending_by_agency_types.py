@@ -37,8 +37,8 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "name": agency_info.get("name"),
-                    "code": agency_info.get("abbreviation") or None,
-                    "id": int(agency_info.get("id")) if len(agency_info.get("id")) > 0 else None,
+                    "code": agency_info.get("abbreviation"),
+                    "id": agency_info.get("id"),
                 }
             )
 
