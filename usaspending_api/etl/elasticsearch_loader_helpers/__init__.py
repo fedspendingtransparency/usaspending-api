@@ -4,6 +4,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.fetch_data import (
     get_updated_record_count,
     obtain_all_ids_to_process,
     EXTRACT_SQL,
+    extract_records,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     check_awards_for_deletes,
@@ -19,6 +20,8 @@ from usaspending_api.etl.elasticsearch_loader_helpers.load_data import (
     set_final_index_config,
     swap_aliases,
     VIEW_COLUMNS,
+    load_data,
+    transform_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     convert_postgres_array_as_string_to_list,
@@ -59,4 +62,7 @@ __all__ = [
     "gen_random_name",
     "EXTRACT_SQL",
     "chunks",
+    "extract_records",
+    "load_data",
+    "transform_data",
 ]

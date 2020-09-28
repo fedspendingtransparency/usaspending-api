@@ -27,8 +27,9 @@ class WorkerNode:
     name: str
     index: str
     sql: str
-    ids: List[int] = field(default_factory=list)
+    load_type: str
     transform_func: callable
+    ids: List[int] = field(default_factory=list)
 
 
 def chunks(l, n):
@@ -46,7 +47,7 @@ def convert_postgres_array_as_string_to_list(array_as_string: str) -> Optional[l
     return array_as_string[1:-1].split(",") if len(array_as_string) > 2 else None
 
 
-def convert_postgres_json_array_as_string_to_list(json_array_as_string: str) -> Optional[dict]:
+def convert_postgres_json_array_as_string_to_list(json_array_as_string: str) -> Optional[List]:
     """
         Postgres JSON arrays (jsonb) are stored in CSVs as strings. Since we want to avoid nested types
         in Elasticsearch the JSON arrays are converted to dictionaries to make parsing easier and then
@@ -56,6 +57,22 @@ def convert_postgres_json_array_as_string_to_list(json_array_as_string: str) -> 
         return None
     result = []
     json_array = json.loads(json_array_as_string)
+    for j in json_array:
+        for key, value in j.items():
+            j[key] = "" if value is None else str(j[key])
+        result.append(json.dumps(j, sort_keys=True))
+    return result
+
+
+def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
+    """
+        Postgres JSON arrays (jsonb) are stored in CSVs as strings. Since we want to avoid nested types
+        in Elasticsearch the JSON arrays are converted to dictionaries to make parsing easier and then
+        converted back into a formatted string.
+    """
+    if json_array is None or len(json_array) == 0:
+        return None
+    result = []
     for j in json_array:
         for key, value in j.items():
             j[key] = "" if value is None else str(j[key])
@@ -105,8 +122,8 @@ def filter_query(column, values, query_type="match_phrase"):
 
 
 def format_log(msg, process=None, job=None):
-    inner_str = f"[{process if process else 'main'}] {f'(#{job})' if job else ''}"
-    return f"{inner_str:<18} | {msg}"
+    inner_str = f"[{process if process else 'main'}] {f'{job}' if job else ''}"
+    return f"{inner_str:<38} | {msg}"
 
 
 def gen_random_name():

@@ -6,6 +6,7 @@ from time import sleep
 from typing import Tuple
 from django.conf import settings
 from math import ceil
+from django.core.management import call_command
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.etl.elasticsearch_loader_helpers import (
@@ -23,6 +24,9 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     gen_random_name,
     EXTRACT_SQL,
     chunks,
+    extract_records,
+    transform_data,
+    load_data,
 )
 
 logger = logging.getLogger("script")
@@ -35,7 +39,7 @@ class Controller:
         self.elasticsearch_client = elasticsearch_client
 
     def prepare_for_etl(self):
-        id_list = obtain_all_ids_to_process(self.config)
+        id_list = obtain_all_ids_to_process(self.config, True)
         self.updated_record_count = len(id_list)
         self.fractions = self.partion_ids(id_list, self.config["batch_size"])
 
@@ -47,13 +51,23 @@ class Controller:
             )
         )
 
-        workers = [self.create_worker(f) for f in self.fractions]
+        self.workers = [self.create_worker(f) for f in self.fractions]
         total = 0
-        for worker in workers:
+        for worker in self.workers:
             total += len(worker.ids)
             print(f"{worker.name}: {len(worker.ids)}")
 
         print(total)
+
+        if self.config["create_new_index"]:
+            # ensure template for index is present and the latest version
+            call_command("es_configure", "--template-only", f"--load-type={self.config['load_type']}")
+
+    def extract(self):
+        for worker in self.workers:
+            records = extract_records(worker)
+            records = transform_data(worker, records)
+            load_data(worker, records, self.elasticsearch_client)
 
     def run_load_steps(self) -> None:
         download_queue = Queue()  # Queue for jobs which need a csv downloaded
@@ -150,9 +164,11 @@ class Controller:
             view = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
             transform_func = None
 
-        sql = EXTRACT_SQL.format(id_col=id_col, view=view, ids=tuple(fraction))
-        name = next(gen_random_name())
-
         return WorkerNode(
-            index=self.config["index_name"], sql=sql, transform_func=transform_func, name=name, ids=fraction
+            ids=fraction,
+            index=self.config["index_name"],
+            load_type=self.config["load_type"],
+            name=next(gen_random_name()),
+            sql=EXTRACT_SQL.format(id_col=id_col, view=view, ids=tuple(fraction)),
+            transform_func=transform_func,
         )

@@ -96,7 +96,7 @@ def get_updated_record_count(config):
     return execute_sql_statement(count_sql, True, config["verbose"])[0]["count"]
 
 
-def obtain_all_ids_to_process(config):
+def obtain_all_ids_to_process(config, sort_ids=False):
     if config["load_type"] == "awards":
         view_name = settings.ES_AWARDS_ETL_VIEW_NAME
         id_col = "award_id"
@@ -105,7 +105,11 @@ def obtain_all_ids_to_process(config):
         id_col = "transaction_id"
 
     sql = ID_SQL.format(update_date=config["starting_date"], view=view_name, id_col=id_col)
-    return list([x[id_col] for x in execute_sql_statement(sql, True, config["verbose"])])
+    results = list([x[id_col] for x in execute_sql_statement(sql, True, config["verbose"])])
+    if sort_ids:
+        results.sort()
+
+    return results
 
 
 def download_db_records(fetch_jobs, done_jobs, config):
@@ -146,6 +150,18 @@ def download_db_records(fetch_jobs, done_jobs, config):
     done_jobs.put(DataJob(None, None, None, None))
     logger.info(format_log(f"PostgreSQL COPY operations complete", process="Download"))
     return
+
+
+def extract_records(worker):
+    start = perf_counter()
+    records = execute_sql_statement(worker.sql, True)
+
+    logger.info(
+        format_log(
+            f"{len(records):,} records extracted in {perf_counter() - start:.2f}s", job=worker.name, process="Download"
+        )
+    )
+    return records
 
 
 def download_csv(count_sql, copy_sql, filename, job_id, skip_counts, verbose):

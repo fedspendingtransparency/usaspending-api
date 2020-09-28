@@ -14,6 +14,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     format_log,
     convert_postgres_array_as_string_to_list,
     convert_postgres_json_array_as_string_to_list,
+    convert_postgres_json_array_to_list,
 )
 
 
@@ -400,3 +401,53 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
     logger.info(
         format_log(f"Elasticsearch Index loading took {perf_counter() - start:.2f}s", job=job.name, process="ES Index")
     )
+
+
+def transform_data(worker, records):
+    logger.info(format_log(f"Transforming data", job=worker.name, process="ES Index"))
+    start = perf_counter()
+
+    # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
+    converters = {
+        # "business_categories": convert_postgres_array_as_string_to_list,
+        # "tas_paths": convert_postgres_array_as_string_to_list,
+        # "tas_components": convert_postgres_array_as_string_to_list,
+        "federal_accounts": convert_postgres_json_array_to_list,
+        # "disaster_emergency_fund_codes": convert_postgres_array_as_string_to_list,
+    }
+    # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
+    column_list = AWARD_VIEW_COLUMNS if worker.load_type == "awards" else VIEW_COLUMNS
+    _ = {k: str for k in column_list if k not in converters}
+
+    # df = pd.DataFrame.from_records(records, columns=column_list)
+    # df = df.where(cond=(pd.notnull(df)), other=None)
+
+    for record in records:
+        for field, converter in converters.items():
+            record[field] = converter(record[field])
+        record["routing"] = record[settings.ES_ROUTING_FIELD]
+        record["_id"] = record[f"{'award' if worker.load_type == 'awards' else 'transaction'}_id"]
+    # TODO: convert special fields to correct format
+
+    # Route all documents with the same recipient to the same shard
+    # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
+    # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
+    # and this is needed for performance
+    # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
+    # df["routing"] = df[settings.ES_ROUTING_FIELD]
+
+    # Explicitly setting the ES _id field to match the postgres PK value allows
+    # bulk index operations to be upserts without creating duplicate documents
+
+    logger.info(
+        format_log(f"Data Transformation took {perf_counter() - start:.2f}s", job=worker.name, process="ES Index")
+    )
+    return records
+
+
+def load_data(worker, records, client):
+    start = perf_counter()
+
+    logger.info(format_log(f"Starting Index operation", job=worker.name, process="ES Index"))
+    streaming_post_to_es(client, records, worker.index, worker.load_type, worker.name)
+    logger.info(format_log(f"Index operation took {perf_counter() - start:.2f}s", job=worker.name, process="ES Index"))

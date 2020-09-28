@@ -102,9 +102,10 @@ class Command(BaseCommand):
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
 
         loader = Controller(config, elasticsearch_client)
-        # loader.prepare_for_etl()
-        loader.run_load_steps()
-        loader.complete_process()
+        loader.prepare_for_etl()
+        loader.extract()
+        # loader.run_load_steps()
+        # loader.complete_process()
 
         logger.info(format_log("---------------------------------------------------------------"))
         logger.info(format_log(f"Script completed in {perf_counter() - start:.2f}s"))
