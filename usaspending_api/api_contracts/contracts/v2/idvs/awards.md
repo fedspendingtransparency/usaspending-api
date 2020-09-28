@@ -37,7 +37,7 @@ List child IDVs, child awards, or grandchild awards for IDV
                 + `obligated_amount`
         + `order`: `desc` (optional, string)
             The direction results are sorted by. `asc` for ascending, `desc` for descending.
-            + Default: `desc`
+            + Default: `desc`            
 
 + Response 200 (application/json)
     + Attributes (object)

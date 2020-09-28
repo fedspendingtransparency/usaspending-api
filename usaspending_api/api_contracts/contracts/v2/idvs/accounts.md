@@ -22,6 +22,15 @@ This endpoint returns a list of federal accounts under a given IDV.
             Direction of sort
         + `sort`:`total_transaction_obligated_amount` (optional, string)
             The field to sort on
+    + Body
+    
+        {
+            "limit": 10,
+            "sort": "total_transaction_obligated_amount",
+            "order": "desc",
+            "award_id": "CONT_IDV_TMHQ10C0040_2044",
+            "page": 1
+        }
 
 + Response 200 (application/json)
     + Attributes (object) 

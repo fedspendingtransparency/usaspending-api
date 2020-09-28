@@ -43,6 +43,14 @@ List File C financial data for an IDV award's descendant contracts
             + Members
                 + `asc`
                 + `desc`
+    + Body
+        {
+            "award_id": "CONT_IDV_TMHQ10C0040_2044",
+            "page": 1,
+            "sort": "piid",
+            "order": "asc",
+            "limit": 15
+        }
 
 + Response 200 (application/json)
     + Attributes (object)
