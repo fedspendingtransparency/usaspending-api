@@ -1,14 +1,16 @@
 import logging
 
-from multiprocessing import Process, Queue
+from django.conf import settings
+from django.core.management import call_command
+from math import ceil
+from multiprocessing import Process, Queue, Pool
 from pathlib import Path
+from random import choice
 from time import sleep
 from typing import Tuple
-from django.conf import settings
-from math import ceil
-from django.core.management import call_command
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
+from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     DataJob,
     deleted_transactions,
@@ -39,35 +41,47 @@ class Controller:
         self.elasticsearch_client = elasticsearch_client
 
     def prepare_for_etl(self):
+        logger.info(format_log("Assessing data to process"))
         id_list = obtain_all_ids_to_process(self.config, True)
         self.updated_record_count = len(id_list)
         self.fractions = self.partion_ids(id_list, self.config["batch_size"])
+
+        self.config["workers"] = min(self.config["workers"], len(self.fractions))
 
         logger.info(
             format_log(
                 f"Created {len(self.fractions):,} jobs to process"
                 f" {self.updated_record_count:,} {self.config['load_type']} records"
-                f" using {self.config['workers']} workers"
+                f" using {self.config['workers']:,} workers"
             )
         )
 
         self.workers = [self.create_worker(f) for f in self.fractions]
-        total = 0
-        for worker in self.workers:
-            total += len(worker.ids)
-            print(f"{worker.name}: {len(worker.ids)}")
-
-        print(total)
 
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
             call_command("es_configure", "--template-only", f"--load-type={self.config['load_type']}")
 
     def extract(self):
-        for worker in self.workers:
-            records = extract_records(worker)
-            records = transform_data(worker, records)
-            load_data(worker, records, self.elasticsearch_client)
+        with Pool(self.config["workers"]) as pool:
+            pool.map(self.extract_transform_load, self.workers)
+
+    @staticmethod
+    def extract_transform_load(worker):
+        random_verb = choice(
+            ["skillfully", "deftly", "expertly", "readily", "resourcefully", "nimbly", "agilely", "casually", "easily"]
+        )
+        logger.info(
+            format_log(
+                f"{worker.name.upper()} enters the arena to {random_verb} handle {len(worker.ids)} docs",
+                job=worker.name,
+            )
+        )
+
+        client = instantiate_elasticsearch_client()
+        records = extract_records(worker)
+        records = transform_data(worker, records)
+        load_data(worker, records, client)
 
     def run_load_steps(self) -> None:
         download_queue = Queue()  # Queue for jobs which need a csv downloaded

@@ -93,7 +93,7 @@ class Command(BaseCommand):
 
         start = perf_counter()
         logger.info(format_log(f"Starting script\n{'=' * 56}"))
-        start_msg = "target index: {index_name} | FY(s): {fiscal_years} | Starting from: {starting_date}"
+        start_msg = "target index: {index_name} | Starting from: {starting_date}"
         logger.info(format_log(start_msg.format(**config)))
 
         if config["load_type"] == "transactions":
