@@ -47,19 +47,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                     "10",
                     "06",
                     "09",
-                    "11",
-                    "A",
-                    "B",
-                    "C",
-                    "D",
-                    "IDV_A",
-                    "IDV_B",
-                    "IDV_B_A",
-                    "IDV_B_B",
-                    "IDV_B_C",
-                    "IDV_C",
-                    "IDV_D",
-                    "IDV_E"
+                    "11"
                 ]
             },
             "pagination": {
