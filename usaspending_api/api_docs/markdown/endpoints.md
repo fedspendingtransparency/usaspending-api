@@ -72,6 +72,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/disaster/agency/loans/](/api/v2/disaster/agency/loans/)|POST| Returns insights on the Agencies awarding loans from disaster/emergency funding |
 |[/api/v2/disaster/agency/spending/](/api/v2/disaster/agency/spending/)|POST| Returns insights on the Agencies which received disaster/emergency funding |
 |[/api/v2/disaster/award/amount/](/api/v2/disaster/award/amount/)|POST| Returns account data obligation and outlay spending aggregations of all (File D) Awards which received disaster/emergency funding |
+|[/api/v2/disaster/award/count/](/api/v2/disaster/award/count/)|POST| Returns the count of account data obligation and outlay spending aggregations of all (File D) Awards which received disaster/emergency funding |
 |[/api/v2/disaster/cfda/count/](/api/v2/disaster/cfda/count/)|POST| Dimension Count of Disaster/Emergency funding data |
 |[/api/v2/disaster/cfda/loans/](/api/v2/disaster/cfda/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension |
 |[/api/v2/disaster/cfda/spending/](/api/v2/disaster/cfda/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension |
