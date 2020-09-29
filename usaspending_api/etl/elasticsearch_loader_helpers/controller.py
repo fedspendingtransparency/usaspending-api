@@ -57,7 +57,9 @@ class Controller:
 
     def launch_workers(self):
         with Pool(self.config["workers"]) as pool:
-            pool.map(self.extract_transform_load, self.workers)
+            pool.imap(self.extract_transform_load, self.workers)
+            pool.close()
+            pool.join()
 
     @staticmethod
     def extract_transform_load(worker):
@@ -70,6 +72,8 @@ class Controller:
         try:
             records = transform_data(worker, extract_records(worker))
             load_data(worker, records, client)
+            del records
+            del client
         except Exception as e:
             logger.exception(format_log(f"{worker.name} was lost in battle.", job=worker.name))
             raise e
