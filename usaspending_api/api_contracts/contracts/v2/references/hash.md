@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Restore Filters From URL Hash [/api/v2/references/hash/]
 
-Restores selected filter criteria, based on URL hash. Supports the advanced search page and allow for complex filtering for specific subsets of spending data.
+Restores selected filter criteria, based on URL hash. Supports the advanced search page and allow for complex filtering for specific subsets of spending data. Primarily used when user shares or saves a url from an Advanced Search results page.
 
 ## POST
 
@@ -19,7 +19,7 @@ Restore Filters From URL Hash Data
 
     + Attributes (object)
         + `hash` (required, string)
-            + Default: `5703c297b902ac3b76088c5c275b53f9`
+            + Default: `5703c297b902ac3b76088c5c275b53f9` (retruns  default filters)
 
     + Body
 

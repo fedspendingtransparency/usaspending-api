@@ -47,21 +47,19 @@ class FilterEndpoint(APIView):
         return Response({"hash": hash})
 
 
-@method_decorator(deprecated, name="post")
 class HashEndpoint(APIView):
-    """DEPRECATED"""
-
     serializer_class = HashSerializer
 
     def post(self, request, format=None):
         """
-        Return the hash for a json
+        Return the stored filter object corresponding to the received hash
         """
         # get hash
         body_unicode = request.body.decode("utf-8")
         body = json.loads(body_unicode)
         hash = body["hash"]
-        # check for hash in db, if not in db
+
+        # check for hash in db
         try:
             fh = FilterHash.objects.get(hash=hash)
             # return filter json
