@@ -28,7 +28,10 @@ from usaspending_api.disaster.v2.views.elasticsearch_account_base import Elastic
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
+from usaspending_api.search.v2.elasticsearch_helper import (
+    get_summed_value_as_float,
+    get_number_of_unique_nested_terms_accounts,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -81,25 +84,19 @@ class SpendingByAgencyViewSet(
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            # query = self.filters.pop("query", None)
-            # if query:
-            #     self.filters["query"] = {"text": query, "fields": self.query_fields}
             self.filter_query = ES_Q("bool", filter={"exists": {"field": "financial_account_distinct_award_key"}})
             defc = self.filters.pop("def_codes")
             self.filters.update({"nested_def_codes": defc})
-            self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(self.filters)
-
-            # Ensure that only non-zero values are taken into consideration
-            # TODO: Refactor to use new NonzeroFields filter in QueryWithFilters
-            # non_zero_queries = []
-            # for field in self.sum_column_mapping.values():
-            #     non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))
-            #     non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
-            # self.filter_query.must.append(ES_Q("bool", should=non_zero_queries, minimum_should_match=1))
-
-            self.bucket_count = (
-                10000  # get_number_of_unique_terms_for_awards(self.filter_query, f"{self.agg_key}.hash")
+            self.filters.update(
+                {
+                    "nested_nonzero_fields": [
+                        "financial_accounts_by_award.transaction_obligated_amount",
+                        "financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
+                    ]
+                }
             )
+            self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(self.filters)
+            self.bucket_count = get_number_of_unique_nested_terms_accounts(self.filter_query, f"{self.agg_key}")
             messages = []
             if self.pagination.sort_key in ("id", "code"):
                 messages.append(

@@ -10,7 +10,7 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     INDEX_ALIASES_TO_AWARD_TYPES,
 )
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch, AwardSearch
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch, AwardSearch, AccountSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 
@@ -175,6 +175,24 @@ def get_number_of_unique_terms_for_awards(filter_query: ES_Q, field: str) -> int
           should be implemented with a safeguard in case this count is above 10k.
     """
     return _get_number_of_unique_terms(AwardSearch().filter(filter_query), field)
+
+
+def get_number_of_unique_nested_terms_accounts(filter_query: ES_Q, field: str) -> int:
+    """
+    Returns the count for a specific filter_query.
+    NOTE: Counts below the precision_threshold are expected to be close to accurate (per the Elasticsearch
+          documentation). Since aggregations do not support more than 10k buckets this value is hard coded to
+          11k to ensure that endpoints using Elasticsearch do not cross the 10k threshold. Elasticsearch endpoints
+          should be implemented with a safeguard in case this count is above 10k.
+    """
+    nested_agg = A("nested", path="financial_accounts_by_award")
+    cardinality_aggregation = A("cardinality", field=field, precision_threshold=11000)
+    nested_agg.metric("field_count", cardinality_aggregation)
+    search = AccountSearch().filter(filter_query)
+    search.aggs.metric("financial_account_agg", nested_agg)
+    response = search.handle_execute()
+    response_dict = response.aggs.to_dict()
+    return response_dict.get("financial_account_agg", {}).get("field_count", {"value": 0})["value"]
 
 
 def _get_number_of_unique_terms(search, field: str) -> int:
