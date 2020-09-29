@@ -439,11 +439,25 @@ class _NestedDEFC(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
         def_codes_query = []
         for v in filter_values:
-            def_codes_query.append(ES_Q("match", {"financial_accounts_by_awards.disaster_emergency_fund_codes": v}))
-        if query_type == _QueryType.AWARDS:
-            return ES_Q("bool", should=def_codes_query, minimum_should_match=1)
+            def_codes_query.append(ES_Q("match", **{"financial_accounts_by_award.disaster_emergency_fund_code": v}))
 
-        return ES_Q("bool", should=def_codes_query, minimum_should_match=1)
+        defc_query = ES_Q("bool", should=def_codes_query, minimum_should_match=1)
+        return ES_Q("nested", path="financial_accounts_by_award", query=defc_query)
+
+
+class _NestedNonZero(_Filter):
+    """List of fields where at least one should have a nonzero value for each document"""
+
+    underscore_name = "nested_nonzero_fields"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
+        non_zero_queries = []
+        for field in filter_values:
+            non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))
+            non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
+        non_zero_should = ES_Q("bool", should=non_zero_queries, minimum_should_match=1)
+        return ES_Q("nested", path="financial_accounts_by_award", query=non_zero_should)
 
 
 class QueryWithFilters:
@@ -472,6 +486,8 @@ class QueryWithFilters:
         _DisasterEmergencyFundCodes.underscore_name: _DisasterEmergencyFundCodes,
         _QueryText.underscore_name: _QueryText,
         _NonzeroFields.underscore_name: _NonzeroFields,
+        _NestedDEFC.underscore_name: _NestedDEFC,
+        _NestedNonZero.underscore_name: _NestedNonZero,
     }
 
     unsupported_filters = ["legal_entities"]
@@ -549,5 +565,6 @@ class QueryWithFilters:
     def generate_transactions_elasticsearch_query(cls, filters: dict) -> ES_Q:
         return cls._generate_elasticsearch_query(filters, _QueryType.TRANSACTIONS)
 
-    def generate_accounts_elasticsearch_query(self, filters: dict) -> ES_Q:
-        return cls._generate_elasticsearch_query(filters, _QueryType.AWARDS)
+    @classmethod
+    def generate_accounts_elasticsearch_query(cls, filters: dict) -> ES_Q:
+        return cls._generate_elasticsearch_query(filters, _QueryType.ACCOUNTS)

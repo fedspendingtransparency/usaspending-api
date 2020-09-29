@@ -28,10 +28,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_account_base import Elastic
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.search.v2.elasticsearch_helper import (
-    get_summed_value_as_float,
-    get_number_of_unique_terms_for_awards,
-)
+from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 logger = logging.getLogger(__name__)
 
@@ -75,31 +72,34 @@ class SpendingByAgencyViewSet(
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
     required_filters = ["def_codes", "award_type_codes", "query"]
     query_fields = ["funding_toptier_agency_name.contains"]
-    agg_key = "funding_toptier_agency_code"  # primary (tier-1) aggregation key
-    # sub_agg_key = "funding_subtier_agency_code"  # secondary (tier-2) sub-aggregation key
+    agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
+    top_hits_fields = [
+        "financial_accounts_by_award.funding_toptier_agency_code",
+        "financial_accounts_by_award.funding_toptier_agency_name",
+    ]
+
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            query = self.filters.pop("query", None)
-            if query:
-                self.filters["query"] = {"text": query, "fields": self.query_fields}
-            # self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
-            self.filter_query = ES_Q(
-                "bool", filter={"exists": {"field": "financial_account_distinct_award_key"}}
-            )  # QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
+            # query = self.filters.pop("query", None)
+            # if query:
+            #     self.filters["query"] = {"text": query, "fields": self.query_fields}
+            self.filter_query = ES_Q("bool", filter={"exists": {"field": "financial_account_distinct_award_key"}})
+            defc = self.filters.pop("def_codes")
+            self.filters.update({"nested_def_codes": defc})
+            self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(self.filters)
 
             # Ensure that only non-zero values are taken into consideration
             # TODO: Refactor to use new NonzeroFields filter in QueryWithFilters
-            non_zero_queries = []
-            for field in self.sum_column_mapping.values():
-                non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))
-                non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
-            self.filter_query.must.append(ES_Q("bool", should=non_zero_queries, minimum_should_match=1))
+            # non_zero_queries = []
+            # for field in self.sum_column_mapping.values():
+            #     non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))
+            #     non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
+            # self.filter_query.must.append(ES_Q("bool", should=non_zero_queries, minimum_should_match=1))
 
             self.bucket_count = (
                 10000  # get_number_of_unique_terms_for_awards(self.filter_query, f"{self.agg_key}.hash")
             )
-            # print(self.bucket_count)
             messages = []
             if self.pagination.sort_key in ("id", "code"):
                 messages.append(
@@ -141,6 +141,23 @@ class SpendingByAgencyViewSet(
                 "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
         )
+
+    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
+        results = []
+        for bucket in info_buckets:
+            results.append(self._build_json_result(bucket))
+        return results
+
+    def _build_json_result(self, bucket: dict):
+        return {
+            "id": int(bucket["key"]),
+            "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_code"],
+            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
+            # the count of distinct awards contributing to the totals
+            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
+            "obligations": int(bucket["sum_covid_obligation"]["value"]),
+            "outlays": int(bucket["sum_covid_outlay"]["value"]),
+        }
 
     @property
     def total_queryset(self):

@@ -2,26 +2,20 @@ from abc import abstractmethod
 from typing import List, Optional, Dict
 
 from django.conf import settings
-from django.contrib.postgres.fields import ArrayField
-from django.db.models import Sum, Count, TextField, Q
-from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 from elasticsearch_dsl import Q as ES_Q, A
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from usaspending_api.awards.models import CovidFinancialAccountMatview
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AccountSearch
 from usaspending_api.common.exceptions import ForbiddenException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, _BasePaginationMixin
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_awards,
-    get_summed_value_as_float,
 )
 
 
@@ -69,7 +63,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
     agg_group_name: str = "group_by_agg_key"  # name used for the tier-1 aggregation group
     sub_agg_key: str = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
     sub_agg_group_name: str = "sub_group_by_sub_agg_key"  # name used for the tier-2 aggregation group
-
+    top_hits_fields: List[str]  # list used for the top_hits aggregation
     filter_query: ES_Q
     bucket_count: int
 
@@ -130,22 +124,14 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         # Create the initial search using filters
         search = AccountSearch().filter(self.filter_query)
         aggs = A("nested", path="financial_accounts_by_award")
-        group_by_dim_agg = A("terms", field="financial_accounts_by_award.funding_toptier_agency_id", size=2000, shard_size=2000)
-
-        # dim_metadata = A(
-        #     "top_hits",
-        #     {
-        #         "size": 1,
-        #         "sort": [{"financial_accounts_by_award.update_date": {"order": "desc"}}],
-        #         "_source": {
-        #             "includes": [
-        #                 "financial_accounts_by_award.funding_toptier_agency_code",
-        #                 "financial_accounts_by_award.funding_toptier_agency_name",
-        #             ]
-        #         },
-        #     },
-        # )
-        # group_by_dim_agg.metric("dim_metadata", dim_metadata)
+        group_by_dim_agg = A("terms", field=self.agg_key, size=2000, shard_size=2000)
+        dim_metadata = A(
+            "top_hits",
+            size=1,
+            sort=[{"financial_accounts_by_award.update_date": {"order": "desc"}}],
+            _source={"includes": self.top_hits_fields},
+        )
+        group_by_dim_agg.metric("dim_metadata", dim_metadata)
 
         pagination_agg = A("bucket_sort", sort={"sum_covid_obligation": {"order": "desc"}})
         group_by_dim_agg.metric("pagination_agg", pagination_agg)
@@ -155,13 +141,14 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             script={"source": "doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? _value : 0"},
         )
         group_by_dim_agg.metric("sum_covid_outlay", sum_covid_outlay)
-        sum_covid_obligation=A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
+        sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         group_by_dim_agg.metric("sum_covid_obligation", sum_covid_obligation)
         value_count = A("value_count", field="award_id")
-        count_awards_by_dim = A("reverse_nested", count_awards=value_count)
+        count_awards_by_dim = A("reverse_nested", **{})
+        count_awards_by_dim.metric("award_count", value_count)
         group_by_dim_agg.metric("count_awards_by_dim", count_awards_by_dim)
         aggs.metric("group_by_dim_agg", group_by_dim_agg)
-        search.aggs.bucket("finacial_accounts_agg", aggs)
+        search.aggs.bucket("financial_accounts_agg", aggs)
         search.update_from_dict({"size": 0})
 
         return search
@@ -207,45 +194,15 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             search.aggs[self.agg_group_name].aggs[self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
 
     def build_totals(self, response: List[dict]) -> dict:
-        # Need to use a Postgres in this case since we only look at the first 10k results for Elasticsearch.
-        # Since the endpoint is performing aggregations on the entire matview with no grouping or joins
-        # the query takes minimal time to complete.
-        if self.agg_key == settings.ES_ROUTING_FIELD:
-            annotations = {"cast_def_codes": Cast("def_codes", ArrayField(TextField()))}
-            filters = [
-                Q(cast_def_codes__overlap=self.def_codes),
-                self.has_award_of_provided_type(should_join_awards=False),
-            ]
-            aggregations = {
-                "face_value_of_loan": Sum("total_loan_value"),
-                "obligation": Sum("obligation"),
-                "outlay": Sum("outlay"),
-            }
-            aggregations = {col: aggregations[col] for col in self.sum_column_mapping.keys()}
-            aggregations["award_count"] = Count("award_id")
-
-            if self.filters.get("query"):
-                filters.append(Q(recipient_name__icontains=self.filters["query"]["text"]))
-
-            totals = (
-                CovidFinancialAccountMatview.objects.annotate(**annotations)
-                .filter(*filters)
-                .values()
-                .aggregate(**aggregations)
-            )
-            return totals
-
-        totals = {key: 0 for key in self.sum_column_mapping.keys()}
+        obligations = 0
+        outlays = 0
         award_count = 0
+        for item in response:
+            obligations += item["sum_covid_obligation"]["value"]
+            outlays += item["sum_covid_outlay"]["value"]
+            award_count += item["count_awards_by_dim"]["award_count"]["value"]
 
-        for bucket in response:
-            for key in totals.keys():
-                totals[key] += get_summed_value_as_float(bucket, self.sum_column_mapping[key])
-            award_count += int(bucket.get("doc_count", 0))
-
-        totals["award_count"] = award_count
-
-        return totals
+        return {"obligations": obligations, "outlays": outlays, "award_count": award_count}
 
     def query_elasticsearch(self) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
@@ -255,9 +212,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
 
         response = search.handle_execute()
         response = response.aggs.to_dict()
-        print(response)
-        buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-
+        buckets = response.get("financial_accounts_agg", {}).get("group_by_dim_agg", {}).get("buckets", [])
         totals = self.build_totals(buckets)
 
         results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
