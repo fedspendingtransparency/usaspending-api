@@ -1,281 +1,19 @@
 import json
 import logging
-import os
-import pandas as pd
 
 from django.conf import settings
-from django.core.management import call_command
 from elasticsearch import helpers
-from time import perf_counter, sleep
+from time import perf_counter
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     format_log,
-    convert_postgres_array_as_string_to_list,
-    convert_postgres_json_array_as_string_to_list,
     convert_postgres_json_array_to_list,
 )
 
 
 logger = logging.getLogger("script")
-
-VIEW_COLUMNS = [
-    "transaction_id",
-    "detached_award_proc_unique",
-    "afa_generated_unique",
-    "generated_unique_transaction_id",
-    "display_award_id",
-    "update_date",
-    "modification_number",
-    "generated_unique_award_id",
-    "award_id",
-    "piid",
-    "fain",
-    "uri",
-    "award_description",
-    "product_or_service_code",
-    "product_or_service_description",
-    "psc_agg_key",
-    "naics_code",
-    "naics_description",
-    "naics_agg_key",
-    "type_description",
-    "award_category",
-    "recipient_unique_id",
-    "recipient_name",
-    "recipient_hash",
-    "recipient_agg_key",
-    "parent_recipient_unique_id",
-    "parent_recipient_name",
-    "parent_recipient_hash",
-    "action_date",
-    "fiscal_action_date",
-    "period_of_performance_start_date",
-    "period_of_performance_current_end_date",
-    "ordering_period_end_date",
-    "transaction_fiscal_year",
-    "award_fiscal_year",
-    "award_amount",
-    "transaction_amount",
-    "face_value_loan_guarantee",
-    "original_loan_subsidy_cost",
-    "generated_pragmatic_obligation",
-    "awarding_agency_id",
-    "funding_agency_id",
-    "awarding_toptier_agency_name",
-    "funding_toptier_agency_name",
-    "awarding_subtier_agency_name",
-    "funding_subtier_agency_name",
-    "awarding_toptier_agency_abbreviation",
-    "funding_toptier_agency_abbreviation",
-    "awarding_subtier_agency_abbreviation",
-    "funding_subtier_agency_abbreviation",
-    "awarding_toptier_agency_agg_key",
-    "funding_toptier_agency_agg_key",
-    "awarding_subtier_agency_agg_key",
-    "funding_subtier_agency_agg_key",
-    "cfda_number",
-    "cfda_title",
-    "cfda_agg_key",
-    "type_of_contract_pricing",
-    "type_set_aside",
-    "extent_competed",
-    "type",
-    "pop_country_code",
-    "pop_country_name",
-    "pop_state_code",
-    "pop_county_code",
-    "pop_county_name",
-    "pop_zip5",
-    "pop_congressional_code",
-    "pop_city_name",
-    "pop_county_agg_key",
-    "pop_congressional_agg_key",
-    "pop_state_agg_key",
-    "pop_country_agg_key",
-    "recipient_location_country_code",
-    "recipient_location_country_name",
-    "recipient_location_state_code",
-    "recipient_location_county_code",
-    "recipient_location_county_name",
-    "recipient_location_zip5",
-    "recipient_location_congressional_code",
-    "recipient_location_city_name",
-    "recipient_location_county_agg_key",
-    "recipient_location_congressional_agg_key",
-    "recipient_location_state_agg_key",
-    "tas_paths",
-    "tas_components",
-    "federal_accounts",
-    "business_categories",
-    "disaster_emergency_fund_codes",
-]
-AWARD_VIEW_COLUMNS = [
-    "award_id",
-    "generated_unique_award_id",
-    "display_award_id",
-    "category",
-    "type",
-    "type_description",
-    "piid",
-    "fain",
-    "uri",
-    "total_obligation",
-    "description",
-    "award_amount",
-    "total_subsidy_cost",
-    "total_loan_value",
-    "update_date",
-    "recipient_name",
-    "recipient_hash",
-    "recipient_agg_key",
-    "recipient_unique_id",
-    "parent_recipient_unique_id",
-    "business_categories",
-    "action_date",
-    "fiscal_year",
-    "last_modified_date",
-    "period_of_performance_start_date",
-    "period_of_performance_current_end_date",
-    "date_signed",
-    "ordering_period_end_date",
-    "original_loan_subsidy_cost",
-    "face_value_loan_guarantee",
-    "awarding_agency_id",
-    "funding_agency_id",
-    "awarding_toptier_agency_name",
-    "funding_toptier_agency_name",
-    "awarding_subtier_agency_name",
-    "funding_subtier_agency_name",
-    "awarding_toptier_agency_code",
-    "funding_toptier_agency_code",
-    "awarding_subtier_agency_code",
-    "funding_subtier_agency_code",
-    "funding_toptier_agency_agg_key",
-    "funding_subtier_agency_agg_key",
-    "recipient_location_country_code",
-    "recipient_location_country_name",
-    "recipient_location_state_code",
-    "recipient_location_county_code",
-    "recipient_location_county_name",
-    "recipient_location_congressional_code",
-    "recipient_location_zip5",
-    "recipient_location_city_name",
-    "recipient_location_county_agg_key",
-    "recipient_location_congressional_agg_key",
-    "recipient_location_state_agg_key",
-    "pop_country_code",
-    "pop_country_name",
-    "pop_state_code",
-    "pop_county_code",
-    "pop_county_name",
-    "pop_zip5",
-    "pop_congressional_code",
-    "pop_city_name",
-    "pop_city_code",
-    "pop_county_agg_key",
-    "pop_congressional_agg_key",
-    "pop_state_agg_key",
-    "cfda_number",
-    "cfda_title",
-    "cfda_agg_key",
-    "sai_number",
-    "type_of_contract_pricing",
-    "extent_competed",
-    "type_set_aside",
-    "product_or_service_code",
-    "product_or_service_description",
-    "naics_code",
-    "naics_description",
-    "tas_paths",
-    "tas_components",
-    "disaster_emergency_fund_codes",
-    "total_covid_obligation",
-    "total_covid_outlay",
-]
-
-COUNT_FY_SQL = """
-SELECT COUNT(*) AS count
-FROM {view}
-WHERE {fiscal_year_field}={fy} AND update_date >= '{update_date}'
-"""
-
-COUNT_SQL = """
-SELECT COUNT(*) AS count
-FROM {view}
-WHERE update_date >= '{update_date}'
-"""
-
-COPY_SQL = """"COPY (
-    SELECT *
-    FROM {view}
-    WHERE {fiscal_year_field}={fy} AND update_date >= '{update_date}'
-) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
-"""
-
-# ==============================================================================
-# Other Globals
-# ==============================================================================
-
-AWARD_DESC_CATEGORIES = {
-    "loans": "loans",
-    "grant": "grants",
-    "insurance": "other",
-    "other": "other",
-    "contract": "contracts",
-    "direct payment": "directpayments",
-}
-
-
-def csv_chunk_gen(filename, chunksize, job_id, load_type):
-    logger.info(format_log(f"Opening {filename} (batch size = {chunksize:,})", job=job_id, process="ES Index"))
-    # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
-    converters = {
-        "business_categories": convert_postgres_array_as_string_to_list,
-        "tas_paths": convert_postgres_array_as_string_to_list,
-        "tas_components": convert_postgres_array_as_string_to_list,
-        "federal_accounts": convert_postgres_json_array_as_string_to_list,
-        "disaster_emergency_fund_codes": convert_postgres_array_as_string_to_list,
-    }
-    # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    column_list = AWARD_VIEW_COLUMNS if load_type == "awards" else VIEW_COLUMNS
-    dtype = {k: str for k in column_list if k not in converters}
-    for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
-        file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
-        # Route all documents with the same recipient to the same shard
-        # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
-        # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
-        # and this is needed for performance
-        # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
-        file_df["routing"] = file_df[settings.ES_ROUTING_FIELD]
-
-        # Explicitly setting the ES _id field to match the postgres PK value allows
-        # bulk index operations to be upserts without creating duplicate documents
-        file_df["_id"] = file_df[f"{'award' if load_type == 'awards' else 'transaction'}_id"]
-        yield file_df.to_dict(orient="records")
-
-
-def es_data_loader(client, fetch_jobs, done_jobs, config):
-    if config["create_new_index"]:
-        # ensure template for index is present and the latest version
-        call_command("es_configure", "--template-only", f"--load-type={config['load_type']}")
-    while True:
-        if not done_jobs.empty():
-            job = done_jobs.get_nowait()
-            if job.name is None:
-                break
-
-            logger.info(format_log(f"Starting new job", job=job.name, process="ES Index"))
-            post_to_elasticsearch(client, job, config)
-            if os.path.exists(job.csv):
-                os.remove(job.csv)
-        else:
-            logger.info(format_log(f"No Job. Sleeping {config['ingest_wait']}s", process="ES Index"))
-            sleep(int(config["ingest_wait"]))
-
-    logger.info(format_log(f"Completed Elasticsearch data load", process="ES Index"))
-    return
 
 
 def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None):
@@ -287,7 +25,7 @@ def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None)
 
     except Exception as e:
         logger.exception(f"Fatal error: \n\n{str(e)[:5000]}...\n\n{'*' * 80}")
-        raise SystemExit(1)
+        raise RuntimeError()
 
     logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", job=job_id, process="ES Index"))
     return success, failed
@@ -367,42 +105,6 @@ def swap_aliases(client, index, load_type):
         logger.exception(format_log(f"Unable to delete indexes: {old_indexes}", process="ES Alias Drop"))
 
 
-def post_to_elasticsearch(client, job, config, chunksize=250000):
-    logger.info(format_log(f"Populating ES Index '{job.index}'", job=job.name, process="ES Index"))
-    start = perf_counter()
-    try:
-        does_index_exist = client.indices.exists(job.index)
-    except Exception as e:
-        print(e)
-        raise SystemExit(1)
-    if not does_index_exist:
-        logger.info(format_log(f"Creating index '{job.index}'", job=job.name, process="ES Index"))
-        client.indices.create(index=job.index)
-        client.indices.refresh(job.index)
-
-    csv_generator = csv_chunk_gen(job.csv, chunksize, job.name, config["load_type"])
-    for count, chunk in enumerate(csv_generator):
-        if len(chunk) == 0:
-            logger.info(format_log(f"No documents to add/delete for chunk #{count}", job=job.name, process="ES Index"))
-            continue
-
-        iteration = perf_counter()
-        current_rows = f"({count * chunksize + 1:,}-{count * chunksize + len(chunk):,})"
-        logger.info(
-            format_log(f"ES Stream #{count} rows [{current_rows}/{job.count:,}]", job=job.name, process="ES Index")
-        )
-        streaming_post_to_es(client, chunk, job.index, config["load_type"], job.name)
-        logger.info(
-            format_log(
-                f"Iteration group #{count} took {perf_counter() - iteration:.2f}s", job=job.name, process="ES Index"
-            )
-        )
-
-    logger.info(
-        format_log(f"Elasticsearch Index loading took {perf_counter() - start:.2f}s", job=job.name, process="ES Index")
-    )
-
-
 def transform_data(worker, records):
     logger.info(format_log(f"Transforming data", job=worker.name, process="ES Index"))
     start = perf_counter()
@@ -415,12 +117,6 @@ def transform_data(worker, records):
         "federal_accounts": convert_postgres_json_array_to_list,
         # "disaster_emergency_fund_codes": convert_postgres_array_as_string_to_list,
     }
-    # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
-    column_list = AWARD_VIEW_COLUMNS if worker.load_type == "awards" else VIEW_COLUMNS
-    _ = {k: str for k in column_list if k not in converters}
-
-    # df = pd.DataFrame.from_records(records, columns=column_list)
-    # df = df.where(cond=(pd.notnull(df)), other=None)
 
     for record in records:
         for field, converter in converters.items():
@@ -447,7 +143,18 @@ def transform_data(worker, records):
 
 def load_data(worker, records, client):
     start = perf_counter()
-
     logger.info(format_log(f"Starting Index operation", job=worker.name, process="ES Index"))
     streaming_post_to_es(client, records, worker.index, worker.load_type, worker.name)
     logger.info(format_log(f"Index operation took {perf_counter() - start:.2f}s", job=worker.name, process="ES Index"))
+
+
+def create_index(index, client):
+    try:
+        does_index_exist = client.indices.exists(index)
+    except Exception as e:
+        logger.exception(e)
+        raise SystemExit(1)
+    if not does_index_exist:
+        logger.info(format_log(f"Creating index '{index}'", process="ES Index"))
+        client.indices.create(index=index)
+        client.indices.refresh(index)

@@ -3,21 +3,12 @@ import logging
 import psycopg2
 
 from typing import Optional, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from random import choice
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 logger = logging.getLogger("script")
-
-
-class DataJob:
-    def __init__(self, *args):
-        self.name = args[0]
-        self.index = args[1]
-        self.fy = args[2]
-        self.csv = args[3]
-        self.count = None
 
 
 @dataclass
@@ -29,39 +20,13 @@ class WorkerNode:
     sql: str
     load_type: str
     transform_func: callable
-    ids: List[int] = field(default_factory=list)
+    # ids: List[int] = field(default_factory=list)
 
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i : i + n]
-
-
-def convert_postgres_array_as_string_to_list(array_as_string: str) -> Optional[list]:
-    """
-        Postgres arrays are stored in CSVs as strings. Elasticsearch is able to handle lists of items, but needs to
-        be passed a list instead of a string. In the case of an empty array, return null.
-        For example, "{this,is,a,postgres,array}" -> ["this", "is", "a", "postgres", "array"].
-    """
-    return array_as_string[1:-1].split(",") if len(array_as_string) > 2 else None
-
-
-def convert_postgres_json_array_as_string_to_list(json_array_as_string: str) -> Optional[List]:
-    """
-        Postgres JSON arrays (jsonb) are stored in CSVs as strings. Since we want to avoid nested types
-        in Elasticsearch the JSON arrays are converted to dictionaries to make parsing easier and then
-        converted back into a formatted string.
-    """
-    if json_array_as_string is None or len(json_array_as_string) == 0:
-        return None
-    result = []
-    json_array = json.loads(json_array_as_string)
-    for j in json_array:
-        for key, value in j.items():
-            j[key] = "" if value is None else str(j[key])
-        result.append(json.dumps(j, sort_keys=True))
-    return result
 
 
 def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
@@ -78,21 +43,6 @@ def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
             j[key] = "" if value is None else str(j[key])
         result.append(json.dumps(j, sort_keys=True))
     return result
-
-
-def process_guarddog(process_list):
-    """
-        pass in a list of multiprocess Process objects.
-        If one errored then terminate the others and return True
-    """
-    for proc in process_list:
-        # If exitcode is None, process is still running. exit code 0 is normal
-        if proc.exitcode not in (None, 0):
-            msg = f"Script proccess failed!!! {proc.name} exited with error {proc.exitcode}. Terminating all processes."
-            logger.error(format_log(msg))
-            [x.terminate() for x in process_list]
-            return True
-    return False
 
 
 def execute_sql_statement(cmd, results=False, verbose=False):
@@ -123,11 +73,11 @@ def filter_query(column, values, query_type="match_phrase"):
 
 def format_log(msg, process=None, job=None):
     inner_str = f"[{process if process else 'main'}] {f'{job}' if job else ''}"
-    return f"{inner_str:<38} | {msg}"
+    return f"{inner_str:<32} | {msg}"
 
 
 def gen_random_name():
-    """Generates up to 400 unique name strings, random order each run"""
+    """Generates over 600 unique name strings, random order each run"""
     previous_names = []
 
     nouns = [
@@ -136,7 +86,9 @@ def gen_random_name():
         "Armadillo",
         "Champion",
         "Crusher",
+        "Dart",
         "Defender",
+        "Dragon",
         "Enchanter",
         "Falcon",
         "Gargoyle",
@@ -148,8 +100,10 @@ def gen_random_name():
         "Puma",
         "Seer",
         "Shadow",
+        "Slayer",
         "Spectacle",
         "Warrior",
+        "Wizard",
         "Wonder",
     ]
 
@@ -166,14 +120,21 @@ def gen_random_name():
         "Ethereal",
         "Gentle",
         "Giant",
+        "Green",
         "Grey",
         "Heavy",
+        "Humble",
         "Kind",
         "Mighty",
+        "Nefarious",
         "Professor",
+        "Purple",
         "Red",
+        "Sassy",
+        "Speedy",
         "Thunder",
         "White",
+        "Yellow",
     ]
 
     max_combinations = len(prefix) * len(nouns)

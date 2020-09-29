@@ -9,8 +9,7 @@ from time import perf_counter
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
-from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type, fy as parse_fiscal_year
-from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
+from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.elasticsearch_loader_helpers import format_log, Controller
 
 logger = logging.getLogger("script")
@@ -65,19 +64,12 @@ class Command(BaseCommand):
             default="transactions",
         )
         parser.add_argument(
-            "--idle-wait-time",
-            type=int,
-            help="Time in seconds the ES index process should wait before looking for a new CSV data file.",
-            default=60,
-            metavar="(default: 60)",
-        )
-        parser.add_argument(
             "--workers",
             type=int,
             help="Number of concurrent ETL workers",
             default=10,
-            choices=range(1, 101),
-            metavar="[1-100]",
+            choices=range(1, 51),
+            metavar="[1-50]",
         )
         parser.add_argument(
             "--batch-size",
@@ -103,8 +95,7 @@ class Command(BaseCommand):
 
         loader = Controller(config, elasticsearch_client)
         loader.prepare_for_etl()
-        loader.extract()
-        # loader.run_load_steps()
+        loader.launch_workers()
         # loader.complete_process()
 
         logger.info(format_log("---------------------------------------------------------------"))
@@ -126,7 +117,6 @@ def parse_cli_args(options: dict, es_client) -> dict:
     )
     config = set_config(simple_args, options)
 
-    config["fiscal_years"] = fiscal_years_for_processing(options)
     config["directory"] = Path().resolve()
 
     if config["create_new_index"] and not config["index_name"]:
@@ -181,8 +171,6 @@ def parse_cli_args(options: dict, es_client) -> dict:
         logger.error(format_log("Skipping deletions for ths load, --deleted overwritten to False"))
         config["process_deletes"] = False
 
-    config["ingest_wait"] = options["idle_wait_time"]
-
     return config
 
 
@@ -191,6 +179,7 @@ def set_config(copy_args: list, arg_parse_options: dict) -> dict:
     root_index = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX
     if arg_parse_options["load_type"] == "awards":
         root_index = settings.ES_AWARDS_QUERY_ALIAS_PREFIX
+
     config = {
         "aws_region": settings.USASPENDING_AWS_REGION,
         "s3_bucket": settings.DELETED_TRANSACTION_JOURNAL_FILES,
@@ -201,10 +190,6 @@ def set_config(copy_args: list, arg_parse_options: dict) -> dict:
 
     config.update({k: v for k, v in arg_parse_options.items() if k in copy_args})
     return config
-
-
-def fiscal_years_for_processing(options: list) -> list:
-    return create_fiscal_year_list(start_year=parse_fiscal_year(settings.API_SEARCH_MIN_DATE))
 
 
 def check_new_index_name_is_ok(provided_name: str, suffix: str) -> None:
