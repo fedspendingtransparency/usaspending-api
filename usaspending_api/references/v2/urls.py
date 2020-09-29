@@ -20,6 +20,7 @@ urlpatterns = [
     url(r"^cfda/totals/(?P<cfda>[0-9]+\.[0-9]+)/$", cfda.CFDAViewSet.as_view()),
     url(r"^data_dictionary/$", data_dictionary.DataDictionaryViewSet.as_view()),
     url(r"^def_codes/$", def_codes.DEFCodesViewSet.as_view()),
+    url(r"^filter", views.FilterEndpoint.as_view()),
     url(r"^filter_tree/psc/$", psc.PSCViewSet.as_view()),
     url(r"^filter_tree/psc/(?P<tier1>(\w| )*)/$", psc.PSCViewSet.as_view()),
     url(r"^filter_tree/psc/(?P<tier1>(\w| )*)/(?P<tier2>\w*)/$", psc.PSCViewSet.as_view()),

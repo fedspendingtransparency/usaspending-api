@@ -10,15 +10,12 @@ from usaspending_api.common.api_versioning import deprecated
 from django.utils.decorators import method_decorator
 
 
-@method_decorator(deprecated, name="post")
 class FilterEndpoint(APIView):
-    """DEPRECATED"""
-
     serializer_class = FilterSerializer
 
     def post(self, request, format=None):
         """
-        Return the hash for a json
+        Return the hash for a received filters object
         """
         # get json
         # request.body is used because we want unicode as hash input
