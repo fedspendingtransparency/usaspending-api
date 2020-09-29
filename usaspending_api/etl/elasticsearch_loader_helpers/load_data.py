@@ -27,7 +27,7 @@ def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None)
         logger.exception(f"Fatal error: \n\n{str(e)[:5000]}...\n\n{'*' * 80}")
         raise RuntimeError()
 
-    logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", job=job_id, process="ES Index"))
+    logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", job=job_id, process="Index"))
     return success, failed
 
 
@@ -79,7 +79,7 @@ def set_final_index_config(client, index):
 
 def swap_aliases(client, index, load_type):
     if client.indices.get_alias(index, "*"):
-        logger.info(format_log(f"Removing old aliases for index '{index}'", process="ES Alias Drop"))
+        logger.info(format_log(f"Removing old aliases for index '{index}'", process="ES Alias"))
         client.indices.delete_alias(index, "_all")
     if load_type == "awards":
         alias_patterns = settings.ES_AWARDS_QUERY_ALIAS_PREFIX + "*"
@@ -91,22 +91,22 @@ def swap_aliases(client, index, load_type):
         old_indexes = list(client.indices.get_alias("*", alias_patterns).keys())
         for old_index in old_indexes:
             client.indices.delete_alias(old_index, "_all")
-            logger.info(format_log(f"Removing aliases from '{old_index}'", process="ES Alias Drop"))
+            logger.info(format_log(f"Removing aliases from '{old_index}'", process="ES Alias"))
     except Exception:
-        logger.exception(format_log(f"No aliases found for {alias_patterns}", process="ES Alias Drop"))
+        logger.exception(format_log(f"No aliases found for {alias_patterns}", process="ES Alias"))
 
     create_aliases(client, index, load_type=load_type)
 
     try:
         if old_indexes:
             client.indices.delete(index=old_indexes, ignore_unavailable=False)
-            logger.info(format_log(f"Deleted index(es) '{old_indexes}'", process="ES Alias Drop"))
+            logger.info(format_log(f"Deleted index(es) '{old_indexes}'", process="ES Alias"))
     except Exception:
-        logger.exception(format_log(f"Unable to delete indexes: {old_indexes}", process="ES Alias Drop"))
+        logger.exception(format_log(f"Unable to delete indexes: {old_indexes}", process="ES Alias"))
 
 
 def transform_data(worker, records):
-    logger.info(format_log(f"Transforming data", job=worker.name, process="ES Index"))
+    logger.info(format_log(f"Transforming data", job=worker.name, process="Index"))
     start = perf_counter()
 
     # Need a specific converter to handle converting strings to correct data types (e.g. string -> array)
@@ -135,17 +135,15 @@ def transform_data(worker, records):
     # Explicitly setting the ES _id field to match the postgres PK value allows
     # bulk index operations to be upserts without creating duplicate documents
 
-    logger.info(
-        format_log(f"Data Transformation took {perf_counter() - start:.2f}s", job=worker.name, process="ES Index")
-    )
+    logger.info(format_log(f"Data Transformation took {perf_counter() - start:.2f}s", job=worker.name, process="Index"))
     return records
 
 
 def load_data(worker, records, client):
     start = perf_counter()
-    logger.info(format_log(f"Starting Index operation", job=worker.name, process="ES Index"))
+    logger.info(format_log(f"Starting Index operation", job=worker.name, process="Index"))
     streaming_post_to_es(client, records, worker.index, worker.load_type, worker.name)
-    logger.info(format_log(f"Index operation took {perf_counter() - start:.2f}s", job=worker.name, process="ES Index"))
+    logger.info(format_log(f"Index operation took {perf_counter() - start:.2f}s", job=worker.name, process="Index"))
 
 
 def create_index(index, client):
@@ -155,6 +153,6 @@ def create_index(index, client):
         logger.exception(e)
         raise SystemExit(1)
     if not does_index_exist:
-        logger.info(format_log(f"Creating index '{index}'", process="ES Index"))
+        logger.info(format_log(f"Creating index '{index}'", process="Index"))
         client.indices.create(index=index)
         client.indices.refresh(index)

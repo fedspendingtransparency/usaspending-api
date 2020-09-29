@@ -5,6 +5,7 @@ from django.core.management import call_command
 from math import ceil
 from multiprocessing import Pool
 from random import choice
+from time import perf_counter
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
@@ -34,7 +35,7 @@ class Controller:
 
     def prepare_for_etl(self):
         logger.info(format_log("Assessing data to process"))
-        self.record_count = count_of_records_to_process(self.config, True)
+        self.record_count = count_of_records_to_process(self.config)
         self.partition_size = self.calculate_partition_size(self.record_count, self.config["batch_size"])
         self.number_of_jobs = ceil(self.record_count / self.partition_size)
 
@@ -56,30 +57,8 @@ class Controller:
             create_index(self.config["index_name"], instantiate_elasticsearch_client())
 
     def launch_workers(self):
-        with Pool(self.config["workers"]) as pool:
-            pool.imap(self.extract_transform_load, self.workers)
-            pool.close()
-            pool.join()
-
-    @staticmethod
-    def extract_transform_load(worker):
-        random_verb = choice(
-            ["skillfully", "deftly", "expertly", "readily", "quickly", "nimbly", "agilely", "casually", "easily"]
-        )
-        logger.info(format_log(f"{worker.name.upper()} {random_verb} enters the arena", job=worker.name))
-
-        client = instantiate_elasticsearch_client()
-        try:
-            records = transform_data(worker, extract_records(worker))
-            load_data(worker, records, client)
-            del records
-            del client
-        except Exception as e:
-            logger.exception(format_log(f"{worker.name} was lost in battle.", job=worker.name))
-            raise e
-        else:
-            msg = f"{worker.name} completed the mission like a {choice(['pro', 'champ', 'boss'])}."
-            logger.info(format_log(msg, job=worker.name))
+        with Pool(self.config["workers"], maxtasksperchild=1) as pool:
+            pool.map(extract_transform_load, self.workers)
 
     def complete_process(self) -> None:
         if self.config["create_new_index"]:
@@ -126,3 +105,21 @@ class Controller:
             sql=sql,
             transform_func=transform_func,
         )
+
+
+def extract_transform_load(worker):
+    start = perf_counter()
+    random_verb = choice(["skillfully", "deftly", "expertly", "readily", "quickly", "nimbly", "casually", "easily"])
+    logger.info(format_log(f"{worker.name.upper()} {random_verb} enters the arena", job=worker.name))
+
+    client = instantiate_elasticsearch_client()
+    try:
+        records = transform_data(worker, extract_records(worker))
+        load_data(worker, records, client)
+    except Exception as e:
+        logger.exception(format_log(f"{worker.name} was lost in battle.", job=worker.name))
+        raise e
+    else:
+        attrib = choice(["pro", "champ", "boss", "top dog", "hero", "super"])
+        msg = f"{worker.name} completed the mission like a {attrib} in {perf_counter() - start:.2f}s"
+        logger.info(format_log(msg, job=worker.name))
