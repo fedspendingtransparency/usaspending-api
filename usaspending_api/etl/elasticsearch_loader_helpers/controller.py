@@ -10,19 +10,19 @@ from time import perf_counter
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.etl.elasticsearch_loader_helpers import (
-    deleted_transactions,
+    count_of_records_to_process,
+    create_index,
     deleted_awards,
+    deleted_transactions,
+    extract_records,
+    EXTRACT_SQL,
     format_log,
+    gen_random_name,
+    load_data,
     set_final_index_config,
     swap_aliases,
-    count_of_records_to_process,
-    WorkerNode,
-    gen_random_name,
-    EXTRACT_SQL,
-    extract_records,
     transform_data,
-    load_data,
-    create_index,
+    WorkerNode,
 )
 
 logger = logging.getLogger("script")
@@ -34,6 +34,8 @@ class Controller:
         self.config = config
 
     def prepare_for_etl(self):
+        if self.config["process_deletes"]:
+            self.run_deletes()
         logger.info(format_log("Assessing data to process"))
         self.record_count = count_of_records_to_process(self.config)
         self.partition_size = self.calculate_partition_size(self.record_count, self.config["batch_size"])
@@ -43,7 +45,7 @@ class Controller:
 
         logger.info(
             format_log(
-                f"Hailing {self.number_of_jobs:,} heros"
+                f"Hailing {self.number_of_jobs:,} heroes"
                 f" to handle {self.record_count:,} {self.config['load_type']} records"
                 f" in squad{'s' if self.config['workers'] > 1 else ' size'} of {self.config['workers']:,}"
             )
@@ -77,7 +79,7 @@ class Controller:
 
     @staticmethod
     def calculate_partition_size(record_count: int, max_size: int) -> int:
-        """Create partion size with max size of max_size"""
+        """Create partion size less than or equal to max_size for more even distribution"""
         return ceil(record_count / ceil(record_count / max_size))
 
     def create_worker(self, number: int) -> WorkerNode:
@@ -106,11 +108,19 @@ class Controller:
             transform_func=transform_func,
         )
 
+    def run_deletes(self):
+        logger.info(format_log("Processing deletions"))
+        client = instantiate_elasticsearch_client()
+        if self.config["load_type"] == "transactions":
+            deleted_transactions(client, self.config)
+        else:
+            deleted_awards(client, self.config)
+
 
 def extract_transform_load(worker):
     start = perf_counter()
-    random_verb = choice(["skillfully", "deftly", "expertly", "readily", "quickly", "nimbly", "casually", "easily"])
-    logger.info(format_log(f"{worker.name.upper()} {random_verb} enters the arena", job=worker.name))
+    a = choice(["skillfully", "deftly", "expertly", "readily", "quickly", "nimbly", "casually", "easily", "boldly"])
+    logger.info(format_log(f"{worker.name.upper()} {a} enters the arena", job=worker.name))
 
     client = instantiate_elasticsearch_client()
     try:

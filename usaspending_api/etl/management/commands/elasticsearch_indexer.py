@@ -24,8 +24,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--process-deletes",
             action="store_true",
-            help="When this flag is set, the script will include the process to "
-            "obtain records of deleted transactions from S3 and remove from the index",
+            help="When this flag is set, the script will include the extra steps"
+            "to calculate deleted records and remove from the target index",
         )
         parser.add_argument(
             "--skip-counts",
@@ -96,7 +96,7 @@ class Command(BaseCommand):
         loader = Controller(config, elasticsearch_client)
         loader.prepare_for_etl()
         loader.launch_workers()
-        # loader.complete_process()
+        loader.complete_process()
 
         logger.info(format_log("---------------------------------------------------------------"))
         logger.info(format_log(f"Script completed in {perf_counter() - start:.2f}s"))

@@ -11,11 +11,11 @@ from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.load_data import (
     create_aliases,
+    create_index,
     load_data,
     set_final_index_config,
     swap_aliases,
     transform_data,
-    create_index,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     execute_sql_statement,
@@ -31,6 +31,7 @@ __all__ = [
     "Controller",
     "count_of_records_to_process",
     "create_aliases",
+    "create_index",
     "deleted_awards",
     "deleted_transactions",
     "execute_sql_statement",
@@ -44,5 +45,4 @@ __all__ = [
     "swap_aliases",
     "transform_data",
     "WorkerNode",
-    "create_index",
 ]
