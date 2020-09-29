@@ -17,6 +17,7 @@ from usaspending_api.etl.es_etl_helpers import (
     swap_aliases,
     take_snapshot,
     get_updated_record_count,
+    toggle_refresh_on,
 )
 
 
@@ -107,5 +108,6 @@ class Rapidloader:
             take_snapshot(self.elasticsearch_client, self.config["index_name"], settings.ES_REPOSITORY)
 
         if self.config["is_incremental_load"]:
+            toggle_refresh_on(self.elasticsearch_client, self.config["index_name"])
             printf({"msg": f"Storing datetime {self.config['processing_start_datetime']} for next incremental load"})
             update_last_load_date(f"es_{self.config['load_type']}", self.config["processing_start_datetime"])
