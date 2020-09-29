@@ -4,7 +4,7 @@ import psycopg2
 
 from typing import Optional, List
 from dataclasses import dataclass
-from random import choice
+from random import choice, randint
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -77,14 +77,20 @@ def format_log(msg, process=None, job=None):
 
 
 def gen_random_name():
-    """Generates over 600 unique name strings, random order each run"""
+    """Generates (over) 2000 unique name strings, random order each run"""
     previous_names = []
 
     nouns = [
         "Agent",
+        "Ant",
         "Archer",
         "Armadillo",
+        "Assassin",
+        "Beetle",
+        "Boss",
+        "Captian",
         "Champion",
+        "Commando",
         "Crusher",
         "Dart",
         "Defender",
@@ -93,17 +99,27 @@ def gen_random_name():
         "Falcon",
         "Gargoyle",
         "Hammer",
+        "Karma",
+        "Knight",
+        "Magician",
         "Mantis",
         "Mastermind",
+        "Mongoose",
+        "Moth",
         "Omen",
         "Phoenix",
+        "Protector",
         "Puma",
         "Seer",
         "Shadow",
         "Slayer",
+        "Smasher",
         "Spectacle",
+        "Titan",
         "Warrior",
+        "Wing",
         "Wizard",
+        "Wolf",
         "Wonder",
     ]
 
@@ -111,29 +127,52 @@ def gen_random_name():
         "Black",
         "Blue",
         "Capped",
+        "Captian",
         "Colossal",
         "Commander",
+        "Crazy",
         "Dark",
         "Doctor",
         "Eager",
         "Earth",
         "Ethereal",
+        "Fabulous",
+        "Fallen",
+        "Fancy",
+        "Fantastic",
+        "Fearless",
+        "Fiery",
         "Gentle",
         "Giant",
+        "Glorious",
         "Green",
         "Grey",
         "Heavy",
         "Humble",
+        "Infamous",
+        "Intelligent",
+        "Jade",
         "Kind",
+        "Mega",
         "Mighty",
+        "Mysterious",
         "Nefarious",
+        "Nocturnal",
+        "Orange",
         "Professor",
         "Purple",
+        "Quick",
         "Red",
+        "Ruby",
         "Sassy",
+        "Scarlet",
+        "Smooth",
+        "Sneeky",
         "Speedy",
+        "The",
         "Thunder",
         "White",
+        "Wild",
         "Yellow",
     ]
 
@@ -147,3 +186,15 @@ def gen_random_name():
 
         if len(previous_names) >= max_combinations:
             break
+
+    counter = 0
+    while True:
+        name = f"Cloned Warrior {randint(1098, 99999)}"
+        if counter > 90:
+            break
+        elif name not in previous_names:
+            previous_names.append(name)
+            counter = 0
+            yield name
+        else:
+            counter += 1
