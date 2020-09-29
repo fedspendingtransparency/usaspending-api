@@ -42,6 +42,7 @@ def cfda_awards_and_transactions(db):
         quarter_format_flag=False,
         is_final_balances_for_fy=False,
         reporting_period_start="2022-04-01",
+        submission_window_id=2022070,
     )
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -50,6 +51,7 @@ def cfda_awards_and_transactions(db):
         quarter_format_flag=False,
         is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
+        submission_window_id=2022080,
     )
     sub3 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -58,6 +60,7 @@ def cfda_awards_and_transactions(db):
         quarter_format_flag=False,
         is_final_balances_for_fy=False,
         reporting_period_start="2022-04-01",
+        submission_window_id=2022070,
     )
     sub4 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -66,6 +69,7 @@ def cfda_awards_and_transactions(db):
         quarter_format_flag=False,
         is_final_balances_for_fy=False,
         reporting_period_start="9999-04-01",
+        submission_window_id=9999070,
     )
 
     # Financial Accounts by Awards

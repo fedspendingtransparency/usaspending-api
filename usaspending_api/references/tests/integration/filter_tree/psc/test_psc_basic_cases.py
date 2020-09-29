@@ -8,6 +8,8 @@ from usaspending_api.references.tests.integration.filter_tree.psc.psc_data_fixtu
     service_tier_two,
     service_tier_three,
     service_tier_four,
+    rnd_tier_two_special,
+    rnd_tier_four_special,
 )
 
 base_query = "/api/v2/references/filter_tree/psc/"
@@ -77,3 +79,13 @@ def _call_and_expect_200(client, url):
     resp = client.get(url)
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     return resp
+
+
+def test_tier_two_rnd_special(client, rnd_special):
+    resp = _call_and_expect_200(client, base_query + "Research%20and%20Development/")
+    assert resp.json() == {"results": [rnd_tier_two_special()]}
+
+
+def test_tier_four_rnd_special(client, rnd_special):
+    resp = _call_and_expect_200(client, base_query + "Research%20and%20Development/AU/")
+    assert resp.json() == {"results": [rnd_tier_four_special()]}

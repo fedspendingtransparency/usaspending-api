@@ -32,6 +32,13 @@ This route sends a request to the backend to begin generating a zipfile of award
 
             {
                 "filters": {
+                    "agencies": [
+                        {
+                            "type": "awarding",
+                            "tier": "toptier",
+                            "name": "Department of Agriculture"
+                        }
+                    ],
                     "keywords": ["Defense"]
                 },
                 "columns": [
@@ -60,7 +67,6 @@ This route sends a request to the backend to begin generating a zipfile of award
                 "file_name": "PrimeAwardSummariesAndSubawards_2020-01-13_H21M05S48397603.zip",
                 "file_url": "/csv_downloads/PrimeAwardSummariesAndSubawards_2020-01-13_H21M05S48397603.zip",
                 "download_request": {
-                    "agency": "all",
                     "columns": [
                         "assistance_award_unique_key",
                         "award_id_fain",
@@ -74,6 +80,13 @@ This route sends a request to the backend to begin generating a zipfile of award
                     ],
                     "file_format": "csv",
                     "filters": {
+                        "agencies": [
+                            {
+                                "type": "awarding",
+                                "tier": "toptier",
+                                "name": "Department of Agriculture"
+                            }
+                        ],
                         "award_type_codes": [
                             "02",
                             "03",
@@ -161,6 +174,9 @@ This route sends a request to the backend to begin generating a zipfile of award
     + Members
         + `funding`
         + `awarding`
++ `toptier_name` (optional, string)
+    Provided when the `name` belongs to a subtier agency
+
 
 ### TimePeriod (object)
 + `start_date` (required, string)

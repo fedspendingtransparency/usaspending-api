@@ -46,8 +46,35 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
             if required_param not in filters:
                 raise InvalidParameterException(f"Missing one or more required body parameters: {required_param}")
 
-        if "agency" not in filters and "agencies" not in filters:
-            raise InvalidParameterException(f"Request must include either 'agency' or 'agencies'")
+        # Replacing agency with agencies
+        if "agency" in filters:
+            if "agencies" not in filters:
+                filters["agencies"] = []
+            if str(filters["agency"]).lower() == "all":
+                toptier_name = "all"
+            else:
+                toptier_name = ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).values("name").first()
+                if toptier_name is None:
+                    raise InvalidParameterException(f"Toptier ID not found: {filters['agency']}")
+                toptier_name = toptier_name["name"]
+            if "sub_agency" in filters:
+                filters["agencies"].append(
+                    {
+                        "type": "awarding",
+                        "tier": "subtier",
+                        "name": filters["sub_agency"],
+                        "toptier_name": toptier_name,
+                    }
+                )
+                del filters["sub_agency"]
+            else:
+                filters["agencies"].append({"type": "awarding", "tier": "toptier", "name": toptier_name})
+            del filters["agency"]
+
+        if "agencies" in filters:
+            filters["agencies"] = [val for val in filters["agencies"] if val.get("name", "").lower() != "all"]
+        else:
+            raise InvalidParameterException("Request must include either 'agency' or 'agencies'")
 
         # Creating new filter for custom award download to keep Prime and Sub Awards separate;
         # Also adding award levels based on filters passed
@@ -78,26 +105,5 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
         filters["time_period"] = [date_range_copied]
         del filters["date_range"]
         del filters["date_type"]
-
-        # Replacing agency with agencies
-        if filters.get("agency"):
-            if filters["agency"] != "all":
-                toptier_name = ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).values("name")
-                if not toptier_name:
-                    raise InvalidParameterException("Toptier ID not found: {}".format(filters["agency"]))
-                toptier_name = toptier_name[0]["name"]
-                if "sub_agency" in filters:
-                    if filters["sub_agency"]:
-                        filters["agencies"] = [
-                            {
-                                "type": "awarding",
-                                "tier": "subtier",
-                                "name": filters["sub_agency"],
-                                "toptier_name": toptier_name,
-                            }
-                        ]
-                    del filters["sub_agency"]
-                else:
-                    filters["agencies"] = [{"type": "awarding", "tier": "toptier", "name": toptier_name}]
 
         request_data["filters"] = filters

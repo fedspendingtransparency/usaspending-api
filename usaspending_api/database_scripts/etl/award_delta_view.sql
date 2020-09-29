@@ -262,9 +262,7 @@ LEFT JOIN (
         AND sa.reporting_period_start >= '2020-04-01'
     INNER JOIN dabs_submission_window_schedule AS closed_periods
         ON   closed_periods.period_start_date >= '2020-04-01' AND closed_periods.submission_reveal_date < now()
-        AND  sa.reporting_fiscal_year = closed_periods.submission_fiscal_year
-        AND  sa.reporting_fiscal_period = closed_periods.submission_fiscal_month
-        AND  sa.quarter_format_flag = closed_periods.is_quarter
+        AND sa.submission_window_id = closed_periods.id
     WHERE faba.award_id IS NOT NULL
     GROUP BY
         faba.award_id

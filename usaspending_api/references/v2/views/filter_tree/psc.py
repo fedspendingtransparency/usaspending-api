@@ -35,12 +35,5 @@ class PSCViewSet(APIView):
 
         filter_tree = PSCFilterTree()
         return Response(
-            {
-                "results": [
-                    elem.to_JSON()
-                    for elem in filter_tree.search(
-                        tier1, tier2, tier3, request_values["depth"], request_values["filter"]
-                    )
-                ]
-            }
+            {"results": filter_tree.search(tier1, tier2, tier3, request_values["depth"], request_values["filter"])}
         )

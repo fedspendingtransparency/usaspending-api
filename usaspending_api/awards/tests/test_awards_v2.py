@@ -1218,36 +1218,6 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
 
 
-def test_defc(client, awards_and_transactions):
-    mommy.make("references.DisasterEmergencyFundCode", code="A", title="AA")
-    mommy.make("references.DisasterEmergencyFundCode", code="B", title="BB")
-    mommy.make(
-        "awards.FinancialAccountsByAwards",
-        financial_accounts_by_awards_id=1,
-        award_id=1,
-        disaster_emergency_fund_id="B",
-    )
-    mommy.make(
-        "awards.FinancialAccountsByAwards",
-        financial_accounts_by_awards_id=2,
-        award_id=1,
-        disaster_emergency_fund_id="A",
-    )
-    mommy.make(
-        "awards.FinancialAccountsByAwards",
-        financial_accounts_by_awards_id=3,
-        award_id=1,
-        disaster_emergency_fund_id="A",
-    )
-    mommy.make(
-        "awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=4, award_id=1,
-    )
-
-    resp = client.get("/api/v2/awards/ASST_AGG_1830212.0481163_3620/")
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["disaster_emergency_fund_codes"] == ["A", "B"]
-
-
 expected_response_asst = {
     "id": 1,
     "record_type": 111,
@@ -1357,7 +1327,6 @@ expected_response_asst = {
     "account_outlays_by_defc": [],
     "total_account_obligation": 0,
     "total_account_outlay": 0,
-    "disaster_emergency_fund_codes": [],
 }
 
 
@@ -1545,7 +1514,6 @@ expected_response_cont = {
     "account_outlays_by_defc": [],
     "total_account_obligation": 0,
     "total_account_outlay": 0,
-    "disaster_emergency_fund_codes": [],
 }
 
 expected_contract_award_parent = {

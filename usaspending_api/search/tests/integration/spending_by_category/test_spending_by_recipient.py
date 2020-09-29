@@ -121,13 +121,14 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
 
 def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, elasticsearch_transaction_index, db):
     """
-    This tests the approach to compensating for high-cardinality aggregations documented in DEV-4685,
-    to ensure accuracy and completeness of aggregations and sorting even when taking less buckets than the term
-    cardinality.
+    This tests the approach to compensating for high-cardinality aggregations
+    documented in DEV-4685, to ensure accuracy and completeness of aggregations
+    and sorting even when taking less buckets than the term cardinality.
 
-    Without the code to route indexing of transaction documents in elasticsearch to shards by the `recipient_agg_key`,
-    which was added to :meth:`usaspending_api.etl.es_etl_helpers.csv_chunk_gen`, the below agg queries should lead to
-    inaccurate results, as shown in the DEV-4538.
+    Without the code to route indexing of transaction documents in elasticsearch
+    to shards by the `recipient_agg_key`, which was added to
+    :meth:`usaspending_api.etl.elasticsearch_loader_helpers.csv_chunk_gen`,
+    the below agg queries should lead to inaccurate results, as shown in the DEV-4538.
 
     With routing by recipient, documents will be allocated to shards as below
 

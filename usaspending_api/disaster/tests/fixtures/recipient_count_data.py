@@ -100,6 +100,7 @@ def fabs_award_with_quarterly_submission(award_count_sub_schedule, award_count_q
 def fabs_award_with_old_submission(defc_codes, award_count_sub_schedule):
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=20220300,
         is_quarter=False,
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
@@ -112,6 +113,7 @@ def fabs_award_with_old_submission(defc_codes, award_count_sub_schedule):
         reporting_fiscal_period=3,
         quarter_format_flag=False,
         reporting_period_start="2022-04-01",
+        submission_window_id=20220300,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
