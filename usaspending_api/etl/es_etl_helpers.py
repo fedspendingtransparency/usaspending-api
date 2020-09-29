@@ -21,8 +21,6 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 # SQL Template Strings for Postgres Statements
 # ==============================================================================
 
-global TEST
-
 VIEW_COLUMNS = [
     "transaction_id",
     "detached_award_proc_unique",
