@@ -129,82 +129,39 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         """
         # Create the initial search using filters
         search = AccountSearch().filter(self.filter_query)
-        aggs1 = A("nested", path="financial_accounts_by_award")
-        aggs2 = A("terms", field="financial_accounts_by_award.funding_toptier_agency_id", size=2000, shard_size=2000)
-        dim_metadata = A(
-            "top_hits",
-            {
-                "size": 1,
-                "sort": [{"financial_accounts_by_award.update_date": {"order": "desc"}}],
-                "_source": {
-                    "includes": [
-                        "financial_accounts_by_award.funding_toptier_agency_code",
-                        "financial_accounts_by_award.funding_toptier_agency_name",
-                    ]
-                },
-            },
-        )
-        pagination_agg = A("bucket_sort", {"from": 0, "size": 101, "sort": {"sum_covid_obligation": {"order": "desc"}}})
-        sum_covid_obligation = A(
+        aggs = A("nested", path="financial_accounts_by_award")
+        group_by_dim_agg = A("terms", field="financial_accounts_by_award.funding_toptier_agency_id", size=2000, shard_size=2000)
+
+        # dim_metadata = A(
+        #     "top_hits",
+        #     {
+        #         "size": 1,
+        #         "sort": [{"financial_accounts_by_award.update_date": {"order": "desc"}}],
+        #         "_source": {
+        #             "includes": [
+        #                 "financial_accounts_by_award.funding_toptier_agency_code",
+        #                 "financial_accounts_by_award.funding_toptier_agency_name",
+        #             ]
+        #         },
+        #     },
+        # )
+        # group_by_dim_agg.metric("dim_metadata", dim_metadata)
+
+        pagination_agg = A("bucket_sort", sort={"sum_covid_obligation": {"order": "desc"}})
+        group_by_dim_agg.metric("pagination_agg", pagination_agg)
+        sum_covid_outlay = A(
             "sum",
             field="financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
             script={"source": "doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? _value : 0"},
         )
-        count_awards_by_dim = A("reverse_nested", {"aggs": {"count_awards": {"value_count": {"field": "award_id"}}}})
-        search.aggs.bucket("finacial_accounts_agg", aggs1)
-
-        # As of writing this the value of settings.ES_ROUTING_FIELD is the only high cardinality aggregation that
-        # we support. Since the Elasticsearch clusters are routed by this field we don't care to get a count of
-        # unique buckets, but instead we use the upper_limit and don't allow an upper_limit > 10k.
-        if self.bucket_count == 0:
-            return None
-        elif self.agg_key == settings.ES_ROUTING_FIELD:
-            size = self.bucket_count
-            shard_size = size
-            group_by_agg_key_values = {
-                "order": [
-                    {self.sort_column_mapping[self.pagination.sort_key]: self.pagination.sort_order},
-                    {self.sort_column_mapping["id"]: self.pagination.sort_order},
-                ]
-            }
-            bucket_sort_values = None
-        else:
-            size = self.bucket_count
-            shard_size = self.bucket_count + 100
-            group_by_agg_key_values = {}
-            bucket_sort_values = {
-                "sort": [
-                    {self.sort_column_mapping[self.pagination.sort_key]: {"order": self.pagination.sort_order}},
-                    {self.sort_column_mapping["id"]: {"order": self.pagination.sort_order}},
-                ]
-            }
-
-        if shard_size > 10000:
-            raise ForbiddenException(
-                "Current filters return too many unique items. Narrow filters to return results or use downloads."
-            )
-
-        # Define all aggregations needed to build the response
-        group_by_agg_key_values.update({"field": self.agg_key, "size": size, "shard_size": shard_size})
-        group_by_agg_key = A("terms", **group_by_agg_key_values)
-
-        sum_aggregations = {
-            mapping: get_scaled_sum_aggregations(mapping, self.pagination)
-            for mapping in self.sum_column_mapping.values()
-        }
-
-        search.aggs.bucket(self.agg_group_name, group_by_agg_key)
-        for field, sum_aggregations in sum_aggregations.items():
-            search.aggs[self.agg_group_name].metric(field, sum_aggregations["sum_field"])
-
-        if bucket_sort_values:
-            bucket_sort_aggregation = A("bucket_sort", **bucket_sort_values)
-            search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
-
-        # If provided, break down primary bucket aggregation into sub-aggregations based on a sub_agg_key
-        if self.sub_agg_key:
-            self.extend_elasticsearch_search_with_sub_aggregation(search)
-        # Set size to 0 since we don't care about documents returned
+        group_by_dim_agg.metric("sum_covid_outlay", sum_covid_outlay)
+        sum_covid_obligation=A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
+        group_by_dim_agg.metric("sum_covid_obligation", sum_covid_obligation)
+        value_count = A("value_count", field="award_id")
+        count_awards_by_dim = A("reverse_nested", count_awards=value_count)
+        group_by_dim_agg.metric("count_awards_by_dim", count_awards_by_dim)
+        aggs.metric("group_by_dim_agg", group_by_dim_agg)
+        search.aggs.bucket("finacial_accounts_agg", aggs)
         search.update_from_dict({"size": 0})
 
         return search
@@ -298,6 +255,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
 
         response = search.handle_execute()
         response = response.aggs.to_dict()
+        print(response)
         buckets = response.get("group_by_agg_key", {}).get("buckets", [])
 
         totals = self.build_totals(buckets)
