@@ -4,7 +4,7 @@ import psycopg2
 
 from typing import Optional, List
 from dataclasses import dataclass
-from random import choice, randint
+from random import choice
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -24,7 +24,7 @@ class WorkerNode:
 
 
 def chunks(l, n):
-    """Yield successive n-sized chunks from l."""
+    """Yield successive n-sized chunks from l"""
     for i in range(0, len(l), n):
         yield l[i : i + n]
 
@@ -77,7 +77,7 @@ def format_log(msg, process=None, job=None):
 
 
 def gen_random_name():
-    """Generates (over) 2000 unique name strings, random order each run"""
+    """Generates (over) 5000 unique names in random order. Adds integer to names if necessary"""
     previous_names = []
 
     nouns = [
@@ -86,37 +86,73 @@ def gen_random_name():
         "Archer",
         "Armadillo",
         "Assassin",
+        "Bandit",
         "Beetle",
         "Boss",
+        "Brain",
         "Captian",
         "Champion",
         "Commando",
+        "Conjuror",
         "Crusher",
         "Dart",
         "Defender",
         "Dragon",
+        "Electron",
         "Enchanter",
+        "Eye",
         "Falcon",
+        "Fox",
         "Gargoyle",
+        "Genius",
+        "Golem",
+        "Guard",
+        "Guardian",
         "Hammer",
+        "Heart",
+        "Hunter",
+        "Jackal",
+        "Juggernaut",
         "Karma",
         "Knight",
         "Magician",
+        "Mamba",
         "Mantis",
+        "Martian",
         "Mastermind",
+        "Mecha",
+        "Minion",
+        "Monarch",
         "Mongoose",
         "Moth",
+        "Nightmare",
+        "Nutron",
         "Omen",
         "Phoenix",
         "Protector",
+        "Proton",
         "Puma",
+        "Ranger",
+        "Rocket",
+        "Saber",
+        "Scythe",
         "Seer",
+        "Sentinel",
         "Shadow",
+        "Shepherd",
         "Slayer",
         "Smasher",
         "Spectacle",
+        "Spectre",
+        "Spirit",
+        "Spy",
+        "Storm",
         "Titan",
+        "Trident",
+        "UFO",
+        "Vector",
         "Warrior",
+        "Watcher",
         "Wing",
         "Wizard",
         "Wolf",
@@ -124,6 +160,10 @@ def gen_random_name():
     ]
 
     prefix = [
+        "Amber",
+        "Artifical",
+        "Atomic",
+        "Bionic",
         "Black",
         "Blue",
         "Capped",
@@ -131,6 +171,7 @@ def gen_random_name():
         "Colossal",
         "Commander",
         "Crazy",
+        "Curious",
         "Dark",
         "Doctor",
         "Eager",
@@ -142,6 +183,7 @@ def gen_random_name():
         "Fantastic",
         "Fearless",
         "Fiery",
+        "Flying",
         "Gentle",
         "Giant",
         "Glorious",
@@ -149,16 +191,21 @@ def gen_random_name():
         "Grey",
         "Heavy",
         "Humble",
+        "Ice",
         "Infamous",
         "Intelligent",
+        "Invisible",
         "Jade",
         "Kind",
         "Mega",
         "Mighty",
         "Mysterious",
         "Nefarious",
+        "Night",
         "Nocturnal",
         "Orange",
+        "Orange",
+        "Prime",
         "Professor",
         "Purple",
         "Quick",
@@ -166,35 +213,35 @@ def gen_random_name():
         "Ruby",
         "Sassy",
         "Scarlet",
+        "Sensitive",
         "Smooth",
         "Sneeky",
         "Speedy",
+        "Super",
+        "Supreme",
         "The",
         "Thunder",
+        "Ultra",
+        "Unarmed",
+        "Universal",
         "White",
         "Wild",
+        "Winged",
+        "Wonder",
         "Yellow",
     ]
 
     max_combinations = len(prefix) * len(nouns)
+    name_template = "{prefix} {noun}"
+    iterations = 1
 
     while True:
-        name = f"{choice(prefix)} {choice(nouns)}"
+        name = name_template.format(prefix=choice(prefix), noun=choice(nouns))
         if name not in previous_names:
             previous_names.append(name)
             yield name
 
         if len(previous_names) >= max_combinations:
-            break
-
-    counter = 0
-    while True:
-        name = f"Cloned Warrior {randint(1098, 99999)}"
-        if counter > 90:
-            break
-        elif name not in previous_names:
-            previous_names.append(name)
-            counter = 0
-            yield name
-        else:
-            counter += 1
+            iterations += 1
+            max_combinations *= iterations
+            name_template = "{prefix} {noun} {iterations}"
