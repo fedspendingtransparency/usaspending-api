@@ -18,7 +18,9 @@ Returns the counts of transaction records which match the keyword grouped by awa
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
     + Body 
-        {"filters":{"keyword":"test"}}
+            
+            
+            {"filters":{"keyword":"test"}}
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -32,6 +34,7 @@ Returns the counts of transaction records which match the keyword grouped by awa
 
     + Body
 
+            
             {
                 "results": {
                     "idvs": 597,

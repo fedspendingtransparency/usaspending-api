@@ -23,28 +23,29 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
         
     + Body
     
-        {
-            "filter": {
-                "def_codes": [
-                    "L",
-                    "M",
-                    "N",
-                    "O",
-                    "P"
-                ],
-                "award_type_codes": [
-                    "07",
-                    "08"
-                ]
-            },
-            "pagination": {
-                "limit": 10,
-                "page": 1,
-                "sort": "award_count",
-                "order": "desc"
-            },
-            "spending_type": "total"
-        }
+        
+            {
+                "filter": {
+                    "def_codes": [
+                        "L",
+                        "M",
+                        "N",
+                        "O",
+                        "P"
+                    ],
+                    "award_type_codes": [
+                        "07",
+                        "08"
+                    ]
+                },
+                "pagination": {
+                    "limit": 10,
+                    "page": 1,
+                    "sort": "award_count",
+                    "order": "desc"
+                },
+                "spending_type": "total"
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -54,6 +55,7 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
 
     + Body
 
+            
             {
                 "totals": {
                     "award_count": 4574,

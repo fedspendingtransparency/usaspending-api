@@ -28,6 +28,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
 
     + Body
 
+            
             {
                 "filter": {
                     "def_codes": [
@@ -51,6 +52,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
 
     + Body
 
+            
             {
                 "totals": {
                     "award_count": 4574,

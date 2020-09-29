@@ -28,48 +28,49 @@ Returns spending details of Object Classes receiving supplemental funding budget
         
     + Body
     
-        {
-            "filter": {
-                "def_codes": [
-                    "L",
-                    "M",
-                    "N",
-                    "O",
-                    "P"
-                ],
-                "award_type_codes": [
-                    "02",
-                    "03",
-                    "04",
-                    "05",
-                    "07",
-                    "08",
-                    "10",
-                    "06",
-                    "09",
-                    "11",
-                    "A",
-                    "B",
-                    "C",
-                    "D",
-                    "IDV_A",
-                    "IDV_B",
-                    "IDV_B_A",
-                    "IDV_B_B",
-                    "IDV_B_C",
-                    "IDV_C",
-                    "IDV_D",
-                    "IDV_E"
-                ]
-            },
-            "pagination": {
-                "limit": 10,
-                "page": 1,
-                "sort": "award_count",
-                "order": "desc"
-            },
-            "spending_type": "total"
-        }
+            
+            {
+                "filter": {
+                    "def_codes": [
+                        "L",
+                        "M",
+                        "N",
+                        "O",
+                        "P"
+                    ],
+                    "award_type_codes": [
+                        "02",
+                        "03",
+                        "04",
+                        "05",
+                        "07",
+                        "08",
+                        "10",
+                        "06",
+                        "09",
+                        "11",
+                        "A",
+                        "B",
+                        "C",
+                        "D",
+                        "IDV_A",
+                        "IDV_B",
+                        "IDV_B_A",
+                        "IDV_B_B",
+                        "IDV_B_C",
+                        "IDV_C",
+                        "IDV_D",
+                        "IDV_E"
+                    ]
+                },
+                "pagination": {
+                    "limit": 10,
+                    "page": 1,
+                    "sort": "award_count",
+                    "order": "desc"
+                },
+                "spending_type": "total"
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -78,6 +79,7 @@ Returns spending details of Object Classes receiving supplemental funding budget
         + `page_metadata` (required, PageMetadata, fixed-type)
     + Body
 
+            
             {
                 "totals": {
                     "award_count": 4574,

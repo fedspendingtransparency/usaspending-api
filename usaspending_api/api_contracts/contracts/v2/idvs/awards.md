@@ -39,14 +39,16 @@ List child IDVs, child awards, or grandchild awards for IDV
             The direction results are sorted by. `asc` for ascending, `desc` for descending.
             + Default: `desc`            
     + Body
-        {
-            "award_id": "CONT_IDV_TMHQ10C0040_2044",
-            "type": "child_awards",
-            "limit": 10,
-            "page": 1,
-            "sort": "period_of_performance_start_date",
-            "order": "desc"
-        }
+            
+            
+            {
+                "award_id": "CONT_IDV_TMHQ10C0040_2044",
+                "type": "child_awards",
+                "limit": 10,
+                "page": 1,
+                "sort": "period_of_performance_start_date",
+                "order": "desc"
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -55,6 +57,7 @@ List child IDVs, child awards, or grandchild awards for IDV
 
     * Body
 
+           
             {
                 "results": [
                     {

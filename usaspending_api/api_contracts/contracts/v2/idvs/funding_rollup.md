@@ -11,7 +11,9 @@ This endpoint returns award metadata summing the total transaction obligations a
     + Attributes (object)
         + `award_id`: `CONT_IDV_N0018918D0057_9700` (required, string)
     + Body 
-        { "award_id":"CONT_IDV_TMHQ10C0040_2044" }
+            
+            
+            { "award_id":"CONT_IDV_TMHQ10C0040_2044" }
 + Response 200 (application/json)
     + Attributes (object)
         + `total_transaction_obligated_amount` (required, number)
@@ -20,6 +22,7 @@ This endpoint returns award metadata summing the total transaction obligations a
         + `federal_account_count` (required, number)
     + Body
 
+            
             {
                 "total_transaction_obligated_amount": 42946881.56,
                 "awarding_agency_count": 27,

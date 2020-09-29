@@ -25,12 +25,12 @@ List child and grandchild awards for a given IDV
             
     + Body
         
-        {
-            "award_id": "CONT_IDV_TMHQ10C0040_2044",
-            "page": 1,
-            "hide_edge_cases": true,
-            "limit": 50
-        }
+            {
+                "award_id": "CONT_IDV_TMHQ10C0040_2044",
+                "page": 1,
+                "hide_edge_cases": true,
+                "limit": 50
+            }
         
 + Response 200 (application/json)
     + Attributes (object)

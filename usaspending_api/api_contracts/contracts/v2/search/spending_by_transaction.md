@@ -36,31 +36,33 @@ Returns transaction records which match the keyword and award type code filters.
                 + `asc`
                 + `desc`
     + Body
-        {
-            "filters": {
-                "keyword": "test",
-                "award_type_codes": [
-                    "A",
-                    "B",
-                    "C",
-                    "D"
-                ]
-            },
-            "fields": [
-                "Award ID",
-                "Mod",
-                "Recipient Name",
-                "Action Date",
-                "Transaction Amount",
-                "Awarding Agency",
-                "Awarding Sub Agency",
-                "Award Type"
-            ],
-            "page": 1,
-            "limit": 35,
-            "sort": "Transaction Amount",
-            "order": "desc"
-        }
+            
+            
+            {
+                "filters": {
+                    "keyword": "test",
+                    "award_type_codes": [
+                        "A",
+                        "B",
+                        "C",
+                        "D"
+                    ]
+                },
+                "fields": [
+                    "Award ID",
+                    "Mod",
+                    "Recipient Name",
+                    "Action Date",
+                    "Transaction Amount",
+                    "Awarding Agency",
+                    "Awarding Sub Agency",
+                    "Award Type"
+                ],
+                "page": 1,
+                "limit": 35,
+                "sort": "Transaction Amount",
+                "order": "desc"
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -70,6 +72,7 @@ Returns transaction records which match the keyword and award type code filters.
 
     + Body
 
+            
             {
                 "limit": 10,
                 "page_metadata": {

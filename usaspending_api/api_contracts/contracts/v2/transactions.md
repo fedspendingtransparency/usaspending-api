@@ -37,13 +37,15 @@ This endpoint returns a list of transactions, their amount, type, action date, a
                 + `desc`
                 + `asc`
     + Body
-        {
-            "award_id": "CONT_AWD_N0001917C0015_9700_-NONE-_-NONE-",
-            "page": 1,
-            "sort": "federal_action_obligation",
-            "order": "asc",
-            "limit": 5000
-        }
+            
+            
+            {
+                "award_id": "CONT_AWD_N0001917C0015_9700_-NONE-_-NONE-",
+                "page": 1,
+                "sort": "federal_action_obligation",
+                "order": "asc",
+                "limit": 5000
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
