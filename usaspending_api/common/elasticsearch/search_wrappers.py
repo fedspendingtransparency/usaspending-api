@@ -88,6 +88,7 @@ class _Search(Search):
         return result
 
     def handle_execute(self, retries: int = 5, timeout: str = "90s") -> Response:
+        print(self.to_dict())
         return self._handle_errors(self._execute, retries, timeout)
 
     def handle_count(self, retries: int = 5) -> int:
@@ -100,3 +101,7 @@ class TransactionSearch(_Search):
 
 class AwardSearch(_Search):
     _index_name = f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*"
+
+
+class AccountSearch(_Search):
+    _index_name = "accounts-by-awards-covid-19-2020-09-24-06-53"  # f"{settings.ES_ACCOUNTS_QUERY_ALIAS_PREFIX}*"

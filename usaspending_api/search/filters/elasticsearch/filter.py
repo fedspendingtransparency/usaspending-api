@@ -8,6 +8,7 @@ from elasticsearch_dsl import Q as ES_Q
 class _QueryType(Enum):
     TRANSACTIONS = "transactions"
     AWARDS = "awards"
+    ACCOUNTS = "accounts"
 
 
 class _Filter(metaclass=ABCMeta):

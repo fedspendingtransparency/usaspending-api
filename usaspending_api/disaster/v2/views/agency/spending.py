@@ -7,11 +7,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django_cte import With
 from rest_framework.response import Response
 from typing import List
+from elasticsearch_dsl import Q as ES_Q
 
-from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api import settings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
@@ -22,11 +24,14 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
 )
+from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
-
+from usaspending_api.search.v2.elasticsearch_helper import (
+    get_summed_value_as_float,
+    get_number_of_unique_terms_for_awards,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,16 +62,68 @@ def route_agency_spending_backend(**initkwargs):
     return route_agency_spending_backend
 
 
-class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterBase):
+class SpendingByAgencyViewSet(
+    PaginationMixin,
+    SpendingMixin,
+    FabaOutlayMixin,
+    ElasticsearchAccountDisasterBase,
+    ElasticsearchSpendingPaginationMixin,
+    DisasterBase,
+):
     """ Returns disaster spending by agency. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
-
+    required_filters = ["def_codes", "award_type_codes", "query"]
+    query_fields = ["funding_toptier_agency_name.contains"]
+    agg_key = "funding_toptier_agency_code"  # primary (tier-1) aggregation key
+    # sub_agg_key = "funding_subtier_agency_code"  # secondary (tier-2) sub-aggregation key
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            results = self.award_queryset
-            extra_columns = ["award_count"]
+            query = self.filters.pop("query", None)
+            if query:
+                self.filters["query"] = {"text": query, "fields": self.query_fields}
+            # self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
+            self.filter_query = ES_Q(
+                "bool", filter={"exists": {"field": "financial_account_distinct_award_key"}}
+            )  # QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
+
+            # Ensure that only non-zero values are taken into consideration
+            # TODO: Refactor to use new NonzeroFields filter in QueryWithFilters
+            non_zero_queries = []
+            for field in self.sum_column_mapping.values():
+                non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))
+                non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
+            self.filter_query.must.append(ES_Q("bool", should=non_zero_queries, minimum_should_match=1))
+
+            self.bucket_count = (
+                10000  # get_number_of_unique_terms_for_awards(self.filter_query, f"{self.agg_key}.hash")
+            )
+            # print(self.bucket_count)
+            messages = []
+            if self.pagination.sort_key in ("id", "code"):
+                messages.append(
+                    (
+                        f"Notice! API Request to sort on '{self.pagination.sort_key}' field isn't fully implemented."
+                        " Results were actually sorted using 'description' field."
+                    )
+                )
+            if self.bucket_count > 10000 and self.agg_key == settings.ES_ROUTING_FIELD:
+                self.bucket_count = 10000
+                messages.append(
+                    (
+                        "Notice! API Request is capped at 10,000 results. Either download to view all results or"
+                        " filter using the 'query' attribute."
+                    )
+                )
+
+            response = self.query_elasticsearch()
+            response["page_metadata"] = get_pagination_metadata(
+                self.bucket_count, self.pagination.limit, self.pagination.page
+            )
+            if messages:
+                response["messages"] = messages
+            return Response(response)
         else:
             results = self.total_queryset
             extra_columns = ["total_budgetary_resources"]
@@ -163,54 +220,6 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
         return (
             cte.join(ToptierAgency, toptier_agency_id=cte.col.funding_toptier_agency_id)
             .with_cte(cte)
-            .annotate(**annotations)
-            .values(*annotations)
-        )
-
-    @property
-    def award_queryset(self):
-        cte = With(
-            ToptierAgency.objects.distinct("toptier_agency_id")
-            .filter(agency__isnull=False)
-            .annotate(agency_id=F("agency__id"), toptier_name=F("name"))
-            .values("toptier_agency_id", "agency_id", "toptier_code", "toptier_name")
-            .order_by("toptier_agency_id", "-agency__toptier_flag", "agency_id")
-        )
-
-        filters = [
-            self.is_in_provided_def_codes,
-            self.all_closed_defc_submissions,
-            Q(treasury_account__isnull=False),
-        ]
-
-        annotations = {
-            "id": cte.col.agency_id,
-            "code": cte.col.toptier_code,
-            "description": cte.col.toptier_name,
-            # Currently, this endpoint can never have children.
-            "children": Value([], output_field=ArrayField(IntegerField())),
-            "award_count": self.unique_file_d_award_count(),
-            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
-            "outlay": Coalesce(
-                Sum(
-                    Case(
-                        When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
-                        default=Value(0),
-                    )
-                ),
-                0,
-            ),
-            "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
-        }
-
-        # Assuming it is more performant to fetch all rows once rather than
-        #  run a count query and fetch only a page's worth of results
-        return (
-            cte.join(FinancialAccountsByAwards, treasury_account__funding_toptier_agency_id=cte.col.toptier_agency_id)
-            .with_cte(cte)
-            .filter(*filters)
-            .annotate(agency_id=cte.col.agency_id, toptier_code=cte.col.toptier_code, toptier_name=cte.col.toptier_name)
-            .values("agency_id", "toptier_code", "toptier_name")
             .annotate(**annotations)
             .values(*annotations)
         )
