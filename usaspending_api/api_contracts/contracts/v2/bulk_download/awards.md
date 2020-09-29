@@ -80,13 +80,12 @@ This route sends a request to the backend to begin generating a zipfile of award
             The JSON object used when processing the download.
 
     + Body
-            
+
             {
                 "status_url": "https://api.usaspending.gov/api/v2/download/status?file_name=All_PrimeTransactions_2020-09-16_H15M20S52934397.zip",
                 "file_name": "All_PrimeTransactions_2020-09-16_H15M20S52934397.zip",
                 "file_url": "https://files.usaspending.gov/generated_downloads/dev/All_PrimeTransactions_2020-09-16_H15M20S52934397.zip",
                 "download_request": {
-                    "agency": "all",
                     "columns": [],
                     "download_types": [
                         "prime_awards"
@@ -215,4 +214,4 @@ This route sends a request to the backend to begin generating a zipfile of award
         + `funding`
         + `awarding`
 + `toptier_name` (optional, string)
-    Required if and only if `tier`=`subtier`
+    Provided when the `name` belongs to a subtier agency
