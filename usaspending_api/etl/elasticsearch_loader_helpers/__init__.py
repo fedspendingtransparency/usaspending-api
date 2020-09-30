@@ -1,4 +1,9 @@
-from usaspending_api.etl.elasticsearch_loader_helpers.fetch_data import (
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
+    set_final_index_config,
+    swap_aliases,
+    create_aliases,
+)
+from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import (
     count_of_records_to_process,
     extract_records,
     EXTRACT_SQL,
@@ -10,11 +15,10 @@ from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     get_deleted_award_ids,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.load_data import (
-    create_aliases,
     create_index,
     load_data,
-    set_final_index_config,
-    swap_aliases,
+)
+from usaspending_api.etl.elasticsearch_loader_helpers.transform_data import (
     transform_award_data,
     transform_transaction_data,
 )
