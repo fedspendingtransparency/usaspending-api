@@ -127,7 +127,7 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
 
     Without the code to route indexing of transaction documents in elasticsearch
     to shards by the `recipient_agg_key`, which was added to
-    :meth:`usaspending_api.etl.elasticsearch_loader_helpers.es_etl_helpers.csv_chunk_gen`,
+    :meth:`usaspending_api.etl.elasticsearch_loader_helpers.csv_chunk_gen`,
     the below agg queries should lead to inaccurate results, as shown in the DEV-4538.
 
     With routing by recipient, documents will be allocated to shards as below
