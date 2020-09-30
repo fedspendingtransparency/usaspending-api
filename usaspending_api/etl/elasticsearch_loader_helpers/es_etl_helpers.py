@@ -618,7 +618,6 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
         logger.info(
             format_log(f"ES Stream #{count} rows [{current_rows}/{job.count:,}]", job=job.name, process="ES Index")
         )
-        streaming_post_to_es(client, chunk, job.index, config["load_type"], job.name)
         streaming_post_to_es(
             client, chunk, job.index, config["load_type"], job.name, delete_before_index=is_incremental
         )
