@@ -2,9 +2,11 @@ import json
 import logging
 import psycopg2
 
-from typing import Optional, List
+from django.conf import settings
 from dataclasses import dataclass
+from pathlib import Path
 from random import choice
+from typing import Optional, List
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -18,8 +20,8 @@ class WorkerNode:
     name: str
     index: str
     sql: str
-    load_type: str
-    transform_func: callable
+    primary_key: str
+    transform_func: callable = None
     # ids: List[int] = field(default_factory=list)
 
 
@@ -78,165 +80,14 @@ def format_log(msg, process=None, job=None):
 
 def gen_random_name():
     """Generates (over) 5000 unique names in random order. Adds integer to names if necessary"""
+    data_file = json.loads(Path(settings.APP_DIR / "data" / "multiprocessing_worker_names.json").read_text())
+    iterations = 1
+    max_combinations = len(data_file["attributes"]) * len(data_file["subjects"])
+    name_template = "{attribute} {subject}"
     previous_names = []
 
-    nouns = [
-        "Agent",
-        "Ant",
-        "Archer",
-        "Armadillo",
-        "Assassin",
-        "Bandit",
-        "Beetle",
-        "Boss",
-        "Brain",
-        "Captian",
-        "Champion",
-        "Commando",
-        "Conjuror",
-        "Crusher",
-        "Dart",
-        "Defender",
-        "Dragon",
-        "Electron",
-        "Enchanter",
-        "Eye",
-        "Falcon",
-        "Fox",
-        "Gargoyle",
-        "Genius",
-        "Golem",
-        "Guard",
-        "Guardian",
-        "Hammer",
-        "Heart",
-        "Hunter",
-        "Jackal",
-        "Juggernaut",
-        "Karma",
-        "Knight",
-        "Magician",
-        "Mamba",
-        "Mantis",
-        "Martian",
-        "Mastermind",
-        "Mecha",
-        "Minion",
-        "Monarch",
-        "Mongoose",
-        "Moth",
-        "Nightmare",
-        "Nutron",
-        "Omen",
-        "Phoenix",
-        "Protector",
-        "Proton",
-        "Puma",
-        "Ranger",
-        "Rocket",
-        "Saber",
-        "Scythe",
-        "Seer",
-        "Sentinel",
-        "Shadow",
-        "Shepherd",
-        "Slayer",
-        "Smasher",
-        "Spectacle",
-        "Spectre",
-        "Spirit",
-        "Spy",
-        "Storm",
-        "Titan",
-        "Trident",
-        "UFO",
-        "Vector",
-        "Warrior",
-        "Watcher",
-        "Wing",
-        "Wizard",
-        "Wolf",
-        "Wonder",
-    ]
-
-    prefix = [
-        "Amber",
-        "Artifical",
-        "Atomic",
-        "Bionic",
-        "Black",
-        "Blue",
-        "Capped",
-        "Captian",
-        "Colossal",
-        "Commander",
-        "Crazy",
-        "Curious",
-        "Dark",
-        "Doctor",
-        "Eager",
-        "Earth",
-        "Ethereal",
-        "Fabulous",
-        "Fallen",
-        "Fancy",
-        "Fantastic",
-        "Fearless",
-        "Fiery",
-        "Flying",
-        "Gentle",
-        "Giant",
-        "Glorious",
-        "Green",
-        "Grey",
-        "Heavy",
-        "Humble",
-        "Ice",
-        "Infamous",
-        "Intelligent",
-        "Invisible",
-        "Jade",
-        "Kind",
-        "Mega",
-        "Mighty",
-        "Mysterious",
-        "Nefarious",
-        "Night",
-        "Nocturnal",
-        "Orange",
-        "Orange",
-        "Prime",
-        "Professor",
-        "Purple",
-        "Quick",
-        "Red",
-        "Ruby",
-        "Sassy",
-        "Scarlet",
-        "Sensitive",
-        "Smooth",
-        "Sneeky",
-        "Speedy",
-        "Super",
-        "Supreme",
-        "The",
-        "Thunder",
-        "Ultra",
-        "Unarmed",
-        "Universal",
-        "White",
-        "Wild",
-        "Winged",
-        "Wonder",
-        "Yellow",
-    ]
-
-    max_combinations = len(prefix) * len(nouns)
-    name_template = "{prefix} {noun}"
-    iterations = 1
-
     while True:
-        name = name_template.format(prefix=choice(prefix), noun=choice(nouns))
+        name = name_template.format(attribute=choice(data_file["attributes"]), subject=choice(data_file["subjects"]))
         if name not in previous_names:
             previous_names.append(name)
             yield name
@@ -244,4 +95,4 @@ def gen_random_name():
         if len(previous_names) >= max_combinations:
             iterations += 1
             max_combinations *= iterations
-            name_template = "{prefix} {noun} {iterations}"
+            name_template = "{attribute} {subject} {iterations}"

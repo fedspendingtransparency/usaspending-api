@@ -1,6 +1,5 @@
 import logging
 
-from django.conf import settings
 from django.core.management import call_command
 from math import ceil
 from multiprocessing import Pool
@@ -21,7 +20,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     load_data,
     set_final_index_config,
     swap_aliases,
-    transform_data,
     WorkerNode,
 )
 
@@ -38,6 +36,11 @@ class Controller:
             self.run_deletes()
         logger.info(format_log("Assessing data to process"))
         self.record_count = count_of_records_to_process(self.config)
+
+        if self.record_count == 0:
+            self.workers = []
+            return
+
         self.partition_size = self.calculate_partition_size(self.record_count, self.config["batch_size"])
         self.number_of_jobs = ceil(self.record_count / self.partition_size)
 
@@ -46,7 +49,7 @@ class Controller:
         logger.info(
             format_log(
                 f"Hailing {self.number_of_jobs:,} heroes"
-                f" to handle {self.record_count:,} {self.config['load_type']} records"
+                f" to handle {self.record_count:,} {self.config['data_type']} records"
                 f" in squad{'s' if self.config['workers'] > 1 else ' size'} of {self.config['workers']:,}"
             )
         )
@@ -55,7 +58,7 @@ class Controller:
 
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
-            call_command("es_configure", "--template-only", f"--load-type={self.config['load_type']}")
+            call_command("es_configure", "--template-only", f"--load-type={self.config['data_type']}s")
             create_index(self.config["index_name"], instantiate_elasticsearch_client())
 
     def launch_workers(self):
@@ -64,18 +67,19 @@ class Controller:
 
     def complete_process(self) -> None:
         if self.config["create_new_index"]:
-            set_final_index_config(self.elasticsearch_client, self.config["index_name"])
+            client = instantiate_elasticsearch_client()
+            set_final_index_config(client, self.config["index_name"])
             if self.config["skip_delete_index"]:
                 logger.info(format_log("Skipping deletion of old indices"))
             else:
                 logger.info(format_log("Closing old indices and adding aliases"))
-                swap_aliases(self.elasticsearch_client, self.config["index_name"], self.config["load_type"])
+                swap_aliases(client, self.config)
 
         if self.config["is_incremental_load"]:
             logger.info(
                 format_log(f"Storing datetime {self.config['processing_start_datetime']} for next incremental load")
             )
-            update_last_load_date(f"es_{self.config['load_type']}", self.config["processing_start_datetime"])
+            update_last_load_date(f"{self.config['stored_date_key']}", self.config["processing_start_datetime"])
 
     @staticmethod
     def calculate_partition_size(record_count: int, max_size: int) -> int:
@@ -83,38 +87,29 @@ class Controller:
         return ceil(record_count / ceil(record_count / max_size))
 
     def create_worker(self, number: int) -> WorkerNode:
-        if self.config["load_type"] == "awards":
-            id_col = "award_id"
-            view = settings.ES_AWARDS_ETL_VIEW_NAME
-            transform_func = None
-        else:
-            id_col = "transaction_id"
-            view = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
-            transform_func = None
-
-        sql = EXTRACT_SQL.format(
-            id_col=id_col,
-            view=view,
-            update_date=self.config["starting_date"],
+        sql_str = EXTRACT_SQL.format(
             divisor=self.number_of_jobs,
+            id_col=self.config["primary_key"],
             remainder=number,
+            update_date=self.config["starting_date"],
+            view=self.config["sql_view"],
         )
 
         return WorkerNode(
             index=self.config["index_name"],
-            load_type=self.config["load_type"],
+            primary_key=self.config["primary_key"],
             name=next(gen_random_name()),
-            sql=sql,
-            transform_func=transform_func,
+            sql=sql_str,
+            transform_func=self.config["data_transform_func"],
         )
 
     def run_deletes(self):
         logger.info(format_log("Processing deletions"))
         client = instantiate_elasticsearch_client()
-        if self.config["load_type"] == "transactions":
-            deleted_transactions(client, self.config)
-        else:
+        if self.config["data_type"] == "award":
             deleted_awards(client, self.config)
+        else:
+            deleted_transactions(client, self.config)
 
 
 def extract_transform_load(worker):
@@ -124,7 +119,7 @@ def extract_transform_load(worker):
 
     client = instantiate_elasticsearch_client()
     try:
-        records = transform_data(worker, extract_records(worker))
+        records = worker.transform_func(worker, extract_records(worker))
         load_data(worker, records, client)
     except Exception as e:
         logger.exception(format_log(f"{worker.name} was lost in battle.", job=worker.name))

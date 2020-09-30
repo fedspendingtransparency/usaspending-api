@@ -3,14 +3,18 @@ import logging
 from datetime import datetime, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from pathlib import Path
 from time import perf_counter
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
-from usaspending_api.etl.elasticsearch_loader_helpers import format_log, Controller
+from usaspending_api.etl.elasticsearch_loader_helpers import (
+    format_log,
+    Controller,
+    transform_award_data,
+    transform_transaction_data,
+)
 
 logger = logging.getLogger("script")
 
@@ -26,11 +30,6 @@ class Command(BaseCommand):
             action="store_true",
             help="When this flag is set, the script will include the extra steps"
             "to calculate deleted records and remove from the target index",
-        )
-        parser.add_argument(
-            "--skip-counts",
-            action="store_true",
-            help="When this flag is set, the ETL process will skip the record counts to reduce operation time",
         )
         parser.add_argument(
             "--index-name",
@@ -59,14 +58,14 @@ class Command(BaseCommand):
         parser.add_argument(
             "--load-type",
             type=str,
-            help="Select which type of load to perform, current options are transactions or awards.",
+            required=True,
+            help="Select which data the ETL will process.",
             choices=["transactions", "awards"],
-            default="transactions",
         )
         parser.add_argument(
             "--workers",
             type=int,
-            help="Number of concurrent ETL workers",
+            help="Number of parallel processes to operate.",
             default=10,
             choices=range(1, 51),
             metavar="[1-50]",
@@ -74,7 +73,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--batch-size",
             type=int,
-            help="Batch size for one worker processing a full ETL pipe",
+            help="Approx number of records for each partition a subprocess will ETL.",
             default=10000,
             metavar="(default: 10,000)",
         )
@@ -88,10 +87,7 @@ class Command(BaseCommand):
         start_msg = "target index: {index_name} | Starting from: {starting_date}"
         logger.info(format_log(start_msg.format(**config)))
 
-        if config["load_type"] == "transactions":
-            ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
-        elif config["load_type"] == "awards":
-            ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
+        ensure_view_exists(config["sql_view"])
 
         loader = Controller(config, elasticsearch_client)
         loader.prepare_for_etl()
@@ -117,17 +113,12 @@ def parse_cli_args(options: dict, es_client) -> dict:
     )
     config = set_config(simple_args, options)
 
-    config["directory"] = Path().resolve()
-
     if config["create_new_index"] and not config["index_name"]:
-        raise SystemExit("Fatal error: --create-new-index requires --index-name.")
+        raise SystemExit("Fatal error: '--create-new-index' requires '--index-name'.")
     elif config["create_new_index"]:
         config["index_name"] = config["index_name"].lower()
         config["starting_date"] = default_datetime
-        check_new_index_name_is_ok(
-            config["index_name"],
-            settings.ES_AWARDS_NAME_SUFFIX if config["load_type"] == "awards" else settings.ES_TRANSACTIONS_NAME_SUFFIX,
-        )
+        check_new_index_name_is_ok(config["index_name"], config["required_index_name"])
     elif options["start_datetime"]:
         config["starting_date"] = options["start_datetime"]
     else:
@@ -136,57 +127,65 @@ def parse_cli_args(options: dict, es_client) -> dict:
         #      - The earliest records in S3.
         #      - When all transaction records in the USAspending SQL database were updated.
         #   And keep it timezone-aware for S3
-        config["starting_date"] = get_last_load_date(f"es_{options['load_type']}", default=default_datetime)
-
-    config["max_query_size"] = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
-    if options["load_type"] == "awards":
-        config["max_query_size"] = settings.ES_AWARDS_MAX_RESULT_WINDOW
+        config["starting_date"] = get_last_load_date(config["stored_date_key"], default=default_datetime)
 
     config["is_incremental_load"] = not bool(config["create_new_index"]) and (
         config["starting_date"] != default_datetime
     )
 
     if config["is_incremental_load"]:
-        write_alias = settings.ES_TRANSACTIONS_WRITE_ALIAS
-        if config["load_type"] == "awards":
-            write_alias = settings.ES_AWARDS_WRITE_ALIAS
         if config["index_name"]:
-            logger.info(format_log(f"Ignoring provided index name, using alias '{write_alias}' for incremental load"))
-        config["index_name"] = write_alias
-        if not es_client.cat.aliases(name=write_alias):
-            logger.error(format_log(f"Write alias '{write_alias}' is missing"))
+            logger.info(format_log(f"Ignoring provided index name, using alias '{config['write_alias']}' for safety"))
+        config["index_name"] = config["write_alias"]
+        if not es_client.cat.aliases(name=config["write_alias"]):
+            logger.error(format_log(f"Write alias '{config['write_alias']}' is missing"))
             raise SystemExit(1)
     else:
         if es_client.indices.exists(config["index_name"]):
             logger.error(format_log(f"Data load into existing index. Change index name or run an incremental load"))
             raise SystemExit(1)
 
-    if not config["directory"].is_dir():
-        logger.error(format_log(f"Provided directory does not exist"))
-        raise SystemExit(1)
-    elif config["starting_date"] < default_datetime:
+    if config["starting_date"] < default_datetime:
         logger.error(format_log(f"--start-datetime is too early. Set no earlier than {default_datetime}"))
         raise SystemExit(1)
-    elif not config["is_incremental_load"] and config["process_deletes"]:
-        logger.error(format_log("Skipping deletions for ths load, --deleted overwritten to False"))
-        config["process_deletes"] = False
 
     return config
 
 
 def set_config(copy_args: list, arg_parse_options: dict) -> dict:
     """Set values based on env vars and when the script started"""
-    root_index = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX
-    if arg_parse_options["load_type"] == "awards":
-        root_index = settings.ES_AWARDS_QUERY_ALIAS_PREFIX
 
-    config = {
-        "aws_region": settings.USASPENDING_AWS_REGION,
-        "s3_bucket": settings.DELETED_TRANSACTION_JOURNAL_FILES,
-        "root_index": root_index,
-        "processing_start_datetime": datetime.now(timezone.utc),
-        "verbose": arg_parse_options["verbosity"] > 1,  # convert the management command's levels of verbosity to a bool
-    }
+    if arg_parse_options["load_type"] == "awards":
+        config = {
+            "data_transform_func": transform_award_data,
+            "data_type": "award",
+            "max_query_size": settings.ES_AWARDS_MAX_RESULT_WINDOW,
+            "primary_key": "award_id",
+            "query_alias_prefix": settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
+            "required_index_name": settings.ES_AWARDS_NAME_SUFFIX,
+            "sql_view": settings.ES_AWARDS_ETL_VIEW_NAME,
+            "stored_date_key": "es_awards",
+            "unique_id_field": "generated_unique_award_id",
+            "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
+        }
+    else:
+        config = {
+            "data_transform_func": transform_transaction_data,
+            "data_type": "transaction",
+            "max_query_size": settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW,
+            "primary_key": "transaction_id",
+            "query_alias_prefix": settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
+            "required_index_name": settings.ES_TRANSACTIONS_NAME_SUFFIX,
+            "sql_view": settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
+            "stored_date_key": "es_transactions",
+            "unique_id_field": "generated_unique_transaction_id",
+            "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
+        }
+
+    config["aws_region"] = settings.USASPENDING_AWS_REGION
+    config["s3_bucket"] = settings.DELETED_TRANSACTION_JOURNAL_FILES
+    config["processing_start_datetime"] = datetime.now(timezone.utc)
+    config["verbose"] = arg_parse_options["verbosity"] > 1  # convert command's levels of verbosity to a bool
 
     config.update({k: v for k, v in arg_parse_options.items() if k in copy_args})
     return config

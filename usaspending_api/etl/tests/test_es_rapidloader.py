@@ -92,7 +92,7 @@ def award_data_fixture(db):
 
 
 config = {
-    "root_index": "award-query",
+    "query_alias_prefix": "award-query",
     "processing_start_datetime": datetime(2019, 12, 13, 16, 10, 33, 729108, tzinfo=timezone.utc),
     "verbose": False,
     "load_type": "awards",
@@ -137,7 +137,7 @@ def test_es_transaction_loader_class(award_data_fixture, elasticsearch_transacti
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.utilities.execute_sql_statement", mock_execute_sql
     )
-    config["root_index"] = "transaction-query"
+    config["query_alias_prefix"] = "transaction-query"
     config["load_type"] = "transactions"
     elasticsearch_client = instantiate_elasticsearch_client()
     loader = Controller(config, elasticsearch_client)
@@ -169,7 +169,7 @@ def test_award_delete_sql(award_data_fixture, monkeypatch, db):
 def test_get_award_ids(award_data_fixture, elasticsearch_transaction_index):
     elasticsearch_transaction_index.update_index()
     id_list = [{"key": 1, "col": "transaction_id"}]
-    config["root_index"] = "transaction-query"
+    config["query_alias_prefix"] = "transaction-query"
     config["load_type"] = "transactions"
     client = elasticsearch_transaction_index.client
     ids = get_deleted_award_ids(client, id_list, config, index=elasticsearch_transaction_index.index_name)

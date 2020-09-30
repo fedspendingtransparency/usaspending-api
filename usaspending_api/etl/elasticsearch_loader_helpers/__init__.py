@@ -15,7 +15,8 @@ from usaspending_api.etl.elasticsearch_loader_helpers.load_data import (
     load_data,
     set_final_index_config,
     swap_aliases,
-    transform_data,
+    transform_award_data,
+    transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     execute_sql_statement,
@@ -43,6 +44,7 @@ __all__ = [
     "load_data",
     "set_final_index_config",
     "swap_aliases",
-    "transform_data",
+    "transform_award_data",
+    "transform_transaction_data",
     "WorkerNode",
 ]
