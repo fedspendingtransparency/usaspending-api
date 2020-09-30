@@ -9,7 +9,8 @@ from collections import defaultdict
 from datetime import datetime
 from django.conf import settings
 from django.core.management import call_command
-from elasticsearch import helpers, TransportError
+from elasticsearch import helpers, TransportError, Elasticsearch
+from elasticsearch_dsl import Search, Q as ES_Q
 from time import perf_counter, sleep
 from typing import Optional
 
@@ -450,9 +451,38 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     return
 
 
-def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None):
+def streaming_post_to_es(
+    client, chunk, index_name: str, type: str, job_id=None, delete_before_index=True, delete_key="_id"
+):
+    """
+    Called this repeatedly with successive chunks of data to pump into an Elasticsearch index.
+
+    Args:
+        client: Elasticsearch client
+        chunk (List[dict]): list of dictionary objects holding field_name:value data
+        index_name (str): name of targetted index
+        type (str): indexed data type (e.g. awards or transactions)
+        job_id (str): name of ES ETL job being run, used in logging
+        delete_before_index (bool): When true, attempts to delete given documents by a unique key before indexing them.
+            NOTE: For incremental loads, we must "delete-before-index" due to the fact that on many of our indices,
+                we have different values for _id and routing key.
+                Not doing this exposed a bug in our approach to expedite incremental UPSERTS aimed at allowing ES to
+                overwrite documents when it encountered one already existing by a given _id. The problem is that the
+                index operation uses the routing key to target only 1 shard for its index/overwrite. If the routing key
+                value changes between two incremental loads of the same doc with the same _id, it may get routed to a
+                different shard and won't overwrite the original doc, leaving duplicates across all shards in the index.
+        delete_key (str): The column (field) name used for value lookup in the given chunk to derive documents to be
+            deleted, if delete_before_index is True. Currently defaulting to "_id", taking advantage of the fact
+            that we are explicitly setting "_id" in the documents to-be-indexed, which is a unique key for each doc
+            (e.g. the PK of the DB row)
+
+    Returns: (succeeded, failed) tuple, which counts successful index doc writes vs. failed doc writes
+    """
     success, failed = 0, 0
     try:
+        if delete_before_index:
+            value_list = [doc[delete_key] for doc in chunk]
+            delete_docs_by_unique_key(client, delete_key, value_list, job_id, index_name)
         for ok, item in helpers.parallel_bulk(client, chunk, index=index_name):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
@@ -507,8 +537,30 @@ def set_final_index_config(client, index):
     client.indices.put_settings(final_index_settings, index)
     client.indices.refresh(index)
     for setting, value in final_index_settings.items():
-        message = f'Changing "{setting}" from {current_settings.get(setting)} to {value}'
+        message = f'Changed "{setting}" from {current_settings.get(setting)} to {value}'
         logger.info(format_log(message, process="ES Settings"))
+
+
+def toggle_refresh_off(client, index):
+    client.indices.put_settings({"refresh_interval": "-1"}, index)
+    message = (
+        f'Set "refresh_interval": "-1" to turn auto refresh off during incremental load. Manual refreshes will '
+        f"occur for each batch completion."
+    )
+    logger.info(format_log(message, process="ES Settings"))
+
+
+def toggle_refresh_on(client, index):
+    response = client.indices.get(index)
+    aliased_index_name = list(response.keys())[0]
+    current_refresh_interval = response[aliased_index_name]["settings"]["index"]["refresh_interval"]
+    es_settingsfile = str(settings.APP_DIR / "etl" / "es_config_objects.json")
+    with open(es_settingsfile) as f:
+        settings_dict = json.load(f)
+    final_refresh_interval = settings_dict["final_index_settings"]["refresh_interval"]
+    client.indices.put_settings({"refresh_interval": final_refresh_interval}, index)
+    message = f'Changed "refresh_interval" from {current_refresh_interval} to {final_refresh_interval}'
+    logger.info(format_log(message, process="ES Settings"))
 
 
 def swap_aliases(client, index, load_type):
@@ -558,12 +610,22 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             logger.info(format_log(f"No documents to add/delete for chunk #{count}", job=job.name, process="ES Index"))
             continue
 
+        # Only delete before adding/inserting/indexing new docs on incremental loads, not full reindexes
+        is_incremental = config["is_incremental_load"] and str(config["is_incremental_load"]).lower() == "true"
+
         iteration = perf_counter()
         current_rows = f"({count * chunksize + 1:,}-{count * chunksize + len(chunk):,})"
         logger.info(
             format_log(f"ES Stream #{count} rows [{current_rows}/{job.count:,}]", job=job.name, process="ES Index")
         )
         streaming_post_to_es(client, chunk, job.index, config["load_type"], job.name)
+        streaming_post_to_es(
+            client, chunk, job.index, config["load_type"], job.name, delete_before_index=is_incremental
+        )
+        if is_incremental:
+            # refresh_interval is off during incremental loads.
+            # Manually refresh after delete + insert complete for search consistency
+            client.indices.refresh(job.index)
         logger.info(
             format_log(
                 f"Iteration group #{count} took {perf_counter() - iteration:.2f}s", job=job.name, process="ES Index"
@@ -737,11 +799,61 @@ def delete_from_es(client, id_list, job_id, config, index=None):
                 )
             except Exception:
                 logger.exception(format_log(f"", job=job_id, process="ES Delete"))
+                raise SystemExit(1)
 
     end_ = client.count(index=index)["count"]
     msg = f"ES Deletes took {perf_counter() - start:.2f}s. Deleted {start_ - end_:,} records"
     logger.info(format_log(msg, job=job_id, process="ES Delete"))
     return
+
+
+def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list, job_id: str, index) -> int:
+    """
+    Bulk delete a batch of documents whose field identified by ``key`` matches any value provided in the
+    ``values_list``.
+
+    Args:
+        client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
+        key (str): name of filed in targeted elasticearch index that shoudld have a unique value for
+            every doc in the index. Ideally the field or sub-field provided is of ``keyword`` type.
+        value_list (list): if key field has these values, the document will be deleted
+        job_id (str): name of ES ETL job being run, used in logging
+        index (str): name of index (or alias) to target for the ``_delete_by_query`` ES operation.
+
+            NOTE: This delete routine looks at just the index name given. If there are duplicate records across
+            multiple indexes, an alias or wildcard should be provided for ``index`` param that covers multiple
+            indices, or this will need to be run once per index.
+
+    Returns: Number of ES documents deleted
+    """
+    start = perf_counter()
+
+    logger.info(format_log(f"Deleting up to {len(value_list):,} document(s)", process="ES Delete", job=job_id))
+    assert index, "index name must be provided"
+
+    deleted = 0
+    is_error = False
+    try:
+        # 65,536 is max number of terms that can be added to an ES terms filter query
+        values_generator = chunks(value_list, 50000)
+        for chunk_of_values in values_generator:
+            # Creates an Elasticsearch query criteria for the _delete_by_query call
+            q = ES_Q("terms", **{key: chunk_of_values})
+            # Invoking _delete_by_query as per the elasticsearch-dsl docs:
+            #   https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#delete-by-query
+            response = Search(using=client, index=index).filter(q).delete()
+            chunk_deletes = response["deleted"]
+            deleted += chunk_deletes
+    except Exception:
+        is_error = True
+        logger.exception(format_log(f"", job=job_id, process="ES Delete"))
+        raise SystemExit(1)
+    finally:
+        error_text = " before encountering an error" if is_error else ""
+        msg = f"ES Deletes took {perf_counter() - start:.2f}s. Deleted {deleted:,} records{error_text}"
+        logger.info(format_log(msg, process="ES Delete", job=job_id))
+
+    return deleted
 
 
 def get_deleted_award_ids(client, id_list, config, index=None):
