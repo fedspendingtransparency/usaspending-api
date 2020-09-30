@@ -25,23 +25,7 @@ SELECT
   vw_es_award_search.recipient_name,
   vw_es_award_search.recipient_unique_id,
   recipient_profile.recipient_hash,
-  CASE
-    WHEN recipient_profile.recipient_hash IS NULL or recipient_profile.recipient_levels IS NULL
-      THEN
-        JSON_BUILD_OBJECT(
-          'name', vw_es_award_search.recipient_name,
-          'unique_id', vw_es_award_search.recipient_unique_id,
-          'hash','',
-          'levels',''
-        )
-    ELSE
-      JSON_BUILD_OBJECT(
-        'name', vw_es_award_search.recipient_name,
-        'unique_id', vw_es_award_search.recipient_unique_id,
-        'hash', recipient_profile.recipient_hash,
-        'levels', recipient_profile.recipient_levels
-      )
-  END AS recipient_agg_key,
+  recipient_profile.recipient_levels,
 
   vw_es_award_search.parent_recipient_unique_id,
   vw_es_award_search.business_categories,
@@ -59,6 +43,13 @@ SELECT
 
   vw_es_award_search.awarding_agency_id,
   vw_es_award_search.funding_agency_id,
+  (
+    SELECT a1.id
+    FROM agency a1
+    WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id)
+    ORDER BY a1.toptier_flag DESC, a1.id
+    LIMIT 1
+  ) AS funding_toptier_agency_id,
   vw_es_award_search.awarding_toptier_agency_name,
   vw_es_award_search.funding_toptier_agency_name,
   vw_es_award_search.awarding_subtier_agency_name,
@@ -67,56 +58,40 @@ SELECT
   vw_es_award_search.funding_toptier_agency_code,
   vw_es_award_search.awarding_subtier_agency_code,
   vw_es_award_search.funding_subtier_agency_code,
-  CASE
-    WHEN vw_es_award_search.funding_toptier_agency_name IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'name', vw_es_award_search.funding_toptier_agency_name,
-        'code', vw_es_award_search.funding_toptier_agency_code,
-        'id', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1)
-      )
-    ELSE NULL
-  END AS funding_toptier_agency_agg_key,
-  CASE
-    WHEN vw_es_award_search.funding_subtier_agency_name IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'name', vw_es_award_search.funding_subtier_agency_name,
-        'code', vw_es_award_search.funding_subtier_agency_code,
-        'id', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1)
-      )
-    ELSE NULL
-  END AS funding_subtier_agency_agg_key,
 
   vw_es_award_search.recipient_location_country_code,
   vw_es_award_search.recipient_location_country_name,
   vw_es_award_search.recipient_location_state_code,
+  RL_STATE_LOOKUP.name AS recipient_location_state_name,
+  RL_STATE_LOOKUP.fips AS recipient_location_state_fips,
+  RL_STATE_POPULATION.latest_population AS recipient_location_state_population,
   vw_es_award_search.recipient_location_county_code,
   vw_es_award_search.recipient_location_county_name,
+  RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
   vw_es_award_search.recipient_location_congressional_code,
+  RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
   vw_es_award_search.recipient_location_zip5,
   vw_es_award_search.recipient_location_city_name,
 
   vw_es_award_search.pop_country_code,
   vw_es_award_search.pop_country_name,
   vw_es_award_search.pop_state_code,
+  POP_STATE_LOOKUP.name AS pop_state_name,
+  POP_STATE_LOOKUP.fips AS pop_state_fips,
+  POP_STATE_POPULATION.latest_population AS pop_state_population,
   vw_es_award_search.pop_county_code,
   vw_es_award_search.pop_county_name,
+  POP_COUNTY_POPULATION.latest_population AS pop_county_population,
   vw_es_award_search.pop_zip5,
   vw_es_award_search.pop_congressional_code,
+  POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
   vw_es_award_search.pop_city_name,
   vw_es_award_search.pop_city_code,
 
   vw_es_award_search.cfda_number,
   cfda.program_title AS cfda_title,
-  CASE
-    WHEN vw_es_award_search.cfda_number IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'code', vw_es_award_search.cfda_number,
-        'description', cfda.program_title,
-        'id', cfda.id,
-        'url', CASE WHEN cfda.url = 'None;' THEN NULL ELSE cfda.url END
-      )
-    ELSE NULL
-  END AS cfda_agg_key,
+  cfda.id AS cfda_id,
+  cfda.url AS cfda_url,
 
   vw_es_award_search.sai_number,
   vw_es_award_search.type_of_contract_pricing,
@@ -128,83 +103,12 @@ SELECT
   vw_es_award_search.naics_code,
   vw_es_award_search.naics_description,
 
-  CASE
-    WHEN
-        vw_es_award_search.recipient_location_state_code IS NOT NULL
-        AND vw_es_award_search.recipient_location_county_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', vw_es_award_search.recipient_location_country_code,
-        'state_code', vw_es_award_search.recipient_location_state_code,
-        'state_fips', RL_STATE_LOOKUP.fips,
-        'county_code', vw_es_award_search.recipient_location_county_code,
-        'county_name', vw_es_award_search.recipient_location_county_name,
-        'population', RL_COUNTY_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS recipient_location_county_agg_key,
-  CASE
-    WHEN
-        vw_es_award_search.recipient_location_state_code IS NOT NULL
-        AND vw_es_award_search.recipient_location_congressional_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', vw_es_award_search.recipient_location_country_code,
-        'state_code', vw_es_award_search.recipient_location_state_code,
-        'state_fips', RL_STATE_LOOKUP.fips,
-        'congressional_code', vw_es_award_search.recipient_location_congressional_code,
-        'population', RL_DISTRICT_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS recipient_location_congressional_agg_key,
-  CASE
-    WHEN vw_es_award_search.recipient_location_state_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', vw_es_award_search.recipient_location_country_code,
-        'state_code', vw_es_award_search.recipient_location_state_code,
-        'state_name', RL_STATE_LOOKUP.name,
-        'population', RL_STATE_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS recipient_location_state_agg_key,
-
-  CASE
-    WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_county_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', vw_es_award_search.pop_country_code,
-        'state_code', vw_es_award_search.pop_state_code,
-        'state_fips', POP_STATE_LOOKUP.fips,
-        'county_code', vw_es_award_search.pop_county_code,
-        'county_name', vw_es_award_search.pop_county_name,
-        'population', POP_COUNTY_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS pop_county_agg_key,
-  CASE
-    WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_congressional_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', vw_es_award_search.pop_country_code,
-        'state_code', vw_es_award_search.pop_state_code,
-        'state_fips', POP_STATE_LOOKUP.fips,
-        'congressional_code', vw_es_award_search.pop_congressional_code,
-        'population', POP_DISTRICT_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS pop_congressional_agg_key,
-  CASE
-    WHEN vw_es_award_search.pop_state_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', vw_es_award_search.pop_country_code,
-        'state_code', vw_es_award_search.pop_state_code,
-        'state_name', POP_STATE_LOOKUP.name,
-        'population', POP_STATE_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS pop_state_agg_key,
-
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
   DEFC.disaster_emergency_fund_codes AS disaster_emergency_fund_codes,
   DEFC.gross_outlay_amount_by_award_cpe AS total_covid_outlay,
   DEFC.transaction_obligated_amount AS total_covid_obligation
+
 FROM vw_es_award_search
 INNER JOIN awards a ON (a.id = vw_es_award_search.award_id)
 LEFT JOIN transaction_fabs fabs ON (fabs.transaction_id = a.latest_transaction_id)

@@ -29,7 +29,7 @@ class RecipientLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisa
 
             # Build a list of hash IDs to handle multiple levels
             recipient_hash = info.get("hash")
-            recipient_levels = sorted(info.get("levels", []))
+            recipient_levels = sorted(info.get("levels") or [])
             if recipient_hash and recipient_levels:
                 recipient_hash_list = [f"{recipient_hash}-{level}" for level in recipient_levels]
             else:

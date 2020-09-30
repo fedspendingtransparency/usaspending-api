@@ -1,9 +1,7 @@
 import json
 
 from datetime import datetime, timezone
-from typing import Optional, List
 from django.conf import settings
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection, DEFAULT_DB_ALIAS
 from elasticsearch import Elasticsearch
 from pathlib import Path
@@ -17,7 +15,13 @@ from usaspending_api.common.sqs.sqs_handler import (
 )
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
-from usaspending_api.etl.elasticsearch_loader_helpers import create_aliases
+from usaspending_api.etl.elasticsearch_loader_helpers import (
+    create_aliases,
+    transform_transaction_data,
+    transform_award_data,
+    load_data,
+)
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import WorkerNode
 from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
 
@@ -40,6 +44,13 @@ class TestElasticSearchIndex:
             "verbose": False,
             "write_alias": self.index_name + "-alias",
         }
+        self.worker = WorkerNode(
+            name=f"{self.index_type} test worker",
+            index=self.index_name,
+            sql=None,
+            primary_key="award_id" if self.index_type == "awards" else "transaction_id",
+            transform_func=None,
+        )
 
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
@@ -72,38 +83,27 @@ class TestElasticSearchIndex:
             transactions = ordered_dictionary_fetcher(cursor)
             cursor.execute(f"DROP VIEW {view_name};")
 
-        for transaction in transactions:
-            # Special cases where we convert array of JSON to an array of strings to avoid nested types
             if self.index_type == "transactions":
-                transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
-            for key, val in transaction.items():
-                if val is not None and "agg_key" in key:
-                    transaction[key] = json.dumps(transaction[key], sort_keys=True)
+                records = transform_transaction_data(self.worker, transactions)
+            else:
+                records = transform_award_data(self.worker, transactions)
+
+            # Need to overwrite the routing field if different from default
             routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
-            routing_value = transaction.get(routing_key)
-            self.client.index(
-                index=self.index_name,
-                body=json.dumps(transaction, cls=DjangoJSONEncoder),
-                id=transaction["{}_id".format(self.index_type[:-1])],
-                routing=routing_value,
-            )
-        # Force newly added documents to become searchable.
-        self.client.indices.refresh(self.index_name)
+            if routing_key != settings.ES_ROUTING_FIELD:
+                for rec in records:
+                    rec["routing"] = rec[routing_key]
+
+            load_data(self.worker, records, self.client)
+
+            # Force newly added documents to become searchable.
+            self.client.indices.refresh(self.index_name)
 
     @classmethod
     def _generate_index_name(cls):
         return "test-{}-{}".format(
             datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
         )
-
-    @staticmethod
-    def convert_json_arrays_to_list(json_array: Optional[List[dict]]) -> Optional[List[str]]:
-        if json_array is None:
-            return None
-        result = []
-        for j in json_array:
-            result.append(json.dumps(j, sort_keys=True))
-        return result
 
 
 def ensure_broker_server_dblink_exists():

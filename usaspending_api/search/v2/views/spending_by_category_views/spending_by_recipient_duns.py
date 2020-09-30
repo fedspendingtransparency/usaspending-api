@@ -66,10 +66,15 @@ class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
         for bucket in location_info_buckets:
             recipient_info = json.loads(bucket.get("key"))
 
+            if recipient_info["hash"] is not None and recipient_info["levels"] is not None:
+                recipient_id = f"{recipient_info['hash']}-{recipient_info['levels']}"
+            else:
+                recipient_id = None
+
             results.append(
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                    "recipient_id": recipient_info["hash_with_level"] or None,
+                    "recipient_id": recipient_id,
                     "name": recipient_info["name"] or None,
                     "code": recipient_info["unique_id"] or "DUNS Number not provided",
                 }

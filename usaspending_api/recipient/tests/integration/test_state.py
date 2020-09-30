@@ -15,7 +15,7 @@ from usaspending_api.recipient.v2.views.states import obtain_state_totals
 
 # Getting relative dates as the 'latest'/default argument returns results relative to when it gets called
 TODAY = datetime.datetime.now()
-OUTSIDE_OF_LATEST = TODAY - datetime.timedelta(365 * 2)
+OUTSIDE_OF_LATEST = datetime.datetime(TODAY.year - 2, TODAY.month, TODAY.day)
 CURRENT_FISCAL_YEAR = generate_fiscal_year(TODAY)
 
 EXPECTED_STATE = {

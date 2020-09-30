@@ -30,37 +30,16 @@ SELECT
 
   UTM.product_or_service_code,
   UTM.product_or_service_description,
-  CASE
-    WHEN UTM.product_or_service_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'code', UTM.product_or_service_code,
-        'description', UTM.product_or_service_description
-      )
-    ELSE NULL
-  END AS psc_agg_key,
   UTM.naics_code,
   UTM.naics_description,
-  CASE
-    WHEN UTM.naics_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT('code', UTM.naics_code, 'description', UTM.naics_description)
-    ELSE NULL
-  END AS naics_agg_key,
+
   UTM.type_description,
   UTM.award_category,
 
   UTM.recipient_unique_id,
   UTM.recipient_name,
   UTM.recipient_hash,
-  CASE
-    WHEN RECIPIENT_HASH_AND_LEVEL.recipient_hash IS NULL or RECIPIENT_HASH_AND_LEVEL.recipient_level IS NULL
-      THEN JSON_BUILD_OBJECT('hash_with_level', '', 'name', UTM.recipient_name, 'unique_id', UTM.recipient_unique_id)
-    ELSE
-      JSON_BUILD_OBJECT(
-        'hash_with_level', CONCAT(RECIPIENT_HASH_AND_LEVEL.recipient_hash, '-', RECIPIENT_HASH_AND_LEVEL.recipient_level),
-        'name', UTM.recipient_name,
-        'unique_id', UTM.recipient_unique_id
-      )
-  END AS recipient_agg_key,
+  RECIPIENT_HASH_AND_LEVEL.recipient_levels,
 
   UTM.parent_recipient_unique_id,
   UPPER(PRL.legal_business_name) AS parent_recipient_name,
@@ -81,6 +60,8 @@ SELECT
 
   UTM.awarding_agency_id,
   UTM.funding_agency_id,
+  TAA.id AS awarding_toptier_agency_id,
+  TFA.id AS funding_toptier_agency_id,
   UTM.awarding_toptier_agency_name,
   UTM.funding_toptier_agency_name,
   UTM.awarding_subtier_agency_name,
@@ -89,54 +70,11 @@ SELECT
   UTM.funding_toptier_agency_abbreviation,
   UTM.awarding_subtier_agency_abbreviation,
   UTM.funding_subtier_agency_abbreviation,
-  CASE
-    WHEN UTM.awarding_toptier_agency_name IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'name', UTM.awarding_toptier_agency_name,
-        'abbreviation', UTM.awarding_toptier_agency_abbreviation,
-        'id', TAA.id
-      )
-    ELSE NULL
-  END AS awarding_toptier_agency_agg_key,
-  CASE
-    WHEN UTM.funding_toptier_agency_name IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'name', UTM.funding_toptier_agency_name,
-        'abbreviation', UTM.funding_toptier_agency_abbreviation,
-        'id', TFA.id
-      )
-    ELSE NULL
-  END AS funding_toptier_agency_agg_key,
-  CASE
-    WHEN UTM.awarding_subtier_agency_name IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'name', UTM.awarding_subtier_agency_name,
-        'abbreviation', UTM.awarding_subtier_agency_abbreviation,
-        'id', UTM.awarding_agency_id
-      )
-    ELSE NULL
-  END AS awarding_subtier_agency_agg_key,
-  CASE
-    WHEN UTM.funding_subtier_agency_name IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'name', UTM.funding_subtier_agency_name,
-        'abbreviation', UTM.funding_subtier_agency_abbreviation,
-        'id', UTM.funding_agency_id
-      )
-    ELSE NULL
-  END AS funding_subtier_agency_agg_key,
 
   UTM.cfda_number,
   UTM.cfda_title,
-  CASE
-    WHEN UTM.cfda_number IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'code', UTM.cfda_number,
-        'description', UTM.cfda_title,
-        'id', UTM.cfda_id
-      )
-    ELSE NULL
-  END AS cfda_agg_key,
+  UTM.cfda_id,
+  NULL::text AS cfda_url,
 
   UTM.type_of_contract_pricing,
   UTM.type_set_aside,
@@ -146,94 +84,30 @@ SELECT
   UTM.pop_country_code,
   UTM.pop_country_name,
   UTM.pop_state_code,
+  POP_STATE_LOOKUP.name AS pop_state_name,
+  POP_STATE_LOOKUP.fips AS pop_state_fips,
+  POP_STATE_POPULATION.latest_population AS pop_state_population,
   UTM.pop_county_code,
   UTM.pop_county_name,
+  POP_COUNTY_POPULATION.latest_population AS pop_county_population,
   UTM.pop_zip5,
   UTM.pop_congressional_code,
+  POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
   UTM.pop_city_name,
-  CASE
-    WHEN UTM.pop_state_code IS NOT NULL AND UTM.pop_county_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', UTM.pop_country_code,
-        'state_code', UTM.pop_state_code,
-        'state_fips', POP_STATE_LOOKUP.fips,
-        'county_code', UTM.pop_county_code,
-        'county_name', UTM.pop_county_name,
-        'population', POP_COUNTY_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS pop_county_agg_key,
-  CASE
-    WHEN UTM.pop_state_code IS NOT NULL AND UTM.pop_congressional_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', UTM.pop_country_code,
-        'state_code', UTM.pop_state_code,
-        'state_fips', POP_STATE_LOOKUP.fips,
-        'congressional_code', UTM.pop_congressional_code,
-        'population', POP_DISTRICT_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS pop_congressional_agg_key,
-  CASE
-    WHEN UTM.pop_state_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', UTM.pop_country_code,
-        'state_code', UTM.pop_state_code,
-        'state_name', POP_STATE_LOOKUP.name,
-        'population', POP_STATE_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS pop_state_agg_key,
-  CASE
-    WHEN UTM.pop_country_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', UTM.pop_country_code,
-        'country_name', UTM.pop_country_name
-      )
-    ELSE NULL
-  END AS pop_country_agg_key,
 
   UTM.recipient_location_country_code,
   UTM.recipient_location_country_name,
   UTM.recipient_location_state_code,
+  RL_STATE_LOOKUP.name AS recipient_location_state_name,
+  RL_STATE_LOOKUP.fips AS recipient_location_state_fips,
+  RL_STATE_POPULATION.latest_population AS recipient_location_state_population,
   UTM.recipient_location_county_code,
   UTM.recipient_location_county_name,
+  RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
   UTM.recipient_location_zip5,
   UTM.recipient_location_congressional_code,
+  RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
   UTM.recipient_location_city_name,
-  CASE
-    WHEN UTM.recipient_location_state_code IS NOT NULL AND UTM.recipient_location_county_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', UTM.recipient_location_country_code,
-        'state_code', UTM.recipient_location_state_code,
-        'state_fips', RL_STATE_LOOKUP.fips,
-        'county_code', UTM.recipient_location_county_code,
-        'county_name', UTM.recipient_location_county_name,
-        'population', RL_COUNTY_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS recipient_location_county_agg_key,
-  CASE
-    WHEN UTM.recipient_location_state_code IS NOT NULL AND UTM.recipient_location_congressional_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', UTM.recipient_location_country_code,
-        'state_code', UTM.recipient_location_state_code,
-        'state_fips', RL_STATE_LOOKUP.fips,
-        'congressional_code', UTM.recipient_location_congressional_code,
-        'population', RL_DISTRICT_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS recipient_location_congressional_agg_key,
-  CASE
-    WHEN UTM.recipient_location_state_code IS NOT NULL
-      THEN JSON_BUILD_OBJECT(
-        'country_code', UTM.recipient_location_country_code,
-        'state_code', UTM.recipient_location_state_code,
-        'state_name', RL_STATE_LOOKUP.name,
-        'population', RL_STATE_POPULATION.latest_population
-      )
-    ELSE NULL
-  END AS recipient_location_state_agg_key,
 
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
@@ -256,7 +130,7 @@ LEFT JOIN (
 ) TFA ON (UTM.funding_toptier_agency_id = TFA.toptier_agency_id)
 LEFT JOIN recipient_lookup PRL ON (PRL.duns = UTM.parent_recipient_unique_id AND UTM.parent_recipient_unique_id IS NOT NULL)
 LEFT JOIN LATERAL (
-  SELECT   recipient_hash, recipient_level, recipient_unique_id
+  SELECT   recipient_hash, recipient_level as recipient_levels, recipient_unique_id
   FROM     recipient_profile
   WHERE    (recipient_hash = UTM.recipient_hash or recipient_unique_id = UTM.recipient_unique_id) AND
            recipient_name NOT IN (

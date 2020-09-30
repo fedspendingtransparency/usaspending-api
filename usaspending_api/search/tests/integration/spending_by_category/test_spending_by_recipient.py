@@ -111,7 +111,7 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
     results = []
     for bucket in response["aggregations"]["results"]["buckets"]:
         results.append({"key": bucket["key"], "sum": bucket["sum_agg"]["value"]})
-    print(results)
+
     assert len(results) == 1
     assert results[0]["key"] == str(
         recipient1
@@ -249,7 +249,12 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "name": "RECIPIENT 3",
                 "recipient_id": "d2894d22-67fc-f9cb-4005-33fa6a29ef86-C",
             },
-            {"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None},
+            {
+                "amount": 50.0,
+                "code": "456789123",
+                "name": "RECIPIENT 2",
+                "recipient_id": "3c92491a-f2cd-ec7d-294b-7daf91511866-R",
+            },
             {
                 "amount": 5.0,
                 "code": "DUNS Number not provided",
