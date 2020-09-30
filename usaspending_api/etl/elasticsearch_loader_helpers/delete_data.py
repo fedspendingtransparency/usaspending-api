@@ -15,8 +15,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
 )
 
 logger = logging.getLogger("script")
-UNIVERSAL_TRANSACTION_ID_NAME = "generated_unique_transaction_id"
-UNIVERSAL_AWARD_ID_NAME = "generated_unique_award_id"
 
 
 def delete_query(response):
@@ -38,7 +36,7 @@ def delete_from_es(client, id_list, job_id, config, index=None):
     logger.info(format_log(f"Deleting up to {len(id_list):,} document(s)", job=job_id, process="ES Delete"))
 
     if index is None:
-        index = f"{config['root_index']}-*"
+        index = f"{config['query_alias_prefix']}-*"
     start_ = client.count(index=index)["count"]
     logger.info(format_log(f"Starting amount of indices ----- {start_:,}", job=job_id, process="ES Delete"))
     col_to_items_dict = defaultdict(list)
@@ -75,7 +73,7 @@ def get_deleted_award_ids(client, id_list, config, index=None):
                    ...]
      """
     if index is None:
-        index = f"{config['root_index']}-*"
+        index = f"{config['query_alias_prefix']}-*"
     col_to_items_dict = defaultdict(list)
     for l in id_list:
         col_to_items_dict[l["col"]].append(l["key"])
@@ -96,7 +94,7 @@ def deleted_awards(client, config):
     if we can't find the awards in the database, then we have to delete them from es
     """
     deleted_ids = gather_deleted_ids(config)
-    id_list = [{"key": deleted_id, "col": UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
+    id_list = [{"key": deleted_id, "col": config["unique_id_field"]} for deleted_id in deleted_ids]
     award_ids = get_deleted_award_ids(client, id_list, config, settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*")
     if (len(award_ids)) == 0:
         logger.info(format_log(f"No related awards require deletion", process="ES Delete"))
@@ -104,7 +102,7 @@ def deleted_awards(client, config):
     deleted_award_ids = check_awards_for_deletes(award_ids)
     if len(deleted_award_ids) != 0:
         award_id_list = [
-            {"key": deleted_award["generated_unique_award_id"], "col": UNIVERSAL_AWARD_ID_NAME}
+            {"key": deleted_award["generated_unique_award_id"], "col": config["unique_id_field"]}
             for deleted_award in deleted_award_ids
         ]
         delete_from_es(client, award_id_list, None, config, None)
@@ -115,7 +113,7 @@ def deleted_awards(client, config):
 
 def deleted_transactions(client, config):
     deleted_ids = gather_deleted_ids(config)
-    id_list = [{"key": deleted_id, "col": UNIVERSAL_TRANSACTION_ID_NAME} for deleted_id in deleted_ids]
+    id_list = [{"key": deleted_id, "col": config["unique_id_field"]} for deleted_id in deleted_ids]
     delete_from_es(client, id_list, None, config, None)
 
 
