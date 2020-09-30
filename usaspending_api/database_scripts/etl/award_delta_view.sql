@@ -2,7 +2,7 @@ DROP VIEW IF EXISTS award_delta_view;
 CREATE VIEW award_delta_view AS
 SELECT
   vw_es_award_search.award_id,
-  a.generated_unique_award_id,
+  vw_es_award_search.generated_unique_award_id,
     CASE
     WHEN vw_es_award_search.type IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND vw_es_award_search.fain IS NOT NULL THEN vw_es_award_search.fain
     WHEN vw_es_award_search.piid IS NOT NULL THEN vw_es_award_search.piid  -- contracts. Did it this way to easily handle IDV contracts
@@ -20,7 +20,7 @@ SELECT
   vw_es_award_search.award_amount,
   vw_es_award_search.total_subsidy_cost,
   vw_es_award_search.total_loan_value,
-  a.update_date,
+  vw_es_award_search.update_date,
 
   vw_es_award_search.recipient_name,
   vw_es_award_search.recipient_unique_id,
@@ -105,14 +105,14 @@ SELECT
   vw_es_award_search.pop_city_code,
 
   vw_es_award_search.cfda_number,
-  cfda.program_title AS cfda_title,
+  vw_es_award_search.cfda_program_title AS cfda_title,
   CASE
     WHEN vw_es_award_search.cfda_number IS NOT NULL
       THEN CONCAT(
         '{"code":"', vw_es_award_search.cfda_number,
-        '","description":"', cfda.program_title,
-        '","id":"', cfda.id,
-        '","url":"', CASE WHEN cfda.url = 'None;' THEN NULL ELSE cfda.url END, '"}'
+        '","description":"', vw_es_award_search.cfda_program_title,
+        '","id":"', vw_es_award_search.cfda_id,
+        '","url":"', CASE WHEN vw_es_award_search.cfda_url = 'None;' THEN NULL ELSE vw_es_award_search.cfda_url END, '"}'
       )
     ELSE NULL
   END AS cfda_agg_key,
@@ -205,8 +205,6 @@ SELECT
   DEFC.gross_outlay_amount_by_award_cpe AS total_covid_outlay,
   DEFC.transaction_obligated_amount AS total_covid_obligation
 FROM vw_es_award_search
-INNER JOIN awards a ON (a.id = vw_es_award_search.award_id)
-LEFT JOIN transaction_fabs fabs ON (fabs.transaction_id = a.latest_transaction_id)
 LEFT JOIN references_cfda cfda ON (cfda.program_number = fabs.cfda_number)
 LEFT JOIN LATERAL (
   SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) AS recipient_levels

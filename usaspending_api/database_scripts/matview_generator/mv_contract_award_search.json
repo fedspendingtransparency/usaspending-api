@@ -9,6 +9,8 @@
     "  awards.category,",
     "  awards.type,",
     "  awards.type_description,",
+    "  awards.generated_unique_award_id",
+    "  awards.update_date,",
     "  awards.piid,",
     "  NULL::text AS fain,",
     "  NULL::text AS uri,",
