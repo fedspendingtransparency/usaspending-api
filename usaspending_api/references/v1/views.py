@@ -9,8 +9,10 @@ from usaspending_api.references.v1.serializers import FilterSerializer, HashSeri
 from usaspending_api.common.api_versioning import deprecated
 from django.utils.decorators import method_decorator
 
-
+@method_decorator(deprecated, name="post")
 class FilterEndpoint(APIView):
+    """DEPRECATED"""
+
     serializer_class = FilterSerializer
 
     def post(self, request, format=None):
@@ -43,8 +45,10 @@ class FilterEndpoint(APIView):
         # return hash
         return Response({"hash": hash})
 
-
+@method_decorator(deprecated, name="post")
 class HashEndpoint(APIView):
+    """DEPRECATED"""
+
     serializer_class = HashSerializer
 
     def post(self, request, format=None):
