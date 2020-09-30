@@ -19,6 +19,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     swap_aliases,
     take_snapshot,
     get_updated_record_count,
+    toggle_refresh_on,
 )
 
 logger = logging.getLogger("script")
@@ -111,6 +112,7 @@ class Controller:
             take_snapshot(self.elasticsearch_client, self.config["index_name"], settings.ES_REPOSITORY)
 
         if self.config["is_incremental_load"]:
+            toggle_refresh_on(self.elasticsearch_client, self.config["index_name"])
             logger.info(
                 format_log(f"Storing datetime {self.config['processing_start_datetime']} for next incremental load")
             )
