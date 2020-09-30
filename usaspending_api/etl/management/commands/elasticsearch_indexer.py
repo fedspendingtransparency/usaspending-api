@@ -52,7 +52,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--skip-delete-index",
             action="store_true",
-            help="When creating a new index skip the step that deletes the old indexes and swaps the aliases. "
+            help="When creating a new index, skip the steps that delete old indexes and swap aliases. "
             "Only applicable when --create-new-index is provided.",
         )
         parser.add_argument(
@@ -101,17 +101,17 @@ class Command(BaseCommand):
 
 def parse_cli_args(options: dict, es_client) -> dict:
     default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
-    simple_args = (
-        "skip_delete_index",
-        "process_deletes",
+    passthrough_values = (
+        "batch_size",
         "create_new_index",
         "index_name",
-        "skip_counts",
         "load_type",
+        "process_deletes",
+        "skip_counts",
+        "skip_delete_index",
         "workers",
-        "batch_size",
     )
-    config = set_config(simple_args, options)
+    config = set_config(passthrough_values, options)
 
     if config["create_new_index"] and not config["index_name"]:
         raise SystemExit("Fatal error: '--create-new-index' requires '--index-name'.")
@@ -152,7 +152,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
     return config
 
 
-def set_config(copy_args: list, arg_parse_options: dict) -> dict:
+def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
     """Set values based on env vars and when the script started"""
 
     if arg_parse_options["load_type"] == "awards":
@@ -182,12 +182,16 @@ def set_config(copy_args: list, arg_parse_options: dict) -> dict:
             "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
         }
 
-    config["aws_region"] = settings.USASPENDING_AWS_REGION
-    config["s3_bucket"] = settings.DELETED_TRANSACTION_JOURNAL_FILES
-    config["processing_start_datetime"] = datetime.now(timezone.utc)
-    config["verbose"] = arg_parse_options["verbosity"] > 1  # convert command's levels of verbosity to a bool
+    config.update({k: v for k, v in arg_parse_options.items() if k in passthrough_values})
+    config.update(
+        {
+            "aws_region": settings.USASPENDING_AWS_REGION,
+            "s3_bucket": settings.DELETED_TRANSACTION_JOURNAL_FILES,
+            "processing_start_datetime": datetime.now(timezone.utc),
+            "verbose": arg_parse_options["verbosity"] > 1,  # convert command's levels of verbosity to a bool
+        }
+    )
 
-    config.update({k: v for k, v in arg_parse_options.items() if k in copy_args})
     return config
 
 
