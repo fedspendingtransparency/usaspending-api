@@ -844,7 +844,7 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
             response = Search(using=client, index=index).filter(q).delete()
             chunk_deletes = response["deleted"]
             deleted += chunk_deletes
-    except Exception as e:
+    except Exception:
         is_error = True
         logger.exception(format_log(f"", job=job_id, process="ES Delete"))
         raise SystemExit(1)
