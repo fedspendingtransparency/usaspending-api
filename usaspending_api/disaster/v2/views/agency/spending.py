@@ -115,6 +115,11 @@ class SpendingByAgencyViewSet(
                 )
 
             response = self.query_elasticsearch()
+            response["results"] = sorted(
+                response["results"],
+                key=lambda x: x[self.pagination.sort_key],
+                reverse=self.pagination.order_by != "desc",
+            )
             response["page_metadata"] = get_pagination_metadata(
                 self.bucket_count, self.pagination.limit, self.pagination.page
             )
@@ -150,10 +155,12 @@ class SpendingByAgencyViewSet(
             "id": int(bucket["key"]),
             "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_code"],
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
+            "children": [],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            "obligations": int(bucket["sum_covid_obligation"]["value"]),
-            "outlays": int(bucket["sum_covid_outlay"]["value"]),
+            "obligation": int(bucket["sum_covid_obligation"]["value"]),
+            "outlay": int(bucket["sum_covid_outlay"]["value"]),
+            "total_budgetary_resources": None,
         }
 
     @property

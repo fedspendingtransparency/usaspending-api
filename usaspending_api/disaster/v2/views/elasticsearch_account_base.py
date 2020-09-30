@@ -143,7 +143,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         group_by_dim_agg.metric("sum_covid_outlay", sum_covid_outlay)
         sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         group_by_dim_agg.metric("sum_covid_obligation", sum_covid_obligation)
-        value_count = A("value_count", field="award_id")
+        value_count = A("cardinality", field="award_id")
         count_awards_by_dim = A("reverse_nested", **{})
         count_awards_by_dim.metric("award_count", value_count)
         group_by_dim_agg.metric("count_awards_by_dim", count_awards_by_dim)
@@ -202,7 +202,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             outlays += item["sum_covid_outlay"]["value"]
             award_count += item["count_awards_by_dim"]["award_count"]["value"]
 
-        return {"obligations": obligations, "outlays": outlays, "award_count": award_count}
+        return {"obligation": obligations, "outlay": outlays, "award_count": award_count}
 
     def query_elasticsearch(self) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
