@@ -1,11 +1,15 @@
+from typing import List
+
 from django.db.models import Q, Sum, F, Value, DecimalField, Case, When, OuterRef, Subquery, Func, IntegerField
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
+from usaspending_api import settings
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.federal_account.federal_account_result import FedAcctResults, FedAccount, TAS
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
@@ -15,7 +19,11 @@ from usaspending_api.disaster.v2.views.disaster_base import (
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
-
+from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_nested_terms_accounts
+from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
+from usaspending_api.disaster.v2.views.elasticsearch_base import (
+    ElasticsearchSpendingPaginationMixin,
+)
 
 def construct_response(results: list, pagination: Pagination):
     FederalAccounts = FedAcctResults()
@@ -31,16 +39,66 @@ def construct_response(results: list, pagination: Pagination):
     }
 
 
-class SpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterBase):
+class SpendingViewSet(
+    PaginationMixin,
+    SpendingMixin,
+    FabaOutlayMixin,
+    ElasticsearchAccountDisasterBase,
+    ElasticsearchSpendingPaginationMixin,
+    DisasterBase,
+):
     """ Returns disaster spending by federal account. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
-
+    agg_key = "financial_accounts_by_award.federal_account_id"  # primary (tier-1) aggregation key
+    top_hits_fields = [
+        "financial_accounts_by_award.federal_account_title",
+        "financial_accounts_by_award.federal_account_symbol",
+    ]
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            results = list(self.award_queryset)
-            extra_columns = ["award_count"]
+            defc = self.filters.pop("def_codes")
+            self.filters.update({"nested_def_codes": defc})
+            self.filters.update(
+                {
+                    "nested_nonzero_fields": [
+                        "financial_accounts_by_award.transaction_obligated_amount",
+                        "financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
+                    ]
+                }
+            )
+            self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(self.filters)
+            self.bucket_count = get_number_of_unique_nested_terms_accounts(self.filter_query, f"{self.agg_key}")
+            messages = []
+            if self.pagination.sort_key in ("id", "code"):
+                messages.append(
+                    (
+                        f"Notice! API Request to sort on '{self.pagination.sort_key}' field isn't fully implemented."
+                        " Results were actually sorted using 'description' field."
+                    )
+                )
+            if self.bucket_count > 10000 and self.agg_key == settings.ES_ROUTING_FIELD:
+                self.bucket_count = 10000
+                messages.append(
+                    (
+                        "Notice! API Request is capped at 10,000 results. Either download to view all results or"
+                        " filter using the 'query' attribute."
+                    )
+                )
+
+            response = self.query_elasticsearch()
+            response["results"] = sorted(
+                response["results"],
+                key=lambda x: x[self.pagination.sort_key],
+                reverse=self.pagination.order_by != "desc",
+            )
+            response["page_metadata"] = get_pagination_metadata(
+                self.bucket_count, self.pagination.limit, self.pagination.page
+            )
+            if messages:
+                response["messages"] = messages
+            return Response(response)
         else:
             results = list(self.total_queryset)
             extra_columns = ["total_budgetary_resources"]
@@ -50,6 +108,24 @@ class SpendingViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterB
 
         return Response(response)
 
+    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
+        results = []
+        for bucket in info_buckets:
+            results.append(self._build_json_result(bucket))
+        return results
+
+    def _build_json_result(self, bucket: dict):
+        return {
+            "id": int(bucket["key"]),
+            "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_symbol"],
+            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_title"],
+            "children": [],
+            # the count of distinct awards contributing to the totals
+            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
+            "obligation": int(bucket["sum_covid_obligation"]["value"]),
+            "outlay": int(bucket["sum_covid_outlay"]["value"]),
+            "total_budgetary_resources": None,
+        }
     @property
     def total_queryset(self):
         filters = [

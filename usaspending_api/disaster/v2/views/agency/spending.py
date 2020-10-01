@@ -7,7 +7,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django_cte import With
 from rest_framework.response import Response
 from typing import List
-from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api import settings
 from usaspending_api.common.cache_decorator import cache_response
@@ -84,7 +83,6 @@ class SpendingByAgencyViewSet(
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            self.filter_query = ES_Q("bool", filter={"exists": {"field": "financial_account_distinct_award_key"}})
             defc = self.filters.pop("def_codes")
             self.filters.update({"nested_def_codes": defc})
             self.filters.update(
