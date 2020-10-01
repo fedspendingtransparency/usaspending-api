@@ -19,13 +19,13 @@ from usaspending_api.search.v2.elasticsearch_helper import (
 )
 
 
-class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
+class ElasticsearchAccountSpendingPaginationMixin(_BasePaginationMixin):
     sum_column_mapping = {
-        "obligation": "financial_accounts_by_award.transaction_obligated_amount",
-        "outlay": "financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
+        "obligation": "sum_covid_obligation",
+        "outlay": "sum_covid_outlay",
     }
     sort_column_mapping = {
-        "award_count": "_count",
+        "award_count": "count_awards_by_dim.award_count",
         "description": "_key",  # _key will ultimately sort on description value
         "code": "_key",  # Façade sort behavior, really sorting on description
         "id": "_key",  # Façade sort behavior, really sorting on description
@@ -133,7 +133,10 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         )
         group_by_dim_agg.metric("dim_metadata", dim_metadata)
 
-        pagination_agg = A("bucket_sort", sort={"sum_covid_obligation": {"order": "desc"}})
+        pagination_agg = A(
+            "bucket_sort",
+            sort={self.sort_column_mapping[self.pagination.sort_key]: {"order": self.pagination.sort_order}},
+        )
         group_by_dim_agg.metric("pagination_agg", pagination_agg)
         sum_covid_outlay = A(
             "sum",

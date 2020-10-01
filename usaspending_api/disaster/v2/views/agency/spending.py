@@ -23,7 +23,10 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
 )
-from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
+from usaspending_api.disaster.v2.views.elasticsearch_account_base import (
+    ElasticsearchAccountDisasterBase,
+    ElasticsearchAccountSpendingPaginationMixin,
+)
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -66,7 +69,7 @@ class SpendingByAgencyViewSet(
     SpendingMixin,
     FabaOutlayMixin,
     ElasticsearchAccountDisasterBase,
-    ElasticsearchSpendingPaginationMixin,
+    ElasticsearchAccountSpendingPaginationMixin,
     DisasterBase,
 ):
     """ Returns disaster spending by agency. """
@@ -113,11 +116,6 @@ class SpendingByAgencyViewSet(
                 )
 
             response = self.query_elasticsearch()
-            response["results"] = sorted(
-                response["results"],
-                key=lambda x: x[self.pagination.sort_key],
-                reverse=self.pagination.order_by != "desc",
-            )
             response["page_metadata"] = get_pagination_metadata(
                 self.bucket_count, self.pagination.limit, self.pagination.page
             )
