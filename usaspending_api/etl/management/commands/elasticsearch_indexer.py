@@ -88,15 +88,24 @@ class Command(BaseCommand):
         logger.info(format_log(start_msg.format(**config)))
 
         ensure_view_exists(config["sql_view"])
-
+        error_addition = ""
         loader = Controller(config, elasticsearch_client)
-        loader.prepare_for_etl()
-        loader.launch_workers()
-        loader.complete_process()
 
-        logger.info(format_log("---------------------------------------------------------------"))
-        logger.info(format_log(f"Script completed in {perf_counter() - start:.2f}s"))
-        logger.info(format_log("---------------------------------------------------------------"))
+        try:
+            loader.prepare_for_etl()
+            loader.launch_workers()
+        except Exception as e:
+            logger.error(format_log(f"{str(e)}"))
+            error_addition = "before encounting a problem during execution.... "
+            raise SystemExit(1)
+        else:
+            loader.complete_process()
+        finally:
+            msg = f"Script completed in {perf_counter() - start:.2f}s {error_addition}|"
+            headers = f"{'-' * (len(msg) - 2)} |"
+            logger.info(format_log(headers))
+            logger.info(format_log(msg))
+            logger.info(format_log(headers))
 
 
 def parse_cli_args(options: dict, es_client) -> dict:

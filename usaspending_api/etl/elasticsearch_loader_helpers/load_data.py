@@ -20,12 +20,14 @@ def streaming_post_to_es(client, chunk, index_name: str, job_id=None):
     success, failed = 0, 0
     try:
         for ok, item in helpers.parallel_bulk(client, chunk, index=index_name):
-            success = [success, success + 1][ok]
-            failed = [failed + 1, failed][ok]
+            if ok:
+                success += 1
+            else:
+                failed += 1
 
     except Exception as e:
-        logger.exception(f"Fatal error: \n\n{str(e)[:5000]}...\n\n{'*' * 80}")
-        raise RuntimeError()
+        logger.error(f"{job_id} is dazed: \n\n{str(e)[:2000]}\n...\n{str(e)[-2000:]}\n")
+        raise RuntimeError(f"{job_id}")
 
     logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", job=job_id, process="Index"))
     return success, failed

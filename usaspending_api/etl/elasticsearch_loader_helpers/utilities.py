@@ -2,8 +2,8 @@ import json
 import logging
 import psycopg2
 
-from django.conf import settings
 from dataclasses import dataclass
+from django.conf import settings
 from pathlib import Path
 from random import choice
 from typing import Optional, List
