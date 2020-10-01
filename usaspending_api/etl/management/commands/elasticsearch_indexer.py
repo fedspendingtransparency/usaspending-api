@@ -11,7 +11,7 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type, fy as parse_fiscal_year
 from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
-from usaspending_api.etl.elasticsearch_loader_helpers import format_log, Controller
+from usaspending_api.etl.elasticsearch_loader_helpers import format_log, Controller, toggle_refresh_off
 
 logger = logging.getLogger("script")
 
@@ -185,6 +185,9 @@ def process_cli_parameters(options: dict, es_client) -> dict:
         if not es_client.cat.aliases(name=write_alias):
             logger.error(format_log(f"Write alias '{write_alias}' is missing"))
             raise SystemExit(1)
+        # Force manual refresh for atomic transaction-like delete/re-add consistency during incremental load.
+        # Turned back on at end.
+        toggle_refresh_off(es_client, config["index_name"])
     else:
         if es_client.indices.exists(config["index_name"]):
             logger.error(format_log(f"Data load into existing index. Change index name or run an incremental load"))
