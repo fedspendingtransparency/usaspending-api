@@ -9,6 +9,7 @@ from usaspending_api.references.v1.serializers import FilterSerializer, HashSeri
 from usaspending_api.common.api_versioning import deprecated
 from django.utils.decorators import method_decorator
 
+
 @method_decorator(deprecated, name="post")
 class FilterEndpoint(APIView):
     """DEPRECATED"""
@@ -44,6 +45,7 @@ class FilterEndpoint(APIView):
                 return HttpResponseBadRequest("The DB object could not be saved. Exception Thrown.")
         # return hash
         return Response({"hash": hash})
+
 
 @method_decorator(deprecated, name="post")
 class HashEndpoint(APIView):

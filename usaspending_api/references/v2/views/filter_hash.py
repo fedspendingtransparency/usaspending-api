@@ -4,64 +4,55 @@ import json
 from django.http import HttpResponseBadRequest
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from usaspending_api.references.models import FilterHash
-from usaspending_api.references.v1.serializers import FilterSerializer, HashSerializer
-from usaspending_api.common.api_versioning import deprecated
-from django.utils.decorators import method_decorator
 
 
 class FilterEndpoint(APIView):
-    serializer_class = FilterSerializer
+    """Return the hash for a received filters object"""
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/filter.md"
+
+    @staticmethod
+    def create_hash(payload):
+        """
+            Create a MD5 hash from a Python dict
+            (Some tomfoolery here due to Python's handling of byte strings)
+        """
+        m = hashlib.md5()
+        m.update(payload)
+        hash_key = m.hexdigest().encode("utf8")
+        if len(str(hash_key)) > 2 and str(hash_key)[:2] == "b'":
+            hash_key = str(hash_key)[2:-1]
+        return hash_key
 
     def post(self, request, format=None):
-        """
-        Return the hash for a received filters object
-        """
-        # get json
-        # request.body is used because we want unicode as hash input
-        json_req = request.body
-        # create hash
-        m = hashlib.md5()
-        m.update(json_req)
-        hash = m.hexdigest().encode("utf8")
-        if len(str(hash)) > 2 and str(hash)[:2] == "b'":
-            hash = str(hash)[2:-1]
-        # check for hash in db, store if not in db
+        hash_key = self.create_hash(request.body)
+
         try:
-            fh = FilterHash.objects.get(hash=hash)
+            fh = FilterHash.objects.get(hash=hash_key)
         except FilterHash.DoesNotExist:
-            # store in DB
             try:
                 # request.data is used because we want json as input
-                fh = FilterHash(hash=hash, filter=request.data)
+                fh = FilterHash(hash=hash_key, filter=request.data)
                 fh.save()
-            except ValueError:
-                return HttpResponseBadRequest("The DB object could not be saved. Value Error Thrown.")
-            # added as a catch all. Should never be hit
             except Exception:
-                return HttpResponseBadRequest("The DB object could not be saved. Exception Thrown.")
-        # return hash
-        return Response({"hash": hash})
+                return HttpResponseBadRequest("Error storing the filter for future retrieval")
+
+        return Response({"hash": hash_key})
 
 
 class HashEndpoint(APIView):
-    serializer_class = HashSerializer
+    """Return the stored filter object corresponding to the received hash"""
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/filter.md"
 
     def post(self, request, format=None):
-        """
-        Return the stored filter object corresponding to the received hash
-        """
-        # get hash
         body_unicode = request.body.decode("utf-8")
-        body = json.loads(body_unicode)
-        hash = body["hash"]
+        filter_hash = json.loads(body_unicode)["hash"]
 
-        # check for hash in db
         try:
-            fh = FilterHash.objects.get(hash=hash)
-            # return filter json
+            fh = FilterHash.objects.get(hash=filter_hash)
             return Response({"filter": fh.filter})
         except FilterHash.DoesNotExist:
-            return HttpResponseBadRequest(
-                "The FilterHash Object with that has does not exist. DoesNotExist Error Thrown."
-            )
+            return HttpResponseBadRequest("A FilterHash Object with that hash does not exist.")
