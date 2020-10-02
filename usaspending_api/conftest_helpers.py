@@ -50,6 +50,7 @@ class TestElasticSearchIndex:
             sql=None,
             primary_key="award_id" if self.index_type == "awards" else "transaction_id",
             transform_func=None,
+            is_incremental=None,
         )
 
     def delete_index(self):
