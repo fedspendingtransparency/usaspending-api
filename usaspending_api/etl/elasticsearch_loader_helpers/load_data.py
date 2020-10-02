@@ -11,6 +11,7 @@ from time import perf_counter, sleep
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 
+from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import delete_docs_by_unique_key
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     format_log,
     convert_postgres_array_as_string_to_list,
@@ -278,9 +279,38 @@ def es_data_loader(client, fetch_jobs, done_jobs, config):
     return
 
 
-def streaming_post_to_es(client, chunk, index_name: str, type: str, job_id=None):
+def streaming_post_to_es(
+    client, chunk, index_name: str, type: str, job_id=None, delete_before_index=True, delete_key="_id"
+):
+    """
+    Called this repeatedly with successive chunks of data to pump into an Elasticsearch index.
+
+    Args:
+        client: Elasticsearch client
+        chunk (List[dict]): list of dictionary objects holding field_name:value data
+        index_name (str): name of targetted index
+        type (str): indexed data type (e.g. awards or transactions)
+        job_id (str): name of ES ETL job being run, used in logging
+        delete_before_index (bool): When true, attempts to delete given documents by a unique key before indexing them.
+            NOTE: For incremental loads, we must "delete-before-index" due to the fact that on many of our indices,
+                we have different values for _id and routing key.
+                Not doing this exposed a bug in our approach to expedite incremental UPSERTS aimed at allowing ES to
+                overwrite documents when it encountered one already existing by a given _id. The problem is that the
+                index operation uses the routing key to target only 1 shard for its index/overwrite. If the routing key
+                value changes between two incremental loads of the same doc with the same _id, it may get routed to a
+                different shard and won't overwrite the original doc, leaving duplicates across all shards in the index.
+        delete_key (str): The column (field) name used for value lookup in the given chunk to derive documents to be
+            deleted, if delete_before_index is True. Currently defaulting to "_id", taking advantage of the fact
+            that we are explicitly setting "_id" in the documents to-be-indexed, which is a unique key for each doc
+            (e.g. the PK of the DB row)
+
+    Returns: (succeeded, failed) tuple, which counts successful index doc writes vs. failed doc writes
+    """
     success, failed = 0, 0
     try:
+        if delete_before_index:
+            value_list = [doc[delete_key] for doc in chunk]
+            delete_docs_by_unique_key(client, delete_key, value_list, job_id, index_name)
         for ok, item in helpers.parallel_bulk(client, chunk, index=index_name):
             success = [success, success + 1][ok]
             failed = [failed + 1, failed][ok]
@@ -335,8 +365,30 @@ def set_final_index_config(client, index):
     client.indices.put_settings(final_index_settings, index)
     client.indices.refresh(index)
     for setting, value in final_index_settings.items():
-        message = f'Changing "{setting}" from {current_settings.get(setting)} to {value}'
+        message = f'Changed "{setting}" from {current_settings.get(setting)} to {value}'
         logger.info(format_log(message, process="ES Settings"))
+
+
+def toggle_refresh_off(client, index):
+    client.indices.put_settings({"refresh_interval": "-1"}, index)
+    message = (
+        f'Set "refresh_interval": "-1" to turn auto refresh off during incremental load. Manual refreshes will '
+        f"occur for each batch completion."
+    )
+    logger.info(format_log(message, process="ES Settings"))
+
+
+def toggle_refresh_on(client, index):
+    response = client.indices.get(index)
+    aliased_index_name = list(response.keys())[0]
+    current_refresh_interval = response[aliased_index_name]["settings"]["index"]["refresh_interval"]
+    es_settingsfile = str(settings.APP_DIR / "etl" / "es_config_objects.json")
+    with open(es_settingsfile) as f:
+        settings_dict = json.load(f)
+    final_refresh_interval = settings_dict["final_index_settings"]["refresh_interval"]
+    client.indices.put_settings({"refresh_interval": final_refresh_interval}, index)
+    message = f'Changed "refresh_interval" from {current_refresh_interval} to {final_refresh_interval}'
+    logger.info(format_log(message, process="ES Settings"))
 
 
 def swap_aliases(client, index, load_type):
@@ -386,12 +438,21 @@ def post_to_elasticsearch(client, job, config, chunksize=250000):
             logger.info(format_log(f"No documents to add/delete for chunk #{count}", job=job.name, process="ES Index"))
             continue
 
+        # Only delete before adding/inserting/indexing new docs on incremental loads, not full reindexes
+        is_incremental = config["is_incremental_load"] and str(config["is_incremental_load"]).lower() == "true"
+
         iteration = perf_counter()
         current_rows = f"({count * chunksize + 1:,}-{count * chunksize + len(chunk):,})"
         logger.info(
             format_log(f"ES Stream #{count} rows [{current_rows}/{job.count:,}]", job=job.name, process="ES Index")
         )
-        streaming_post_to_es(client, chunk, job.index, config["load_type"], job.name)
+        streaming_post_to_es(
+            client, chunk, job.index, config["load_type"], job.name, delete_before_index=is_incremental
+        )
+        if is_incremental:
+            # refresh_interval is off during incremental loads.
+            # Manually refresh after delete + insert complete for search consistency
+            client.indices.refresh(job.index)
         logger.info(
             format_log(
                 f"Iteration group #{count} took {perf_counter() - iteration:.2f}s", job=job.name, process="ES Index"
