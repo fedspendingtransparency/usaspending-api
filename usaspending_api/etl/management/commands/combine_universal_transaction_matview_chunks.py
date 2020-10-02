@@ -10,8 +10,7 @@ from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 logger = logging.getLogger("script")
 
 RECREATE_TABLE_SQL = """
-DROP TABLE IF EXISTS universal_transaction_matview_temp;
-DROP MATERIALIZED VIEW IF EXISTS universal_transaction_matview_temp;
+DROP {old_object_type} IF EXISTS universal_transaction_matview_temp;
 CREATE TABLE universal_transaction_matview_temp AS SELECT * from universal_transaction_matview_0 WITH NO DATA;
 """
 
@@ -35,6 +34,8 @@ CREATE INDEX idx_ut_action_date_pre2008_temp ON universal_transaction_matview_te
 """
 
 SWAP_TABLES_SQL = """
+DROP {old_object_type} IF EXISTS universal_transaction_matview_old;
+
 ALTER TABLE IF EXISTS universal_transaction_matview RENAME TO universal_transaction_matview_old;
 ALTER MATERIALIZED VIEW IF EXISTS universal_transaction_matview RENAME TO universal_transaction_matview_old;
 
@@ -88,14 +89,19 @@ class Command(BaseCommand):
         parser.add_argument(
             "--analyze", action="store_true", help="Indicates whether table should be analyzed"
         )
+        parser.add_argument(
+            "--old-object-type", default="TABLE", help="Indicates whether the old version of the table is a Matview"
+        )
 
     def handle(self, *args, **options):
         chunk_count = options["chunk_count"]
 
-        logger.info("Chunk Count: {chunk_count}")
+        logger.info(f"Chunk Count: {chunk_count}")
+
+        old_object_type = options["old_object_type"]
 
         with Timer("Recreating table"):
-            self.recreate_matview()
+            self.recreate_matview(old_object_type)
 
         with Timer("Inserting data into table"):
             self.insert_matview_data(chunk_count)
@@ -104,7 +110,7 @@ class Command(BaseCommand):
             self.create_indexes()
 
         with Timer("Swapping Tables/Indexes"):
-            self.swap_matviews()
+            self.swap_matviews(old_object_type)
 
         if options["analyze"]:
             with Timer("Analyzing Table"):
@@ -113,9 +119,9 @@ class Command(BaseCommand):
         with Timer("Granting Table Permissions"):
             self.grant_matview_permissions()
 
-    def recreate_matview(self):
+    def recreate_matview(self, old_object_type):
         with connection.cursor() as cursor:
-            cursor.execute(RECREATE_TABLE_SQL)
+            cursor.execute(RECREATE_TABLE_SQL.format(old_object_type=old_object_type))
 
     def insert_matview_data(self, chunk_count):
         loop = asyncio.new_event_loop()
@@ -125,7 +131,7 @@ class Command(BaseCommand):
                 asyncio.ensure_future(
                     async_run_creates(
                         INSERT_INTO_TABLE_SQL.format(current_chunk=current_chunk),
-                        wrapper=Timer("Insert into table {current_chunk}"),
+                        wrapper=Timer(f"Insert into table {current_chunk}"),
                     ),
                     loop=loop,
                 )
@@ -140,16 +146,16 @@ class Command(BaseCommand):
         i = 0
         for sql in sqlparse.split(TABLE_INDEX_SQL):
             tasks.append(
-                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer("Creating Index {i}"),), loop=loop,)
+                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(f"Creating Index {i}"),), loop=loop,)
             )
             i += 1
 
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
 
-    def swap_matviews(self):
+    def swap_matviews(self, old_object_type):
         with connection.cursor() as cursor:
-            cursor.execute(SWAP_TABLES_SQL)
+            cursor.execute(SWAP_TABLES_SQL.format(old_object_type=old_object_type))
 
     def analyze_matview(self):
         with connection.cursor() as cursor:
