@@ -61,7 +61,7 @@ def delete_from_es(client, id_list, job_id, config, index=None):
                     index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
                 )
             except Exception:
-                logger.exception(format_log(f"", job=job_id, process="ES Delete"))
+                logger.exception("", job=job_id, process="ES Delete")
                 raise SystemExit(1)
 
     end_ = client.count(index=index)["count"]
@@ -109,7 +109,7 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
             deleted += chunk_deletes
     except Exception:
         is_error = True
-        logger.exception(format_log(f"", job=job_id, process="ES Delete"))
+        logger.exception("", job=job_id, process="ES Delete")
         raise SystemExit(1)
     finally:
         error_text = " before encountering an error" if is_error else ""

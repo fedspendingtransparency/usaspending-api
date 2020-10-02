@@ -17,18 +17,15 @@ def load_data(worker, records, client):
     logger.info(format_log(f"Index operation took {perf_counter() - start:.2f}s", job=worker.name, process="Index"))
 
 
-def streaming_post_to_es(
-    client, chunk, index_name: str, type: str, job_id=None, delete_before_index=True, delete_key="_id"
-):
+def streaming_post_to_es(client, chunk, index_name: str, job_name=None, delete_before_index=True, delete_key="_id"):
     """
-    Called this repeatedly with successive chunks of data to pump into an Elasticsearch index.
+    Pump data into an Elasticsearch index.
 
     Args:
         client: Elasticsearch client
         chunk (List[dict]): list of dictionary objects holding field_name:value data
         index_name (str): name of targetted index
-        type (str): indexed data type (e.g. awards or transactions)
-        job_id (str): name of ES ETL job being run, used in logging
+        job_name (str): name of ES ETL job being run, used in logging
         delete_before_index (bool): When true, attempts to delete given documents by a unique key before indexing them.
             NOTE: For incremental loads, we must "delete-before-index" due to the fact that on many of our indices,
                 we have different values for _id and routing key.
@@ -48,7 +45,7 @@ def streaming_post_to_es(
     try:
         if delete_before_index:
             value_list = [doc[delete_key] for doc in chunk]
-            delete_docs_by_unique_key(client, delete_key, value_list, job_id, index_name)
+            delete_docs_by_unique_key(client, delete_key, value_list, job_name, index_name)
         for ok, item in helpers.parallel_bulk(client, chunk, index=index_name):
             if ok:
                 success += 1
@@ -56,10 +53,10 @@ def streaming_post_to_es(
                 failed += 1
 
     except Exception as e:
-        logger.error(f"{job_id} is dazed: \n\n{str(e)[:2000]}\n...\n{str(e)[-2000:]}\n")
-        raise RuntimeError(f"{job_id}")
+        logger.error(f"{job_name} is dazed: \n\n{str(e)[:2000]}\n...\n{str(e)[-2000:]}\n")
+        raise RuntimeError(f"{job_name}")
 
-    logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", job=job_id, process="Index"))
+    logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", job=job_name, process="Index"))
     return success, failed
 
 

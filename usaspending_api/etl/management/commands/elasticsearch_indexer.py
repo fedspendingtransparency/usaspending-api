@@ -64,17 +64,19 @@ class Command(BaseCommand):
             choices=["transactions", "awards"],
         )
         parser.add_argument(
-            "--workers",
+            "--processes",
             type=int,
-            help="Number of parallel processes to operate.",
+            help="Number of parallel processes to operate. psycopg2 kicked the bucket with 100",
             default=10,
-            choices=range(1, 51),
-            metavar="[1-50]",
+            choices=range(1, 71),
+            metavar="[1-70]",
         )
         parser.add_argument(
-            "--batch-size",
+            "--partitions",
             type=int,
-            help="Approx number of records for each partition a subprocess will ETL.",
+            help="Set how much the data are partitioned. "
+            "NOTICE: large datasets may need indexes or other performance "
+            " optimizations if this is changed",
             default=10000,
             metavar="(default: 10,000)",
         )
@@ -96,7 +98,7 @@ class Command(BaseCommand):
             loader.prepare_for_etl()
             loader.launch_workers()
         except Exception as e:
-            logger.error(format_log(f"{str(e)}"))
+            logger.error(f"{str(e)}")
             error_addition = "before encounting a problem during execution.... "
             raise SystemExit(1)
         else:
@@ -112,14 +114,14 @@ class Command(BaseCommand):
 def parse_cli_args(options: dict, es_client) -> dict:
     default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
     passthrough_values = (
-        "batch_size",
+        "partitions",
         "create_new_index",
         "index_name",
         "load_type",
         "process_deletes",
         "skip_counts",
         "skip_delete_index",
-        "workers",
+        "processes",
     )
     config = set_config(passthrough_values, options)
 
@@ -148,18 +150,18 @@ def parse_cli_args(options: dict, es_client) -> dict:
             logger.info(format_log(f"Ignoring provided index name, using alias '{config['write_alias']}' for safety"))
         config["index_name"] = config["write_alias"]
         if not es_client.cat.aliases(name=config["write_alias"]):
-            logger.error(format_log(f"Write alias '{config['write_alias']}' is missing"))
+            logger.error(f"Write alias '{config['write_alias']}' is missing")
             raise SystemExit(1)
         # Force manual refresh for atomic transaction-like delete/re-add consistency during incremental load.
         # Turned back on at end.
         toggle_refresh_off(es_client, config["index_name"])
     else:
         if es_client.indices.exists(config["index_name"]):
-            logger.error(format_log(f"Data load into existing index. Change index name or run an incremental load"))
+            logger.error(f"Data load into existing index. Change index name or run an incremental load")
             raise SystemExit(1)
 
     if config["starting_date"] < default_datetime:
-        logger.error(format_log(f"--start-datetime is too early. Set no earlier than {default_datetime}"))
+        logger.error(f"--start-datetime is too early. Set no earlier than {default_datetime}")
         raise SystemExit(1)
 
     return config

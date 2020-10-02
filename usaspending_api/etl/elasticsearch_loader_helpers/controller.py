@@ -1,7 +1,6 @@
 import logging
 
 from django.core.management import call_command
-from math import ceil
 from multiprocessing import Pool, Event
 from random import choice
 from time import perf_counter
@@ -45,23 +44,20 @@ class Controller:
         self.record_count = count_of_records_to_process(self.config)
 
         if self.record_count == 0:
-            self.workers = []
+            self.processes = []
             return
 
-        self.partition_size = self.calculate_partition_size(self.record_count, self.config["batch_size"])
-        self.number_of_jobs = ceil(self.record_count / self.partition_size)
-
-        self.config["workers"] = min(self.config["workers"], self.number_of_jobs)
+        self.config["processes"] = min(self.config["processes"], self.config["partitions"])
 
         logger.info(
             format_log(
-                f"Hailing {self.number_of_jobs:,} heroes"
+                f"Hailing {self.config['partitions']:,} heroes"
                 f" to handle {self.record_count:,} {self.config['data_type']} records"
-                f" in squad{'s' if self.config['workers'] > 1 else ' size'} of {self.config['workers']:,}"
+                f" in squads of {self.config['processes']:,}"
             )
         )
 
-        self.workers = [self.create_worker(j) for j in range(self.number_of_jobs)]
+        self.workers = [self.create_worker(j) for j in range(self.config["partitions"])]
 
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
@@ -71,7 +67,7 @@ class Controller:
     def launch_workers(self):
         _abort = Event()  # Event which signals an error occured in a subprocess when set
 
-        with Pool(self.config["workers"], maxtasksperchild=1, initializer=init, initargs=(_abort,)) as pool:
+        with Pool(self.config["processes"], maxtasksperchild=1, initializer=init, initargs=(_abort,)) as pool:
             # Using list comprehension to prevent new tasks from starting if an event occured
             pool.map(extract_transform_load, [worker for worker in self.workers if not _abort.is_set()])
 
@@ -95,14 +91,9 @@ class Controller:
             )
             update_last_load_date(f"{self.config['stored_date_key']}", self.config["processing_start_datetime"])
 
-    @staticmethod
-    def calculate_partition_size(record_count: int, max_size: int) -> int:
-        """Create partion size less than or equal to max_size for more even distribution"""
-        return ceil(record_count / ceil(record_count / max_size))
-
     def create_worker(self, number: int) -> WorkerNode:
         sql_str = EXTRACT_SQL.format(
-            divisor=self.number_of_jobs,
+            divisor=self.config["partitions"],
             id_col=self.config["primary_key"],
             remainder=number,
             update_date=self.config["starting_date"],
@@ -145,7 +136,7 @@ def extract_transform_load(worker):
             logger.info(format_log(f"{worker.name} realizes the battle lost. #ragequit"))
         else:
             msg = f"{worker.name} has fallen in battle! How could such a thing happen to this great warrior?"
-            logger.error(format_log(msg, job=worker.name))
+            logger.error(msg, job=worker.name)
             abort.set()
     else:
         attrib = choice(["pro", "champ", "boss", "top dog", "hero", "super"])

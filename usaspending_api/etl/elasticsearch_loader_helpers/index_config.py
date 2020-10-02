@@ -59,7 +59,7 @@ def swap_aliases(client, config):
             client.indices.delete_alias(old_index, "_all")
             logger.info(format_log(f"Removing aliases from '{old_index}'", process="ES Alias"))
     except Exception:
-        logger.exception(format_log(f"No aliases found for {alias_patterns}", process="ES Alias"))
+        logger.exception(f"No aliases found for {alias_patterns}", process="ES Alias")
 
     create_aliases(client, config)
 
@@ -68,7 +68,7 @@ def swap_aliases(client, config):
             client.indices.delete(index=old_indexes, ignore_unavailable=False)
             logger.info(format_log(f"Deleted index(es) '{old_indexes}'", process="ES Alias"))
     except Exception:
-        logger.exception(format_log(f"Unable to delete indexes: {old_indexes}", process="ES Alias"))
+        logger.exception(f"Unable to delete indexes: {old_indexes}", process="ES Alias")
 
 
 def toggle_refresh_off(client, index):
