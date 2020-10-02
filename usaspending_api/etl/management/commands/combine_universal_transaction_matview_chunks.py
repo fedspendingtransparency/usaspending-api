@@ -68,6 +68,10 @@ ALTER INDEX idx_ut_recipient_hash_temp RENAME TO idx_ut_recipient_hash;
 ALTER INDEX idx_ut_action_date_pre2008_temp RENAME TO idx_ut_action_date_pre2008;
 """
 
+REMOVE_OLD_TABLE_SQL = """
+DROP TABLE IF EXISTS universal_transaction_matview_old;
+"""
+
 ANALYZE_TABLE_SQL = """
 ANALYZE VERBOSE universal_transaction_matview;
 """
@@ -92,6 +96,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--old-object-type", default="TABLE", help="Indicates whether the old version of the table is a Matview"
         )
+        parser.add_argument(
+            "--keep-data", action="store_true", default=False, help="Indicates whether or not to drop old table at end of command"
+        )
 
     def handle(self, *args, **options):
         chunk_count = options["chunk_count"]
@@ -111,6 +118,9 @@ class Command(BaseCommand):
 
         with Timer("Swapping Tables/Indexes"):
             self.swap_matviews(old_object_type)
+        
+        if not options["keep_data"]:
+            self.remove_old_table()
 
         if options["analyze"]:
             with Timer("Analyzing Table"):
@@ -156,6 +166,10 @@ class Command(BaseCommand):
     def swap_matviews(self, old_object_type):
         with connection.cursor() as cursor:
             cursor.execute(SWAP_TABLES_SQL.format(old_object_type=old_object_type))
+
+    def remove_old_table(self):
+        with connection.cursor() as cursor:
+            cursor.execute(REMOVE_OLD_TABLE_SQL)
 
     def analyze_matview(self):
         with connection.cursor() as cursor:
