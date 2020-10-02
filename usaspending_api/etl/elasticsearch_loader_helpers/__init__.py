@@ -1,7 +1,9 @@
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
+    create_aliases,
     set_final_index_config,
     swap_aliases,
-    create_aliases,
+    toggle_refresh_off,
+    toggle_refresh_on,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import (
     count_of_records_to_process,
@@ -10,6 +12,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import (
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     check_awards_for_deletes,
+    delete_docs_by_unique_key,
     deleted_awards,
     deleted_transactions,
     get_deleted_award_ids,
@@ -37,6 +40,7 @@ __all__ = [
     "count_of_records_to_process",
     "create_aliases",
     "create_index",
+    "delete_docs_by_unique_key",
     "deleted_awards",
     "deleted_transactions",
     "execute_sql_statement",
@@ -48,6 +52,9 @@ __all__ = [
     "load_data",
     "set_final_index_config",
     "swap_aliases",
+    "take_snapshot",
+    "toggle_refresh_off",
+    "toggle_refresh_on",
     "transform_award_data",
     "transform_transaction_data",
     "WorkerNode",

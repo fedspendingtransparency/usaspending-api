@@ -6,6 +6,9 @@ from collections import defaultdict
 from django.conf import settings
 from time import perf_counter
 
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search, Q as ES_Q
+
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     execute_sql_statement,
@@ -58,12 +61,62 @@ def delete_from_es(client, id_list, job_id, config, index=None):
                     index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
                 )
             except Exception:
-                logger.exception(format_log(f"", job=job_id, process="ES Delete"))
+                logger.exception("", job=job_id, process="ES Delete")
+                raise SystemExit(1)
 
     end_ = client.count(index=index)["count"]
     msg = f"ES Deletes took {perf_counter() - start:.2f}s. Deleted {start_ - end_:,} records"
     logger.info(format_log(msg, job=job_id, process="ES Delete"))
     return
+
+
+def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list, job_id: str, index) -> int:
+    """
+    Bulk delete a batch of documents whose field identified by ``key`` matches any value provided in the
+    ``values_list``.
+
+    Args:
+        client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
+        key (str): name of filed in targeted elasticearch index that shoudld have a unique value for
+            every doc in the index. Ideally the field or sub-field provided is of ``keyword`` type.
+        value_list (list): if key field has these values, the document will be deleted
+        job_id (str): name of ES ETL job being run, used in logging
+        index (str): name of index (or alias) to target for the ``_delete_by_query`` ES operation.
+
+            NOTE: This delete routine looks at just the index name given. If there are duplicate records across
+            multiple indexes, an alias or wildcard should be provided for ``index`` param that covers multiple
+            indices, or this will need to be run once per index.
+
+    Returns: Number of ES documents deleted
+    """
+    start = perf_counter()
+
+    logger.info(format_log(f"Deleting up to {len(value_list):,} document(s)", process="ES Delete", job=job_id))
+    assert index, "index name must be provided"
+
+    deleted = 0
+    is_error = False
+    try:
+        # 65,536 is max number of terms that can be added to an ES terms filter query
+        values_generator = chunks(value_list, 50000)
+        for chunk_of_values in values_generator:
+            # Creates an Elasticsearch query criteria for the _delete_by_query call
+            q = ES_Q("terms", **{key: chunk_of_values})
+            # Invoking _delete_by_query as per the elasticsearch-dsl docs:
+            #   https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#delete-by-query
+            response = Search(using=client, index=index).filter(q).delete()
+            chunk_deletes = response["deleted"]
+            deleted += chunk_deletes
+    except Exception:
+        is_error = True
+        logger.exception("", job=job_id, process="ES Delete")
+        raise SystemExit(1)
+    finally:
+        error_text = " before encountering an error" if is_error else ""
+        msg = f"ES Deletes took {perf_counter() - start:.2f}s. Deleted {deleted:,} records{error_text}"
+        logger.info(format_log(msg, process="ES Delete", job=job_id))
+
+    return deleted
 
 
 def get_deleted_award_ids(client, id_list, config, index=None):

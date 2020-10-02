@@ -30,6 +30,17 @@ This endpoint returns a filtered set of subawards.
             + Default: `desc`
         + `award_id` (optional, string)
             Either a "generated" natural award id (string) or a database surrogate award id (number).  Generated award identifiers are preferred as they are effectively permanent.  Surrogate award ids are retained for backward compatibility but are deprecated.
+    + Body
+            
+            
+            {
+                "page": 1,
+                "limit": 15,
+                "sort": "subaward_number",
+                "order": "desc",
+                "award_id": "25882628"
+            }
+        
             
 + Response 200 (application/json)
     + Attributes (object)
