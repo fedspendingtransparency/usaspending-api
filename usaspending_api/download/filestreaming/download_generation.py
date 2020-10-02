@@ -34,7 +34,7 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FI
 from usaspending_api.download.models import DownloadJob
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
-MAX_VISIBILITY_TIMEOUT = 60 * 60 * 4
+MAX_VISIBILITY_TIMEOUT = 60 * 60 * settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
 
@@ -533,12 +533,17 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     """Executes a single PSQL command within its own Subprocess"""
     try:
         log_time = time.perf_counter()
+        temp_env = os.environ.copy()
+        if not download_job.monthly_download:
+            # Since terminating the process isn't guarenteed to end the DB statement, add timeout to client connection
+            temp_env["PGOPTIONS"] = f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h"
 
         cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
         subprocess.check_output(
             ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
             stdin=cat_command.stdout,
             stderr=subprocess.STDOUT,
+            env=temp_env,
         )
 
         duration = time.perf_counter() - log_time

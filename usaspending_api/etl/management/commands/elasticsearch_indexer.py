@@ -14,6 +14,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     Controller,
     transform_award_data,
     transform_transaction_data,
+    toggle_refresh_off,
 )
 
 logger = logging.getLogger("script")
@@ -149,6 +150,9 @@ def parse_cli_args(options: dict, es_client) -> dict:
         if not es_client.cat.aliases(name=config["write_alias"]):
             logger.error(format_log(f"Write alias '{config['write_alias']}' is missing"))
             raise SystemExit(1)
+        # Force manual refresh for atomic transaction-like delete/re-add consistency during incremental load.
+        # Turned back on at end.
+        toggle_refresh_off(es_client, config["index_name"])
     else:
         if es_client.indices.exists(config["index_name"]):
             logger.error(format_log(f"Data load into existing index. Change index name or run an incremental load"))

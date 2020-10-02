@@ -20,6 +20,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     load_data,
     set_final_index_config,
     swap_aliases,
+    toggle_refresh_on,
     WorkerNode,
 )
 
@@ -88,6 +89,7 @@ class Controller:
                 swap_aliases(client, self.config)
 
         if self.config["is_incremental_load"]:
+            toggle_refresh_on(self.elasticsearch_client, self.config["index_name"])
             logger.info(
                 format_log(f"Storing datetime {self.config['processing_start_datetime']} for next incremental load")
             )
@@ -112,6 +114,7 @@ class Controller:
             primary_key=self.config["primary_key"],
             name=next(gen_random_name()),
             sql=sql_str,
+            is_incremental=self.config["is_incremental_load"],
             transform_func=self.config["data_transform_func"],
         )
 
