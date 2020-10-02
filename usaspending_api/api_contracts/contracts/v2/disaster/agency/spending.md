@@ -25,43 +25,14 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
                 + `total`
                 + `award`
         + `pagination` (optional, Pagination, fixed-type)
-        
+
     + Body
-    
-            
+
+
             {
                 "filter": {
-                    "def_codes": [
-                        "L",
-                        "M",
-                        "N",
-                        "O",
-                        "P"
-                    ],
-                    "award_type_codes": [
-                        "02",
-                        "03",
-                        "04",
-                        "05",
-                        "07",
-                        "08",
-                        "10",
-                        "06",
-                        "09",
-                        "11",
-                        "A",
-                        "B",
-                        "C",
-                        "D",
-                        "IDV_A",
-                        "IDV_B",
-                        "IDV_B_A",
-                        "IDV_B_B",
-                        "IDV_B_C",
-                        "IDV_C",
-                        "IDV_D",
-                        "IDV_E"
-                    ]
+                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "award_type_codes": ["02", "03", "04", "05", "07", "08", "10", "06", "09", "11", "A", "B", "C", "D", "IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]
                 },
                 "pagination": {
                     "limit": 10,
@@ -80,7 +51,7 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
 
     + Body
 
-            
+
             {
                 "totals": {
                     "award_count": 4574,

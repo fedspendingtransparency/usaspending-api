@@ -36,11 +36,11 @@ Returns transaction records which match the keyword and award type code filters.
                 + `asc`
                 + `desc`
     + Body
-            
-            
+
+
             {
                 "filters": {
-                    "keyword": "test",
+                    "keywords": ["test"],
                     "award_type_codes": [
                         "A",
                         "B",
@@ -72,7 +72,7 @@ Returns transaction records which match the keyword and award type code filters.
 
     + Body
 
-            
+
             {
                 "limit": 10,
                 "page_metadata": {

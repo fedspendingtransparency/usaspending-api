@@ -19,15 +19,12 @@ Returns the number of transactions that would be included in a download request 
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
-        
     + Body
-    
-            
+
+
             {
                 "filters": {
-                    "keywords": [
-                        "cheese"
-                    ],
+                    "keywords": ["cheese"],
                     "time_period": [
                         {
                             "start_date": "2019-10-01",
@@ -38,26 +35,10 @@ Returns the number of transactions that would be included in a download request 
                             "end_date": "2011-09-30"
                         }
                     ],
-                    "recipient_type_names": [
-                        "higher_education"
-                    ],
-                    "place_of_performance_locations": [
-                        {
-                            "country": "USA",
-                            "state": "WI"
-                        }
-                    ],
-                    "psc_codes": {
-                        "require": [
-                            [
-                                "Product",
-                                "10",
-                                "1035"
-                            ]
-                        ]
-                    }
-                },
-                "auditTrail": "Download Availability Count"
+                    "recipient_type_names": ["higher_education"],
+                    "place_of_performance_locations": [{"country": "USA", "state": "WI"}],
+                    "psc_codes": {"require": [["Product","10","1035"]]}
+                }
             }
 
 + Response 200 (application/json)
@@ -72,7 +53,7 @@ Returns the number of transactions that would be included in a download request 
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
-            
+
             {
                 "calculated_transaction_count": 87343,
                 "maximum_transaction_limit": 500000,

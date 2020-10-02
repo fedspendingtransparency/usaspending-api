@@ -12,7 +12,7 @@ This endpoint returns a list of federal accounts under a given IDV.
 ### List Federal Accounts [POST]
 + Request (application/json)
     + Attributes (object)
-        + `award_id`:`CONT_IDV_GS30FHA006_4732` (required, string) 
+        + `award_id`:`CONT_IDV_GS30FHA006_4732` (required, string)
             IDV to return accounts for
         + `page`: 1 (optional, number)
             Page number to return
@@ -23,7 +23,8 @@ This endpoint returns a list of federal accounts under a given IDV.
         + `sort`:`total_transaction_obligated_amount` (optional, string)
             The field to sort on
     + Body
-    
+
+
             {
                 "limit": 10,
                 "sort": "total_transaction_obligated_amount",
@@ -33,11 +34,12 @@ This endpoint returns a list of federal accounts under a given IDV.
             }
 
 + Response 200 (application/json)
-    + Attributes (object) 
+    + Attributes (object)
        + `results` (required, array[AccountListing], fixed-type)
        + `page_metadata` (required, PageMetadata, fixed-type)
     + Body
-        
+
+
             {
                 "results": [
                     {
@@ -58,7 +60,7 @@ This endpoint returns a list of federal accounts under a given IDV.
                     "hasPrevious": false
                 }
             }
-        
+
 
 # Data Structures
 

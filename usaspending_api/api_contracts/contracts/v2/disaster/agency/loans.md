@@ -20,23 +20,13 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
     + Attributes
         + `filter` (required, Filter, fixed-type)
         + `pagination` (optional, Pagination, fixed-type)
-        
     + Body
-    
-        
+
+
             {
                 "filter": {
-                    "def_codes": [
-                        "L",
-                        "M",
-                        "N",
-                        "O",
-                        "P"
-                    ],
-                    "award_type_codes": [
-                        "07",
-                        "08"
-                    ]
+                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "award_type_codes": ["07", "08"]
                 },
                 "pagination": {
                     "limit": 10,
@@ -55,7 +45,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 
     + Body
 
-            
+
             {
                 "totals": {
                     "award_count": 4574,

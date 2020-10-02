@@ -17,12 +17,12 @@ requests it returns a list of all user selectable flagged subtier agencies.
                 + `account_agencies`
                 + `award_agencies`
         + `agency` (optional, number)
-    + Body 
-    
-        
+    + Body
+
+
             {
-                "type":"award_agencies",
-                "agency":0
+                "type": "award_agencies",
+                "agency": 0
             }
 
 + Response 200 (application/json)

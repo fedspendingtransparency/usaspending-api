@@ -20,23 +20,13 @@ Returns loan spending details of recipients receiving supplemental funding budge
     + Attributes
         + `filter` (required, Filter, fixed-type)
         + `pagination` (optional, Pagination, fixed-type)
-        
     + Body
-    
-        
+
+
             {
                 "filter": {
-                    "def_codes": [
-                        "L",
-                        "M",
-                        "N",
-                        "O",
-                        "P"
-                    ],
-                    "award_type_codes": [
-                        "07",
-                        "08"
-                    ]
+                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "award_type_codes": ["07", "08"]
                 },
                 "pagination": {
                     "limit": 10,
@@ -52,10 +42,9 @@ Returns loan spending details of recipients receiving supplemental funding budge
         + `totals` (required, Totals, fixed-type)
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
-
     + Body
 
-            
+
             {
                 "totals": {
                     "award_count": 4574,
