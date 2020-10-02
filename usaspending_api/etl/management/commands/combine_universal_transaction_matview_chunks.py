@@ -12,7 +12,7 @@ logger = logging.getLogger("script")
 RECREATE_TABLE_SQL = """
 DROP TABLE IF EXISTS universal_transaction_matview_temp;
 DROP MATERIALIZED VIEW IF EXISTS universal_transaction_matview_temp;
-CREATE TABLE universal_transaction_matview_temp AS TABLE universal_transaction_matview_0 WITH NO DATA;
+CREATE TABLE universal_transaction_matview_temp AS SELECT * from universal_transaction_matview_0 WITH NO DATA;
 """
 
 INSERT_INTO_TABLE_SQL = """
