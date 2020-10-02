@@ -83,7 +83,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--chunk-count", default=10, help="Number of chunked matviews to read from", type=int)
-        parser.add_argument("--analyze", action="store_true", help="Indicates whether table should be analyzed", type=int)
+        parser.add_argument(
+            "--analyze", action="store_true", help="Indicates whether table should be analyzed", type=int
+        )
 
     def handle(self, *args, **options):
         chunk_count = options["chunk_count"]
@@ -136,13 +138,7 @@ class Command(BaseCommand):
         i = 0
         for sql in sqlparse.split(TABLE_INDEX_SQL):
             tasks.append(
-                asyncio.ensure_future(
-                    async_run_creates(
-                        sql,
-                        wrapper=Timer("Creating Index {}".format(i)),
-                    ),
-                    loop=loop,
-                )
+                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer("Creating Index {}".format(i)),), loop=loop,)
             )
             i += 1
 
