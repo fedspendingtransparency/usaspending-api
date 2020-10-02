@@ -27,6 +27,21 @@ This endpoint returns the count of new awards grouped by time period in ascendin
             + Default
                 + `quarter`
         + `filters` (required, TimeFilterObject)
+    + Body
+            
+            
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "recipient_id": "1c3edaaa-611b-840c-bf2b-fd34df49f21f-P",
+                    "time_period": [
+                        {
+                            "start_date": "2007-10-01",
+                            "end_date": "2020-09-30"
+                        }
+                    ]
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
