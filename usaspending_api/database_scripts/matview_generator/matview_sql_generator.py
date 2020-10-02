@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import subprocess
+import copy
 
 from uuid import uuid4
 
@@ -371,6 +372,18 @@ def create_monolith_file(sql_json):
     write_sql_file(sql_strings, os.path.join(DEST_FOLDER, sql_json["final_name"]))
 
 
+def add_chunk_strings(sql_json, chunk):
+    chunked_sql_json = copy.deepcopy(sql_json)
+
+    chunk_count = GLOBAL_ARGS.chunks
+
+    if chunk_count > 1:
+        chunked_sql_json["final_name"] += "_{}".format(chunk)
+        chunked_sql_json["matview_sql"].append("  AND transaction_normalized.id % {} = {}".format(chunk_count, chunk))
+
+    return chunked_sql_json
+
+
 def main(source_file):
     global COMMIT_HASH
     global RANDOM_CHARS
@@ -383,8 +396,13 @@ def main(source_file):
         print("Error on Matview source JSON file: {}".format(source_file))
         print(e)
         raise SystemExit(1)
-    create_monolith_file(sql_json)
-    create_componentized_files(sql_json)
+
+    for chunk in range(0, GLOBAL_ARGS.chunks):
+        chunked_sql_json = add_chunk_strings(sql_json, chunk)
+
+        create_monolith_file(chunked_sql_json)
+        create_componentized_files(chunked_sql_json)
+
     print_debug("Done")
 
 
@@ -414,6 +432,7 @@ if __name__ == "__main__":
         default=1,
         help="When value >=2, distribute the index SQL across that file count",
     )
+    arg_parser.add_argument("-c", "--chunks", type=int, default=1, help="When value >=2, split matview into multiple SQL files")
     arg_parser.add_argument(
         "-n", "--no-data", action="store_true", help="Delay populating matview with data until indexes are created"
     )
