@@ -69,3 +69,25 @@ def swap_aliases(client, config):
             logger.info(format_log(f"Deleted index(es) '{old_indexes}'", process="ES Alias"))
     except Exception:
         logger.exception(format_log(f"Unable to delete indexes: {old_indexes}", process="ES Alias"))
+
+
+def toggle_refresh_off(client, index):
+    client.indices.put_settings({"refresh_interval": "-1"}, index)
+    message = (
+        f'Set "refresh_interval": "-1" to turn auto refresh off during incremental load. Manual refreshes will '
+        f"occur for each batch completion."
+    )
+    logger.info(format_log(message, process="ES Settings"))
+
+
+def toggle_refresh_on(client, index):
+    response = client.indices.get(index)
+    aliased_index_name = list(response.keys())[0]
+    current_refresh_interval = response[aliased_index_name]["settings"]["index"]["refresh_interval"]
+    es_settingsfile = str(settings.APP_DIR / "etl" / "es_config_objects.json")
+    with open(es_settingsfile) as f:
+        settings_dict = json.load(f)
+    final_refresh_interval = settings_dict["final_index_settings"]["refresh_interval"]
+    client.indices.put_settings({"refresh_interval": final_refresh_interval}, index)
+    message = f'Changed "refresh_interval" from {current_refresh_interval} to {final_refresh_interval}'
+    logger.info(format_log(message, process="ES Settings"))
