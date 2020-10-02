@@ -42,6 +42,15 @@ Lists federal account financial data for the requested award
             + Members
                 + `asc`
                 + `desc`
+        + Body
+
+            {
+                "award_id":"CONT_AWD_N0001902C3002_9700_-NONE-_-NONE-",
+                "page":1,
+                "sort":"reporting_fiscal_date",
+                "order":"asc",
+                "limit":15
+            }
 
 + Response 200 (application/json)
     + Attributes

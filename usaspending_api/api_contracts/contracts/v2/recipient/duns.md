@@ -51,6 +51,15 @@ This endpoint returns a list of recipients, their level, DUNS, and amount.
                 + `other_financial_assistance`
 
     + Body
+            
+            
+            {
+                "order": "desc",
+                "sort": "amount",
+                "page": 1,
+                "limit": 50,
+                "award_type": "all"
+            }
 
 
 + Response 200 (application/json)
@@ -60,6 +69,48 @@ This endpoint returns a list of recipients, their level, DUNS, and amount.
 
     + Body
 
+
+            {
+                "page_metadata": {
+                    "page": 1,
+                    "total": 6426446,
+                    "limit": 50,
+                    "next": 2,
+                    "previous": null,
+                    "hasNext": true,
+                    "hasPrevious": false
+                },
+                "results": [
+                    {
+                        "id": "1c3edaaa-611b-840c-bf2b-fd34df49f21f-P",
+                        "duns": "071549000",
+                        "name": "CALIFORNIA, STATE OF",
+                        "recipient_level": "P",
+                        "amount": 125645635660.93
+                    },
+                    {
+                        "id": "9f972e57-c05f-b374-bf11-0408f30da215-R",
+                        "duns": null,
+                        "name": "OPTUM BANK",
+                        "recipient_level": "R",
+                        "amount": 99578072991.9
+                    },
+                    {
+                        "id": "b0e81504-fe4b-96fb-ae3c-27b1a7fb4cda-P",
+                        "duns": "041002973",
+                        "name": "NEW YORK, STATE OF",
+                        "recipient_level": "P",
+                        "amount": 81273339054.44
+                    },
+                    {
+                        "id": "bf782d74-80d4-581e-ae9f-3b5b57092d7d-C",
+                        "duns": "796528263",
+                        "name": "HEALTH CARE SERVICES, CALIFORNIA DEPARTMENT OF",
+                        "recipient_level": "C",
+                        "amount": 66803275488.0
+                    }
+                ]
+            }
 
 
 
