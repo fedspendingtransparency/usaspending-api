@@ -26,6 +26,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.transform_data import (
     transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
+    chunks,
     execute_sql_statement,
     format_log,
     gen_random_name,
@@ -36,6 +37,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.controller import Controll
 
 __all__ = [
     "check_awards_for_deletes",
+    "chunks",
     "Controller",
     "count_of_records_to_process",
     "create_aliases",
