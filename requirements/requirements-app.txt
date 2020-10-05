@@ -19,7 +19,7 @@ django-queryset-csv==1.0.1
 django-simple-history==2.7.3
 django-spaghetti-and-meatballs==0.2.2
 Django==2.2.*
-djangorestframework==3.9.4
+djangorestframework==3.11.0
 docutils==0.15.2
 drf-extensions==0.3.1
 drf-tracking==1.4.0

@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from multiprocessing import Process, Queue
 from pathlib import Path
@@ -5,13 +7,13 @@ from time import sleep
 from typing import Tuple
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
-from usaspending_api.etl.es_etl_helpers import (
+from usaspending_api.etl.elasticsearch_loader_helpers.es_etl_helpers import (
     DataJob,
     deleted_transactions,
     deleted_awards,
     download_db_records,
     es_data_loader,
-    printf,
+    format_log,
     process_guarddog,
     set_final_index_config,
     swap_aliases,
@@ -19,6 +21,8 @@ from usaspending_api.etl.es_etl_helpers import (
     get_updated_record_count,
     toggle_refresh_on,
 )
+
+logger = logging.getLogger("script")
 
 
 class Rapidloader:
@@ -32,14 +36,14 @@ class Rapidloader:
         es_ingest_queue = Queue(20)  # Queue for jobs which have a csv and are ready for ES ingest
 
         updated_record_count = get_updated_record_count(self.config)
-        printf({"msg": f"Found {updated_record_count:,} {self.config['load_type']} records to index"})
+        logger.info(format_log(f"Found {updated_record_count:,} {self.config['load_type']} records to index"))
 
         if updated_record_count == 0:
             jobs = 0
         else:
             download_queue, jobs = self.create_download_jobs()
 
-        printf({"msg": f"There are {jobs} jobs to process"})
+        logger.info(format_log(f"There are {jobs} jobs to process"))
 
         process_list = [
             Process(
@@ -67,7 +71,7 @@ class Rapidloader:
             )
             process_list[-1].start()  # start S3 csv fetch proces
             while process_list[-1].is_alive():
-                printf({"msg": "Waiting to start ES ingest until S3 deletes are complete"})
+                logger.info(format_log("Waiting to start ES ingest until S3 deletes are complete"))
                 sleep(7)  # add a brief pause to make sure the deletes are processed in ES
 
         if updated_record_count != 0:
@@ -78,7 +82,7 @@ class Rapidloader:
             if process_guarddog(process_list):
                 raise SystemExit("Fatal error: review logs to determine why process died.")
             elif all([not x.is_alive() for x in process_list]):
-                printf({"msg": "All ETL processes completed execution with no error codes"})
+                logger.info(format_log("All ETL processes completed execution with no error codes"))
                 break
 
     def create_download_jobs(self) -> Tuple[Queue, int]:
@@ -98,16 +102,18 @@ class Rapidloader:
         if self.config["create_new_index"]:
             set_final_index_config(self.elasticsearch_client, self.config["index_name"])
             if self.config["skip_delete_index"]:
-                printf({"msg": "Skipping deletion of old indices"})
+                logger.info(format_log("Skipping deletion of old indices"))
             else:
-                printf({"msg": "Closing old indices and adding aliases"})
+                logger.info(format_log("Closing old indices and adding aliases"))
                 swap_aliases(self.elasticsearch_client, self.config["index_name"], self.config["load_type"])
 
         if self.config["snapshot"]:
-            printf({"msg": "Taking snapshot"})
+            logger.info(format_log("Taking snapshot"))
             take_snapshot(self.elasticsearch_client, self.config["index_name"], settings.ES_REPOSITORY)
 
         if self.config["is_incremental_load"]:
             toggle_refresh_on(self.elasticsearch_client, self.config["index_name"])
-            printf({"msg": f"Storing datetime {self.config['processing_start_datetime']} for next incremental load"})
+            logger.info(
+                format_log(f"Storing datetime {self.config['processing_start_datetime']} for next incremental load")
+            )
             update_last_load_date(f"es_{self.config['load_type']}", self.config["processing_start_datetime"])

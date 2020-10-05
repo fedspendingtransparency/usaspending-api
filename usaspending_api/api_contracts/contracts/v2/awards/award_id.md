@@ -275,7 +275,6 @@ This endpoint returns a list of data that is associated with the award profile p
                         "amount": 1.0
                     }
                 ]
-                "disaster_emergency_fund_codes": ["L", "M"]
             }
 
 + Request A request with a financial assistance id (application/json)
@@ -450,7 +449,6 @@ This endpoint returns a list of data that is associated with the award profile p
                         "amount": 1.0
                     }
                 ]
-                "disaster_emergency_fund_codes": ["L", "M"]
             }
 
 + Request A request with an IDV id (application/json)
@@ -707,7 +705,6 @@ This endpoint returns a list of data that is associated with the award profile p
                         "amount": 1.0
                     }
                 ]
-                "disaster_emergency_fund_codes": ["L", "M"]
             }
 
 # Data Structures
@@ -751,7 +748,6 @@ This endpoint returns a list of data that is associated with the award profile p
 + `total_account_obligation` (required, number)
 + `account_obligations_by_defc` (required, array[DEFCAmount], fixed-type)
 + `account_outlays_by_defc` (required, array[DEFCAmount], fixed-type)
-+ `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## IDVResponse (object)
 + `id` (required, number)
@@ -796,7 +792,6 @@ This endpoint returns a list of data that is associated with the award profile p
 + `total_account_obligation` (required, number)
 + `account_obligations_by_defc` (required, array[DEFCAmount], fixed-type)
 + `account_outlays_by_defc` (required, array[DEFCAmount], fixed-type)
-+ `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## FinancialAssistanceResponse (object)
 + `id` (required, number)
@@ -850,7 +845,6 @@ This endpoint returns a list of data that is associated with the award profile p
 + `total_account_obligation` (required, number)
 + `account_obligations_by_defc` (required, array[DEFCAmount], fixed-type)
 + `account_outlays_by_defc` (required, array[DEFCAmount], fixed-type)
-+ `disaster_emergency_fund_codes` (required, array[string], fixed-type)
 
 ## CFDAInfo (object)
 + `applicant_eligibility` (required, string, nullable)

@@ -201,6 +201,8 @@ def validate_account_request(request_data):
     json_request["download_types"] = request_data["filters"]["submission_types"]
     json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
 
+    json_request["filters"]["def_codes"] = _validate_def_codes(filters)
+
     # Validate the rest of the filters
     check_types_and_assign_defaults(filters, json_request["filters"], ACCOUNT_FILTER_DEFAULTS)
 
@@ -209,14 +211,13 @@ def validate_account_request(request_data):
 
 def validate_disaster_recipient_request(request_data):
     _validate_required_parameters(request_data, ["filters"])
-    all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
     model = [
         {
             "key": "filters|def_codes",
             "name": "def_codes",
             "type": "array",
             "array_type": "enum",
-            "enum_values": all_def_codes,
+            "enum_values": sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True)),
             "allow_nulls": False,
             "optional": False,
         },
@@ -456,6 +457,23 @@ def _validate_fiscal_period(filters: dict) -> Optional[int]:
         )
 
     return period
+
+
+def _validate_def_codes(filters: dict) -> Optional[list]:
+
+    # case when the whole def_codes object is missing from filters
+    if "def_codes" not in filters or filters["def_codes"] is None:
+        return None
+
+    all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
+    provided_codes = set([str(code).upper() for code in filters["def_codes"]])  # accept lowercase def_code
+
+    if not provided_codes.issubset(all_def_codes):
+        raise InvalidParameterException(
+            f"provide codes {filters['def_codes']} contain non-valid DEF Codes. List of valid DEFC {','.join(all_def_codes)}"
+        )
+
+    return list(provided_codes)
 
 
 def _validate_and_bolster_requested_submission_window(

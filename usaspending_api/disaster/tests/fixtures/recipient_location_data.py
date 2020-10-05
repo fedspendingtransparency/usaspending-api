@@ -45,6 +45,7 @@ def awards_and_transactions():
         quarter_format_flag=False,
         is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
+        submission_window_id="2022081",
     )
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -53,6 +54,7 @@ def awards_and_transactions():
         quarter_format_flag=False,
         is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
+        submission_window_id="2022081",
     )
     sub3 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -61,6 +63,7 @@ def awards_and_transactions():
         quarter_format_flag=False,
         is_final_balances_for_fy=True,
         reporting_period_start="2022-05-01",
+        submission_window_id="2022081",
     )
 
     # Financial Accounts by Awards
