@@ -16,7 +16,7 @@ from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, _BaseP
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_awards,
-)
+    get_number_of_unique_nested_terms_accounts)
 
 
 class ElasticsearchAccountSpendingPaginationMixin(_BasePaginationMixin):
@@ -39,9 +39,8 @@ class ElasticsearchAccountSpendingPaginationMixin(_BasePaginationMixin):
 
 class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
     sum_column_mapping = {
-        "obligation": "total_covid_obligation",
-        "outlay": "total_covid_outlay",
-        "face_value_of_loan": "total_loan_value",
+        "obligation": "sum_covid_obligation",
+        "outlay": "sum_covid_outlay"
     }
     sort_column_mapping = {
         "award_count": "_count",
@@ -61,9 +60,9 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
     query_fields: List[str]
     agg_key: str
     agg_group_name: str = "group_by_agg_key"  # name used for the tier-1 aggregation group
-    sub_agg_key: str = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
-    sub_agg_group_name: str = "sub_group_by_sub_agg_key"  # name used for the tier-2 aggregation group
+    child_agg_key: str = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
     top_hits_fields: List[str]  # list used for the top_hits aggregation
+    child_fields: List[str]  # list used for the top_hits aggregation
     filter_query: ES_Q
     bucket_count: int
 
@@ -117,19 +116,19 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         pass
 
-    def build_elasticsearch_search_with_aggregations(self) -> Optional[AccountSearch]:
-        """
-        Using the provided ES_Q object creates an AccountSearch object with the necessary applied aggregations.
-        """
-        # Create the initial search using filters
+    def perform_search(self, agg_key, search_fields):
+        bucket_count = get_number_of_unique_nested_terms_accounts(self.filter_query, f"{agg_key}")
+        size = bucket_count
+        shard_size = bucket_count + 100
+
         search = AccountSearch().filter(self.filter_query)
         aggs = A("nested", path="financial_accounts_by_award")
-        group_by_dim_agg = A("terms", field=self.agg_key, size=2000, shard_size=2000)
+        group_by_dim_agg = A("terms", field=agg_key, size=size, shard_size=shard_size)
         dim_metadata = A(
             "top_hits",
             size=1,
             sort=[{"financial_accounts_by_award.update_date": {"order": "desc"}}],
-            _source={"includes": self.top_hits_fields},
+            _source={"includes": search_fields},
         )
         group_by_dim_agg.metric("dim_metadata", dim_metadata)
 
@@ -146,55 +145,30 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         group_by_dim_agg.metric("sum_covid_outlay", sum_covid_outlay)
         sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         group_by_dim_agg.metric("sum_covid_obligation", sum_covid_obligation)
-        value_count = A("cardinality", field="award_id")
+        value_count = A("cardinality", field="financial_account_distinct_award_key")
         count_awards_by_dim = A("reverse_nested", **{})
         count_awards_by_dim.metric("award_count", value_count)
         group_by_dim_agg.metric("count_awards_by_dim", count_awards_by_dim)
         aggs.metric("group_by_dim_agg", group_by_dim_agg)
         search.aggs.bucket("financial_accounts_agg", aggs)
         search.update_from_dict({"size": 0})
-
         return search
 
-    def extend_elasticsearch_search_with_sub_aggregation(self, search: AccountSearch):
+    def build_elasticsearch_search_with_aggregations(self) -> Optional[AccountSearch]:
+        """
+        Using the provided ES_Q object creates an AccountSearch object with the necessary applied aggregations.
+        """
+        # Create the initial search using filters
+        return self.perform_search(self.agg_key, self.top_hits_fields)
+
+    def extend_elasticsearch_search_with_sub_aggregation(self) -> Optional[AccountSearch]:
         """
         This template method is called if the `self.sub_agg_key` is supplied, in order to post-process the query and
         inject a sub-aggregation on a secondary dimension (that is subordinate to the first agg_key's dimension).
 
         Example: Subtier Agency spending rolled up to Toptier Agency spending
         """
-        sub_bucket_count = get_number_of_unique_terms_for_awards(self.filter_query, f"{self.sub_agg_key}.hash")
-        size = sub_bucket_count
-        shard_size = sub_bucket_count + 100
-        sub_group_by_sub_agg_key_values = {}
-
-        if shard_size > 10000:
-            raise ForbiddenException(
-                "Current filters return too many unique items. Narrow filters to return results or use downloads."
-            )
-
-        # Sub-aggregation to append to primary agg
-        sub_group_by_sub_agg_key_values.update(
-            {
-                "field": self.sub_agg_key,
-                "size": size,
-                "shard_size": shard_size,
-                "order": [
-                    {self.sort_column_mapping[self.pagination.sort_key]: self.pagination.sort_order},
-                    {self.sort_column_mapping["id"]: self.pagination.sort_order},
-                ],
-            }
-        )
-        sub_group_by_sub_agg_key = A("terms", **sub_group_by_sub_agg_key_values)
-
-        sum_aggregations = {
-            mapping: get_scaled_sum_aggregations(mapping) for mapping in self.sum_column_mapping.values()
-        }
-
-        # Append sub-agg to primary agg, and include the sub-agg's sum metric aggs too
-        search.aggs[self.agg_group_name].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key)
-        for field, sum_aggregations in sum_aggregations.items():
-            search.aggs[self.agg_group_name].aggs[self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
+        return self.perform_search(self.child_agg_key, self.child_fields)
 
     def build_totals(self, response: List[dict]) -> dict:
         obligations = 0
@@ -217,7 +191,13 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         response = response.aggs.to_dict()
         buckets = response.get("financial_accounts_agg", {}).get("group_by_dim_agg", {}).get("buckets", [])
         totals = self.build_totals(buckets)
+        if self.child_agg_key is not None:
+            search2 = self.extend_elasticsearch_search_with_sub_aggregation()
+            child_response = search2.handle_execute()
+            child_response = child_response.aggs.to_dict()
+            buckets2 = child_response.get("financial_accounts_agg", {}).get("group_by_dim_agg", {}).get("buckets", [])
+            results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit: self.pagination.upper_limit], buckets2)
+        else:
+            results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
 
-        results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
-
-        return {"totals": totals, "results": results}
+        return { "results": results, "totals": totals}
