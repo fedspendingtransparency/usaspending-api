@@ -72,6 +72,10 @@ REMOVE_OLD_TABLE_SQL = """
 DROP TABLE IF EXISTS universal_transaction_matview_old;
 """
 
+REMOVE_MATVIEW_DATA_SQL = """
+REFRESH MATERIALIZED VIEW universal_transaction_matview_{current_chunk} WITH NO DATA;
+"""
+
 ANALYZE_TABLE_SQL = """
 ANALYZE VERBOSE universal_transaction_matview;
 """
@@ -97,7 +101,7 @@ class Command(BaseCommand):
             "--old-object-type", default="TABLE", help="Indicates whether the old version of the table is a Matview"
         )
         parser.add_argument(
-            "--keep-data", action="store_true", default=False, help="Indicates whether or not to drop old table at end of command"
+            "--keep-old-data", action="store_true", default=False, help="Indicates whether or not to drop old table and matviews at end of command"
         )
 
     def handle(self, *args, **options):
@@ -119,8 +123,8 @@ class Command(BaseCommand):
         with Timer("Swapping Tables/Indexes"):
             self.swap_matviews(old_object_type)
         
-        if not options["keep_data"]:
-            self.remove_old_table()
+        if not options["keep_old_data"]:
+            self.remove_old_data(chunk_count)
 
         if options["analyze"]:
             with Timer("Analyzing Table"):
@@ -136,6 +140,7 @@ class Command(BaseCommand):
     def insert_matview_data(self, chunk_count):
         loop = asyncio.new_event_loop()
         tasks = []
+
         for current_chunk in range(0, chunk_count):
             tasks.append(
                 asyncio.ensure_future(
@@ -167,9 +172,12 @@ class Command(BaseCommand):
         with connection.cursor() as cursor:
             cursor.execute(SWAP_TABLES_SQL.format(old_object_type=old_object_type))
 
-    def remove_old_table(self):
+    def remove_old_data(self, chunk_count):
         with connection.cursor() as cursor:
             cursor.execute(REMOVE_OLD_TABLE_SQL)
+
+            for current_chunk in range(0, chunk_count):
+                cursor.execute(REMOVE_MATVIEW_DATA_SQL.format(current_chunk=current_chunk))
 
     def analyze_matview(self):
         with connection.cursor() as cursor:
