@@ -8,6 +8,7 @@ from pathlib import Path
 from random import choice
 from typing import Optional, List
 
+
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 logger = logging.getLogger("script")
@@ -81,19 +82,36 @@ def format_log(msg, process=None, job=None):
 
 def gen_random_name():
     """Generates (over) 5000 unique names in random order. Adds integer to names if necessary"""
-    data_file = json.loads(Path(settings.APP_DIR / "data" / "multiprocessing_worker_names.json").read_text())
-    iterations = 1
-    max_combinations = len(data_file["attributes"]) * len(data_file["subjects"])
-    name_template = "{attribute} {subject}"
-    previous_names = []
+    name_dict = json.loads(Path(settings.APP_DIR / "data" / "multiprocessing_worker_names.json").read_text())
+    upper_limit = len(name_dict["attributes"]) * len(name_dict["subjects"])
+    name_str = "{attribute} {subject}{loop}"
+    previous_names, full_cycles, loop = [], 0, ""
+
+    def to_roman_numerals(num: int) -> str:
+        return (
+            ("I" * num)
+            .replace("IIIII", "V")
+            .replace("IIII", "IV")
+            .replace("VV", "X")
+            .replace("VIV", "IX")
+            .replace("XXXXX", "L")
+            .replace("XXXX", "XL")
+            .replace("LL", "C")
+            .replace("LXL", "XC")
+            .replace("CCCCC", "D")
+            .replace("CCCC", "CD")
+            .replace("DD", "M")
+            .replace("DCD", "CM")
+        )
 
     while True:
-        name = name_template.format(attribute=choice(data_file["attributes"]), subject=choice(data_file["subjects"]))
+        random_a, random_s = choice(name_dict["attributes"]), choice(name_dict["subjects"])
+        name = name_str.format(attribute=random_a, subject=random_s, loop=loop)
+
         if name not in previous_names:
             previous_names.append(name)
             yield name
 
-        if len(previous_names) >= max_combinations:
-            iterations += 1
-            max_combinations *= iterations
-            name_template = "{attribute} {subject} {iterations}"
+        if len(previous_names) >= (upper_limit + (upper_limit * full_cycles)):
+            full_cycles += 1
+            loop = f" {to_roman_numerals(full_cycles)}"

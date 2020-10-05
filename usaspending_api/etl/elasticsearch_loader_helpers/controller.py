@@ -99,11 +99,12 @@ class Controller:
             update_date=self.config["starting_date"],
             view=self.config["sql_view"],
         )
+        name_gen = gen_random_name()
 
         return WorkerNode(
             index=self.config["index_name"],
             primary_key=self.config["primary_key"],
-            name=next(gen_random_name()),
+            name=next(name_gen),
             sql=sql_str,
             is_incremental=self.config["is_incremental_load"],
             transform_func=self.config["data_transform_func"],
