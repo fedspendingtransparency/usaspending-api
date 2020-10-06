@@ -20,8 +20,11 @@ from usaspending_api.disaster.v2.views.disaster_base import (
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_nested_terms_accounts
-from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase, \
-    ElasticsearchAccountSpendingPaginationMixin
+from usaspending_api.disaster.v2.views.elasticsearch_account_base import (
+    ElasticsearchAccountDisasterBase,
+    ElasticsearchAccountSpendingPaginationMixin,
+)
+
 
 def construct_response(results: list, pagination: Pagination):
     FederalAccounts = FedAcctResults()
@@ -48,17 +51,15 @@ class SpendingViewSet(
     """ Returns disaster spending by federal account. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
-    agg_key = "financial_accounts_by_award.federal_account_id"  # primary (tier-1) aggregation key
+    agg_key = "financial_accounts_by_award.treasury_account_id"
     top_hits_fields = [
-        "financial_accounts_by_award.federal_account_title",
-        "financial_accounts_by_award.federal_account_symbol",
-    ]
-    child_agg_key = "financial_accounts_by_award.treasury_account_id"  # secondary (tier-2) aggregation key
-    child_fields = [
         "financial_accounts_by_award.treasury_account_title",
         "financial_accounts_by_award.treasury_account_symbol",
         "financial_accounts_by_award.federal_account_symbol",
+        "financial_accounts_by_award.federal_account_title",
+        "financial_accounts_by_award.federal_account_id",
     ]
+
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
@@ -97,6 +98,12 @@ class SpendingViewSet(
             )
             if messages:
                 response["messages"] = messages
+
+            response["results"] = sorted(
+                response["results"],
+                key=lambda x: x[self.pagination.sort_key],
+                reverse=self.pagination.order_by != "desc",
+            )
             return Response(response)
         else:
             results = list(self.total_queryset)
@@ -107,27 +114,47 @@ class SpendingViewSet(
 
         return Response(response)
 
-    def build_elasticsearch_result(self, info_buckets: List[dict], child_buckets = None) -> List[dict]:
-        results = []
+    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
+        temp_results = {}
+        child_results = []
         for bucket in info_buckets:
-            result = self._build_json_result(bucket)
-            for child in child_buckets:
-                if child["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_symbol"] == result["code"]:
-                    result["children"].append(self._build_child_json_result(child))
-            results.append(result)
+            child = self._build_child_json_result(bucket)
+            child_results.append(child)
+        for child in child_results:
+            result = self._build_json_result(child)
+            child.pop("parent_data")
+            if result["id"] in temp_results.keys():
+                temp_results[result["id"]] = {
+                    "id": int(result["id"]),
+                    "code": result["code"],
+                    "description": result["description"],
+                    "award_count": temp_results[result["id"]]["award_count"] + result["award_count"],
+                    # the count of distinct awards contributing to the totals
+                    "obligation": temp_results[result["id"]]["obligation"] + result["obligation"],
+                    "outlay": temp_results[result["id"]]["outlay"] + result["outlay"],
+                    "total_budgetary_resources": None,
+                    "children": sorted(
+                        (temp_results[result["id"]]["children"] + result["children"]),
+                        key=lambda x: x[self.pagination.sort_key],
+                        reverse=self.pagination.order_by != "desc",
+                    ),
+                }
+            else:
+                temp_results[result["id"]] = result
+        results = [x for x in temp_results.values()]
         return results
 
-    def _build_json_result(self, bucket: dict):
+    def _build_json_result(self, child):
         return {
-            "id": int(bucket["key"]),
-            "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_symbol"],
-            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_title"],
-            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
+            "id": child["parent_data"][2],
+            "code": child["parent_data"][1],
+            "description": child["parent_data"][0],
+            "award_count": child["award_count"],
             # the count of distinct awards contributing to the totals
-            "obligation": int(bucket["sum_covid_obligation"]["value"]),
-            "outlay": int(bucket["sum_covid_outlay"]["value"]),
+            "obligation": child["obligation"],
+            "outlay": child["outlay"],
             "total_budgetary_resources": None,
-            "children": [],
+            "children": [child],
         }
 
     def _build_child_json_result(self, bucket: dict):
@@ -140,6 +167,11 @@ class SpendingViewSet(
             "obligation": int(bucket["sum_covid_obligation"]["value"]),
             "outlay": int(bucket["sum_covid_outlay"]["value"]),
             "total_budgetary_resources": None,
+            "parent_data": [
+                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_title"],
+                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_symbol"],
+                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_id"],
+            ],
         }
 
     @property
@@ -204,49 +236,6 @@ class SpendingViewSet(
         #  run a count query and fetch only a page's worth of results
         return (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
-            .values(
-                "treasury_account__federal_account__id",
-                "treasury_account__federal_account__federal_account_code",
-                "treasury_account__federal_account__account_title",
-            )
-            .annotate(**annotations)
-            .values(*annotations.keys())
-        )
-
-    @property
-    def award_queryset(self):
-        filters = [
-            self.is_in_provided_def_codes,
-            Q(treasury_account__isnull=False),
-            Q(treasury_account__federal_account__isnull=False),
-            self.all_closed_defc_submissions,
-        ]
-
-        annotations = {
-            "fa_code": F("treasury_account__federal_account__federal_account_code"),
-            "award_count": self.unique_file_d_award_count(),
-            "description": F("treasury_account__account_title"),
-            "code": F("treasury_account__tas_rendering_label"),
-            "id": F("treasury_account__treasury_account_identifier"),
-            "fa_description": F("treasury_account__federal_account__account_title"),
-            "fa_id": F("treasury_account__federal_account_id"),
-            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
-            "outlay": Coalesce(
-                Sum(
-                    Case(
-                        When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
-                        default=Value(0),
-                    )
-                ),
-                0,
-            ),
-            "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
-        }
-
-        # Assuming it is more performant to fetch all rows once rather than
-        #  run a count query and fetch only a page's worth of results
-        return (
-            FinancialAccountsByAwards.objects.filter(*filters)
             .values(
                 "treasury_account__federal_account__id",
                 "treasury_account__federal_account__federal_account_code",

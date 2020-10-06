@@ -16,7 +16,8 @@ from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, _BaseP
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_awards,
-    get_number_of_unique_nested_terms_accounts)
+    get_number_of_unique_nested_terms_accounts,
+)
 
 
 class ElasticsearchAccountSpendingPaginationMixin(_BasePaginationMixin):
@@ -38,10 +39,7 @@ class ElasticsearchAccountSpendingPaginationMixin(_BasePaginationMixin):
 
 
 class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
-    sum_column_mapping = {
-        "obligation": "sum_covid_obligation",
-        "outlay": "sum_covid_outlay"
-    }
+    sum_column_mapping = {"obligation": "sum_covid_obligation", "outlay": "sum_covid_outlay"}
     sort_column_mapping = {
         "award_count": "_count",
         "description": "_key",  # _key will ultimately sort on description value
@@ -131,12 +129,12 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             _source={"includes": search_fields},
         )
         group_by_dim_agg.metric("dim_metadata", dim_metadata)
-
-        pagination_agg = A(
-            "bucket_sort",
-            sort={self.sort_column_mapping[self.pagination.sort_key]: {"order": self.pagination.sort_order}},
-        )
-        group_by_dim_agg.metric("pagination_agg", pagination_agg)
+        #
+        # pagination_agg = A(
+        #     "bucket_sort",
+        #     sort={self.sort_column_mapping[self.pagination.sort_key]: {"order": self.pagination.sort_order}},
+        # )
+        # group_by_dim_agg.metric("pagination_agg", pagination_agg)
         sum_covid_outlay = A(
             "sum",
             field="financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
@@ -191,13 +189,6 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         response = response.aggs.to_dict()
         buckets = response.get("financial_accounts_agg", {}).get("group_by_dim_agg", {}).get("buckets", [])
         totals = self.build_totals(buckets)
-        if self.child_agg_key is not None:
-            search2 = self.extend_elasticsearch_search_with_sub_aggregation()
-            child_response = search2.handle_execute()
-            child_response = child_response.aggs.to_dict()
-            buckets2 = child_response.get("financial_accounts_agg", {}).get("group_by_dim_agg", {}).get("buckets", [])
-            results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit: self.pagination.upper_limit], buckets2)
-        else:
-            results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
+        results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
 
-        return { "results": results, "totals": totals}
+        return {"results": results, "totals": totals}
