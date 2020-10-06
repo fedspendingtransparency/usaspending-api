@@ -135,7 +135,7 @@ class Command(BaseCommand):
             try:
                 cursor.execute(RECREATE_TABLE_SQL.format(old_object_type="TABLE"))
             except Exception as e:
-                if str(e).contains("is not a table"):
+                if "is not a table" in str(e):
                     logger.info(
                         "universal_transaction_matview_temp existed, but not as table. Trying to drop as Matview"
                     )
@@ -178,7 +178,7 @@ class Command(BaseCommand):
             try:
                 cursor.execute(SWAP_TABLES_SQL.format(old_object_type="TABLE"))
             except Exception as e:
-                if str(e).contains("is not a table"):
+                if "is not a table" in str(e):
                     logger.info(
                         "universal_transaction_matview_temp existed, but not as table. Trying to drop as Matview"
                     )
