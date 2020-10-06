@@ -182,7 +182,7 @@ class Command(BaseCommand):
                     logger.info(
                         "universal_transaction_matview_temp existed, but not as table. Trying to drop as Matview"
                     )
-                    cursor.execute(RECREATE_TABLE_SQL.format(old_object_type="MATERIALIZED VIEW"))
+                    cursor.execute(SWAP_TABLES_SQL.format(old_object_type="MATERIALIZED VIEW"))
 
     def remove_old_data(self, chunk_count):
         with connection.cursor() as cursor:
