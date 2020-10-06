@@ -99,7 +99,7 @@ class Command(BaseCommand):
             loader.launch_workers()
         except Exception as e:
             logger.error(f"{str(e)}")
-            error_addition = "before encounting a problem during execution.... "
+            error_addition = "before encountering a problem during execution.... "
             raise SystemExit(1)
         else:
             loader.complete_process()
@@ -183,7 +183,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "unique_key_field": "generated_unique_award_id",
             "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
         }
-    else:
+    elif arg_parse_options["load_type"] == "transactions":
         config = {
             "data_transform_func": transform_transaction_data,
             "data_type": "transaction",
@@ -196,6 +196,8 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "unique_key_field": "generated_unique_transaction_id",
             "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
         }
+    else:
+        raise RuntimeError(f"Configuration is not configured for --load-type={arg_parse_options['load_type']}")
 
     config.update({k: v for k, v in arg_parse_options.items() if k in passthrough_values})
     config.update(

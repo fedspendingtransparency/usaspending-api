@@ -34,7 +34,7 @@ def extract_records(worker):
     try:
         records = execute_sql_statement(worker.sql, True)
     except Exception as e:
-        logger.exception(f"Worker {worker.name} failed with '{worker.sql}'")
+        logger.exception(f"Failed on partition {worker.name} with '{worker.sql}'")
         raise e
 
     msg = f"{len(records):,} records extracted in {perf_counter() - start:.2f}s"

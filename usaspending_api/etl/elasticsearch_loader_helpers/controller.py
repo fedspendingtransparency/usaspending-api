@@ -2,7 +2,6 @@ import logging
 
 from django.core.management import call_command
 from multiprocessing import Pool, Event
-from random import choice
 from time import perf_counter
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
@@ -27,14 +26,18 @@ logger = logging.getLogger("script")
 
 
 def init_shared_abort(a):
-    """odd mechanism to set a global abort event in each subprocess"""
+    """
+        Odd mechanism to set a global abort event in each subprocess
+        Inspired by https://stackoverflow.com/a/59984671
+    """
     global abort
     abort = a
 
 
 class Controller:
+    """Controller for multiprocess Elasticsearch ETL"""
+
     def __init__(self, config):
-        """Set values based on env vars and when the script started"""
         self.config = config
 
     def prepare_for_etl(self):
@@ -51,13 +54,13 @@ class Controller:
 
         logger.info(
             format_log(
-                f"Hailing {self.config['partitions']:,} heroes"
-                f" to handle {self.record_count:,} {self.config['data_type']} records"
-                f" in squads of {self.config['processes']:,}"
+                f"Created {self.config['partitions']:,} partitions"
+                f" to process {self.record_count:,} total {self.config['data_type']} records"
+                f" with {self.config['processes']:,} parellel processes"
             )
         )
 
-        self.workers = [self.create_worker(j) for j in range(self.config["partitions"])]
+        self.workers = self.create_workers()
 
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
@@ -71,7 +74,7 @@ class Controller:
             pool.map(extract_transform_load, self.workers)
 
         if _abort.is_set():
-            raise RuntimeError("One or more heroes have fallen! Initiate strategic retreat")
+            raise RuntimeError("One or more partitions failed!")
 
     def complete_process(self) -> None:
         client = instantiate_elasticsearch_client()
@@ -90,7 +93,12 @@ class Controller:
             )
             update_last_load_date(f"{self.config['stored_date_key']}", self.config["processing_start_datetime"])
 
-    def create_worker(self, number: int) -> WorkerNode:
+    def create_workers(self):
+
+        name_gen = gen_random_name()
+        return [self.create_worker(j, name_gen) for j in range(self.config["partitions"])]
+
+    def create_worker(self, number: int, name_gen) -> WorkerNode:
         sql_str = EXTRACT_SQL.format(
             divisor=self.config["partitions"],
             id_col=self.config["primary_key"],
@@ -99,11 +107,10 @@ class Controller:
             view=self.config["sql_view"],
         )
 
-        name_gen = gen_random_name()
-
         return WorkerNode(
             index=self.config["index_name"],
             primary_key=self.config["primary_key"],
+            partition_number=number,
             name=next(name_gen),
             sql=sql_str,
             is_incremental=self.config["is_incremental_load"],
@@ -123,25 +130,26 @@ class Controller:
 
 def extract_transform_load(worker):
     if abort.is_set():
-        logger.info(format_log(f"{worker.name} became lost on the way over."))
+        logger.info(format_log(f"{worker.name} partition was skipped due to previous error"))
         return
 
     start = perf_counter()
-    a = choice(["skillfully", "deftly", "expertly", "readily", "quickly", "nimbly", "casually", "easily", "boldly"])
-    logger.info(format_log(f"{worker.name.upper()} {a} enters the arena", job=worker.name))
+    msg = f"Started processing on partition #{worker.partition_number}: {worker.name}"
+    logger.info(format_log(msg, job=worker.name))
 
     client = instantiate_elasticsearch_client()
     try:
         records = worker.transform_func(worker, extract_records(worker))
+        if abort.is_set():
+            logger.info(format_log(f"Prematurely ending {worker.name} due to previous error"))
+            return
         load_data(worker, records, client)
     except Exception:
         if abort.is_set():
-            logger.info(format_log(f"{worker.name} realizes the battle is lost."))
+            logger.info(format_log(f"{worker.name} failed after an error was previously encountered"))
         else:
-            msg = f"{worker.name} has fallen in battle! How could such a thing happen to this great warrior?"
-            logger.error(format_log(msg, job=worker.name))
+            logger.error(format_log(f"{worker.name} failed!", job=worker.name))
             abort.set()
     else:
-        attrib = choice(["pro", "champ", "boss", "top dog", "hero", "super"])
-        msg = f"{worker.name} completed the mission like a {attrib} in {perf_counter() - start:.2f}s"
+        msg = f"Partition {worker.name} was successfully processed in {perf_counter() - start:.2f}s"
         logger.info(format_log(msg, job=worker.name))

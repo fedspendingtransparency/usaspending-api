@@ -22,6 +22,7 @@ class WorkerNode:
     index: str
     sql: str
     primary_key: str
+    partition_number: int
     is_incremental: bool
     transform_func: callable = None
 
@@ -80,9 +81,11 @@ def format_log(msg, process=None, job=None):
 
 
 def gen_random_name():
-    """Generates (over) 5000 unique names in random order. Adds integer to names if necessary"""
+    """Generates over 5000 unique names in random order and will infinately continue to generate unique names w/ roman numerals appended"""
     name_dict = json.loads(Path(settings.APP_DIR / "data" / "multiprocessing_worker_names.json").read_text())
-    upper_limit = len(name_dict["attributes"]) * len(name_dict["subjects"])
+    attributes = list(set(name_dict["attributes"]))
+    subjects = list(set(name_dict["subjects"]))
+    upper_limit = len(attributes) * len(subjects)
     name_str = "{attribute} {subject}{loop}"
     previous_names, full_cycles, loop = [], 0, ""
 
@@ -104,7 +107,7 @@ def gen_random_name():
         )
 
     while True:
-        random_a, random_s = choice(name_dict["attributes"]), choice(name_dict["subjects"])
+        random_a, random_s = choice(attributes), choice(subjects)
         name = name_str.format(attribute=random_a, subject=random_s, loop=loop)
 
         if name not in previous_names:

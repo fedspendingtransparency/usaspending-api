@@ -53,7 +53,7 @@ def streaming_post_to_es(client, chunk, index_name: str, job_name=None, delete_b
                 failed += 1
 
     except Exception as e:
-        logger.error(f"{job_name} is dazed: \n\n{str(e)[:2000]}\n...\n{str(e)[-2000:]}\n")
+        logger.error(f"Error on partition {job_name}:\n\n{str(e)[:2000]}\n...\n{str(e)[-2000:]}\n")
         raise RuntimeError(f"{job_name}")
 
     logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", job=job_name, process="Index"))
