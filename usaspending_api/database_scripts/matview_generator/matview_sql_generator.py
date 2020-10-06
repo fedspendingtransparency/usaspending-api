@@ -375,7 +375,7 @@ def create_monolith_file(sql_json):
 def add_chunk_strings(sql_json, chunk):
     chunked_sql_json = copy.deepcopy(sql_json)
 
-    chunk_count = GLOBAL_ARGS.chunks
+    chunk_count = GLOBAL_ARGS.chunk_count
 
     if chunk_count > 1:
         chunked_sql_json["final_name"] += "_{}".format(chunk)
@@ -397,7 +397,7 @@ def main(source_file):
         print(e)
         raise SystemExit(1)
 
-    for chunk in range(0, GLOBAL_ARGS.chunks):
+    for chunk in range(0, GLOBAL_ARGS.chunk_count):
         chunked_sql_json = add_chunk_strings(sql_json, chunk)
 
         create_monolith_file(chunked_sql_json)
@@ -433,7 +433,7 @@ if __name__ == "__main__":
         help="When value >=2, distribute the index SQL across that file count",
     )
     arg_parser.add_argument(
-        "-c", "--chunks", type=int, default=1, help="When value >=2, split matview into multiple SQL files"
+        "-c", "--chunk-count", type=int, default=1, help="When value >=2, split matview into multiple SQL files"
     )
     arg_parser.add_argument(
         "-n", "--no-data", action="store_true", help="Delay populating matview with data until indexes are created"

@@ -10,6 +10,7 @@ DEFAULT_MATIVEW_DIR = settings.REPO_DIR.parent / "matviews"
 DEPENDENCY_FILEPATH = settings.APP_DIR / "database_scripts" / "matviews" / "functions_and_enums.sql"
 JSON_DIR = settings.APP_DIR / "database_scripts" / "matview_sql_generator"
 MATVIEW_GENERATOR_FILE = settings.APP_DIR / "database_scripts" / "matview_generator" / "matview_sql_generator.py"
+UNIVERSAL_TRANSACTION_DEF = settings.APP_DIR / "database_scripts" / "matview_generator" / "universal_transaction_matview.json"
 OVERLAY_VIEWS = [
     settings.APP_DIR / "database_scripts" / "matviews" / "vw_award_search.sql",
     settings.APP_DIR / "database_scripts" / "matviews" / "vw_es_award_search.sql",
@@ -111,14 +112,6 @@ MATERIALIZED_VIEWS = OrderedDict(
                 "model": TASAutocompleteMatview,
                 "json_filepath": str(JSON_DIR / "tas_autocomplete_matview.json"),
                 "sql_filename": "tas_autocomplete_matview.sql",
-            },
-        ),
-        (
-            "universal_transaction_matview",
-            {
-                "model": mv.UniversalTransactionView,
-                "json_filepath": str(JSON_DIR / "universal_transaction_matview.json"),
-                "sql_filename": "universal_transaction_matview.sql",
             },
         ),
     ]

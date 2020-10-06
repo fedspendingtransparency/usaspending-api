@@ -14,6 +14,7 @@ from usaspending_api.common.matview_manager import (
     DROP_OLD_MATVIEWS,
     MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
+    UNIVERSAL_TRANSACTION_DEF,
     OVERLAY_VIEWS,
 )
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -33,6 +34,7 @@ class Command(BaseCommand):
         self.no_cleanup = args["leave_sql"]
         self.remove_matviews = not args["leave_old"]
         self.run_dependencies = args["dependencies"]
+        self.chunk_count = args["chunk_count"]
 
     def add_arguments(self, parser):
         parser.add_argument("--only", choices=list(MATERIALIZED_VIEWS.keys()))
@@ -55,6 +57,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--dependencies", action="store_true", help="Run the SQL dependencies before the materialized view SQL."
         )
+        parser.add_argument("--chunk-count", default=10, help="Number of chunks to split the UTM into", type=int)
 
     def handle(self, *args, **options):
         """Overloaded Command Entrypoint"""
@@ -75,7 +78,12 @@ class Command(BaseCommand):
         self.matview_dir.mkdir()
 
         # IF using this for operations, DO NOT LEAVE hardcoded `python3` in the command
-        exec_str = "python3 {} --quiet --dest={}/ --batch_indexes=3".format(MATVIEW_GENERATOR_FILE, self.matview_dir)
+        # Create main list of Matview SQL files
+        exec_str = f"python3 {MATVIEW_GENERATOR_FILE} --quiet --dest={self.matview_dir}/ --batch_indexes=3"
+        subprocess.call(exec_str, shell=True)
+
+        # Create SQL files for Chunked Universal Transaction Matviews
+        exec_str = f"python3 {MATVIEW_GENERATOR_FILE} --quiet  --dest={self.matview_dir} --file {UNIVERSAL_TRANSACTION_DEF} --chunk-count {self.chunk_count}"
         subprocess.call(exec_str, shell=True)
 
     def cleanup(self):
@@ -88,6 +96,12 @@ class Command(BaseCommand):
         for matview, config in self.matviews.items():
             logger.info("Creating Future for {}".format(matview))
             sql = (self.matview_dir / config["sql_filename"]).read_text()
+            tasks.append(asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(matview)), loop=loop))
+
+        for current_chunk in range(0, self.chunk_count):
+            matview = f"universal_transaction_matview_{current_chunk}"
+            logger.info(f"Creating Future for {matview}")
+            sql = (self.matview_dir / f"universal_transaction_matview_{current_chunk}.sql").read_text()
             tasks.append(asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(matview)), loop=loop))
 
         loop.run_until_complete(asyncio.gather(*tasks))

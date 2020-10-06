@@ -122,7 +122,7 @@ class Command(BaseCommand):
 
         with Timer("Swapping Tables/Indexes"):
             self.swap_matviews(old_object_type)
-        
+
         if not options["keep_old_data"]:
             self.remove_old_data(chunk_count)
 

@@ -156,59 +156,9 @@
     "      OR rl_country_lookup.country_name = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code))",
     "WHERE",
     "  transaction_normalized.action_date >= '2000-10-01'"
-  ],
+  ]
+
+  ,
   "indexes": [
-    {
-      "name": "transaction_id",
-      "unique": true,
-      "columns": [{"name": "transaction_id", "order": "ASC NULLS LAST"}]
-    }, {
-      "name": "action_date",
-      "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "last_modified_date",
-      "columns": [{"name": "last_modified_date", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "fiscal_year",
-      "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "type",
-      "where": "type IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "type"}]
-    }, {
-      "name": "award_id",
-      "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "award_id"}]
-    }, {
-      "name": "pop_zip5",
-      "where": "pop_zip5 IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "pop_zip5"}]
-    }, {
-      "name": "recipient_unique_id",
-      "where": "recipient_unique_id IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "recipient_unique_id"}]
-    }, {
-      "name": "parent_recipient_unique_id",
-      "where": "parent_recipient_unique_id IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "parent_recipient_unique_id"}]
-    }, {
-      "name": "simple_pop_geolocation",
-      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "pop_state_code"}, {"name": "action_date"}]
-    }, {
-      "name": "recipient_hash",
-      "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "recipient_hash"}]
-    }, {
-      "name": "action_date_pre2008",
-      "where": "action_date < '2007-10-01'",
-      "columns": [{"name": "action_date"}]
-    }
   ]
 }
-
-
-
-
