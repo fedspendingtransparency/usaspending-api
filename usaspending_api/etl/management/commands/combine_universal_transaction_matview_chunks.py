@@ -94,11 +94,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--chunk-count", default=10, help="Number of chunked matviews to read from", type=int)
+        parser.add_argument("--analyze", action="store_true", help="Indicates whether table should be analyzed")
         parser.add_argument(
-            "--analyze", action="store_true", help="Indicates whether table should be analyzed"
-        )
-        parser.add_argument(
-            "--keep-old-data", action="store_true", default=False, help="Indicates whether or not to drop old table and matviews at end of command"
+            "--keep-old-data",
+            action="store_true",
+            default=False,
+            help="Indicates whether or not to drop old table and matviews at end of command",
         )
 
     def handle(self, *args, **options):
@@ -135,7 +136,9 @@ class Command(BaseCommand):
                 cursor.execute(RECREATE_TABLE_SQL.format(old_object_type="TABLE"))
             except Exception as e:
                 if str(e).contains("is not a table"):
-                    logger.info("universal_transaction_matview_temp existed, but not as table. Trying to drop as Matview")
+                    logger.info(
+                        "universal_transaction_matview_temp existed, but not as table. Trying to drop as Matview"
+                    )
                     cursor.execute(RECREATE_TABLE_SQL.format(old_object_type="MATERIALIZED VIEW"))
 
     def insert_matview_data(self, chunk_count):
@@ -176,7 +179,9 @@ class Command(BaseCommand):
                 cursor.execute(SWAP_TABLES_SQL.format(old_object_type="TABLE"))
             except Exception as e:
                 if str(e).contains("is not a table"):
-                    logger.info("universal_transaction_matview_temp existed, but not as table. Trying to drop as Matview")
+                    logger.info(
+                        "universal_transaction_matview_temp existed, but not as table. Trying to drop as Matview"
+                    )
                     cursor.execute(RECREATE_TABLE_SQL.format(old_object_type="MATERIALIZED VIEW"))
 
     def remove_old_data(self, chunk_count):
