@@ -92,7 +92,7 @@ class Command(BaseCommand):
 
         ensure_view_exists(config["sql_view"])
         error_addition = ""
-        loader = Controller(config, elasticsearch_client)
+        loader = Controller(config)
 
         try:
             loader.prepare_for_etl()
@@ -104,7 +104,7 @@ class Command(BaseCommand):
         else:
             loader.complete_process()
         finally:
-            msg = f"Script completed in {perf_counter() - start:.2f}s {error_addition}|"
+            msg = f"Script duration was {perf_counter() - start:.2f}s {error_addition}|"
             headers = f"{'-' * (len(msg) - 2)} |"
             logger.info(format_log(headers))
             logger.info(format_log(msg))
@@ -180,7 +180,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_AWARDS_NAME_SUFFIX,
             "sql_view": settings.ES_AWARDS_ETL_VIEW_NAME,
             "stored_date_key": "es_awards",
-            "unique_id_field": "generated_unique_award_id",
+            "unique_key_field": "generated_unique_award_id",
             "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
         }
     else:
@@ -193,7 +193,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_TRANSACTIONS_NAME_SUFFIX,
             "sql_view": settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
             "stored_date_key": "es_transactions",
-            "unique_id_field": "generated_unique_transaction_id",
+            "unique_key_field": "generated_unique_transaction_id",
             "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
         }
 

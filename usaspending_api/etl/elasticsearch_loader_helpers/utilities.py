@@ -24,7 +24,6 @@ class WorkerNode:
     primary_key: str
     is_incremental: bool
     transform_func: callable = None
-    # ids: List[int] = field(default_factory=list)
 
 
 def chunks(l, n):

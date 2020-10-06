@@ -61,7 +61,7 @@ def delete_from_es(client, id_list, job_id, config, index=None):
                     index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
                 )
             except Exception:
-                logger.exception("", job=job_id, process="ES Delete")
+                logger.exception(format_log("", job=job_id, process="ES Delete"))
                 raise SystemExit(1)
 
     end_ = client.count(index=index)["count"]
@@ -92,7 +92,8 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
     start = perf_counter()
 
     logger.info(format_log(f"Deleting up to {len(value_list):,} document(s)", process="ES Delete", job=job_id))
-    assert index, "index name must be provided"
+    if not index:
+        raise RuntimeError("index name must be provided")
 
     deleted = 0
     is_error = False
@@ -109,7 +110,7 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
             deleted += chunk_deletes
     except Exception:
         is_error = True
-        logger.exception("", job=job_id, process="ES Delete")
+        logger.exception(format_log("", job=job_id, process="ES Delete"))
         raise SystemExit(1)
     finally:
         error_text = " before encountering an error" if is_error else ""
@@ -147,7 +148,7 @@ def deleted_awards(client, config):
     if we can't find the awards in the database, then we have to delete them from es
     """
     deleted_ids = gather_deleted_ids(config)
-    id_list = [{"key": deleted_id, "col": config["unique_id_field"]} for deleted_id in deleted_ids]
+    id_list = [{"key": deleted_id, "col": config["unique_key_field"]} for deleted_id in deleted_ids]
     award_ids = get_deleted_award_ids(client, id_list, config, settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*")
     if (len(award_ids)) == 0:
         logger.info(format_log(f"No related awards require deletion", process="ES Delete"))
@@ -155,7 +156,7 @@ def deleted_awards(client, config):
     deleted_award_ids = check_awards_for_deletes(award_ids)
     if len(deleted_award_ids) != 0:
         award_id_list = [
-            {"key": deleted_award["generated_unique_award_id"], "col": config["unique_id_field"]}
+            {"key": deleted_award["generated_unique_award_id"], "col": config["unique_key_field"]}
             for deleted_award in deleted_award_ids
         ]
         delete_from_es(client, award_id_list, None, config, None)
@@ -166,7 +167,7 @@ def deleted_awards(client, config):
 
 def deleted_transactions(client, config):
     deleted_ids = gather_deleted_ids(config)
-    id_list = [{"key": deleted_id, "col": config["unique_id_field"]} for deleted_id in deleted_ids]
+    id_list = [{"key": deleted_id, "col": config["unique_key_field"]} for deleted_id in deleted_ids]
     delete_from_es(client, id_list, None, config, None)
 
 

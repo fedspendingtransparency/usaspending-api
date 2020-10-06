@@ -26,14 +26,14 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
 logger = logging.getLogger("script")
 
 
-def init(a):
+def init_shared_abort(a):
     """odd mechanism to set a global abort event in each subprocess"""
     global abort
     abort = a
 
 
 class Controller:
-    def __init__(self, config, elasticsearch_client):
+    def __init__(self, config):
         """Set values based on env vars and when the script started"""
         self.config = config
 
@@ -65,18 +65,17 @@ class Controller:
             create_index(self.config["index_name"], instantiate_elasticsearch_client())
 
     def launch_workers(self):
-        _abort = Event()  # Event which signals an error occured in a subprocess when set
-
-        with Pool(self.config["processes"], maxtasksperchild=1, initializer=init, initargs=(_abort,)) as pool:
-            # Using list comprehension to prevent new tasks from starting if an event occured
-            pool.map(extract_transform_load, [worker for worker in self.workers if not _abort.is_set()])
+        _abort = Event()  # Event which when set signals an error occured in a subprocess
+        parellel_procs = self.config["processes"]
+        with Pool(parellel_procs, maxtasksperchild=1, initializer=init_shared_abort, initargs=(_abort,)) as pool:
+            pool.map(extract_transform_load, self.workers)
 
         if _abort.is_set():
             raise RuntimeError("One or more heroes have fallen! Initiate strategic retreat")
 
     def complete_process(self) -> None:
+        client = instantiate_elasticsearch_client()
         if self.config["create_new_index"]:
-            client = instantiate_elasticsearch_client()
             set_final_index_config(client, self.config["index_name"])
             if self.config["skip_delete_index"]:
                 logger.info(format_log("Skipping deletion of old indices"))
@@ -85,7 +84,7 @@ class Controller:
                 swap_aliases(client, self.config)
 
         if self.config["is_incremental_load"]:
-            toggle_refresh_on(self.elasticsearch_client, self.config["index_name"])
+            toggle_refresh_on(client, self.config["index_name"])
             logger.info(
                 format_log(f"Storing datetime {self.config['processing_start_datetime']} for next incremental load")
             )
@@ -99,6 +98,7 @@ class Controller:
             update_date=self.config["starting_date"],
             view=self.config["sql_view"],
         )
+
         name_gen = gen_random_name()
 
         return WorkerNode(
@@ -115,8 +115,10 @@ class Controller:
         client = instantiate_elasticsearch_client()
         if self.config["data_type"] == "award":
             deleted_awards(client, self.config)
-        else:
+        elif self.config["data_type"] == "transaction":
             deleted_transactions(client, self.config)
+        else:
+            raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
 
 
 def extract_transform_load(worker):
@@ -134,10 +136,10 @@ def extract_transform_load(worker):
         load_data(worker, records, client)
     except Exception:
         if abort.is_set():
-            logger.info(format_log(f"{worker.name} realizes the battle lost. #ragequit"))
+            logger.info(format_log(f"{worker.name} realizes the battle is lost."))
         else:
             msg = f"{worker.name} has fallen in battle! How could such a thing happen to this great warrior?"
-            logger.error(msg, job=worker.name)
+            logger.error(format_log(msg, job=worker.name))
             abort.set()
     else:
         attrib = choice(["pro", "champ", "boss", "top dog", "hero", "super"])
