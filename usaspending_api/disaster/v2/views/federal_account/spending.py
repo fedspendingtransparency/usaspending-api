@@ -142,7 +142,7 @@ class SpendingViewSet(
             else:
                 temp_results[result["id"]] = result
         results = [x for x in temp_results.values()]
-        return results
+        return results[self.pagination.lower_limit : self.pagination.upper_limit]
 
     def _build_json_result(self, child):
         return {

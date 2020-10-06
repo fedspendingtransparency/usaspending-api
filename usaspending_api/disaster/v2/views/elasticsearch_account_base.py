@@ -159,15 +159,6 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         # Create the initial search using filters
         return self.perform_search(self.agg_key, self.top_hits_fields)
 
-    def extend_elasticsearch_search_with_sub_aggregation(self) -> Optional[AccountSearch]:
-        """
-        This template method is called if the `self.sub_agg_key` is supplied, in order to post-process the query and
-        inject a sub-aggregation on a secondary dimension (that is subordinate to the first agg_key's dimension).
-
-        Example: Subtier Agency spending rolled up to Toptier Agency spending
-        """
-        return self.perform_search(self.child_agg_key, self.child_fields)
-
     def build_totals(self, response: List[dict]) -> dict:
         obligations = 0
         outlays = 0
@@ -189,6 +180,6 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         response = response.aggs.to_dict()
         buckets = response.get("financial_accounts_agg", {}).get("group_by_dim_agg", {}).get("buckets", [])
         totals = self.build_totals(buckets)
-        results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
+        results = self.build_elasticsearch_result(buckets)
 
         return {"results": results, "totals": totals}
