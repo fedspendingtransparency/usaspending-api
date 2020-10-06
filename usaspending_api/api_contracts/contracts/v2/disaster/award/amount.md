@@ -19,6 +19,22 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
 
     + Attributes
         + `filter` (required, Filter, fixed-type)
+    + Body
+
+
+            {
+                "filter": {
+                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "award_type_codes": ["02", "03", "04", "05", "07", "08", "10", "06", "09", "11", "A", "B", "C", "D", "IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]
+                },
+                "pagination": {
+                    "limit": 10,
+                    "page": 1,
+                    "sort": "award_count",
+                    "order": "desc"
+                },
+                "spending_type": "total"
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -26,8 +42,9 @@ This endpoint provides the Account obligation and outlay aggregations of Awards
         + `face_value_of_loan` (optional, number)
         + `obligation` (required, number)
         + `outlay` (required, number)
-        
+
     + Body
+
 
             {
                 "award_count": 42,

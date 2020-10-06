@@ -11,8 +11,7 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type, fy as parse_fiscal_year
 from usaspending_api.common.helpers.fiscal_year_helpers import create_fiscal_year_list
-from usaspending_api.etl.elasticsearch_loader_helpers.es_etl_helpers import format_log, toggle_refresh_off
-from usaspending_api.etl.elasticsearch_loader_helpers.rapidloader import Rapidloader
+from usaspending_api.etl.elasticsearch_loader_helpers import format_log, Controller, toggle_refresh_off
 
 logger = logging.getLogger("script")
 
@@ -29,7 +28,7 @@ class Command(BaseCommand):
                i. Continue to upload a CSV file until all years are uploaded to ES
            c. Delete CSV file
     TO RELOAD ALL data:
-        python3 manage.py es_rapidloader --index-name <NEW-INDEX-NAME> --create-new-index all
+        python3 manage.py elasticsearch_indexer --index-name <NEW-INDEX-NAME> --create-new-index all
 
         Running with --new-index will trigger several actions:
         0. A view will be created in the source database for the ETL queries
@@ -123,7 +122,7 @@ class Command(BaseCommand):
         elif config["load_type"] == "awards":
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
 
-        loader = Rapidloader(config, elasticsearch_client)
+        loader = Controller(config, elasticsearch_client)
         loader.run_load_steps()
         loader.complete_process()
 
