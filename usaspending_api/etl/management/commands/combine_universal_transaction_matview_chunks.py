@@ -98,9 +98,6 @@ class Command(BaseCommand):
             "--analyze", action="store_true", help="Indicates whether table should be analyzed"
         )
         parser.add_argument(
-            "--old-object-type", default="TABLE", help="Indicates whether the old version of the table is a Matview"
-        )
-        parser.add_argument(
             "--keep-old-data", action="store_true", default=False, help="Indicates whether or not to drop old table and matviews at end of command"
         )
 
@@ -109,10 +106,8 @@ class Command(BaseCommand):
 
         logger.info(f"Chunk Count: {chunk_count}")
 
-        old_object_type = options["old_object_type"]
-
         with Timer("Recreating table"):
-            self.recreate_matview(old_object_type)
+            self.recreate_matview()
 
         with Timer("Inserting data into table"):
             self.insert_matview_data(chunk_count)
@@ -121,7 +116,7 @@ class Command(BaseCommand):
             self.create_indexes()
 
         with Timer("Swapping Tables/Indexes"):
-            self.swap_matviews(old_object_type)
+            self.swap_matviews()
 
         if not options["keep_old_data"]:
             self.remove_old_data(chunk_count)
@@ -133,9 +128,15 @@ class Command(BaseCommand):
         with Timer("Granting Table Permissions"):
             self.grant_matview_permissions()
 
-    def recreate_matview(self, old_object_type):
+    def recreate_matview(self):
         with connection.cursor() as cursor:
-            cursor.execute(RECREATE_TABLE_SQL.format(old_object_type=old_object_type))
+            # This table was previously a Matview, so the DROP may fail
+            try:
+                cursor.execute(RECREATE_TABLE_SQL.format(old_object_type="TABLE"))
+            except Exception as e:
+                if str(e).contains("is not a table"):
+                    logger.info("universal_transaction_matview_temp existed, but not as table. Trying to drop as Matview")
+                    cursor.execute(RECREATE_TABLE_SQL.format(old_object_type="MATERIALIZED VIEW"))
 
     def insert_matview_data(self, chunk_count):
         loop = asyncio.new_event_loop()
@@ -168,9 +169,15 @@ class Command(BaseCommand):
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
 
-    def swap_matviews(self, old_object_type):
+    def swap_matviews(self):
         with connection.cursor() as cursor:
-            cursor.execute(SWAP_TABLES_SQL.format(old_object_type=old_object_type))
+            # This table was previously a Matview, so the DROP may fail
+            try:
+                cursor.execute(SWAP_TABLES_SQL.format(old_object_type="TABLE"))
+            except Exception as e:
+                if str(e).contains("is not a table"):
+                    logger.info("universal_transaction_matview_temp existed, but not as table. Trying to drop as Matview")
+                    cursor.execute(RECREATE_TABLE_SQL.format(old_object_type="MATERIALIZED VIEW"))
 
     def remove_old_data(self, chunk_count):
         with connection.cursor() as cursor:
