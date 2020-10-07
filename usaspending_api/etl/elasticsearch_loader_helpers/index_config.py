@@ -85,7 +85,7 @@ def swap_aliases(client, config):
 
 def toggle_refresh_off(client, index):
     client.indices.put_settings({"refresh_interval": "-1"}, index)
-    message = (f'Set "refresh_interval": "-1" to turn auto refresh off')
+    message = f'Set "refresh_interval": "-1" to turn auto refresh off'
     logger.info(format_log(message, action="ES Settings"))
 
 

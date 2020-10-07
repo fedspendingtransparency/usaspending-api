@@ -41,6 +41,9 @@ def transform_data(worker, records, converters):
 
         # Explicitly setting the ES _id field to match the postgres PK value allows
         # bulk index operations to be upserts without creating duplicate documents
+        # IF and ONLY IF a routing meta field is not also provided (one whose value differs
+        # from the doc _id field). If explicit routing is done, UPSERTs may cause duplicates,
+        # so docs must be deleted before UPSERTed. (More info in streaming_post_to_es(...))
         record["_id"] = record[worker.primary_key]
 
         # TODO: convert special fields to correct format ????

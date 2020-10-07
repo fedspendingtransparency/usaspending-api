@@ -130,7 +130,7 @@ class Controller:
 
 def extract_transform_load(task):
     if abort.is_set():
-        logger.info(format_log(f"{task.name} partition was skipped due to previous error"))
+        logger.warning(format_log(f"Skipping partition #{task.partition_number} due to previous error", name=task.name))
         return
 
     start = perf_counter()
@@ -141,15 +141,16 @@ def extract_transform_load(task):
     try:
         records = task.transform_func(task, extract_records(task))
         if abort.is_set():
-            logger.info(format_log(f"Prematurely ending {task.name} due to previous error"))
+            logger.warning(format_log(f"Prematurely ending {task.name} due to previous error"))
             return
         load_data(task, records, client)
     except Exception:
         if abort.is_set():
-            logger.info(format_log(f"{task.name} failed after an error was previously encountered"))
+            msg = f"Partition #{task.partition_number} failed after an error was previously encountered"
+            logger.warning(format_log(msg, name=task.name))
         else:
             logger.error(format_log(f"{task.name} failed!", name=task.name))
             abort.set()
     else:
-        msg = f"Partition {task.name} was successfully processed in {perf_counter() - start:.2f}s"
+        msg = f"Partition #{task.partition_number} was successfully processed in {perf_counter() - start:.2f}s"
         logger.info(format_log(msg, name=task.name))
