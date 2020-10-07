@@ -25,7 +25,7 @@ def transform_transaction_data(worker, records):
 
 
 def transform_data(worker, records, converters):
-    logger.info(format_log(f"Transforming data", job=worker.name, process="Index"))
+    logger.info(format_log(f"Transforming data", name=worker.name, action="Index"))
     start = perf_counter()
 
     for record in records:
@@ -45,5 +45,5 @@ def transform_data(worker, records, converters):
 
         # TODO: convert special fields to correct format ????
 
-    logger.info(format_log(f"Data Transformation took {perf_counter() - start:.2f}s", job=worker.name, process="Index"))
+    logger.info(format_log(f"Data Transformation took {perf_counter() - start:.2f}s", name=worker.name, action="Index"))
     return records

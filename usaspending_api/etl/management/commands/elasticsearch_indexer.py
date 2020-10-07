@@ -94,9 +94,12 @@ class Command(BaseCommand):
         error_addition = ""
         loader = Controller(config)
 
+        if config["is_incremental_load"]:
+            toggle_refresh_off(elasticsearch_client, config["index_name"])  # Turned back on at end.
+
         try:
             loader.prepare_for_etl()
-            loader.launch_workers()
+            loader.dispatch_tasks()
         except Exception as e:
             logger.error(f"{str(e)}")
             error_addition = "before encountering a problem during execution.... "
@@ -152,9 +155,6 @@ def parse_cli_args(options: dict, es_client) -> dict:
         if not es_client.cat.aliases(name=config["write_alias"]):
             logger.error(f"Write alias '{config['write_alias']}' is missing")
             raise SystemExit(1)
-        # Force manual refresh for atomic transaction-like delete/re-add consistency during incremental load.
-        # Turned back on at end.
-        toggle_refresh_off(es_client, config["index_name"])
     else:
         if es_client.indices.exists(config["index_name"]):
             logger.error(f"Data load into existing index. Change index name or run an incremental load")

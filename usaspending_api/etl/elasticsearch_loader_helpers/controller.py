@@ -19,7 +19,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     set_final_index_config,
     swap_aliases,
     toggle_refresh_on,
-    WorkerNode,
+    TaskSpec,
 )
 
 logger = logging.getLogger("script")
@@ -60,18 +60,18 @@ class Controller:
             )
         )
 
-        self.workers = self.create_workers()
+        self.tasks = self.construct_tasks()
 
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
             call_command("es_configure", "--template-only", f"--load-type={self.config['data_type']}s")
             create_index(self.config["index_name"], instantiate_elasticsearch_client())
 
-    def launch_workers(self):
+    def dispatch_tasks(self):
         _abort = Event()  # Event which when set signals an error occured in a subprocess
         parellel_procs = self.config["processes"]
         with Pool(parellel_procs, maxtasksperchild=1, initializer=init_shared_abort, initargs=(_abort,)) as pool:
-            pool.map(extract_transform_load, self.workers)
+            pool.map(extract_transform_load, self.tasks)
 
         if _abort.is_set():
             raise RuntimeError("One or more partitions failed!")
@@ -93,12 +93,12 @@ class Controller:
             )
             update_last_load_date(f"{self.config['stored_date_key']}", self.config["processing_start_datetime"])
 
-    def create_workers(self):
+    def construct_tasks(self):
 
         name_gen = gen_random_name()
-        return [self.create_worker(j, name_gen) for j in range(self.config["partitions"])]
+        return [self.configure_task(j, name_gen) for j in range(self.config["partitions"])]
 
-    def create_worker(self, number: int, name_gen) -> WorkerNode:
+    def configure_task(self, number: int, name_gen) -> TaskSpec:
         sql_str = EXTRACT_SQL.format(
             divisor=self.config["partitions"],
             id_col=self.config["primary_key"],
@@ -107,7 +107,7 @@ class Controller:
             view=self.config["sql_view"],
         )
 
-        return WorkerNode(
+        return TaskSpec(
             index=self.config["index_name"],
             primary_key=self.config["primary_key"],
             partition_number=number,
@@ -128,28 +128,28 @@ class Controller:
             raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
 
 
-def extract_transform_load(worker):
+def extract_transform_load(task):
     if abort.is_set():
-        logger.info(format_log(f"{worker.name} partition was skipped due to previous error"))
+        logger.info(format_log(f"{task.name} partition was skipped due to previous error"))
         return
 
     start = perf_counter()
-    msg = f"Started processing on partition #{worker.partition_number}: {worker.name}"
-    logger.info(format_log(msg, job=worker.name))
+    msg = f"Started processing on partition #{task.partition_number}: {task.name}"
+    logger.info(format_log(msg, name=task.name))
 
     client = instantiate_elasticsearch_client()
     try:
-        records = worker.transform_func(worker, extract_records(worker))
+        records = task.transform_func(task, extract_records(task))
         if abort.is_set():
-            logger.info(format_log(f"Prematurely ending {worker.name} due to previous error"))
+            logger.info(format_log(f"Prematurely ending {task.name} due to previous error"))
             return
-        load_data(worker, records, client)
+        load_data(task, records, client)
     except Exception:
         if abort.is_set():
-            logger.info(format_log(f"{worker.name} failed after an error was previously encountered"))
+            logger.info(format_log(f"{task.name} failed after an error was previously encountered"))
         else:
-            logger.error(format_log(f"{worker.name} failed!", job=worker.name))
+            logger.error(format_log(f"{task.name} failed!", name=task.name))
             abort.set()
     else:
-        msg = f"Partition {worker.name} was successfully processed in {perf_counter() - start:.2f}s"
-        logger.info(format_log(msg, job=worker.name))
+        msg = f"Partition {task.name} was successfully processed in {perf_counter() - start:.2f}s"
+        logger.info(format_log(msg, name=task.name))

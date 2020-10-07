@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from django.conf import settings
 from pathlib import Path
 from random import choice
-from typing import Optional, List
+from typing import Optional, List, Any
 
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -15,8 +15,8 @@ logger = logging.getLogger("script")
 
 
 @dataclass
-class WorkerNode:
-    """Contains details for a worker node to perform micro ETL step"""
+class TaskSpec:
+    """Contains details for a single ETL task"""
 
     name: str
     index: str
@@ -27,10 +27,10 @@ class WorkerNode:
     transform_func: callable = None
 
 
-def chunks(l, n):
-    """Yield successive n-sized chunks from l"""
-    for i in range(0, len(l), n):
-        yield l[i : i + n]
+def chunks(items: List[Any], size: int) -> List[Any]:
+    """Yield successive sized chunks from items"""
+    for i in range(0, len(items), size):
+        yield items[i : i + size]
 
 
 def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
@@ -49,8 +49,8 @@ def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
     return result
 
 
-def execute_sql_statement(cmd, results=False, verbose=False):
-    """ Simple function to execute SQL using a psycopg2 connection"""
+def execute_sql_statement(cmd: str, results: bool = False, verbose: bool = False) -> Optional[List[dict]]:
+    """Simple function to execute SQL using a single-use psycopg2 connection"""
     rows = None
     if verbose:
         print(cmd)
@@ -64,24 +64,29 @@ def execute_sql_statement(cmd, results=False, verbose=False):
     return rows
 
 
-def db_rows_to_dict(cursor):
-    """ Return a dictionary of all row results from a database connection cursor """
+def db_rows_to_dict(cursor: psycopg2.extensions.cursor) -> List[dict]:
+    """Return a dictionary of all row results from a database connection cursor"""
     columns = [col[0] for col in cursor.description]
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
-def filter_query(column, values, query_type="match_phrase"):
+def filter_query(column: str, values: list, query_type: str = "match_phrase") -> dict:
     queries = [{query_type: {column: str(i)}} for i in values]
     return {"query": {"bool": {"should": [queries]}}}
 
 
-def format_log(msg, process=None, job=None):
-    inner_str = f"[{process if process else 'main'}] {f'{job}' if job else ''}"
+def format_log(msg: str, action: str = None, name: str = None) -> str:
+    """Helper function to format log statements"""
+    inner_str = f"[{action if action else 'main'}] {f'{name}' if name else ''}"
     return f"{inner_str:<32} | {msg}"
 
 
-def gen_random_name():
-    """Generates over 5000 unique names in random order and will infinately continue to generate unique names w/ roman numerals appended"""
+def gen_random_name() -> str:
+    """
+        Generate over 5000 unique names in a random order.
+        Successive calls past the unique name combinations will infinitely
+        continue to generate additional unique names w/ roman numerals appended.
+    """
     name_dict = json.loads(Path(settings.APP_DIR / "data" / "multiprocessing_worker_names.json").read_text())
     attributes = list(set(name_dict["attributes"]))
     subjects = list(set(name_dict["subjects"]))

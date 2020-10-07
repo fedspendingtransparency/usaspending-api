@@ -12,9 +12,9 @@ logger = logging.getLogger("script")
 
 def load_data(worker, records, client):
     start = perf_counter()
-    logger.info(format_log(f"Starting Index operation", job=worker.name, process="Index"))
+    logger.info(format_log(f"Starting Index operation", name=worker.name, action="Index"))
     streaming_post_to_es(client, records, worker.index, worker.name, delete_before_index=worker.is_incremental)
-    logger.info(format_log(f"Index operation took {perf_counter() - start:.2f}s", job=worker.name, process="Index"))
+    logger.info(format_log(f"Index operation took {perf_counter() - start:.2f}s", name=worker.name, action="Index"))
 
 
 def streaming_post_to_es(client, chunk, index_name: str, job_name=None, delete_before_index=True, delete_key="_id"):
@@ -56,17 +56,5 @@ def streaming_post_to_es(client, chunk, index_name: str, job_name=None, delete_b
         logger.error(f"Error on partition {job_name}:\n\n{str(e)[:2000]}\n...\n{str(e)[-2000:]}\n")
         raise RuntimeError(f"{job_name}")
 
-    logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", job=job_name, process="Index"))
+    logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", name=job_name, action="Index"))
     return success, failed
-
-
-def create_index(index, client):
-    try:
-        does_index_exist = client.indices.exists(index)
-    except Exception:
-        logger.exception("Unable to query cluster for indices")
-        raise SystemExit(1)
-    if not does_index_exist:
-        logger.info(format_log(f"Creating index '{index}'", process="Index"))
-        client.indices.create(index=index)
-        client.indices.refresh(index)

@@ -18,25 +18,25 @@ EXTRACT_SQL = """
 """
 
 
-def count_of_records_to_process(config):
+def count_of_records_to_process(config: dict) -> int:
     start = perf_counter()
     count_sql = COUNT_SQL.format(update_date=config["starting_date"], view=config["sql_view"])
     count = execute_sql_statement(count_sql, True, config["verbose"])[0]["count"]
     msg = f"Found {count:,} {config['data_type']} DB records, took {perf_counter() - start:.2f}s"
-    logger.info(format_log(msg, process="Extract"))
+    logger.info(format_log(msg, action="Extract"))
     return count
 
 
-def extract_records(worker):
+def extract_records(task):
     start = perf_counter()
-    logger.info(format_log(f"Extracting data from source", job=worker.name, process="Extract"))
+    logger.info(format_log(f"Extracting data from source", name=task.name, action="Extract"))
 
     try:
-        records = execute_sql_statement(worker.sql, True)
+        records = execute_sql_statement(task.sql, True)
     except Exception as e:
-        logger.exception(f"Failed on partition {worker.name} with '{worker.sql}'")
+        logger.exception(f"Failed on partition {task.name} with '{task.sql}'")
         raise e
 
     msg = f"{len(records):,} records extracted in {perf_counter() - start:.2f}s"
-    logger.info(format_log(msg, job=worker.name, process="Extract"))
+    logger.info(format_log(msg, name=task.name, action="Extract"))
     return records
