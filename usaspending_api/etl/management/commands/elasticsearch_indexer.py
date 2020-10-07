@@ -66,7 +66,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--processes",
             type=int,
-            help="Number of parallel processes to operate. psycopg2 kicked the bucket with 100",
+            help="Number of parallel processes to operate. psycopg2 kicked the bucket with 100.",
             default=10,
             choices=range(1, 71),
             metavar="[1-70]",
@@ -74,7 +74,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--partition-size",
             type=int,
-            help="Set the upper-limit of a single data partition. ",
+            help="Set the target size of a single data partition. A partition "
+            "might be slightly larger or slightly smaller depending on the "
+            " distribution of the data to process",
             default=250000,
             metavar="(default: 250,000)",
         )

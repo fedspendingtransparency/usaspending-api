@@ -107,8 +107,10 @@ class Controller:
         name_gen = gen_random_name()
         return [self.configure_task(j, name_gen) for j in range(self.config["partitions"])]
 
-    def configure_task(self, number: int, name_gen: Generator) -> TaskSpec:
-        sql_str = obtain_extract_sql({**self.config, **{"remainder": number, "divisor": self.config["partitions"]}})
+    def configure_task(self, partition_number: int, name_gen: Generator) -> TaskSpec:
+        sql_str = obtain_extract_sql(
+            {**self.config, **{"remainder": partition_number, "divisor": self.config["partitions"]}}
+        )
 
         return TaskSpec(
             base_table=self.config["base_table"],
@@ -116,7 +118,7 @@ class Controller:
             index=self.config["index_name"],
             is_incremental=self.config["is_incremental_load"],
             name=next(name_gen),
-            partition_number=number,
+            partition_number=partition_number,
             primary_key=self.config["primary_key"],
             sql=sql_str,
             transform_func=self.config["data_transform_func"],
@@ -147,7 +149,8 @@ def extract_transform_load(task: TaskSpec) -> None:
     try:
         records = task.transform_func(task, extract_records(task))
         if abort.is_set():
-            logger.warning(format_log(f"Prematurely ending {task.name} due to previous error"))
+            f"Prematurely ending partition #{task.partition_number} due to error in another process"
+            logger.warning(format_log(msg, name=task.name))
             return
         load_data(task, records, client)
     except Exception:
