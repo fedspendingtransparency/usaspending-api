@@ -76,7 +76,7 @@ class Command(BaseCommand):
             type=int,
             help="Set the upper-limit of a single data partition. ",
             default=250000,
-            metavar="(default: 10,000)",
+            metavar="(default: 250,000)",
         )
 
     def handle(self, *args, **options):
