@@ -8,7 +8,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
 from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import (
     count_of_records_to_process,
     extract_records,
-    EXTRACT_SQL,
+    obtain_extract_sql,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     create_aliases,
@@ -44,11 +44,11 @@ __all__ = [
     "deleted_transactions",
     "execute_sql_statement",
     "extract_records",
-    "EXTRACT_SQL",
     "format_log",
     "gen_random_name",
     "get_deleted_award_ids",
     "load_data",
+    "obtain_extract_sql",
     "set_final_index_config",
     "swap_aliases",
     "take_snapshot",

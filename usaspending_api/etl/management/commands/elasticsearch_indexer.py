@@ -72,12 +72,10 @@ class Command(BaseCommand):
             metavar="[1-70]",
         )
         parser.add_argument(
-            "--partitions",
+            "--partition-size",
             type=int,
-            help="Set how much the data are partitioned. "
-            "NOTICE: large datasets may need indexes or other performance "
-            " optimizations if this is changed",
-            default=10000,
+            help="Set the upper-limit of a single data partition. ",
+            default=250000,
             metavar="(default: 10,000)",
         )
 
@@ -117,7 +115,7 @@ class Command(BaseCommand):
 def parse_cli_args(options: dict, es_client) -> dict:
     default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
     passthrough_values = (
-        "partitions",
+        "partition_size",
         "create_new_index",
         "index_name",
         "load_type",
@@ -172,6 +170,8 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
 
     if arg_parse_options["load_type"] == "awards":
         config = {
+            "base_table": "awards",
+            "base_table_id": "id",
             "data_transform_func": transform_award_data,
             "data_type": "award",
             "max_query_size": settings.ES_AWARDS_MAX_RESULT_WINDOW,
@@ -185,6 +185,8 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
         }
     elif arg_parse_options["load_type"] == "transactions":
         config = {
+            "base_table": "transaction_normalized",
+            "base_table_id": "id",
             "data_transform_func": transform_transaction_data,
             "data_type": "transaction",
             "max_query_size": settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW,

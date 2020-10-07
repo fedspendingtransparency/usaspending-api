@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from django.conf import settings
 from pathlib import Path
 from random import choice
-from typing import Optional, List, Any
+from typing import Any, Generator, List, Optional
 
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -21,6 +21,9 @@ class TaskSpec:
     name: str
     index: str
     sql: str
+    view: str
+    base_table: str
+    base_table_id: str
     primary_key: str
     partition_number: int
     is_incremental: bool
@@ -81,7 +84,7 @@ def format_log(msg: str, action: str = None, name: str = None) -> str:
     return f"{inner_str:<32} | {msg}"
 
 
-def gen_random_name() -> str:
+def gen_random_name() -> Generator[str, None, None]:
     """
         Generate over 5000 unique names in a random order.
         Successive calls past the unique name combinations will infinitely

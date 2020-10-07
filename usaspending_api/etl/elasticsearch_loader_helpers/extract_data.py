@@ -7,21 +7,52 @@ logger = logging.getLogger("script")
 
 COUNT_SQL = """
 SELECT COUNT(*) AS count
-FROM "{view}"
-WHERE "update_date" >= '{update_date}'
+FROM "{sql_view}"
+WHERE "update_date" >= '{starting_date}'
 """
 
 EXTRACT_SQL = """
     SELECT *
-    FROM "{view}"
-    WHERE "update_date" >= '{update_date}' AND mod("{id_col}", {divisor}) = {remainder}
+    FROM "{sql_view}"
+    WHERE "update_date" >= '{starting_date}' AND mod("{primary_key}", {divisor}) = {remainder}
 """
+
+
+TEST_COUNT_SQL = """
+SELECT COUNT(*) AS count
+FROM "{base_table}"
+WHERE "update_date" >= '{starting_date}'
+"""
+
+TEST_EXTRACT_SQL = """
+    SELECT *
+    FROM "{sql_view}"
+    WHERE "{primary_key}" IN (
+        SELECT "{base_table_id}"
+        FROM "{base_table}"
+        WHERE (
+            "update_date" >= '{starting_date}'
+            AND mod("{primary_key}", {divisor}) = {remainder}
+        )
+    )
+"""
+
+
+def obtain_count_sql(config: dict, test=False) -> str:
+    if test:
+        return TEST_COUNT_SQL.format(**config)
+    return COUNT_SQL.format(**config)
+
+
+def obtain_extract_sql(config: dict, test=False) -> str:
+    if test:
+        return TEST_EXTRACT_SQL.format(**config)
+    return EXTRACT_SQL.format(**config)
 
 
 def count_of_records_to_process(config: dict) -> int:
     start = perf_counter()
-    count_sql = COUNT_SQL.format(update_date=config["starting_date"], view=config["sql_view"])
-    count = execute_sql_statement(count_sql, True, config["verbose"])[0]["count"]
+    count = execute_sql_statement(obtain_count_sql(config), True, config["verbose"])[0]["count"]
     msg = f"Found {count:,} {config['data_type']} DB records, took {perf_counter() - start:.2f}s"
     logger.info(format_log(msg, action="Extract"))
     return count
