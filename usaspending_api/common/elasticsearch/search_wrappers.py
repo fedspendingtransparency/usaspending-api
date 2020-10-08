@@ -103,4 +103,4 @@ class AwardSearch(_Search):
 
 
 class AccountSearch(_Search):
-    _index_name = "accounts-by-awards-covid-19-2020-09-24-06-53"  # f"{settings.ES_ACCOUNTS_QUERY_ALIAS_PREFIX}*"
+    _index_name = "accounts-by-awards-covid-19-2020-09-29-01-50"  # f"{settings.ES_ACCOUNTS_QUERY_ALIAS_PREFIX}*"

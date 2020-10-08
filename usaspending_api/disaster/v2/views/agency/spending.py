@@ -30,7 +30,7 @@ from usaspending_api.references.models import GTASSF133Balances, Agency, Toptier
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_summed_value_as_float,
-    get_number_of_unique_nested_terms_accounts,
+    get_number_of_unique_terms_for_accounts,
 )
 
 logger = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ class SpendingByAgencyViewSet(
                 }
             )
             self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(self.filters)
-            self.bucket_count = get_number_of_unique_nested_terms_accounts(self.filter_query, f"{self.agg_key}")
+            self.bucket_count = get_number_of_unique_terms_for_accounts(self.filter_query, f"{self.agg_key}")
             messages = []
             if self.pagination.sort_key in ("id", "code"):
                 messages.append(
