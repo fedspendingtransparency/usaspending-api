@@ -378,7 +378,7 @@ def add_chunk_strings(sql_json, chunk):
     chunk_count = GLOBAL_ARGS.chunk_count
 
     if chunk_count > 1:
-        chunked_sql_json["final_name"] += f"_{chunk}"
+        chunked_sql_json["final_name"] = f"{chunked_sql_json['final_name']}_{chunk}"
         chunked_sql_json["matview_sql"].append("  AND transaction_normalized.id % {} = {}".format(chunk_count, chunk))
 
     return chunked_sql_json

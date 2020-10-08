@@ -68,9 +68,7 @@ ALTER INDEX idx_ut_recipient_hash_temp RENAME TO idx_ut_recipient_hash;
 ALTER INDEX idx_ut_action_date_pre2008_temp RENAME TO idx_ut_action_date_pre2008;
 """
 
-REMOVE_OLD_TABLE_SQL = """
-DROP TABLE IF EXISTS universal_transaction_matview_old;
-"""
+REMOVE_OLD_TABLE_SQL = """DROP TABLE IF EXISTS universal_transaction_matview_old;"""
 
 REMOVE_MATVIEW_DATA_SQL = """
 REFRESH MATERIALIZED VIEW universal_transaction_matview_{current_chunk} WITH NO DATA;
@@ -80,9 +78,7 @@ ANALYZE_TABLE_SQL = """
 ANALYZE VERBOSE universal_transaction_matview;
 """
 
-TABLE_PERMISSION_SQL = """
-GRANT SELECT ON universal_transaction_matview TO readonly;
-"""
+TABLE_PERMISSION_SQL = """GRANT SELECT ON universal_transaction_matview TO readonly;"""
 
 
 class Command(BaseCommand):
@@ -94,7 +90,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--chunk-count", default=10, help="Number of chunked matviews to read from", type=int)
-        parser.add_argument("--analyze", action="store_true", help="Indicates whether table should be analyzed")
         parser.add_argument(
             "--keep-old-data",
             action="store_true",
@@ -122,9 +117,8 @@ class Command(BaseCommand):
         if not options["keep_old_data"]:
             self.remove_old_data(chunk_count)
 
-        if options["analyze"]:
-            with Timer("Analyzing Table"):
-                self.analyze_matview()
+        with Timer("Analyzing Table"):
+            self.analyze_matview()
 
         with Timer("Granting Table Permissions"):
             self.grant_matview_permissions()

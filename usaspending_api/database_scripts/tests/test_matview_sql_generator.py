@@ -1,11 +1,10 @@
 import pytest
 
 from django.db import connection
-from collections import OrderedDict
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS, CHUNKED_MATERIALIZED_VIEWS
 
-ALL_MATVIEWS = OrderedDict(list(MATERIALIZED_VIEWS.items()) + list(CHUNKED_MATERIALIZED_VIEWS.items()))
+ALL_MATVIEWS = {**MATERIALIZED_VIEWS, **CHUNKED_MATERIALIZED_VIEWS}
 
 
 @pytest.fixture

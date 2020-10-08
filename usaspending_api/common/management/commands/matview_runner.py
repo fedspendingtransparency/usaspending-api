@@ -9,11 +9,11 @@ from pathlib import Path
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.common.matview_manager import (
+    CHUNKED_MATERIALIZED_VIEWS,
     DEFAULT_MATIVEW_DIR,
     DEPENDENCY_FILEPATH,
     DROP_OLD_MATVIEWS,
     MATERIALIZED_VIEWS,
-    CHUNKED_MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
     OVERLAY_VIEWS,
 )
@@ -104,7 +104,7 @@ class Command(BaseCommand):
 
         # Create Chunked Matviews
         for matview, config in self.chunked_matviews.items():
-            for current_chunk in range(0, self.chunk_count):
+            for current_chunk in range(self.chunk_count):
                 chunked_matview = f"{matview}_{current_chunk}"
                 logger.info(f"Creating Future for chunked matview {chunked_matview}")
                 sql = (self.matview_dir / f"{chunked_matview}.sql").read_text()
