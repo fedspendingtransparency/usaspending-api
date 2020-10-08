@@ -460,6 +460,19 @@ class _NestedNonZero(_Filter):
         return ES_Q("nested", path="financial_accounts_by_award", query=non_zero_should)
 
 
+class _AwardType(_Filter):
+    underscore_name = "award_type"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
+        award_type_codes_query = []
+
+        for v in filter_values:
+            award_type_codes_query.append(ES_Q("match", award_type=v))
+
+        return ES_Q("bool", should=award_type_codes_query, minimum_should_match=1)
+
+
 class QueryWithFilters:
 
     filter_lookup = {
@@ -467,6 +480,7 @@ class QueryWithFilters:
         _KeywordSearch.underscore_name: _KeywordSearch,
         _TimePeriods.underscore_name: _TimePeriods,
         _AwardTypeCodes.underscore_name: _AwardTypeCodes,
+        _AwardType.underscore_name: _AwardType,
         _Agencies.underscore_name: _Agencies,
         _RecipientSearchText.underscore_name: _RecipientSearchText,
         _RecipientId.underscore_name: _RecipientId,

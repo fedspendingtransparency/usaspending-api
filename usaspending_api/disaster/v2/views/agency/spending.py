@@ -23,10 +23,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
 )
-from usaspending_api.disaster.v2.views.elasticsearch_account_base import (
-    ElasticsearchAccountDisasterBase,
-    ElasticsearchAccountSpendingPaginationMixin,
-)
+from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -69,7 +66,7 @@ class SpendingByAgencyViewSet(
     SpendingMixin,
     FabaOutlayMixin,
     ElasticsearchAccountDisasterBase,
-    ElasticsearchAccountSpendingPaginationMixin,
+    ElasticsearchSpendingPaginationMixin,
     DisasterBase,
 ):
     """ Returns disaster spending by agency. """
@@ -86,42 +83,7 @@ class SpendingByAgencyViewSet(
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            defc = self.filters.pop("def_codes")
-            self.filters.update({"nested_def_codes": defc})
-            self.filters.update(
-                {
-                    "nested_nonzero_fields": [
-                        "financial_accounts_by_award.transaction_obligated_amount",
-                        "financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
-                    ]
-                }
-            )
-            self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(self.filters)
-            self.bucket_count = get_number_of_unique_nested_terms_accounts(self.filter_query, f"{self.agg_key}")
-            messages = []
-            if self.pagination.sort_key in ("id", "code"):
-                messages.append(
-                    (
-                        f"Notice! API Request to sort on '{self.pagination.sort_key}' field isn't fully implemented."
-                        " Results were actually sorted using 'description' field."
-                    )
-                )
-            if self.bucket_count > 10000 and self.agg_key == settings.ES_ROUTING_FIELD:
-                self.bucket_count = 10000
-                messages.append(
-                    (
-                        "Notice! API Request is capped at 10,000 results. Either download to view all results or"
-                        " filter using the 'query' attribute."
-                    )
-                )
-
-            response = self.query_elasticsearch()
-            response["page_metadata"] = get_pagination_metadata(
-                self.bucket_count, self.pagination.limit, self.pagination.page
-            )
-            if messages:
-                response["messages"] = messages
-            return Response(response)
+            return self.perform_elasticsearch_search()
         else:
             results = self.total_queryset
             extra_columns = ["total_budgetary_resources"]

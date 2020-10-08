@@ -10,6 +10,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchSpendingPaginationMixin
 from usaspending_api.disaster.v2.views.federal_account.federal_account_result import FedAcctResults, FedAccount, TAS
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
@@ -19,11 +20,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
-from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_nested_terms_accounts
-from usaspending_api.disaster.v2.views.elasticsearch_account_base import (
-    ElasticsearchAccountDisasterBase,
-    ElasticsearchAccountSpendingPaginationMixin,
-)
+from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 
 
 def construct_response(results: list, pagination: Pagination):
@@ -45,7 +42,7 @@ class SpendingViewSet(
     SpendingMixin,
     FabaOutlayMixin,
     ElasticsearchAccountDisasterBase,
-    ElasticsearchAccountSpendingPaginationMixin,
+    ElasticsearchSpendingPaginationMixin,
     DisasterBase,
 ):
     """ Returns disaster spending by federal account. """
@@ -63,48 +60,7 @@ class SpendingViewSet(
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            defc = self.filters.pop("def_codes")
-            self.filters.update({"nested_def_codes": defc})
-            self.filters.update(
-                {
-                    "nested_nonzero_fields": [
-                        "financial_accounts_by_award.transaction_obligated_amount",
-                        "financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
-                    ]
-                }
-            )
-            self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(self.filters)
-            self.bucket_count = get_number_of_unique_nested_terms_accounts(self.filter_query, f"{self.agg_key}")
-            messages = []
-            if self.pagination.sort_key in ("id", "code"):
-                messages.append(
-                    (
-                        f"Notice! API Request to sort on '{self.pagination.sort_key}' field isn't fully implemented."
-                        " Results were actually sorted using 'description' field."
-                    )
-                )
-            if self.bucket_count > 10000 and self.agg_key == settings.ES_ROUTING_FIELD:
-                self.bucket_count = 10000
-                messages.append(
-                    (
-                        "Notice! API Request is capped at 10,000 results. Either download to view all results or"
-                        " filter using the 'query' attribute."
-                    )
-                )
-
-            response = self.query_elasticsearch()
-            response["page_metadata"] = get_pagination_metadata(
-                self.bucket_count, self.pagination.limit, self.pagination.page
-            )
-            if messages:
-                response["messages"] = messages
-
-            response["results"] = sorted(
-                response["results"],
-                key=lambda x: x[self.pagination.sort_key],
-                reverse=self.pagination.order_by != "desc",
-            )
-            return Response(response)
+            return self.perform_elasticsearch_search()
         else:
             results = list(self.total_queryset)
             extra_columns = ["total_budgetary_resources"]
@@ -133,16 +89,12 @@ class SpendingViewSet(
                     "obligation": temp_results[result["id"]]["obligation"] + result["obligation"],
                     "outlay": temp_results[result["id"]]["outlay"] + result["outlay"],
                     "total_budgetary_resources": None,
-                    "children": sorted(
-                        (temp_results[result["id"]]["children"] + result["children"]),
-                        key=lambda x: x[self.pagination.sort_key],
-                        reverse=self.pagination.order_by != "desc",
-                    ),
+                    "children": temp_results[result["id"]]["children"] + result["children"],
                 }
             else:
                 temp_results[result["id"]] = result
         results = [x for x in temp_results.values()]
-        return results[self.pagination.lower_limit : self.pagination.upper_limit]
+        return results
 
     def _build_json_result(self, child):
         return {

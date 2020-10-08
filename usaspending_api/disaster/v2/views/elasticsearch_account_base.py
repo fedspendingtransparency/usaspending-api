@@ -1,32 +1,27 @@
 from abc import abstractmethod
 from typing import List, Optional, Dict
 
-from django.conf import settings
 from django.utils.functional import cached_property
 from elasticsearch_dsl import Q as ES_Q, A
-from rest_framework.request import Request
 from rest_framework.response import Response
 
+from usaspending_api import settings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AccountSearch
-from usaspending_api.common.exceptions import ForbiddenException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, _BasePaginationMixin
-from usaspending_api.search.v2.elasticsearch_helper import (
-    get_scaled_sum_aggregations,
-    get_number_of_unique_terms_for_awards,
-    get_number_of_unique_nested_terms_accounts,
-)
+from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_nested_terms_accounts
 
 
-class ElasticsearchAccountSpendingPaginationMixin(_BasePaginationMixin):
+class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
     sum_column_mapping = {
-        "obligation": "sum_covid_obligation",
-        "outlay": "sum_covid_outlay",
+        "obligation": "financial_accounts_by_award.transaction_obligated_amount",
+        "outlay": "financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
     }
     sort_column_mapping = {
-        "award_count": "count_awards_by_dim.award_count",
+        "award_count": "_count",
         "description": "_key",  # _key will ultimately sort on description value
         "code": "_key",  # Façade sort behavior, really sorting on description
         "id": "_key",  # Façade sort behavior, really sorting on description
@@ -39,7 +34,11 @@ class ElasticsearchAccountSpendingPaginationMixin(_BasePaginationMixin):
 
 
 class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
-    sum_column_mapping = {"obligation": "sum_covid_obligation", "outlay": "sum_covid_outlay"}
+    sum_column_mapping = {
+        "obligation": "total_covid_obligation",
+        "outlay": "total_covid_outlay",
+        "face_value_of_loan": "total_loan_value",
+    }
     sort_column_mapping = {
         "award_count": "_count",
         "description": "_key",  # _key will ultimately sort on description value
@@ -55,35 +54,41 @@ class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
 
 class ElasticsearchAccountDisasterBase(DisasterBase):
 
-    query_fields: List[str]
-    agg_key: str
     agg_group_name: str = "group_by_agg_key"  # name used for the tier-1 aggregation group
-    child_agg_key: str = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
-    top_hits_fields: List[str]  # list used for the top_hits aggregation
-    child_fields: List[str]  # list used for the top_hits aggregation
-    filter_query: ES_Q
+    agg_key: str
     bucket_count: int
+    filter_query: ES_Q
+    has_children: bool = False
+    query_fields: List[str]
+    sub_agg_group_name: str = "sub_group_by_sub_agg_key"  # name used for the tier-2 aggregation group
+    sub_agg_key: str = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
+    top_hits_fields: List[str]  # list used for the top_hits aggregation
 
     pagination: Pagination  # Overwritten by a pagination mixin
     sort_column_mapping: Dict[str, str]  # Overwritten by a pagination mixin
     sum_column_mapping: Dict[str, str]  # Overwritten by a pagination mixin
 
     @cache_response()
-    def post(self, request: Request) -> Response:
+    def post(self, request):
+        return self.perform_elasticsearch_search()
+
+    def perform_elasticsearch_search(self) -> Response:
         # Need to update the value of "query" to have the fields to search on
-        query = self.filters.pop("query", None)
-        if query:
-            self.filters["query"] = {"text": query, "fields": self.query_fields}
-
-        # Ensure that only non-zero values are taken into consideration
-        # TODO: Refactor to use new NonzeroFields filter in QueryWithFilters
-        non_zero_queries = []
-        for field in self.sum_column_mapping.values():
-            non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))
-            non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
-        self.filter_query.must.append(ES_Q("bool", should=non_zero_queries, minimum_should_match=1))
-
-        self.bucket_count = get_number_of_unique_terms_for_awards(self.filter_query, f"{self.agg_key}.hash")
+        defc = self.filters.pop("def_codes")
+        if self.filters.get("award_type_codes"):
+            award_types = self.filters.pop("award_type_codes")
+            self.filters.update({"award_type": award_types})
+        self.filters.update({"nested_def_codes": defc})
+        self.filters.update(
+            {
+                "nested_nonzero_fields": [
+                    "financial_accounts_by_award.transaction_obligated_amount",
+                    "financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
+                ]
+            }
+        )
+        self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(self.filters)
+        self.bucket_count = get_number_of_unique_nested_terms_accounts(self.filter_query, f"{self.agg_key}")
         messages = []
         if self.pagination.sort_key in ("id", "code"):
             messages.append(
@@ -114,50 +119,45 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         pass
 
-    def perform_search(self, agg_key, search_fields):
-        bucket_count = get_number_of_unique_nested_terms_accounts(self.filter_query, f"{agg_key}")
-        size = bucket_count
-        shard_size = bucket_count + 100
-
-        search = AccountSearch().filter(self.filter_query)
-        aggs = A("nested", path="financial_accounts_by_award")
-        group_by_dim_agg = A("terms", field=agg_key, size=size, shard_size=shard_size)
-        dim_metadata = A(
-            "top_hits",
-            size=1,
-            sort=[{"financial_accounts_by_award.update_date": {"order": "desc"}}],
-            _source={"includes": search_fields},
-        )
-        group_by_dim_agg.metric("dim_metadata", dim_metadata)
-        #
-        # pagination_agg = A(
-        #     "bucket_sort",
-        #     sort={self.sort_column_mapping[self.pagination.sort_key]: {"order": self.pagination.sort_order}},
-        # )
-        # group_by_dim_agg.metric("pagination_agg", pagination_agg)
-        sum_covid_outlay = A(
-            "sum",
-            field="financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
-            script={"source": "doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? _value : 0"},
-        )
-        group_by_dim_agg.metric("sum_covid_outlay", sum_covid_outlay)
-        sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
-        group_by_dim_agg.metric("sum_covid_obligation", sum_covid_obligation)
-        value_count = A("cardinality", field="financial_account_distinct_award_key")
-        count_awards_by_dim = A("reverse_nested", **{})
-        count_awards_by_dim.metric("award_count", value_count)
-        group_by_dim_agg.metric("count_awards_by_dim", count_awards_by_dim)
-        aggs.metric("group_by_dim_agg", group_by_dim_agg)
-        search.aggs.bucket("financial_accounts_agg", aggs)
-        search.update_from_dict({"size": 0})
-        return search
-
     def build_elasticsearch_search_with_aggregations(self) -> Optional[AccountSearch]:
         """
         Using the provided ES_Q object creates an AccountSearch object with the necessary applied aggregations.
         """
         # Create the initial search using filters
-        return self.perform_search(self.agg_key, self.top_hits_fields)
+        search = AccountSearch().filter(self.filter_query)
+
+        # Create the aggregations
+        aggs = A("nested", path="financial_accounts_by_award")
+        group_by_dim_agg = A("terms", field=self.agg_key)
+        dim_metadata = A(
+            "top_hits",
+            size=1,
+            sort=[{"financial_accounts_by_award.update_date": {"order": "desc"}}],
+            _source={"includes": self.top_hits_fields},
+        )
+        sum_covid_outlay = A(
+            "sum",
+            field="financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
+            script={"source": "doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? _value : 0"},
+        )
+        sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
+        count_awards_by_dim = A("reverse_nested", **{})
+        award_count = A("cardinality", field="award_id")
+        loan_value = A("sum", field="total_loan_amount")
+        # Apply the aggregations
+        search.aggs.bucket("aggs", aggs).bucket("group_by_dim_agg", group_by_dim_agg).metric(
+            "dim_metadata", dim_metadata
+        ).metric("sum_covid_obligation", sum_covid_obligation).metric("sum_covid_outlay", sum_covid_outlay).bucket(
+            "count_awards_by_dim", count_awards_by_dim
+        ).metric(
+            "award_count", award_count
+        ).metric(
+            "sum_loan_value", loan_value
+        )
+
+        search.update_from_dict({"size": 0})
+
+        return search
 
     def build_totals(self, response: List[dict]) -> dict:
         obligations = 0
@@ -178,8 +178,25 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
 
         response = search.handle_execute()
         response = response.aggs.to_dict()
-        buckets = response.get("financial_accounts_agg", {}).get("group_by_dim_agg", {}).get("buckets", [])
+        buckets = response.get("aggs", {}).get("group_by_dim_agg", {}).get("buckets", [])
         totals = self.build_totals(buckets)
-        results = self.build_elasticsearch_result(buckets)
 
-        return {"results": results, "totals": totals}
+        results = self.build_elasticsearch_result(buckets)
+        sorted_results = self.sort_results(results)
+
+        return {"totals": totals, "results": sorted_results}
+
+    def sort_results(self, results: List[dict]) -> List[dict]:
+        sorted_parents = sorted(
+            results, key=lambda val: val[self.pagination.sort_key], reverse=self.pagination.sort_order == "desc"
+        )
+
+        if self.has_children:
+            for parent in sorted_parents:
+                parent["children"] = sorted(
+                    parent.get("children", []),
+                    key=lambda val: val[self.pagination.sort_key],
+                    reverse=self.pagination.sort_order == "desc",
+                )
+
+        return sorted_parents[self.pagination.lower_limit : self.pagination.upper_limit]
