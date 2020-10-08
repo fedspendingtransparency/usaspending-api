@@ -8,11 +8,8 @@ import usaspending_api.search.models as mv
 
 DEFAULT_MATIVEW_DIR = settings.REPO_DIR.parent / "matviews"
 DEPENDENCY_FILEPATH = settings.APP_DIR / "database_scripts" / "matviews" / "functions_and_enums.sql"
-JSON_DIR = settings.APP_DIR / "database_scripts" / "matview_sql_generator"
+JSON_DIR = settings.APP_DIR / "database_scripts" / "matview_generator"
 MATVIEW_GENERATOR_FILE = settings.APP_DIR / "database_scripts" / "matview_generator" / "matview_sql_generator.py"
-UNIVERSAL_TRANSACTION_DEF = (
-    settings.APP_DIR / "database_scripts" / "matview_generator" / "universal_transaction_matview.json"
-)
 OVERLAY_VIEWS = [
     settings.APP_DIR / "database_scripts" / "matviews" / "vw_award_search.sql",
     settings.APP_DIR / "database_scripts" / "matviews" / "vw_es_award_search.sql",

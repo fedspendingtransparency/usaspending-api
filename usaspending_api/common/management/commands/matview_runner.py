@@ -13,8 +13,8 @@ from usaspending_api.common.matview_manager import (
     DEPENDENCY_FILEPATH,
     DROP_OLD_MATVIEWS,
     MATERIALIZED_VIEWS,
+    CHUNKED_MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
-    UNIVERSAL_TRANSACTION_DEF,
     OVERLAY_VIEWS,
 )
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -28,6 +28,7 @@ class Command(BaseCommand):
 
     def faux_init(self, args):
         self.matviews = MATERIALIZED_VIEWS
+        self.chunked_matviews = CHUNKED_MATERIALIZED_VIEWS
         if args["only"]:
             self.matviews = {args["only"]: MATERIALIZED_VIEWS[args["only"]]}
         self.matview_dir = args["temp_dir"]
@@ -83,8 +84,10 @@ class Command(BaseCommand):
         subprocess.call(exec_str, shell=True)
 
         # Create SQL files for Chunked Universal Transaction Matviews
-        exec_str = f"python3 {MATVIEW_GENERATOR_FILE} --quiet  --dest={self.matview_dir} --file {UNIVERSAL_TRANSACTION_DEF} --chunk-count {self.chunk_count}"
-        subprocess.call(exec_str, shell=True)
+        for matview, config in self.chunked_matviews.items():
+            exec_str = f"python3 {MATVIEW_GENERATOR_FILE} --quiet  --dest={self.matview_dir} --file {config['json_filepath']} --chunk-count {self.chunk_count}"
+            logger.info(exec_str)
+            subprocess.call(exec_str, shell=True)
 
     def cleanup(self):
         """Cleanup files after run"""
@@ -93,16 +96,20 @@ class Command(BaseCommand):
     def create_views(self):
         loop = asyncio.new_event_loop()
         tasks = []
+
+        # Create Matviews
         for matview, config in self.matviews.items():
-            logger.info("Creating Future for {}".format(matview))
+            logger.info(f"Creating Future for matview {matview}")
             sql = (self.matview_dir / config["sql_filename"]).read_text()
             tasks.append(asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(matview)), loop=loop))
 
-        for current_chunk in range(0, self.chunk_count):
-            matview = f"universal_transaction_matview_{current_chunk}"
-            logger.info(f"Creating Future for {matview}")
-            sql = (self.matview_dir / f"universal_transaction_matview_{current_chunk}.sql").read_text()
-            tasks.append(asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(matview)), loop=loop))
+        # Create Chunked Matviews
+        for matview, config in self.chunked_matviews.items():
+            for current_chunk in range(0, self.chunk_count):
+                chunked_matview = f"{matview}_{current_chunk}"
+                logger.info(f"Creating Future for chunked matview {chunked_matview}")
+                sql = (self.matview_dir / f"{chunked_matview}.sql").read_text()
+                tasks.append(asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(chunked_matview)), loop=loop))
 
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()

@@ -5,7 +5,7 @@ from collections import OrderedDict
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS, CHUNKED_MATERIALIZED_VIEWS
 
-MATVIEWS = OrderedDict(list(MATERIALIZED_VIEWS.items()) + list(CHUNKED_MATERIALIZED_VIEWS.items()))
+ALL_MATVIEWS = OrderedDict(list(MATERIALIZED_VIEWS.items()) + list(CHUNKED_MATERIALIZED_VIEWS.items()))
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def convert_traditional_views_to_materialized_views(transactional_db):
 
     # Get rid of the traditional views that replace our materialized views for tests.
     with connection.cursor() as cursor:
-        cursor.execute("; ".join(f"drop view if exists {v} cascade" for v in MATVIEWS))
+        cursor.execute("; ".join(f"drop view if exists {v} cascade" for v in ALL_MATVIEWS))
 
     # Create materialized views.
     generate_matviews(materialized_views_as_traditional_views=False)
@@ -27,7 +27,7 @@ def convert_traditional_views_to_materialized_views(transactional_db):
 
     # Great.  Test is over.  Drop all of our materialized views.
     with connection.cursor() as cursor:
-        cursor.execute("; ".join(f"drop materialized view if exists {v} cascade" for v in MATVIEWS))
+        cursor.execute("; ".join(f"drop materialized view if exists {v} cascade" for v in ALL_MATVIEWS))
 
     # Recreate our traditional views.
     generate_matviews(materialized_views_as_traditional_views=True)
