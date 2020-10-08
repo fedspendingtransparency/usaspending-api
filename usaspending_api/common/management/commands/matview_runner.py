@@ -86,7 +86,6 @@ class Command(BaseCommand):
         # Create SQL files for Chunked Universal Transaction Matviews
         for matview, config in self.chunked_matviews.items():
             exec_str = f"python3 {MATVIEW_GENERATOR_FILE} --quiet  --dest={self.matview_dir} --file {config['json_filepath']} --chunk-count {self.chunk_count}"
-            logger.info(exec_str)
             subprocess.call(exec_str, shell=True)
 
     def cleanup(self):
