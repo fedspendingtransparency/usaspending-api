@@ -10,6 +10,15 @@ This endpoint returns the total transaction obligations and count of awarding ag
 + Request (application/json)
     + Attributes (object)
         + `award_id`: `CONT_AWD_DEAC5206NA25396_8900_-NONE-_-NONE-` (required, string)
+    + Body
+
+            {
+                "award_id":"CONT_AWD_N0001902C3002_9700_-NONE-_-NONE-",
+                "page":1,
+                "sort":"reporting_fiscal_date",
+                "order":"asc",
+                "limit":15
+            }
 + Response 200 (application/json)
     + Attributes
         + `total_transaction_obligated_amount` (required, number)

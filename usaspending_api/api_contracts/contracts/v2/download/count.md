@@ -19,6 +19,27 @@ Returns the number of transactions that would be included in a download request 
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
+    + Body
+
+
+            {
+                "filters": {
+                    "keywords": ["cheese"],
+                    "time_period": [
+                        {
+                            "start_date": "2019-10-01",
+                            "end_date": "2020-09-30"
+                        },
+                        {
+                            "start_date": "2010-10-01",
+                            "end_date": "2011-09-30"
+                        }
+                    ],
+                    "recipient_type_names": ["higher_education"],
+                    "place_of_performance_locations": [{"country": "USA", "state": "WI"}],
+                    "psc_codes": {"require": [["Product","10","1035"]]}
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -31,6 +52,7 @@ Returns the number of transactions that would be included in a download request 
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
+
 
             {
                 "calculated_transaction_count": 87343,

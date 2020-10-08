@@ -18,6 +18,11 @@ Returns the high-level aggregations of the counts and dollar amounts for all tra
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
             Need to provide `keywords`
+            
+    + Body
+        
+        
+            {"filters":{"keyword":"test"}}
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -27,6 +32,7 @@ Returns the high-level aggregations of the counts and dollar amounts for all tra
 
     + Body
 
+            
             {
                 "results": {
                     "prime_awards_obligation_amount": 55791124858.71,
