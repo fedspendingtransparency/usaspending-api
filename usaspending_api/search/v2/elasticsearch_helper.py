@@ -177,7 +177,7 @@ def get_number_of_unique_terms_for_awards(filter_query: ES_Q, field: str) -> int
     return _get_number_of_unique_terms(AwardSearch().filter(filter_query), field)
 
 
-def get_number_of_unique_nested_terms_accounts(filter_query: ES_Q, field: str) -> int:
+def get_number_of_unique_terms_for_accounts(filter_query: ES_Q, field: str, is_nested: bool = True) -> int:
     """
     Returns the count for a specific filter_query.
     NOTE: Counts below the precision_threshold are expected to be close to accurate (per the Elasticsearch
@@ -185,11 +185,14 @@ def get_number_of_unique_nested_terms_accounts(filter_query: ES_Q, field: str) -
           11k to ensure that endpoints using Elasticsearch do not cross the 10k threshold. Elasticsearch endpoints
           should be implemented with a safeguard in case this count is above 10k.
     """
-    nested_agg = A("nested", path="financial_accounts_by_award")
-    cardinality_aggregation = A("cardinality", field=field, precision_threshold=11000)
-    nested_agg.metric("field_count", cardinality_aggregation)
     search = AccountSearch().filter(filter_query)
-    search.aggs.metric("financial_account_agg", nested_agg)
+    cardinality_aggregation = A("cardinality", field=field, precision_threshold=11000)
+    if is_nested:
+        nested_agg = A("nested", path="financial_accounts_by_award")
+        nested_agg.metric("field_count", cardinality_aggregation)
+        search.aggs.metric("financial_account_agg", nested_agg)
+    else:
+        search.aggs.metric("financial_account_agg", cardinality_aggregation)
     response = search.handle_execute()
     response_dict = response.aggs.to_dict()
     return response_dict.get("financial_account_agg", {}).get("field_count", {"value": 0})["value"]

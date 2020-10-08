@@ -201,7 +201,7 @@ SELECT
 
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
-  DEFC.disaster_emergency_fund_codes AS disaster_emergency_fund_codes,
+  DEFC.disaster_emergency_fund_codes AS disaster_emergency_fund_code,
   DEFC.gross_outlay_amount_by_award_cpe AS total_covid_outlay,
   DEFC.transaction_obligated_amount AS total_covid_obligation
 FROM vw_es_award_search

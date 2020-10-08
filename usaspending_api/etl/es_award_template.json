@@ -546,7 +546,7 @@
         "tas_components": {
           "type": "keyword"
         },
-        "disaster_emergency_fund_codes": {
+        "disaster_emergency_fund_code": {
           "type": "keyword"
         },
         "total_covid_obligation": {

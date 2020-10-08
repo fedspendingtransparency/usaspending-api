@@ -29,7 +29,7 @@ from usaspending_api.references.models import GTASSF133Balances, Agency, Toptier
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_summed_value_as_float,
-    get_number_of_unique_nested_terms_accounts,
+    get_number_of_unique_terms_for_accounts,
 )
 
 logger = logging.getLogger(__name__)
