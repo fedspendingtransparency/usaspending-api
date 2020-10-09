@@ -5,6 +5,7 @@ from enum import Enum
 from typing import List
 
 from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
+from usaspending_api.references.models import Cfda
 from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_cfda_id_title_by_number,
     fetch_psc_description_by_code,
@@ -31,9 +32,15 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         results = []
+        cfda_code_list = []  # Separate lookup is done for CFDA to join to references_cfda during ES indexing
         industry_code_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
+
         for bucket in industry_code_info_buckets:
-            industry_code_info = json_str_to_dict(bucket.get("key"))
+            if self.industry_code_type == IndustryCodeType.CFDA:
+                industry_code_info = {"code": bucket.get("key")}
+                cfda_code_list.append(industry_code_info["code"])
+            else:
+                industry_code_info = json_str_to_dict(bucket.get("key"))
 
             results.append(
                 {
@@ -43,6 +50,17 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                     "name": industry_code_info.get("description") or None,
                 }
             )
+
+        if cfda_code_list:
+            cfda_matches = {
+                cfda["program_number"]: cfda
+                for cfda in Cfda.objects.filter(program_number__in=cfda_code_list).values(
+                    "id", "program_number", "program_title"
+                )
+            }
+            for val in results:
+                val["id"] = cfda_matches.get(val["code"], {}).get("id")
+                val["name"] = cfda_matches.get(val["code"], {}).get("program_title")
 
         return results
 
@@ -82,7 +100,7 @@ class CfdaViewSet(AbstractIndustryCodeViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/cfda.md"
 
     industry_code_type = IndustryCodeType.CFDA
-    category = Category(name="cfda", agg_key="cfda_agg_key")
+    category = Category(name="cfda", agg_key=industry_code_type.value)
 
 
 class NAICSViewSet(AbstractIndustryCodeViewSet):

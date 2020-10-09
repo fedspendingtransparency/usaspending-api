@@ -30,6 +30,6 @@ class CfdaCountViewSet(DisasterBase):
             non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
         filter_query.must.append(ES_Q("bool", should=non_zero_queries, minimum_should_match=1))
 
-        bucket_count = get_number_of_unique_terms_for_awards(filter_query, "cfda_agg_key.hash")
+        bucket_count = get_number_of_unique_terms_for_awards(filter_query, "cfda_number.hash")
 
         return Response({"count": bucket_count})
