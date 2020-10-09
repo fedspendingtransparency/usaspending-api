@@ -455,6 +455,7 @@
         },
         "cfda_number": {
           "type": "text",
+          "eager_global_ordinals": true,
           "fields": {
             "contains": {
               "type": "text",
@@ -462,6 +463,9 @@
             },
             "keyword": {
               "type": "keyword"
+            },
+            "hash": {
+              "type": "murmur3"
             }
           }
         },
@@ -474,15 +478,6 @@
             },
             "keyword": {
               "type": "keyword"
-            }
-          }
-        },
-        "cfda_agg_key": {
-          "type": "keyword",
-          "eager_global_ordinals": true,
-          "fields": {
-            "hash": {
-              "type": "murmur3"
             }
           }
         },
