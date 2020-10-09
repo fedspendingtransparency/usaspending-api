@@ -1,9 +1,10 @@
 import logging
 
 from django.core.management import call_command
+from math import ceil
 from multiprocessing import Pool, Event
-from random import choice
 from time import perf_counter
+from typing import Generator, List
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
@@ -13,31 +14,35 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     deleted_awards,
     deleted_transactions,
     extract_records,
-    EXTRACT_SQL,
     format_log,
     gen_random_name,
     load_data,
+    obtain_extract_sql,
     set_final_index_config,
     swap_aliases,
+    TaskSpec,
     toggle_refresh_on,
-    WorkerNode,
 )
 
 logger = logging.getLogger("script")
 
 
-def init(a):
-    """odd mechanism to set a global abort event in each subprocess"""
+def init_shared_abort(a: Event) -> None:
+    """
+        Odd mechanism to set a global abort event in each subprocess
+        Inspired by https://stackoverflow.com/a/59984671
+    """
     global abort
     abort = a
 
 
 class Controller:
-    def __init__(self, config, elasticsearch_client):
-        """Set values based on env vars and when the script started"""
+    """Controller for multiprocess Elasticsearch ETL"""
+
+    def __init__(self, config):
         self.config = config
 
-    def prepare_for_etl(self):
+    def prepare_for_etl(self) -> None:
         if self.config["process_deletes"]:
             self.run_deletes()
         logger.info(format_log("Assessing data to process"))
@@ -47,36 +52,36 @@ class Controller:
             self.processes = []
             return
 
+        self.config["partitions"] = self.determine_partitions()
         self.config["processes"] = min(self.config["processes"], self.config["partitions"])
 
         logger.info(
             format_log(
-                f"Hailing {self.config['partitions']:,} heroes"
-                f" to handle {self.record_count:,} {self.config['data_type']} records"
-                f" in squads of {self.config['processes']:,}"
+                f"Created {self.config['partitions']:,} partitions"
+                f" to process {self.record_count:,} total {self.config['data_type']} records"
+                f" with {self.config['processes']:,} parellel processes"
             )
         )
 
-        self.workers = [self.create_worker(j) for j in range(self.config["partitions"])]
+        self.tasks = self.construct_tasks()
 
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
             call_command("es_configure", "--template-only", f"--load-type={self.config['data_type']}s")
             create_index(self.config["index_name"], instantiate_elasticsearch_client())
 
-    def launch_workers(self):
-        _abort = Event()  # Event which signals an error occured in a subprocess when set
-
-        with Pool(self.config["processes"], maxtasksperchild=1, initializer=init, initargs=(_abort,)) as pool:
-            # Using list comprehension to prevent new tasks from starting if an event occured
-            pool.map(extract_transform_load, [worker for worker in self.workers if not _abort.is_set()])
+    def dispatch_tasks(self) -> None:
+        _abort = Event()  # Event which when set signals an error occured in a subprocess
+        parellel_procs = self.config["processes"]
+        with Pool(parellel_procs, maxtasksperchild=1, initializer=init_shared_abort, initargs=(_abort,)) as pool:
+            pool.map(extract_transform_load, self.tasks)
 
         if _abort.is_set():
-            raise RuntimeError("One or more heroes have fallen! Initiate strategic retreat")
+            raise RuntimeError("One or more partitions failed!")
 
     def complete_process(self) -> None:
+        client = instantiate_elasticsearch_client()
         if self.config["create_new_index"]:
-            client = instantiate_elasticsearch_client()
             set_final_index_config(client, self.config["index_name"])
             if self.config["skip_delete_index"]:
                 logger.info(format_log("Skipping deletion of old indices"))
@@ -85,60 +90,76 @@ class Controller:
                 swap_aliases(client, self.config)
 
         if self.config["is_incremental_load"]:
-            toggle_refresh_on(self.elasticsearch_client, self.config["index_name"])
+            toggle_refresh_on(client, self.config["index_name"])
             logger.info(
                 format_log(f"Storing datetime {self.config['processing_start_datetime']} for next incremental load")
             )
             update_last_load_date(f"{self.config['stored_date_key']}", self.config["processing_start_datetime"])
 
-    def create_worker(self, number: int) -> WorkerNode:
-        sql_str = EXTRACT_SQL.format(
-            divisor=self.config["partitions"],
-            id_col=self.config["primary_key"],
-            remainder=number,
-            update_date=self.config["starting_date"],
+    def determine_partitions(self) -> int:
+        """Create partion size less than or equal to max_size for more even distribution"""
+        if self.config["partition_size"] > self.record_count:
+            return 1
+        return ceil(self.record_count / self.config["partition_size"])
+
+    def construct_tasks(self) -> List[TaskSpec]:
+        """Create the Task objects w/ the appropriate configuration"""
+        name_gen = gen_random_name()
+        return [self.configure_task(j, name_gen) for j in range(self.config["partitions"])]
+
+    def configure_task(self, partition_number: int, name_gen: Generator) -> TaskSpec:
+        sql_str = obtain_extract_sql(
+            {**self.config, **{"remainder": partition_number, "divisor": self.config["partitions"]}}
+        )
+
+        return TaskSpec(
+            base_table=self.config["base_table"],
+            base_table_id=self.config["base_table_id"],
+            index=self.config["index_name"],
+            is_incremental=self.config["is_incremental_load"],
+            name=next(name_gen),
+            partition_number=partition_number,
+            primary_key=self.config["primary_key"],
+            sql=sql_str,
+            transform_func=self.config["data_transform_func"],
             view=self.config["sql_view"],
         )
 
-        return WorkerNode(
-            index=self.config["index_name"],
-            primary_key=self.config["primary_key"],
-            name=next(gen_random_name()),
-            sql=sql_str,
-            is_incremental=self.config["is_incremental_load"],
-            transform_func=self.config["data_transform_func"],
-        )
-
-    def run_deletes(self):
+    def run_deletes(self) -> None:
         logger.info(format_log("Processing deletions"))
         client = instantiate_elasticsearch_client()
         if self.config["data_type"] == "award":
             deleted_awards(client, self.config)
-        else:
+        elif self.config["data_type"] == "transaction":
             deleted_transactions(client, self.config)
+        else:
+            raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
 
 
-def extract_transform_load(worker):
+def extract_transform_load(task: TaskSpec) -> None:
     if abort.is_set():
-        logger.info(format_log(f"{worker.name} became lost on the way over."))
+        logger.warning(format_log(f"Skipping partition #{task.partition_number} due to previous error", name=task.name))
         return
 
     start = perf_counter()
-    a = choice(["skillfully", "deftly", "expertly", "readily", "quickly", "nimbly", "casually", "easily", "boldly"])
-    logger.info(format_log(f"{worker.name.upper()} {a} enters the arena", job=worker.name))
+    msg = f"Started processing on partition #{task.partition_number}: {task.name}"
+    logger.info(format_log(msg, name=task.name))
 
     client = instantiate_elasticsearch_client()
     try:
-        records = worker.transform_func(worker, extract_records(worker))
-        load_data(worker, records, client)
+        records = task.transform_func(task, extract_records(task))
+        if abort.is_set():
+            f"Prematurely ending partition #{task.partition_number} due to error in another process"
+            logger.warning(format_log(msg, name=task.name))
+            return
+        load_data(task, records, client)
     except Exception:
         if abort.is_set():
-            logger.info(format_log(f"{worker.name} realizes the battle lost. #ragequit"))
+            msg = f"Partition #{task.partition_number} failed after an error was previously encountered"
+            logger.warning(format_log(msg, name=task.name))
         else:
-            msg = f"{worker.name} has fallen in battle! How could such a thing happen to this great warrior?"
-            logger.error(msg, job=worker.name)
+            logger.error(format_log(f"{task.name} failed!", name=task.name))
             abort.set()
     else:
-        attrib = choice(["pro", "champ", "boss", "top dog", "hero", "super"])
-        msg = f"{worker.name} completed the mission like a {attrib} in {perf_counter() - start:.2f}s"
-        logger.info(format_log(msg, job=worker.name))
+        msg = f"Partition #{task.partition_number} was successfully processed in {perf_counter() - start:.2f}s"
+        logger.info(format_log(msg, name=task.name))

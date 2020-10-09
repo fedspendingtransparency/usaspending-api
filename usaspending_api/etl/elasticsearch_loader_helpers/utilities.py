@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from django.conf import settings
 from pathlib import Path
 from random import choice
-from typing import Optional, List
+from typing import Any, Generator, List, Optional
+
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -16,22 +17,25 @@ logger = logging.getLogger("script")
 
 
 @dataclass
-class WorkerNode:
-    """Contains details for a worker node to perform micro ETL step"""
+class TaskSpec:
+    """Contains details for a single ETL task"""
 
     name: str
     index: str
     sql: str
+    view: str
+    base_table: str
+    base_table_id: str
     primary_key: str
+    partition_number: int
     is_incremental: bool
     transform_func: callable = None
-    # ids: List[int] = field(default_factory=list)
 
 
-def chunks(l, n):
-    """Yield successive n-sized chunks from l"""
-    for i in range(0, len(l), n):
-        yield l[i : i + n]
+def chunks(items: List[Any], size: int) -> List[Any]:
+    """Yield successive sized chunks from items"""
+    for i in range(0, len(items), size):
+        yield items[i : i + size]
 
 
 def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
@@ -48,8 +52,8 @@ def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
     return result
 
 
-def execute_sql_statement(cmd, results=False, verbose=False):
-    """ Simple function to execute SQL using a psycopg2 connection"""
+def execute_sql_statement(cmd: str, results: bool = False, verbose: bool = False) -> Optional[List[dict]]:
+    """Simple function to execute SQL using a single-use psycopg2 connection"""
     rows = None
     if verbose:
         print(cmd)
@@ -63,40 +67,64 @@ def execute_sql_statement(cmd, results=False, verbose=False):
     return rows
 
 
-def db_rows_to_dict(cursor):
-    """ Return a dictionary of all row results from a database connection cursor """
+def db_rows_to_dict(cursor: psycopg2.extensions.cursor) -> List[dict]:
+    """Return a dictionary of all row results from a database connection cursor"""
     columns = [col[0] for col in cursor.description]
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
-def filter_query(column, values, query_type="match_phrase"):
+def filter_query(column: str, values: list, query_type: str = "match_phrase") -> dict:
     queries = [{query_type: {column: str(i)}} for i in values]
     return {"query": {"bool": {"should": [queries]}}}
 
 
-def format_log(msg, process=None, job=None):
-    inner_str = f"[{process if process else 'main'}] {f'{job}' if job else ''}"
+def format_log(msg: str, action: str = None, name: str = None) -> str:
+    """Helper function to format log statements"""
+    inner_str = f"[{action if action else 'main'}] {f'{name}' if name else ''}"
     return f"{inner_str:<32} | {msg}"
 
 
-def gen_random_name():
-    """Generates (over) 5000 unique names in random order. Adds integer to names if necessary"""
-    data_file = json.loads(Path(settings.APP_DIR / "data" / "multiprocessing_worker_names.json").read_text())
-    iterations = 1
-    max_combinations = len(data_file["attributes"]) * len(data_file["subjects"])
-    name_template = "{attribute} {subject}"
-    previous_names = []
+def gen_random_name() -> Generator[str, None, None]:
+    """
+        Generate over 5000 unique names in a random order.
+        Successive calls past the unique name combinations will infinitely
+        continue to generate additional unique names w/ roman numerals appended.
+    """
+    name_dict = json.loads(Path(settings.APP_DIR / "data" / "multiprocessing_worker_names.json").read_text())
+    attributes = list(set(name_dict["attributes"]))
+    subjects = list(set(name_dict["subjects"]))
+    upper_limit = len(attributes) * len(subjects)
+    name_str = "{attribute} {subject}{loop}"
+    previous_names, full_cycles, loop = [], 0, ""
+
+    def to_roman_numerals(num: int) -> str:
+        return (
+            ("I" * num)
+            .replace("IIIII", "V")
+            .replace("IIII", "IV")
+            .replace("VV", "X")
+            .replace("VIV", "IX")
+            .replace("XXXXX", "L")
+            .replace("XXXX", "XL")
+            .replace("LL", "C")
+            .replace("LXL", "XC")
+            .replace("CCCCC", "D")
+            .replace("CCCC", "CD")
+            .replace("DD", "M")
+            .replace("DCD", "CM")
+        )
 
     while True:
-        name = name_template.format(attribute=choice(data_file["attributes"]), subject=choice(data_file["subjects"]))
+        random_a, random_s = choice(attributes), choice(subjects)
+        name = name_str.format(attribute=random_a, subject=random_s, loop=loop)
+
         if name not in previous_names:
             previous_names.append(name)
             yield name
 
-        if len(previous_names) >= max_combinations:
-            iterations += 1
-            max_combinations *= iterations
-            name_template = "{attribute} {subject} {iterations}"
+        if len(previous_names) >= (upper_limit + (upper_limit * full_cycles)):
+            full_cycles += 1
+            loop = f" {to_roman_numerals(full_cycles)}"
 
 
 def create_agg_key(key_name: str, record: dict):
@@ -133,18 +161,6 @@ def create_agg_key(key_name: str, record: dict):
             ("id", record[f"{agency_type}_{agency_tier + '_' if agency_tier == 'toptier' else ''}agency_id"])
         )
         return OrderedDict(item_list)
-
-    def _cfda_agg_key():
-        if record["cfda_number"] is None:
-            return None
-        return OrderedDict(
-            [
-                ("code", record["cfda_number"]),
-                ("description", record["cfda_title"]),
-                ("id", record["cfda_id"]),
-                ("url", record["cfda_url"] if record["cfda_url"] != "None;" else None),
-            ]
-        )
 
     def _naics_agg_key():
         if record["naics_code"] is None:
@@ -210,7 +226,6 @@ def create_agg_key(key_name: str, record: dict):
     agg_key_func_lookup = {
         "awarding_subtier_agency_agg_key": lambda: _agency_agg_key("awarding", "subtier"),
         "awarding_toptier_agency_agg_key": lambda: _agency_agg_key("awarding", "toptier"),
-        "cfda_agg_key": _cfda_agg_key,
         "funding_subtier_agency_agg_key": lambda: _agency_agg_key("funding", "subtier"),
         "funding_toptier_agency_agg_key": lambda: _agency_agg_key("funding", "toptier"),
         "naics_agg_key": _naics_agg_key,

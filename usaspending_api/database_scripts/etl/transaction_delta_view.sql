@@ -73,8 +73,6 @@ SELECT
 
   UTM.cfda_number,
   UTM.cfda_title,
-  UTM.cfda_id,
-  NULL::text AS cfda_url,
 
   UTM.type_of_contract_pricing,
   UTM.type_set_aside,

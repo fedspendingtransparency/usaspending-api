@@ -7,36 +7,43 @@ logger = logging.getLogger("script")
 
 COUNT_SQL = """
 SELECT COUNT(*) AS count
-FROM "{view}"
-WHERE "update_date" >= '{update_date}'
+FROM "{sql_view}"
+WHERE "update_date" >= '{starting_date}'
 """
 
 EXTRACT_SQL = """
     SELECT *
-    FROM "{view}"
-    WHERE "update_date" >= '{update_date}' AND mod("{id_col}", {divisor}) = {remainder}
+    FROM "{sql_view}"
+    WHERE "update_date" >= '{starting_date}' AND mod("{primary_key}", {divisor}) = {remainder}
 """
 
 
-def count_of_records_to_process(config):
+def obtain_count_sql(config: dict) -> str:
+    return COUNT_SQL.format(**config)
+
+
+def obtain_extract_sql(config: dict) -> str:
+    return EXTRACT_SQL.format(**config)
+
+
+def count_of_records_to_process(config: dict) -> int:
     start = perf_counter()
-    count_sql = COUNT_SQL.format(update_date=config["starting_date"], view=config["sql_view"])
-    count = execute_sql_statement(count_sql, True, config["verbose"])[0]["count"]
+    count = execute_sql_statement(obtain_count_sql(config), True, config["verbose"])[0]["count"]
     msg = f"Found {count:,} {config['data_type']} DB records, took {perf_counter() - start:.2f}s"
-    logger.info(format_log(msg, process="Extract"))
+    logger.info(format_log(msg, action="Extract"))
     return count
 
 
-def extract_records(worker):
+def extract_records(task):
     start = perf_counter()
-    logger.info(format_log(f"Extracting data from source", job=worker.name, process="Extract"))
+    logger.info(format_log(f"Extracting data from source", name=task.name, action="Extract"))
 
     try:
-        records = execute_sql_statement(worker.sql, True)
+        records = execute_sql_statement(task.sql, True)
     except Exception as e:
-        logger.exception(f"Worker {worker.name} failed with '{worker.sql}'")
+        logger.exception(f"Failed on partition {task.name} with '{task.sql}'")
         raise e
 
     msg = f"{len(records):,} records extracted in {perf_counter() - start:.2f}s"
-    logger.info(format_log(msg, job=worker.name, process="Extract"))
+    logger.info(format_log(msg, name=task.name, action="Extract"))
     return records

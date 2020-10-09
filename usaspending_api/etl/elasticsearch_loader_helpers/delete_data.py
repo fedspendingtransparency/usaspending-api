@@ -5,6 +5,7 @@ import pandas as pd
 from collections import defaultdict
 from django.conf import settings
 from time import perf_counter
+from typing import Tuple, List, Optional
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q as ES_Q
@@ -20,57 +21,69 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
 logger = logging.getLogger("script")
 
 
-def delete_query(response):
+def delete_query(response: dict) -> dict:
     return {"query": {"ids": {"values": [i["_id"] for i in response["hits"]["hits"]]}}}
 
 
-def delete_from_es(client, id_list, job_id, config, index=None):
+def delete_from_es(
+    client: Elasticsearch,
+    id_list: List[dict],
+    index: str,
+    max_query_size: int,
+    use_aliases: bool = False,
+    task_id: Optional[Tuple[int, str]] = None,
+) -> None:
     """
-    id_list = [{key:'key1',col:'tranaction_id'},
-               {key:'key2',col:'generated_unique_transaction_id'}],
-               ...]
-    or
-    id_list = [{key:'key1',col:'award_id'},
-               {key:'key2',col:'generated_unique_award_id'}],
-               ...]
+        id_list = [
+            {key: 'key1', col: 'tranaction_id'},
+            {key: 'key2', col: 'generated_unique_transaction_id'},
+            ...
+        ]
+        - or -
+        id_list = [
+            {key: 'key1', col: 'award_id'},
+            {key: 'key2', col: 'generated_unique_award_id'},
+            ...
+        ]
+
     """
     start = perf_counter()
+    msg = f"Deleting up to {len(id_list):,} document{'s' if len(id_list) != 1 else ''}"
+    logger.info(format_log(msg, name=task_id, action="Delete"))
 
-    logger.info(format_log(f"Deleting up to {len(id_list):,} document(s)", job=job_id, process="ES Delete"))
-
-    if index is None:
-        index = f"{config['query_alias_prefix']}-*"
+    if use_aliases:
+        index = f"{index}-*"
     start_ = client.count(index=index)["count"]
-    logger.info(format_log(f"Starting amount of indices ----- {start_:,}", job=job_id, process="ES Delete"))
+    logger.info(format_log(f"Starting amount of indices ----- {start_:,}", name=task_id, action="Delete"))
     col_to_items_dict = defaultdict(list)
     for l in id_list:
         col_to_items_dict[l["col"]].append(l["key"])
 
     for column, values in col_to_items_dict.items():
-        logger.info(format_log(f"Deleting {len(values):,} of '{column}'", job=job_id, process="ES Delete"))
+        logger.info(format_log(f"Deleting {len(values):,} of '{column}'", name=task_id, action="Delete"))
         values_generator = chunks(values, 1000)
         for v in values_generator:
             # IMPORTANT: This delete routine looks at just 1 index at a time. If there are duplicate records across
             # multiple indexes, those duplicates will not be caught by this routine. It is left as is because at the
             # time of this comment, we are migrating to using a single index.
             body = filter_query(column, v)
-            response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
+            response = client.search(index=index, body=json.dumps(body), size=max_query_size)
             delete_body = delete_query(response)
             try:
-                client.delete_by_query(
-                    index=index, body=json.dumps(delete_body), refresh=True, size=config["max_query_size"]
-                )
+                client.delete_by_query(index=index, body=json.dumps(delete_body), refresh=True, size=max_query_size)
             except Exception:
-                logger.exception("", job=job_id, process="ES Delete")
+                logger.exception(format_log("", name=task_id, action="Delete"))
                 raise SystemExit(1)
 
     end_ = client.count(index=index)["count"]
-    msg = f"ES Deletes took {perf_counter() - start:.2f}s. Deleted {start_ - end_:,} records"
-    logger.info(format_log(msg, job=job_id, process="ES Delete"))
+    record_count = start_ - end_
+    duration = perf_counter() - start
+    msg = f"Delete operation took {duration:.2f}s. Removed {record_count:,} document{'s' if record_count != 1 else ''}"
+    logger.info(format_log(msg, name=task_id, action="Delete"))
     return
 
 
-def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list, job_id: str, index) -> int:
+def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list, task_id: str, index) -> int:
     """
     Bulk delete a batch of documents whose field identified by ``key`` matches any value provided in the
     ``values_list``.
@@ -80,7 +93,7 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
         key (str): name of filed in targeted elasticearch index that shoudld have a unique value for
             every doc in the index. Ideally the field or sub-field provided is of ``keyword`` type.
         value_list (list): if key field has these values, the document will be deleted
-        job_id (str): name of ES ETL job being run, used in logging
+        task_id (str): name of ES ETL job being run, used in logging
         index (str): name of index (or alias) to target for the ``_delete_by_query`` ES operation.
 
             NOTE: This delete routine looks at just the index name given. If there are duplicate records across
@@ -91,8 +104,13 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
     """
     start = perf_counter()
 
-    logger.info(format_log(f"Deleting up to {len(value_list):,} document(s)", process="ES Delete", job=job_id))
-    assert index, "index name must be provided"
+    if len(value_list) == 0:
+        logger.info(format_log("Nothing to delete", action="Delete", name=task_id))
+        return 0
+
+    logger.info(format_log(f"Deleting up to {len(value_list):,} document(s)", action="Delete", name=task_id))
+    if not index:
+        raise RuntimeError("index name must be provided")
 
     deleted = 0
     is_error = False
@@ -109,12 +127,14 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
             deleted += chunk_deletes
     except Exception:
         is_error = True
-        logger.exception("", job=job_id, process="ES Delete")
+        logger.exception(format_log("", name=task_id, action="Delete"))
         raise SystemExit(1)
     finally:
         error_text = " before encountering an error" if is_error else ""
-        msg = f"ES Deletes took {perf_counter() - start:.2f}s. Deleted {deleted:,} records{error_text}"
-        logger.info(format_log(msg, process="ES Delete", job=job_id))
+        duration = perf_counter() - start
+        docs = f"document{'s' if deleted != 1 else ''}"
+        msg = f"Delete operation took {duration:.2f}s. Removed {deleted:,} {docs}{error_text}"
+        logger.info(format_log(msg, action="Delete", name=task_id))
 
     return deleted
 
@@ -147,27 +167,38 @@ def deleted_awards(client, config):
     if we can't find the awards in the database, then we have to delete them from es
     """
     deleted_ids = gather_deleted_ids(config)
-    id_list = [{"key": deleted_id, "col": config["unique_id_field"]} for deleted_id in deleted_ids]
+    id_list = [{"key": deleted_id, "col": config["unique_key_field"]} for deleted_id in deleted_ids]
     award_ids = get_deleted_award_ids(client, id_list, config, settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*")
     if (len(award_ids)) == 0:
-        logger.info(format_log(f"No related awards require deletion", process="ES Delete"))
+        logger.info(format_log(f"No related awards require deletion", action="Delete"))
         return
+
     deleted_award_ids = check_awards_for_deletes(award_ids)
-    if len(deleted_award_ids) != 0:
-        award_id_list = [
-            {"key": deleted_award["generated_unique_award_id"], "col": config["unique_id_field"]}
-            for deleted_award in deleted_award_ids
-        ]
-        delete_from_es(client, award_id_list, None, config, None)
-    else:
-        logger.info(format_log(f"No related awards require deletion", process="ES Delete"))
+    if len(deleted_award_ids) == 0:
+        logger.info(format_log(f"No related awards require deletion", action="Delete"))
+        return
+
+    award_id_list = [
+        {"key": deleted_award["generated_unique_award_id"], "col": config["unique_key_field"]}
+        for deleted_award in deleted_award_ids
+    ]
+    delete_from_es(
+        client,
+        award_id_list,
+        index=config["query_alias_prefix"],
+        max_query_size=config["max_query_size"],
+        use_aliases=True,
+    )
+
     return
 
 
 def deleted_transactions(client, config):
     deleted_ids = gather_deleted_ids(config)
-    id_list = [{"key": deleted_id, "col": config["unique_id_field"]} for deleted_id in deleted_ids]
-    delete_from_es(client, id_list, None, config, None)
+    id_list = [{"key": deleted_id, "col": config["unique_key_field"]} for deleted_id in deleted_ids]
+    delete_from_es(
+        client, id_list, index=config["query_alias_prefix"], max_query_size=config["max_query_size"], use_aliases=True
+    )
 
 
 def gather_deleted_ids(config):
@@ -177,19 +208,17 @@ def gather_deleted_ids(config):
     """
 
     if not config["process_deletes"]:
-        logger.info(format_log(f"Skipping the S3 CSV fetch for deleted transactions", process="ES Delete"))
+        logger.info(format_log(f"Skipping the S3 CSV fetch for deleted transactions", action="Delete"))
         return
 
-    logger.info(format_log(f"Gathering all deleted transactions from S3", process="ES Delete"))
+    logger.info(format_log(f"Gathering all deleted transactions from S3", action="Delete"))
     start = perf_counter()
 
     bucket_objects = retrieve_s3_bucket_object_list(bucket_name=config["s3_bucket"])
-    logger.info(
-        format_log(f"{len(bucket_objects):,} files found in bucket '{config['s3_bucket']}'", process="ES Delete")
-    )
+    logger.info(format_log(f"{len(bucket_objects):,} files found in bucket '{config['s3_bucket']}'", action="Delete"))
 
     if config["verbose"]:
-        logger.info(format_log(f"CSV data from {config['starting_date']} to now", process="ES Delete"))
+        logger.info(format_log(f"CSV data from {config['starting_date']} to now", action="Delete"))
 
     filtered_csv_list = [
         x
@@ -198,7 +227,7 @@ def gather_deleted_ids(config):
     ]
 
     if config["verbose"]:
-        logger.info(format_log(f"Found {len(filtered_csv_list)} csv files", process="ES Delete"))
+        logger.info(format_log(f"Found {len(filtered_csv_list)} csv files", action="Delete"))
 
     deleted_ids = {}
 
@@ -213,7 +242,7 @@ def gather_deleted_ids(config):
         elif "afa_generated_unique" in data:
             new_ids = ["ASST_TX_" + x.upper() for x in data["afa_generated_unique"].values]
         else:
-            logger.info(format_log(f"[Missing valid col] in {obj.key}", process="ES Delete"))
+            logger.info(format_log(f"[Missing valid col] in {obj.key}", action="Delete"))
 
         for uid in new_ids:
             if uid in deleted_ids:
@@ -224,12 +253,11 @@ def gather_deleted_ids(config):
 
     if config["verbose"]:
         for uid, deleted_dict in deleted_ids.items():
-            logger.info(format_log(f"id: {uid} last modified: {deleted_dict['timestamp']}", process="ES Delete"))
+            logger.info(format_log(f"id: {uid} last modified: {deleted_dict['timestamp']}", action="Delete"))
 
     logger.info(
         format_log(
-            f"Gathering {len(deleted_ids):,} deleted transactions took {perf_counter() - start:.2f}s",
-            process="ES Delete",
+            f"Gathering {len(deleted_ids):,} deleted transactions took {perf_counter() - start:.2f}s", action="Delete",
         )
     )
     return deleted_ids

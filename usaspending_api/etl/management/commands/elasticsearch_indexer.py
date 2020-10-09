@@ -66,19 +66,19 @@ class Command(BaseCommand):
         parser.add_argument(
             "--processes",
             type=int,
-            help="Number of parallel processes to operate. psycopg2 kicked the bucket with 100",
+            help="Number of parallel processes to operate. psycopg2 kicked the bucket with 100.",
             default=10,
             choices=range(1, 71),
             metavar="[1-70]",
         )
         parser.add_argument(
-            "--partitions",
+            "--partition-size",
             type=int,
-            help="Set how much the data are partitioned. "
-            "NOTICE: large datasets may need indexes or other performance "
-            " optimizations if this is changed",
-            default=10000,
-            metavar="(default: 10,000)",
+            help="Set the target size of a single data partition. A partition "
+            "might be slightly larger or slightly smaller depending on the "
+            " distribution of the data to process",
+            default=250000,
+            metavar="(default: 250,000)",
         )
 
     def handle(self, *args, **options):
@@ -92,19 +92,22 @@ class Command(BaseCommand):
 
         ensure_view_exists(config["sql_view"])
         error_addition = ""
-        loader = Controller(config, elasticsearch_client)
+        loader = Controller(config)
+
+        if config["is_incremental_load"]:
+            toggle_refresh_off(elasticsearch_client, config["index_name"])  # Turned back on at end.
 
         try:
             loader.prepare_for_etl()
-            loader.launch_workers()
+            loader.dispatch_tasks()
         except Exception as e:
             logger.error(f"{str(e)}")
-            error_addition = "before encounting a problem during execution.... "
+            error_addition = "before encountering a problem during execution.... "
             raise SystemExit(1)
         else:
             loader.complete_process()
         finally:
-            msg = f"Script completed in {perf_counter() - start:.2f}s {error_addition}|"
+            msg = f"Script duration was {perf_counter() - start:.2f}s {error_addition}|"
             headers = f"{'-' * (len(msg) - 2)} |"
             logger.info(format_log(headers))
             logger.info(format_log(msg))
@@ -114,7 +117,7 @@ class Command(BaseCommand):
 def parse_cli_args(options: dict, es_client) -> dict:
     default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
     passthrough_values = (
-        "partitions",
+        "partition_size",
         "create_new_index",
         "index_name",
         "load_type",
@@ -152,9 +155,6 @@ def parse_cli_args(options: dict, es_client) -> dict:
         if not es_client.cat.aliases(name=config["write_alias"]):
             logger.error(f"Write alias '{config['write_alias']}' is missing")
             raise SystemExit(1)
-        # Force manual refresh for atomic transaction-like delete/re-add consistency during incremental load.
-        # Turned back on at end.
-        toggle_refresh_off(es_client, config["index_name"])
     else:
         if es_client.indices.exists(config["index_name"]):
             logger.error(f"Data load into existing index. Change index name or run an incremental load")
@@ -172,6 +172,8 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
 
     if arg_parse_options["load_type"] == "awards":
         config = {
+            "base_table": "awards",
+            "base_table_id": "id",
             "data_transform_func": transform_award_data,
             "data_type": "award",
             "max_query_size": settings.ES_AWARDS_MAX_RESULT_WINDOW,
@@ -180,11 +182,13 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_AWARDS_NAME_SUFFIX,
             "sql_view": settings.ES_AWARDS_ETL_VIEW_NAME,
             "stored_date_key": "es_awards",
-            "unique_id_field": "generated_unique_award_id",
+            "unique_key_field": "generated_unique_award_id",
             "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
         }
-    else:
+    elif arg_parse_options["load_type"] == "transactions":
         config = {
+            "base_table": "transaction_normalized",
+            "base_table_id": "id",
             "data_transform_func": transform_transaction_data,
             "data_type": "transaction",
             "max_query_size": settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW,
@@ -193,9 +197,11 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_TRANSACTIONS_NAME_SUFFIX,
             "sql_view": settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
             "stored_date_key": "es_transactions",
-            "unique_id_field": "generated_unique_transaction_id",
+            "unique_key_field": "generated_unique_transaction_id",
             "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
         }
+    else:
+        raise RuntimeError(f"Configuration is not configured for --load-type={arg_parse_options['load_type']}")
 
     config.update({k: v for k, v in arg_parse_options.items() if k in passthrough_values})
     config.update(
