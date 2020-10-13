@@ -754,22 +754,22 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
     for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
 
-        # Assign values to the different agg_key fields
-        for key in agg_keys:
-            file_df = file_df.assign(
-                **{key: file_df.apply(lambda val: create_agg_key(key, val), axis=1, result_type="reduce")}
-            )
+        file_df = file_df.assign(
+            # Assign values to the different agg_key fields
+            **{
+                key: file_df.apply(lambda df: create_agg_key(df, key), axis=1, result_type="reduce") for key in agg_keys
+            },
+            # Explicitly setting the ES _id field to match the postgres PK value allows
+            # bulk index operations to be upserts without creating duplicate documents
+            _id=lambda df: df[f"{'award' if load_type == 'awards' else 'transaction'}_id"],
+            # Route all documents with the same recipient to the same shard
+            # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
+            # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
+            # and this is needed for performance
+            # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
+            routing=lambda df: df[settings.ES_ROUTING_FIELD],
+        )
 
-        # Route all documents with the same recipient to the same shard
-        # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
-        # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
-        # and this is needed for performance
-        # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
-        file_df["routing"] = file_df[settings.ES_ROUTING_FIELD]
-
-        # Explicitly setting the ES _id field to match the postgres PK value allows
-        # bulk index operations to be upserts without creating duplicate documents
-        file_df["_id"] = file_df[f"{'award' if load_type == 'awards' else 'transaction'}_id"]
         yield file_df.to_dict(orient="records")
 
 
