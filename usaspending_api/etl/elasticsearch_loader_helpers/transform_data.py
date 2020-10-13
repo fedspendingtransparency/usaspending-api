@@ -16,17 +16,24 @@ logger = logging.getLogger("script")
 
 def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     converters = {}
-    return transform_data(worker, records, converters)
+    return transform_data(worker, records, converters, settings.ES_ROUTING_FIELD)
 
 
 def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     converters = {
         "federal_accounts": convert_postgres_json_array_to_list,
     }
-    return transform_data(worker, records, converters)
+    return transform_data(worker, records, converters, settings.ES_ROUTING_FIELD)
 
 
-def transform_data(worker: TaskSpec, records: List[dict], converters: Dict[str, Callable]) -> List[dict]:
+def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
+    converters = {}
+    return transform_data(worker, records, converters, None)
+
+
+def transform_data(
+    worker: TaskSpec, records: List[dict], converters: Dict[str, Callable], routing_field: str
+) -> List[dict]:
     logger.info(format_log(f"Transforming data", name=worker.name, action="Index"))
     start = perf_counter()
 
@@ -39,7 +46,8 @@ def transform_data(worker: TaskSpec, records: List[dict], converters: Dict[str, 
         # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
         # and this is needed for performance
         # ES helper will pop any "meta" fields like "routing" from provided data dict and use them in the action
-        record["routing"] = record[settings.ES_ROUTING_FIELD]
+        if routing_field:
+            record["routing"] = record[routing_field]
 
         # Explicitly setting the ES _id field to match the postgres PK value allows
         # bulk index operations to be upserts without creating duplicate documents

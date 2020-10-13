@@ -46,7 +46,7 @@ class Controller:
         if self.config["process_deletes"]:
             self.run_deletes()
         logger.info(format_log("Assessing data to process"))
-        self.record_count = count_of_records_to_process(self.config)
+        self.record_count, self.min_id, self.max_id = count_of_records_to_process(self.config)
 
         if self.record_count == 0:
             self.processes = []
@@ -67,7 +67,7 @@ class Controller:
 
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
-            call_command("es_configure", "--template-only", f"--load-type={self.config['data_type']}s")
+            call_command("es_configure", "--template-only", f"--load-type={self.config['data_type']}")
             create_index(self.config["index_name"], instantiate_elasticsearch_client())
 
     def dispatch_tasks(self) -> None:
@@ -100,7 +100,8 @@ class Controller:
         """Create partion size less than or equal to max_size for more even distribution"""
         if self.config["partition_size"] > self.record_count:
             return 1
-        return ceil(self.record_count / self.config["partition_size"])
+        # return ceil(self.record_count / self.config["partition_size"])
+        return ceil(min((self.max_id - self.min_id), self.record_count) / (self.config["partition_size"]))
 
     def construct_tasks(self) -> List[TaskSpec]:
         """Create the Task objects w/ the appropriate configuration"""
@@ -108,9 +109,14 @@ class Controller:
         return [self.configure_task(j, name_gen) for j in range(self.config["partitions"])]
 
     def configure_task(self, partition_number: int, name_gen: Generator) -> TaskSpec:
-        sql_str = obtain_extract_sql(
-            {**self.config, **{"remainder": partition_number, "divisor": self.config["partitions"]}}
-        )
+        # sql_str = obtain_extract_sql(
+        #     {**self.config, **{"remainder": partition_number, "divisor": self.config["partitions"]}}
+        # )
+        range_size = ceil((self.max_id - self.min_id) / self.config["partitions"])
+        lower_bound = self.min_id + (range_size * partition_number)
+        upper_bound = self.min_id + (range_size * (partition_number + 1))
+        sql_str = obtain_extract_sql({**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}})
+        print(f"partion {partition_number}: {lower_bound:,}:{upper_bound:,}")
 
         return TaskSpec(
             base_table=self.config["base_table"],

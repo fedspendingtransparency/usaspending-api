@@ -6,32 +6,60 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_lo
 logger = logging.getLogger("script")
 
 COUNT_SQL = """
-SELECT COUNT(*) AS count
-FROM "{sql_view}"
-WHERE "update_date" >= '{starting_date}'
-"""
+    SELECT COUNT(*) AS count
+    FROM "{sql_view}"
+    WHERE "update_date" >= '{starting_date}'
+      {optional_predicate}
+""".replace(
+    "\n", ""
+)
 
 EXTRACT_SQL = """
     SELECT *
     FROM "{sql_view}"
-    WHERE "update_date" >= '{starting_date}' AND mod("{primary_key}", {divisor}) = {remainder}
-"""
+    WHERE "update_date" >= '{starting_date}' AND "{primary_key}" BETWEEN {lower_bound} AND {upper_bound}
+      {optional_predicate}
+""".replace(
+    "\n", ""
+)
+
+MIN_MAX_COUNT_SQL = """
+    SELECT min({primary_key}) AS min, max({primary_key}) AS max, count(*) AS count
+    FROM "{sql_view}"
+    WHERE "update_date" >= '{starting_date}'
+      {optional_predicate}
+""".replace(
+    "\n", ""
+)
 
 
 def obtain_count_sql(config: dict) -> str:
+    if "optional_predicate" not in config:
+        config["optional_predicate"] = ""
     return COUNT_SQL.format(**config)
 
 
+def obtain_min_max_count_sql(config: dict) -> str:
+    if "optional_predicate" not in config:
+        config["optional_predicate"] = ""
+    sql = MIN_MAX_COUNT_SQL.format(**config)
+    logger.warning(f"{sql}")
+    return sql
+
+
 def obtain_extract_sql(config: dict) -> str:
+    if "optional_predicate" not in config:
+        config["optional_predicate"] = ""
     return EXTRACT_SQL.format(**config)
 
 
 def count_of_records_to_process(config: dict) -> int:
     start = perf_counter()
-    count = execute_sql_statement(obtain_count_sql(config), True, config["verbose"])[0]["count"]
+    results = execute_sql_statement(obtain_min_max_count_sql(config), True, config["verbose"])[0]
+    min_id, max_id, count = results["min"], results["max"], results["count"]
     msg = f"Found {count:,} {config['data_type']} DB records, took {perf_counter() - start:.2f}s"
     logger.info(format_log(msg, action="Extract"))
-    return count
+    return count, min_id, max_id
 
 
 def extract_records(task):

@@ -26,7 +26,7 @@ def put_alias(client, index, alias_name, alias_body):
     client.indices.put_alias(index, alias_name, body=alias_body)
 
 
-def create_aliases(client, config):
+def create_award_type_aliases(client, config):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
 
         alias_name = f"{config['query_alias_prefix']}-{award_type}"
@@ -73,7 +73,8 @@ def swap_aliases(client, config):
     except Exception:
         logger.exception(f"No aliases found for {alias_patterns}", action="ES Alias")
 
-    create_aliases(client, config)
+    if config["create_award_type_aliases"]:
+        create_award_type_aliases(client, config)
 
     try:
         if old_indexes:

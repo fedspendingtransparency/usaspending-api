@@ -10,11 +10,12 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.elasticsearch_loader_helpers import (
-    format_log,
     Controller,
-    transform_award_data,
-    transform_transaction_data,
+    format_log,
     toggle_refresh_off,
+    transform_award_data,
+    transform_covid19_faba_data,
+    transform_transaction_data,
 )
 
 logger = logging.getLogger("script")
@@ -61,7 +62,7 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="Select which data the ETL will process.",
-            choices=["transactions", "awards"],
+            choices=["transactions", "awards", "covid19-faba"],
         )
         parser.add_argument(
             "--processes",
@@ -115,7 +116,6 @@ class Command(BaseCommand):
 
 
 def parse_cli_args(options: dict, es_client) -> dict:
-    default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
     passthrough_values = (
         "partition_size",
         "create_new_index",
@@ -132,7 +132,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         raise SystemExit("Fatal error: '--create-new-index' requires '--index-name'.")
     elif config["create_new_index"]:
         config["index_name"] = config["index_name"].lower()
-        config["starting_date"] = default_datetime
+        config["starting_date"] = config["initial_datetime"]
         check_new_index_name_is_ok(config["index_name"], config["required_index_name"])
     elif options["start_datetime"]:
         config["starting_date"] = options["start_datetime"]
@@ -142,10 +142,10 @@ def parse_cli_args(options: dict, es_client) -> dict:
         #      - The earliest records in S3.
         #      - When all transaction records in the USAspending SQL database were updated.
         #   And keep it timezone-aware for S3
-        config["starting_date"] = get_last_load_date(config["stored_date_key"], default=default_datetime)
+        config["starting_date"] = get_last_load_date(config["stored_date_key"], default=config["initial_datetime"])
 
     config["is_incremental_load"] = not bool(config["create_new_index"]) and (
-        config["starting_date"] != default_datetime
+        config["starting_date"] != config["initial_datetime"]
     )
 
     if config["is_incremental_load"]:
@@ -160,8 +160,8 @@ def parse_cli_args(options: dict, es_client) -> dict:
             logger.error(f"Data load into existing index. Change index name or run an incremental load")
             raise SystemExit(1)
 
-    if config["starting_date"] < default_datetime:
-        logger.error(f"--start-datetime is too early. Set no earlier than {default_datetime}")
+    if config["starting_date"] < config["initial_datetime"]:
+        logger.error(f"--start-datetime is too early. Set no earlier than {config['initial_datetime']}")
         raise SystemExit(1)
 
     return config
@@ -169,14 +169,17 @@ def parse_cli_args(options: dict, es_client) -> dict:
 
 def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
     """Set values based on env vars and when the script started"""
-
+    default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
     if arg_parse_options["load_type"] == "awards":
         config = {
             "base_table": "awards",
             "base_table_id": "id",
+            "create_award_type_aliases": True,
             "data_transform_func": transform_award_data,
             "data_type": "award",
+            "initial_datetime": default_datetime,
             "max_query_size": settings.ES_AWARDS_MAX_RESULT_WINDOW,
+            "optional_predicate": "",
             "primary_key": "award_id",
             "query_alias_prefix": settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
             "required_index_name": settings.ES_AWARDS_NAME_SUFFIX,
@@ -189,9 +192,12 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
         config = {
             "base_table": "transaction_normalized",
             "base_table_id": "id",
+            "create_award_type_aliases": True,
             "data_transform_func": transform_transaction_data,
             "data_type": "transaction",
+            "initial_datetime": default_datetime,
             "max_query_size": settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW,
+            "optional_predicate": "",
             "primary_key": "transaction_id",
             "query_alias_prefix": settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
             "required_index_name": settings.ES_TRANSACTIONS_NAME_SUFFIX,
@@ -199,6 +205,24 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "stored_date_key": "es_transactions",
             "unique_key_field": "generated_unique_transaction_id",
             "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
+        }
+    elif arg_parse_options["load_type"] == "covid19-faba":
+        config = {
+            "base_table": "financial_accounts_by_awards",
+            "base_table_id": "financial_accounts_by_awards_id",
+            "create_award_type_aliases": False,
+            "data_transform_func": transform_covid19_faba_data,
+            "data_type": "covid19-faba",
+            "initial_datetime": datetime.strptime(f"2020-04-01+0000", "%Y-%m-%d%z"),
+            "max_query_size": settings.ES_COVID19_FABA_MAX_RESULT_WINDOW,
+            "optional_predicate": " AND disaster_emergency_fund_code IN ('L', 'M', 'N', 'O','P')",
+            "primary_key": "financial_accounts_by_awards_id",
+            "query_alias_prefix": settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX,
+            "required_index_name": settings.ES_COVID19_FABA_NAME_SUFFIX,
+            "sql_view": settings.ES_COVID19_FABA_ETL_VIEW_NAME,
+            "stored_date_key": ...,
+            "unique_key_field": "distinct_award_key",
+            "write_alias": settings.ES_COVID19_FABA_WRITE_ALIAS,
         }
     else:
         raise RuntimeError(f"Configuration is not configured for --load-type={arg_parse_options['load_type']}")
