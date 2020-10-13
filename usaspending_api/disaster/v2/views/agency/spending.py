@@ -8,11 +8,9 @@ from django_cte import With
 from rest_framework.response import Response
 from typing import List
 
-from usaspending_api import settings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     PaginationMixin,
@@ -28,8 +26,7 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.search.v2.elasticsearch_helper import (
-    get_summed_value_as_float,
-    get_number_of_unique_terms_for_accounts,
+    get_summed_value_as_float
 )
 
 logger = logging.getLogger(__name__)
@@ -73,7 +70,11 @@ class SpendingByAgencyViewSet(
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
     required_filters = ["def_codes", "award_type_codes", "query"]
-    query_fields = ["funding_toptier_agency_name.contains"]
+    nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
+    query_fields = [
+        "funding_toptier_agency_name",
+        "funding_toptier_agency_name.contains",
+    ]
     agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
     top_hits_fields = [
         "financial_accounts_by_award.funding_toptier_agency_code",
@@ -116,9 +117,7 @@ class SpendingByAgencyViewSet(
             "children": [],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            "obligation": int(bucket["sum_covid_obligation"]["value"]),
-            "outlay": int(bucket["sum_covid_outlay"]["value"]),
-            "total_budgetary_resources": None,
+            **{key: get_summed_value_as_float(bucket, f"sum_{val}") for key, val in self.nested_nonzero_fields.items()},
         }
 
     @property

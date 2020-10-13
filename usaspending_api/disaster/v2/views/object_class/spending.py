@@ -64,7 +64,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            response = self.perform_elasticsearch_search()
+            return self.perform_elasticsearch_search()
         else:
             results = list(self.total_queryset)
             response = construct_response(results, self.pagination)

@@ -3,11 +3,9 @@ import logging
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import F, Value, IntegerField, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.response import Response
 from typing import List
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
-from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansPaginationMixin,
@@ -54,9 +52,10 @@ class LoansByAgencyViewSet(
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
-    required_filters = ["def_codes", "_loan_award_type_codes", "query"]
+    required_filters = ["def_codes", "query"]
     query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
+    nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
     top_hits_fields = [
         "financial_accounts_by_award.funding_toptier_agency_code",
         "financial_accounts_by_award.funding_toptier_agency_name",
@@ -64,6 +63,7 @@ class LoansByAgencyViewSet(
 
     @cache_response()
     def post(self, request):
+        self.filters.update({"award_type": ["07", "08"]})
         return self.perform_elasticsearch_search()
         # results = list(self.queryset.order_by(*self.pagination.robust_order_by_fields))
         # return Response(
@@ -87,8 +87,7 @@ class LoansByAgencyViewSet(
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            "obligation": bucket["sum_covid_obligation"]["value"],
-            "outlay": bucket["sum_covid_outlay"]["value"],
+            **{key: get_summed_value_as_float(bucket, f"sum_{val}") for key, val in self.nested_nonzero_fields.items()},
             "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
             "children": [],
         }

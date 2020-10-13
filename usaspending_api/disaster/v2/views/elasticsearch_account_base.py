@@ -8,6 +8,7 @@ from usaspending_api import settings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AccountSearch
+from usaspending_api.common.exceptions import ForbiddenException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
@@ -35,8 +36,9 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         return Response(self.perform_elasticsearch_search())
 
     def perform_elasticsearch_search(self) -> Response:
-        filters = {f"nested_{key}": val for key, val in self.filters.items()}
-
+        filters = {f"nested_{key}": val for key, val in self.filters.items() if key != "award_type"}
+        if self.filters.get("award_type") is not None:
+            filters["award_type"] = self.filters["award_type"]
         # Need to update the value of "query" to have the fields to search on
         query = filters.pop("query", None)
         if query:
@@ -45,7 +47,6 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         # Ensure that only non-zero values are taken into consideration
         filters["nested_nonzero_fields"] = list(self.nested_nonzero_fields.values())
         filters["nonzero_fields"] = self.nonzero_fields
-
         self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(filters)
 
         self.bucket_count = get_number_of_unique_terms_for_accounts(self.filter_query, self.agg_key)
@@ -65,7 +66,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         if messages:
             response["messages"] = messages
 
-        return response
+        return Response(response)
 
     @abstractmethod
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
@@ -99,6 +100,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         count_awards_by_dim = A("reverse_nested", **{})
         award_count = A("value_count", field="award_id")
+        loan_value = A("sum", field="total_loan_value")
 
         # Apply the aggregations
         search.aggs.bucket(self.agg_group_name, financial_accounts_agg).bucket(
@@ -109,6 +111,8 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             "count_awards_by_dim", count_awards_by_dim
         ).metric(
             "award_count", award_count
+        ).metric(
+            "sum_loan_value", loan_value
         )
 
         # Apply sub-aggregation for children if applicable
@@ -153,6 +157,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         sub_sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         sub_count_awards_by_dim = A("reverse_nested", **{})
         sub_award_count = A("value_count", field="award_id")
+        loan_value = A("sum", field="total_loan_value")
 
         sub_group_by_sub_agg_key.metric("dim_metadata", sub_dim_metadata).metric(
             "sum_transaction_obligated_amount", sub_sum_covid_obligation
@@ -160,6 +165,8 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             "count_awards_by_dim", sub_count_awards_by_dim
         ).metric(
             "award_count", sub_award_count
+        ).metric(
+            "sum_loan_value", loan_value
         )
 
         # Append sub-agg to primary agg, and include the sub-agg's sum metric aggs too

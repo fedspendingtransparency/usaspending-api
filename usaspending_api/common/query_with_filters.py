@@ -467,41 +467,13 @@ class _NonzeroFields(_Filter):
         return ES_Q("bool", should=non_zero_queries, minimum_should_match=1)
 
 
-class _NestedDEFC(_Filter):
-    """Disaster and Emergency Fund Code filters"""
-
-    underscore_name = "nested_def_codes"
-
-    @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
-        def_codes_query = []
-        for v in filter_values:
-            def_codes_query.append(ES_Q("match", **{"financial_accounts_by_award.disaster_emergency_fund_code": v}))
-
-        defc_query = ES_Q("bool", should=def_codes_query, minimum_should_match=1)
-        return ES_Q("nested", path="financial_accounts_by_award", query=defc_query)
-
-
-class _NestedNonZero(_Filter):
-    """List of fields where at least one should have a nonzero value for each document"""
-
-    underscore_name = "nested_nonzero_fields"
-
-    @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
-        non_zero_queries = []
-        for field in filter_values:
-            non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))
-            non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
-        non_zero_should = ES_Q("bool", should=non_zero_queries, minimum_should_match=1)
-        return ES_Q("nested", path="financial_accounts_by_award", query=non_zero_should)
-
-
 class _AwardType(_Filter):
     underscore_name = "award_type"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType) -> ES_Q:
+    def generate_elasticsearch_query(
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+    ) -> ES_Q:
         award_type_codes_query = []
 
         for v in filter_values:
