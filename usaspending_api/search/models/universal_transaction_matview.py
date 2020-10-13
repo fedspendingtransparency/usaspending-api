@@ -61,9 +61,8 @@ class UniversalTransactionView(models.Model):
     detached_award_proc_unique = models.TextField()
     ordering_period_end_date = models.TextField()
     cfda_number = models.TextField()
-    afa_generated_unique = models.TextField()
     cfda_title = models.TextField()
-    cfda_id = models.IntegerField()
+    afa_generated_unique = models.TextField()
 
     recipient_hash = models.UUIDField()
     recipient_name = models.TextField()

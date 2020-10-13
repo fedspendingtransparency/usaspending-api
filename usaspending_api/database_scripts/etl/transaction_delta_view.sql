@@ -128,15 +128,6 @@ SELECT
 
   UTM.cfda_number,
   UTM.cfda_title,
-  CASE
-    WHEN UTM.cfda_number IS NOT NULL
-      THEN CONCAT(
-        '{"code":"', UTM.cfda_number,
-        '","description":"', UTM.cfda_title,
-        '","id":"', UTM.cfda_id, '"}'
-      )
-    ELSE NULL
-  END AS cfda_agg_key,
 
   UTM.type_of_contract_pricing,
   UTM.type_set_aside,
