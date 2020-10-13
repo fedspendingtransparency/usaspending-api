@@ -21,7 +21,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     transform_award_data,
     load_data,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.utilities import WorkerNode
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec
 from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
 
@@ -44,13 +44,17 @@ class TestElasticSearchIndex:
             "verbose": False,
             "write_alias": self.index_name + "-alias",
         }
-        self.worker = WorkerNode(
+        self.worker = TaskSpec(
             name=f"{self.index_type} test worker",
             index=self.index_name,
             sql=None,
+            view=None,
+            base_table=None,
+            base_table_id=None,
             primary_key="award_id" if self.index_type == "awards" else "transaction_id",
-            transform_func=None,
+            partition_number=None,
             is_incremental=None,
+            transform_func=None,
         )
 
     def delete_index(self):

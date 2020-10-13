@@ -240,7 +240,11 @@ def create_agg_key(key_name: str, record: dict):
         "recipient_location_state_agg_key": lambda: _state_agg_key("recipient_location"),
     }
 
-    agg_key = agg_key_func_lookup[key_name]()
+    agg_key_func = agg_key_func_lookup.get(key_name)
+    if agg_key_func is None:
+        logger.error(f"The agg_key '{key_name}' is not valid.")
+
+    agg_key = agg_key_func()
     if agg_key is None:
         return None
     return json.dumps(agg_key)

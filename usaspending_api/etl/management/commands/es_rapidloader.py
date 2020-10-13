@@ -32,7 +32,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     chunks,
     execute_sql_statement,
 )
-
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import create_agg_key
 
 logger = logging.getLogger("script")
 
@@ -524,6 +524,35 @@ AWARD_VIEW_COLUMNS = [
     "total_covid_outlay",
 ]
 
+AWARD_AGG_KEYS = [
+    "funding_subtier_agency_agg_key",
+    "funding_toptier_agency_agg_key",
+    "pop_county_agg_key",
+    "pop_congressional_agg_key",
+    "pop_state_agg_key",
+    "recipient_agg_key",
+    "recipient_location_county_agg_key",
+    "recipient_location_congressional_agg_key",
+    "recipient_location_state_agg_key",
+]
+
+TRANSACTION_AGG_KEYS = [
+    "awarding_subtier_agency_agg_key",
+    "awarding_toptier_agency_agg_key",
+    "funding_subtier_agency_agg_key",
+    "funding_toptier_agency_agg_key",
+    "naics_agg_key",
+    "pop_county_agg_key",
+    "pop_congressional_agg_key",
+    "pop_state_agg_key",
+    "pop_country_agg_key",
+    "psc_agg_key",
+    "recipient_agg_key",
+    "recipient_location_county_agg_key",
+    "recipient_location_congressional_agg_key",
+    "recipient_location_state_agg_key",
+]
+
 COUNT_FY_SQL = """
 SELECT COUNT(*) AS count
 FROM {view}
@@ -720,9 +749,17 @@ def csv_chunk_gen(filename, chunksize, job_id, load_type):
     }
     # Panda's data type guessing causes issues for Elasticsearch. Explicitly cast using dictionary
     column_list = AWARD_VIEW_COLUMNS if load_type == "awards" else VIEW_COLUMNS
+    agg_keys = AWARD_AGG_KEYS if load_type == "awards" else TRANSACTION_AGG_KEYS
     dtype = {k: str for k in column_list if k not in converters}
     for file_df in pd.read_csv(filename, dtype=dtype, converters=converters, header=0, chunksize=chunksize):
         file_df = file_df.where(cond=(pd.notnull(file_df)), other=None)
+
+        # Assign values to the different agg_key fields
+        for key in agg_keys:
+            file_df = file_df.assign(
+                **{key: file_df.apply(lambda val: create_agg_key(key, val), axis=1, result_type="reduce")}
+            )
+
         # Route all documents with the same recipient to the same shard
         # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
         # Recipient is are highest-cardinality category with over 2M unique values to aggregate against,
