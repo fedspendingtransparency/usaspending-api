@@ -1,5 +1,4 @@
 import hashlib
-import json
 
 from django.http import HttpResponseBadRequest
 from rest_framework.response import Response
