@@ -8,8 +8,7 @@ logger = logging.getLogger("script")
 COUNT_SQL = """
     SELECT COUNT(*) AS count
     FROM "{sql_view}"
-    WHERE "update_date" >= '{starting_date}'
-      {optional_predicate}
+    {optional_predicate}
 """.replace(
     "\n", ""
 )
@@ -17,8 +16,7 @@ COUNT_SQL = """
 EXTRACT_SQL = """
     SELECT *
     FROM "{sql_view}"
-    WHERE "update_date" >= '{starting_date}' AND "{primary_key}" BETWEEN {lower_bound} AND {upper_bound}
-      {optional_predicate}
+    {optional_predicate} "{primary_key}" BETWEEN {lower_bound} AND {upper_bound}
 """.replace(
     "\n", ""
 )
@@ -26,8 +24,7 @@ EXTRACT_SQL = """
 MIN_MAX_COUNT_SQL = """
     SELECT min({primary_key}) AS min, max({primary_key}) AS max, count(*) AS count
     FROM "{sql_view}"
-    WHERE "update_date" >= '{starting_date}'
-      {optional_predicate}
+    {optional_predicate}
 """.replace(
     "\n", ""
 )
@@ -48,8 +45,10 @@ def obtain_min_max_count_sql(config: dict) -> str:
 
 
 def obtain_extract_sql(config: dict) -> str:
-    if "optional_predicate" not in config:
-        config["optional_predicate"] = ""
+    if not config.get("optional_predicate"):
+        config["optional_predicate"] = "WHERE"
+    else:
+        config["optional_predicate"] += " AND "
     return EXTRACT_SQL.format(**config)
 
 

@@ -101,7 +101,7 @@ class Controller:
         if self.config["partition_size"] > self.record_count:
             return 1
         # return ceil(self.record_count / self.config["partition_size"])
-        return ceil(min((self.max_id - self.min_id), self.record_count) / (self.config["partition_size"]))
+        return ceil(max((self.max_id - self.min_id), self.record_count) / (self.config["partition_size"]))
 
     def construct_tasks(self) -> List[TaskSpec]:
         """Create the Task objects w/ the appropriate configuration"""
@@ -116,7 +116,7 @@ class Controller:
         lower_bound = self.min_id + (range_size * partition_number)
         upper_bound = self.min_id + (range_size * (partition_number + 1))
         sql_str = obtain_extract_sql({**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}})
-        print(f"partion {partition_number}: {lower_bound:,}:{upper_bound:,}")
+        print(f"partition {partition_number}: {lower_bound:,}:{upper_bound:,}")
 
         return TaskSpec(
             base_table=self.config["base_table"],
