@@ -63,7 +63,7 @@ class Controller:
                 f"Created {self.config['partitions']:,} partitions"
                 f" to process {self.record_count:,} total {self.config['data_type']} records"
                 f" from ID {self.min_id} to {self.max_id}"
-                f" with {self.config['processes']:,} parellel processes"
+                f" with {self.config['processes']:,} parallel processes"
             )
         )
 
@@ -116,13 +116,8 @@ class Controller:
         return [self.configure_task(j, name_gen) for j in range(self.config["partitions"])]
 
     def configure_task(self, partition_number: int, name_gen: Generator) -> TaskSpec:
-        # sql_str = obtain_extract_sql(
-        #     {**self.config, **{"remainder": partition_number, "divisor": self.config["partitions"]}}
-        # )
-
         lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
         sql_str = obtain_extract_sql({**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}})
-        print(f"partition {partition_number}: {lower_bound:,}:{upper_bound:,}")
 
         return TaskSpec(
             base_table=self.config["base_table"],

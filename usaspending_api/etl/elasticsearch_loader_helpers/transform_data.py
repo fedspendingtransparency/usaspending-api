@@ -2,7 +2,7 @@ import logging
 
 from django.conf import settings
 from time import perf_counter
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     convert_postgres_json_array_to_list,
@@ -32,7 +32,7 @@ def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[d
 
 
 def transform_data(
-    worker: TaskSpec, records: List[dict], converters: Dict[str, Callable], routing_field: str
+    worker: TaskSpec, records: List[dict], converters: Dict[str, Callable], routing_field: Optional[str] = None
 ) -> List[dict]:
     logger.info(format_log(f"Transforming data", name=worker.name, action="Index"))
     start = perf_counter()

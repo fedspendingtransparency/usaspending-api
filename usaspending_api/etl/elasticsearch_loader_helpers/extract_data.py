@@ -33,14 +33,13 @@ MIN_MAX_COUNT_SQL = """
 def obtain_count_sql(config: dict) -> str:
     if "optional_predicate" not in config:
         config["optional_predicate"] = ""
-    return COUNT_SQL.format(**config)
+    return COUNT_SQL.format(**config).format(**config)  # fugly. Allow string values to have expressions
 
 
 def obtain_min_max_count_sql(config: dict) -> str:
     if "optional_predicate" not in config:
         config["optional_predicate"] = ""
-    sql = MIN_MAX_COUNT_SQL.format(**config)
-    logger.warning(f"{sql}")
+    sql = MIN_MAX_COUNT_SQL.format(**config).format(**config)  # fugly. Allow string values to have expressions
     return sql
 
 
@@ -49,7 +48,7 @@ def obtain_extract_sql(config: dict) -> str:
         config["optional_predicate"] = "WHERE"
     else:
         config["optional_predicate"] += " AND "
-    return EXTRACT_SQL.format(**config)
+    return EXTRACT_SQL.format(**config).format(**config)  # fugly. Allow string values to have expressions
 
 
 def count_of_records_to_process(config: dict) -> int:

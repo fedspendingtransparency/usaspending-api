@@ -35,8 +35,8 @@ class Command(BaseCommand):
             "--load-type",
             type=str,
             help="Select which type of index to configure, current options are awards or transactions",
-            choices=["transactions", "awards", "covid19-faba"],
-            default="transactions",
+            choices=["transaction", "award", "covid19-faba", "transactions", "awards"],
+            default="transaction",
         )
         parser.add_argument(
             "--template-only",
@@ -50,11 +50,11 @@ class Command(BaseCommand):
         if not settings.ES_HOSTNAME:
             raise SystemExit("Fatal error: $ES_HOSTNAME is not set.")
         self.load_type = options["load_type"]
-        if options["load_type"] == "award":
+        if options["load_type"] in ("award", "awards"):
             self.index_pattern = f"*{settings.ES_AWARDS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_AWARDS_MAX_RESULT_WINDOW
             self.template = "award_template"
-        elif options["load_type"] == "transaction":
+        elif options["load_type"] in ("transaction", "transactions"):
             self.index_pattern = f"*{settings.ES_TRANSACTIONS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
             self.template = "transaction_template"

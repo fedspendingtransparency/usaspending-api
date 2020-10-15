@@ -62,7 +62,7 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="Select which data the ETL will process.",
-            choices=["transactions", "awards", "covid19-faba"],
+            choices=["transaction", "award", "covid19-faba"],
         )
         parser.add_argument(
             "--processes",
@@ -170,7 +170,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
 def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
     """Set values based on env vars and when the script started"""
     default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
-    if arg_parse_options["load_type"] == "awards":
+    if arg_parse_options["load_type"] == "award":
         config = {
             "base_table": "awards",
             "base_table_id": "id",
@@ -188,7 +188,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "unique_key_field": "generated_unique_award_id",
             "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
         }
-    elif arg_parse_options["load_type"] == "transactions":
+    elif arg_parse_options["load_type"] == "transaction":
         config = {
             "base_table": "transaction_normalized",
             "base_table_id": "id",
