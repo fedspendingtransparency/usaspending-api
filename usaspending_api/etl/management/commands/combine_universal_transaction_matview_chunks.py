@@ -1,84 +1,15 @@
 import logging
 import asyncio
 import sqlparse
+from pathlib import Path
 
 from django.db import connection, transaction
 from django.core.management.base import BaseCommand
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
+from usaspending_api.common.matview_manager import DEFAULT_CHUNKED_MATIVEW_DIR
 
 logger = logging.getLogger("script")
-
-RECREATE_TABLE_SQL = """
-DROP {old_object_type} IF EXISTS universal_transaction_matview_temp;
-CREATE TABLE universal_transaction_matview_temp AS SELECT * from universal_transaction_matview_0 WITH NO DATA;
-"""
-
-INSERT_INTO_TABLE_SQL = """
-INSERT INTO universal_transaction_matview_temp SELECT * FROM universal_transaction_matview_{current_chunk}
-"""
-
-TABLE_INDEX_SQL = """
-CREATE UNIQUE INDEX idx_ut_transaction_id_temp ON universal_transaction_matview_temp USING BTREE(transaction_id ASC NULLS LAST) WITH (fillfactor = 97);
-CREATE INDEX idx_ut_action_date_temp ON universal_transaction_matview_temp USING BTREE(action_date DESC NULLS LAST) WITH (fillfactor = 97) WHERE action_date >= '2007-10-01';
-CREATE INDEX idx_ut_last_modified_date_temp ON universal_transaction_matview_temp USING BTREE(last_modified_date DESC NULLS LAST) WITH (fillfactor = 97);
-CREATE INDEX idx_ut_fiscal_year_temp ON universal_transaction_matview_temp USING BTREE(fiscal_year DESC NULLS LAST) WITH (fillfactor = 97) WHERE action_date >= '2007-10-01';
-CREATE INDEX idx_ut_type_temp ON universal_transaction_matview_temp USING BTREE(type) WITH (fillfactor = 97) WHERE type IS NOT NULL AND action_date >= '2007-10-01';
-CREATE INDEX idx_ut_award_id_temp ON universal_transaction_matview_temp USING BTREE(award_id) WITH (fillfactor = 97) WHERE action_date >= '2007-10-01';
-CREATE INDEX idx_ut_pop_zip5_temp ON universal_transaction_matview_temp USING BTREE(pop_zip5) WITH (fillfactor = 97) WHERE pop_zip5 IS NOT NULL AND action_date >= '2007-10-01';
-CREATE INDEX idx_ut_recipient_unique_id_temp ON universal_transaction_matview_temp USING BTREE(recipient_unique_id) WITH (fillfactor = 97) WHERE recipient_unique_id IS NOT NULL AND action_date >= '2007-10-01';
-CREATE INDEX idx_ut_parent_recipient_unique_id_temp ON universal_transaction_matview_temp USING BTREE(parent_recipient_unique_id) WITH (fillfactor = 97) WHERE parent_recipient_unique_id IS NOT NULL AND action_date >= '2007-10-01';
-CREATE INDEX idx_ut_simple_pop_geolocation_temp ON universal_transaction_matview_temp USING BTREE(pop_state_code, action_date) WITH (fillfactor = 97) WHERE pop_country_code = 'USA' AND pop_state_code IS NOT NULL AND action_date >= '2007-10-01';
-CREATE INDEX idx_ut_recipient_hash_temp ON universal_transaction_matview_temp USING BTREE(recipient_hash) WITH (fillfactor = 97) WHERE action_date >= '2007-10-01';
-CREATE INDEX idx_ut_action_date_pre2008_temp ON universal_transaction_matview_temp USING BTREE(action_date) WITH (fillfactor = 97) WHERE action_date < '2007-10-01';
-"""
-
-SWAP_TABLES_SQL = """
-DROP {old_object_type} IF EXISTS universal_transaction_matview_old;
-
-ALTER TABLE IF EXISTS universal_transaction_matview RENAME TO universal_transaction_matview_old;
-ALTER MATERIALIZED VIEW IF EXISTS universal_transaction_matview RENAME TO universal_transaction_matview_old;
-
-ALTER INDEX IF EXISTS idx_ut_transaction_id RENAME TO idx_ut_transaction_id_old;
-ALTER INDEX IF EXISTS idx_ut_action_date RENAME TO idx_ut_action_date_old;
-ALTER INDEX IF EXISTS idx_ut_last_modified_date RENAME TO idx_ut_last_modified_date_old;
-ALTER INDEX IF EXISTS idx_ut_fiscal_year RENAME TO idx_ut_fiscal_year_old;
-ALTER INDEX IF EXISTS idx_ut_type RENAME TO idx_ut_type_old;
-ALTER INDEX IF EXISTS idx_ut_award_id RENAME TO idx_ut_award_id_old;
-ALTER INDEX IF EXISTS idx_ut_pop_zip5 RENAME TO idx_ut_pop_zip5_old;
-ALTER INDEX IF EXISTS idx_ut_recipient_unique_id RENAME TO idx_ut_recipient_unique_id_old;
-ALTER INDEX IF EXISTS idx_ut_parent_recipient_unique_id RENAME TO idx_ut_parent_recipient_unique_id_old;
-ALTER INDEX IF EXISTS idx_ut_simple_pop_geolocation RENAME TO idx_ut_simple_pop_geolocation_old;
-ALTER INDEX IF EXISTS idx_ut_recipient_hash RENAME TO idx_ut_recipient_hash_old;
-ALTER INDEX IF EXISTS idx_ut_action_date_pre2008 RENAME TO idx_ut_action_date_pre2008_old;
-
-ALTER TABLE universal_transaction_matview_temp RENAME TO universal_transaction_matview;
-
-ALTER INDEX idx_ut_transaction_id_temp RENAME TO idx_ut_transaction_id;
-ALTER INDEX idx_ut_action_date_temp RENAME TO idx_ut_action_date;
-ALTER INDEX idx_ut_last_modified_date_temp RENAME TO idx_ut_last_modified_date;
-ALTER INDEX idx_ut_fiscal_year_temp RENAME TO idx_ut_fiscal_year;
-ALTER INDEX idx_ut_type_temp RENAME TO idx_ut_type;
-ALTER INDEX idx_ut_award_id_temp RENAME TO idx_ut_award_id;
-ALTER INDEX idx_ut_pop_zip5_temp RENAME TO idx_ut_pop_zip5;
-ALTER INDEX idx_ut_recipient_unique_id_temp RENAME TO idx_ut_recipient_unique_id;
-ALTER INDEX idx_ut_parent_recipient_unique_id_temp RENAME TO idx_ut_parent_recipient_unique_id;
-ALTER INDEX idx_ut_simple_pop_geolocation_temp RENAME TO idx_ut_simple_pop_geolocation;
-ALTER INDEX idx_ut_recipient_hash_temp RENAME TO idx_ut_recipient_hash;
-ALTER INDEX idx_ut_action_date_pre2008_temp RENAME TO idx_ut_action_date_pre2008;
-"""
-
-REMOVE_OLD_TABLE_SQL = """DROP TABLE IF EXISTS universal_transaction_matview_old;"""
-
-REMOVE_MATVIEW_DATA_SQL = """
-REFRESH MATERIALIZED VIEW universal_transaction_matview_{current_chunk} WITH NO DATA;
-"""
-
-ANALYZE_TABLE_SQL = """
-ANALYZE VERBOSE universal_transaction_matview;
-"""
-
-TABLE_PERMISSION_SQL = """GRANT SELECT ON universal_transaction_matview TO readonly;"""
 
 
 class Command(BaseCommand):
@@ -91,14 +22,27 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--chunk-count", default=10, help="Number of chunked matviews to read from", type=int)
         parser.add_argument(
+            "--matview-dir",
+            type=Path,
+            help="Choose a non-default directory to store materialized view SQL files.",
+            default=DEFAULT_CHUNKED_MATIVEW_DIR,
+        )
+        parser.add_argument(
             "--keep-old-data",
             action="store_true",
             default=False,
-            help="Indicates whether or not to drop old table and matviews at end of command",
+            help="Indicates whether or not to drop old table at end of command",
+        )
+        parser.add_argument(
+            "--keep-matview-data",
+            action="store_true",
+            default=False,
+            help="Indicates whether or not to empty data from chunked matviews at the end of command",
         )
 
     def handle(self, *args, **options):
         chunk_count = options["chunk_count"]
+        self.matview_dir = options["matview_dir"]
 
         logger.info(f"Chunk Count: {chunk_count}")
 
@@ -115,10 +59,12 @@ class Command(BaseCommand):
             self.swap_matviews()
 
         if not options["keep_old_data"]:
-            self.remove_old_data(chunk_count)
+            with Timer("Clearing old table"):
+                self.remove_old_data(chunk_count)
 
-        with Timer("Analyzing Table"):
-            self.analyze_matview()
+        if not options["keep_matview_data"]:
+            with Timer("Emptying Matviews"):
+                self.empty_matviews()
 
         with Timer("Granting Table Permissions"):
             self.grant_matview_permissions()
@@ -127,29 +73,33 @@ class Command(BaseCommand):
         with connection.cursor() as cursor:
             # This table was previously a Matview, so the DROP may fail
             try:
-                cursor.execute(RECREATE_TABLE_SQL.format(old_object_type="TABLE"))
+                sql = (self.matview_dir / "componentized" / "universal_transaction_matview__create.sql").read_text()
+                cursor.execute(sql)
             except Exception as e:
                 if "is not a table" in str(e):
                     logger.warning(
                         "universal_transaction_matview_temp existed, but not as table. This may be because this "
                         + "command is being run for the first time. Trying to drop as Matview instead..."
                     )
-                    cursor.execute(RECREATE_TABLE_SQL.format(old_object_type="MATERIALIZED VIEW"))
+                    sql = sql.replace("DROP TABLE", "DROP MATERIALIZED VIEW")
+                    cursor.execute(sql)
+                else:
+                    raise
 
     def insert_matview_data(self, chunk_count):
         loop = asyncio.new_event_loop()
         tasks = []
 
-        for current_chunk in range(0, chunk_count):
+        insert_table_sql = (
+            self.matview_dir / "componentized" / "universal_transaction_matview__inserts.sql"
+        ).read_text()
+
+        index = 0
+        for sql in sqlparse.split(insert_table_sql):
             tasks.append(
-                asyncio.ensure_future(
-                    async_run_creates(
-                        INSERT_INTO_TABLE_SQL.format(current_chunk=current_chunk),
-                        wrapper=Timer(f"Insert into table {current_chunk}"),
-                    ),
-                    loop=loop,
-                )
+                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(f"Insert into table {index}"),), loop=loop,)
             )
+            index += 1
 
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
@@ -157,41 +107,56 @@ class Command(BaseCommand):
     def create_indexes(self):
         loop = asyncio.new_event_loop()
         tasks = []
-        i = 0
-        for sql in sqlparse.split(TABLE_INDEX_SQL):
+
+        index_table_sql = (
+            self.matview_dir / "componentized" / "universal_transaction_matview__indexes.sql"
+        ).read_text()
+
+        index = 0
+        for sql in sqlparse.split(index_table_sql):
             tasks.append(
-                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(f"Creating Index {i}"),), loop=loop,)
+                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(f"Creating Index {index}"),), loop=loop,)
             )
-            i += 1
+            index += 1
 
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
 
     @transaction.atomic
     def swap_matviews(self):
+
+        swap_sql = (self.matview_dir / "componentized" / "universal_transaction_matview__renames.sql").read_text()
+
         with connection.cursor() as cursor:
             # This table was previously a Matview, so the DROP may fail
             try:
-                cursor.execute(SWAP_TABLES_SQL.format(old_object_type="TABLE"))
+                cursor.execute(swap_sql)
             except Exception as e:
                 if "is not a table" in str(e):
                     logger.warning(
                         "universal_transaction_matview_old existed, but not as table. This may be because this "
                         + "command is being run for the first time. Trying to drop as Matview instead..."
                     )
-                    cursor.execute(SWAP_TABLES_SQL.format(old_object_type="MATERIALIZED VIEW"))
+                    swap_sql = swap_sql.replace("DROP TABLE", "DROP MATERIALIZED VIEW")
+                    cursor.execute(swap_sql)
+                else:
+                    raise
 
     def remove_old_data(self, chunk_count):
-        with connection.cursor() as cursor:
-            cursor.execute(REMOVE_OLD_TABLE_SQL)
 
-            for current_chunk in range(0, chunk_count):
-                cursor.execute(REMOVE_MATVIEW_DATA_SQL.format(current_chunk=current_chunk))
+        drop_sql = (self.matview_dir / "componentized" / "universal_transaction_matview__drops.sql").read_text()
 
-    def analyze_matview(self):
         with connection.cursor() as cursor:
-            cursor.execute(ANALYZE_TABLE_SQL)
+            cursor.execute(drop_sql)
+
+    def empty_matviews(self):
+        empty_sql = (self.matview_dir / "componentized" / "universal_transaction_matview__empty.sql").read_text()
+
+        with connection.cursor() as cursor:
+            cursor.execute(empty_sql)
 
     def grant_matview_permissions(self):
+        mods_sql = (self.matview_dir / "componentized" / "universal_transaction_matview__mods.sql").read_text()
+
         with connection.cursor() as cursor:
-            cursor.execute(TABLE_PERMISSION_SQL)
+            cursor.execute(mods_sql)

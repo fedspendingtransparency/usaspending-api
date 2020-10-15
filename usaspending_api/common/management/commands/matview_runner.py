@@ -11,10 +11,12 @@ from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.common.matview_manager import (
     CHUNKED_MATERIALIZED_VIEWS,
     DEFAULT_MATIVEW_DIR,
+    DEFAULT_CHUNKED_MATIVEW_DIR,
     DEPENDENCY_FILEPATH,
     DROP_OLD_MATVIEWS,
     MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
+    CHUNKED_MATVIEW_GENERATOR_FILE,
     OVERLAY_VIEWS,
 )
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -32,6 +34,7 @@ class Command(BaseCommand):
         if args["only"]:
             self.matviews = {args["only"]: MATERIALIZED_VIEWS[args["only"]]}
         self.matview_dir = args["temp_dir"]
+        self.matview_chunked_dir = args["temp_chunked_dir"]
         self.no_cleanup = args["leave_sql"]
         self.remove_matviews = not args["leave_old"]
         self.run_dependencies = args["dependencies"]
@@ -56,6 +59,12 @@ class Command(BaseCommand):
             default=DEFAULT_MATIVEW_DIR,
         )
         parser.add_argument(
+            "--temp-chunked-dir",
+            type=Path,
+            help="Choose a non-default directory to store materialized view SQL files.",
+            default=DEFAULT_CHUNKED_MATIVEW_DIR,
+        )
+        parser.add_argument(
             "--dependencies", action="store_true", help="Run the SQL dependencies before the materialized view SQL."
         )
         parser.add_argument("--chunk-count", default=10, help="Number of chunks to split the UTM into", type=int)
@@ -78,6 +87,11 @@ class Command(BaseCommand):
             recursive_delete(self.matview_dir)
         self.matview_dir.mkdir()
 
+        if self.matview_chunked_dir.exists():
+            logger.warning("Clearing dir {}".format(self.matview_chunked_dir))
+            recursive_delete(self.matview_chunked_dir)
+        self.matview_chunked_dir.mkdir()
+
         # IF using this for operations, DO NOT LEAVE hardcoded `python3` in the command
         # Create main list of Matview SQL files
         exec_str = f"python3 {MATVIEW_GENERATOR_FILE} --quiet --dest={self.matview_dir}/ --batch_indexes=3"
@@ -85,7 +99,7 @@ class Command(BaseCommand):
 
         # Create SQL files for Chunked Universal Transaction Matviews
         for matview, config in self.chunked_matviews.items():
-            exec_str = f"python3 {MATVIEW_GENERATOR_FILE} --quiet  --dest={self.matview_dir} --file {config['json_filepath']} --chunk-count {self.chunk_count}"
+            exec_str = f"python3 {CHUNKED_MATVIEW_GENERATOR_FILE} --quiet  --file {config['json_filepath']} --chunk-count {self.chunk_count}"
             subprocess.call(exec_str, shell=True)
 
     def cleanup(self):
@@ -107,7 +121,7 @@ class Command(BaseCommand):
             for current_chunk in range(self.chunk_count):
                 chunked_matview = f"{matview}_{current_chunk}"
                 logger.info(f"Creating Future for chunked matview {chunked_matview}")
-                sql = (self.matview_dir / f"{chunked_matview}.sql").read_text()
+                sql = (self.matview_chunked_dir / f"{chunked_matview}.sql").read_text()
                 tasks.append(asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(chunked_matview)), loop=loop))
 
         loop.run_until_complete(asyncio.gather(*tasks))
