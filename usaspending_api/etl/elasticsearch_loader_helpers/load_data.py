@@ -51,13 +51,34 @@ def streaming_post_to_es(
 
     Returns: (succeeded, failed) tuple, which counts successful index doc writes vs. failed doc writes
     """
+
+    # Assuming >=4GB RAM per vCPU of the data nodes in the ES cluster, use below settings for calibrating the max
+    # batch size of JSON docs for each bulk indexing HTTP request to the ES cluster
+    # Indexing should get distributed among the cluster
+    # Mileage may vary - try out different batch sizes
+    # It may be better to see finer-grain metrics by using higher request rates with shorter index-durations,
+    # rather than a busier indexing process (i.e. err on the smaller batch sizes to get feedback)
+    # Aiming for a batch that yields each ES cluster data-node handling max 0.3-1MB per vCPU per batch request
+    # Ex: 3-data-node cluster of i3.large.elasticsearch = 2 vCPU * 3 nodes = 6 vCPU: .75MB*6 ~= 4.5MB batches
+    # Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: .75MB*20 ~= 15MB batches
+    ES_MAX_BATCH_BYTES = 10 * 1024 * 1024
+    # Aiming for a batch that yields each ES cluster data-node handling max 100-400 doc entries per vCPU per request
+    # Ex: 3-data-node cluster of i3.large.elasticsearch = 2 vCPU * 3 nodes = 6 vCPU: 300*6 = 1800 doc batches
+    # Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: 300*20 = 6000 doc batches
+    ES_BATCH_ENTRIES = 4000
+
     success, failed = 0, 0
     try:
         if delete_before_index:
             value_list = [doc[delete_key] for doc in chunk]
             delete_docs_by_unique_key(client, delete_key, value_list, job_name, index_name)
         for ok, item in helpers.streaming_bulk(
-            client, actions=chunk, chunk_size=5000, max_retries=10, index=index_name
+            client,
+            actions=chunk,
+            chunk_size=ES_BATCH_ENTRIES,
+            max_chunk_bytes=ES_MAX_BATCH_BYTES,
+            max_retries=10,
+            index=index_name,
         ):
             if ok:
                 success += 1
