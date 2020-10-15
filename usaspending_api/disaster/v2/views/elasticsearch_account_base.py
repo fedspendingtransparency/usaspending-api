@@ -4,7 +4,6 @@ from typing import List, Optional, Dict
 from elasticsearch_dsl import Q as ES_Q, A
 from rest_framework.response import Response
 
-from usaspending_api import settings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AccountSearch
@@ -12,7 +11,6 @@ from usaspending_api.common.exceptions import ForbiddenException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
-from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms_for_accounts
 
 
 class ElasticsearchAccountDisasterBase(DisasterBase):
@@ -49,7 +47,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         filters["nonzero_fields"] = self.nonzero_fields
         self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(filters)
 
-        self.bucket_count = get_number_of_unique_terms_for_accounts(self.filter_query, self.agg_key)
+        self.bucket_count = 1000  # get_number_of_unique_terms_for_accounts(self.filter_query, self.agg_key)
         messages = []
         if self.pagination.sort_key in ("id", "code"):
             messages.append(
@@ -130,7 +128,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
 
         Example: Subtier Agency spending rolled up to Toptier Agency spending
         """
-        sub_bucket_count = get_number_of_unique_terms_for_accounts(self.filter_query, f"{self.sub_agg_key}")
+        sub_bucket_count = 1000  # get_number_of_unique_terms_for_accounts(self.filter_query, f"{self.sub_agg_key}")
         size = sub_bucket_count
         shard_size = sub_bucket_count + 100
 

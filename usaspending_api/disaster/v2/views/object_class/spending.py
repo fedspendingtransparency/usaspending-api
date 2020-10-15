@@ -43,7 +43,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/spending.md"
 
     # Defined for the Elasticsearch implementation of Spending by Award
-    agg_key = "financial_accounts_by_award.major_object_class"  # primary (tier-1) aggregation key
+    agg_key = "financial_accounts_by_award.object_class" #"financial_accounts_by_award.major_object_class"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
     query_fields = [
         "major_object_class",
@@ -51,14 +51,16 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
         "object_class",
         "object_class_name.contains",
     ]
-    sub_agg_key = "financial_accounts_by_award.object_class"
-    sub_top_hits_fields = [
-        "financial_accounts_by_award.object_class_id",
-        "financial_accounts_by_award.object_class_name",
-    ]
+    # sub_agg_key = "financial_accounts_by_award.object_class"
+    # sub_top_hits_fields = [
+    #     "financial_accounts_by_award.object_class_id",
+    #     "financial_accounts_by_award.object_class_name",
+    # ]
     top_hits_fields = [
         "financial_accounts_by_award.object_class_id",
         "financial_accounts_by_award.major_object_class_name",
+        "financial_accounts_by_award.object_class_name",
+        "financial_accounts_by_award.major_object_class"
     ]
 
     @cache_response()
@@ -128,30 +130,53 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
         )
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
-        results = []
-
+        temp_results = {}
+        child_results = []
         for bucket in info_buckets:
-            result = self._build_json_result(bucket, True)
-            child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
-            children = []
-            for child_bucket in child_info_buckets:
-                children.append(self._build_json_result(child_bucket, False))
-            result["children"] = children
-            results.append(result)
-
+            child = self._build_child_json_result(bucket)
+            child_results.append(child)
+        for child in child_results:
+            result = self._build_json_result(child)
+            child.pop("parent_data")
+            if result["code"] in temp_results.keys():
+                temp_results[result["code"]] = {
+                    "id": int(result["id"]),
+                    "code": result["code"],
+                    "description": result["description"],
+                    "award_count": temp_results[result["code"]]["award_count"] + result["award_count"],
+                    # the count of distinct awards contributing to the totals
+                    "obligation": temp_results[result["code"]]["obligation"] + result["obligation"],
+                    "outlay": temp_results[result["code"]]["outlay"] + result["outlay"],
+                    "children": temp_results[result["code"]]["children"] + result["children"],
+                }
+            else:
+                temp_results[result["code"]] = result
+        results = [x for x in temp_results.values()]
         return results
 
-    def _build_json_result(self, bucket: dict, is_parent: bool):
-        if is_parent:
-            description_key = "major_object_class_name"
-        else:
-            description_key = "object_class_name"
+    def _build_json_result(self, child):
+        return {
+            "id": child["parent_data"][1],
+            "code": child["parent_data"][1],
+            "description": child["parent_data"][0],
+            "award_count": child["award_count"],
+            # the count of distinct awards contributing to the totals
+            "obligation": child["obligation"],
+            "outlay": child["outlay"],
+            "children": [child],
+        }
 
+    def _build_child_json_result(self, bucket: dict):
         return {
             "id": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_id"],
             "code": bucket["key"],
-            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"][description_key],
+            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_name"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{key: get_summed_value_as_float(bucket, f"sum_{val}") for key, val in self.nested_nonzero_fields.items()},
+            "parent_data": [
+                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class_name"],
+                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class"],
+
+            ],
         }
