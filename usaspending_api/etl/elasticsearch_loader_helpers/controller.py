@@ -4,7 +4,7 @@ from django.core.management import call_command
 from math import ceil
 from multiprocessing import Pool, Event, Value
 from time import perf_counter
-from typing import Generator, List
+from typing import Generator, List, Tuple
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
@@ -62,6 +62,7 @@ class Controller:
             format_log(
                 f"Created {self.config['partitions']:,} partitions"
                 f" to process {self.record_count:,} total {self.config['data_type']} records"
+                f" from ID {self.min_id} to {self.max_id}"
                 f" with {self.config['processes']:,} parellel processes"
             )
         )
@@ -118,9 +119,8 @@ class Controller:
         # sql_str = obtain_extract_sql(
         #     {**self.config, **{"remainder": partition_number, "divisor": self.config["partitions"]}}
         # )
-        range_size = ceil((self.max_id - self.min_id) / self.config["partitions"])
-        lower_bound = self.min_id + (range_size * partition_number)
-        upper_bound = self.min_id + (range_size * (partition_number + 1))
+
+        lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
         sql_str = obtain_extract_sql({**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}})
         print(f"partition {partition_number}: {lower_bound:,}:{upper_bound:,}")
 
@@ -136,6 +136,13 @@ class Controller:
             transform_func=self.config["data_transform_func"],
             view=self.config["sql_view"],
         )
+
+    def get_id_range_for_partition(self, partition_number: int) -> Tuple[int, int]:
+        range_size = ceil((self.max_id - self.min_id) / self.config["partitions"])
+        lower_bound = self.min_id + (range_size * partition_number)
+        upper_bound = min(self.min_id + ((range_size * (partition_number + 1) - 1)), self.max_id)
+
+        return lower_bound, upper_bound
 
     def run_deletes(self) -> None:
         logger.info(format_log("Processing deletions"))
