@@ -69,8 +69,8 @@ class Command(BaseCommand):
             type=int,
             help="Number of parallel processes to operate. psycopg2 kicked the bucket with 100.",
             default=10,
-            choices=range(1, 71),
-            metavar="[1-70]",
+            choices=range(1, 101),
+            metavar="[1-100]",
         )
         parser.add_argument(
             "--partition-size",

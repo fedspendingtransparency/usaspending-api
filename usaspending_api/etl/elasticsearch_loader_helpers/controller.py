@@ -2,7 +2,7 @@ import logging
 
 from django.core.management import call_command
 from math import ceil
-from multiprocessing import Pool, Event
+from multiprocessing import Pool, Event, Value
 from time import perf_counter
 from typing import Generator, List
 
@@ -25,6 +25,9 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
 )
 
 logger = logging.getLogger("script")
+
+total_doc_success = Value("i", 0, lock=True)
+total_doc_fail = Value("i", 0, lock=True)
 
 
 def init_shared_abort(a: Event) -> None:
@@ -75,6 +78,9 @@ class Controller:
         parellel_procs = self.config["processes"]
         with Pool(parellel_procs, maxtasksperchild=1, initializer=init_shared_abort, initargs=(_abort,)) as pool:
             pool.map(extract_transform_load, self.tasks)
+
+        msg = f"Total documents indexed: {total_doc_success.value}, total document fails: {total_doc_fail.value}"
+        logger.info(format_log(msg))
 
         if _abort.is_set():
             raise RuntimeError("One or more partitions failed!")
@@ -158,7 +164,11 @@ def extract_transform_load(task: TaskSpec) -> None:
             f"Prematurely ending partition #{task.partition_number} due to error in another process"
             logger.warning(format_log(msg, name=task.name))
             return
-        load_data(task, records, client)
+        success, fail = load_data(task, records, client)
+        with total_doc_success.get_lock():
+            total_doc_success.value += success
+        with total_doc_fail.get_lock():
+            total_doc_fail.value += fail
     except Exception:
         if abort.is_set():
             msg = f"Partition #{task.partition_number} failed after an error was previously encountered"

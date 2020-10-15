@@ -13,11 +13,21 @@ logger = logging.getLogger("script")
 def load_data(worker, records, client):
     start = perf_counter()
     logger.info(format_log(f"Starting Index operation", name=worker.name, action="Index"))
-    streaming_post_to_es(client, records, worker.index, worker.name, delete_before_index=worker.is_incremental)
+    success, failed = streaming_post_to_es(
+        client, records, worker.index, worker.name, delete_before_index=worker.is_incremental
+    )
     logger.info(format_log(f"Index operation took {perf_counter() - start:.2f}s", name=worker.name, action="Index"))
+    return success, failed
 
 
-def streaming_post_to_es(client, chunk, index_name: str, job_name=None, delete_before_index=True, delete_key="_id"):
+def streaming_post_to_es(
+    client,
+    chunk: list,
+    index_name: str,
+    job_name: str = None,
+    delete_before_index: bool = True,
+    delete_key: str = "_id",
+):
     """
     Pump data into an Elasticsearch index.
 
@@ -46,7 +56,9 @@ def streaming_post_to_es(client, chunk, index_name: str, job_name=None, delete_b
         if delete_before_index:
             value_list = [doc[delete_key] for doc in chunk]
             delete_docs_by_unique_key(client, delete_key, value_list, job_name, index_name)
-        for ok, item in helpers.parallel_bulk(client, chunk, index=index_name):
+        for ok, item in helpers.streaming_bulk(
+            client, actions=chunk, chunk_size=5000, max_retries=10, index=index_name
+        ):
             if ok:
                 success += 1
             else:
