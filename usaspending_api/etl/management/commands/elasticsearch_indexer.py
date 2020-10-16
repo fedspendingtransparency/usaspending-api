@@ -22,7 +22,20 @@ logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-    """Parallelized ETL script for indexing SQL data into Elasticsearch"""
+    """Parallelized ETL script for indexing SQL data into Elasticsearch
+
+    1. DB extraction should be very fast if the query is straightforward.
+        We have seen 1-2 seconds or less per 10k rows on a db.r5.8xl instance with ??? IOPS
+    2. Parallelization performance is largely based on number of vCPUs available
+        to the pool of parallel processes. Ideally have 1 vCPU per process,
+        but have still seen good results with 2 processes per vCPU. YMMV.
+    3. Elasticsearch indexing appears to become a bottleneck when the prior
+        2 parts are taken care of. Further simplifying SQL, increasing the
+        DB size, and increasing the worker node vCPUs/memory yielded the same
+        overall runtime, due to ES indexing backpressure. Presumably adding more
+        nodes, or increasing node size in the ES cluster may reduce this pressure,
+        but not (yet) tested.
+    """
 
     help = """Hopefully the code comments are helpful enough to figure this out...."""
 
