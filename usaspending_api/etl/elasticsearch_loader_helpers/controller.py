@@ -1,4 +1,5 @@
 import logging
+import psycopg2
 
 from django.core.management import call_command
 from math import ceil
@@ -8,6 +9,7 @@ from typing import Generator, List, Tuple
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     count_of_records_to_process,
     create_index,
@@ -23,6 +25,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     TaskSpec,
     toggle_refresh_on,
 )
+from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import obtain_distinct_sql
 
 logger = logging.getLogger("script")
 
@@ -40,7 +43,20 @@ def init_shared_abort(a: Event) -> None:
 
 
 class Controller:
-    """Controller for multiprocess Elasticsearch ETL"""
+    """Parallelized ETL script for indexing SQL data into Elasticsearch
+
+    1. DB extraction should be very fast if the query is straightforward.
+        We have seen 1-2 seconds or less per 10k rows on a db.r5.8xl instance with ??? IOPS
+    2. Parallelization performance is largely based on number of vCPUs available
+        to the pool of parallel processes. Ideally have 1 vCPU per process,
+        but have still seen good results with 2 processes per vCPU. YMMV.
+    3. Elasticsearch indexing appears to become a bottleneck when the prior
+        2 parts are taken care of. Further simplifying SQL, increasing the
+        DB size, and increasing the worker node vCPUs/memory yielded the same
+        overall runtime, due to ES indexing backpressure. Presumably adding more
+        nodes, or increasing node size in the ES cluster may reduce this pressure,
+        but not (yet) tested.
+    """
 
     def __init__(self, config):
         self.config = config
@@ -107,21 +123,31 @@ class Controller:
         """Create partion size less than or equal to max_size for more even distribution"""
         if self.config["partition_size"] > self.record_count:
             return 1
-        # return ceil(self.record_count / self.config["partition_size"])
-        return ceil(max((self.max_id - self.min_id), self.record_count) / (self.config["partition_size"]))
+        elif self.config["data_type"] == "covid19-faba":
+            return ceil(self.record_count / self.config["partition_size"])
+        else:
+            return ceil(max((self.max_id - self.min_id), self.record_count) / (self.config["partition_size"]))
 
     def construct_tasks(self) -> List[TaskSpec]:
         """Create the Task objects w/ the appropriate configuration"""
         name_gen = gen_random_name()
-        return [self.configure_task(j, name_gen) for j in range(self.config["partitions"])]
+        if self.config["data_type"] == "covid19-faba":
+            distinct_key_gen = self.distinct_keys_range_generator()
+        else:
+            distinct_key_gen = None
+        return [self.configure_task(j, name_gen, distinct_key_gen) for j in range(self.config["partitions"])]
 
-    def configure_task(self, partition_number: int, name_gen: Generator) -> TaskSpec:
-        lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
+    def configure_task(self, partition_number: int, name_gen: Generator, distinct_key_gen: Generator) -> TaskSpec:
+        if self.config["data_type"] == "covid19-faba":
+            lower_bound, upper_bound = next(distinct_key_gen)
+        else:
+            lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
         sql_str = obtain_extract_sql({**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}})
 
         return TaskSpec(
             base_table=self.config["base_table"],
             base_table_id=self.config["base_table_id"],
+            execute_sql_func=self.config["execute_sql_func"],
             index=self.config["index_name"],
             is_incremental=self.config["is_incremental_load"],
             name=next(name_gen),
@@ -131,6 +157,19 @@ class Controller:
             transform_func=self.config["data_transform_func"],
             view=self.config["sql_view"],
         )
+
+    def distinct_keys_range_generator(self) -> Generator[Tuple[int, int], None, None]:
+        range_size = ceil(self.record_count / self.config["partitions"])
+        sql = obtain_distinct_sql(self.config)
+        with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+            # connection.autocommit = True
+            with connection.cursor("distinct_award_keys") as cursor:
+                cursor.execute(sql)
+                while True:
+                    key_list = [key[0] for key in cursor.fetchmany(size=range_size)]
+                    if not key_list:
+                        break
+                    yield key_list[0], key_list[-1]
 
     def get_id_range_for_partition(self, partition_number: int) -> Tuple[int, int]:
         range_size = ceil((self.max_id - self.min_id) / self.config["partitions"])

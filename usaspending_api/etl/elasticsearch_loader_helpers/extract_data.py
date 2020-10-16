@@ -16,15 +16,24 @@ COUNT_SQL = """
 EXTRACT_SQL = """
     SELECT *
     FROM "{sql_view}"
-    {optional_predicate} "{primary_key}" BETWEEN {lower_bound} AND {upper_bound}
+    {optional_predicate} "{primary_key}" BETWEEN '{lower_bound}' AND '{upper_bound}'
 """.replace(
     "\n", ""
 )
 
 MIN_MAX_COUNT_SQL = """
-    SELECT min({primary_key}) AS min, max({primary_key}) AS max, count(*) AS count
+    SELECT min({primary_key}) AS min, max({primary_key}) AS max, count(distinct {{primary_key}}) AS count
     FROM "{sql_view}"
     {optional_predicate}
+""".replace(
+    "\n", ""
+)
+
+DISTINCT_SQL = """
+    SELECT distinct {{primary_key}}
+    FROM "{sql_view}"
+    {optional_predicate}
+    ORDER BY {{primary_key}}
 """.replace(
     "\n", ""
 )
@@ -51,6 +60,12 @@ def obtain_extract_sql(config: dict) -> str:
     return EXTRACT_SQL.format(**config).format(**config)  # fugly. Allow string values to have expressions
 
 
+def obtain_distinct_sql(config: dict) -> str:
+    if "optional_predicate" not in config:
+        config["optional_predicate"] = ""
+    return DISTINCT_SQL.format(**config).format(**config)  # fugly. Allow string values to have expressions
+
+
 def count_of_records_to_process(config: dict) -> int:
     start = perf_counter()
     results = execute_sql_statement(obtain_min_max_count_sql(config), True, config["verbose"])[0]
@@ -65,7 +80,7 @@ def extract_records(task):
     logger.info(format_log(f"Extracting data from source", name=task.name, action="Extract"))
 
     try:
-        records = execute_sql_statement(task.sql, True)
+        records = task.execute_sql_func(task.sql, True)
     except Exception as e:
         logger.exception(f"Failed on partition {task.name} with '{task.sql}'")
         raise e

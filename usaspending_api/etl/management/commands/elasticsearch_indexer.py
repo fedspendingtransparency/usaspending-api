@@ -16,6 +16,8 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     transform_award_data,
     transform_covid19_faba_data,
     transform_transaction_data,
+    execute_sql_statement,
+    execute_faba_sql_statement,
 )
 
 logger = logging.getLogger("script")
@@ -177,6 +179,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "create_award_type_aliases": True,
             "data_transform_func": transform_award_data,
             "data_type": "award",
+            "execute_sql_func": execute_sql_statement,
             "initial_datetime": default_datetime,
             "max_query_size": settings.ES_AWARDS_MAX_RESULT_WINDOW,
             "optional_predicate": """WHERE "update_date" >= '{starting_date}'""",
@@ -195,6 +198,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "create_award_type_aliases": True,
             "data_transform_func": transform_transaction_data,
             "data_type": "transaction",
+            "execute_sql_func": execute_sql_statement,
             "initial_datetime": default_datetime,
             "max_query_size": settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW,
             "optional_predicate": """WHERE "update_date" >= '{starting_date}'""",
@@ -213,10 +217,11 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "create_award_type_aliases": False,
             "data_transform_func": transform_covid19_faba_data,
             "data_type": "covid19-faba",
+            "execute_sql_func": execute_faba_sql_statement,
             "initial_datetime": datetime.strptime(f"2020-04-01+0000", "%Y-%m-%d%z"),
             "max_query_size": settings.ES_COVID19_FABA_MAX_RESULT_WINDOW,
             "optional_predicate": "",
-            "primary_key": "financial_accounts_by_awards_id",
+            "primary_key": "financial_account_distinct_award_key",
             "query_alias_prefix": settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX,
             "required_index_name": settings.ES_COVID19_FABA_NAME_SUFFIX,
             "sql_view": settings.ES_COVID19_FABA_ETL_VIEW_NAME,

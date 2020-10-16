@@ -1,5 +1,6 @@
 import json
 import logging
+import pandas as pd
 import psycopg2
 
 from dataclasses import dataclass
@@ -27,6 +28,7 @@ class TaskSpec:
     primary_key: str
     partition_number: int
     is_incremental: bool
+    execute_sql_func: callable = None
     transform_func: callable = None
 
 
@@ -64,6 +66,32 @@ def execute_sql_statement(cmd: str, results: bool = False, verbose: bool = False
             cursor.execute(cmd)
             if results:
                 rows = db_rows_to_dict(cursor)
+    return rows
+
+
+def execute_faba_sql_statement(cmd: str, results: bool = False, verbose: bool = False) -> Optional[List[dict]]:
+    """Function used to execute SQL for the COVID FABA Index that relies on nested types"""
+    rows = None
+    if verbose:
+        print(cmd)
+
+    group_by_fields = [
+        "financial_account_distinct_award_key",
+        "award_id",
+        "award_type",
+        "generated_unique_award_id",
+        "total_loan_value",
+    ]
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+        df = pd.read_sql_query(cmd, connection)
+        df = df.where(pd.notnull(df), None)
+        df = df.groupby(group_by_fields, dropna=False).apply(lambda x: x.to_dict(orient="records"))
+        df = df.reset_index()
+        df = df.where(pd.notnull(df), None)
+        df = df.rename(columns={0: "financial_accounts_by_award"})
+        if results:
+            rows = df.to_dict(orient="records")
+
     return rows
 
 
