@@ -25,6 +25,7 @@ class TaskSpec:
     base_table: str
     base_table_id: str
     primary_key: str
+    field_for_es_id: str
     partition_number: int
     is_incremental: bool
     transform_func: callable = None

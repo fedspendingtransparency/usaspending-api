@@ -54,7 +54,7 @@ def transform_data(
         # IF and ONLY IF a routing meta field is not also provided (one whose value differs
         # from the doc _id field). If explicit routing is done, UPSERTs may cause duplicates,
         # so docs must be deleted before UPSERTed. (More info in streaming_post_to_es(...))
-        record["_id"] = record[worker.primary_key]
+        record["_id"] = record[worker.field_for_es_id]
 
     duration = perf_counter() - start
     logger.info(format_log(f"Transformation operation took {duration:.2f}s", name=worker.name, action="Index"))

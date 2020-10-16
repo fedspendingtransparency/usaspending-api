@@ -36,6 +36,14 @@ def create_award_type_aliases(client, config):
         alias_body = {"filter": {"terms": {"type": award_type_codes}}}
         put_alias(client, config["index_name"], alias_name, alias_body)
 
+
+def create_read_alias(client, config):
+    alias_name = config["query_alias_prefix"]
+    logger.info(format_log(f"Putting alias '{alias_name}' on {config['index_name']}", action="ES Alias"))
+    put_alias(client, config["index_name"], alias_name, {})
+
+
+def create_load_alias(client, config):
     # ensure the new index is added to the alias used for incremental loads.
     # If the alias is on multiple indexes, the loads will fail!
     logger.info(format_log(f"Putting alias '{config['write_alias']}' on {config['index_name']}", action="ES Alias"))
@@ -75,6 +83,10 @@ def swap_aliases(client, config):
 
     if config["create_award_type_aliases"]:
         create_award_type_aliases(client, config)
+    else:
+        create_read_alias(client, config)
+
+    create_load_alias(client, config)
 
     try:
         if old_indexes:

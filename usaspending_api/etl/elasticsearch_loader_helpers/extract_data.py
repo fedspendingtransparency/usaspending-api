@@ -5,18 +5,18 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_lo
 
 logger = logging.getLogger("script")
 
-COUNT_SQL = """
-    SELECT COUNT(*) AS count
-    FROM "{sql_view}"
-    {optional_predicate}
-""".replace(
-    "\n", ""
-)
-
 EXTRACT_SQL = """
     SELECT *
     FROM "{sql_view}"
     {optional_predicate} "{primary_key}" BETWEEN {lower_bound} AND {upper_bound}
+""".replace(
+    "\n", ""
+)
+
+EXTRACT_NULL_SQL = """
+    SELECT *
+    FROM "{sql_view}"
+    {optional_predicate} "{primary_key}" IS NULL
 """.replace(
     "\n", ""
 )
@@ -30,12 +30,6 @@ MIN_MAX_COUNT_SQL = """
 )
 
 
-def obtain_count_sql(config: dict) -> str:
-    if "optional_predicate" not in config:
-        config["optional_predicate"] = ""
-    return COUNT_SQL.format(**config).format(**config)  # fugly. Allow string values to have expressions
-
-
 def obtain_min_max_count_sql(config: dict) -> str:
     if "optional_predicate" not in config:
         config["optional_predicate"] = ""
@@ -43,12 +37,17 @@ def obtain_min_max_count_sql(config: dict) -> str:
     return sql
 
 
-def obtain_extract_sql(config: dict) -> str:
+def obtain_extract_sql(config: dict, is_null_partition: bool = False) -> str:
     if not config.get("optional_predicate"):
         config["optional_predicate"] = "WHERE"
     else:
         config["optional_predicate"] += " AND "
-    return EXTRACT_SQL.format(**config).format(**config)  # fugly. Allow string values to have expressions
+
+    if is_null_partition:
+        sql = EXTRACT_NULL_SQL
+    else:
+        sql = EXTRACT_SQL
+    return sql.format(**config).format(**config)  # fugly. Allow string values to have expressions
 
 
 def count_of_records_to_process(config: dict) -> int:
