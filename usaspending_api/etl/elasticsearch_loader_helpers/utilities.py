@@ -85,11 +85,15 @@ def execute_faba_sql_statement(cmd: str, results: bool = False, verbose: bool = 
     ]
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         df = pd.read_sql_query(cmd, connection)
+
+        fields_in_group = [col for col in df.columns if col not in group_by_fields]
+
         df = df.where(pd.notnull(df), None)
-        df = df.groupby(group_by_fields, dropna=False).apply(lambda x: x.to_dict(orient="records"))
+        df = df.groupby(group_by_fields, dropna=False)[fields_in_group].apply(lambda x: x.to_dict(orient="records"))
         df = df.reset_index()
         df = df.where(pd.notnull(df), None)
         df = df.rename(columns={0: "financial_accounts_by_award"})
+
         if results:
             rows = df.to_dict(orient="records")
 
