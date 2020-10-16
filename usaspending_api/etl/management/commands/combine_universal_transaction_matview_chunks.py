@@ -94,12 +94,10 @@ class Command(BaseCommand):
             self.matview_dir / "componentized" / "universal_transaction_matview__inserts.sql"
         ).read_text()
 
-        index = 0
-        for sql in sqlparse.split(insert_table_sql):
+        for i, sql in enumerate(sqlparse.split(insert_table_sql)):
             tasks.append(
-                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(f"Insert into table {index}"),), loop=loop,)
+                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(f"Insert into table {i}"),), loop=loop,)
             )
-            index += 1
 
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
@@ -112,12 +110,10 @@ class Command(BaseCommand):
             self.matview_dir / "componentized" / "universal_transaction_matview__indexes.sql"
         ).read_text()
 
-        index = 0
-        for sql in sqlparse.split(index_table_sql):
+        for i, sql in enumerate(sqlparse.split(index_table_sql)):
             tasks.append(
-                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(f"Creating Index {index}"),), loop=loop,)
+                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(f"Creating Index {i}"),), loop=loop,)
             )
-            index += 1
 
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()

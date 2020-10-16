@@ -3,6 +3,7 @@ import logging
 import psycopg2
 import subprocess
 
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from pathlib import Path
 
@@ -67,7 +68,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--dependencies", action="store_true", help="Run the SQL dependencies before the materialized view SQL."
         )
-        parser.add_argument("--chunk-count", default=10, help="Number of chunks to split the UTM into", type=int)
+        parser.add_argument("--chunk-count", default=10, help="Number of chunks to split chunked matviews into", type=int)
 
     def handle(self, *args, **options):
         """Overloaded Command Entrypoint"""
@@ -126,6 +127,10 @@ class Command(BaseCommand):
 
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
+
+        if "universal_transaction_matview" in self.chunked_matviews:
+            logger.info("Inserting data from universal_transaction_matview chunks into single table.")
+            call_command("combine_universal_transaction_matview_chunks", chunk_count=self.chunk_count)
 
         for view in OVERLAY_VIEWS:
             run_sql(view.read_text(), "Creating Views")
