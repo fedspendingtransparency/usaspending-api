@@ -1,5 +1,4 @@
 import logging
-import psycopg2
 
 from django.core.management import call_command
 from math import ceil
@@ -9,7 +8,6 @@ from typing import Generator, List, Tuple
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     count_of_records_to_process,
     create_index,
@@ -25,7 +23,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     TaskSpec,
     toggle_refresh_on,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import obtain_distinct_sql
 
 logger = logging.getLogger("script")
 
@@ -73,17 +70,19 @@ class Controller:
 
         self.config["partitions"] = self.determine_partitions()
         self.config["processes"] = min(self.config["processes"], self.config["partitions"])
+        self.tasks = self.construct_tasks()
 
         logger.info(
             format_log(
-                f"Created {self.config['partitions']:,} partitions"
+                f"Created {len(self.tasks):,} task partitions"
                 f" to process {self.record_count:,} total {self.config['data_type']} records"
                 f" from ID {self.min_id} to {self.max_id}"
                 f" with {self.config['processes']:,} parallel processes"
             )
         )
 
-        self.tasks = self.construct_tasks()
+        # for task in self.tasks:
+        #     logger.warning(task)
 
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
@@ -121,28 +120,25 @@ class Controller:
 
     def determine_partitions(self) -> int:
         """Create partion size less than or equal to max_size for more even distribution"""
-        if self.config["partition_size"] > self.record_count:
+        if self.config["partition_size"] > (self.max_id - self.min_id):
             return 1
-        elif self.config["data_type"] == "covid19-faba":
-            return ceil(self.record_count / self.config["partition_size"])
-        else:
-            return ceil(max((self.max_id - self.min_id), self.record_count) / (self.config["partition_size"]))
+        # return ceil(self.record_count / self.config["partition_size"])
+        return ceil(max((self.max_id - self.min_id), self.record_count) / (self.config["partition_size"]))
 
     def construct_tasks(self) -> List[TaskSpec]:
         """Create the Task objects w/ the appropriate configuration"""
         name_gen = gen_random_name()
-        if self.config["data_type"] == "covid19-faba":
-            distinct_key_gen = self.distinct_keys_range_generator()
-        else:
-            distinct_key_gen = None
-        return [self.configure_task(j, name_gen, distinct_key_gen) for j in range(self.config["partitions"])]
+        task_list = [self.configure_task(j, name_gen) for j in range(self.config["partitions"])]
 
-    def configure_task(self, partition_number: int, name_gen: Generator, distinct_key_gen: Generator) -> TaskSpec:
-        if self.config["data_type"] == "covid19-faba":
-            lower_bound, upper_bound = next(distinct_key_gen)
-        else:
-            lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
-        sql_str = obtain_extract_sql({**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}})
+        if self.config["extra_null_partition"]:
+            task_list.insert(0, self.configure_task(self.config["partitions"], name_gen, True))
+
+        return task_list
+
+    def configure_task(self, partition_number: int, name_gen: Generator, is_null_partition: bool = False) -> TaskSpec:
+        lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
+        sql_config = {**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}}
+        sql_str = obtain_extract_sql(sql_config, is_null_partition)
 
         return TaskSpec(
             base_table=self.config["base_table"],
@@ -153,23 +149,11 @@ class Controller:
             name=next(name_gen),
             partition_number=partition_number,
             primary_key=self.config["primary_key"],
+            field_for_es_id=self.config["field_for_es_id"],
             sql=sql_str,
             transform_func=self.config["data_transform_func"],
             view=self.config["sql_view"],
         )
-
-    def distinct_keys_range_generator(self) -> Generator[Tuple[int, int], None, None]:
-        range_size = ceil(self.record_count / self.config["partitions"])
-        sql = obtain_distinct_sql(self.config)
-        with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
-            # connection.autocommit = True
-            with connection.cursor("distinct_award_keys") as cursor:
-                cursor.execute(sql)
-                while True:
-                    key_list = [key[0] for key in cursor.fetchmany(size=range_size)]
-                    if not key_list:
-                        break
-                    yield key_list[0], key_list[-1]
 
     def get_id_range_for_partition(self, partition_number: int) -> Tuple[int, int]:
         range_size = ceil((self.max_id - self.min_id) / self.config["partitions"])

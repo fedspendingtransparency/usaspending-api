@@ -25,6 +25,7 @@ class TaskSpec:
     view: str
     base_table: str
     base_table_id: str
+    field_for_es_id: str
     primary_key: str
     partition_number: int
     is_incremental: bool
