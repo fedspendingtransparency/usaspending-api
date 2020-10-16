@@ -68,7 +68,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--dependencies", action="store_true", help="Run the SQL dependencies before the materialized view SQL."
         )
-        parser.add_argument("--chunk-count", default=10, help="Number of chunks to split chunked matviews into", type=int)
+        parser.add_argument(
+            "--chunk-count", default=10, help="Number of chunks to split chunked matviews into", type=int
+        )
 
     def handle(self, *args, **options):
         """Overloaded Command Entrypoint"""
