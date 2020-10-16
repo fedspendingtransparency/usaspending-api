@@ -245,9 +245,6 @@ if __name__ == "__main__":
         help="When value >=2, distribute the index SQL across that file count",
     )
     arg_parser.add_argument(
-        "-c", "--chunk-count", type=int, default=1, help="When value >=2, split matview into multiple SQL files"
-    )
-    arg_parser.add_argument(
         "-n", "--no-data", action="store_true", help="Delay populating matview with data until indexes are created"
     )
     GLOBAL_ARGS = arg_parser.parse_args()
