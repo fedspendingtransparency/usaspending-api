@@ -30,7 +30,7 @@ EXTRACT_NULL_SQL = """
 )
 
 MIN_MAX_COUNT_SQL = """
-    SELECT min({primary_key}) AS min, max({primary_key}) AS max, count(distinct {{primary_key}}) AS count
+    SELECT min({primary_key}) AS min, max({primary_key}) AS max, count(*) AS count
     FROM "{sql_view}"
     {optional_predicate}
 """.replace(

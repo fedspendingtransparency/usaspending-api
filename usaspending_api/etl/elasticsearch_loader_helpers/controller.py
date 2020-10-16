@@ -81,8 +81,8 @@ class Controller:
             )
         )
 
-        # for task in self.tasks:
-        #     logger.warning(task)
+        for task in self.tasks:
+            logger.warning(task)
 
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
