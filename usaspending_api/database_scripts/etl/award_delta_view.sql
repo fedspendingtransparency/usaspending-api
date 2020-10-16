@@ -25,7 +25,22 @@ SELECT
   vw_es_award_search.recipient_name,
   vw_es_award_search.recipient_unique_id,
   recipient_profile.recipient_hash,
-  recipient_profile.recipient_levels,
+  CASE	  recipient_profile.recipient_levels,
+    WHEN recipient_profile.recipient_hash IS NULL or recipient_profile.recipient_levels IS NULL	
+      THEN	
+        CONCAT(	
+          '{"name":"', vw_es_award_search.recipient_name,	
+          '","unique_id":"', vw_es_award_search.recipient_unique_id,	
+          '","hash":"","levels":""}'	
+        )	
+    ELSE	
+      CONCAT(	
+        '{"name":"', vw_es_award_search.recipient_name,	
+        '","unique_id":"', vw_es_award_search.recipient_unique_id,	
+        '","hash":"', recipient_profile.recipient_hash,	
+        '","levels":"', recipient_profile.recipient_levels, '"}'	
+      )	
+  END AS recipient_agg_key,
 
   vw_es_award_search.parent_recipient_unique_id,
   vw_es_award_search.business_categories,
@@ -52,6 +67,24 @@ SELECT
   vw_es_award_search.funding_toptier_agency_code,
   vw_es_award_search.awarding_subtier_agency_code,
   vw_es_award_search.funding_subtier_agency_code,
+  CASE	
+    WHEN vw_es_award_search.funding_toptier_agency_name IS NOT NULL	
+      THEN CONCAT(	
+        '{"name":"', vw_es_award_search.funding_toptier_agency_name,	
+        '","code":"', vw_es_award_search.funding_toptier_agency_code,	
+        '","id":"', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1), '"}'	
+      )	
+    ELSE NULL	
+  END AS funding_toptier_agency_agg_key,	
+  CASE	
+    WHEN vw_es_award_search.funding_subtier_agency_name IS NOT NULL	
+      THEN CONCAT(	
+        '{"name":"', vw_es_award_search.funding_subtier_agency_name,	
+        '","code":"', vw_es_award_search.funding_subtier_agency_code,	
+        '","id":"', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1), '"}'	
+      )	
+    ELSE NULL	
+  END AS funding_subtier_agency_agg_key,
 
   vw_es_award_search.recipient_location_country_code,
   vw_es_award_search.recipient_location_country_name,
@@ -86,6 +119,17 @@ SELECT
   vw_es_award_search.cfda_program_title AS cfda_title,
   vw_es_award_search.cfda_id,
   vw_es_award_search.cfda_url,
+  cfda.program_title AS cfda_title,	  vw_es_award_search.cfda_program_title AS cfda_title,
+  CASE	  vw_es_award_search.cfda_id,
+    WHEN vw_es_award_search.cfda_number IS NOT NULL	  vw_es_award_search.cfda_url,
+      THEN CONCAT(	
+        '{"code":"', vw_es_award_search.cfda_number,	
+        '","description":"', cfda_title,	
+        '","id":"', vw_es_award_search.cfda_id,	
+        '","url":"', CASE WHEN vw_es_award_search.cfda_url = 'None;' THEN NULL ELSE vw_es_award_search.cfda_url END, '"}'	
+      )	
+    ELSE NULL	
+  END AS cfda_agg_key,
 
   vw_es_award_search.sai_number,
   vw_es_award_search.type_of_contract_pricing,
@@ -97,11 +141,83 @@ SELECT
   vw_es_award_search.naics_code,
   vw_es_award_search.naics_description,
 
-  TREASURY_ACCT.tas_paths,
-  TREASURY_ACCT.tas_components,
-  DEFC.disaster_emergency_fund_codes AS disaster_emergency_fund_codes,
-  DEFC.gross_outlay_amount_by_award_cpe AS total_covid_outlay,
-  DEFC.transaction_obligated_amount AS total_covid_obligation
+  CASE	
+    WHEN	
+        vw_es_award_search.recipient_location_state_code IS NOT NULL	
+        AND vw_es_award_search.recipient_location_county_code IS NOT NULL	
+      THEN CONCAT(	
+        '{"country_code":"', vw_es_award_search.recipient_location_country_code,	
+        '","state_code":"', vw_es_award_search.recipient_location_state_code,	
+        '","state_fips":"', vw_es_award_search.recipient_location_state_fips,	
+        '","county_code":"', vw_es_award_search.recipient_location_county_code,	
+        '","county_name":"', vw_es_award_search.recipient_location_county_name,	
+        '","population":"', vw_es_award_search.recipient_location_county_population, '"}'	
+      )	
+    ELSE NULL	
+  END AS recipient_location_county_agg_key,	
+  CASE	
+    WHEN	
+        vw_es_award_search.recipient_location_state_code IS NOT NULL	
+        AND vw_es_award_search.recipient_location_congressional_code IS NOT NULL	
+      THEN CONCAT(	
+        '{"country_code":"', vw_es_award_search.recipient_location_country_code,	
+        '","state_code":"', vw_es_award_search.recipient_location_state_code,	
+        '","state_fips":"', vw_es_award_search.recipient_location_state_fips,	
+        '","congressional_code":"', vw_es_award_search.recipient_location_congressional_code,	
+        '","population":"', vw_es_award_search.recipient_location_congressional_population, '"}'	
+      )	
+    ELSE NULL	
+  END AS recipient_location_congressional_agg_key,	
+  CASE	
+    WHEN vw_es_award_search.recipient_location_state_code IS NOT NULL	
+      THEN CONCAT(	
+        '{"country_code":"', vw_es_award_search.recipient_location_country_code,	
+        '","state_code":"', vw_es_award_search.recipient_location_state_code,	
+        '","state_name":"', vw_es_award_search.recipient_location_state_name,	
+        '","population":"', vw_es_award_search.recipient_location_state_population, '"}'	
+      )	
+    ELSE NULL	
+  END AS recipient_location_state_agg_key,	
+
+  CASE	
+    WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_county_code IS NOT NULL	
+      THEN CONCAT(	
+        '{"country_code":"', vw_es_award_search.pop_country_code,	
+        '","state_code":"', vw_es_award_search.pop_state_code,	
+        '","state_fips":"', vw_es_award_search.pop_state_fips,	
+        '","county_code":"', vw_es_award_search.pop_county_code,	
+        '","county_name":"', vw_es_award_search.pop_county_name,	
+        '","population":"', vw_es_award_search.pop_county_population, '"}'	
+      )	
+    ELSE NULL	
+  END AS pop_county_agg_key,	
+  CASE	
+    WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_congressional_code IS NOT NULL	
+      THEN CONCAT(	
+        '{"country_code":"', vw_es_award_search.pop_country_code,	
+        '","state_code":"', vw_es_award_search.pop_state_code,	
+        '","state_fips":"', vw_es_award_search.pop_state_fips,	
+        '","congressional_code":"', vw_es_award_search.pop_congressional_code,	
+        '","population":"', vw_es_award_search.pop_congressional_population, '"}'	
+      )	
+    ELSE NULL	
+  END AS pop_congressional_agg_key,	
+  CASE	
+    WHEN vw_es_award_search.pop_state_code IS NOT NULL	
+      THEN CONCAT(	
+        '{"country_code":"', vw_es_award_search.pop_country_code,	
+        '","state_code":"', vw_es_award_search.pop_state_code,	
+         '","state_name":"', vw_es_award_search.pop_state_name,	
+        '","population":"', vw_es_award_search.pop_state_population, '"}'	
+      )	
+    ELSE NULL	
+  END AS pop_state_agg_key,	
+
+  vw_es_award_search.tas_paths,
+  vw_es_award_search.tas_components,
+  vw_es_award_search.disaster_emergency_fund_codes AS disaster_emergency_fund_codes,
+  vw_es_award_search.gross_outlay_amount_by_award_cpe AS total_covid_outlay,
+  vw_es_award_search.transaction_obligated_amount AS total_covid_obligation
 FROM vw_es_award_search
 LEFT JOIN LATERAL (
   SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) AS recipient_levels
