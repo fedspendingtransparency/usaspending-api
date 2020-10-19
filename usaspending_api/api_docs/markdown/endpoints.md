@@ -29,7 +29,7 @@ The currently available endpoints are listed in the following table.
 | Endpoint | Methods | Description |
 | -------- | ------- | ----------- |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/](/api/v2/agency/012/)|GET| Returns agency overview information for USAspending.gov's Agency Details page for agencies that have ever awarded |
-|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/](/api/v2/agency/012/budget_function/)|POST| Returns a list of Budget Functions and Budget Subfunctions for the agency in a single fiscal year |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/](/api/v2/agency/012/budget_function/)|GET| Returns a list of Budget Functions and Budget Subfunctions for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/count/](/api/v2/agency/012/budget_function/count/)|GET| Returns the count of Budget Functions for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budgetary_resources/](/api/v2/agency/012/budgetary_resources/)|GET| Returns budgetary resources and obligations for the agency and fiscal year requested |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/federal_account/](/api/v2/agency/012/federal_account/)|GET| Returns a list of Federal Accounts and Treasury Accounts for the agency in a single fiscal year |
@@ -72,7 +72,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/disaster/agency/loans/](/api/v2/disaster/agency/loans/)|POST| Returns insights on the Agencies awarding loans from disaster/emergency funding |
 |[/api/v2/disaster/agency/spending/](/api/v2/disaster/agency/spending/)|POST| Returns insights on the Agencies which received disaster/emergency funding |
 |[/api/v2/disaster/award/amount/](/api/v2/disaster/award/amount/)|POST| Returns account data obligation and outlay spending aggregations of all (File D) Awards which received disaster/emergency funding |
-|[/api/v2/disaster/award/count/](/api/v2/disaster/award/count/)|POST| Dimension Count of Disaster/Emergency funding data |
+|[/api/v2/disaster/award/count/](/api/v2/disaster/award/count/)|POST| Returns the count of account data obligation and outlay spending aggregations of all (File D) Awards which received disaster/emergency funding |
 |[/api/v2/disaster/cfda/count/](/api/v2/disaster/cfda/count/)|POST| Dimension Count of Disaster/Emergency funding data |
 |[/api/v2/disaster/cfda/loans/](/api/v2/disaster/cfda/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension |
 |[/api/v2/disaster/cfda/spending/](/api/v2/disaster/cfda/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension |
@@ -83,7 +83,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/disaster/object_class/count/](/api/v2/disaster/object_class/count/)|POST| Dimension Count of Disaster/Emergency funding data |
 |[/api/v2/disaster/object_class/loans/](/api/v2/disaster/object_class/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension |
 |[/api/v2/disaster/object_class/spending/](/api/v2/disaster/object_class/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension |
-|[/api/v2/disaster/overview/](/api/v2/disaster/overview/)|POST| Overview of Disaster/Emergency funding and spending |
+|[/api/v2/disaster/overview/](/api/v2/disaster/overview/)|GET| Overview of Disaster/Emergency funding and spending |
 |[/api/v2/disaster/recipient/count/](/api/v2/disaster/recipient/count/)|POST| Dimension Count of Disaster/Emergency funding data |
 |[/api/v2/disaster/recipient/loans/](/api/v2/disaster/recipient/loans/)|POST| Records of loan Disaster/Emergency funding data by dimension |
 |[/api/v2/disaster/recipient/spending/](/api/v2/disaster/recipient/spending/)|POST| Records of spending Disaster/Emergency funding data by dimension |
@@ -122,10 +122,11 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/recipient/state/awards/<FIPS\>/](/api/v2/recipient/state/awards/51/)|GET| Returns award breakdown based on FIPS |
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency |
 |[/api/v2/references/award_types/](/api/v2/references/award_types/)|GET| Returns a map of award types by award grouping. |
-|[/api/v2/references/cfda/totals/](/api/v2/references/cfda/totals/)|GET| Provides total values for all CFDAs |
 |[/api/v2/references/cfda/totals/<CFDA/>/](/api/v2/references/cfda/totals/10.555/)|GET| Provides total values for provided CFDA |
+|[/api/v2/references/cfda/totals/](/api/v2/references/cfda/totals/)|GET| Provides total values for all CFDAs |
 |[/api/v2/references/data_dictionary/](/api/v2/references/data_dictionary/)|GET| Returns a JSON structure of the Schema team's Rosetta Crosswalk Data Dictionary |
 |[/api/v2/references/def_codes/](/api/v2/references/def_codes/)|GET| Returns an object of Disaster Emergency Fund (DEF) Codes (DEFC) and titles |
+|[/api/v2/references/filter/](/api/v2/references/filter/)|POST| Accepts an Advanced Search filter object and returns a hash which can be used as a lookup key by `/api/v2/references/hash/` |
 |[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/<PSC\>/](/api/v2/references/filter_tree/psc/Service/C/C1/)|GET| Returns a list of PSC under the provided path |
 |[/api/v2/references/filter_tree/psc/<GROUP\>/<PSC\>/](/api/v2/references/filter_tree/psc/Product/10/)|GET| Returns a list of PSC under the provided path |
 |[/api/v2/references/filter_tree/psc/<GROUP\>/](/api/v2/references/filter_tree/psc/Product/)|GET| Returns a list of PSC under the provided path |
@@ -134,6 +135,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/references/filter_tree/tas/<AGENCY\>/](/api/v2/references/filter_tree/tas/020/)|GET| Returns a list of federal accounts associated with the specified agency |
 |[/api/v2/references/filter_tree/tas/](/api/v2/references/filter_tree/tas/)|GET| Returns a list of toptier agencies that have at least one TAS affiliated with them |
 |[/api/v2/references/glossary/](/api/v2/references/glossary/)|GET| Returns a list of glossary terms and definitions |
+|[/api/v2/references/hash/](/api/v2/references/hash/)|POST| Accepts a hash generated by `/api/v2/references/filter/` and returns an Advanced Search filter object |
 |[/api/v2/references/naics/<NAICS_CODE\>/](/api/v2/references/naics/11/)|GET| Returns the requested NAICS and immediate children, as well as related, relevant data. |
 |[/api/v2/references/naics/](/api/v2/references/naics/)|GET| Returns all Tier 1 (2-digit) NAICS and related, relevant data. |
 |[/api/v2/references/submission_periods/](/api/v2/references/submission_periods/)|GET| Returns a list of all available submission periods with essential information about start and end dates. |

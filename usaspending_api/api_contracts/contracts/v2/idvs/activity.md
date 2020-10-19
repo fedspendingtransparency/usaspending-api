@@ -22,6 +22,16 @@ List child and grandchild awards for a given IDV
         + `hide_edge_cases` (optional, boolean)
             Choose whether or not to hide awards that have no/negative obligated amounts and/or no/negative awarded amounts and/or no end date
             + Default: false
+            
+    + Body
+        
+            {
+                "award_id": "CONT_IDV_TMHQ10C0040_2044",
+                "page": 1,
+                "hide_edge_cases": true,
+                "limit": 50
+            }
+        
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[ChildAward], fixed-type)

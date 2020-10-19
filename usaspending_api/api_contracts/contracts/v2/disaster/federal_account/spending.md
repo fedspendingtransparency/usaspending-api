@@ -25,8 +25,8 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
                 + `total`
                 + `award`
         + `pagination` (optional, Pagination, fixed-type)
-
     + Body
+
 
             {
                 "filter": {
@@ -48,8 +48,8 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
         + `totals` (required, Totals, fixed-type)
         + `results` (required, array[Result], fixed-type)
         + `page_metadata` (required, PageMetadata, fixed-type)
-
     + Body
+
 
             {
                 "totals": {

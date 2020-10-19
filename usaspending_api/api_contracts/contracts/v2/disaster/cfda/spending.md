@@ -25,6 +25,22 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
                 + `total`
                 + `award`
         + `pagination` (optional, Pagination, fixed-type)
+    + Body
+
+
+            {
+                "filter": {
+                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "award_type_codes": ["02", "03", "04", "05", "07", "08", "10", "06", "09", "11"]
+                },
+                "pagination": {
+                    "limit": 10,
+                    "page": 1,
+                    "sort": "award_count",
+                    "order": "desc"
+                },
+                "spending_type": "total"
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -33,6 +49,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
         + `page_metadata` (required, PageMetadata, fixed-type)
 
     + Body
+
 
             {
                 "totals": {

@@ -17,7 +17,11 @@ Returns the counts of transaction records which match the keyword grouped by awa
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
-            Need to provide `keywords`
+        The `keywords` filter is mandatory for this endpoint
+    + Body
+
+
+            {"filters":{"keywords":["test"]}}
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -30,6 +34,7 @@ Returns the counts of transaction records which match the keyword grouped by awa
             - `grants`: 0 (required, number)
 
     + Body
+
 
             {
                 "results": {
@@ -45,4 +50,4 @@ Returns the counts of transaction records which match the keyword grouped by awa
 # Data Structures
 
 ## AdvancedFilterObject (object)
-+ `keywords`: `lockheed` (required, array[string], fixed-type)
++ `keywords`: [[`lockheed`]] (required, array[string], fixed-type)
