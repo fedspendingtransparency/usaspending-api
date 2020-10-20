@@ -71,19 +71,13 @@ def execute_sql_statement(cmd: str, results: bool = False, verbose: bool = False
     return rows
 
 
-def execute_faba_sql_statement(cmd: str, results: bool = False, verbose: bool = False) -> Optional[pd.DataFrame]:
-    """Function used to execute SQL for the COVID FABA Index that relies on nested types"""
-
+def execute_sql_statement_to_dataframe(cmd: str, verbose: bool = False) -> pd.DataFrame:
+    """Simple function to execute SQL using a single-use psycopg2 connection returns dataframe"""
     if verbose:
         print(cmd)
 
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
-        df = pd.read_sql_query(cmd, connection)
-
-    if results:
-        return df
-
-    return None
+        return pd.read_sql_query(cmd, connection)
 
 
 def db_rows_to_dict(cursor: psycopg2.extensions.cursor) -> List[dict]:

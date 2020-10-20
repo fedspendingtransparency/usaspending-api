@@ -30,7 +30,7 @@
             "type": "keyword"
           },
           "deobligations_recoveries_refunds_of_prior_year_by_award_cpe": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "direct_reimbursable": {
@@ -92,27 +92,27 @@
             "type": "text"
           },
           "gross_outlay_amount_by_award_cpe": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "gross_outlay_amount_by_award_fyb": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "gross_outlays_delivered_orders_paid_total_cpe": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "gross_outlays_delivered_orders_paid_total_fyb": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "gross_outlays_undelivered_orders_prepaid_total_cpe": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "gross_outlays_undelivered_orders_prepaid_total_fyb": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "is_final_balances_for_fy": {
@@ -147,23 +147,23 @@
             "type": "text"
           },
           "obligations_delivered_orders_unpaid_total_cpe": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "obligations_delivered_orders_unpaid_total_fyb": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "obligations_incurred_total_by_award_cpe": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "obligations_undelivered_orders_unpaid_total_cpe": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "obligations_undelivered_orders_unpaid_total_fyb": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "parent_award_id": {
@@ -224,7 +224,7 @@
             "type": "keyword"
           },
           "transaction_obligated_amount": {
-            "scaling_factor": 100.0,
+            "scaling_factor": 100,
             "type": "scaled_float"
           },
           "treasury_account_id": {
