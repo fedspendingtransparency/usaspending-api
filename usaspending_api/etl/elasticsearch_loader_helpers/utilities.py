@@ -71,34 +71,19 @@ def execute_sql_statement(cmd: str, results: bool = False, verbose: bool = False
     return rows
 
 
-def execute_faba_sql_statement(cmd: str, results: bool = False, verbose: bool = False) -> Optional[List[dict]]:
+def execute_faba_sql_statement(cmd: str, results: bool = False, verbose: bool = False) -> Optional[pd.DataFrame]:
     """Function used to execute SQL for the COVID FABA Index that relies on nested types"""
-    rows = None
+
     if verbose:
         print(cmd)
 
-    group_by_fields = [
-        "financial_account_distinct_award_key",
-        "award_id",
-        "award_type",
-        "generated_unique_award_id",
-        "total_loan_value",
-    ]
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         df = pd.read_sql_query(cmd, connection)
 
-        fields_in_group = [col for col in df.columns if col not in group_by_fields]
+    if results:
+        return df
 
-        df = df.where(pd.notnull(df), None)
-        df = df.groupby(group_by_fields, dropna=False)[fields_in_group].apply(lambda x: x.to_dict(orient="records"))
-        df = df.reset_index()
-        df = df.where(pd.notnull(df), None)
-        df = df.rename(columns={0: "financial_accounts_by_award"})
-
-        if results:
-            rows = df.to_dict(orient="records")
-
-    return rows
+    return None
 
 
 def db_rows_to_dict(cursor: psycopg2.extensions.cursor) -> List[dict]:

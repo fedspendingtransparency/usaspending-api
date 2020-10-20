@@ -21,14 +21,6 @@ EXTRACT_NULL_SQL = """
     "\n", ""
 )
 
-EXTRACT_NULL_SQL = """
-    SELECT *
-    FROM "{sql_view}"
-    {optional_predicate} "{primary_key}" IS NULL
-""".replace(
-    "\n", ""
-)
-
 MIN_MAX_COUNT_SQL = """
     SELECT min({primary_key}) AS min, max({primary_key}) AS max, count(*) AS count
     FROM "{sql_view}"
