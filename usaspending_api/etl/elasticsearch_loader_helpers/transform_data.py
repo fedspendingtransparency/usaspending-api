@@ -1,5 +1,4 @@
 import logging
-import pandas as pd
 
 from django.conf import settings
 from time import perf_counter
@@ -28,7 +27,7 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
 
 
 def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
-    logger.info(format_log(f"Transforming data", name=worker.name, action="Index"))
+    logger.info(format_log(f"Transforming data", name=worker.name, action="Transform"))
     start = perf_counter()
     results = {}
 
@@ -42,26 +41,30 @@ def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[d
         temp_key = f"{disinct_award_key}|{award_id}|{award_type}|{generated_unique_award_id}|{total_loan_value}"
         if temp_key not in results:
             results[temp_key] = {
-                "financial_account_distinct_award_key" : disinct_award_key,
-                "award_id" : award_id,
-                "award_type" : award_type,
-                "generated_unique_award_id" : generated_unique_award_id,
-                "total_loan_value" : total_loan_value,
+                "financial_account_distinct_award_key": disinct_award_key,
+                "award_id": award_id,
+                "award_type": award_type,
+                "generated_unique_award_id": generated_unique_award_id,
+                "total_loan_value": total_loan_value,
                 "financial_accounts_by_award": list(),
                 "_id": es_id_field,
             }
 
         results[temp_key]["financial_accounts_by_award"].append(record)
 
-    duration = perf_counter() - start
-    logger.info(format_log(f"Transformation operation took {duration:.2f}s for {len(results)} records", name=worker.name, action="Index"))
+    if len(results) != len(records):
+        msg = f"Transformed {len(records)} database records into {len(results)} documents for ingest"
+        logger.info(format_log(msg, name=worker.name, action="Transform"))
+
+    msg = f"Transformation operation took {perf_counter() - start:.2f}s"
+    logger.info(format_log(msg, name=worker.name, action="Transform"))
     return list(results.values())  # don't need the dict key, return a list of the dict values
 
 
 def transform_data(
     worker: TaskSpec, records: List[dict], converters: Dict[str, Callable], routing_field: Optional[str] = None
 ) -> List[dict]:
-    logger.info(format_log(f"Transforming data", name=worker.name, action="Index"))
+    logger.info(format_log(f"Transforming data", name=worker.name, action="Transform"))
     start = perf_counter()
 
     for record in records:
@@ -84,5 +87,5 @@ def transform_data(
         record["_id"] = record[worker.field_for_es_id]
 
     duration = perf_counter() - start
-    logger.info(format_log(f"Transformation operation took {duration:.2f}s", name=worker.name, action="Index"))
+    logger.info(format_log(f"Transformation operation took {duration:.2f}s", name=worker.name, action="Transform"))
     return records
