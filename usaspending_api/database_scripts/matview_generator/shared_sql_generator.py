@@ -104,7 +104,7 @@ def make_matview_refresh(matview_name, concurrently="CONCURRENTLY "):
     return statement_list
 
 
-def make_indexes_sql(sql_json, matview_name, unique_string, quiet):
+def make_indexes_sql(sql_json, matview_name, unique_string, progress_sql, quiet):
     unique_name_list = []
     create_indexes = []
     rename_old_indexes = []
@@ -134,7 +134,7 @@ def make_indexes_sql(sql_json, matview_name, unique_string, quiet):
 
     indexes_and_msg = []
     for n, index in enumerate(create_indexes):
-        if n % 10 == 0 and n > 0:
+        if n % 10 == 0 and n > 0 and progress_sql:
             console = TEMPLATE["sql_print_output"].format("{} indexes created, {} remaining".format(n, total - n))
             indexes_and_msg.append(console)
         indexes_and_msg.append(index)

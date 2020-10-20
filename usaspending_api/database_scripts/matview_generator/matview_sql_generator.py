@@ -117,7 +117,7 @@ def create_all_sql_strings(sql_json):
     matview_temp_name = matview_name + "_temp"
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
-        sql_json, matview_temp_name, UNIQUE_STRING, GLOBAL_ARGS.quiet
+        sql_json, matview_temp_name, UNIQUE_STRING, True, GLOBAL_ARGS.quiet
     )
     create_stats, rename_old_stats, rename_new_stats = make_stats_sql(sql_json, matview_temp_name, UNIQUE_STRING)
 
@@ -158,7 +158,7 @@ def create_componentized_files(sql_json):
     matview_temp_name = matview_name + "_temp"
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
-        sql_json, matview_temp_name, UNIQUE_STRING, GLOBAL_ARGS.quiet
+        sql_json, matview_temp_name, UNIQUE_STRING, True, GLOBAL_ARGS.quiet
     )
     create_stats, rename_old_stats, rename_new_stats = make_stats_sql(sql_json, matview_temp_name, UNIQUE_STRING)
 

@@ -16,6 +16,7 @@ from shared_sql_generator import (
     make_table_drops,
     make_table_inserts,
     make_matview_empty,
+    make_matview_refresh,
     TEMPLATE,
 )
 
@@ -152,7 +153,7 @@ def create_componentized_files(sql_json):
     write_sql_file(insert_into_table, filename_base + "__inserts")
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
-        sql_json, table_temp_name, UNIQUE_STRING, GLOBAL_ARGS.quiet
+        sql_json, table_temp_name, UNIQUE_STRING, False, GLOBAL_ARGS.quiet
     )
     write_sql_file(create_indexes, filename_base + "__indexes")
 
@@ -167,6 +168,20 @@ def create_componentized_files(sql_json):
 
     sql_strings = make_matview_empty(table_name, GLOBAL_ARGS.chunk_count)
     write_sql_file(sql_strings, filename_base + "__empty")
+
+
+def create_chunked_componentized_files(sql_json):
+    table_name = sql_json["final_name"]
+    filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json["final_name"])
+
+    sql_strings = make_matview_drops(table_name)
+    write_sql_file(sql_strings, filename_base + "__drops")
+
+    sql_strings = make_matview_refresh(table_name, "")
+    write_sql_file(sql_strings, filename_base + "__refresh")
+
+    sql_strings = make_matview_create(table_name, sql_json["matview_sql"])
+    write_sql_file(sql_strings, filename_base + "__matview")
 
 
 def create_monolith_file(sql_json):
@@ -210,6 +225,7 @@ def main(source_file):
         chunked_sql_json = add_chunk_strings(sql_json, chunk)
 
         create_monolith_file(chunked_sql_json)
+        create_chunked_componentized_files(chunked_sql_json)
 
     print_debug("Done")
 
