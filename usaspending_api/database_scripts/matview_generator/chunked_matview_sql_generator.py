@@ -180,6 +180,9 @@ def create_chunked_componentized_files(sql_json):
     sql_strings = make_matview_refresh(table_name, "")
     write_sql_file(sql_strings, filename_base + "__refresh")
 
+    sql_strings = make_matview_create(table_name, sql_json["matview_sql"])
+    write_sql_file(sql_strings, filename_base + "__matview")
+
 
 def create_monolith_file(sql_json):
     sql_strings = create_all_sql_strings(sql_json)
