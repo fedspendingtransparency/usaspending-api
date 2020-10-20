@@ -1,0 +1,370 @@
+{
+  "settings": {
+    "index.mapping.ignore_malformed": true,
+    "index.max_result_window": null,
+    "index.refresh_interval": -1,
+    "index": {
+      "number_of_shards": 5,
+      "number_of_replicas": 0
+    },
+    "analysis": {
+      "analyzer": {
+        "stemmer_analyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "singular_stemmer"
+          ]
+        }
+      },
+      "filter": {
+        "singular_stemmer": {
+          "type": "stemmer",
+          "name": "minimal_english"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "award_id": {
+        "type": "keyword",
+        "null_value": "NULL"
+      },
+      "award_type": {
+        "type": "keyword",
+        "null_value": "NULL"
+      },
+      "distinct_award_key": {
+        "type": "keyword"
+      },
+      "financial_accounts_by_award": {
+        "type": "nested",
+        "properties": {
+          "create_date": {
+            "type": "date",
+            "format": "yyyy-MM-dd HH:mm:ss"
+          },
+          "data_source": {
+            "type": "keyword"
+          },
+          "deobligations_recoveries_refunds_of_prior_year_by_award_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "direct_reimbursable": {
+            "type": "keyword"
+          },
+          "disaster_emergency_fund_code": {
+            "type": "keyword",
+            "null_value": "NULL"
+          },
+          "disaster_emergency_fund_code_group_name": {
+            "type": "keyword",
+            "null_value": "NULL"
+          },
+          "distinct_award_key": {
+            "type": "keyword"
+          },
+          "fain": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "federal_account_id": {
+            "type": "integer"
+          },
+          "federal_account_symbol": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "federal_account_title": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "financial_accounts_by_awards_id": {
+            "type": "integer"
+          },
+          "funding_toptier_agency_code": {
+            "type": "keyword"
+          },
+          "funding_toptier_agency_id": {
+            "type": "integer"
+          },
+          "funding_toptier_agency_name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "gross_outlay_amount_by_award_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "gross_outlay_amount_by_award_fyb": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "gross_outlays_delivered_orders_paid_total_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "gross_outlays_delivered_orders_paid_total_fyb": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "gross_outlays_undelivered_orders_prepaid_total_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "gross_outlays_undelivered_orders_prepaid_total_fyb": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "is_quarter": {
+            "type": "boolean"
+          },
+          "major_object_class": {
+            "type": "keyword"
+          },
+          "major_object_class_name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "object_class": {
+            "type": "keyword"
+          },
+          "object_class_id": {
+            "type": "integer"
+          },
+          "object_class_name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "obligations_delivered_orders_unpaid_total_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "obligations_delivered_orders_unpaid_total_fyb": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "obligations_incurred_total_by_award_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "obligations_undelivered_orders_unpaid_total_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "obligations_undelivered_orders_unpaid_total_fyb": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "parent_award_id": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "period_end_date": {
+            "type": "date",
+            "format": "yyyy-MM-dd HH:mm:ss"
+          },
+          "period_start_date": {
+            "type": "date",
+            "format": "yyyy-MM-dd HH:mm:ss"
+          },
+          "piid": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "program_activity_code": {
+            "type": "keyword"
+          },
+          "program_activity_id": {
+            "type": "integer"
+          },
+          "program_activity_name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "reporting_period_end": {
+            "type": "date",
+            "format": "yyyy-MM-dd HH:mm:ss"
+          },
+          "reporting_period_start": {
+            "type": "date",
+            "format": "yyyy-MM-dd HH:mm:ss"
+          },
+          "submission_fiscal_month": {
+            "type": "integer"
+          },
+          "submission_fiscal_quarter": {
+            "type": "integer"
+          },
+          "submission_fiscal_year": {
+            "type": "integer"
+          },
+          "submission_id": {
+            "type": "integer"
+          },
+          "transaction_obligated_amount": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "treasury_account_id": {
+            "type": "integer"
+          },
+          "treasury_account_symbol": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "treasury_account_title": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "update_date": {
+            "type": "date",
+            "format": "yyyy-MM-dd HH:mm:ss"
+          },
+          "uri": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "ussgl480100_undelivered_orders_obligations_unpaid_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl480100_undelivered_orders_obligations_unpaid_fyb": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl490100_delivered_orders_obligations_unpaid_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl490100_delivered_orders_obligations_unpaid_fyb": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl490200_delivered_orders_obligations_paid_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl490800_authority_outlayed_not_yet_disbursed_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl490800_authority_outlayed_not_yet_disbursed_fyb": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          },
+          "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe": {
+            "type": "scaled_float",
+            "scaling_factor": 100.0
+          }
+        }
+      },
+      "generated_unique_award_id": {
+        "type": "keyword"
+      },
+      "total_loan_value": {
+        "type": "scaled_float",
+        "scaling_factor": 100.0
+      }
+    }
+  }
+}

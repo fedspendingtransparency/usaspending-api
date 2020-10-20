@@ -63,7 +63,8 @@ def test_object_class_groups_by_object_classes(
 
 
 @pytest.mark.django_db
-def test_object_class_spending_filters_on_defc(client, basic_faba_with_object_class, monkeypatch, helpers):
+def test_object_class_spending_filters_on_defc(client, elasticsearch_account_index, basic_faba_with_object_class, monkeypatch, helpers):
+    elasticsearch_account_index.update_index()
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 

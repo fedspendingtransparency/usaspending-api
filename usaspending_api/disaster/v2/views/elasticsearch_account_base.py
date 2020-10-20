@@ -59,8 +59,9 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
 
         response = self.query_elasticsearch()
         response["page_metadata"] = get_pagination_metadata(
-            self.bucket_count, self.pagination.limit, self.pagination.page
+            len(response["results"]), self.pagination.limit, self.pagination.page
         )
+        response["results"] = response["results"][self.pagination.lower_limit : self.pagination.upper_limit]
         if messages:
             response["messages"] = messages
 
@@ -194,8 +195,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         results = self.build_elasticsearch_result(buckets)
         totals = self.build_totals(results)
         sorted_results = self.sort_results(results)
-
-        return {"totals": totals, "results": sorted_results[self.pagination.lower_limit : self.pagination.upper_limit]}
+        return {"totals": totals, "results": sorted_results}
 
     def sort_results(self, results: List[dict]) -> List[dict]:
         sorted_parents = sorted(

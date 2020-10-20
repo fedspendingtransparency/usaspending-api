@@ -60,12 +60,19 @@ class TestElasticSearchIndex:
         Get all of the transactions presented in the view and stuff them into the Elasticsearch index.
         The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
         """
-        view_sql_file = "award_delta_view.sql" if self.index_type == "awards" else "transaction_delta_view.sql"
+        if self.index_type == "awards":
+            view_sql_file = "award_delta_view.sql"
+        elif self.index_type == "accounts":
+            view_sql_file = "account_delta_view.sql"
+        else:
+            view_sql_file = "transaction_delta_view.sql"
         view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
         with connection.cursor() as cursor:
             cursor.execute(view_sql)
             if self.index_type == "transactions":
                 view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+            elif self.index_type == "accounts":
+                view_name = settings.ES_ACCOUNTS_ETL_VIEW_NAME
             else:
                 view_name = settings.ES_AWARDS_ETL_VIEW_NAME
             cursor.execute(f"SELECT * FROM {view_name};")
