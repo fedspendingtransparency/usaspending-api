@@ -153,7 +153,7 @@ def create_componentized_files(sql_json):
     write_sql_file(insert_into_table, filename_base + "__inserts")
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
-        sql_json, table_temp_name, UNIQUE_STRING, GLOBAL_ARGS.quiet
+        sql_json, table_temp_name, UNIQUE_STRING, False, GLOBAL_ARGS.quiet
     )
     write_sql_file(create_indexes, filename_base + "__indexes")
 
