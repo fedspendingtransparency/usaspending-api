@@ -16,6 +16,7 @@ from shared_sql_generator import (
     make_table_drops,
     make_table_inserts,
     make_matview_empty,
+    make_matview_refresh,
     TEMPLATE,
 )
 
@@ -169,6 +170,17 @@ def create_componentized_files(sql_json):
     write_sql_file(sql_strings, filename_base + "__empty")
 
 
+def create_chunked_componentized_files(sql_json):
+    table_name = sql_json["final_name"]
+    filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json["final_name"])
+
+    sql_strings = make_matview_drops(table_name)
+    write_sql_file(sql_strings, filename_base + "__drops")
+
+    sql_strings = make_matview_refresh(table_name, "")
+    write_sql_file(sql_strings, filename_base + "__refresh")
+
+
 def create_monolith_file(sql_json):
     sql_strings = create_all_sql_strings(sql_json)
     print_debug('Preparing to store "{}" in sql file'.format(sql_json["final_name"]))
@@ -210,6 +222,7 @@ def main(source_file):
         chunked_sql_json = add_chunk_strings(sql_json, chunk)
 
         create_monolith_file(chunked_sql_json)
+        create_chunked_componentized_files(chunked_sql_json)
 
     print_debug("Done")
 
