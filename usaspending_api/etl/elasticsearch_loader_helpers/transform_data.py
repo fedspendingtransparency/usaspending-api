@@ -28,26 +28,34 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
 
 
 def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
-    # converters = {}
-    # return transform_data(worker, records, converters, None)
+    logger.info(format_log(f"Transforming data", name=worker.name, action="Index"))
+    start = perf_counter()
+    results = {}
 
-    group_by_fields = [
-        "financial_account_distinct_award_key",
-        "award_id",
-        "award_type",
-        "generated_unique_award_id",
-        "total_loan_value",
-    ]
+    for record in records:
+        es_id_field = record[worker.field_for_es_id]
+        disinct_award_key = record.pop("financial_account_distinct_award_key")
+        award_id = record.pop("award_id")
+        award_type = record.pop("award_type")
+        generated_unique_award_id = record.pop("generated_unique_award_id")
+        total_loan_value = record.pop("total_loan_value")
+        temp_key = f"{disinct_award_key}|{award_id}|{award_type}|{generated_unique_award_id}|{total_loan_value}"
+        if temp_key not in results:
+            results[temp_key] = {
+                "financial_account_distinct_award_key" : disinct_award_key,
+                "award_id" : award_id,
+                "award_type" : award_type,
+                "generated_unique_award_id" : generated_unique_award_id,
+                "total_loan_value" : total_loan_value,
+                "financial_accounts_by_award": list(),
+                "_id": es_id_field,
+            }
 
-    fields_in_group = [col for col in records.columns if col not in group_by_fields]
+        results[temp_key]["financial_accounts_by_award"].append(record)
 
-    df = records.where(pd.notnull(records), None)
-    df = df.groupby(group_by_fields, dropna=False)[fields_in_group].apply(lambda x: x.to_dict(orient="records"))
-    df = df.reset_index()
-    df = df.where(pd.notnull(df), None)
-    df = df.rename(columns={0: "financial_accounts_by_award"})
-
-    return df.to_dict(orient="records")
+    duration = perf_counter() - start
+    logger.info(format_log(f"Transformation operation took {duration:.2f}s for {len(results)} records", name=worker.name, action="Index"))
+    return list(results.values())  # don't need the dict key, return a list of the dict values
 
 
 def transform_data(

@@ -68,9 +68,6 @@ class Controller:
             )
         )
 
-        for task in self.tasks:
-            logger.warning(task)
-
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
             call_command("es_configure", "--template-only", f"--load-type={self.config['data_type']}")

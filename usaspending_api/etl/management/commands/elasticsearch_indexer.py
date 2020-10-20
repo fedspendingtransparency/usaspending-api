@@ -11,13 +11,12 @@ from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensur
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     Controller,
+    execute_sql_statement,
     format_log,
     toggle_refresh_off,
     transform_award_data,
     transform_covid19_faba_data,
     transform_transaction_data,
-    execute_sql_statement,
-    execute_faba_sql_statement,
 )
 
 logger = logging.getLogger("script")
@@ -234,7 +233,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "create_award_type_aliases": False,
             "data_transform_func": transform_covid19_faba_data,
             "data_type": "covid19-faba",
-            "execute_sql_func": execute_faba_sql_statement,
+            "execute_sql_func": execute_sql_statement,
             "extra_null_partition": True,
             "field_for_es_id": "financial_account_distinct_award_key",
             "initial_datetime": datetime.strptime(f"2020-04-01+0000", "%Y-%m-%d%z"),
