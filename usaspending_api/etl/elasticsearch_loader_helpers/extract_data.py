@@ -5,18 +5,18 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_lo
 
 logger = logging.getLogger("script")
 
-COUNT_SQL = """
-    SELECT COUNT(*) AS count
-    FROM "{sql_view}"
-    {optional_predicate}
-""".replace(
-    "\n", ""
-)
-
 EXTRACT_SQL = """
     SELECT *
     FROM "{sql_view}"
     {optional_predicate} "{primary_key}" BETWEEN {lower_bound} AND {upper_bound}
+""".replace(
+    "\n", ""
+)
+
+EXTRACT_NULL_SQL = """
+    SELECT *
+    FROM "{sql_view}"
+    {optional_predicate} "{primary_key}" IS NULL
 """.replace(
     "\n", ""
 )
@@ -36,12 +36,6 @@ MIN_MAX_COUNT_SQL = """
 """.replace(
     "\n", ""
 )
-
-
-def obtain_count_sql(config: dict) -> str:
-    if "optional_predicate" not in config:
-        config["optional_predicate"] = ""
-    return COUNT_SQL.format(**config).format(**config)  # fugly. Allow string values to have expressions
 
 
 def obtain_min_max_count_sql(config: dict) -> str:

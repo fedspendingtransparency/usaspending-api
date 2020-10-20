@@ -4,6 +4,7 @@ import argparse
 import glob
 import hashlib
 import os
+import copy
 
 from shared_sql_generator import (
     COMPONENT_DIR,
@@ -11,14 +12,14 @@ from shared_sql_generator import (
     HERE,
     ingest_json,
     make_indexes_sql,
-    make_matview_refresh,
     make_modification_sql,
-    make_stats_sql,
-    split_indexes_chunks,
+    make_table_drops,
+    make_table_inserts,
+    make_matview_empty,
     TEMPLATE,
 )
 
-# Usage: python matview_sql_generator.py (from usaspending_api/database_scripts/matview_generator)
+# Usage: python chunked_matview_sql_generator.py --file <file_name> (from usaspending_api/database_scripts/matview_generator)
 #        ^--- Will clobber files in usaspending_api/database_scripts/matviews
 
 """
@@ -65,37 +66,48 @@ EXAMPLE SQL DESCRIPTION JSON FILE:
 }
 """
 
+GLOBAL_ARGS = None
+UNIQUE_STRING = None
+
 
 def make_matview_drops(final_matview_name):
-    matview_temp_name = final_matview_name + "_temp"
-    matview_archive_name = final_matview_name + "_old"
-
-    return [TEMPLATE["drop_matview"].format(matview_temp_name), TEMPLATE["drop_matview"].format(matview_archive_name)]
+    return [TEMPLATE["drop_matview"].format(final_matview_name)]
 
 
 def make_matview_create(final_matview_name, sql):
     matview_sql = "\n".join(sql)
-    matview_temp_name = final_matview_name + "_temp"
-    with_or_without_data = ""
-    if GLOBAL_ARGS.no_data:
-        with_or_without_data = "NO "
-
-    return [TEMPLATE["create_matview"].format(matview_temp_name, matview_sql, with_or_without_data)]
+    return [TEMPLATE["create_matview"].format(final_matview_name, matview_sql, "")]
 
 
-def make_rename_sql(matview_name, old_indexes, old_stats, new_indexes, new_stats):
-    matview_temp_name = matview_name + "_temp"
-    matview_archive_name = matview_name + "_old"
+def make_table_create(table_name):
+    table_temp_name = table_name + "_temp"
+    # Use the first Matview as the table definition
+    matview_name = table_name + "_0"
+    return [
+        TEMPLATE["drop_table"].format(table_temp_name),
+        TEMPLATE["create_table"].format(table_temp_name, matview_name),
+    ]
+
+
+def make_index_rename_sql(old_indexes, new_indexes):
     sql_strings = []
-    sql_strings.append(TEMPLATE["rename_matview"].format("IF EXISTS ", matview_name, matview_archive_name))
     sql_strings += old_indexes
     sql_strings.append("")
-    sql_strings += old_stats
+    sql_strings += new_indexes
+    return sql_strings
+
+
+def make_rename_sql(table_name, old_indexes, new_indexes):
+    table_temp_name = table_name + "_temp"
+    table_archive_name = table_name + "_old"
+    sql_strings = []
+    sql_strings.append(TEMPLATE["drop_table"].format(table_archive_name))
+    sql_strings.append(TEMPLATE["rename_table"].format("IF EXISTS ", table_name, table_archive_name))
+    sql_strings += old_indexes
     sql_strings.append("")
-    sql_strings.append(TEMPLATE["rename_matview"].format("", matview_temp_name, matview_name))
+    sql_strings.append(TEMPLATE["rename_table"].format("", table_temp_name, table_name))
     sql_strings += new_indexes
     sql_strings.append("")
-    sql_strings += new_stats
     return sql_strings
 
 
@@ -103,38 +115,16 @@ def create_all_sql_strings(sql_json):
     """ Desired ordering of steps for final SQL:
         1. Drop existing "_temp" and "_old" matviews
         2. Create new matview
-        3. Create indexes for new matview
-        4. (optional) Cluster matview on index
-        5. analyze verbose <matview>
-        6. Rename existing matview, append with _old
-        7. Rename all existing matview indexes to avoid name collisions
-        8. Rename new matview
-        9. Rename new matview indexes
+        3. analyze verbose <matview>
     """
     final_sql_strings = []
 
     matview_name = sql_json["final_name"]
-    matview_temp_name = matview_name + "_temp"
-
-    create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
-        sql_json, matview_temp_name, UNIQUE_STRING, GLOBAL_ARGS.quiet
-    )
-    create_stats, rename_old_stats, rename_new_stats = make_stats_sql(sql_json, matview_temp_name, UNIQUE_STRING)
 
     final_sql_strings.extend(make_matview_drops(matview_name))
     final_sql_strings.append("")
     final_sql_strings.extend(make_matview_create(matview_name, sql_json["matview_sql"]))
 
-    final_sql_strings.append("")
-    final_sql_strings += create_indexes
-    final_sql_strings.append("")
-    final_sql_strings += create_stats
-    final_sql_strings.append("")
-    if GLOBAL_ARGS.no_data:
-        final_sql_strings.extend([TEMPLATE["refresh_matview"].format("", matview_name), ""])
-    final_sql_strings.extend(
-        make_rename_sql(matview_name, rename_old_indexes, rename_old_stats, rename_new_indexes, rename_new_stats)
-    )
     final_sql_strings.append("")
     final_sql_strings.extend(make_modification_sql(matview_name, GLOBAL_ARGS.quiet))
     return final_sql_strings
@@ -151,52 +141,55 @@ def write_sql_file(str_list, filename):
 
 
 def create_componentized_files(sql_json):
+    table_name = sql_json["final_name"]
+    table_temp_name = table_name + "_temp"
     filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json["final_name"])
-    index_dir_path = os.path.join(filename_base, "batch_indexes/")
 
-    matview_name = sql_json["final_name"]
-    matview_temp_name = matview_name + "_temp"
+    create_table = make_table_create(table_name)
+    write_sql_file(create_table, filename_base + "__create")
+
+    insert_into_table = make_table_inserts(table_name, GLOBAL_ARGS.chunk_count)
+    write_sql_file(insert_into_table, filename_base + "__inserts")
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
-        sql_json, matview_temp_name, UNIQUE_STRING, GLOBAL_ARGS.quiet
+        sql_json, table_temp_name, UNIQUE_STRING, GLOBAL_ARGS.quiet
     )
-    create_stats, rename_old_stats, rename_new_stats = make_stats_sql(sql_json, matview_temp_name, UNIQUE_STRING)
+    write_sql_file(create_indexes, filename_base + "__indexes")
 
-    sql_strings = make_matview_drops(matview_name)
-    write_sql_file(sql_strings, filename_base + "__drops")
-
-    sql_strings = make_matview_create(matview_name, sql_json["matview_sql"])
-    write_sql_file(sql_strings, filename_base + "__matview")
-
-    indexes_and_stats = create_indexes + create_stats
-    write_sql_file(indexes_and_stats, filename_base + "__indexes")
-
-    if GLOBAL_ARGS.batch_indexes > 1:
-        if not os.path.exists(index_dir_path):
-            os.makedirs(index_dir_path)
-        for i, index_block in enumerate(split_indexes_chunks(indexes_and_stats, GLOBAL_ARGS.batch_indexes)):
-            write_sql_file(index_block, index_dir_path + "group_{}".format(i))
-
-    sql_strings = make_modification_sql(matview_name, GLOBAL_ARGS.quiet)
-    write_sql_file(sql_strings, filename_base + "__mods")
-
-    sql_strings = make_rename_sql(
-        matview_name, rename_old_indexes, rename_old_stats, rename_new_indexes, rename_new_stats
-    )
+    sql_strings = make_rename_sql(table_name, rename_old_indexes, rename_new_indexes)
     write_sql_file(sql_strings, filename_base + "__renames")
 
-    if "refresh" in sql_json and sql_json["refresh"] is True:
-        if GLOBAL_ARGS.no_data:
-            sql_strings = make_matview_refresh(matview_temp_name, "")
-        else:
-            sql_strings = make_matview_refresh(matview_name)
-        write_sql_file(sql_strings, filename_base + "__refresh")
+    sql_strings = make_modification_sql(table_name, GLOBAL_ARGS.quiet)
+    write_sql_file(sql_strings, filename_base + "__mods")
+
+    sql_strings = make_table_drops(table_name)
+    write_sql_file(sql_strings, filename_base + "__drops")
+
+    sql_strings = make_matview_empty(table_name, GLOBAL_ARGS.chunk_count)
+    write_sql_file(sql_strings, filename_base + "__empty")
 
 
 def create_monolith_file(sql_json):
     sql_strings = create_all_sql_strings(sql_json)
     print_debug('Preparing to store "{}" in sql file'.format(sql_json["final_name"]))
     write_sql_file(sql_strings, os.path.join(DEST_FOLDER, sql_json["final_name"]))
+
+
+def add_chunk_strings(sql_json, chunk):
+    chunked_sql_json = copy.deepcopy(sql_json)
+
+    chunk_count = GLOBAL_ARGS.chunk_count
+
+    if chunk_count > 1:
+        chunked_sql_json["final_name"] = f"{chunked_sql_json['final_name']}_{chunk}"
+        chunked_sql_json["matview_sql"].append("  AND transaction_normalized.id % {} = {}".format(chunk_count, chunk))
+
+    return chunked_sql_json
+
+
+def print_debug(msg):
+    if not GLOBAL_ARGS.quiet:
+        print(msg)
 
 
 def main(source_file):
@@ -212,15 +205,13 @@ def main(source_file):
         print(e)
         raise SystemExit(1)
 
-    create_monolith_file(sql_json)
     create_componentized_files(sql_json)
+    for chunk in range(0, GLOBAL_ARGS.chunk_count):
+        chunked_sql_json = add_chunk_strings(sql_json, chunk)
+
+        create_monolith_file(chunked_sql_json)
 
     print_debug("Done")
-
-
-def print_debug(msg):
-    if not GLOBAL_ARGS.quiet:
-        print(msg)
 
 
 if __name__ == "__main__":
@@ -228,7 +219,7 @@ if __name__ == "__main__":
         prog="matview_sql_generator.py", description="Generates all of the necessary SQL files for jenkins scripts"
     )
     arg_parser.add_argument(
-        "--dest", type=str, default="../matviews/", help="Destination folder for all generated sql files"
+        "--dest", type=str, default="../chunked_matviews/", help="Destination folder for all generated sql files"
     )
     arg_parser.add_argument(
         "--file", type=str, default=None, help="filepath to the json file containing the sql description"
@@ -237,15 +228,7 @@ if __name__ == "__main__":
         "-q", "--quiet", action="store_true", help="Flag to suppress stdout when there are no errors"
     )
     arg_parser.add_argument(
-        "-b",
-        "--batch_indexes",
-        type=int,
-        choices=range(1, 8),
-        default=1,
-        help="When value >=2, distribute the index SQL across that file count",
-    )
-    arg_parser.add_argument(
-        "-n", "--no-data", action="store_true", help="Delay populating matview with data until indexes are created"
+        "-c", "--chunk-count", type=int, default=1, help="When value >=2, split matview into multiple SQL files"
     )
     GLOBAL_ARGS = arg_parser.parse_args()
 

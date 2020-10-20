@@ -27,6 +27,7 @@ class TaskSpec:
     base_table_id: str
     field_for_es_id: str
     primary_key: str
+    field_for_es_id: str
     partition_number: int
     is_incremental: bool
     execute_sql_func: callable = None
