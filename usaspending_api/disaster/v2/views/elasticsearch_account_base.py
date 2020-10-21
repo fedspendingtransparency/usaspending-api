@@ -38,7 +38,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         if self.filters.get("award_type") is not None:
             filters["award_type"] = self.filters["award_type"]
         # Need to update the value of "query" to have the fields to search on
-        query = filters.pop("query", None)
+        query = filters.pop("nested_query", None)
         if query:
             filters["nested_query"] = {"text": query, "fields": self.query_fields}
 

@@ -16,13 +16,17 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
     """ Returns loan disaster spending by federal account. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
-    agg_key = "financial_accounts_by_award.treasury_account_id"   # "financial_accounts_by_award.federal_account_id"  primary (tier-1) aggregation key
+    agg_key = "financial_accounts_by_award.treasury_account_id"  # "financial_accounts_by_award.federal_account_id"  primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
     query_fields = [
         "federal_account_symbol",
         "federal_account_symbol.contains",
         "federal_account_title",
         "federal_account_title.contains",
+        "treasury_account_symbol",
+        "treasury_account_symbol.contains",
+        "treasury_account_title",
+        "treasury_account_title.contains",
     ]
     # sub_agg_key = "financial_accounts_by_award.treasury_account_id"
     # sub_top_hits_fields = [
@@ -34,7 +38,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
         "financial_accounts_by_award.federal_account_title",
         "financial_accounts_by_award.treasury_account_symbol",
         "financial_accounts_by_award.treasury_account_title",
-        "financial_accounts_by_award.federal_account_id"
+        "financial_accounts_by_award.federal_account_id",
     ]
 
     @cache_response()
