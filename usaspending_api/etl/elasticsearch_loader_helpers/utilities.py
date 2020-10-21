@@ -1,6 +1,5 @@
 import json
 import logging
-import pandas as pd
 import psycopg2
 
 from dataclasses import dataclass
@@ -71,15 +70,6 @@ def execute_sql_statement(cmd: str, results: bool = False, verbose: bool = False
     return rows
 
 
-def execute_sql_statement_to_dataframe(cmd: str, verbose: bool = False) -> pd.DataFrame:
-    """Simple function to execute SQL using a single-use psycopg2 connection returns dataframe"""
-    if verbose:
-        print(cmd)
-
-    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
-        return pd.read_sql_query(cmd, connection)
-
-
 def db_rows_to_dict(cursor: psycopg2.extensions.cursor) -> List[dict]:
     """Return a dictionary of all row results from a database connection cursor"""
     columns = [col[0] for col in cursor.description]
@@ -94,7 +84,7 @@ def filter_query(column: str, values: list, query_type: str = "match_phrase") ->
 def format_log(msg: str, action: str = None, name: str = None) -> str:
     """Helper function to format log statements"""
     inner_str = f"[{action if action else 'main'}] {f'{name}' if name else ''}"
-    return f"{inner_str:<32} | {msg}"
+    return f"{inner_str:<34} | {msg}"
 
 
 def gen_random_name() -> Generator[str, None, None]:

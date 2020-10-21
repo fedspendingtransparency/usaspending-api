@@ -1,6 +1,6 @@
 DROP VIEW IF EXISTS covid19_faba_view;
 CREATE VIEW covid19_faba_view AS
-  SELECT faba.data_source,
+  SELECT
     faba.financial_accounts_by_awards_id,
     faba.piid,
     faba.parent_award_id,

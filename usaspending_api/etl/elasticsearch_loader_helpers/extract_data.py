@@ -1,7 +1,9 @@
 import logging
 
 from time import perf_counter
-from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_log, execute_sql_statement
+from typing import List, Tuple
+
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log, execute_sql_statement
 
 logger = logging.getLogger("script")
 
@@ -50,7 +52,7 @@ def obtain_extract_sql(config: dict, is_null_partition: bool = False) -> str:
     return sql.format(**config).format(**config)  # fugly. Allow string values to have expressions
 
 
-def count_of_records_to_process(config: dict) -> int:
+def count_of_records_to_process(config: dict) -> Tuple[int, int, int]:
     start = perf_counter()
     results = execute_sql_statement(obtain_min_max_count_sql(config), True, config["verbose"])[0]
     min_id, max_id, count = results["min"], results["max"], results["count"]
@@ -59,7 +61,7 @@ def count_of_records_to_process(config: dict) -> int:
     return count, min_id, max_id
 
 
-def extract_records(task):
+def extract_records(task: TaskSpec) -> List[dict]:
     start = perf_counter()
     logger.info(format_log(f"Extracting data from source", name=task.name, action="Extract"))
 

@@ -26,9 +26,6 @@
           "create_date": {
             "type": "date"
           },
-          "data_source": {
-            "type": "keyword"
-          },
           "deobligations_recoveries_refunds_of_prior_year_by_award_cpe": {
             "scaling_factor": 100,
             "type": "scaled_float"

@@ -27,7 +27,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers.transform_data import (
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     chunks,
     execute_sql_statement,
-    execute_sql_statement_to_dataframe,
     format_log,
     gen_random_name,
     TaskSpec,
@@ -45,7 +44,6 @@ __all__ = [
     "deleted_awards",
     "deleted_transactions",
     "execute_sql_statement",
-    "execute_sql_statement_to_dataframe",
     "extract_records",
     "format_log",
     "gen_random_name",

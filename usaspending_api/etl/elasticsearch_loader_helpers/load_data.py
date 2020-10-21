@@ -1,10 +1,11 @@
 import logging
 
-from elasticsearch import helpers
+from elasticsearch import Elasticsearch, helpers
 from time import perf_counter
+from typing import List, Tuple
 
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import delete_docs_by_unique_key
-from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_log
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log
 
 
 logger = logging.getLogger("script")
@@ -25,7 +26,7 @@ ES_MAX_BATCH_BYTES = 10 * 1024 * 1024
 ES_BATCH_ENTRIES = 4000
 
 
-def load_data(worker, records, client):
+def load_data(worker: TaskSpec, records: List[dict], client: Elasticsearch) -> Tuple[int, int]:
     start = perf_counter()
     logger.info(format_log(f"Starting Index operation", name=worker.name, action="Index"))
     success, failed = streaming_post_to_es(
@@ -36,13 +37,13 @@ def load_data(worker, records, client):
 
 
 def streaming_post_to_es(
-    client,
+    client: Elasticsearch,
     chunk: list,
     index_name: str,
     job_name: str = None,
     delete_before_index: bool = True,
     delete_key: str = "_id",
-):
+) -> Tuple[int, int]:
     """
     Pump data into an Elasticsearch index.
 
