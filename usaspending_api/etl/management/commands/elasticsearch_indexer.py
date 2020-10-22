@@ -7,7 +7,7 @@ from time import perf_counter
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists, drop_etl_view
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     Controller,
@@ -96,6 +96,11 @@ class Command(BaseCommand):
             default=250000,
             metavar="(default: 250,000)",
         )
+        parser.add_argument(
+            "--drop-db-view",
+            action="store_true",
+            help="After completing the ETL, drop the SQL view used for the data extraction",
+        )
 
     def handle(self, *args, **options):
         elasticsearch_client = instantiate_elasticsearch_client()
@@ -122,6 +127,9 @@ class Command(BaseCommand):
             raise SystemExit(1)
         else:
             loader.complete_process()
+            if config["drop_db_view"]:
+                logger.info(format_log(f"Dropping SQL view '{config['sql_view']}'"))
+                drop_etl_view(config["sql_view"], True)
         finally:
             msg = f"Script duration was {perf_counter() - start:.2f}s {error_addition}|"
             headers = f"{'-' * (len(msg) - 2)} |"
@@ -132,14 +140,15 @@ class Command(BaseCommand):
 
 def parse_cli_args(options: dict, es_client) -> dict:
     passthrough_values = (
-        "partition_size",
         "create_new_index",
+        "drop_db_view",
         "index_name",
         "load_type",
+        "partition_size",
         "process_deletes",
+        "processes",
         "skip_counts",
         "skip_delete_index",
-        "processes",
     )
     config = set_config(passthrough_values, options)
 
