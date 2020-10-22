@@ -571,7 +571,7 @@ def subaward_annotations():
         ),
         "prime_award_disaster_emergency_fund_codes": Case(
             When(
-                broker_subaward__action_date__gte=datetime.date(2020, 4, 1),
+                broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=Subquery(
                     FinancialAccountsByAwards.objects.filter(
                         filter_limit_to_closed_periods(), award_id=OuterRef("award_id")
@@ -602,7 +602,7 @@ def subaward_annotations():
         ),
         "prime_award_outlayed_amount_funded_by_COVID-19_supplementals": Case(
             When(
-                broker_subaward__action_date__gte=datetime.date(2020, 4, 1),
+                broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=Subquery(
                     FinancialAccountsByAwards.objects.filter(
                         filter_by_latest_closed_periods(),
@@ -619,7 +619,7 @@ def subaward_annotations():
         ),
         "prime_award_obligated_amount_funded_by_COVID-19_supplementals": Case(
             When(
-                broker_subaward__action_date__gte=datetime.date(2020, 4, 1),
+                broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=Subquery(
                     FinancialAccountsByAwards.objects.filter(
                         filter_limit_to_closed_periods(),

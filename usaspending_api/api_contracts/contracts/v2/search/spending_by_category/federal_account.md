@@ -28,6 +28,23 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
             + Default: 1
         + `subawards` (optional, boolean)
             Determines whether Prime Awards or Sub Awards are searched
+    + Body 
+            
+            
+            {
+                "filters": {
+                    "recipient_id": "1c3edaaa-611b-840c-bf2b-fd34df49f21f-P",
+                    "time_period": [
+                        {
+                            "start_date": "2019-09-28",
+                            "end_date": "2020-09-28"
+                        }
+                    ]
+                },
+                "category": "federal_account",
+                "limit": 5,
+                "page": 1
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -39,6 +56,7 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
+            
             {
                 "category": "federal_account",
                 "limit": 10,

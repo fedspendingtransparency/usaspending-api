@@ -119,7 +119,7 @@ SELECT
   vw_es_award_search.cfda_program_title AS cfda_title,
   vw_es_award_search.cfda_id,
   vw_es_award_search.cfda_url,
-  cfda.program_title AS cfda_title,	  vw_es_award_search.cfda_program_title AS cfda_title,
+  vw_es_award_search.cfda_program_title AS cfda_title,
   CASE	  vw_es_award_search.cfda_id,
     WHEN vw_es_award_search.cfda_number IS NOT NULL	  vw_es_award_search.cfda_url,
       THEN CONCAT(	
