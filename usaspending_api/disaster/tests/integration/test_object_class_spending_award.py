@@ -57,7 +57,7 @@ def test_object_class_groups_by_object_classes(
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="award")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="award")
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json()["results"]) == 2
 
@@ -74,6 +74,7 @@ def test_object_class_spending_filters_on_defc(
     assert len(resp.json()["results"]) == 0
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="award")
+    print(resp.json())
     assert len(resp.json()["results"]) == 1
 
 

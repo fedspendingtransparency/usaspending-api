@@ -62,8 +62,8 @@ class TestElasticSearchIndex:
         """
         if self.index_type == "awards":
             view_sql_file = "award_delta_view.sql"
-        elif self.index_type == "accounts":
-            view_sql_file = "account_delta_view.sql"
+        elif self.index_type == "covid19_faba_":
+            view_sql_file = "covid19_faba_view.sql"
         else:
             view_sql_file = "transaction_delta_view.sql"
         view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
@@ -71,8 +71,8 @@ class TestElasticSearchIndex:
             cursor.execute(view_sql)
             if self.index_type == "transactions":
                 view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
-            elif self.index_type == "accounts":
-                view_name = settings.ES_ACCOUNTS_ETL_VIEW_NAME
+            elif self.index_type == "covid19_faba_":
+                view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
             else:
                 view_name = settings.ES_AWARDS_ETL_VIEW_NAME
             cursor.execute(f"SELECT * FROM {view_name};")
@@ -88,7 +88,7 @@ class TestElasticSearchIndex:
             self.client.index(
                 index=self.index_name,
                 body=json.dumps(transaction, cls=DjangoJSONEncoder),
-                id=transaction["{}_id".format(self.index_type[:-1])],
+                id=transaction["{}_id".format("transaction" if self.index_type == "transactions" else "award")],
                 routing=routing_value,
             )
         # Force newly added documents to become searchable.

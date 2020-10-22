@@ -18,7 +18,6 @@ CURL_COMMANDS = {
 
 FILES = {
     "award_template": settings.APP_DIR / "etl" / "es_award_template.json",
-    "account_template": settings.APP_DIR / "etl" / "es_account_template.json",
     "covid19_faba_template": settings.APP_DIR / "etl" / "es_covid19_faba_template.json",
     "settings": settings.APP_DIR / "etl" / "es_config_objects.json",
     "transaction_template": settings.APP_DIR / "etl" / "es_transaction_template.json",

@@ -18,7 +18,7 @@ def basic_faba_with_object_class(award_count_sub_schedule, award_count_submissio
         parent_award_id="basic award",
         award=award,
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
-        submission_id=SubmissionAttributes.objects.all().first(),
+        submission=SubmissionAttributes.objects.all().first(),
         object_class=basic_object_class[0],
     )
 
