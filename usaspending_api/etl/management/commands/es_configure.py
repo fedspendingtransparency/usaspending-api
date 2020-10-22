@@ -17,10 +17,11 @@ CURL_COMMANDS = {
 }
 
 FILES = {
-    "transaction_template": settings.APP_DIR / "etl" / "es_transaction_template.json",
     "award_template": settings.APP_DIR / "etl" / "es_award_template.json",
     "account_template": settings.APP_DIR / "etl" / "es_account_template.json",
+    "covid19_faba_template": settings.APP_DIR / "etl" / "es_covid19_faba_template.json",
     "settings": settings.APP_DIR / "etl" / "es_config_objects.json",
+    "transaction_template": settings.APP_DIR / "etl" / "es_transaction_template.json",
 }
 
 
@@ -35,8 +36,8 @@ class Command(BaseCommand):
             "--load-type",
             type=str,
             help="Select which type of index to configure, current options are awards or transactions",
-            choices=["transactions", "awards"],
-            default="transactions",
+            choices=["transaction", "award", "covid19-faba", "transactions", "awards"],
+            default="transaction",
         )
         parser.add_argument(
             "--template-only",
@@ -50,13 +51,20 @@ class Command(BaseCommand):
         if not settings.ES_HOSTNAME:
             raise SystemExit("Fatal error: $ES_HOSTNAME is not set.")
         self.load_type = options["load_type"]
-        self.template = f"{options['load_type'][:-1]}_template"
-        if options["load_type"] == "awards":
+        if options["load_type"] in ("award", "awards"):
             self.index_pattern = f"*{settings.ES_AWARDS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_AWARDS_MAX_RESULT_WINDOW
-        elif options["load_type"] == "transactions":
+            self.template = "award_template"
+        elif options["load_type"] in ("transaction", "transactions"):
             self.index_pattern = f"*{settings.ES_TRANSACTIONS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+            self.template = "transaction_template"
+        elif options["load_type"] == "covid19-faba":
+            self.index_pattern = f"*{settings.ES_COVID19_FABA_NAME_SUFFIX}"
+            self.max_result_window = settings.ES_COVID19_FABA_MAX_RESULT_WINDOW
+            self.template = "covid19_faba_template"
+        else:
+            raise RuntimeError(f"No config for {options['load_type']}")
 
         cluster, index_settings = self.get_elasticsearch_settings()
         template = self.get_index_template()

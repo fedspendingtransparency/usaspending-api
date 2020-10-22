@@ -90,7 +90,9 @@ class ElasticsearchDisasterBase(DisasterBase):
             non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
         self.filter_query.must.append(ES_Q("bool", should=non_zero_queries, minimum_should_match=1))
 
-        self.bucket_count = get_number_of_unique_terms_for_awards(self.filter_query, f"{self.agg_key}.hash")
+        self.bucket_count = get_number_of_unique_terms_for_awards(
+            self.filter_query, f"{self.agg_key.replace('.keyword', '')}.hash"
+        )
 
         messages = []
         if self.pagination.sort_key in ("id", "code"):
