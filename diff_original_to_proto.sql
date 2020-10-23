@@ -1,4 +1,3 @@
-
 SELECT
     old.transaction_id,
     jsonb_strip_nulls(
@@ -6,7 +5,7 @@ SELECT
             'transaction_id', CASE WHEN old."transaction_id" IS DISTINCT FROM new."transaction_id" THEN jsonb_build_object('old', old."transaction_id", 'new', new."transaction_id") ELSE null END,
             'detached_award_proc_unique', CASE WHEN old."detached_award_proc_unique" IS DISTINCT FROM new."detached_award_proc_unique" THEN jsonb_build_object('old', old."detached_award_proc_unique", 'new', new."detached_award_proc_unique") ELSE null END,
             'afa_generated_unique', CASE WHEN old."afa_generated_unique" IS DISTINCT FROM new."afa_generated_unique" THEN jsonb_build_object('old', old."afa_generated_unique", 'new', new."afa_generated_unique") ELSE null END,
-            -- 'update_date', CASE WHEN old."update_date" IS DISTINCT FROM new."update_date" THEN jsonb_build_object('old', old."update_date", 'new', new."update_date") ELSE null END,
+            'update_date', CASE WHEN old."update_date" IS DISTINCT FROM new."etl_update_date" THEN jsonb_build_object('old', old."update_date", 'new', new."etl_update_date") ELSE null END,
             'modification_number', CASE WHEN old."modification_number" IS DISTINCT FROM new."modification_number" THEN jsonb_build_object('old', old."modification_number", 'new', new."modification_number") ELSE null END,
             'generated_unique_award_id', CASE WHEN old."generated_unique_award_id" IS DISTINCT FROM new."generated_unique_award_id" THEN jsonb_build_object('old', old."generated_unique_award_id", 'new', new."generated_unique_award_id") ELSE null END,
             'award_id', CASE WHEN old."award_id" IS DISTINCT FROM new."award_id" THEN jsonb_build_object('old', old."award_id", 'new', new."award_id") ELSE null END,
@@ -101,7 +100,7 @@ WHERE
 old."transaction_id" IS DISTINCT FROM new."transaction_id"
 OR old."detached_award_proc_unique" IS DISTINCT FROM new."detached_award_proc_unique"
 OR old."afa_generated_unique" IS DISTINCT FROM new."afa_generated_unique"
--- OR old."update_date" IS DISTINCT FROM new."update_date"
+OR old."update_date" IS DISTINCT FROM new."etl_update_date"
 OR old."modification_number" IS DISTINCT FROM new."modification_number"
 OR old."generated_unique_award_id" IS DISTINCT FROM new."generated_unique_award_id"
 OR old."award_id" IS DISTINCT FROM new."award_id"
@@ -184,5 +183,5 @@ OR old."tas_components" IS DISTINCT FROM new."tas_components"
 OR old."federal_accounts" IS DISTINCT FROM new."federal_accounts"
 OR old."business_categories" IS DISTINCT FROM new."business_categories"
 OR old."disaster_emergency_fund_codes" IS DISTINCT FROM new."disaster_emergency_fund_codes"
-LIMIT 1000
+--LIMIT 1000
 ;

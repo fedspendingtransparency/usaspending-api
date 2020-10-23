@@ -1,19 +1,32 @@
 DROP MATERIALIZED VIEW IF EXISTS universal_transaction_matview_proto;
 CREATE MATERIALIZED VIEW universal_transaction_matview_proto AS (
 SELECT
-  tas.treasury_account_identifiers,
-
   transaction_normalized.id AS transaction_id,
+  transaction_normalized.award_id,
+  transaction_normalized.modification_number,
+  transaction_fpds.detached_award_proc_unique,
+  transaction_fabs.afa_generated_unique,
+  awards.generated_unique_award_id,
+  awards.fain,
+  awards.uri,
+  awards.piid,
+
   transaction_normalized.action_date::date,
   DATE(transaction_normalized.action_date::date + interval '3 months') AS fiscal_action_date,
   transaction_normalized.last_modified_date::date,
   transaction_normalized.fiscal_year,
   awards.certified_date AS award_certified_date,
   FY(awards.certified_date) AS award_fiscal_year,
-  transaction_normalized.type,
-  transaction_normalized.award_id,
   transaction_normalized.update_date,
+  awards.update_date AS award_update_date,
+  GREATEST(transaction_normalized.update_date, awards.update_date) AS etl_update_date,
+  awards.period_of_performance_start_date,
+  awards.period_of_performance_current_end_date,
+
+  transaction_normalized.type,
+  awards.type_description,
   awards.category AS award_category,
+  transaction_normalized.description AS transaction_description,
 
   COALESCE(CASE
     WHEN transaction_normalized.type IN('07','08') THEN awards.total_subsidy_cost
@@ -23,19 +36,22 @@ SELECT
     WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost
     ELSE transaction_normalized.federal_action_obligation
   END, 0)::NUMERIC(23, 2) AS generated_pragmatic_obligation,
-  awards.fain,
-  awards.uri,
-  awards.piid,
-  awards.update_date AS award_update_date,
-  awards.generated_unique_award_id,
-  awards.type_description,
-  awards.period_of_performance_start_date,
-  awards.period_of_performance_current_end_date,
   COALESCE(transaction_normalized.federal_action_obligation, 0)::NUMERIC(23, 2) AS federal_action_obligation,
   COALESCE(transaction_normalized.original_loan_subsidy_cost, 0)::NUMERIC(23, 2) AS original_loan_subsidy_cost,
   COALESCE(transaction_normalized.face_value_loan_guarantee, 0)::NUMERIC(23, 2) AS face_value_loan_guarantee,
-  transaction_normalized.description AS transaction_description,
-  transaction_normalized.modification_number,
+
+  transaction_normalized.business_categories,
+  transaction_fpds.naics AS naics_code,
+  naics.description AS naics_description,
+  transaction_fpds.product_or_service_code,
+  psc.description AS product_or_service_description,
+  transaction_fpds.type_of_contract_pricing,
+  transaction_fpds.type_set_aside,
+  transaction_fpds.extent_competed,
+  transaction_fpds.ordering_period_end_date,
+  transaction_fabs.cfda_number,
+  transaction_fabs.cfda_title AS cfda_title,
+  references_cfda.id AS cfda_id,
 
   pop_country_lookup.country_name AS pop_country_name,
   pop_country_lookup.country_code AS pop_country_code,
@@ -55,20 +71,6 @@ SELECT
   COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5) AS recipient_location_zip5,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name)) AS recipient_location_city_name,
 
-  transaction_fpds.naics AS naics_code,
-  naics.description AS naics_description,
-  transaction_fpds.product_or_service_code,
-  psc.description AS product_or_service_description,
-  transaction_fpds.type_of_contract_pricing,
-  transaction_fpds.type_set_aside,
-  transaction_fpds.extent_competed,
-  transaction_fpds.detached_award_proc_unique,
-  transaction_fpds.ordering_period_end_date,
-  transaction_fabs.cfda_number,
-  transaction_fabs.afa_generated_unique,
-  transaction_fabs.cfda_title AS cfda_title,
-  references_cfda.id AS cfda_id,
-
   COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
     CASE
       WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
@@ -76,8 +78,9 @@ SELECT
   ))::uuid) AS recipient_hash,
   UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
   COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
+  PRL.recipient_hash AS parent_recipient_hash,
+  UPPER(PRL.legal_business_name) AS parent_recipient_name,
   COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
-  transaction_normalized.business_categories,
 
   transaction_normalized.awarding_agency_id,
   transaction_normalized.funding_agency_id,
@@ -92,12 +95,11 @@ SELECT
   SAA.abbreviation AS awarding_subtier_agency_abbreviation,
   SFA.abbreviation AS funding_subtier_agency_abbreviation,
 
+  tas.treasury_account_identifiers,
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
   FEDERAL_ACCT.federal_accounts,
   FEDERAL_ACCT.defc AS disaster_emergency_fund_codes,
-  UPPER(PRL.legal_business_name) AS parent_recipient_name,
-  PRL.recipient_hash AS parent_recipient_hash,
 
     CASE
     WHEN COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) IS NOT NULL AND LPAD(CAST(CAST((REGEXP_MATCH(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\d+)(?:\.\d+)?$'))[1] AS smallint) AS text), 3, '0') IS NOT NULL
@@ -129,8 +131,7 @@ SELECT
       )
     ELSE NULL
   END AS recipient_location_state_agg_key,
-
-    CASE
+  CASE
     WHEN COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IS NOT NULL AND COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co) IS NOT NULL
       THEN CONCAT('{"country_code":"', pop_country_lookup.country_code,
         '","state_code":"', COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code),
@@ -167,8 +168,7 @@ SELECT
       )
     ELSE NULL
   END AS pop_country_agg_key,
-
-    CASE
+  CASE
     WHEN TAA.name IS NOT NULL
       THEN CONCAT('{"name":"', TAA.name,
         '","abbreviation":"', TAA.abbreviation,
@@ -200,7 +200,7 @@ SELECT
       )
     ELSE NULL
   END AS funding_subtier_agency_agg_key,
-    CASE
+  CASE
     WHEN transaction_fpds.product_or_service_code IS NOT NULL
       THEN CONCAT(
         '{"code":"', transaction_fpds.product_or_service_code,
@@ -223,9 +223,6 @@ SELECT
         '","unique_id":"', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu), '"}'
       )
   END AS recipient_agg_key
-
-
-
 FROM
   transaction_normalized
 LEFT OUTER JOIN
@@ -387,3 +384,4 @@ WHERE
   transaction_normalized.action_date >= '2000-10-01');
 
 CREATE UNIQUE INDEX temp_idx_dev_6052_matview_proto_id ON universal_transaction_matview_proto(transaction_id);
+CREATE INDEX temp_idx_dev_6052_matview_proto_etl_date ON universal_transaction_matview_proto(etl_update_date);
