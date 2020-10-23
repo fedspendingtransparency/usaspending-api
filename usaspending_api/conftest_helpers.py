@@ -16,12 +16,12 @@ from usaspending_api.common.sqs.sqs_handler import (
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.elasticsearch_loader_helpers import (
-    create_aliases,
-    transform_transaction_data,
-    transform_award_data,
+    create_award_type_aliases,
     load_data,
+    TaskSpec,
+    transform_award_data,
+    transform_transaction_data,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec
 from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
 
@@ -68,7 +68,7 @@ class TestElasticSearchIndex:
         """
         self.delete_index()
         self.client.indices.create(index=self.index_name, body=self.template)
-        create_aliases(self.client, self.etl_config)
+        create_award_type_aliases(self.client, self.etl_config)
         self._add_contents(**options)
 
     def _add_contents(self, **options):

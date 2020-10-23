@@ -14,6 +14,7 @@ from usaspending_api.common.matview_manager import (
     OVERLAY_VIEWS,
     DEPENDENCY_FILEPATH,
     MATERIALIZED_VIEWS,
+    CHUNKED_MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
     DEFAULT_MATIVEW_DIR,
 )
@@ -22,6 +23,7 @@ from usaspending_api.references.models import Agency
 
 logger = logging.getLogger(__name__)
 TEMP_SQL_FILES = [DEFAULT_MATIVEW_DIR / val["sql_filename"] for val in MATERIALIZED_VIEWS.values()]
+TEMP_SQL_FILES += [DEFAULT_MATIVEW_DIR / val["sql_filename"] for val in CHUNKED_MATERIALIZED_VIEWS.values()]
 
 
 def read_text_file(filepath):

@@ -1,5 +1,4 @@
 import hashlib
-import json
 
 from django.http import HttpResponseBadRequest
 from rest_framework.response import Response
@@ -45,14 +44,14 @@ class FilterEndpoint(APIView):
 class HashEndpoint(APIView):
     """Return the stored filter object corresponding to the received hash"""
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/filter.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/hash.md"
 
     def post(self, request, format=None):
-        body_unicode = request.body.decode("utf-8")
-        filter_hash = json.loads(body_unicode)["hash"]
+        if "hash" not in request.data:
+            return HttpResponseBadRequest("Missing `hash` key in request body")
 
         try:
-            fh = FilterHash.objects.get(hash=filter_hash)
+            fh = FilterHash.objects.get(hash=request.data["hash"])
             return Response({"filter": fh.filter})
         except FilterHash.DoesNotExist:
             return HttpResponseBadRequest("A FilterHash Object with that hash does not exist.")
