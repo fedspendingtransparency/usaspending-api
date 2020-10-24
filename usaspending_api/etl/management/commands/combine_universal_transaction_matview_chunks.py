@@ -91,8 +91,8 @@ class Command(BaseCommand):
         tasks = []
 
         insert_table_sql = (
-            self.matview_dir / "componentized" / "universal_transaction_matview__inserts.sql"
-        ).read_text().strip()
+            (self.matview_dir / "componentized" / "universal_transaction_matview__inserts.sql").read_text().strip()
+        )
 
         for i, sql in enumerate(sqlparse.split(insert_table_sql)):
             tasks.append(
