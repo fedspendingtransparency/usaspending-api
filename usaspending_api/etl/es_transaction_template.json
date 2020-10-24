@@ -70,7 +70,7 @@
       "uri": {
         "type": "keyword"
       },
-      "award_description": {
+      "transaction_description": {
         "type": "text",
         "analyzer": "stemmer_analyzer"
       },

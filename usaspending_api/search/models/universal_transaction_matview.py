@@ -107,7 +107,7 @@ class UniversalTransactionView(models.Model):
     funding_subtier_agency_agg_key = models.TextField()
     psc_agg_key = models.TextField()
     naics_agg_key = models.TextField()
-    recipient_agg_ke = models.TextField()
+    recipient_agg_key = models.TextField()
 
     class Meta:
         managed = False

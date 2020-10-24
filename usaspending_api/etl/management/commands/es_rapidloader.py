@@ -364,7 +364,7 @@ VIEW_COLUMNS = [
     "piid",
     "fain",
     "uri",
-    "award_description",
+    "transaction_description",
     "product_or_service_code",
     "product_or_service_description",
     "psc_agg_key",
