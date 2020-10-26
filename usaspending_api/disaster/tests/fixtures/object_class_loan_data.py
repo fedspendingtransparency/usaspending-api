@@ -22,6 +22,7 @@ def basic_object_class_faba_with_loan_value(award_count_sub_schedule, award_coun
         submission=SubmissionAttributes.objects.all().first(),
         object_class=basic_object_class[0],
         gross_outlays_delivered_orders_paid_total_cpe=8,
+        transaction_obligated_amount=1,
     )
 
     mommy.make(
@@ -32,6 +33,7 @@ def basic_object_class_faba_with_loan_value(award_count_sub_schedule, award_coun
         submission=SubmissionAttributes.objects.all().first(),
         object_class=basic_object_class[0],
         gross_outlays_delivered_orders_paid_total_cpe=9,
+        transaction_obligated_amount=1,
     )
 
 

@@ -2,6 +2,8 @@ import pytest
 
 from rest_framework import status
 
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
 url = "/api/v2/disaster/object_class/spending/"
 
 
@@ -9,7 +11,7 @@ url = "/api/v2/disaster/object_class/spending/"
 def test_basic_object_class_award_success(
     client, elasticsearch_account_index, basic_faba_with_object_class, monkeypatch, helpers
 ):
-    elasticsearch_account_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
@@ -45,7 +47,7 @@ def test_basic_object_class_award_success(
 def test_object_class_counts_awards(
     client, elasticsearch_account_index, faba_with_object_class_and_two_awards, monkeypatch, helpers
 ):
-    elasticsearch_account_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
@@ -60,7 +62,7 @@ def test_object_class_counts_awards(
 def test_object_class_groups_by_object_classes(
     client, elasticsearch_account_index, faba_with_two_object_classes_and_two_awards, monkeypatch, helpers
 ):
-    elasticsearch_account_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
@@ -73,7 +75,7 @@ def test_object_class_groups_by_object_classes(
 def test_object_class_spending_filters_on_defc(
     client, elasticsearch_account_index, basic_faba_with_object_class, monkeypatch, helpers
 ):
-    elasticsearch_account_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
@@ -88,7 +90,7 @@ def test_object_class_spending_filters_on_defc(
 def test_object_class_spending_filters_on_object_class_existance(
     client, elasticsearch_account_index, award_count_sub_schedule, basic_faba, monkeypatch, helpers
 ):
-    elasticsearch_account_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 

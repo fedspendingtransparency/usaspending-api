@@ -1,15 +1,16 @@
 import pytest
 
 from rest_framework import status
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 url = "/api/v2/disaster/object_class/loans/"
 
 
 @pytest.mark.django_db
 def test_basic_object_class_award_success(
-    client, elasticsearch_account_index, basic_object_class_faba_with_loan_value, monkeypatch, helpers
+    client, basic_object_class_faba_with_loan_value, elasticsearch_account_index, monkeypatch, helpers
 ):
-    elasticsearch_account_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
@@ -44,9 +45,9 @@ def test_basic_object_class_award_success(
 
 @pytest.mark.django_db
 def test_object_class_spending_filters_on_defc(
-    client, elasticsearch_account_index, basic_object_class_faba_with_loan_value, monkeypatch, helpers
+    client, basic_object_class_faba_with_loan_value, elasticsearch_account_index, monkeypatch, helpers
 ):
-    elasticsearch_account_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"])
@@ -64,7 +65,7 @@ def test_object_class_adds_value_across_awards(
     monkeypatch,
     helpers,
 ):
-    elasticsearch_account_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
@@ -79,7 +80,7 @@ def test_object_class_doesnt_add_across_object_classes(
     monkeypatch,
     helpers,
 ):
-    elasticsearch_account_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
@@ -91,7 +92,7 @@ def test_object_class_doesnt_add_across_object_classes(
 def test_object_class_spending_filters_on_object_class_existance(
     client, elasticsearch_account_index, award_count_sub_schedule, basic_faba, monkeypatch, helpers
 ):
-    elasticsearch_account_index.update_index()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
