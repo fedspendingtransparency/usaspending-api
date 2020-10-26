@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--chunk-count", default=10, help="Number of chunked matviews to read from", type=int)
-        parser.add_argument("--index-concurrency", default=5, help="Concurrency limit for index creation", type=int)
+        parser.add_argument("--index-concurrency", default=20, help="Concurrency limit for index creation", type=int)
         parser.add_argument(
             "--matview-dir",
             type=Path,
