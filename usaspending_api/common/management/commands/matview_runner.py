@@ -40,6 +40,7 @@ class Command(BaseCommand):
         self.remove_matviews = not args["leave_old"]
         self.run_dependencies = args["dependencies"]
         self.chunk_count = args["chunk_count"]
+        self.index_concurrency = args["index_concurrency"]
 
     def add_arguments(self, parser):
         parser.add_argument("--only", choices=list(MATERIALIZED_VIEWS.keys()))
@@ -70,6 +71,12 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--chunk-count", default=10, help="Number of chunks to split chunked matviews into", type=int
+        )
+        parser.add_argument(
+            "--index-concurrency",
+            default=5,
+            help="Concurrency limit for index creation on the Universal Transaction Table",
+            type=int,
         )
 
     def handle(self, *args, **options):
@@ -132,7 +139,11 @@ class Command(BaseCommand):
 
         if "universal_transaction_matview" in self.chunked_matviews:
             logger.info("Inserting data from universal_transaction_matview chunks into single table.")
-            call_command("combine_universal_transaction_matview_chunks", chunk_count=self.chunk_count)
+            call_command(
+                "combine_universal_transaction_matview_chunks",
+                chunk_count=self.chunk_count,
+                index_concurrency=self.index_concurrency,
+            )
 
         for view in OVERLAY_VIEWS:
             run_sql(view.read_text(), "Creating Views")
