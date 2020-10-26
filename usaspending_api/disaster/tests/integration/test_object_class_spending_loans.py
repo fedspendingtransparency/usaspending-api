@@ -6,7 +6,10 @@ url = "/api/v2/disaster/object_class/loans/"
 
 
 @pytest.mark.django_db
-def test_basic_object_class_award_success(client, basic_object_class_faba_with_loan_value, monkeypatch, helpers):
+def test_basic_object_class_award_success(
+    client, elasticsearch_account_index, basic_object_class_faba_with_loan_value, monkeypatch, helpers
+):
+    elasticsearch_account_index.update_index()
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
@@ -16,7 +19,7 @@ def test_basic_object_class_award_success(client, basic_object_class_faba_with_l
             "code": "001",
             "description": "001 name",
             "award_count": 1,
-            "obligation": 0.0,
+            "obligation": 1.0,
             "outlay": 0.0,
             "children": [
                 {
@@ -24,7 +27,7 @@ def test_basic_object_class_award_success(client, basic_object_class_faba_with_l
                     "code": "0001",
                     "description": "0001 name",
                     "award_count": 1,
-                    "obligation": 0.0,
+                    "obligation": 1.0,
                     "outlay": 0.0,
                     "face_value_of_loan": 5,
                 }
@@ -40,7 +43,10 @@ def test_basic_object_class_award_success(client, basic_object_class_faba_with_l
 
 
 @pytest.mark.django_db
-def test_object_class_spending_filters_on_defc(client, basic_object_class_faba_with_loan_value, monkeypatch, helpers):
+def test_object_class_spending_filters_on_defc(
+    client, elasticsearch_account_index, basic_object_class_faba_with_loan_value, monkeypatch, helpers
+):
+    elasticsearch_account_index.update_index()
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"])
@@ -52,8 +58,13 @@ def test_object_class_spending_filters_on_defc(client, basic_object_class_faba_w
 
 @pytest.mark.django_db
 def test_object_class_adds_value_across_awards(
-    client, basic_object_class_multiple_faba_with_loan_value_with_single_object_class, monkeypatch, helpers
+    client,
+    elasticsearch_account_index,
+    basic_object_class_multiple_faba_with_loan_value_with_single_object_class,
+    monkeypatch,
+    helpers,
 ):
+    elasticsearch_account_index.update_index()
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
@@ -62,8 +73,13 @@ def test_object_class_adds_value_across_awards(
 
 @pytest.mark.django_db
 def test_object_class_doesnt_add_across_object_classes(
-    client, basic_object_class_multiple_faba_with_loan_value_with_two_object_classes, monkeypatch, helpers
+    client,
+    elasticsearch_account_index,
+    basic_object_class_multiple_faba_with_loan_value_with_two_object_classes,
+    monkeypatch,
+    helpers,
 ):
+    elasticsearch_account_index.update_index()
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
@@ -73,8 +89,9 @@ def test_object_class_doesnt_add_across_object_classes(
 
 @pytest.mark.django_db
 def test_object_class_spending_filters_on_object_class_existance(
-    client, award_count_sub_schedule, basic_faba, monkeypatch, helpers
+    client, elasticsearch_account_index, award_count_sub_schedule, basic_faba, monkeypatch, helpers
 ):
+    elasticsearch_account_index.update_index()
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])

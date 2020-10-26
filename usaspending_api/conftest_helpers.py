@@ -85,6 +85,20 @@ class TestElasticSearchIndex:
             routing_value = transaction.get(routing_key)
             if self.index_type == "transactions":
                 transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
+            if self.index_type == "covid19_faba_":
+                disinct_award_key = transaction.pop("financial_account_distinct_award_key")
+                award_id = transaction.pop("award_id")
+                award_type = transaction.pop("award_type")
+                generated_unique_award_id = transaction.pop("generated_unique_award_id")
+                total_loan_value = transaction.pop("total_loan_value")
+                transaction = {
+                    "financial_account_distinct_award_key": disinct_award_key,
+                    "award_id": award_id,
+                    "award_type": award_type,
+                    "generated_unique_award_id": generated_unique_award_id,
+                    "total_loan_value": total_loan_value,
+                    "financial_accounts_by_award": transaction,
+                }
             self.client.index(
                 index=self.index_name,
                 body=json.dumps(transaction, cls=DjangoJSONEncoder),
