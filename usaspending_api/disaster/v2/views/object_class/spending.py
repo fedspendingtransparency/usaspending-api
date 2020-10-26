@@ -175,7 +175,10 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_name"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            **{key: get_summed_value_as_float(bucket, f"sum_{val}") for key, val in self.nested_nonzero_fields.items()},
+            **{
+                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                for key, val in self.nested_nonzero_fields.items()
+            },
             "parent_data": [
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class_name"],
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class"],

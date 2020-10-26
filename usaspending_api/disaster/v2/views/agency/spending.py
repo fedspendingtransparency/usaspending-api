@@ -115,7 +115,10 @@ class SpendingByAgencyViewSet(
             "children": [],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            **{key: get_summed_value_as_float(bucket, f"sum_{val}") for key, val in self.nested_nonzero_fields.items()},
+            **{
+                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                for key, val in self.nested_nonzero_fields.items()
+            },
         }
 
     @property
@@ -236,7 +239,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
-                column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
-                for column in self.sum_column_mapping
+                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                for key, val in self.sum_column_mapping.items()
             },
         }

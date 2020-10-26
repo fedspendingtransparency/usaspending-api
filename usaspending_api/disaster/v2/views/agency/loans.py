@@ -87,7 +87,10 @@ class LoansByAgencyViewSet(
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            **{key: get_summed_value_as_float(bucket, f"sum_{val}") for key, val in self.nested_nonzero_fields.items()},
+            **{
+                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                for key, val in self.nested_nonzero_fields.items()
+            },
             "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
             "children": [],
         }

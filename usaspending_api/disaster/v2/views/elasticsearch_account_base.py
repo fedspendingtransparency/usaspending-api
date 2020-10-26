@@ -180,7 +180,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             outlays += item["outlay"]
             award_count += item["award_count"]
 
-        return {"obligation": obligations, "outlay": outlays, "award_count": award_count}
+        return {"obligation": round(obligations, 2), "outlay": round(outlays, 2), "award_count": award_count}
 
     def query_elasticsearch(self) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
