@@ -216,3 +216,34 @@ def test_get_quarter_from_period():
     assert fyh.get_quarter_from_period("1") is None
     assert fyh.get_quarter_from_period("a") is None
     assert fyh.get_quarter_from_period({"hello": "there"}) is None
+
+
+def test_generate_fiscal_date_range():
+    start = date(2020, 9, 30)
+    end = date(2020, 10, 1)
+    expected = [{
+        "fiscal_year": 2020,
+        "fiscal_quarter": 4,
+        "fiscal_month": 12
+    }, {
+        "fiscal_year": 2021,
+        "fiscal_quarter": 1,
+        "fiscal_month": 1
+    }]
+    assert fyh.generate_fiscal_date_range(start, end, "fiscal_year") == expected
+    assert fyh.generate_fiscal_date_range(start, end, "quarter") == expected
+    assert fyh.generate_fiscal_date_range(start, end, "anything") == expected
+
+
+def test_create_full_time_periods():
+    # NOTE: not checking aggregations, only the time periods
+
+    years = fyh.create_full_time_periods("2020-09-30", "2020-10-01", "fy")
+    assert len(years) == 2
+    assert years[0]["time_period"] == {"fy": "2020"}
+    assert years[1]["time_period"] == {"fy": "2021"}
+
+    quarters = fyh.create_full_time_periods("2020-09-30", "2020-10-01", "quarter")
+    assert len(quarters) == 2
+    assert years[0]["time_period"] == {"fy": "2020", "quarter": "4"}
+    assert years[1]["time_period"] == {"fy": "2021", "quarter": "1"}
