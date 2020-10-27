@@ -25,7 +25,6 @@ from usaspending_api.disaster.v2.views.elasticsearch_account_base import Elastic
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 logger = logging.getLogger(__name__)
 

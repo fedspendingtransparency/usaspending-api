@@ -33,7 +33,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
     def post(self, request):
         return Response(self.perform_elasticsearch_search())
 
-    def perform_elasticsearch_search(self) -> Response:
+    def perform_elasticsearch_search(self, loans=False) -> Response:
         filters = {f"nested_{key}": val for key, val in self.filters.items() if key != "award_type"}
         if self.filters.get("award_type") is not None:
             filters["award_type"] = self.filters["award_type"]
@@ -57,7 +57,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
                 )
             )
 
-        response = self.query_elasticsearch()
+        response = self.query_elasticsearch(loans)
         response["page_metadata"] = get_pagination_metadata(
             len(response["results"]), self.pagination.limit, self.pagination.page
         )
@@ -171,18 +171,24 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         # Append sub-agg to primary agg, and include the sub-agg's sum metric aggs too
         search.aggs[self.agg_group_name]["group_by_dim_agg"].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key)
 
-    def build_totals(self, response: List[dict]) -> dict:
+    def build_totals(self, response: List[dict], loans: bool) -> dict:
         obligations = 0
         outlays = 0
         award_count = 0
+        loan_sum = 0
         for item in response:
             obligations += item["obligation"]
             outlays += item["outlay"]
             award_count += item["award_count"]
+            if loans:
+                loan_sum += item["face_value_of_loan"]
 
-        return {"obligation": round(obligations, 2), "outlay": round(outlays, 2), "award_count": award_count}
+        retval = {"obligation": round(obligations, 2), "outlay": round(outlays, 2), "award_count": award_count}
+        if loans:
+            retval["face_value_of_loan"] = loan_sum
+        return retval
 
-    def query_elasticsearch(self) -> dict:
+    def query_elasticsearch(self, loans) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
         if search is None:
             totals = self.build_totals(response=[])
@@ -193,7 +199,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         buckets = response.get(self.agg_group_name, {}).get("group_by_dim_agg", {}).get("buckets", [])
 
         results = self.build_elasticsearch_result(buckets)
-        totals = self.build_totals(results)
+        totals = self.build_totals(results, loans)
         sorted_results = self.sort_results(results)
         return {"totals": totals, "results": sorted_results}
 

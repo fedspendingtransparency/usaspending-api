@@ -28,11 +28,6 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
         "treasury_account_title",
         "treasury_account_title.contains",
     ]
-    # sub_agg_key = "financial_accounts_by_award.treasury_account_id"
-    # sub_top_hits_fields = [
-    #     "financial_accounts_by_award.treasury_account_symbol",
-    #     "financial_accounts_by_award.treasury_account_title",
-    # ]
     top_hits_fields = [
         "financial_accounts_by_award.federal_account_symbol",
         "financial_accounts_by_award.federal_account_title",
@@ -45,37 +40,6 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
     def post(self, request):
         self.filters.update({"award_type": ["07", "08"]})
         return self.perform_elasticsearch_search()
-
-    # def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
-    #     results = []
-    #
-    #     for bucket in info_buckets:
-    #         result = self._build_json_result(bucket, True)
-    #         child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
-    #         children = []
-    #         for child_bucket in child_info_buckets:
-    #             children.append(self._build_json_result(child_bucket, False))
-    #         result["children"] = children
-    #         results.append(result)
-    #
-    #     return results
-    #
-    # def _build_json_result(self, bucket: dict, is_parent: bool):
-    #     if is_parent:
-    #         description_key = "federal_account_title"
-    #         id_key = "federal_account_symbol"
-    #     else:
-    #         description_key = "treasury_account_title"
-    #         id_key = "treasury_account_symbol"
-    #     return {
-    #         "id": bucket["key"],
-    #         "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"][id_key],
-    #         "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"][description_key],
-    #         # the count of distinct awards contributing to the totals
-    #         "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-    #         **{key: get_summed_value_as_float(bucket, f"sum_{val}") for key, val in self.nested_nonzero_fields.items()},
-    #         "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
-    #     }
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         temp_results = {}

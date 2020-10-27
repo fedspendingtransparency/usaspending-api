@@ -19,7 +19,6 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     FabaOutlayMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 
 def construct_response(results: list, pagination: Pagination, strip_total_budgetary_resources=True):
@@ -53,11 +52,6 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
         "object_class_name",
         "object_class_name.contains",
     ]
-    # sub_agg_key = "financial_accounts_by_award.object_class"
-    # sub_top_hits_fields = [
-    #     "financial_accounts_by_award.object_class_id",
-    #     "financial_accounts_by_award.object_class_name",
-    # ]
     top_hits_fields = [
         "financial_accounts_by_award.object_class_id",
         "financial_accounts_by_award.major_object_class_name",
@@ -150,6 +144,8 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                     "obligation": temp_results[result["code"]]["obligation"] + result["obligation"],
                     "outlay": temp_results[result["code"]]["outlay"] + result["outlay"],
                     "children": temp_results[result["code"]]["children"] + result["children"],
+                    "face_value_of_loan": temp_results[result["code"]]["face_value_of_loan"]
+                    + result["face_value_of_loan"],
                 }
             else:
                 temp_results[result["code"]] = result
@@ -166,6 +162,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             "obligation": child["obligation"],
             "outlay": child["outlay"],
             "children": [child],
+            "face_value_of_loan": child["face_value_of_loan"],
         }
 
     def _build_child_json_result(self, bucket: dict):

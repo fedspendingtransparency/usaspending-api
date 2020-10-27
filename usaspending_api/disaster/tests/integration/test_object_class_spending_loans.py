@@ -39,7 +39,7 @@ def test_basic_object_class_award_success(
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"award_count": 1, "face_value_of_loan": 5.0, "obligation": 0, "outlay": 0}
+    expected_totals = {"award_count": 1, "face_value_of_loan": 5.0, "obligation": 1.0, "outlay": 0}
     assert resp.json()["totals"] == expected_totals
 
 
@@ -67,7 +67,6 @@ def test_object_class_adds_value_across_awards(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
     assert resp.json()["results"][0]["face_value_of_loan"] == 10
 
