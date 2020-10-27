@@ -219,6 +219,7 @@ def test_get_quarter_from_period():
 
 
 def test_generate_fiscal_date_range():
+    # 2-day range that crosses all boundaries
     start = date(2020, 9, 30)
     end = date(2020, 10, 1)
     expected = [{
@@ -237,13 +238,21 @@ def test_generate_fiscal_date_range():
 
 def test_create_full_time_periods():
     # NOTE: not checking aggregations, only the time periods
+    # 2-day range that crosses all boundaries
+    start = date(2020, 9, 30)
+    end = date(2020, 10, 1)
 
-    years = fyh.create_full_time_periods("2020-09-30", "2020-10-01", "fy")
+    years = fyh.create_full_time_periods(start, end, "fy")
     assert len(years) == 2
     assert years[0]["time_period"] == {"fy": "2020"}
     assert years[1]["time_period"] == {"fy": "2021"}
 
-    quarters = fyh.create_full_time_periods("2020-09-30", "2020-10-01", "quarter")
+    quarters = fyh.create_full_time_periods(start, end, "quarter")
     assert len(quarters) == 2
-    assert years[0]["time_period"] == {"fy": "2020", "quarter": "4"}
-    assert years[1]["time_period"] == {"fy": "2021", "quarter": "1"}
+    assert quarters[0]["time_period"] == {"fy": "2020", "quarter": "4"}
+    assert quarters[1]["time_period"] == {"fy": "2021", "quarter": "1"}
+
+    months = fyh.create_full_time_periods(start, end, "month")
+    assert len(months) == 2
+    assert months[0]["time_period"] == {"fy": "2020", "month": "12"}
+    assert months[1]["time_period"] == {"fy": "2021", "month": "1"}
