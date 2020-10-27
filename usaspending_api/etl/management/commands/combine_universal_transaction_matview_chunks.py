@@ -21,6 +21,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--chunk-count", default=10, help="Number of chunked matviews to read from", type=int)
+        parser.add_argument("--index-concurrency", default=20, help="Concurrency limit for index creation", type=int)
         parser.add_argument(
             "--matview-dir",
             type=Path,
@@ -42,6 +43,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         chunk_count = options["chunk_count"]
+        index_concurrency = options["index_concurrency"]
         self.matview_dir = options["matview_dir"]
 
         logger.info(f"Chunk Count: {chunk_count}")
@@ -53,7 +55,7 @@ class Command(BaseCommand):
             self.insert_matview_data(chunk_count)
 
         with Timer("Creating table indexes"):
-            self.create_indexes()
+            self.create_indexes(index_concurrency)
 
         with Timer("Swapping Tables/Indexes"):
             self.swap_matviews()
@@ -91,8 +93,8 @@ class Command(BaseCommand):
         tasks = []
 
         insert_table_sql = (
-            self.matview_dir / "componentized" / "universal_transaction_matview__inserts.sql"
-        ).read_text()
+            (self.matview_dir / "componentized" / "universal_transaction_matview__inserts.sql").read_text().strip()
+        )
 
         for i, sql in enumerate(sqlparse.split(insert_table_sql)):
             tasks.append(
@@ -102,20 +104,27 @@ class Command(BaseCommand):
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
 
-    def create_indexes(self):
-        loop = asyncio.new_event_loop()
+    async def index_with_concurrency(self, index_concurrency):
+        semaphore = asyncio.Semaphore(index_concurrency)
         tasks = []
 
+        async def create_with_sem(sql, index):
+            async with semaphore:
+                return await async_run_creates(sql, wrapper=Timer(f"Creating Index {index}"),)
+
         index_table_sql = (
-            self.matview_dir / "componentized" / "universal_transaction_matview__indexes.sql"
-        ).read_text()
+            (self.matview_dir / "componentized" / "universal_transaction_matview__indexes.sql").read_text().strip()
+        )
 
         for i, sql in enumerate(sqlparse.split(index_table_sql)):
-            tasks.append(
-                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(f"Creating Index {i}"),), loop=loop,)
-            )
+            logger.info(f"Creating future for index: {i} - SQL: {sql}")
+            tasks.append(create_with_sem(sql, i))
 
-        loop.run_until_complete(asyncio.gather(*tasks))
+        return await asyncio.gather(*tasks)
+
+    def create_indexes(self, index_concurrency):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.index_with_concurrency(index_concurrency))
         loop.close()
 
     @transaction.atomic
