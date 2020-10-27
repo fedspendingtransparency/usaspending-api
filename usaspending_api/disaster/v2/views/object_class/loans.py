@@ -26,14 +26,12 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
         "object_class",
         "object_class_name.contains",
     ]
-    sub_agg_key = "financial_accounts_by_award.object_class"
-    sub_top_hits_fields = [
-        "financial_accounts_by_award.object_class_id",
-        "financial_accounts_by_award.object_class_name",
-    ]
     top_hits_fields = [
         "financial_accounts_by_award.object_class_id",
         "financial_accounts_by_award.major_object_class_name",
+        "financial_accounts_by_award.major_object_class",
+        "financial_accounts_by_award.object_class_name",
+        "financial_accounts_by_award.object_class",
     ]
 
     @cache_response()
@@ -80,32 +78,92 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
 
         return query.queryset.values("major_object_class", "object_class").annotate(**annotations).values(*annotations)
 
+    # def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
+    #     results = []
+    #
+    #     for bucket in info_buckets:
+    #         result = self._build_json_result(bucket, True)
+    #         child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
+    #         children = []
+    #         for child_bucket in child_info_buckets:
+    #             children.append(self._build_json_result(child_bucket, False))
+    #         result["children"] = children
+    #         results.append(result)
+    #
+    #     return results
+    #
+    # def _build_json_result(self, bucket: dict, is_parent: bool):
+    #     if is_parent:
+    #         description_key = "major_object_class_name"
+    #     else:
+    #         description_key = "object_class_name"
+    #
+    #     return {
+    #         "id": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_id"],
+    #         "code": bucket["key"],
+    #         "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"][description_key],
+    #         # the count of distinct awards contributing to the totals
+    #         "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
+    #         **{
+    #             key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+    #             for key, val in self.nested_nonzero_fields.items()
+    #         },
+    #         "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
+    #     }
+
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
-        results = []
-
+        temp_results = {}
+        child_results = []
         for bucket in info_buckets:
-            result = self._build_json_result(bucket, True)
-            child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
-            children = []
-            for child_bucket in child_info_buckets:
-                children.append(self._build_json_result(child_bucket, False))
-            result["children"] = children
-            results.append(result)
-
+            child = self._build_child_json_result(bucket)
+            child_results.append(child)
+        for child in child_results:
+            result = self._build_json_result(child)
+            child.pop("parent_data")
+            if result["id"] in temp_results.keys():
+                temp_results[result["id"]] = {
+                    "id": int(result["id"]),
+                    "code": result["code"],
+                    "description": result["description"],
+                    "award_count": temp_results[result["id"]]["award_count"] + result["award_count"],
+                    # the count of distinct awards contributing to the totals
+                    "obligation": temp_results[result["id"]]["obligation"] + result["obligation"],
+                    "outlay": temp_results[result["id"]]["outlay"] + result["outlay"],
+                    "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
+                    "children": temp_results[result["id"]]["children"] + result["children"],
+                }
+            else:
+                temp_results[result["id"]] = result
+        results = [x for x in temp_results.values()]
         return results
 
-    def _build_json_result(self, bucket: dict, is_parent: bool):
-        if is_parent:
-            description_key = "major_object_class_name"
-        else:
-            description_key = "object_class_name"
+    def _build_json_result(self, child):
+        return {
+            "id": child["parent_data"][2],
+            "code": child["parent_data"][1],
+            "description": child["parent_data"][0],
+            "award_count": child["award_count"],
+            # the count of distinct awards contributing to the totals
+            "obligation": child["obligation"],
+            "outlay": child["outlay"],
+            "face_value_of_loan": child["face_value_of_loan"],
+            "children": [child],
+        }
 
+    def _build_child_json_result(self, bucket: dict):
         return {
             "id": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_id"],
             "code": bucket["key"],
-            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"][description_key],
+            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_name"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            **{key: get_summed_value_as_float(bucket, f"sum_{val}") for key, val in self.nested_nonzero_fields.items()},
-            "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
+            **{
+                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                for key, val in self.nested_nonzero_fields.items()
+            },            "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
+            "parent_data": [
+                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class_name"],
+                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class"],
+                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_id"],
+            ],
         }

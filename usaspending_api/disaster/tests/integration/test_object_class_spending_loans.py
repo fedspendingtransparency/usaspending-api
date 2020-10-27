@@ -16,7 +16,7 @@ def test_basic_object_class_award_success(
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
     expected_results = [
         {
-            "id": "001",
+            "id": 1,
             "code": "001",
             "description": "001 name",
             "award_count": 1,
@@ -24,16 +24,16 @@ def test_basic_object_class_award_success(
             "outlay": 0.0,
             "children": [
                 {
-                    "id": "1",
+                    "id": 1,
                     "code": "0001",
                     "description": "0001 name",
                     "award_count": 1,
                     "obligation": 1.0,
                     "outlay": 0.0,
-                    "face_value_of_loan": 5,
+                    "face_value_of_loan": 5.0,
                 }
             ],
-            "face_value_of_loan": 5,
+            "face_value_of_loan": 5.0,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
