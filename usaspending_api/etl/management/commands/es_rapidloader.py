@@ -385,7 +385,7 @@ VIEW_COLUMNS = [
     "period_of_performance_start_date",
     "period_of_performance_current_end_date",
     "ordering_period_end_date",
-    "transaction_fiscal_year",
+    "fiscal_year",
     "award_fiscal_year",
     "award_amount",
     "transaction_amount",
@@ -526,20 +526,20 @@ AWARD_VIEW_COLUMNS = [
 
 COUNT_FY_SQL = """
 SELECT COUNT(*) AS count
-FROM {view}
-WHERE {fiscal_year_field}={fy} AND update_date >= '{update_date}'
+FROM "{view}"
+WHERE "fiscal_year" = {fy} AND "update_date" >= '{update_date}'
 """
 
 COUNT_SQL = """
 SELECT COUNT(*) AS count
-FROM {view}
-WHERE update_date >= '{update_date}'
+FROM "{view}"
+WHERE "update_date" >= '{update_date}'
 """
 
 COPY_SQL = """"COPY (
     SELECT *
-    FROM {view}
-    WHERE {fiscal_year_field}={fy} AND update_date >= '{update_date}'
+    FROM "{view}"
+    WHERE "fiscal_year" = {fy} AND "update_date" >= '{update_date}'
 ) TO STDOUT DELIMITER ',' CSV HEADER" > '{filename}'
 """
 
@@ -616,22 +616,14 @@ def configure_sql_strings(config, filename, deleted_ids):
     """
     if config["load_type"] == "awards":
         view = settings.ES_AWARDS_ETL_VIEW_NAME
-        fiscal_year_field = "fiscal_year"
     else:
         view = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
-        fiscal_year_field = "transaction_fiscal_year"
 
     copy_sql = COPY_SQL.format(
-        fy=config["fiscal_year"],
-        update_date=config["starting_date"],
-        filename=filename,
-        view=view,
-        fiscal_year_field=fiscal_year_field,
+        fy=config["fiscal_year"], update_date=config["starting_date"], filename=filename, view=view,
     )
 
-    count_sql = COUNT_FY_SQL.format(
-        fy=config["fiscal_year"], update_date=config["starting_date"], view=view, fiscal_year_field=fiscal_year_field
-    )
+    count_sql = COUNT_FY_SQL.format(fy=config["fiscal_year"], update_date=config["starting_date"], view=view)
 
     return copy_sql, count_sql
 
