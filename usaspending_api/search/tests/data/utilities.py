@@ -5,7 +5,7 @@ def setup_elasticsearch_test(monkeypatch, index_fixture, **options):
     if index_fixture.index_type == "awards":
         search_wrapper = "AwardSearch"
         query_alias = settings.ES_AWARDS_QUERY_ALIAS_PREFIX
-    if index_fixture.index_type == "covid19_faba_":
+    elif index_fixture.index_type == "covid19_faba_":
         search_wrapper = "AccountSearch"
         query_alias = settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX
     else:

@@ -65,8 +65,9 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             return self.perform_elasticsearch_search()
         else:
             results = list(self.total_queryset)
+            extra_columns = []
             response = construct_response(results, self.pagination)
-            response["totals"] = self.accumulate_total_values(results)
+            response["totals"] = self.accumulate_total_values(results, extra_columns)
 
         return Response(response)
 
