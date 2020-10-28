@@ -84,6 +84,9 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
 
         # Create the aggregations
         financial_accounts_agg = A("nested", path="financial_accounts_by_award")
+        filtered_aggs = A(
+            "filter", terms={"financial_accounts_by_award.disaster_emergency_fund_code": self.filters.get("def_codes")}
+        )
         group_by_dim_agg = A("terms", field=self.agg_key, size=self.bucket_count)
         dim_metadata = A(
             "top_hits",
@@ -98,11 +101,11 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         )
         sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         count_awards_by_dim = A("reverse_nested", **{})
-        award_count = A("value_count", field="award_id")
+        award_count = A("value_count", field="financial_account_distinct_award_key")
         loan_value = A("sum", field="total_loan_value")
 
         # Apply the aggregations
-        search.aggs.bucket(self.agg_group_name, financial_accounts_agg).bucket(
+        search.aggs.bucket(self.agg_group_name, financial_accounts_agg).bucket("filtered_aggs", filtered_aggs).bucket(
             "group_by_dim_agg", group_by_dim_agg
         ).metric("dim_metadata", dim_metadata).metric("sum_transaction_obligated_amount", sum_covid_obligation).metric(
             "sum_gross_outlay_amount_by_award_cpe", sum_covid_outlay
@@ -193,11 +196,14 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         if search is None:
             totals = self.build_totals(response=[])
             return {"totals": totals, "results": []}
-
         response = search.handle_execute()
         response = response.aggs.to_dict()
-        buckets = response.get(self.agg_group_name, {}).get("group_by_dim_agg", {}).get("buckets", [])
-
+        buckets = (
+            response.get(self.agg_group_name, {})
+            .get("filtered_aggs", {})
+            .get("group_by_dim_agg", {})
+            .get("buckets", [])
+        )
         results = self.build_elasticsearch_result(buckets)
         totals = self.build_totals(results, loans)
         sorted_results = self.sort_results(results)

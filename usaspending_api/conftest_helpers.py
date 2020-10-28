@@ -78,6 +78,27 @@ class TestElasticSearchIndex:
             cursor.execute(f"SELECT * FROM {view_name};")
             transactions = ordered_dictionary_fetcher(cursor)
             cursor.execute(f"DROP VIEW {view_name};")
+        results = {}
+        if self.index_type == "covid19_faba_":
+            for record in transactions:
+                disinct_award_key = record.pop("financial_account_distinct_award_key")
+                award_id = record.pop("award_id")
+                award_type = record.pop("award_type")
+                generated_unique_award_id = record.pop("generated_unique_award_id")
+                total_loan_value = record.pop("total_loan_value")
+                temp_key = f"{disinct_award_key}|{award_id}|{award_type}|{generated_unique_award_id}|{total_loan_value}"
+                if temp_key not in results:
+                    results[temp_key] = {
+                        "financial_account_distinct_award_key": disinct_award_key,
+                        "award_id": award_id,
+                        "award_type": award_type,
+                        "generated_unique_award_id": generated_unique_award_id,
+                        "total_loan_value": total_loan_value,
+                        "financial_accounts_by_award": list(),
+                    }
+
+                results[temp_key]["financial_accounts_by_award"].append(record)
+            transactions = [val for key, val in results.items()]
 
         for transaction in transactions:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
@@ -85,24 +106,16 @@ class TestElasticSearchIndex:
             routing_value = transaction.get(routing_key)
             if self.index_type == "transactions":
                 transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
-            if self.index_type == "covid19_faba_":
-                disinct_award_key = transaction.pop("financial_account_distinct_award_key")
-                award_id = transaction.pop("award_id")
-                award_type = transaction.pop("award_type")
-                generated_unique_award_id = transaction.pop("generated_unique_award_id")
-                total_loan_value = transaction.pop("total_loan_value")
-                transaction = {
-                    "financial_account_distinct_award_key": disinct_award_key,
-                    "award_id": award_id,
-                    "award_type": award_type,
-                    "generated_unique_award_id": generated_unique_award_id,
-                    "total_loan_value": total_loan_value,
-                    "financial_accounts_by_award": transaction,
-                }
+            if self.index_type == "transaction":
+                es_id = "transaction_id"
+            elif self.index_type == "awards":
+                es_id = "award_id"
+            else:
+                es_id = "financial_account_distinct_award_key"
             self.client.index(
                 index=self.index_name,
                 body=json.dumps(transaction, cls=DjangoJSONEncoder),
-                id=transaction["{}_id".format("transaction" if self.index_type == "transactions" else "award")],
+                id=transaction.get(es_id),
                 routing=routing_value,
             )
         # Force newly added documents to become searchable.

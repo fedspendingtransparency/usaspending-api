@@ -144,8 +144,6 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                     "obligation": temp_results[result["code"]]["obligation"] + result["obligation"],
                     "outlay": temp_results[result["code"]]["outlay"] + result["outlay"],
                     "children": temp_results[result["code"]]["children"] + result["children"],
-                    "face_value_of_loan": temp_results[result["code"]]["face_value_of_loan"]
-                    + result["face_value_of_loan"],
                 }
             else:
                 temp_results[result["code"]] = result
@@ -162,7 +160,6 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             "obligation": child["obligation"],
             "outlay": child["outlay"],
             "children": [child],
-            "face_value_of_loan": child["face_value_of_loan"],
         }
 
     def _build_child_json_result(self, bucket: dict):

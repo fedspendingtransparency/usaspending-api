@@ -96,6 +96,7 @@ class SpendingViewSet(
                     # the count of distinct awards contributing to the totals
                     "obligation": temp_results[result["id"]]["obligation"] + result["obligation"],
                     "outlay": temp_results[result["id"]]["outlay"] + result["outlay"],
+                    "total_budgetary_resources": None,
                     "children": temp_results[result["id"]]["children"] + result["children"],
                 }
             else:
@@ -112,6 +113,7 @@ class SpendingViewSet(
             # the count of distinct awards contributing to the totals
             "obligation": child["obligation"],
             "outlay": child["outlay"],
+            "total_budgetary_resources": None,
             "children": [child],
         }
 
@@ -126,6 +128,7 @@ class SpendingViewSet(
                 key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
                 for key, val in self.nested_nonzero_fields.items()
             },
+            "total_budgetary_resources": None,
             "parent_data": [
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_title"],
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_symbol"],

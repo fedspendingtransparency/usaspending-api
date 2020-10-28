@@ -9,7 +9,6 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     FabaOutlayMixin,
 )
 from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
-from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 
 class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase):
@@ -39,7 +38,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
     @cache_response()
     def post(self, request):
         self.filters.update({"award_type": ["07", "08"]})
-        return self.perform_elasticsearch_search()
+        return self.perform_elasticsearch_search(loans=True)
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         temp_results = {}
@@ -59,7 +58,8 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
                     # the count of distinct awards contributing to the totals
                     "obligation": temp_results[result["id"]]["obligation"] + result["obligation"],
                     "outlay": temp_results[result["id"]]["outlay"] + result["outlay"],
-                    "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
+                    "face_value_of_loan": temp_results[result["id"]]["face_value_of_loan"]
+                    + result["face_value_of_loan"],
                     "children": temp_results[result["id"]]["children"] + result["children"],
                 }
             else:
@@ -87,7 +87,10 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["treasury_account_title"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            **{key: get_summed_value_as_float(bucket, f"sum_{val}") for key, val in self.nested_nonzero_fields.items()},
+            **{
+                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                for key, val in self.nested_nonzero_fields.items()
+            },
             "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
             "parent_data": [
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_title"],
