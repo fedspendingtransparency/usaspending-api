@@ -54,16 +54,18 @@ def basic_object_class_multiple_faba_with_loan_value_with_single_object_class(
         submission=SubmissionAttributes.objects.all().first(),
         object_class=object_class1[0],
         gross_outlays_delivered_orders_paid_total_cpe=8,
+        transaction_obligated_amount=1,
     )
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
         award=award2,
-        parent_award_id="basic award",
+        parent_award_id="basic award 2",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
         object_class=object_class1[0],
         gross_outlays_delivered_orders_paid_total_cpe=8,
+        transaction_obligated_amount=1,
     )
 
 
@@ -85,6 +87,7 @@ def basic_object_class_multiple_faba_with_loan_value_with_two_object_classes(
         submission=SubmissionAttributes.objects.all().first(),
         object_class=object_class1[0],
         gross_outlays_delivered_orders_paid_total_cpe=8,
+        transaction_obligated_amount=1,
     )
 
     mommy.make(
@@ -95,6 +98,7 @@ def basic_object_class_multiple_faba_with_loan_value_with_two_object_classes(
         submission=SubmissionAttributes.objects.all().first(),
         object_class=object_class2[0],
         gross_outlays_delivered_orders_paid_total_cpe=8,
+        transaction_obligated_amount=1,
     )
 
 

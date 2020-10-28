@@ -20,7 +20,7 @@ class _Keywords(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         keyword_queries = []
         fields = [
@@ -49,7 +49,7 @@ class _KeywordSearch(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         keyword_queries = []
         fields = [
@@ -103,7 +103,7 @@ class _TimePeriods(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[dict], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[dict], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         time_period_query = []
 
@@ -133,7 +133,7 @@ class _AwardTypeCodes(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         award_type_codes_query = []
 
@@ -148,7 +148,7 @@ class _Agencies(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[dict], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[dict], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> List[ES_Q]:
         awarding_agency_query = []
         funding_agency_query = []
@@ -177,7 +177,7 @@ class _RecipientSearchText(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         recipient_search_query = []
         fields = ["recipient_name"]
@@ -202,7 +202,7 @@ class _RecipientId(_Filter):
     underscore_name = "recipient_id"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, nested_path: str = "") -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, nested_path: Optional[str] = None) -> ES_Q:
         recipient_hash = filter_value[:-2]
         if filter_value.endswith("P"):
             return ES_Q("match", parent_recipient_hash=recipient_hash)
@@ -220,7 +220,7 @@ class _RecipientScope(_Filter):
     underscore_name = "recipient_scope"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, nested_path: str = "") -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, nested_path: Optional[str] = None) -> ES_Q:
         recipient_scope_query = ES_Q("match", recipient_location_country_code="USA")
 
         if filter_value == "domestic":
@@ -234,7 +234,7 @@ class _RecipientLocations(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[dict], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[dict], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         recipient_locations_query = []
 
@@ -264,7 +264,7 @@ class _RecipientTypeNames(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         recipient_type_query = []
 
@@ -279,7 +279,7 @@ class _PlaceOfPerformanceScope(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         pop_scope_query = ES_Q("match", pop_country_code="USA")
 
@@ -294,7 +294,7 @@ class _PlaceOfPerformanceLocations(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[dict], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[dict], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         pop_locations_query = []
 
@@ -324,7 +324,7 @@ class _AwardAmounts(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[dict], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[dict], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         award_amounts_query = []
         for v in filter_values:
@@ -339,7 +339,7 @@ class _AwardIds(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         award_ids_query = []
 
@@ -360,7 +360,7 @@ class _ProgramNumbers(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         programs_numbers_query = []
 
@@ -375,7 +375,7 @@ class _ContractPricingTypeCodes(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         contract_pricing_query = []
 
@@ -390,7 +390,7 @@ class _SetAsideTypeCodes(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         set_aside_query = []
 
@@ -405,7 +405,7 @@ class _ExtentCompetedTypeCodes(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         extent_competed_query = []
 
@@ -422,7 +422,7 @@ class _DisasterEmergencyFundCodes(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         def_codes_query = []
         def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code"
@@ -444,7 +444,7 @@ class _QueryText(_Filter):
     underscore_name = "query"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: dict, query_type: _QueryType, nested_path: str = "") -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: dict, query_type: _QueryType, nested_path: Optional[str] = None) -> ES_Q:
         query_text = filter_values["text"]
         query_fields = [f"{nested_path}{'.' if nested_path else ''}{field}" for field in filter_values["fields"]]
         return ES_Q("multi_match", query=query_text, type="phrase_prefix", fields=query_fields)
@@ -457,7 +457,7 @@ class _NonzeroFields(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         non_zero_queries = []
         for field in filter_values:
@@ -472,7 +472,7 @@ class _AwardType(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = None
     ) -> ES_Q:
         award_type_codes_query = []
 
