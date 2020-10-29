@@ -8,8 +8,8 @@ url = "/api/v2/disaster/agency/spending/"
 
 
 @pytest.mark.django_db
-def test_basic_success(client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+def test_basic_success(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_spending_endpoint(
         client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="total", sort="description"

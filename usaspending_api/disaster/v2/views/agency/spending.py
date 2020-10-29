@@ -25,6 +25,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_account_base import Elastic
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 logger = logging.getLogger(__name__)
 
@@ -238,7 +239,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
-                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
-                for key, val in self.sum_column_mapping.items()
+                column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
+                for column in self.sum_column_mapping
             },
         }
