@@ -33,10 +33,12 @@ This endpoint returns an overview of government agency submission data.
     + Body
 
             {
-              "page": 1,
-              "hasNext": true,
-              "hasPrevious": false,
-              "total": 2
+                "page_metadata": {
+                  "page": 1,
+                  "hasNext": false,
+                  "hasPrevious": false,
+                  "total": 2
+                },
                 "results": [
                   {
                     "name": "Department of Health and Human Services",

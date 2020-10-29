@@ -38,10 +38,12 @@ This endpoint returns an overview of government agency tas discrepancies data.
 
             {
 
-              "page": 1,
-              "hasNext": fals,
-              "hasPrevious": false,
-              "total": 2
+                "page_metadata": {
+                  "page": 1,
+                  "hasNext": false,
+                  "hasPrevious": false,
+                  "total": 2
+                },
                 "results": [
                   {
                     "tas": "210-1503",
