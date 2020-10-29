@@ -82,7 +82,7 @@ SELECT
         '{"name":"', vw_es_award_search.funding_subtier_agency_name,
         '","code":"', vw_es_award_search.funding_subtier_agency_code,
         '","id":"', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1), '"}'
-      )	
+      )
     ELSE NULL
   END AS funding_subtier_agency_agg_key,
 
