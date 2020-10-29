@@ -132,7 +132,9 @@ class Command(BaseCommand):
 
         if "universal_transaction_matview" in self.chunked_matviews:
             logger.info("Inserting data from universal_transaction_matview chunks into single table.")
-            call_command("combine_universal_transaction_matview_chunks", chunk_count=self.chunk_count)
+            call_command(
+                "combine_universal_transaction_matview_chunks", chunk_count=self.chunk_count, index_concurrency=20,
+            )
 
         for view in OVERLAY_VIEWS:
             run_sql(view.read_text(), "Creating Views")
