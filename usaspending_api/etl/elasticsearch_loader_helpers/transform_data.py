@@ -104,7 +104,7 @@ def transform_data(
         for field, converter in converters.items():
             record[field] = converter(record[field])
         for key in agg_keys:
-            record[key] = create_agg_key(key, record)
+            record[key] = create_agg_key(record, key)
 
         # Route all documents with the same recipient to the same shard
         # This allows for accuracy and early-termination of "top N" recipient category aggregation queries

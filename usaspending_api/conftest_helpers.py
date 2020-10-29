@@ -21,6 +21,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     TaskSpec,
     transform_award_data,
     transform_transaction_data,
+    execute_sql_statement,
 )
 from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
@@ -36,7 +37,7 @@ class TestElasticSearchIndex:
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_index_template("{}_template".format(self.index_type[:-1]))
+        self.template = retrieve_index_template(f"{self.index_type}_template")
         self.mappings = json.loads(self.template)["mappings"]
         self.etl_config = {
             "index_name": self.index_name,
@@ -45,16 +46,18 @@ class TestElasticSearchIndex:
             "write_alias": self.index_name + "-alias",
         }
         self.worker = TaskSpec(
-            name=f"{self.index_type} test worker",
-            index=self.index_name,
-            sql=None,
-            view=None,
             base_table=None,
             base_table_id=None,
-            primary_key="award_id" if self.index_type == "awards" else "transaction_id",
-            partition_number=None,
+            execute_sql_func=execute_sql_statement,
+            field_for_es_id="award_id" if self.index_type == "award" else "transaction_id",
+            index=self.index_name,
             is_incremental=None,
+            name=f"{self.index_type} test worker",
+            partition_number=None,
+            primary_key="award_id" if self.index_type == "award" else "transaction_id",
+            sql=None,
             transform_func=None,
+            view=None,
         )
 
     def delete_index(self):
@@ -76,22 +79,22 @@ class TestElasticSearchIndex:
         Get all of the transactions presented in the view and stuff them into the Elasticsearch index.
         The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
         """
-        view_sql_file = "award_delta_view.sql" if self.index_type == "awards" else "transaction_delta_view.sql"
+        view_sql_file = "award_delta_view.sql" if self.index_type == "award" else "transaction_delta_view.sql"
         view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
         with connection.cursor() as cursor:
             cursor.execute(view_sql)
-            if self.index_type == "transactions":
+            if self.index_type == "transaction":
                 view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
             else:
                 view_name = settings.ES_AWARDS_ETL_VIEW_NAME
             cursor.execute(f"SELECT * FROM {view_name};")
-            transactions = ordered_dictionary_fetcher(cursor)
+            records = ordered_dictionary_fetcher(cursor)
             cursor.execute(f"DROP VIEW {view_name};")
 
-            if self.index_type == "transactions":
-                records = transform_transaction_data(self.worker, transactions)
+            if self.index_type == "transaction":
+                records = transform_transaction_data(self.worker, records)
             else:
-                records = transform_award_data(self.worker, transactions)
+                records = transform_award_data(self.worker, records)
 
             # Need to overwrite the routing field if different from default
             routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
@@ -106,9 +109,7 @@ class TestElasticSearchIndex:
 
     @classmethod
     def _generate_index_name(cls):
-        return "test-{}-{}".format(
-            datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
-        )
+        return f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}-{generate_random_string()}"
 
 
 def ensure_broker_server_dblink_exists():
