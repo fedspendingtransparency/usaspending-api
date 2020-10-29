@@ -64,7 +64,7 @@ class LoansByAgencyViewSet(
     @cache_response()
     def post(self, request):
         self.filters.update({"award_type": ["07", "08"]})
-        return self.perform_elasticsearch_search()
+        return self.perform_elasticsearch_search(loans=True)
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []

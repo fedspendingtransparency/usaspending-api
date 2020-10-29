@@ -86,7 +86,7 @@ class TestElasticSearchIndex:
                 award_type = record.pop("award_type")
                 generated_unique_award_id = record.pop("generated_unique_award_id")
                 total_loan_value = record.pop("total_loan_value")
-                temp_key = f"{disinct_award_key}|{award_id}|{award_type}|{generated_unique_award_id}|{total_loan_value}"
+                temp_key = f"{award_id}"
                 if temp_key not in results:
                     results[temp_key] = {
                         "financial_account_distinct_award_key": disinct_award_key,

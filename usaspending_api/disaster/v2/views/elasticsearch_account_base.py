@@ -204,7 +204,6 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             .get("group_by_dim_agg", {})
             .get("buckets", [])
         )
-        print(response)
         results = self.build_elasticsearch_result(buckets)
         totals = self.build_totals(results, loans)
         sorted_results = self.sort_results(results)

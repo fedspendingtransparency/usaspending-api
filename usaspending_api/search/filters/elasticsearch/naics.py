@@ -4,11 +4,14 @@ from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import Hier
 from elasticsearch_dsl import Q as ES_Q
 from typing import Optional
 
+
 class NaicsCodes(_Filter, HierarchicalFilter):
     underscore_name = "naics_codes"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType, nested_path: Optional[str]="") -> ES_Q:
+    def generate_elasticsearch_query(
+        cls, filter_values, query_type: _QueryType, nested_path: Optional[str] = ""
+    ) -> ES_Q:
         # legacy functionality permits sending a single list of naics codes, which is treated as the required list
         if isinstance(filter_values, list):
             require = [cls.naics_code_to_naics_code_path(str(code)) for code in filter_values]
