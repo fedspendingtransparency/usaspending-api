@@ -205,10 +205,8 @@ def create_agg_key(record: Union[dict, Series], key_name: str):
         if record[f"{location_type}_country_code"] is None:
             return None
         return {
-            "country_code",
-            record[f"{location_type}_country_code"],
-            "country_name",
-            record[f"{location_type}_country_name"],
+            "country_code": record[f"{location_type}_country_code"],
+            "country_name": record[f"{location_type}_country_name"],
         }
 
     agg_key_func_lookup = {
