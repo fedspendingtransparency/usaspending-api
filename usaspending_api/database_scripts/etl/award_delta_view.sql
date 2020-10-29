@@ -24,9 +24,10 @@ SELECT
 
   vw_es_award_search.recipient_name,
   vw_es_award_search.recipient_unique_id,
-  recipient_profile.recipient_hash,
-  CASE	  recipient_profile.recipient_levels,
-    WHEN recipient_profile.recipient_hash IS NULL or recipient_profile.recipient_levels IS NULL	
+  vw_es_award_search.recipient_hash,
+  vw_es_award_search.recipient_levels,
+  CASE	  
+    WHEN vw_es_award_search.recipient_hash IS NULL or vw_es_award_search.recipient_levels IS NULL	
       THEN	
         CONCAT(	
           '{"name":"', vw_es_award_search.recipient_name,	
@@ -37,8 +38,8 @@ SELECT
       CONCAT(	
         '{"name":"', vw_es_award_search.recipient_name,	
         '","unique_id":"', vw_es_award_search.recipient_unique_id,	
-        '","hash":"', recipient_profile.recipient_hash,	
-        '","levels":"', recipient_profile.recipient_levels, '"}'	
+        '","hash":"', vw_es_award_search.recipient_hash,	
+        '","levels":"', vw_es_award_search.recipient_levels, '"}'	
       )	
   END AS recipient_agg_key,
 
@@ -58,7 +59,6 @@ SELECT
 
   vw_es_award_search.awarding_agency_id,
   vw_es_award_search.funding_agency_id,
-  vw_es_award_search.funding_toptier_agency_id,
   vw_es_award_search.awarding_toptier_agency_name,
   vw_es_award_search.funding_toptier_agency_name,
   vw_es_award_search.awarding_subtier_agency_name,
@@ -116,15 +116,14 @@ SELECT
   vw_es_award_search.pop_city_code,
 
   vw_es_award_search.cfda_number,
-  vw_es_award_search.cfda_program_title AS cfda_title,
+  vw_es_award_search.cfda_program_title as cfda_title,
   vw_es_award_search.cfda_id,
   vw_es_award_search.cfda_url,
-  vw_es_award_search.cfda_program_title AS cfda_title,
-  CASE	  vw_es_award_search.cfda_id,
-    WHEN vw_es_award_search.cfda_number IS NOT NULL	  vw_es_award_search.cfda_url,
+  CASE
+    WHEN vw_es_award_search.cfda_number IS NOT NULL	
       THEN CONCAT(	
         '{"code":"', vw_es_award_search.cfda_number,	
-        '","description":"', cfda_title,	
+        '","description":"', cfda_program_title,	
         '","id":"', vw_es_award_search.cfda_id,	
         '","url":"', CASE WHEN vw_es_award_search.cfda_url = 'None;' THEN NULL ELSE vw_es_award_search.cfda_url END, '"}'	
       )	
@@ -216,87 +215,7 @@ SELECT
   vw_es_award_search.tas_paths,
   vw_es_award_search.tas_components,
   vw_es_award_search.disaster_emergency_fund_codes AS disaster_emergency_fund_codes,
-  vw_es_award_search.gross_outlay_amount_by_award_cpe AS total_covid_outlay,
-  vw_es_award_search.transaction_obligated_amount AS total_covid_obligation
+  vw_es_award_search.total_covid_outlay,
+  vw_es_award_search.total_covid_obligation
 FROM vw_es_award_search
-LEFT JOIN LATERAL (
-  SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) AS recipient_levels
-  FROM     recipient_profile
-  WHERE    (recipient_hash = vw_es_award_search.recipient_hash OR recipient_unique_id = vw_es_award_search.recipient_unique_id) and
-           recipient_name NOT IN (
-             'MULTIPLE RECIPIENTS',
-             'REDACTED DUE TO PII',
-             'MULTIPLE FOREIGN RECIPIENTS',
-             'PRIVATE INDIVIDUAL',
-             'INDIVIDUAL RECIPIENT',
-             'MISCELLANEOUS FOREIGN AWARDEES'
-           ) AND recipient_name IS NOT NULL
-           AND recipient_level != 'P'
-  GROUP BY recipient_hash, recipient_unique_id
-  LIMIT 1
-) recipient_profile ON TRUE
-LEFT JOIN (
-    -- Get awards with COVID-related data
-    -- CONDITIONS:
-    -- 1. Only care about data that references an (D1/D2) award, since this is used to update those referenced awards
-    -- 2. Only care about those awards if they are in a closed submission period, from FY2020 P07 onward
-    -- 3. Only care about outlays for those awards if the period with outlay data is the last closed period in its FY
-    SELECT
-        faba.award_id,
-        ARRAY_AGG(DISTINCT disaster_emergency_fund_code ORDER BY disaster_emergency_fund_code) AS disaster_emergency_fund_codes,
-        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
-        COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
-    FROM
-        financial_accounts_by_awards faba
-    INNER JOIN disaster_emergency_fund_code defc
-        ON defc.code = faba.disaster_emergency_fund_code
-        AND defc.group_name = 'covid_19'
-    INNER JOIN submission_attributes sa
-        ON faba.submission_id = sa.submission_id
-        AND sa.reporting_period_start >= '2020-04-01'
-    INNER JOIN dabs_submission_window_schedule AS closed_periods
-        ON   closed_periods.period_start_date >= '2020-04-01' AND closed_periods.submission_reveal_date < now()
-        AND sa.submission_window_id = closed_periods.id
-    WHERE faba.award_id IS NOT NULL
-    GROUP BY
-        faba.award_id
-) DEFC ON (DEFC.award_id = vw_es_award_search.award_id)
-LEFT JOIN (
-  SELECT
-    faba.award_id,
-    ARRAY_AGG(
-      DISTINCT CONCAT(
-        'agency=', agency.toptier_code,
-        'faaid=', fa.agency_identifier,
-        'famain=', fa.main_account_code,
-        'aid=', taa.agency_id,
-        'main=', taa.main_account_code,
-        'ata=', taa.allocation_transfer_agency_id,
-        'sub=', taa.sub_account_code,
-        'bpoa=', taa.beginning_period_of_availability,
-        'epoa=', taa.ending_period_of_availability,
-        'a=', taa.availability_type_code
-       )
-     ) tas_paths,
-     ARRAY_AGG(
-      DISTINCT CONCAT(
-        'aid=', taa.agency_id,
-        'main=', taa.main_account_code,
-        'ata=', taa.allocation_transfer_agency_id,
-        'sub=', taa.sub_account_code,
-        'bpoa=', taa.beginning_period_of_availability,
-        'epoa=', taa.ending_period_of_availability,
-        'a=', taa.availability_type_code
-       )
-     ) tas_components
-  FROM
-    treasury_appropriation_account taa
-  INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
-  INNER JOIN federal_account fa ON (taa.federal_account_id = fa.id)
-  INNER JOIN toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
-  WHERE
-    faba.award_id IS NOT NULL
-  GROUP BY
-    faba.award_id
-) TREASURY_ACCT ON (TREASURY_ACCT.award_id = vw_es_award_search.award_id)
 ;
