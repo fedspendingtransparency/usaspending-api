@@ -3,11 +3,11 @@ HOST: https://api.usaspending.gov
 
 # Submission Discrepancies [/api/v2/reporting/agencies/{agency_code}/submissions/discrepancies/?{fiscal_year,fiscal_period,page,limit,order,sort}]
 
-This endpoint is used to power USAspending.gov's about the data tas descrepencies modal. This data can be used to better understand the way an agency submits data.
+This endpoint is used to power USAspending.gov's about the data tas discrepancies modal. This data can be used to better understand the way an agency submits data.
 
 ## GET
 
-This endpoint returns an overview of government agency tas descrepencies data.
+This endpoint returns an overview of government agency tas discrepancies data.
 
 + Parameters
     + `agency_code`: `020` (required, string)
@@ -33,7 +33,7 @@ This endpoint returns an overview of government agency tas descrepencies data.
 
     + Attributes (object)
         + `page_metadata` (required, PageMetaDataObject, fixed-type)
-        + `results` (required, array[TasDescrepencies], fixed-type)
+        + `results` (required, array[Tasdiscrepancies], fixed-type)
     + Body
 
             {
@@ -62,6 +62,6 @@ This endpoint returns an overview of government agency tas descrepencies data.
 + `hasPrevious`: false (required, boolean)
 + `total`: (required, number)
 
-## TasDescrepencies (object)
+## Tasdiscrepancies (object)
 + `tas`: (required, string)
 + `amount`: (required, number)
