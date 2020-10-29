@@ -49,7 +49,7 @@ This endpoint returns an overview of government agency submission data.
                     "current_total_budget_authority_amount": 8361447130497.72,
                     "recent_publication_date": "01/10/2020 11:59:21",
                     "recent_publication_date_certified": false,
-                    "descrepency_count": 20,
+                    "discrepancy_count": 20,
                     "obligation_difference": 436376232652.87
                   },
                   {
@@ -61,7 +61,7 @@ This endpoint returns an overview of government agency submission data.
                     "current_total_budget_authority_amount": 8361447130497.72,
                     "recent_publication_date": null,
                     "recent_publication_date_certified": true,
-                    "descrepency_count": 10,
+                    "discrepancy_count": 10,
                     "obligation_difference": 436376232652.87
                   }
                 ]
@@ -84,7 +84,7 @@ This endpoint returns an overview of government agency submission data.
 + `current_total_budget_authority_amount`: (required, number)
 + `recent_publication_date`: (required, date, nullable)
 + `recent_publication_date_certified`: (required, boolean)
-+ `descrepency_count`: (required, number)
++ `discrepancy_count`: (required, number)
     A count of agency TAS in GTAS not in file A.
 + `obligation_difference`: (required, number)
     The difference in file A and file B obligations.
