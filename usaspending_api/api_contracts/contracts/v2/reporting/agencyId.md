@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agencies [/api/v2/references/agencies/{agency_code}/?{page,limit,order,sort}]
+# Agency ID [/api/v2/reporting/agencies/{agency_code}/?{page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's about the data agency page. This data can be used to better understand the way an agency submits data.
 
