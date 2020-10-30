@@ -33,7 +33,7 @@ class BaseAwardSearchModel(models.Model):
 
     recipient_hash = models.UUIDField()
     recipient_name = models.TextField()
-    recipient_levels = models.TextField()
+    recipient_levels = ArrayField(models.TextField(), default=list)
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
     business_categories = ArrayField(models.TextField(), default=list)
@@ -92,7 +92,7 @@ class BaseAwardSearchModel(models.Model):
     pop_city_name = models.TextField()
 
     cfda_program_title = models.TextField()
-    cfda_id = models.TextField()
+    cfda_id = models.IntegerField()
     cfda_url = models.TextField()
     cfda_number = models.TextField()
     sai_number = models.TextField()
@@ -105,9 +105,9 @@ class BaseAwardSearchModel(models.Model):
     naics_code = models.TextField()
     naics_description = models.TextField()
 
-    tas_paths = models.TextField()
-    tas_components = models.TextField()
-    disaster_emergency_fund_codes = models.TextField()
+    tas_paths = ArrayField(models.TextField(), default=list)
+    tas_components = ArrayField(models.TextField(), default=list)
+    disaster_emergency_fund_codes = ArrayField(models.TextField(), default=list)
     total_covid_outlay = models.DecimalField(max_digits=23, decimal_places=2)
     total_covid_obligation = models.DecimalField(max_digits=23, decimal_places=2)
 
