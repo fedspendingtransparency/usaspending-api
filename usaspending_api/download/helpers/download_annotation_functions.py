@@ -191,7 +191,8 @@ def universal_award_matview_annotations():
         "usaspending_permalink": ConcatAll(
             Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
         ),
-        "disaster_emergency_fund_codes" + NAMING_CONFLICT_DISCRIMINATOR: Subquery(
+        "disaster_emergency_fund_codes"
+        + NAMING_CONFLICT_DISCRIMINATOR: Subquery(
             FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
@@ -300,7 +301,8 @@ def idv_order_annotations():
         "usaspending_permalink": ConcatAll(
             Value(AWARD_URL), Func(F("generated_unique_award_id"), function="urlencode"), Value("/")
         ),
-        "disaster_emergency_fund_codes": Subquery(
+        "disaster_emergency_fund_codes"
+        + NAMING_CONFLICT_DISCRIMINATOR: Subquery(
             FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("id"))
             .annotate(
                 value=ExpressionWrapper(
