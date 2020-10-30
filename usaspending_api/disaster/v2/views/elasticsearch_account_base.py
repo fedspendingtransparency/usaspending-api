@@ -47,7 +47,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         filters["nonzero_fields"] = self.nonzero_fields
         self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(filters)
 
-        self.bucket_count = 1000  # get_number_of_unique_terms_for_accounts(self.filter_query, self.agg_key)
+        self.bucket_count = 1000  # using a set value here as doing an extra ES query is detrimental to performance
         messages = []
         if self.pagination.sort_key in ("id", "code"):
             messages.append(
