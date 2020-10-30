@@ -29,14 +29,10 @@ class S3Handler:
         """
         Gets URL for read
         """
-        subdomain = "files"
-        if self.environment != "production":
-            subdomain = "files-nonprod"
-
-        bucket_url = "https://{}.usaspending.gov/{}/".format(subdomain, self.redirect_dir)
+        bucket_url = f"{settings.FILES_SERVER_BASE_URL}/{self.redirect_dir}/"
         env_dir = ""
         if self.redirect_dir == settings.BULK_DOWNLOAD_S3_REDIRECT_DIR and self.environment != "production":
             # currently only downloads have a bucket per environment
-            env_dir = "{}/".format(self.environment)
-        generated = "{}{}{}".format(bucket_url, env_dir, file_name)
+            env_dir = f"{self.environment}/"
+        generated = f"{bucket_url}{env_dir}{file_name}"
         return generated
