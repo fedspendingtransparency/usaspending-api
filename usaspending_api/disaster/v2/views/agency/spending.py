@@ -119,7 +119,7 @@ class SpendingByAgencyViewSet(
                 key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
                 for key, val in self.nested_nonzero_fields.items()
             },
-            "total_bugetary_resources": None,
+            "total_budgetary_resources": None,
         }
 
     @property

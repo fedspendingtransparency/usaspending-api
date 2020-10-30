@@ -158,7 +158,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         )
         sub_sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         sub_count_awards_by_dim = A("reverse_nested", **{})
-        sub_award_count = A("value_count", field="award_id")
+        sub_award_count = A("value_count", field="financial_account_distinct_award_key")
         loan_value = A("sum", field="total_loan_value")
 
         sub_group_by_sub_agg_key.metric("dim_metadata", sub_dim_metadata).metric(
