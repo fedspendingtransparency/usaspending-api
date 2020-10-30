@@ -10,6 +10,28 @@ from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 logger = logging.getLogger("script")
 
+"""
+NOTE: "Reveal Date" (dabs_submission_window_schedule.submission_reveal_data) is stored as the 0th
+second of the day (in UTC time) on which queries surfacing data submitted for this submission
+window should allow the data to be displayed. i.e. if the current date (now() in UTC) is greater
+than or equal to this date and time, show the data related to this submission. If not, don't show it.
+
+Reveal date is derived from the Broker submission_window_schedule.publish_deadline for monthly
+submissions and submission_window_schedule.certification_deadline for quarterly submissions
+
+It is logically intended to be the "next day" after the DABS submission deadline communicated to
+Agency Submitters. That deadline is exactly midnight Pacific Time on the schedule communicated to
+Agency Submitters as part of the DAIMS documentation.
+
+For simplification, Broker data in the submission_window_schedule table only stores the UTC date
+part (with zeroed-time) of the above deadline.
+
+Therefore we take the "reveal date" here to be the same date and time of the given deadline in the
+broker table, since that achieves the logical intention of revealing data "the next day" after the
+deadline communicated to Agency Submitters.
+"""
+
+
 #  SQL to create Month Period Schedules using broker table
 # Use all periods after Period 9, Year 2020 from table
 # Submission Due Date comes from 'publish_deadline' column
