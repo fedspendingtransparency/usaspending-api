@@ -82,7 +82,7 @@ This endpoint returns an overview of government agencies submission data.
 + `code`: (required, string)
 + `submission_history`: (required, array[SubmissionHistory], fixed-type)
 + `current_total_budget_authority_amount`: (required, number)
-+ `recent_publication_date`: (required, date, nullable)
++ `recent_publication_date`: (required, string, nullable)
 + `recent_publication_date_certified`: (required, boolean)
 + `discrepancy_count`: (required, number)
     A count of agency TAS in GTAS not in file A.

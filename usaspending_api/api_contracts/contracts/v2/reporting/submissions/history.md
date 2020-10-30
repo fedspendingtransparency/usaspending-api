@@ -39,5 +39,5 @@ This endpoint returns an overview of government agencies submission data.
 # Data Structures
 
 ## SubmissionHistory (object)
-+ `publish_date`: (required, date)
-+ `certify_date`: (required, date)
++ `publish_date`: (required, string)
++ `certify_date`: (required, string)
