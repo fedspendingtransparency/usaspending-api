@@ -17,7 +17,7 @@ window should allow the data to be displayed. i.e. if the current date (now() in
 than or equal to this date and time, show the data related to this submission. If not, don't show it.
 
 Reveal date is derived from the Broker submission_window_schedule.publish_deadline for monthly
-submissions and submission_window_schedule.certification_deadline for quarterly submissions
+submissions and submission_window_schedule.certification_deadline for quarterly submissions.
 
 It is logically intended to be the "next day" after the DABS submission deadline communicated to
 Agency Submitters. That deadline is exactly midnight Pacific Time on the schedule communicated to
