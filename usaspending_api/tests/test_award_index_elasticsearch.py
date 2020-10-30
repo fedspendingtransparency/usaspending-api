@@ -364,7 +364,7 @@ def test_covid_data(award_data_fixture, elasticsearch_award_index):
         "query": {
             "bool": {
                 "filter": {
-                    "bool": {"should": {"match": {"disaster_emergency_fund_code": "L"}}, "minimum_should_match": 1}
+                    "bool": {"should": {"match": {"disaster_emergency_fund_codes": "L"}}, "minimum_should_match": 1}
                 }
             }
         }
@@ -372,4 +372,4 @@ def test_covid_data(award_data_fixture, elasticsearch_award_index):
     client = elasticsearch_award_index.client
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
     assert response["hits"]["total"]["value"] == 1
-    assert response["hits"]["hits"][0]["_source"]["disaster_emergency_fund_code"] == ["L"]
+    assert response["hits"]["hits"][0]["_source"]["disaster_emergency_fund_codes"] == ["L"]

@@ -71,10 +71,13 @@ class TestElasticSearchIndex:
             cursor.execute(view_sql)
             if self.index_type == "transactions":
                 view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+                es_id = "transaction_id"
             elif self.index_type == "covid19_faba_":
                 view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
+                es_id = "financial_account_distinct_award_key"
             else:
                 view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+                es_id = "award_id"
             cursor.execute(f"SELECT * FROM {view_name};")
             transactions = ordered_dictionary_fetcher(cursor)
             cursor.execute(f"DROP VIEW {view_name};")
@@ -106,12 +109,6 @@ class TestElasticSearchIndex:
             routing_value = transaction.get(routing_key)
             if self.index_type == "transactions":
                 transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
-            if self.index_type == "transaction":
-                es_id = "transaction_id"
-            elif self.index_type == "awards":
-                es_id = "award_id"
-            else:
-                es_id = "financial_account_distinct_award_key"
             self.client.index(
                 index=self.index_name,
                 body=json.dumps(transaction, cls=DjangoJSONEncoder),

@@ -230,7 +230,7 @@ SELECT
   TREASURY_ACCT.tas_components,
   FEDERAL_ACCT.federal_accounts,
   UTM.business_categories,
-  FEDERAL_ACCT.defc AS disaster_emergency_fund_code
+  FEDERAL_ACCT.defc AS disaster_emergency_fund_codes
 
 FROM universal_transaction_matview UTM
 LEFT JOIN (

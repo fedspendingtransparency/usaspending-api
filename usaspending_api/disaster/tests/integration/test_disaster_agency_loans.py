@@ -71,8 +71,6 @@ def test_award_type_codes(
             ],
         }
     ]
-    # response=elasticsearch_award_index.client.search(index=elasticsearch_award_index.index_name, body={"query": {"exists":{"field":"award_id"}}})
-    # print(response)
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
