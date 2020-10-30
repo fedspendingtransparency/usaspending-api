@@ -429,7 +429,7 @@ class _DisasterEmergencyFundCodes(_Filter):
         cls, filter_values: List[str], query_type: _QueryType, nested_path: Optional[str] = ""
     ) -> ES_Q:
         def_codes_query = []
-        def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code"
+        def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{'s' if query_type != _QueryType.ACCOUNTS else ''}"
         for v in filter_values:
             def_codes_query.append(ES_Q("match", **{def_code_field: v}))
         if query_type == _QueryType.TRANSACTIONS:
