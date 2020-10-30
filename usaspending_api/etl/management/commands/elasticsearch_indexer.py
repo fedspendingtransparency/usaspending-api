@@ -227,7 +227,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "field_for_es_id": "transaction_id",
             "initial_datetime": default_datetime,
             "max_query_size": settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW,
-            "optional_predicate": """WHERE "update_date" >= '{starting_date}'""",
+            "optional_predicate": """WHERE "etl_update_date" >= '{starting_date}'""",
             "primary_key": "transaction_id",
             "query_alias_prefix": settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
             "required_index_name": settings.ES_TRANSACTIONS_NAME_SUFFIX,

@@ -47,6 +47,11 @@
         "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
         "index": false
       },
+      "etl_update_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+        "index": false
+      },
       "modification_number": {
         "type": "text",
         "fields": {
@@ -70,7 +75,7 @@
       "uri": {
         "type": "keyword"
       },
-      "award_description": {
+      "transaction_description": {
         "type": "text",
         "analyzer": "stemmer_analyzer"
       },
@@ -203,7 +208,7 @@
         "type": "date",
         "format": "yyyy-MM-dd"
       },
-      "transaction_fiscal_year": {
+      "fiscal_year": {
         "type": "integer"
       },
       "award_fiscal_year": {
