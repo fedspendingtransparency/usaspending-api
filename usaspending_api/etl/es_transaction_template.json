@@ -529,7 +529,7 @@
       "business_categories": {
         "type": "keyword"
       },
-      "disaster_emergency_fund_code": {
+      "disaster_emergency_fund_codes": {
           "type": "keyword"
         }
     }

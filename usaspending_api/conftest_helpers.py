@@ -62,28 +62,27 @@ class TestElasticSearchIndex:
         """
         if self.index_type == "awards":
             view_sql_file = "award_delta_view.sql"
+            view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+            es_id = "award_id"
         elif self.index_type == "covid19_faba_":
             view_sql_file = "covid19_faba_view.sql"
+            view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
+            es_id = "financial_account_distinct_award_key"
         else:
             view_sql_file = "transaction_delta_view.sql"
+            view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+            es_id = "transaction_id"
+
         view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
         with connection.cursor() as cursor:
             cursor.execute(view_sql)
-            if self.index_type == "transactions":
-                view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
-                es_id = "transaction_id"
-            elif self.index_type == "covid19_faba_":
-                view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
-                es_id = "financial_account_distinct_award_key"
-            else:
-                view_name = settings.ES_AWARDS_ETL_VIEW_NAME
-                es_id = "award_id"
+
             cursor.execute(f"SELECT * FROM {view_name};")
-            transactions = ordered_dictionary_fetcher(cursor)
+            records = ordered_dictionary_fetcher(cursor)
             cursor.execute(f"DROP VIEW {view_name};")
         results = {}
         if self.index_type == "covid19_faba_":
-            for record in transactions:
+            for record in records:
                 disinct_award_key = record.pop("financial_account_distinct_award_key")
                 award_id = record.pop("award_id")
                 award_type = record.pop("award_type")
@@ -101,18 +100,18 @@ class TestElasticSearchIndex:
                     }
 
                 results[temp_key]["financial_accounts_by_award"].append(record)
-            transactions = [val for key, val in results.items()]
+            records = [val for key, val in results.items()]
 
-        for transaction in transactions:
+        for record in records:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
             routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
-            routing_value = transaction.get(routing_key)
+            routing_value = record.get(routing_key)
             if self.index_type == "transactions":
-                transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
+                record["federal_accounts"] = self.convert_json_arrays_to_list(record["federal_accounts"])
             self.client.index(
                 index=self.index_name,
-                body=json.dumps(transaction, cls=DjangoJSONEncoder),
-                id=transaction.get(es_id),
+                body=json.dumps(record, cls=DjangoJSONEncoder),
+                id=record.get(es_id),
                 routing=routing_value,
             )
         # Force newly added documents to become searchable.

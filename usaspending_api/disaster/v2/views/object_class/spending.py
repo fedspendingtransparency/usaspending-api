@@ -42,11 +42,9 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/spending.md"
 
     # Defined for the Elasticsearch implementation of Spending by Award
-    agg_key = "financial_accounts_by_award.object_class"  # "financial_accounts_by_award.major_object_class"  # primary (tier-1) aggregation key
+    agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
     query_fields = [
-        "major_object_class.raw",
-        "object_class.raw",
         "major_object_class_name",
         "major_object_class_name.contains",
         "object_class_name",

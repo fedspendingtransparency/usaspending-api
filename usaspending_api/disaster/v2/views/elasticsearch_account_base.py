@@ -11,6 +11,7 @@ from usaspending_api.common.exceptions import ForbiddenException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
+from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms_for_accounts
 
 
 class ElasticsearchAccountDisasterBase(DisasterBase):
@@ -46,8 +47,10 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         filters["nested_nonzero_fields"] = list(self.nested_nonzero_fields.values())
         filters["nonzero_fields"] = self.nonzero_fields
         self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(filters)
-
-        self.bucket_count = 1000  # using a set value here as doing an extra ES query is detrimental to performance
+        # using a set value here as doing an extra ES query is detrimental to performance
+        # And the dimensions on which group-by aggregations are performed so far
+        # (agency, TAS, object_class) all have cardinality less than this number
+        self.bucket_count = 1000
         messages = []
         if self.pagination.sort_key in ("id", "code"):
             messages.append(
@@ -174,7 +177,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         # Append sub-agg to primary agg, and include the sub-agg's sum metric aggs too
         search.aggs[self.agg_group_name]["group_by_dim_agg"].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key)
 
-    def build_totals(self, response: List[dict], loans: bool) -> dict:
+    def build_totals(self, response: List[dict], loans: bool=False) -> dict:
         obligations = 0
         outlays = 0
         award_count = 0
@@ -194,7 +197,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
     def query_elasticsearch(self, loans) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
         if search is None:
-            totals = self.build_totals(response=[])
+            totals = self.build_totals(response=[], loans=loans)
             return {"totals": totals, "results": []}
         response = search.handle_execute()
         response = response.aggs.to_dict()
