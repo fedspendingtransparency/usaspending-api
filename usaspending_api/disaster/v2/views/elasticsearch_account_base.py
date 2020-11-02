@@ -11,7 +11,6 @@ from usaspending_api.common.exceptions import ForbiddenException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
-from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms_for_accounts
 
 
 class ElasticsearchAccountDisasterBase(DisasterBase):
@@ -177,7 +176,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         # Append sub-agg to primary agg, and include the sub-agg's sum metric aggs too
         search.aggs[self.agg_group_name]["group_by_dim_agg"].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key)
 
-    def build_totals(self, response: List[dict], loans: bool=False) -> dict:
+    def build_totals(self, response: List[dict], loans: bool = False) -> dict:
         obligations = 0
         outlays = 0
         award_count = 0
