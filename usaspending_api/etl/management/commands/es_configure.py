@@ -1,10 +1,12 @@
 import json
+import logging
 import subprocess
 
-from django.core.management.base import BaseCommand
-
 from django.conf import settings
-from usaspending_api.etl.elasticsearch_loader_helpers import VIEW_COLUMNS, AWARD_VIEW_COLUMNS
+from django.core.management.base import BaseCommand
+from time import perf_counter
+
+logger = logging.getLogger("script")
 
 CURL_STATEMENT = 'curl -XPUT "{url}" -H "Content-Type: application/json" -d \'{data}\''
 
@@ -42,18 +44,18 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        logger.info("Starting ES Configure")
+        start = perf_counter()
         if not settings.ES_HOSTNAME:
             raise SystemExit("Fatal error: $ES_HOSTNAME is not set.")
         self.load_type = options["load_type"]
-        self.template = "{}_template".format(options["load_type"][:-1])
+        self.template = f"{options['load_type'][:-1]}_template"
         if options["load_type"] == "awards":
-            self.index_pattern = "*{}".format(settings.ES_AWARDS_NAME_SUFFIX)
+            self.index_pattern = f"*{settings.ES_AWARDS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_AWARDS_MAX_RESULT_WINDOW
-            self.load_columns = AWARD_VIEW_COLUMNS
         elif options["load_type"] == "transactions":
-            self.index_pattern = "*{}".format(settings.ES_TRANSACTIONS_NAME_SUFFIX)
+            self.index_pattern = f"*{settings.ES_TRANSACTIONS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
-            self.load_columns = VIEW_COLUMNS
 
         cluster, index_settings = self.get_elasticsearch_settings()
         template = self.get_index_template()
@@ -68,14 +70,17 @@ class Command(BaseCommand):
             payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name=template_name
         )
 
-    def run_curl_cmd(self, **kwargs):
+        logger.info(f"ES Configure took {perf_counter() - start:.2f}s")
+
+    def run_curl_cmd(self, **kwargs) -> None:
         url = kwargs["url"].format(**kwargs)
         cmd = CURL_STATEMENT.format(url=url, data=json.dumps(kwargs["payload"]))
-        print("Running: {}\n\n".format(cmd))
 
-        subprocess.Popen(cmd, shell=True).wait()
-        print("\n\n---------------------------------------------------------------")
-        return
+        try:
+            subprocess.Popen(cmd, shell=True).wait()
+        except Exception as e:
+            logger.exception(f"Failed on command: {cmd}")
+            raise e
 
     def get_elasticsearch_settings(self):
         es_config = self.return_json_from_file(FILES["settings"])
@@ -86,7 +91,6 @@ class Command(BaseCommand):
         template = self.return_json_from_file(FILES[self.template])
         template["index_patterns"] = [self.index_pattern]
         template["settings"]["index.max_result_window"] = self.max_result_window
-        self.validate_known_fields(template)
         return template
 
     def return_json_from_file(self, path):
@@ -96,19 +100,13 @@ class Command(BaseCommand):
         """
         filepath = str(path)
         if not path.exists():
-            raise SystemExit("Fatal error: file {} does not exist.".format(filepath))
+            raise SystemExit(f"Fatal error: file {filepath} does not exist.")
 
-        print("Reading file: {}".format(filepath))
+        logger.debug(f"Reading file: {filepath}")
         with open(filepath, "r") as f:
             json_to_dict = json.load(f)
 
         return json_to_dict
-
-    def validate_known_fields(self, template):
-        defined_fields = set([field for field in template["mappings"]["properties"]])
-        load_columns = set(self.load_columns)
-        if defined_fields ^ load_columns:  # check if any fields are not in both sets
-            raise RuntimeError("Mismatch between template and fields in ETL! Resolve before continuing!")
 
 
 def retrieve_index_template(template):

@@ -105,17 +105,7 @@ SELECT
   vw_es_award_search.pop_city_code,
 
   vw_es_award_search.cfda_number,
-  cfda.program_title AS cfda_title,
-  CASE
-    WHEN vw_es_award_search.cfda_number IS NOT NULL
-      THEN CONCAT(
-        '{"code":"', vw_es_award_search.cfda_number,
-        '","description":"', cfda.program_title,
-        '","id":"', cfda.id,
-        '","url":"', CASE WHEN cfda.url = 'None;' THEN NULL ELSE cfda.url END, '"}'
-      )
-    ELSE NULL
-  END AS cfda_agg_key,
+  fabs.cfda_title,
 
   vw_es_award_search.sai_number,
   vw_es_award_search.type_of_contract_pricing,
@@ -207,7 +197,6 @@ SELECT
 FROM vw_es_award_search
 INNER JOIN awards a ON (a.id = vw_es_award_search.award_id)
 LEFT JOIN transaction_fabs fabs ON (fabs.transaction_id = a.latest_transaction_id)
-LEFT JOIN references_cfda cfda ON (cfda.program_number = fabs.cfda_number)
 LEFT JOIN LATERAL (
   SELECT   recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) AS recipient_levels
   FROM     recipient_profile

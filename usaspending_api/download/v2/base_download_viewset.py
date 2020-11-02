@@ -127,12 +127,11 @@ class BaseDownloadViewSet(APIView):
         if settings.IS_LOCAL:
             protocol = "http"
             host = "localhost:8000"
-        elif settings.DOWNLOAD_ENV == "production":
-            protocol = "https"
-            host = "api.usaspending.gov"
         else:
             protocol = "https"
-            host = f"{settings.DOWNLOAD_ENV}-api.usaspending.gov"
+            host = f"api.{settings.SERVER_BASE_URL}"
+            if settings.DOWNLOAD_ENV != "production":
+                host = f"{settings.DOWNLOAD_ENV}-{host}"
 
         return f"{protocol}://{host}/api/v2/download/status?file_name={file_name}"
 
