@@ -54,16 +54,7 @@ class CFDAViewSet(APIView):
                 response = self._request_from_grants_api()
                 remaining_tries = remaining_tries - 1
 
-            if response.status_code == 200:
-                CFDA_DICTIONARY = response
-            elif response.status_code == 204:
-                #no content
-            elif response.status_code == 408:
-                #timeout
-            elif response.status_code == 503:
-                #unavailable
-            else:
-                raise Exception("Failed to get Grants data; code {0}: {1}", response.status_code, response.reason)
+            CFDA_DICTIONARY = response
 
     def _request_from_grants_api(self):
         return post(
