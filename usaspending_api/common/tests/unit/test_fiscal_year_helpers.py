@@ -242,17 +242,17 @@ def test_create_full_time_periods():
     start = date(2020, 9, 30)
     end = date(2020, 10, 1)
 
-    years = fyh.create_full_time_periods(start, end, "fy")
+    years = fyh.create_full_time_periods(start, end, "fy", {})
     assert len(years) == 2
     assert years[0]["time_period"] == {"fy": "2020"}
     assert years[1]["time_period"] == {"fy": "2021"}
 
-    quarters = fyh.create_full_time_periods(start, end, "quarter")
+    quarters = fyh.create_full_time_periods(start, end, "quarter", {})
     assert len(quarters) == 2
     assert quarters[0]["time_period"] == {"fy": "2020", "quarter": "4"}
     assert quarters[1]["time_period"] == {"fy": "2021", "quarter": "1"}
 
-    months = fyh.create_full_time_periods(start, end, "month")
+    months = fyh.create_full_time_periods(start, end, "month", {})
     assert len(months) == 2
     assert months[0]["time_period"] == {"fy": "2020", "month": "12"}
     assert months[1]["time_period"] == {"fy": "2021", "month": "1"}
