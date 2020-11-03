@@ -7,21 +7,37 @@ from time import perf_counter
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists, drop_etl_view
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.elasticsearch_loader_helpers import (
-    format_log,
     Controller,
-    transform_award_data,
-    transform_transaction_data,
+    execute_sql_statement,
+    format_log,
     toggle_refresh_off,
+    transform_award_data,
+    transform_covid19_faba_data,
+    transform_transaction_data,
 )
 
 logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-    """Parallelized ETL script for indexing SQL data into Elasticsearch"""
+    """Parallelized ETL script for indexing SQL data into Elasticsearch
+
+    1. DB extraction should be very fast if the query is straightforward.
+        We have seen 1-2 seconds or less per 10k rows on a db.r5.4xl instance with 10K IOPS
+    2. Generally speaking, parallelization performance is largely based on number
+        of vCPUs available to the pool of parallel processes. Ideally have 1 vCPU
+        per process. This is mostly true for CPU-heavy tasks. If the ETL is primarily
+        I/O then the number of processes per vCPU can be significantly increased.
+    3. Elasticsearch indexing appears to become a bottleneck when the prior
+        2 parts are taken care of. Further simplifying SQL, increasing the
+        DB size, and increasing the worker node vCPUs/memory yielded the same
+        overall runtime, due to ES indexing backpressure. Presumably adding more
+        nodes, or increasing node size in the ES cluster may reduce this pressure,
+        but not (yet) tested.
+    """
 
     help = """Hopefully the code comments are helpful enough to figure this out...."""
 
@@ -61,15 +77,15 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="Select which data the ETL will process.",
-            choices=["transactions", "awards"],
+            choices=["transaction", "award", "covid19-faba"],
         )
         parser.add_argument(
             "--processes",
             type=int,
             help="Number of parallel processes to operate. psycopg2 kicked the bucket with 100.",
             default=10,
-            choices=range(1, 71),
-            metavar="[1-70]",
+            choices=range(1, 101),
+            metavar="[1-100]",
         )
         parser.add_argument(
             "--partition-size",
@@ -79,6 +95,11 @@ class Command(BaseCommand):
             " distribution of the data to process",
             default=250000,
             metavar="(default: 250,000)",
+        )
+        parser.add_argument(
+            "--drop-db-view",
+            action="store_true",
+            help="After completing the ETL, drop the SQL view used for the data extraction",
         )
 
     def handle(self, *args, **options):
@@ -106,6 +127,9 @@ class Command(BaseCommand):
             raise SystemExit(1)
         else:
             loader.complete_process()
+            if config["drop_db_view"]:
+                logger.info(format_log(f"Dropping SQL view '{config['sql_view']}'"))
+                drop_etl_view(config["sql_view"], True)
         finally:
             msg = f"Script duration was {perf_counter() - start:.2f}s {error_addition}|"
             headers = f"{'-' * (len(msg) - 2)} |"
@@ -115,16 +139,16 @@ class Command(BaseCommand):
 
 
 def parse_cli_args(options: dict, es_client) -> dict:
-    default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
     passthrough_values = (
-        "partition_size",
         "create_new_index",
+        "drop_db_view",
         "index_name",
         "load_type",
+        "partition_size",
         "process_deletes",
+        "processes",
         "skip_counts",
         "skip_delete_index",
-        "processes",
     )
     config = set_config(passthrough_values, options)
 
@@ -132,7 +156,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         raise SystemExit("Fatal error: '--create-new-index' requires '--index-name'.")
     elif config["create_new_index"]:
         config["index_name"] = config["index_name"].lower()
-        config["starting_date"] = default_datetime
+        config["starting_date"] = config["initial_datetime"]
         check_new_index_name_is_ok(config["index_name"], config["required_index_name"])
     elif options["start_datetime"]:
         config["starting_date"] = options["start_datetime"]
@@ -142,10 +166,10 @@ def parse_cli_args(options: dict, es_client) -> dict:
         #      - The earliest records in S3.
         #      - When all transaction records in the USAspending SQL database were updated.
         #   And keep it timezone-aware for S3
-        config["starting_date"] = get_last_load_date(config["stored_date_key"], default=default_datetime)
+        config["starting_date"] = get_last_load_date(config["stored_date_key"], default=config["initial_datetime"])
 
     config["is_incremental_load"] = not bool(config["create_new_index"]) and (
-        config["starting_date"] != default_datetime
+        config["starting_date"] != config["initial_datetime"]
     )
 
     if config["is_incremental_load"]:
@@ -160,8 +184,8 @@ def parse_cli_args(options: dict, es_client) -> dict:
             logger.error(f"Data load into existing index. Change index name or run an incremental load")
             raise SystemExit(1)
 
-    if config["starting_date"] < default_datetime:
-        logger.error(f"--start-datetime is too early. Set no earlier than {default_datetime}")
+    if config["starting_date"] < config["initial_datetime"]:
+        logger.error(f"--start-datetime is too early. Set no earlier than {config['initial_datetime']}")
         raise SystemExit(1)
 
     return config
@@ -169,14 +193,20 @@ def parse_cli_args(options: dict, es_client) -> dict:
 
 def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
     """Set values based on env vars and when the script started"""
-
-    if arg_parse_options["load_type"] == "awards":
+    default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
+    if arg_parse_options["load_type"] == "award":
         config = {
             "base_table": "awards",
             "base_table_id": "id",
+            "create_award_type_aliases": True,
             "data_transform_func": transform_award_data,
             "data_type": "award",
+            "execute_sql_func": execute_sql_statement,
+            "extra_null_partition": False,
+            "field_for_es_id": "award_id",
+            "initial_datetime": default_datetime,
             "max_query_size": settings.ES_AWARDS_MAX_RESULT_WINDOW,
+            "optional_predicate": """WHERE "update_date" >= '{starting_date}'""",
             "primary_key": "award_id",
             "query_alias_prefix": settings.ES_AWARDS_QUERY_ALIAS_PREFIX,
             "required_index_name": settings.ES_AWARDS_NAME_SUFFIX,
@@ -185,13 +215,19 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "unique_key_field": "generated_unique_award_id",
             "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
         }
-    elif arg_parse_options["load_type"] == "transactions":
+    elif arg_parse_options["load_type"] == "transaction":
         config = {
             "base_table": "transaction_normalized",
             "base_table_id": "id",
+            "create_award_type_aliases": True,
             "data_transform_func": transform_transaction_data,
             "data_type": "transaction",
+            "execute_sql_func": execute_sql_statement,
+            "extra_null_partition": False,
+            "field_for_es_id": "transaction_id",
+            "initial_datetime": default_datetime,
             "max_query_size": settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW,
+            "optional_predicate": """WHERE "etl_update_date" >= '{starting_date}'""",
             "primary_key": "transaction_id",
             "query_alias_prefix": settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX,
             "required_index_name": settings.ES_TRANSACTIONS_NAME_SUFFIX,
@@ -199,6 +235,27 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "stored_date_key": "es_transactions",
             "unique_key_field": "generated_unique_transaction_id",
             "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
+        }
+    elif arg_parse_options["load_type"] == "covid19-faba":
+        config = {
+            "base_table": "financial_accounts_by_awards",
+            "base_table_id": "financial_accounts_by_awards_id",
+            "create_award_type_aliases": False,
+            "data_transform_func": transform_covid19_faba_data,
+            "data_type": "covid19-faba",
+            "execute_sql_func": execute_sql_statement,
+            "extra_null_partition": True,
+            "field_for_es_id": "financial_account_distinct_award_key",
+            "initial_datetime": datetime.strptime(f"2020-04-01+0000", "%Y-%m-%d%z"),
+            "max_query_size": settings.ES_COVID19_FABA_MAX_RESULT_WINDOW,
+            "optional_predicate": "",
+            "primary_key": "award_id",
+            "query_alias_prefix": settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX,
+            "required_index_name": settings.ES_COVID19_FABA_NAME_SUFFIX,
+            "sql_view": settings.ES_COVID19_FABA_ETL_VIEW_NAME,
+            "stored_date_key": ...,
+            "unique_key_field": "distinct_award_key",
+            "write_alias": settings.ES_COVID19_FABA_WRITE_ALIAS,
         }
     else:
         raise RuntimeError(f"Configuration is not configured for --load-type={arg_parse_options['load_type']}")
