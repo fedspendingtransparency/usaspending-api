@@ -24,9 +24,11 @@ class TaskSpec:
     view: str
     base_table: str
     base_table_id: str
+    field_for_es_id: str
     primary_key: str
     partition_number: int
     is_incremental: bool
+    execute_sql_func: callable = None
     transform_func: callable = None
 
 
@@ -81,7 +83,7 @@ def filter_query(column: str, values: list, query_type: str = "match_phrase") ->
 def format_log(msg: str, action: str = None, name: str = None) -> str:
     """Helper function to format log statements"""
     inner_str = f"[{action if action else 'main'}] {f'{name}' if name else ''}"
-    return f"{inner_str:<32} | {msg}"
+    return f"{inner_str:<34} | {msg}"
 
 
 def gen_random_name() -> Generator[str, None, None]:

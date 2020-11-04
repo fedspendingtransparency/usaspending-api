@@ -7,9 +7,13 @@ from usaspending_api.search.models import TASAutocompleteMatview
 import usaspending_api.search.models as mv
 
 DEFAULT_MATIVEW_DIR = settings.REPO_DIR.parent / "matviews"
+DEFAULT_CHUNKED_MATIVEW_DIR = settings.REPO_DIR.parent / "chunked_matviews"
 DEPENDENCY_FILEPATH = settings.APP_DIR / "database_scripts" / "matviews" / "functions_and_enums.sql"
-JSON_DIR = settings.APP_DIR / "database_scripts" / "matview_sql_generator"
+JSON_DIR = settings.APP_DIR / "database_scripts" / "matview_generator"
 MATVIEW_GENERATOR_FILE = settings.APP_DIR / "database_scripts" / "matview_generator" / "matview_sql_generator.py"
+CHUNKED_MATVIEW_GENERATOR_FILE = (
+    settings.APP_DIR / "database_scripts" / "matview_generator" / "chunked_matview_sql_generator.py"
+)
 OVERLAY_VIEWS = [
     settings.APP_DIR / "database_scripts" / "matviews" / "vw_award_search.sql",
     settings.APP_DIR / "database_scripts" / "matviews" / "vw_es_award_search.sql",
@@ -113,6 +117,10 @@ MATERIALIZED_VIEWS = OrderedDict(
                 "sql_filename": "tas_autocomplete_matview.sql",
             },
         ),
+    ]
+)
+CHUNKED_MATERIALIZED_VIEWS = OrderedDict(
+    [
         (
             "universal_transaction_matview",
             {

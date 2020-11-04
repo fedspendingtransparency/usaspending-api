@@ -42,9 +42,7 @@ from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 logger = logging.getLogger("script")
 
 
-DEFAULT_CSV_LOCATION = (
-    f'https://files{"-nonprod" if settings.DOWNLOAD_ENV != "production" else ""}.usaspending.gov/reference_data/'
-)
+DEFAULT_CSV_LOCATION = f"{settings.FILES_SERVER_BASE_URL}/reference_data/"
 
 # file_name: temporary_table_name
 FILE_TO_TABLE_MAPPING = {

@@ -93,32 +93,47 @@ STATE_DATA_BUCKET = ""
 if not STATE_DATA_BUCKET:
     STATE_DATA_BUCKET = os.environ.get("STATE_DATA_BUCKET")
 
-DATA_DICTIONARY_DOWNLOAD_URL = "https://files{}.usaspending.gov/docs/Data_Dictionary_Crosswalk.xlsx".format(
-    "-nonprod" if DOWNLOAD_ENV != "production" else ""
-)
+# Download URLs
+FILES_SERVER_BASE_URL = ""
+SERVER_BASE_URL = ""
+
+if not FILES_SERVER_BASE_URL:
+    FILES_SERVER_BASE_URL = os.environ.get(
+        "FILES_SERVER_BASE_URL",
+        # This default value can be removed after DTI migration is complete
+        f"https://files{'-nonprod' if DOWNLOAD_ENV != 'production' else ''}.usaspending.gov",
+    )
+    SERVER_BASE_URL = FILES_SERVER_BASE_URL[FILES_SERVER_BASE_URL.find(".") + 1 :]
+
+AGENCY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/reference_data/agency_codes.csv"
+DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/Data_Dictionary_Crosswalk.xlsx"
+
+# Local download files
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
 ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "AssistanceSummary_download_readme.txt")
 CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_download_readme.txt")
 COVID19_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "COVID-19_download_readme.txt")
 COVID19_DOWNLOAD_FILENAME_PREFIX = "COVID-19_Profile"
-AGENCY_DOWNLOAD_URL = "https://files{}.usaspending.gov/reference_data/agency_codes.csv".format(
-    "-nonprod" if DOWNLOAD_ENV != "production" else ""
-)
 
 # Elasticsearch
 ES_HOSTNAME = ""
 if not ES_HOSTNAME:
     ES_HOSTNAME = os.environ.get("ES_HOSTNAME")
-ES_TRANSACTIONS_ETL_VIEW_NAME = "transaction_delta_view"
-ES_TRANSACTIONS_MAX_RESULT_WINDOW = 50000
-ES_TRANSACTIONS_NAME_SUFFIX = "transactions"
-ES_TRANSACTIONS_QUERY_ALIAS_PREFIX = "transaction-query"
-ES_TRANSACTIONS_WRITE_ALIAS = "transaction-load-alias"
 ES_AWARDS_ETL_VIEW_NAME = "award_delta_view"
 ES_AWARDS_MAX_RESULT_WINDOW = 50000
 ES_AWARDS_NAME_SUFFIX = "awards"
 ES_AWARDS_QUERY_ALIAS_PREFIX = "award-query"
 ES_AWARDS_WRITE_ALIAS = "award-load-alias"
+ES_COVID19_FABA_ETL_VIEW_NAME = "covid19_faba_view"
+ES_COVID19_FABA_MAX_RESULT_WINDOW = 50000
+ES_COVID19_FABA_NAME_SUFFIX = "covid19-faba"
+ES_COVID19_FABA_QUERY_ALIAS_PREFIX = "covid19-faba-query"
+ES_COVID19_FABA_WRITE_ALIAS = "covid19-faba-load-alias"
+ES_TRANSACTIONS_ETL_VIEW_NAME = "transaction_delta_view"
+ES_TRANSACTIONS_MAX_RESULT_WINDOW = 50000
+ES_TRANSACTIONS_NAME_SUFFIX = "transactions"
+ES_TRANSACTIONS_QUERY_ALIAS_PREFIX = "transaction-query"
+ES_TRANSACTIONS_WRITE_ALIAS = "transaction-load-alias"
 ES_TIMEOUT = 90
 ES_REPOSITORY = ""
 ES_ROUTING_FIELD = "recipient_agg_key"
