@@ -3,11 +3,7 @@ CREATE VIEW award_delta_view AS
 SELECT
   vw_es_award_search.award_id,
   vw_es_award_search.generated_unique_award_id,
-  CASE
-    WHEN vw_es_award_search.type IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND vw_es_award_search.fain IS NOT NULL THEN vw_es_award_search.fain
-    WHEN vw_es_award_search.piid IS NOT NULL THEN vw_es_award_search.piid  -- contracts. Did it this way to easily handle IDV contracts
-    ELSE vw_es_award_search.uri
-  END AS display_award_id,
+  vw_es_award_search.display_award_id,
 
   vw_es_award_search.category,
   vw_es_award_search.type,
@@ -26,22 +22,7 @@ SELECT
   vw_es_award_search.recipient_unique_id,
   vw_es_award_search.recipient_hash,
   vw_es_award_search.recipient_levels,
-  CASE	  
-    WHEN vw_es_award_search.recipient_hash IS NULL or vw_es_award_search.recipient_levels IS NULL	
-      THEN	
-        CONCAT(	
-          '{"name":"', vw_es_award_search.recipient_name,	
-          '","unique_id":"', vw_es_award_search.recipient_unique_id,	
-          '","hash":"","levels":""}'	
-        )	
-    ELSE	
-      CONCAT(	
-        '{"name":"', vw_es_award_search.recipient_name,	
-        '","unique_id":"', vw_es_award_search.recipient_unique_id,	
-        '","hash":"', vw_es_award_search.recipient_hash,	
-        '","levels":"', vw_es_award_search.recipient_levels, '"}'	
-      )	
-  END AS recipient_agg_key,
+  vw_es_award_search.recipient_agg_key,
 
   vw_es_award_search.parent_recipient_unique_id,
   vw_es_award_search.business_categories,
@@ -67,24 +48,8 @@ SELECT
   vw_es_award_search.funding_toptier_agency_code,
   vw_es_award_search.awarding_subtier_agency_code,
   vw_es_award_search.funding_subtier_agency_code,
-  CASE
-    WHEN vw_es_award_search.funding_toptier_agency_name IS NOT NULL
-      THEN CONCAT(
-        '{"name":"', vw_es_award_search.funding_toptier_agency_name,
-        '","code":"', vw_es_award_search.funding_toptier_agency_code,
-        '","id":"', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1), '"}'
-      )
-    ELSE NULL
-  END AS funding_toptier_agency_agg_key,
-  CASE
-    WHEN vw_es_award_search.funding_subtier_agency_name IS NOT NULL
-      THEN CONCAT(
-        '{"name":"', vw_es_award_search.funding_subtier_agency_name,
-        '","code":"', vw_es_award_search.funding_subtier_agency_code,
-        '","id":"', (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = vw_es_award_search.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1), '"}'
-      )
-    ELSE NULL
-  END AS funding_subtier_agency_agg_key,
+  vw_es_award_search.funding_toptier_agency_agg_key,
+  vw_es_award_search.funding_subtier_agency_agg_key,
 
   vw_es_award_search.recipient_location_country_code,
   vw_es_award_search.recipient_location_country_name,
@@ -119,16 +84,7 @@ SELECT
   vw_es_award_search.cfda_program_title as cfda_title,
   vw_es_award_search.cfda_id,
   vw_es_award_search.cfda_url,
-  CASE
-    WHEN vw_es_award_search.cfda_number IS NOT NULL
-      THEN CONCAT(
-        '{"code":"', vw_es_award_search.cfda_number,
-        '","description":"', cfda_program_title,
-        '","id":"', vw_es_award_search.cfda_id,
-        '","url":"', CASE WHEN vw_es_award_search.cfda_url = 'None;' THEN NULL ELSE vw_es_award_search.cfda_url END, '"}'
-      )
-    ELSE NULL
-  END AS cfda_agg_key,
+  vw_es_award_search.cfda_agg_key,
 
   vw_es_award_search.sai_number,
   vw_es_award_search.type_of_contract_pricing,
@@ -140,81 +96,17 @@ SELECT
   vw_es_award_search.naics_code,
   vw_es_award_search.naics_description,
 
-  CASE
-    WHEN
-        vw_es_award_search.recipient_location_state_code IS NOT NULL
-        AND vw_es_award_search.recipient_location_county_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.recipient_location_country_code,
-        '","state_code":"', vw_es_award_search.recipient_location_state_code,
-        '","state_fips":"', vw_es_award_search.recipient_location_state_fips,
-        '","county_code":"', vw_es_award_search.recipient_location_county_code,
-        '","county_name":"', vw_es_award_search.recipient_location_county_name,
-        '","population":"', vw_es_award_search.recipient_location_county_population, '"}'
-      )
-    ELSE NULL
-  END AS recipient_location_county_agg_key,
-  CASE
-    WHEN
-        vw_es_award_search.recipient_location_state_code IS NOT NULL
-        AND vw_es_award_search.recipient_location_congressional_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.recipient_location_country_code,
-        '","state_code":"', vw_es_award_search.recipient_location_state_code,
-        '","state_fips":"', vw_es_award_search.recipient_location_state_fips,
-        '","congressional_code":"', vw_es_award_search.recipient_location_congressional_code,
-        '","population":"', vw_es_award_search.recipient_location_congressional_population, '"}'
-      )
-    ELSE NULL
-  END AS recipient_location_congressional_agg_key,
-  CASE
-    WHEN vw_es_award_search.recipient_location_state_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.recipient_location_country_code,
-        '","state_code":"', vw_es_award_search.recipient_location_state_code,
-        '","state_name":"', vw_es_award_search.recipient_location_state_name,
-        '","population":"', vw_es_award_search.recipient_location_state_population, '"}'
-      )
-    ELSE NULL
-  END AS recipient_location_state_agg_key,
+  vw_es_award_search.recipient_location_county_agg_key,
+  vw_es_award_search.recipient_location_congressional_agg_key,
+  vw_es_award_search.recipient_location_state_agg_key,
 
-  CASE
-    WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_county_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.pop_country_code,
-        '","state_code":"', vw_es_award_search.pop_state_code,
-        '","state_fips":"', vw_es_award_search.pop_state_fips,
-        '","county_code":"', vw_es_award_search.pop_county_code,
-        '","county_name":"', vw_es_award_search.pop_county_name,
-        '","population":"', vw_es_award_search.pop_county_population, '"}'
-      )
-    ELSE NULL
-  END AS pop_county_agg_key,
-  CASE
-    WHEN vw_es_award_search.pop_state_code IS NOT NULL AND vw_es_award_search.pop_congressional_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.pop_country_code,
-        '","state_code":"', vw_es_award_search.pop_state_code,
-        '","state_fips":"', vw_es_award_search.pop_state_fips,
-        '","congressional_code":"', vw_es_award_search.pop_congressional_code,
-        '","population":"', vw_es_award_search.pop_congressional_population, '"}'
-      )
-    ELSE NULL
-  END AS pop_congressional_agg_key,
-  CASE
-    WHEN vw_es_award_search.pop_state_code IS NOT NULL
-      THEN CONCAT(
-        '{"country_code":"', vw_es_award_search.pop_country_code,
-        '","state_code":"', vw_es_award_search.pop_state_code,
-         '","state_name":"', vw_es_award_search.pop_state_name,
-        '","population":"', vw_es_award_search.pop_state_population, '"}'
-      )
-    ELSE NULL
-  END AS pop_state_agg_key,
+  vw_es_award_search.op_county_agg_key,
+  vw_es_award_search.pop_congressional_agg_key,
+  vw_es_award_search.pop_state_agg_key,
 
   vw_es_award_search.tas_paths,
   vw_es_award_search.tas_components,
-  vw_es_award_search.disaster_emergency_fund_codes AS disaster_emergency_fund_codes,
+  vw_es_award_search.disaster_emergency_fund_codes,
   vw_es_award_search.total_covid_outlay,
   vw_es_award_search.total_covid_obligation
 FROM vw_es_award_search

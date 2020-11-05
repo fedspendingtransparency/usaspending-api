@@ -32,7 +32,7 @@
     "    WHEN recipient_profile.recipient_hash IS NULL or recipient_profile.recipient_levels IS NULL",
     "      THEN",
     "        CONCAT(",
-    "          '{\"name\":\"', recipient_lookup.recipient_name,",
+    "          '{\"name\":\"', UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal)),",
     "          '\",\"unique_id\":\"', transaction_fpds.awardee_or_recipient_uniqu,",
     "          '\",\"hash\":\"\",\"levels\":\"\"}'",
     "        )",
