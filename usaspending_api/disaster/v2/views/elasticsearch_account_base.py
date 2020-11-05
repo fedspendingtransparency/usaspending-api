@@ -83,12 +83,24 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
 
         # Create the initial search using filters
         search = AccountSearch().filter(self.filter_query)
-
         # Create the aggregations
         financial_accounts_agg = A("nested", path="financial_accounts_by_award")
-        filtered_aggs = A(
-            "filter", terms={"financial_accounts_by_award.disaster_emergency_fund_code": self.filters.get("def_codes")}
-        )
+        if "query" in self.filters:
+            terms = ES_Q(
+                "terms", **{"financial_accounts_by_award.disaster_emergency_fund_code": self.filters.get("def_codes")}
+            )
+            query = ES_Q(
+                "multi_match",
+                query=self.filters["query"],
+                type="phrase_prefix",
+                fields=[f"financial_accounts_by_award.{query}" for query in self.query_fields],
+            )
+            filter_agg_query = ES_Q("bool", should=[terms, query], minimum_should_match=2)
+        else:
+            filter_agg_query = ES_Q(
+                "terms", **{"financial_accounts_by_award.disaster_emergency_fund_code": self.filters.get("def_codes")}
+            )
+        filtered_aggs = A("filter", filter_agg_query)
         group_by_dim_agg = A("terms", field=self.agg_key, size=self.bucket_count)
         dim_metadata = A(
             "top_hits",

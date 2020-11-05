@@ -9,8 +9,9 @@ url = "/api/v2/disaster/agency/spending/"
 
 @pytest.mark.django_db
 def test_basic_success(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
+
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     resp = helpers.post_for_spending_endpoint(
         client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="total", sort="description"
     )
@@ -280,3 +281,30 @@ def test_missing_spending_type(client, monkeypatch, generic_account_data, helper
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"])
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert resp.data["detail"] == "Missing value: 'spending_type' is a required field"
+
+
+@pytest.mark.django_db
+def test_query_search(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
+    # response = elasticsearch_award_index.client.search(index=elasticsearch_award_index.index_name, body={"query": {"exists": {"field": "award_id"}}})
+    # print(response)
+    resp = helpers.post_for_spending_endpoint(
+        client, url, query="Agency 008", def_codes=["L", "M", "N", "O", "P"], spending_type="award",
+    )
+    expected_results = [
+        {
+            "id": 2,
+            "code": "008",
+            "description": "Agency 008",
+            "children": [],
+            "award_count": 1,
+            "obligation": 2000.0,
+            "outlay": 20000.0,
+            "total_budgetary_resources": None,
+        }
+    ]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results

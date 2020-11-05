@@ -93,3 +93,38 @@ def test_federal_account_award_empty(client, monkeypatch, helpers, generic_accou
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"], spending_type="award")
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json()["results"]) == 0
+
+
+@pytest.mark.django_db
+def test_federal_account_award_query(client, generic_account_data, monkeypatch, helpers, elasticsearch_account_index):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
+    helpers.reset_dabs_cache()
+
+    resp = helpers.post_for_spending_endpoint(
+        client, url, query="flowers", def_codes=["M", "L", "N", "O"], spending_type="award"
+    )
+    expected_results = [
+        {
+            "children": [
+                {
+                    "code": "2020/99",
+                    "award_count": 1,
+                    "description": "flowers",
+                    "id": 22,
+                    "obligation": 100.0,
+                    "outlay": 111.0,
+                    "total_budgetary_resources": None,
+                }
+            ],
+            "code": "000-0000",
+            "award_count": 1,
+            "description": "gifts",
+            "id": 21,
+            "obligation": 100.0,
+            "outlay": 111.0,
+            "total_budgetary_resources": None,
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
