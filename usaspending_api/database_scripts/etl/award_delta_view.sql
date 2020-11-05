@@ -82,10 +82,7 @@ SELECT
 
   vw_es_award_search.cfda_number,
   vw_es_award_search.cfda_program_title as cfda_title,
-  vw_es_award_search.cfda_id,
-  vw_es_award_search.cfda_url,
-  vw_es_award_search.cfda_agg_key,
-
+  
   vw_es_award_search.sai_number,
   vw_es_award_search.type_of_contract_pricing,
   vw_es_award_search.extent_competed,
