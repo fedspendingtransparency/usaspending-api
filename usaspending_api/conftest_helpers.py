@@ -17,7 +17,11 @@ from usaspending_api.common.sqs.sqs_handler import (
 )
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
-from usaspending_api.etl.elasticsearch_loader_helpers import create_award_type_aliases
+from usaspending_api.etl.elasticsearch_loader_helpers import (
+    create_award_type_aliases,
+    transform_covid19_faba_data,
+    TaskSpec,
+)
 from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
 
@@ -61,53 +65,48 @@ class TestElasticSearchIndex:
         The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
         """
         if self.index_type == "awards":
-            view_sql_file = "award_delta_view.sql"
+            view_sql_file = f"{settings.ES_AWARDS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_AWARDS_ETL_VIEW_NAME
             es_id = "award_id"
         elif self.index_type == "covid19_faba_":
-            view_sql_file = "covid19_faba_view.sql"
+            view_sql_file = f"{settings.ES_COVID19_FABA_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
             es_id = "financial_account_distinct_award_key"
         else:
-            view_sql_file = "transaction_delta_view.sql"
+            view_sql_file = f"{settings.ES_TRANSACTIONS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
             es_id = "transaction_id"
 
         view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
         with connection.cursor() as cursor:
             cursor.execute(view_sql)
-
             cursor.execute(f"SELECT * FROM {view_name};")
             records = ordered_dictionary_fetcher(cursor)
             cursor.execute(f"DROP VIEW {view_name};")
-        results = {}
-        if self.index_type == "covid19_faba_":
-            for record in records:
-                disinct_award_key = record.pop("financial_account_distinct_award_key")
-                award_id = record.pop("award_id")
-                award_type = record.pop("award_type")
-                generated_unique_award_id = record.pop("generated_unique_award_id")
-                total_loan_value = record.pop("total_loan_value")
-                temp_key = f"{award_id}"
-                if temp_key not in results:
-                    results[temp_key] = {
-                        "financial_account_distinct_award_key": disinct_award_key,
-                        "award_id": award_id,
-                        "award_type": award_type,
-                        "generated_unique_award_id": generated_unique_award_id,
-                        "total_loan_value": total_loan_value,
-                        "financial_accounts_by_award": list(),
-                    }
-
-                results[temp_key]["financial_accounts_by_award"].append(record)
-            records = [val for key, val in results.items()]
-
+            if self.index_type == "covid19_faba_":
+                records = transform_covid19_faba_data(
+                    TaskSpec(
+                        name="worker",
+                        index=self.index_name,
+                        sql=view_sql_file,
+                        view=view_name,
+                        base_table="financial_accounts_by_awards",
+                        base_table_id=1,
+                        field_for_es_id="award_id",
+                        primary_key="financial_account_distinct_award_key",
+                        partition_number=1,
+                        is_incremental=False,
+                    ),
+                    records,
+                )
         for record in records:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
             routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
             routing_value = record.get(routing_key)
             if self.index_type == "transactions":
                 record["federal_accounts"] = self.convert_json_arrays_to_list(record["federal_accounts"])
+            elif self.index_type == "covid19_faba_":
+                record.pop("_id")
             self.client.index(
                 index=self.index_name,
                 body=json.dumps(record, cls=DjangoJSONEncoder),

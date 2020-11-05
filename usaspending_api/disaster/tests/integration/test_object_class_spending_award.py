@@ -105,7 +105,7 @@ def test_object_class_query(client, elasticsearch_account_index, basic_faba_with
     helpers.reset_dabs_cache()
 
     resp = helpers.post_for_spending_endpoint(
-        client, url, query="001 name", def_codes=["L", "M", "N" "O", "P"], spending_type="award"
+        client, url, query="001 name", def_codes=["A", "M", "N"], spending_type="award"
     )
     expected_results = [
         {
