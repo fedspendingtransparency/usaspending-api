@@ -100,7 +100,7 @@ SELECT
   vw_es_award_search.recipient_location_congressional_agg_key,
   vw_es_award_search.recipient_location_state_agg_key,
 
-  vw_es_award_search.op_county_agg_key,
+  vw_es_award_search.pop_county_agg_key,
   vw_es_award_search.pop_congressional_agg_key,
   vw_es_award_search.pop_state_agg_key,
 
