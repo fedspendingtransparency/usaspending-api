@@ -222,15 +222,10 @@ def test_generate_fiscal_date_range():
     # 2-day range that crosses all boundaries
     start = date(2020, 9, 30)
     end = date(2020, 10, 1)
-    expected = [{
-        "fiscal_year": 2020,
-        "fiscal_quarter": 4,
-        "fiscal_month": 12
-    }, {
-        "fiscal_year": 2021,
-        "fiscal_quarter": 1,
-        "fiscal_month": 1
-    }]
+    expected = [
+        {"fiscal_year": 2020, "fiscal_quarter": 4, "fiscal_month": 12},
+        {"fiscal_year": 2021, "fiscal_quarter": 1, "fiscal_month": 1},
+    ]
     assert fyh.generate_fiscal_date_range(start, end, "fiscal_year") == expected
     assert fyh.generate_fiscal_date_range(start, end, "quarter") == expected
     assert fyh.generate_fiscal_date_range(start, end, "anything") == expected
