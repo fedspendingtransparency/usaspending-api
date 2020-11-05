@@ -16,18 +16,26 @@ This endpoint returns an overview of government agency obligation differences da
         The fiscal year.
     + `fiscal_period`: 10 (required, number)
         The fiscal period.
-    + `page`: 1 (optional, number)
+    + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
-    + `limit`: 5 (optional, number)
+    + `limit` (optional, number)
         The number of results to include per page.
         + Default: 10
-    + `order`: `desc` (optional, string)
+    + `order`: `desc` (optional, enum[string])
         The direction (`asc` or `desc`) that the `sort` field will be sorted in.
-        + Default: `desc`.
-    + `sort`: `difference` (optional, string)
+        + Default: `desc`
+        + Members
+            + `asc`
+            + `desc`
+    + `sort`: `difference` (optional, enum[string])
         A data field that will be used to sort the response array.
-        + Default: `difference`.
+        + Default: `difference`
+        + Members
+            + `difference`
+            + `file_a_obligations`
+            + `file_b_obligations`
+            + `tas`
 
 + Response 200 (application/json)
 
@@ -63,13 +71,13 @@ This endpoint returns an overview of government agency obligation differences da
 # Data Structures
 
 ## PageMetaDataObject (object)
-+ `page`: (required, number)
-+ `hasNext`: false (required, boolean)
-+ `hasPrevious`: false (required, boolean)
-+ `total`: (required, number)
++ `page` (required, number)
++ `hasNext` false (required, boolean)
++ `hasPrevious` false (required, boolean)
++ `total` (required, number)
 
 ## ObligationDifferences (object)
-+ `tas`: (required, string)
-+ `file_a_obligations`: (required, number)
-+ `file_b_obligations`: (required, number)
-+ `difference`: (required, number)
++ `tas` (required, string)
++ `file_a_obligations` (required, number)
++ `file_b_obligations` (required, number)
++ `difference` (required, number)

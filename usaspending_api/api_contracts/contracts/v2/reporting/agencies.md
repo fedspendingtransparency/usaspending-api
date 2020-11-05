@@ -15,20 +15,31 @@ This endpoint returns an overview of government agencies submission data.
         The fiscal year.
     + `fiscal_period`: 10 (required, number)
         The fiscal period.
-    + `search`: treasury (optional, string)
+    + `search` (optional, string)
         The agency name to filter on.
-    + `page`: 1 (optional, number)
+    + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
-    + `limit`: 5 (optional, number)
+    + `limit` (optional, number)
         The number of results to include per page.
         + Default: 10
-    + `order`: `desc` (optional, string)
+    + `order` (optional, enum[string])
         The direction (`asc` or `desc`) that the `sort` field will be sorted in.
-        + Default: `desc`.
-    + `sort`: `current_total_budget_authority_amount` (optional, string)
+        + Default: `desc`
+        + Members
+            + `asc`
+            + `desc`
+    + `sort` (optional, enum[string])
         A data field that will be used to sort the response array.
-        + Default: `current_total_budget_authority_amount`.
+        + Default: `current_total_budget_authority_amount`
+        + Members
+            + `code`
+            + `current_total_budget_authority_amount`
+            + `discrepancy_count`
+            + `name`
+            + `obligation_difference`
+            + `recent_publication_date`
+            + `recent_publication_date_certified`
 
 + Response 200 (application/json)
 
@@ -50,7 +61,7 @@ This endpoint returns an overview of government agencies submission data.
                     "abbreviation": "DHHS",
                     "code": "020",
                     "current_total_budget_authority_amount": 8361447130497.72,
-                    "recent_publication_date": "01/10/2020 11:59:21",
+                    "recent_publication_date": "2020-01-10T11:59:21Z",
                     "recent_publication_date_certified": false,
                     "discrepancy_count": 20,
                     "obligation_difference": 436376232652.87
@@ -71,20 +82,20 @@ This endpoint returns an overview of government agencies submission data.
 # Data Structures
 
 ## PageMetaDataObject (object)
-+ `page`: (required, number)
-+ `hasNext`: false (required, boolean)
-+ `hasPrevious`: false (required, boolean)
-+ `total`: (required, number)
++ `page` (required, number)
++ `hasNext` false (required, boolean)
++ `hasPrevious` false (required, boolean)
++ `total` (required, number)
 
 ## AgencyData (object)
-+ `name`: (required, string)
++ `name` (required, string)
 + `abbreviation`: (required, string)
-+ `code`: (required, string)
-+ `submission_history`: (required, array[SubmissionHistory], fixed-type)
-+ `current_total_budget_authority_amount`: (required, number)
-+ `recent_publication_date`: (required, string, nullable)
-+ `recent_publication_date_certified`: (required, boolean)
-+ `discrepancy_count`: (required, number)
++ `code` (required, string)
++ `submission_history` (required, array[SubmissionHistory], fixed-type)
++ `current_total_budget_authority_amount` (required, number)
++ `recent_publication_date` (required, Date, nullable)
++ `recent_publication_date_certified` (required, boolean)
++ `discrepancy_count` (required, number)
     A count of agency TAS in GTAS not in file A.
-+ `obligation_difference`: (required, number)
++ `obligation_difference` (required, number)
     The difference in file A and file B obligations.

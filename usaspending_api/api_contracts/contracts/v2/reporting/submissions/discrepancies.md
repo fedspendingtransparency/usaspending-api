@@ -16,18 +16,24 @@ This endpoint returns an overview of government agency tas discrepancies data.
         The fiscal year.
     + `fiscal_period`: 10 (required, number)
         The fiscal period.
-    + `page`: 1 (optional, number)
+    + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
-    + `limit`: 5 (optional, number)
+    + `limit` (optional, number)
         The number of results to include per page.
         + Default: 10
-    + `order`: `desc` (optional, string)
+    + `order` (optional, enum[string])
         The direction (`asc` or `desc`) that the `sort` field will be sorted in.
-        + Default: `desc`.
-    + `sort`: `amount` (optional, string)
+        + Default: `desc`
+        + Members
+            + `asc`
+            + `desc`
+    + `sort` (optional, enum[string])
         A data field that will be used to sort the response array.
-        + Default: `amount`.
+        + Default: `amount`
+        + Members
+            + `amount`
+            + `tas`
 
 + Response 200 (application/json)
 
@@ -59,11 +65,11 @@ This endpoint returns an overview of government agency tas discrepancies data.
 # Data Structures
 
 ## PageMetaDataObject (object)
-+ `page`: (required, number)
-+ `hasNext`: false (required, boolean)
-+ `hasPrevious`: false (required, boolean)
-+ `total`: (required, number)
++ `page` (required, number)
++ `hasNext` false (required, boolean)
++ `hasPrevious` false (required, boolean)
++ `total` (required, number)
 
 ## Tasdiscrepancies (object)
-+ `tas`: (required, string)
-+ `amount`: (required, number)
++ `tas` (required, string)
++ `amount` (required, number)

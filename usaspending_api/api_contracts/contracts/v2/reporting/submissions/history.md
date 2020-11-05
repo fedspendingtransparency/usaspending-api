@@ -26,12 +26,12 @@ This endpoint returns an overview of government agencies submission data.
             {
                 "results": [
                   {
-                    "publish_date": "10/11/20 08:59:22",
-                    "certify_date": "10/22/20 11:59:34",
+                    "publish_date": "2020-10-11T11:59:21Z",
+                    "certify_date": "2020-10-22T11:59:21Z",
                   },
                   {
-                    "publish_date": "07/10/20 08:59:22",
-                    "certify_date": "07/11/20 11:59:34",
+                    "publish_date": "2020-07-10T11:59:21Z",
+                    "certify_date": "2020-07-11T11:59:21Z",
                   }
                 ]
             }
@@ -39,5 +39,5 @@ This endpoint returns an overview of government agencies submission data.
 # Data Structures
 
 ## SubmissionHistory (object)
-+ `publish_date`: (required, string)
-+ `certify_date`: (required, string)
++ `publish_date` (required, Date)
++ `certify_date` (required, Date)
