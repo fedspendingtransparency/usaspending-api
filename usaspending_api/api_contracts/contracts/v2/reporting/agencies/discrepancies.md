@@ -66,8 +66,8 @@ This endpoint returns an overview of government agency tas discrepancies data.
 
 ## PageMetaDataObject (object)
 + `page` (required, number)
-+ `hasNext` false (required, boolean)
-+ `hasPrevious` false (required, boolean)
++ `hasNext` (required, boolean)
++ `hasPrevious` (required, boolean)
 + `total` (required, number)
 
 ## Tasdiscrepancies (object)

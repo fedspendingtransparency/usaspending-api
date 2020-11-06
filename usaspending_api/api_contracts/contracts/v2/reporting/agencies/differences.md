@@ -72,8 +72,8 @@ This endpoint returns an overview of government agency obligation differences da
 
 ## PageMetaDataObject (object)
 + `page` (required, number)
-+ `hasNext` false (required, boolean)
-+ `hasPrevious` false (required, boolean)
++ `hasNext` (required, boolean)
++ `hasPrevious` (required, boolean)
 + `total` (required, number)
 
 ## ObligationDifferences (object)

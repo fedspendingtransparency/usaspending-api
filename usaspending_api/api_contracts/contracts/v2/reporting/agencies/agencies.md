@@ -83,8 +83,8 @@ This endpoint returns an overview of government agencies submission data.
 
 ## PageMetaDataObject (object)
 + `page` (required, number)
-+ `hasNext` false (required, boolean)
-+ `hasPrevious` false (required, boolean)
++ `hasNext` (required, boolean)
++ `hasPrevious` (required, boolean)
 + `total` (required, number)
 
 ## AgencyData (object)
