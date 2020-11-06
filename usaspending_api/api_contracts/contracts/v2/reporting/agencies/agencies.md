@@ -1,17 +1,22 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency ID [/api/v2/reporting/agencies/{agency_code}/?{page,limit,order,sort}]
+# Agencies Reporting Overview [/api/v2/reporting/agencies/overview?{fiscal_year,fiscal_period,search,page,limit,order,sort}]
 
-This endpoint is used to power USAspending.gov's about the data agency page. This data can be used to better understand the way an agency submits data.
+This endpoint is used to power USAspending.gov's about the data agencies page. This data can be used to better understand the ways agencies submit data.
 
 ## GET
 
-This endpoint returns an overview of government agency submission data.
+This endpoint returns an overview of government agencies submission data.
 
 + Parameters
-    + `agency_code`: `020` (required, string)
-        The specific agency code.
+
+    + `fiscal_year`: 2020 (required, number)
+        The fiscal year.
+    + `fiscal_period`: 10 (required, number)
+        The fiscal period.
+    + `search` (optional, string)
+        The agency name to filter on.
     + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
@@ -31,8 +36,6 @@ This endpoint returns an overview of government agency submission data.
             + `code`
             + `current_total_budget_authority_amount`
             + `discrepancy_count`
-            + `fiscal_year`
-            + `fiscal_period`
             + `name`
             + `obligation_difference`
             + `recent_publication_date`
@@ -57,8 +60,6 @@ This endpoint returns an overview of government agency submission data.
                     "name": "Department of Health and Human Services",
                     "abbreviation": "DHHS",
                     "code": "020",
-                    "fiscal_year": 2020,
-                    "fiscal_period": 12,
                     "current_total_budget_authority_amount": 8361447130497.72,
                     "recent_publication_date": "2020-01-10T11:59:21Z",
                     "recent_publication_date_certified": false,
@@ -69,8 +70,6 @@ This endpoint returns an overview of government agency submission data.
                     "name": "Department of Treasury",
                     "abbreviation": "DOT",
                     "code": "021",
-                    "fiscal_year": 2020,
-                    "fiscal_period": 9,
                     "current_total_budget_authority_amount": 8361447130497.72,
                     "recent_publication_date": null,
                     "recent_publication_date_certified": true,
@@ -90,10 +89,9 @@ This endpoint returns an overview of government agency submission data.
 
 ## AgencyData (object)
 + `name` (required, string)
-+ `abbreviation` (required, string)
++ `abbreviation`: (required, string)
 + `code` (required, string)
-+ `fiscal_year` (required, number)
-+ `fiscal_period` (required, number)
++ `submission_history` (required, array[SubmissionHistory], fixed-type)
 + `current_total_budget_authority_amount` (required, number)
 + `recent_publication_date` (required, Date, nullable)
 + `recent_publication_date_certified` (required, boolean)

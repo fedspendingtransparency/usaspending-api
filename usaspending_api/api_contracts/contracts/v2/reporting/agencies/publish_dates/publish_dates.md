@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Submissions History [/api/v2/reporting/agencies/{agency_code}/submissions/history/?{fiscal_year,fiscal_period,search,page,limit,order,sort}]
+# Agency Reporting Publish Dates [/api/v2/reporting/agencies/{agency_code}/publish-dates?{fiscal_year,fiscal_period,search,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's about the data submission history modal. This data can be used to better understand the ways agencies submit data.
 

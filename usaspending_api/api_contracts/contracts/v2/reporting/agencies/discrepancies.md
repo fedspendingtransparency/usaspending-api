@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Submission Discrepancies [/api/v2/reporting/agencies/{agency_code}/submissions/discrepancies/?{fiscal_year,fiscal_period,page,limit,order,sort}]
+# Agency Reporting Discrepancies [/api/v2/reporting/agencies/{agency_code}/discrepancies/?{fiscal_year,fiscal_period,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's about the data tas discrepancies modal. This data can be used to better understand the way an agency submits data.
 
