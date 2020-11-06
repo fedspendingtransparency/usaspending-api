@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Differences [/api/v2/reporting/agencies/{agency_code}/differences/?{fiscal_year,fiscal_period,page,limit,order,sort}]
+# Agency Reporting Differences [/api/v2/reporting/agencies/{agency_code}/differences?{fiscal_year,fiscal_period,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's about the data obligation differences modal. This data can be used to better understand the way an agency submits data.
 

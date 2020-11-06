@@ -93,7 +93,7 @@ This endpoint returns an overview of government agencies submission data.
 ## Period (object)
 + `period` (required, number),
 + `quarter` (required, number),
-+ `date` (required, Date, nullable),
++ `date` (required, string, nullable),
 + `certified` (required, boolean),
 + `quarterly` (required, boolean),
 + `submitted` (required, boolean)
