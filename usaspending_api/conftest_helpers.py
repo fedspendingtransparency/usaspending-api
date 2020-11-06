@@ -71,7 +71,6 @@ class TestElasticSearchIndex:
         elif self.index_type == "covid19_faba_":
             view_sql_file = f"{settings.ES_COVID19_FABA_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
-            es_id = "financial_account_distinct_award_key"
         else:
             view_sql_file = f"{settings.ES_TRANSACTIONS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
@@ -91,9 +90,9 @@ class TestElasticSearchIndex:
                         sql=view_sql_file,
                         view=view_name,
                         base_table="financial_accounts_by_awards",
-                        base_table_id=1,
-                        field_for_es_id="award_id",
-                        primary_key="financial_account_distinct_award_key",
+                        base_table_id="financial_accounts_by_awards_id",
+                        field_for_es_id="financial_account_distinct_award_key",
+                        primary_key="award_id",
                         partition_number=1,
                         is_incremental=False,
                     ),
@@ -106,7 +105,7 @@ class TestElasticSearchIndex:
             if self.index_type == "transactions":
                 record["federal_accounts"] = self.convert_json_arrays_to_list(record["federal_accounts"])
             elif self.index_type == "covid19_faba_":
-                record.pop("_id")
+                es_id = record.pop("_id")
             self.client.index(
                 index=self.index_name,
                 body=json.dumps(record, cls=DjangoJSONEncoder),

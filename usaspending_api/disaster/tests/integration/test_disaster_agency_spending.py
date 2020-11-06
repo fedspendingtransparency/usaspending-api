@@ -1,8 +1,10 @@
+import datetime
+
 import pytest
 
 from rest_framework import status
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
-
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 url = "/api/v2/disaster/agency/spending/"
 
@@ -11,6 +13,9 @@ url = "/api/v2/disaster/agency/spending/"
 def test_basic_success(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
 
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    bad_date_window = DABSSubmissionWindowSchedule.objects.get(id=2022071)
+    bad_date_window.submission_reveal_date = datetime.date(2020, 4, 15)
+    bad_date_window.save()
     setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     resp = helpers.post_for_spending_endpoint(
         client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="total", sort="description"
@@ -79,7 +84,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
             "description": "Agency 009",
             "children": [],
             "award_count": 3,
-            "obligation": 21999998.0,
+            "obligation": 22199998.0,
             "outlay": 200000022.0,
             "total_budgetary_resources": None,
         },
@@ -88,16 +93,26 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
             "code": "008",
             "description": "Agency 008",
             "children": [],
-            "award_count": 1,
-            "obligation": 2000.0,
+            "award_count": 2,
+            "obligation": 22000.0,
             "outlay": 20000.0,
+            "total_budgetary_resources": None,
+        },
+        {
+            "id": 1,
+            "code": "007",
+            "description": "Agency 007",
+            "children": [],
+            "award_count": 2,
+            "obligation": 222.0,
+            "outlay": 0.0,
             "total_budgetary_resources": None,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"award_count": 4, "obligation": 22001998.0, "outlay": 200020022.0}
+    expected_totals = {"award_count": 7, "obligation": 22222220.0, "outlay": 200020022.0}
 
     assert resp.json()["totals"] == expected_totals
 
@@ -288,8 +303,6 @@ def test_query_search(client, disaster_account_data, elasticsearch_account_index
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
-    # response = elasticsearch_award_index.client.search(index=elasticsearch_award_index.index_name, body={"query": {"exists": {"field": "award_id"}}})
-    # print(response)
     resp = helpers.post_for_spending_endpoint(
         client, url, query="Agency 008", def_codes=["L", "M", "N", "O", "P"], spending_type="award",
     )
