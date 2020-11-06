@@ -230,6 +230,26 @@ def test_generate_fiscal_date_range():
     assert fyh.generate_fiscal_date_range(start, end, "quarter") == expected
     assert fyh.generate_fiscal_date_range(start, end, "anything") == expected
 
+    # check within FY
+    start = date(2019, 10, 2)
+    end = date(2020, 9, 30)
+    expected = [
+        {"fiscal_year": 2020, "fiscal_quarter": 1, "fiscal_month": 1},
+    ]
+    assert fyh.generate_fiscal_date_range(start, end, "fiscal_year") == expected
+
+    expected.append({"fiscal_year": 2020, "fiscal_quarter": 2, "fiscal_month": 4})
+    expected.append({"fiscal_year": 2020, "fiscal_quarter": 3, "fiscal_month": 7})
+    expected.append({"fiscal_year": 2020, "fiscal_quarter": 4, "fiscal_month": 10})
+    assert fyh.generate_fiscal_date_range(start, end, "quarter") == expected
+
+    # 1-day period
+    start = end = date(2021, 6, 23)
+    expected = [{"fiscal_year": 2021, "fiscal_quarter": 3, "fiscal_month": 9}]
+    assert fyh.generate_fiscal_date_range(start, end, "fiscal_year") == expected
+    assert fyh.generate_fiscal_date_range(start, end, "quarter") == expected
+    assert fyh.generate_fiscal_date_range(start, end, "anything") == expected
+
 
 def test_create_full_time_periods():
     # NOTE: not checking aggregations, only the time periods
