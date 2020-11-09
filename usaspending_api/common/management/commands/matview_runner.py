@@ -83,17 +83,17 @@ class Command(BaseCommand):
             if not self.no_cleanup:
                 self.cleanup()
 
+    @staticmethod
+    def clean_or_create_dir(dir_path):
+        if dir_path.exists():
+            logger.warning(f"Clearing dir {dir_path}")
+            recursive_delete(dir_path)
+        dir_path.mkdir()
+
     def generate_matview_sql(self):
         """Convert JSON definition files to SQL"""
-        if self.matview_dir.exists():
-            logger.warning("Clearing dir {}".format(self.matview_dir))
-            recursive_delete(self.matview_dir)
-        self.matview_dir.mkdir()
-
-        if self.matview_chunked_dir.exists():
-            logger.warning("Clearing dir {}".format(self.matview_chunked_dir))
-            recursive_delete(self.matview_chunked_dir)
-        self.matview_chunked_dir.mkdir()
+        self.clean_or_create_dir(self.matview_dir)
+        self.clean_or_create_dir(self.matview_chunked_dir)
 
         # IF using this for operations, DO NOT LEAVE hardcoded `python3` in the command
         # Create main list of Matview SQL files
@@ -102,7 +102,12 @@ class Command(BaseCommand):
 
         # Create SQL files for Chunked Universal Transaction Matviews
         for matview, config in self.chunked_matviews.items():
-            exec_str = f"python3 {CHUNKED_MATVIEW_GENERATOR_FILE} --quiet  --file {config['json_filepath']} --chunk-count {self.chunk_count}"
+            exec_str = (
+                f"python3 {CHUNKED_MATVIEW_GENERATOR_FILE} --quiet"
+                f" --file {config['json_filepath']}"
+                f" --chunk-count {self.chunk_count}"
+                f" --dest={self.matview_chunked_dir}"
+            )
             subprocess.call(exec_str, shell=True)
 
     def cleanup(self):
@@ -133,7 +138,10 @@ class Command(BaseCommand):
         if "universal_transaction_matview" in self.chunked_matviews:
             logger.info("Inserting data from universal_transaction_matview chunks into single table.")
             call_command(
-                "combine_universal_transaction_matview_chunks", chunk_count=self.chunk_count, index_concurrency=20,
+                "combine_universal_transaction_matview_chunks",
+                chunk_count=self.chunk_count,
+                index_concurrency=20,
+                matview_dir=self.matview_chunked_dir,
             )
 
         for view in OVERLAY_VIEWS:
