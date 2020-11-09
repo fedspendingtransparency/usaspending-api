@@ -20,9 +20,9 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
     agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
     query_fields = [
-        "major_object_class",
+        "major_object_class_name",
         "major_object_class_name.contains",
-        "object_class",
+        "object_class_name",
         "object_class_name.contains",
     ]
     top_hits_fields = [
@@ -88,7 +88,7 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
 
     def _build_json_result(self, child):
         return {
-            "id": child["parent_data"][2],
+            "id": child["parent_data"][1],
             "code": child["parent_data"][1],
             "description": child["parent_data"][0],
             "award_count": child["award_count"],
@@ -114,6 +114,5 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
             "parent_data": [
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class_name"],
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class"],
-                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_id"],
             ],
         }
