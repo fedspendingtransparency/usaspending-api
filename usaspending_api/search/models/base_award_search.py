@@ -20,6 +20,7 @@ class BaseAwardSearchModel(models.Model):
     type = models.TextField()
     type_description = models.TextField()
     generated_unique_award_id = models.TextField()
+    display_award_id = models.TextField()
     update_date = models.DateField()
     piid = models.TextField()
     fain = models.TextField()
@@ -34,6 +35,7 @@ class BaseAwardSearchModel(models.Model):
     recipient_hash = models.UUIDField()
     recipient_name = models.TextField()
     recipient_levels = ArrayField(models.TextField(), default=list)
+    recipient_agg_key = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
     business_categories = ArrayField(models.TextField(), default=list)
@@ -61,6 +63,8 @@ class BaseAwardSearchModel(models.Model):
     funding_toptier_agency_code = models.TextField()
     awarding_subtier_agency_code = models.TextField()
     funding_subtier_agency_code = models.TextField()
+    funding_toptier_agency_agg_key = models.TextField()
+    funding_subtier_agency_agg_key = models.TextField()
 
     recipient_location_country_code = models.TextField()
     recipient_location_country_name = models.TextField()
@@ -92,8 +96,6 @@ class BaseAwardSearchModel(models.Model):
     pop_city_name = models.TextField()
 
     cfda_program_title = models.TextField()
-    cfda_id = models.IntegerField()
-    cfda_url = models.TextField()
     cfda_number = models.TextField()
     sai_number = models.TextField()
     type_of_contract_pricing = models.TextField()
@@ -104,6 +106,14 @@ class BaseAwardSearchModel(models.Model):
     product_or_service_description = models.TextField()
     naics_code = models.TextField()
     naics_description = models.TextField()
+
+    recipient_location_county_agg_key = models.TextField()
+    recipient_location_congressional_agg_key = models.TextField()
+    recipient_location_state_agg_key = models.TextField()
+
+    pop_county_agg_key = models.TextField()
+    pop_congressional_agg_key = models.TextField()
+    pop_state_agg_key = models.TextField()
 
     tas_paths = ArrayField(models.TextField(), default=list)
     tas_components = ArrayField(models.TextField(), default=list)
