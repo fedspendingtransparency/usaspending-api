@@ -1,11 +1,7 @@
-import asyncio
 import logging
 
 from django.db import connection
 from django.core.management.base import BaseCommand
-
-from usaspending_api.common.data_connectors.async_sql_query import async_run_update
-from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
 logger = logging.getLogger("script")
 
