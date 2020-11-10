@@ -7,10 +7,8 @@ from rest_framework.response import Response
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchSpendingPaginationMixin
 from usaspending_api.disaster.v2.views.federal_account.federal_account_result import FedAcctResults, FedAccount, TAS
 from usaspending_api.disaster.v2.views.disaster_base import (
-    DisasterBase,
     PaginationMixin,
     SpendingMixin,
     FabaOutlayMixin,
@@ -35,17 +33,12 @@ def construct_response(results: list, pagination: Pagination):
 
 
 class SpendingViewSet(
-    PaginationMixin,
-    SpendingMixin,
-    FabaOutlayMixin,
-    ElasticsearchAccountDisasterBase,
-    ElasticsearchSpendingPaginationMixin,
-    DisasterBase,
+    SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase, PaginationMixin,
 ):
     """ Returns disaster spending by federal account. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
-    agg_key = "financial_accounts_by_award.treasury_account_id"  # "financial_accounts_by_award.federal_account_id"  # primary (tier-1) aggregation key
+    agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
     nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
     query_fields = [
