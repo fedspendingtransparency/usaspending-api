@@ -184,23 +184,29 @@ class Command(BaseCommand):
 
         sql_statements = {}
 
-        sql_statements["Current:Month,   Last:Month"] = self.format_update_sql(periods["this_month"], periods["last_month"])
-        sql_statements["Current:Quarter, Last:Quarter"] = self.format_update_sql(periods["this_quarter"], periods["last_quarter"])
+        sql_statements["Current:Month,   Last:Month"] = self.format_update_sql(
+            periods["this_month"], periods["last_month"]
+        )
+        sql_statements["Current:Quarter, Last:Quarter"] = self.format_update_sql(
+            periods["this_quarter"], periods["last_quarter"]
+        )
 
         # Special case to compare the current quarter to the last month of the previous quarter
-        sql_statements["Current:Quarter, Last:Month"] = self.format_update_sql(periods["this_quarter"], periods["this_quarter"], last_is_quarter=False)
+        sql_statements["Current:Quarter, Last:Month"] = self.format_update_sql(
+            periods["this_quarter"], periods["this_quarter"], last_is_quarter=False
+        )
 
         # Special case to only compare current month to last quarter if the this month is the first of a quarter
         if periods["this_month"]["month"] in (4, 7, 10):
-            sql_statements["Current:Month,   Last:Quarter"] = self.format_update_sql(periods["this_month"], periods["last_quarter"])
+            sql_statements["Current:Month,   Last:Quarter"] = self.format_update_sql(
+                periods["this_month"], periods["last_quarter"]
+            )
 
         loop = asyncio.new_event_loop()
         tasks = []
 
         for description, sql in sql_statements.items():
-            tasks.append(
-                asyncio.ensure_future(async_run_update(sql, wrapper=Timer(description),), loop=loop,)
-            )
+            tasks.append(asyncio.ensure_future(async_run_update(sql, wrapper=Timer(description),), loop=loop,))
 
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
