@@ -167,7 +167,7 @@ class Command(BaseCommand):
         recent_periods = {
             "this_month": self.read_period_fields(recent_month_periods[0]),
             "last_month": self.read_period_fields(recent_month_periods[1]),
-            "last_quarter": self.read_period_fields(recent_quarter_periods[1])
+            "last_quarter": self.read_period_fields(recent_quarter_periods[1]),
         }
 
         return recent_periods
@@ -180,13 +180,15 @@ class Command(BaseCommand):
 
         # Open connection to database
         with connection.cursor() as cursor:
-            cursor.execute(UPDATE_AWARDS_SQL.format(                    
-                last_months_year=periods["last_month"]["year"],
-                last_months_month=periods["last_month"]["month"],
-                last_quarters_year=periods["last_quarter"]["year"],
-                last_quarters_month=periods["last_quarter"]["month"],
-                submission_reveal_date=submission_reveal_date
-            ))
+            cursor.execute(
+                UPDATE_AWARDS_SQL.format(
+                    last_months_year=periods["last_month"]["year"],
+                    last_months_month=periods["last_month"]["month"],
+                    last_quarters_year=periods["last_quarter"]["year"],
+                    last_quarters_month=periods["last_quarter"]["month"],
+                    submission_reveal_date=submission_reveal_date,
+                )
+            )
             logger.info(f"Update message (records updated): {cursor.statusmessage}")
 
     def update_awards_broad(self, periods):
