@@ -1,3 +1,5 @@
+from builtins import Exception
+
 import json
 
 from datetime import datetime, timezone
@@ -36,7 +38,7 @@ class TestElasticSearchIndex:
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_index_template("{}_template".format(self.index_type[:-1]))
+        self.template = retrieve_index_template(f"{self.index_type}_template")
         self.mappings = json.loads(self.template)["mappings"]
         self.etl_config = {
             "index_name": self.index_name,
@@ -64,17 +66,20 @@ class TestElasticSearchIndex:
         Get all of the transactions presented in the view and stuff them into the Elasticsearch index.
         The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
         """
-        if self.index_type == "awards":
+        if self.index_type == "award":
             view_sql_file = f"{settings.ES_AWARDS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_AWARDS_ETL_VIEW_NAME
             es_id = "award_id"
-        elif self.index_type == "covid19_faba_":
+        elif self.index_type == "covid19_faba":
             view_sql_file = f"{settings.ES_COVID19_FABA_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
-        else:
+            es_id = "financial_account_distinct_award_key"
+        elif self.index_type == "transaction":
             view_sql_file = f"{settings.ES_TRANSACTIONS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
             es_id = "transaction_id"
+        else:
+            raise Exception("Invalid index type")
 
         view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
         with connection.cursor() as cursor:
@@ -82,7 +87,7 @@ class TestElasticSearchIndex:
             cursor.execute(f"SELECT * FROM {view_name};")
             records = ordered_dictionary_fetcher(cursor)
             cursor.execute(f"DROP VIEW {view_name};")
-            if self.index_type == "covid19_faba_":
+            if self.index_type == "covid19_faba":
                 records = transform_covid19_faba_data(
                     TaskSpec(
                         name="worker",
@@ -102,14 +107,15 @@ class TestElasticSearchIndex:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
             routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
             routing_value = record.get(routing_key)
-            if self.index_type == "transactions":
+            es_id_value = record.get(es_id)
+            if self.index_type == "transaction":
                 record["federal_accounts"] = self.convert_json_arrays_to_list(record["federal_accounts"])
-            elif self.index_type == "covid19_faba_":
-                es_id = record.pop("_id")
+            elif self.index_type == "covid19_faba":
+                es_id_value = record.pop("_id")
             self.client.index(
                 index=self.index_name,
                 body=json.dumps(record, cls=DjangoJSONEncoder),
-                id=record.get(es_id),
+                id=es_id_value,
                 routing=routing_value,
             )
         # Force newly added documents to become searchable.

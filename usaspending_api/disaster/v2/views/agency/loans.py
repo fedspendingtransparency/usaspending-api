@@ -43,9 +43,7 @@ def route_agency_loans_backend(**initkwargs):
     return route_agency_loans_backend
 
 
-class LoansByAgencyViewSet(
-    LoansPaginationMixin, ElasticsearchAccountDisasterBase, LoansMixin, FabaOutlayMixin, DisasterBase
-):
+class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBase, LoansMixin, FabaOutlayMixin):
     """
         This endpoint provides insights on the Agencies awarding loans from
         disaster/emergency funding per the requested filters.
@@ -56,6 +54,7 @@ class LoansByAgencyViewSet(
     query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
+    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
     top_hits_fields = [
         "financial_accounts_by_award.funding_toptier_agency_code",
         "financial_accounts_by_award.funding_toptier_agency_name",
@@ -63,7 +62,7 @@ class LoansByAgencyViewSet(
 
     @cache_response()
     def post(self, request):
-        self.filters.update({"award_type": ["07", "08"]})
+        self.filters.update({"award_type_codes": ["07", "08"]})
         return self.perform_elasticsearch_search(loans=True)
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:

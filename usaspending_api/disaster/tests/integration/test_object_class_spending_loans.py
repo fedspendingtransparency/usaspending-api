@@ -16,7 +16,7 @@ def test_basic_object_class_award_success(
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
     expected_results = [
         {
-            "id": 1,
+            "id": "001",
             "code": "001",
             "description": "001 name",
             "award_count": 1,

@@ -15,8 +15,9 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
     """ Returns loan disaster spending by federal account. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
-    agg_key = "financial_accounts_by_award.treasury_account_id"  # "financial_accounts_by_award.federal_account_id"  primary (tier-1) aggregation key
+    agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
+    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
     query_fields = [
         "federal_account_symbol",
         "federal_account_symbol.contains",
@@ -37,7 +38,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
 
     @cache_response()
     def post(self, request):
-        self.filters.update({"award_type": ["07", "08"]})
+        self.filters.update({"award_type_codes": ["07", "08"]})
         return self.perform_elasticsearch_search(loans=True)
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:

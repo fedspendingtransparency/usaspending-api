@@ -66,7 +66,7 @@ def test_object_class_groups_by_object_classes(
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "N"], spending_type="award")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="award")
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json()["results"]) == 2
 

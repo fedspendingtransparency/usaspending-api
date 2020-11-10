@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABCMeta
 from usaspending_api.common.exceptions import InvalidParameterException
-from typing import Union, List, Optional
+from typing import Union, List
 from enum import Enum
 from elasticsearch_dsl import Q as ES_Q
 
@@ -20,7 +20,7 @@ class _Filter(metaclass=ABCMeta):
 
     @classmethod
     def generate_query(
-        cls, filter_values: Union[str, list, dict], query_type: _QueryType, nested_path: Optional[str] = ""
+        cls, filter_values: Union[str, list, dict], query_type: _QueryType, nested_path: str = ""
     ) -> dict:
 
         if filter_values is None:
@@ -31,7 +31,7 @@ class _Filter(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def generate_elasticsearch_query(
-        cls, filter_values: Union[str, list, dict], query_type: _QueryType, nested_path: Optional[str] = ""
+        cls, filter_values: Union[str, list, dict], query_type: _QueryType, nested_path: str = ""
     ) -> Union[ES_Q, List[ES_Q]]:
         """ Returns a Q object used to query Elasticsearch. """
         pass

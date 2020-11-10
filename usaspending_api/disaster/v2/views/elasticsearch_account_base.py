@@ -34,9 +34,9 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         return Response(self.perform_elasticsearch_search())
 
     def perform_elasticsearch_search(self, loans=False) -> Response:
-        filters = {f"nested_{key}": val for key, val in self.filters.items() if key != "award_type"}
-        if self.filters.get("award_type") is not None:
-            filters["award_type"] = self.filters["award_type"]
+        filters = {f"nested_{key}": val for key, val in self.filters.items() if key != "award_type_codes"}
+        if self.filters.get("award_type_codes") is not None:
+            filters["award_type_codes"] = self.filters["award_type_codes"]
         # Need to update the value of "query" to have the fields to search on
         query = filters.pop("nested_query", None)
         if query:
@@ -44,7 +44,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
 
         # Ensure that only non-zero values are taken into consideration
         filters["nested_nonzero_fields"] = list(self.nested_nonzero_fields.values())
-        filters["nonzero_fields"] = self.nonzero_fields
+        filters["nonzero_fields"] = list(self.nested_nonzero_fields.values())
         self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(filters)
         # using a set value here as doing an extra ES query is detrimental to performance
         # And the dimensions on which group-by aggregations are performed so far
@@ -234,7 +234,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             for parent in sorted_parents:
                 parent["children"] = sorted(
                     parent.get("children", []),
-                    key=lambda val: val(self.pagination.sort_key, "id"),
+                    key=lambda val: val.get(self.pagination.sort_key, "id"),
                     reverse=self.pagination.sort_order == "desc",
                 )
 

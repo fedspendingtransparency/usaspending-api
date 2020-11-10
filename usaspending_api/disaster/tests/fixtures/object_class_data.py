@@ -27,6 +27,7 @@ def basic_faba_with_object_class(award_count_sub_schedule, award_count_submissio
 @pytest.fixture
 def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_count_submission, defc_codes):
     basic_object_class = major_object_class_with_children("001", [1])
+
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
