@@ -69,7 +69,7 @@ class TestElasticSearchIndex:
         if self.index_type == "award":
             view_sql_file = f"{settings.ES_AWARDS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_AWARDS_ETL_VIEW_NAME
-            es_id = "award_id"
+            es_id = f"{self.index_type}_id"
         elif self.index_type == "covid19_faba":
             view_sql_file = f"{settings.ES_COVID19_FABA_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
@@ -77,7 +77,7 @@ class TestElasticSearchIndex:
         elif self.index_type == "transaction":
             view_sql_file = f"{settings.ES_TRANSACTIONS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
-            es_id = "transaction_id"
+            es_id = f"{self.index_type}_id"
         else:
             raise Exception("Invalid index type")
 
@@ -110,7 +110,7 @@ class TestElasticSearchIndex:
             es_id_value = record.get(es_id)
             if self.index_type == "transaction":
                 record["federal_accounts"] = self.convert_json_arrays_to_list(record["federal_accounts"])
-            elif self.index_type == "covid19_faba":
+            if self.index_type == "covid19_faba":
                 es_id_value = record.pop("_id")
             self.client.index(
                 index=self.index_name,

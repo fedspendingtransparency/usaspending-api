@@ -543,6 +543,20 @@ class QueryWithFilters:
             elif filter_type not in cls.filter_lookup.keys() and filter_type not in cls.nested_filter_lookup.keys():
                 raise InvalidParameterException(f"Invalid filter: {filter_type} does not exist.")
 
+            # Generate the query for a filter
+            if "nested_" in filter_type:
+                query = cls.nested_filter_lookup[filter_type].generate_query(filter_values, query_type, nested_path)
+                list_pointer = nested_must_queries
+            else:
+                query = cls.filter_lookup[filter_type].generate_query(filter_values, query_type)
+                list_pointer = must_queries
+
+            # Handle the possibility of multiple queries from one filter
+            if isinstance(query, list):
+                list_pointer.extend(query)
+            else:
+                list_pointer.append(query)
+
         nested_query = ES_Q("nested", path="financial_accounts_by_award", query=ES_Q("bool", must=nested_must_queries))
         if must_queries and nested_must_queries:
             must_queries.append(nested_query)
