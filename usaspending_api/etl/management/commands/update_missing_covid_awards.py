@@ -1,7 +1,11 @@
+import asyncio
 import logging
 
 from django.db import connection
 from django.core.management.base import BaseCommand
+
+from usaspending_api.common.data_connectors.async_sql_query import async_run_update
+from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
 logger = logging.getLogger("script")
 
@@ -122,7 +126,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--broad-update",
+            "--broad",
             action="store_true",
             default=False,
             help="If this option is selected, ALL covid awards not present in the current period will be updated",
@@ -131,9 +135,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         recent_periods = self.retreive_recent_periods()
 
-        if not args["broad_update"]:
+        if not options["broad"]:
             self.update_awards(recent_periods)
         else:
+            logger.info("Broad flag provided. Updating all Covid awards not reported in the latest submission")
             self.update_awards_broad(recent_periods)
 
     def read_period_fields(self, period):
@@ -176,20 +181,29 @@ class Command(BaseCommand):
         )
 
     def update_awards(self, periods):
-        # Open connection to database
-        with connection.cursor() as cursor:
 
-            cursor.execute(self.format_update_sql(periods["this_month"], periods["last_month"]))
-            cursor.execute(self.format_update_sql(periods["this_quarter"], periods["last_quarter"]))
+        sql_statements = {}
 
-            # Special case to compare the current quarter to the last month of the previous quarter
-            cursor.execute(
-                self.format_update_sql(periods["this_quarter"], periods["this_quarter"], last_is_quarter=False)
+        sql_statements["Current:Month,   Last:Month"] = self.format_update_sql(periods["this_month"], periods["last_month"])
+        sql_statements["Current:Quarter, Last:Quarter"] = self.format_update_sql(periods["this_quarter"], periods["last_quarter"])
+
+        # Special case to compare the current quarter to the last month of the previous quarter
+        sql_statements["Current:Quarter, Last:Month"] = self.format_update_sql(periods["this_quarter"], periods["this_quarter"], last_is_quarter=False)
+
+        # Special case to only compare current month to last quarter if the this month is the first of a quarter
+        if periods["this_month"]["month"] in (4, 7, 10):
+            sql_statements["Current:Month,   Last:Quarter"] = self.format_update_sql(periods["this_month"], periods["last_quarter"])
+
+        loop = asyncio.new_event_loop()
+        tasks = []
+
+        for description, sql in sql_statements.items():
+            tasks.append(
+                asyncio.ensure_future(async_run_update(sql, wrapper=Timer(description),), loop=loop,)
             )
 
-            # Special case to only compare current month to last quarter if the this month is the first of a quarter
-            if periods["this_month"]["month"] in (4, 7, 10):
-                cursor.execute(self.format_update_sql(periods["this_month"], periods["last_quarter"]))
+        loop.run_until_complete(asyncio.gather(*tasks))
+        loop.close()
 
     def update_awards_broad(self, periods):
         submission_reveal_date = periods["this_month"]["submission_reveal_date"]
@@ -197,3 +211,4 @@ class Command(BaseCommand):
         # Open connection to database
         with connection.cursor() as cursor:
             cursor.execute(UPDATE_AWARDS_BROAD_SQL.format(submission_reveal_date))
+            logger.info(f"Update message (records updated): {cursor.statusmessage}")
