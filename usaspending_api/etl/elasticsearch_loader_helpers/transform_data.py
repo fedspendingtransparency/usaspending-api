@@ -38,8 +38,8 @@ def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[d
         award_type = record.pop("type")
         generated_unique_award_id = record.pop("generated_unique_award_id")
         total_loan_value = record.pop("total_loan_value")
-        obligated_sum = record.get("transaction_obligated_amount") or 0
-        outlay_sum = record.get("gross_outlay_amount_by_award_cpe") or 0
+        obligated_sum = record.get("transaction_obligated_amount", 0)
+        outlay_sum = record.get("gross_outlay_amount_by_award_cpe", 0)
         temp_key = disinct_award_key
         if temp_key not in results:
             results[temp_key] = {
@@ -53,8 +53,9 @@ def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[d
                 "outlay_sum": 0,
                 "_id": es_id_field,
             }
-        results[temp_key]["outlay_sum"] += outlay_sum
         results[temp_key]["obligated_sum"] += obligated_sum
+        if record.get("is_final_balances_for_fy"):
+            results[temp_key]["outlay_sum"] += outlay_sum
         results[temp_key]["financial_accounts_by_award"].append(record)
 
     if len(results) != len(records):
