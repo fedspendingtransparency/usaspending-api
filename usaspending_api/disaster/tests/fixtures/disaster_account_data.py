@@ -430,6 +430,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_l,
         transaction_obligated_amount=2,
         gross_outlay_amount_by_award_cpe=20000000,
+        distinct_award_key=0,
     )
     mommy.make(
         faba,
@@ -439,6 +440,7 @@ def disaster_account_data():
         transaction_obligated_amount=20,
         gross_outlay_amount_by_award_cpe=2000000,
         award=a3,
+        distinct_award_key=3,
     )
     mommy.make(
         faba,
@@ -448,6 +450,7 @@ def disaster_account_data():
         transaction_obligated_amount=200,
         gross_outlay_amount_by_award_cpe=200000,
         award=a3,
+        distinct_award_key=3,
     )
     mommy.make(
         faba,
@@ -457,6 +460,7 @@ def disaster_account_data():
         transaction_obligated_amount=1000,
         gross_outlay_amount_by_award_cpe=10000,
         award=a1,
+        distinct_award_key=1,
     )
     mommy.make(
         faba,
@@ -466,6 +470,7 @@ def disaster_account_data():
         transaction_obligated_amount=1000,
         gross_outlay_amount_by_award_cpe=10000,
         award=a1,
+        distinct_award_key=1,
     )
     mommy.make(
         faba,
@@ -475,6 +480,7 @@ def disaster_account_data():
         transaction_obligated_amount=20000,
         gross_outlay_amount_by_award_cpe=2000,
         award=a3,
+        distinct_award_key=3,
     )
     mommy.make(
         faba,
@@ -484,6 +490,7 @@ def disaster_account_data():
         transaction_obligated_amount=200000,
         gross_outlay_amount_by_award_cpe=200,
         award=a3,
+        distinct_award_key=3,
     )
     mommy.make(
         faba,
@@ -493,6 +500,7 @@ def disaster_account_data():
         transaction_obligated_amount=2000000,
         gross_outlay_amount_by_award_cpe=20,
         award=a2,
+        distinct_award_key=2,
     )
     mommy.make(
         faba,
@@ -502,6 +510,7 @@ def disaster_account_data():
         transaction_obligated_amount=20000000,
         gross_outlay_amount_by_award_cpe=2,
         award=a3,
+        distinct_award_key=3,
     )
     mommy.make(
         faba,
@@ -511,6 +520,7 @@ def disaster_account_data():
         transaction_obligated_amount=0,
         gross_outlay_amount_by_award_cpe=0,
         award=a3,
+        distinct_award_key=3,
     )
     mommy.make(
         faba,
@@ -520,6 +530,7 @@ def disaster_account_data():
         transaction_obligated_amount=20,
         gross_outlay_amount_by_award_cpe=2000000,
         award=a3,
+        distinct_award_key=3,
     )
     mommy.make(
         faba,
@@ -529,6 +540,7 @@ def disaster_account_data():
         transaction_obligated_amount=200,
         gross_outlay_amount_by_award_cpe=200000,
         award=a3,
+        distinct_award_key=3,
     )
     mommy.make(
         faba,
@@ -538,6 +550,7 @@ def disaster_account_data():
         transaction_obligated_amount=-2,
         gross_outlay_amount_by_award_cpe=200000000,
         award=a4,
+        distinct_award_key=4,
     )
     mommy.make(
         faba,
@@ -547,6 +560,7 @@ def disaster_account_data():
         transaction_obligated_amount=80,
         gross_outlay_amount_by_award_cpe=20,
         award=a1,
+        distinct_award_key=1,
     )
 
     mommy.make(

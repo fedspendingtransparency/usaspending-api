@@ -25,8 +25,7 @@ Returns loan spending details of Object Classes receiving supplemental funding b
 
             {
                 "filter": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
-                    "award_type_codes": ["07", "08"]
+                    "def_codes": ["L", "M", "N", "O", "P"]
                 },
                 "pagination": {
                     "limit": 10,
