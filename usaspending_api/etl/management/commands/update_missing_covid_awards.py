@@ -72,7 +72,7 @@ WHERE
     AND update_date < '{submission_reveal_date}'
 """
 
-UPDATE_AWARDS_BROAD_SQL = """
+UPDATE_AWARDS_ALL_SQL = """
 WITH covid_awards AS (
     SELECT
         DISTINCT ON
@@ -106,7 +106,7 @@ WHERE
         WHERE
             covid_awards.is_final_balances_for_fy = FALSE
     )
-    AND update_date < '{}'
+    AND update_date < '{submission_reveal_date}'
 """
 
 RECENT_PERIOD_SQL = """
@@ -118,7 +118,7 @@ SELECT
 FROM
     dabs_submission_window_schedule
 WHERE
-    is_quarter = {}
+    is_quarter = {is_quarter}
     AND submission_reveal_date < NOW()
 ORDER BY
     submission_fiscal_year DESC,
@@ -137,31 +137,41 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--broad",
+            "--all",
             action="store_true",
             default=False,
             help="If this option is selected, ALL covid awards not present in the current period will be updated",
         )
 
     def handle(self, *args, **options):
-        recent_periods = self.retreive_recent_periods()
+        periods = self.retreive_recent_periods()
 
-        if not options["broad"]:
-            self.update_awards(recent_periods)
+        submission_reveal_date = periods["this_month"]["submission_reveal_date"]
+
+        if not options["all"]:
+            formatted_update_sql = UPDATE_AWARDS_SQL.format(
+                last_months_year=periods["last_month"]["year"],
+                last_months_month=periods["last_month"]["month"],
+                last_quarters_year=periods["last_quarter"]["year"],
+                last_quarters_month=periods["last_quarter"]["month"],
+                submission_reveal_date=submission_reveal_date,
+            )
         else:
-            logger.info("Broad flag provided. Updating all Covid awards not reported in the latest submission")
-            self.update_awards_broad(recent_periods)
+            logger.info("All flag provided. Updating all Covid awards not reported in the latest submission")
+            formatted_update_sql = UPDATE_AWARDS_ALL_SQL.format(submission_reveal_date=submission_reveal_date)
+
+        self.update_awards(formatted_update_sql)
 
     def retreive_recent_periods(self):
         # Open connection to database
         with connection.cursor() as cursor:
 
             # Query for most recent closed month periods
-            cursor.execute(RECENT_PERIOD_SQL.format("FALSE"))
+            cursor.execute(RECENT_PERIOD_SQL.format(is_quarter="FALSE"))
             recent_month_periods = cursor.fetchmany(2)
 
             # Query for most recent closed quarter periods
-            cursor.execute(RECENT_PERIOD_SQL.format("TRUE"))
+            cursor.execute(RECENT_PERIOD_SQL.format(is_quarter="TRUE"))
             recent_quarter_periods = cursor.fetchmany(2)
 
         recent_periods = {
@@ -175,26 +185,9 @@ class Command(BaseCommand):
     def read_period_fields(self, period):
         return {"month": period[0], "year": period[1], "submission_reveal_date": period[3]}
 
-    def update_awards(self, periods):
-        submission_reveal_date = periods["this_month"]["submission_reveal_date"]
+    def update_awards(self, update_sql):
 
         # Open connection to database
         with connection.cursor() as cursor:
-            cursor.execute(
-                UPDATE_AWARDS_SQL.format(
-                    last_months_year=periods["last_month"]["year"],
-                    last_months_month=periods["last_month"]["month"],
-                    last_quarters_year=periods["last_quarter"]["year"],
-                    last_quarters_month=periods["last_quarter"]["month"],
-                    submission_reveal_date=submission_reveal_date,
-                )
-            )
-            logger.info(f"Update message (records updated): {cursor.statusmessage}")
-
-    def update_awards_broad(self, periods):
-        submission_reveal_date = periods["this_month"]["submission_reveal_date"]
-
-        # Open connection to database
-        with connection.cursor() as cursor:
-            cursor.execute(UPDATE_AWARDS_BROAD_SQL.format(submission_reveal_date))
+            cursor.execute(update_sql)
             logger.info(f"Update message (records updated): {cursor.statusmessage}")
