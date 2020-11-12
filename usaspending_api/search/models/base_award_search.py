@@ -88,7 +88,6 @@ class BaseAwardSearchModel(models.Model):
     pop_state_population = models.IntegerField()
     pop_county_code = models.TextField()
     pop_county_name = models.TextField()
-    pop_country_population = models.IntegerField()
     pop_city_code = models.TextField()
     pop_zip5 = models.TextField()
     pop_congressional_population = models.IntegerField()
