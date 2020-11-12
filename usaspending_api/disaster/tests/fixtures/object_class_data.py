@@ -20,6 +20,7 @@ def basic_faba_with_object_class(award_count_sub_schedule, award_count_submissio
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
         object_class=basic_object_class[0],
+        transaction_obligated_amount=1,
     )
 
 
@@ -142,6 +143,7 @@ def faba_with_object_class_and_two_awards(award_count_sub_schedule, award_count_
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
         object_class=basic_object_class[0],
+        transaction_obligated_amount=1,
     )
 
     mommy.make(
@@ -151,6 +153,7 @@ def faba_with_object_class_and_two_awards(award_count_sub_schedule, award_count_
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
         object_class=basic_object_class[0],
+        transaction_obligated_amount=1,
     )
 
 
@@ -169,6 +172,7 @@ def faba_with_two_object_classes_and_two_awards(award_count_sub_schedule, award_
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
         object_class=object_class1[0],
+        transaction_obligated_amount=1,
     )
 
     mommy.make(
@@ -178,6 +182,7 @@ def faba_with_two_object_classes_and_two_awards(award_count_sub_schedule, award_
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
         object_class=object_class2[0],
+        transaction_obligated_amount=1,
     )
 
 
