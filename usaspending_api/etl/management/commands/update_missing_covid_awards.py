@@ -9,7 +9,8 @@ UPDATE_AWARDS_SQL = """
 WITH recent_covid_awards AS (
     SELECT
         DISTINCT ON
-        (faba.award_id) faba.award_id, sa.submission_id, sa.is_final_balances_for_fy, sa.reporting_fiscal_year, sa.reporting_fiscal_period, sa.quarter_format_flag
+        (faba.award_id) faba.award_id,
+        sa.is_final_balances_for_fy
     FROM
         financial_accounts_by_awards faba
     INNER JOIN disaster_emergency_fund_code defc ON
@@ -76,7 +77,8 @@ UPDATE_AWARDS_ALL_SQL = """
 WITH covid_awards AS (
     SELECT
         DISTINCT ON
-        (faba.award_id) faba.award_id, sa.submission_id, sa.is_final_balances_for_fy, sa.reporting_fiscal_year, sa.reporting_fiscal_period, sa.quarter_format_flag
+        (faba.award_id) faba.award_id,
+        sa.is_final_balances_for_fy
     FROM
         financial_accounts_by_awards faba
     INNER JOIN disaster_emergency_fund_code defc ON
