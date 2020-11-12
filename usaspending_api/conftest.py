@@ -117,7 +117,7 @@ def elasticsearch_transaction_index(db):
 
     See test_demo_elasticsearch_tests.py for sample usage.
     """
-    elastic_search_index = TestElasticSearchIndex("transactions")
+    elastic_search_index = TestElasticSearchIndex("transaction")
     with override_settings(ES_TRANSACTIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
         yield elastic_search_index
         elastic_search_index.delete_index()
@@ -132,8 +132,23 @@ def elasticsearch_award_index(db):
 
     See test_award_index_elasticsearch_tests.py for sample usage.
     """
-    elastic_search_index = TestElasticSearchIndex("awards")
+    elastic_search_index = TestElasticSearchIndex("award")
     with override_settings(ES_AWARDS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
+        yield elastic_search_index
+        elastic_search_index.delete_index()
+
+
+@pytest.fixture
+def elasticsearch_account_index(db):
+    """
+    Add this fixture to your test if you intend to use the Elasticsearch
+    account index.  To use, create some mock database data then call
+    elasticsearch_account_index.update_index to populate Elasticsearch.
+
+    See test_account_index_elasticsearch_tests.py for sample usage.
+    """
+    elastic_search_index = TestElasticSearchIndex("covid19_faba")
+    with override_settings(ES_COVID19_FABA_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
         yield elastic_search_index
         elastic_search_index.delete_index()
 

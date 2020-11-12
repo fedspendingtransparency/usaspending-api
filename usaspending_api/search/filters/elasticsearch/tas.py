@@ -11,7 +11,7 @@ class TasCodes(_Filter, HierarchicalFilter):
     underscore_name = "tas_codes"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType, nested_path: str = "") -> ES_Q:
         if isinstance(filter_values, list):
             # This is a legacy usage, and will be dealt with by the other filter
             return TreasuryAccounts.generate_elasticsearch_query(filter_values, query_type)
