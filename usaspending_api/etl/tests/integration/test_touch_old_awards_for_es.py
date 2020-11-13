@@ -9,6 +9,7 @@ from model_mommy import mommy
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 
 OLD_DATE = "2020-04-05"
+SCRIPT_NAME = "update_missing_covid_awards"
 
 
 @pytest.fixture
@@ -207,7 +208,7 @@ def test_happy_path(submissions, award_data1):
     Award.objects.filter(pk=award_data1).update(update_date=OLD_DATE)
     original_datetime = Award.objects.get(id=award_data1)
 
-    call_command("update_missing_covid_awards")
+    call_command(SCRIPT_NAME)
 
     after = Award.objects.get(id=award_data1)
 
@@ -217,7 +218,7 @@ def test_happy_path(submissions, award_data1):
 
 
 def test_multiple_awards_update_date(submissions, award_data2):
-    """Simple test case: update 5 award records, excluding 5 based on update_date"""
+    """Update 5 award records, excluding 5 based on update_date"""
     award_id, yesterday = award_data2
     today = datetime.now(timezone.utc)
 
@@ -225,7 +226,7 @@ def test_multiple_awards_update_date(submissions, award_data2):
     assert Award.objects.filter(update_date__lt="2020-05-01").count() == 5, "Incorrect number of stale awards"
     assert Award.objects.filter(update_date__gt=yesterday).count() == 0, "Incorrect number of recent awards"
 
-    call_command("update_missing_covid_awards")
+    call_command(SCRIPT_NAME)
 
     assert Award.objects.filter(update_date__gt=yesterday).count() == 5, "Incorrect number of awards updated"
     assert Award.objects.get(id=award_id).update_date - today < timedelta(minutes=1), "Expected award wasn't updated"
@@ -245,7 +246,7 @@ def test_multiple_awards_monthly(submissions, award_data3):
     assert old_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "mock data doesn't meet expectations"
     assert new_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "mock data doesn't meet expectations"
 
-    call_command("update_missing_covid_awards")
+    call_command(SCRIPT_NAME)
 
     old_award_after = Award.objects.filter(fain=old_award.fain).aggregate(Max("update_date"))
     new_award_after = Award.objects.filter(fain=current_award.fain).aggregate(Max("update_date"))
@@ -268,7 +269,7 @@ def test_multiple_awards_monthly_requiring_all(submissions, award_data4):
     assert old_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "mock data doesn't meet expectations"
     assert new_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "mock data doesn't meet expectations"
 
-    call_command("update_missing_covid_awards")
+    call_command(SCRIPT_NAME)
 
     old_award_after = Award.objects.filter(fain=old_award.fain).aggregate(Max("update_date"))
     new_award_after = Award.objects.filter(fain=current_award.fain).aggregate(Max("update_date"))
@@ -276,7 +277,7 @@ def test_multiple_awards_monthly_requiring_all(submissions, award_data4):
     assert old_award_after["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "Award was incorrectly updated"
     assert new_award_after["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "Award was incorrectly updated"
 
-    call_command("update_missing_covid_awards", "--all")
+    call_command(SCRIPT_NAME, "--all")
 
     old_award_after = Award.objects.filter(fain=old_award.fain).aggregate(Max("update_date"))
     new_award_after = Award.objects.filter(fain=current_award.fain).aggregate(Max("update_date"))
@@ -298,19 +299,19 @@ def test_multiple_awards_different_submissions(submissions, award_mixed_periods)
     old_quarterly_award_before = Award.objects.filter(piid=old_quarterly_award.piid).aggregate(Max("update_date"))
     new_quarterly_award_before = Award.objects.filter(piid=current_quarterly_award.piid).aggregate(Max("update_date"))
 
-    assert old_monthly_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE
-    assert new_monthly_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE
-    assert old_quarterly_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE
-    assert new_quarterly_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE
+    assert old_monthly_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "Incorrect starting date"
+    assert new_monthly_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "Incorrect starting date"
+    assert old_quarterly_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "Incorrect starting date"
+    assert new_quarterly_award_before["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "Incorrect starting date"
 
-    call_command("update_missing_covid_awards")
+    call_command(SCRIPT_NAME)
 
     old_monthly_award_after = Award.objects.filter(piid=old_monthly_award.piid).aggregate(Max("update_date"))
     new_monthly_award_after = Award.objects.filter(piid=current_monthly_award.piid).aggregate(Max("update_date"))
     old_quarterly_award_after = Award.objects.filter(piid=old_quarterly_award.piid).aggregate(Max("update_date"))
     new_quarterly_award_after = Award.objects.filter(piid=current_quarterly_award.piid).aggregate(Max("update_date"))
 
-    assert old_monthly_award_after["update_date__max"].strftime("%Y-%m-%d") > OLD_DATE
-    assert new_monthly_award_after["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE
-    assert old_quarterly_award_after["update_date__max"].strftime("%Y-%m-%d") > OLD_DATE
-    assert new_quarterly_award_after["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE
+    assert old_monthly_award_after["update_date__max"].strftime("%Y-%m-%d") > OLD_DATE, "Update didn't occur"
+    assert new_monthly_award_after["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "Incorrectly updated"
+    assert old_quarterly_award_after["update_date__max"].strftime("%Y-%m-%d") > OLD_DATE, "Update didn't occur"
+    assert new_quarterly_award_after["update_date__max"].strftime("%Y-%m-%d") == OLD_DATE, "Incorrectly updated"
