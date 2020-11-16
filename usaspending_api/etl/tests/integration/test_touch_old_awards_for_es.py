@@ -17,9 +17,9 @@ def submissions(db):
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=2020061,
-        submission_reveal_date="2020-04-01",
         submission_fiscal_year=2020,
         submission_fiscal_month=6,
+        submission_reveal_date="2020-04-01",
         is_quarter=True,
     )
     mommy.make(
