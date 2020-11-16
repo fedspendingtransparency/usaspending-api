@@ -217,6 +217,20 @@ def test_happy_path(submissions, award_data1):
     assert after.update_date - today < timedelta(minutes=1), "New datetime isn't today"
 
 
+def test_count_only_flag(submissions, award_data1):
+    """No awards should be updated when --count-only flag is present"""
+
+    Award.objects.filter(pk=award_data1).update(update_date=OLD_DATE)
+    original_datetime = Award.objects.get(id=award_data1)
+
+    call_command(SCRIPT_NAME, "--count-only")
+    call_command(SCRIPT_NAME, "--all", "--count-only")
+
+    after = Award.objects.get(id=award_data1)
+
+    assert original_datetime.update_date == after.update_date, "Award was incorrectly updated"
+
+
 def test_multiple_awards_update_date(submissions, award_data2):
     """Update 5 award records, excluding 5 based on update_date"""
     award_id, yesterday = award_data2
