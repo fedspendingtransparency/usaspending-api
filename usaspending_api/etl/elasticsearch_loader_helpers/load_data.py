@@ -1,23 +1,49 @@
 import logging
 
-from elasticsearch import helpers
+from elasticsearch import Elasticsearch, helpers
 from time import perf_counter
+from typing import List, Tuple
 
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import delete_docs_by_unique_key
-from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_log
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log
 
 
 logger = logging.getLogger("script")
 
+# Assuming >=4GB RAM per vCPU of the data nodes in the ES cluster, use below settings for calibrating the max
+# batch size of JSON docs for each bulk indexing HTTP request to the ES cluster
+# Indexing should get distributed among the cluster
+# Mileage may vary - try out different batch sizes
+# It may be better to see finer-grain metrics by using higher request rates with shorter index-durations,
+# rather than a busier indexing process (i.e. err on the smaller batch sizes to get feedback)
+# Aiming for a batch that yields each ES cluster data-node handling max 0.3-1MB per vCPU per batch request
+# Ex: 3-data-node cluster of i3.large.elasticsearch = 2 vCPU * 3 nodes = 6 vCPU: .75MB*6 ~= 4.5MB batches
+# Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: .75MB*20 ~= 15MB batches
+ES_MAX_BATCH_BYTES = 10 * 1024 * 1024
+# Aiming for a batch that yields each ES cluster data-node handling max 100-400 doc entries per vCPU per request
+# Ex: 3-data-node cluster of i3.large.elasticsearch = 2 vCPU * 3 nodes = 6 vCPU: 300*6 = 1800 doc batches
+# Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: 300*20 = 6000 doc batches
+ES_BATCH_ENTRIES = 4000
 
-def load_data(worker, records, client):
+
+def load_data(worker: TaskSpec, records: List[dict], client: Elasticsearch) -> Tuple[int, int]:
     start = perf_counter()
     logger.info(format_log(f"Starting Index operation", name=worker.name, action="Index"))
-    streaming_post_to_es(client, records, worker.index, worker.name, delete_before_index=worker.is_incremental)
+    success, failed = streaming_post_to_es(
+        client, records, worker.index, worker.name, delete_before_index=worker.is_incremental
+    )
     logger.info(format_log(f"Index operation took {perf_counter() - start:.2f}s", name=worker.name, action="Index"))
+    return success, failed
 
 
-def streaming_post_to_es(client, chunk, index_name: str, job_name=None, delete_before_index=True, delete_key="_id"):
+def streaming_post_to_es(
+    client: Elasticsearch,
+    chunk: list,
+    index_name: str,
+    job_name: str = None,
+    delete_before_index: bool = True,
+    delete_key: str = "_id",
+) -> Tuple[int, int]:
     """
     Pump data into an Elasticsearch index.
 
@@ -41,12 +67,20 @@ def streaming_post_to_es(client, chunk, index_name: str, job_name=None, delete_b
 
     Returns: (succeeded, failed) tuple, which counts successful index doc writes vs. failed doc writes
     """
+
     success, failed = 0, 0
     try:
         if delete_before_index:
             value_list = [doc[delete_key] for doc in chunk]
             delete_docs_by_unique_key(client, delete_key, value_list, job_name, index_name)
-        for ok, item in helpers.parallel_bulk(client, chunk, index=index_name):
+        for ok, item in helpers.streaming_bulk(
+            client,
+            actions=chunk,
+            chunk_size=ES_BATCH_ENTRIES,
+            max_chunk_bytes=ES_MAX_BATCH_BYTES,
+            max_retries=10,
+            index=index_name,
+        ):
             if ok:
                 success += 1
             else:
