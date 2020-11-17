@@ -227,6 +227,8 @@ class Command(BaseCommand):
             # Log results
             if dry_run:
                 count = cursor.fetchone()[0]
-                logger.info(f"There are {count:,} award records which should be reloaded into Elasticsearch for data consistency.")
+                logger.info(
+                    f"There are {count:,} award records which should be reloaded into Elasticsearch for data consistency."
+                )
             else:
                 logger.info(f"Update message (records updated): {cursor.statusmessage}")
