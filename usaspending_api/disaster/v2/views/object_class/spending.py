@@ -44,7 +44,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
     # Defined for the Elasticsearch implementation of Spending by Award
     agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
+    nonzero_fields = {"outlay": "total_covid_outlay", "obligation": "total_covid_obligation"}
     query_fields = [
         "major_object_class_name",
         "major_object_class_name.contains",

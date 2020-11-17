@@ -344,11 +344,11 @@
         "scaling_factor": 100,
         "type": "scaled_float"
       },
-      "obligated_sum": {
+      "total_covid_obligation": {
         "scaling_factor": 100,
         "type": "scaled_float"
       },
-      "outlay_sum": {
+      "total_covid_outlay": {
         "scaling_factor": 100,
         "type": "scaled_float"
       }

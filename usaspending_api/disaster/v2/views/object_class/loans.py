@@ -19,7 +19,7 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/loans.md"
     agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
+    nonzero_fields = {"outlay": "total_covid_outlay", "obligation": "total_covid_obligation"}
     query_fields = [
         "major_object_class_name",
         "major_object_class_name.contains",

@@ -54,7 +54,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBas
     query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
+    nonzero_fields = {"outlay": "total_covid_outlay", "obligation": "total_covid_obligation"}
     top_hits_fields = [
         "financial_accounts_by_award.funding_toptier_agency_code",
         "financial_accounts_by_award.funding_toptier_agency_name",

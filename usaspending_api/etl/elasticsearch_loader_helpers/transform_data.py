@@ -49,12 +49,12 @@ def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[d
                 "generated_unique_award_id": generated_unique_award_id,
                 "total_loan_value": total_loan_value,
                 "financial_accounts_by_award": list(),
-                "obligated_sum": 0,
-                "outlay_sum": 0,
+                "total_covid_obligation": 0,
+                "total_covid_outlay": 0,
                 "_id": es_id_field,
             }
-        results[temp_key]["outlay_sum"] += outlay_sum
-        results[temp_key]["obligated_sum"] += obligated_sum
+        results[temp_key]["total_covid_outlay"] += outlay_sum
+        results[temp_key]["total_covid_obligation"] += obligated_sum
         results[temp_key]["financial_accounts_by_award"].append(record)
 
     if len(results) != len(records):

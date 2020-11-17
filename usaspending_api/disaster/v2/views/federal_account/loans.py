@@ -17,7 +17,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
     agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
+    nonzero_fields = {"outlay": "total_covid_outlay", "obligation": "total_covid_obligation"}
     query_fields = [
         "federal_account_symbol",
         "federal_account_symbol.contains",

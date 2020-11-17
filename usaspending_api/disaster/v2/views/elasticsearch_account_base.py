@@ -50,7 +50,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         # And the dimensions on which group-by aggregations are performed so far
         # (agency, TAS, object_class) all have cardinality less than this number
         # If the data increases to a point where there are more results than this, it should be changed
-        self.bucket_count = 1000
+        self.bucket_count = 10000
         messages = []
         if self.pagination.sort_key in ("id", "code"):
             messages.append(
