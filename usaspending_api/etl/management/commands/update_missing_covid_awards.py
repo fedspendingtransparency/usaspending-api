@@ -5,14 +5,6 @@ from django.core.management.base import BaseCommand
 
 logger = logging.getLogger("script")
 
-"""
-NOTE: This command should be run on the `submission_reveal_date` of each period. This
-will ensure that covid values in elasticsearch are correctly each period. Running the
-command more frequently (ex. daily) will not result in values being constantly recalculated
-because an award's `updated_date` is compared against the `submission_reveal_date`
-when determining which awards to update.
-"""
-
 UPDATE_AWARDS_SQL = """
 WITH recent_covid_awards AS (
     SELECT
@@ -146,12 +138,18 @@ FROM
 
 
 class Command(BaseCommand):
+    """
+    NOTE: This command should be run on the `submission_reveal_date` of each period. This
+    will ensure that covid values in elasticsearch are correctly each period. Running the
+    command more frequently (ex. daily) will not result in values being constantly recalculated
+    because an award's `updated_date` is compared against the `submission_reveal_date`
+    when determining which awards to update.
+    """
 
     help = (
         "This command sets the 'update_date' field on award records with Covid "
         "faba records present in a submission from the previous submission but "
-        "not in the current period's submission. This should be run after each "
-        "period's `submission_reveal_date`. Running the command more frequently"
+        "not in the current period's submission."
     )
 
     def add_arguments(self, parser):
@@ -163,7 +161,7 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--count-only",
+            "--dry-run",
             action="store_true",
             default=False,
             help="If this option is selected, awards will not be updated. The count of awards that would have been updated will instead be logged",
@@ -173,11 +171,11 @@ class Command(BaseCommand):
         periods = self.retreive_recent_periods()
 
         submission_reveal_date = periods["this_month"]["submission_reveal_date"]
-        count_only = options["count_only"]
+        dry_run = options["dry_run"]
 
         operation_sql = UPDATE_OPERATION_SQL
-        if count_only:
-            logger.info("Count only flag provided. No records will be updated.")
+        if dry_run:
+            logger.info("Dry run flag provided. No records will be updated.")
             operation_sql = COUNT_OPERATION_SQL
 
         if not options["all"]:
@@ -195,7 +193,7 @@ class Command(BaseCommand):
                 submission_reveal_date=submission_reveal_date, operation_sql=operation_sql
             )
 
-        self.execute_sql(formatted_update_sql, count_only)
+        self.execute_sql(formatted_update_sql, dry_run)
 
     def retreive_recent_periods(self):
         # Open connection to database
@@ -220,15 +218,15 @@ class Command(BaseCommand):
     def read_period_fields(self, period):
         return {"month": period[0], "year": period[1], "submission_reveal_date": period[3]}
 
-    def execute_sql(self, update_sql, count_only):
+    def execute_sql(self, update_sql, dry_run):
 
         # Open connection to database
         with connection.cursor() as cursor:
             cursor.execute(update_sql)
 
             # Log results
-            if count_only:
+            if dry_run:
                 count = cursor.fetchone()[0]
-                logger.info(f"Ready to update awards: {count}")
+                logger.info(f"There are {count:,} award records which should be reloaded into Elasticsearch for data consistency.")
             else:
                 logger.info(f"Update message (records updated): {cursor.statusmessage}")

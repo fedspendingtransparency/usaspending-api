@@ -223,8 +223,8 @@ def test_count_only_flag(submissions, award_data1):
     Award.objects.filter(pk=award_data1).update(update_date=OLD_DATE)
     original_datetime = Award.objects.get(id=award_data1)
 
-    call_command(SCRIPT_NAME, "--count-only")
-    call_command(SCRIPT_NAME, "--all", "--count-only")
+    call_command(SCRIPT_NAME, "--dry-run")
+    call_command(SCRIPT_NAME, "--all", "--dry-run")
 
     after = Award.objects.get(id=award_data1)
 
