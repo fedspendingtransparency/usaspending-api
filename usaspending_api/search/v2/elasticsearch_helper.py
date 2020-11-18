@@ -69,7 +69,7 @@ def spending_by_transaction_count(request_data):
     return response
 
 
-def get_sum_aggregation_results(keyword, field="transaction_amount"):
+def get_sum_aggregation_results(keyword, field="federal_action_obligation"):
     group_by_agg_key_values = {"field": field}
     aggs = A("sum", **group_by_agg_key_values)
     filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
@@ -133,7 +133,7 @@ def get_sum_and_count_aggregation_results(keyword):
         {"keyword_search": [es_minimal_sanitize(keyword)]}
     )
     search = TransactionSearch().filter(filter_query)
-    search.aggs.bucket("prime_awards_obligation_amount", {"sum": {"field": "transaction_amount"}})
+    search.aggs.bucket("prime_awards_obligation_amount", {"sum": {"field": "federal_action_obligation"}})
     search.aggs.bucket("prime_awards_count", {"value_count": {"field": "transaction_id"}})
     response = search.handle_execute()
 
