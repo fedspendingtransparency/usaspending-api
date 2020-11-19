@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agencies Reporting Publish Dates History [/api/v2/reporting/agencies/publish-dates/history?{fiscal_year,search,page,limit,order,sort}]
+# Agencies Reporting Publish Dates History [/api/v2/reporting/agencies/publish_dates/history?{fiscal_year,search,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's about the data agencies page submission overview tab. This data can be used to better understand the ways agencies submit data.
 
@@ -14,21 +14,21 @@ This endpoint returns an overview of government agencies submission data.
     + `fiscal_year`: 2020 (required, string)
         The fiscal year.
         + Default: `All`.
-    + `search`: treasury (optional, string)
+    + `search` (optional, string)
         The agency name to filter on.
-    + `page`: 1 (optional, number)
+    + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
-    + `limit`: 5 (optional, number)
+    + `limit` (optional, number)
         The number of results to include per page.
         + Default: 10
-    + `order`: `desc` (optional, enum[string])
+    + `order` (optional, enum[string])
         The direction (`asc` or `desc`) that the `sort` field will be sorted in.
         + Default: `desc`
         + Members
             + `asc`
             + `desc`
-    + `sort`: `current_total_budget_authority_amount` (optional, enum[string])
+    + `sort` (optional, enum[string])
         A data field that will be used to sort the response array.
         + Default: `current_total_budget_authority_amount`
         + Members
@@ -45,56 +45,69 @@ This endpoint returns an overview of government agencies submission data.
 
             {
                 "page_metadata": {
-                  "page": 1,
-                  "hasNext": false,
-                  "hasPrevious": false,
-                  "total": 2
+                    "page": 1,
+                    "next": 2,
+                    "previous": 0,
+                    "hasNext": false,
+                    "hasPrevious": false,
+                    "total": 2,
+                    "limit": 10
                 },
                 "results": [
-                  {
-                    "name": "Department of Health and Human Services",
-                    "abbreviation": "DHHS",
-                    "code": "020",
-                    "current_total_budget_authority_amount": 8361447130497.72,
-                    "periods": [
-                        "period": 2,
-                        "quarter": 1,
-                        "date": "2020-01-20T11:59:21Z",
-                        "certified": true,
-                        "quarterly": false,
-                        "submitted": true
-                    ]
-                  },
-                  {
-                    "name": "Department of Treasury",
-                    "abbreviation": "DOT",
-                    "code": "021",
-                    "current_total_budget_authority_amount": 8361447130497.72,
-                    "periods": [
-                        "period": 2,
-                        "quarter": 1,
-                        "date": "2020-01-20T11:59:21Z",
-                        "certified": false,
-                        "quarterly": false,
-                        "submitted": true
-                    ]
-                  }
+                    {
+                        "name": "Department of Health and Human Services",
+                        "abbreviation": "DHHS",
+                        "code": "020",
+                        "current_total_budget_authority_amount": 8361447130497.72,
+                        "periods": [
+                            "period": 2,
+                            "quarter": 1,
+                            "submission_dates": {
+                                "publication_date" : "2020-01-20T11:59:21Z",
+                                "certification_date" : "2020-01-21T10:58:21Z"
+                            },
+                            "quarterly": false,
+                            "submitted": true
+                        ]
+                    },
+                    {
+                        "name": "Department of Treasury",
+                        "abbreviation": "DOT",
+                        "code": "021",
+                        "current_total_budget_authority_amount": 8361447130497.72,
+                        "periods": [
+                            "period": 2,
+                            "quarter": 1,
+                            "submission_dates": {
+                                "publication_date" : "2020-01-20T11:59:21Z",
+                                "certification_date" : "2020-01-21T10:58:21Z"
+                            },
+                            "quarterly": false,
+                            "submitted": true
+                        ]
+                    }
                 ]
             }
 
 # Data Structures
 
-## PageMetaDataObject (object)
+## PageMetadata (object)
 + `page` (required, number)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `total` (required, number)
++ `limit` (required, number)
+
+## SubmissionDates
++ `publication_date` (required, string, nullable),
++ `certification_date` (required, string, nullable)
 
 ## Period (object)
 + `period` (required, number),
 + `quarter` (required, number),
-+ `date` (required, string, nullable),
-+ `certified` (required, boolean),
++ `submission_dates` (required, object[SubmissionDates], nullable),
 + `quarterly` (required, boolean),
 + `submitted` (required, boolean)
 

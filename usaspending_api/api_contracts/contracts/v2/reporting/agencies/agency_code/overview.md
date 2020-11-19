@@ -47,51 +47,48 @@ This endpoint returns an overview of government agency submission data.
 
             {
                 "page_metadata": {
-                  "page": 1,
-                  "hasNext": false,
-                  "hasPrevious": false,
-                  "total": 2
+                    "page": 1,
+                    "next": 2,
+                    "previous": 0,
+                    "hasNext": false,
+                    "hasPrevious": false,
+                    "total": 2,
+                    "limit": 10
                 },
                 "results": [
-                  {
-                    "name": "Department of Health and Human Services",
-                    "abbreviation": "DHHS",
-                    "code": "020",
-                    "fiscal_year": 2020,
-                    "fiscal_period": 12,
-                    "current_total_budget_authority_amount": 8361447130497.72,
-                    "recent_publication_date": "2020-01-10T11:59:21Z",
-                    "recent_publication_date_certified": false,
-                    "discrepancy_count": 20,
-                    "obligation_difference": 436376232652.87
-                  },
-                  {
-                    "name": "Department of Treasury",
-                    "abbreviation": "DOT",
-                    "code": "021",
-                    "fiscal_year": 2020,
-                    "fiscal_period": 9,
-                    "current_total_budget_authority_amount": 8361447130497.72,
-                    "recent_publication_date": null,
-                    "recent_publication_date_certified": true,
-                    "discrepancy_count": 10,
-                    "obligation_difference": 436376232652.87
-                  }
+                    {
+                        "fiscal_year": 2020,
+                        "fiscal_period": 12,
+                        "current_total_budget_authority_amount": 8361447130497.72,
+                        "recent_publication_date": "2020-01-10T11:59:21Z",
+                        "recent_publication_date_certified": false,
+                        "discrepancy_count": 20,
+                        "obligation_difference": 436376232652.87
+                    },
+                    {
+                        "fiscal_year": 2020,
+                        "fiscal_period": 9,
+                        "current_total_budget_authority_amount": 8361447130497.72,
+                        "recent_publication_date": null,
+                        "recent_publication_date_certified": true,
+                        "discrepancy_count": 10,
+                        "obligation_difference": 436376232652.87
+                    }
                 ]
             }
 
 # Data Structures
 
-## PageMetaDataObject (object)
+## PageMetadata (object)
 + `page` (required, number)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `total` (required, number)
++ `limit` (required, number)
 
 ## AgencyData (object)
-+ `name` (required, string)
-+ `abbreviation` (required, string)
-+ `code` (required, string)
 + `fiscal_year` (required, number)
 + `fiscal_period` (required, number)
 + `current_total_budget_authority_amount` (required, number)

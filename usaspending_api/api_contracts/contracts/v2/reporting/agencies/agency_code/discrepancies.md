@@ -45,30 +45,36 @@ This endpoint returns an overview of government agency tas discrepancies data.
             {
 
                 "page_metadata": {
-                  "page": 1,
-                  "hasNext": false,
-                  "hasPrevious": false,
-                  "total": 2
+                    "page": 1,
+                    "next": 2,
+                    "previous": 0,
+                    "hasNext": false,
+                    "hasPrevious": false,
+                    "total": 2,
+                    "limit": 10
                 },
                 "results": [
-                  {
-                    "tas": "210-1503",
-                    "amount": 234543543
-                  },
-                  {
-                    "tas": "012-0212",
-                    "amount": 43637623
-                  }
+                    {
+                        "tas": "210-1503",
+                        "amount": 234543543
+                    },
+                    {
+                        "tas": "012-0212",
+                        "amount": 43637623
+                    }
                 ]
             }
 
 # Data Structures
 
-## PageMetaDataObject (object)
+## PageMetadata (object)
 + `page` (required, number)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `total` (required, number)
++ `limit` (required, number)
 
 ## Tasdiscrepancies (object)
 + `tas` (required, string)

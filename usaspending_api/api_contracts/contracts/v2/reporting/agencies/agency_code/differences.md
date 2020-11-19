@@ -22,13 +22,13 @@ This endpoint returns an overview of government agency obligation differences da
     + `limit` (optional, number)
         The number of results to include per page.
         + Default: 10
-    + `order`: `desc` (optional, enum[string])
+    + `order`: (optional, enum[string])
         The direction (`asc` or `desc`) that the `sort` field will be sorted in.
         + Default: `desc`
         + Members
             + `asc`
             + `desc`
-    + `sort`: `difference` (optional, enum[string])
+    + `sort` (optional, enum[string])
         A data field that will be used to sort the response array.
         + Default: `difference`
         + Members
@@ -47,34 +47,40 @@ This endpoint returns an overview of government agency obligation differences da
             {
 
                 "page_metadata": {
-                  "page": 1,
-                  "hasNext": false,
-                  "hasPrevious": false,
-                  "total": 2
+                    "page": 1,
+                    "next": 2,
+                    "previous": 0,
+                    "hasNext": false,
+                    "hasPrevious": false,
+                    "total": 2,
+                    "limit": 10
                 },
                 "results": [
-                  {
-                    "tas": "210-1503",
-                    "file_a_obligations": 234543543,
-                    "file_b_obligations": 456438768,
-                    "difference": -221895225
-                  },
-                  {
-                    "tas": "012-0212",
-                    "file_a_obligations": 43637623,
-                    "file_b_obligations": 20486582,
-                    "difference": 23151041
-                  }
+                    {
+                        "tas": "210-1503",
+                        "file_a_obligations": 234543543,
+                        "file_b_obligations": 456438768,
+                        "difference": -221895225
+                    },
+                    {
+                        "tas": "012-0212",
+                        "file_a_obligations": 43637623,
+                        "file_b_obligations": 20486582,
+                        "difference": 23151041
+                    }
                 ]
             }
 
 # Data Structures
 
-## PageMetaDataObject (object)
+## PageMetadata (object)
 + `page` (required, number)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `total` (required, number)
++ `limit` (required, number)
 
 ## ObligationDifferences (object)
 + `tas` (required, string)

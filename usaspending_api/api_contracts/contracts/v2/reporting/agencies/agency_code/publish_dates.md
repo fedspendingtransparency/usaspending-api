@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Publish Dates [/api/v2/reporting/agencies/{agency_code}/publish-dates?{fiscal_year,fiscal_period,search,page,limit,order,sort}]
+# Agency Reporting Publish Dates [/api/v2/reporting/agencies/{agency_code}/publish_dates?{fiscal_year,fiscal_period,search,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's about the data submission history modal. This data can be used to better understand the ways agencies submit data.
 
@@ -25,19 +25,19 @@ This endpoint returns an overview of government agencies submission data.
 
             {
                 "results": [
-                  {
-                    "publish_date": "2020-10-11T11:59:21Z",
-                    "certify_date": "2020-10-22T11:59:21Z",
-                  },
-                  {
-                    "publish_date": "2020-07-10T11:59:21Z",
-                    "certify_date": "2020-07-11T11:59:21Z",
-                  }
+                    {
+                        "publication_date": "2020-10-11T11:59:21Z",
+                        "certification_date": "2020-10-22T11:59:21Z",
+                    },
+                    {
+                        "publication_date": "2020-07-10T11:59:21Z",
+                        "certification_date": "2020-07-11T11:59:21Z",
+                    }
                 ]
             }
 
 # Data Structures
 
 ## SubmissionHistory (object)
-+ `publish_date` (required, string, nullable)
-+ `certify_date` (required, string, nullable)
++ `publication_date` (required, string, nullable)
++ `certification_date` (required, string, nullable)
