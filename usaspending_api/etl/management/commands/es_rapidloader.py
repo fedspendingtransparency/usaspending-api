@@ -388,7 +388,7 @@ VIEW_COLUMNS = [
     "fiscal_year",
     "award_fiscal_year",
     "award_amount",
-    "transaction_amount",
+    "federal_action_obligation",
     "face_value_loan_guarantee",
     "original_loan_subsidy_cost",
     "generated_pragmatic_obligation",
