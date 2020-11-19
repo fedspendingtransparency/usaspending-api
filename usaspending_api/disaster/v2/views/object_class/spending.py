@@ -43,7 +43,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
     # Defined for the Elasticsearch implementation of Spending by Award
     agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
+    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
     query_fields = [
         "major_object_class_name",
@@ -61,6 +61,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
+            self.has_children=True
             return self.perform_elasticsearch_search()
         else:
             results = list(self.total_queryset)
@@ -136,13 +137,13 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             child.pop("parent_data")
             if result["code"] in temp_results.keys():
                 temp_results[result["code"]] = {
-                    "id": int(result["id"]),
+                    "id": result["id"],
                     "code": result["code"],
                     "description": result["description"],
                     "award_count": temp_results[result["code"]]["award_count"] + result["award_count"],
                     # the count of distinct awards contributing to the totals
-                    "obligation": temp_results[result["code"]]["obligation"] + result["obligation"],
-                    "outlay": temp_results[result["code"]]["outlay"] + result["outlay"],
+                    "obligation": round(temp_results[result["code"]]["obligation"] + result["obligation"], 2),
+                    "outlay": round(temp_results[result["code"]]["outlay"] + result["outlay"], 2),
                     "children": temp_results[result["code"]]["children"] + result["children"],
                 }
             else:
@@ -152,7 +153,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
     def _build_json_result(self, child):
         return {
-            "id": child["parent_data"][1],
+            "id": str(child["parent_data"][1]),
             "code": child["parent_data"][1],
             "description": child["parent_data"][0],
             "award_count": child["award_count"],
@@ -164,7 +165,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
     def _build_child_json_result(self, bucket: dict):
         return {
-            "id": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_id"],
+            "id": str(bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_id"]),
             "code": bucket["key"],
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_name"],
             # the count of distinct awards contributing to the totals
