@@ -8,8 +8,8 @@ url = "/api/v2/disaster/agency/loans/"
 
 
 @pytest.mark.django_db
-def test_basic_success(client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+def test_basic_success(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M", "N", "O", "P"])
     expected_results = [
@@ -24,7 +24,6 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
             "face_value_of_loan": 333.0,
         },
     ]
-
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
@@ -40,7 +39,10 @@ def test_basic_success(client, disaster_account_data, elasticsearch_award_index,
 
 
 @pytest.mark.django_db
-def test_award_type_codes(client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers):
+def test_award_type_codes(
+    client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
@@ -69,7 +71,6 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
             ],
         }
     ]
-
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 

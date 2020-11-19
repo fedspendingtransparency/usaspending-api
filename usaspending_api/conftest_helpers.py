@@ -1,3 +1,5 @@
+from builtins import Exception
+
 import json
 
 from datetime import datetime, timezone
@@ -17,7 +19,11 @@ from usaspending_api.common.sqs.sqs_handler import (
 )
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
-from usaspending_api.etl.elasticsearch_loader_helpers import create_award_type_aliases
+from usaspending_api.etl.elasticsearch_loader_helpers import (
+    create_award_type_aliases,
+    transform_covid19_faba_data,
+    TaskSpec,
+)
 from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
 
@@ -32,7 +38,7 @@ class TestElasticSearchIndex:
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_index_template("{}_template".format(self.index_type[:-1]))
+        self.template = retrieve_index_template(f"{self.index_type}_template")
         self.mappings = json.loads(self.template)["mappings"]
         self.etl_config = {
             "index_name": self.index_name,
@@ -60,28 +66,56 @@ class TestElasticSearchIndex:
         Get all of the transactions presented in the view and stuff them into the Elasticsearch index.
         The view is only needed to load the transactions into Elasticsearch so it is dropped after each use.
         """
-        view_sql_file = "award_delta_view.sql" if self.index_type == "awards" else "transaction_delta_view.sql"
+        if self.index_type == "award":
+            view_sql_file = f"{settings.ES_AWARDS_ETL_VIEW_NAME}.sql"
+            view_name = settings.ES_AWARDS_ETL_VIEW_NAME
+            es_id = f"{self.index_type}_id"
+        elif self.index_type == "covid19_faba":
+            view_sql_file = f"{settings.ES_COVID19_FABA_ETL_VIEW_NAME}.sql"
+            view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
+            es_id = "financial_account_distinct_award_key"
+        elif self.index_type == "transaction":
+            view_sql_file = f"{settings.ES_TRANSACTIONS_ETL_VIEW_NAME}.sql"
+            view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
+            es_id = f"{self.index_type}_id"
+        else:
+            raise Exception("Invalid index type")
+
         view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
         with connection.cursor() as cursor:
             cursor.execute(view_sql)
-            if self.index_type == "transactions":
-                view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
-            else:
-                view_name = settings.ES_AWARDS_ETL_VIEW_NAME
             cursor.execute(f"SELECT * FROM {view_name};")
-            transactions = ordered_dictionary_fetcher(cursor)
+            records = ordered_dictionary_fetcher(cursor)
             cursor.execute(f"DROP VIEW {view_name};")
-
-        for transaction in transactions:
+            if self.index_type == "covid19_faba":
+                records = transform_covid19_faba_data(
+                    TaskSpec(
+                        name="worker",
+                        index=self.index_name,
+                        sql=view_sql_file,
+                        view=view_name,
+                        base_table="financial_accounts_by_awards",
+                        base_table_id="financial_accounts_by_awards_id",
+                        field_for_es_id="financial_account_distinct_award_key",
+                        primary_key="award_id",
+                        partition_number=1,
+                        is_incremental=False,
+                    ),
+                    records,
+                )
+        for record in records:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
             routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
-            routing_value = transaction.get(routing_key)
-            if self.index_type == "transactions":
-                transaction["federal_accounts"] = self.convert_json_arrays_to_list(transaction["federal_accounts"])
+            routing_value = record.get(routing_key)
+            es_id_value = record.get(es_id)
+            if self.index_type == "transaction":
+                record["federal_accounts"] = self.convert_json_arrays_to_list(record["federal_accounts"])
+            if self.index_type == "covid19_faba":
+                es_id_value = record.pop("_id")
             self.client.index(
                 index=self.index_name,
-                body=json.dumps(transaction, cls=DjangoJSONEncoder),
-                id=transaction["{}_id".format(self.index_type[:-1])],
+                body=json.dumps(record, cls=DjangoJSONEncoder),
+                id=es_id_value,
                 routing=routing_value,
             )
         # Force newly added documents to become searchable.

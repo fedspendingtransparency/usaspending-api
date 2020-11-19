@@ -1,5 +1,6 @@
 VACUUM (ANALYZE, VERBOSE) mv_agency_autocomplete;
 VACUUM (ANALYZE, VERBOSE) mv_contract_award_search;
+VACUUM (ANALYZE, VERBOSE) mv_covid_financial_account;
 VACUUM (ANALYZE, VERBOSE) mv_directpayment_award_search;
 VACUUM (ANALYZE, VERBOSE) mv_grant_award_search;
 VACUUM (ANALYZE, VERBOSE) mv_idv_award_search;
