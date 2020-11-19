@@ -7,7 +7,7 @@ class ReportingAgencyTas(models.Model):
     period
     """
 
-    reporting_agency_tas_id = models.IntegerField(primary_key=True)
+    reporting_agency_tas_id = models.AutoField(primary_key=True)
     toptier_code = models.TextField()
     fiscal_year = models.IntegerField()
     fiscal_period = models.IntegerField()
