@@ -4,16 +4,15 @@ import logging
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import F, Value, IntegerField, Subquery, OuterRef
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.response import Response
 from typing import List
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansPaginationMixin,
     LoansMixin,
     FabaOutlayMixin,
 )
+from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchLoansPaginationMixin,
@@ -44,25 +43,48 @@ def route_agency_loans_backend(**initkwargs):
     return route_agency_loans_backend
 
 
-class LoansByAgencyViewSet(LoansPaginationMixin, LoansMixin, FabaOutlayMixin, DisasterBase):
+class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBase, LoansMixin, FabaOutlayMixin):
     """
         This endpoint provides insights on the Agencies awarding loans from
         disaster/emergency funding per the requested filters.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
+    required_filters = ["def_codes", "query"]
+    query_fields = ["funding_toptier_agency_name.contains"]
+    agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
+    nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
+    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
+    top_hits_fields = [
+        "financial_accounts_by_award.funding_toptier_agency_code",
+        "financial_accounts_by_award.funding_toptier_agency_name",
+    ]
 
     @cache_response()
     def post(self, request):
+        self.filters.update({"award_type_codes": ["07", "08"]})
+        return self.perform_elasticsearch_search(loans=True)
 
-        results = list(self.queryset.order_by(*self.pagination.robust_order_by_fields))
-        return Response(
-            {
-                "totals": self.accumulate_total_values(results, ["award_count", "face_value_of_loan"]),
-                "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
-                "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
-            }
-        )
+    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
+        results = []
+        for bucket in info_buckets:
+            results.append(self._build_json_result(bucket))
+        return results
+
+    def _build_json_result(self, bucket: dict):
+        return {
+            "id": int(bucket["key"]),
+            "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_code"],
+            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
+            # the count of distinct awards contributing to the totals
+            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
+            **{
+                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                for key, val in self.nested_nonzero_fields.items()
+            },
+            "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
+            "children": [],
+        }
 
     @property
     def queryset(self):

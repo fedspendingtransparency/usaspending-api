@@ -6,7 +6,7 @@
     "index": {
       "number_of_shards" : 5,
       "number_of_replicas" : 0,
-      "sort.field" : ["transaction_amount.keyword", "action_date"],
+      "sort.field" : ["federal_action_obligation.keyword", "action_date"],
       "sort.order" : ["desc", "desc"],
       "sort.missing": ["_last", "_last"]
     },
@@ -47,6 +47,11 @@
         "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
         "index": false
       },
+      "etl_update_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+        "index": false
+      },
       "modification_number": {
         "type": "text",
         "fields": {
@@ -70,7 +75,7 @@
       "uri": {
         "type": "keyword"
       },
-      "award_description": {
+      "transaction_description": {
         "type": "text",
         "analyzer": "stemmer_analyzer"
       },
@@ -203,7 +208,7 @@
         "type": "date",
         "format": "yyyy-MM-dd"
       },
-      "transaction_fiscal_year": {
+      "fiscal_year": {
         "type": "integer"
       },
       "award_fiscal_year": {
@@ -213,7 +218,7 @@
         "type": "scaled_float",
         "scaling_factor": 100
       },
-      "transaction_amount": {
+      "federal_action_obligation": {
         "type": "scaled_float",
         "scaling_factor": 100,
         "fields": {

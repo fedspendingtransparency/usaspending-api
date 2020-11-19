@@ -25,7 +25,10 @@ query_paths = {
                 ("parent_award_agency_id", "award__latest_transaction__contract_data__referenced_idv_agency_iden"),
                 ("parent_award_agency_name", "award__latest_transaction__contract_data__referenced_idv_agency_desc"),
                 ("parent_award_id_piid", "award__parent_award_piid"),
-                ("disaster_emergency_fund_codes", None),  # Annotation is used to create this column
+                (
+                    "disaster_emergency_fund_codes" + NAMING_CONFLICT_DISCRIMINATOR,
+                    None,
+                ),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 (
@@ -601,7 +604,10 @@ query_paths = {
                 ("award_id_fain", "award__fain"),
                 ("award_id_uri", "award__uri"),
                 ("sai_number", "award__latest_transaction__assistance_data__sai_number"),
-                ("disaster_emergency_fund_codes", None),  # Annotation is used to create this column
+                (
+                    "disaster_emergency_fund_codes" + NAMING_CONFLICT_DISCRIMINATOR,
+                    None,
+                ),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 (

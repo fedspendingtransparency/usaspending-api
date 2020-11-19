@@ -9,7 +9,6 @@ from django_cte import With
 from rest_framework.response import Response
 from typing import List
 
-from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -22,11 +21,11 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
 )
+from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
-
 
 logger = logging.getLogger(__name__)
 
@@ -57,16 +56,29 @@ def route_agency_spending_backend(**initkwargs):
     return route_agency_spending_backend
 
 
-class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, DisasterBase):
+class SpendingByAgencyViewSet(
+    PaginationMixin, SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase,
+):
     """ Returns disaster spending by agency. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
+    required_filters = ["def_codes", "award_type_codes", "query"]
+    nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
+    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
+    query_fields = [
+        "funding_toptier_agency_name",
+        "funding_toptier_agency_name.contains",
+    ]
+    agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
+    top_hits_fields = [
+        "financial_accounts_by_award.funding_toptier_agency_code",
+        "financial_accounts_by_award.funding_toptier_agency_name",
+    ]
 
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            results = self.award_queryset
-            extra_columns = ["award_count"]
+            return self.perform_elasticsearch_search()
         else:
             results = self.total_queryset
             extra_columns = ["total_budgetary_resources"]
@@ -84,6 +96,27 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
                 "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
         )
+
+    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
+        results = []
+        for bucket in info_buckets:
+            results.append(self._build_json_result(bucket))
+        return results
+
+    def _build_json_result(self, bucket: dict):
+        return {
+            "id": int(bucket["key"]),
+            "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_code"],
+            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
+            "children": [],
+            # the count of distinct awards contributing to the totals
+            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
+            **{
+                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                for key, val in self.nested_nonzero_fields.items()
+            },
+            "total_budgetary_resources": None,
+        }
 
     @property
     def total_queryset(self):
@@ -167,54 +200,6 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, D
             .values(*annotations)
         )
 
-    @property
-    def award_queryset(self):
-        cte = With(
-            ToptierAgency.objects.distinct("toptier_agency_id")
-            .filter(agency__isnull=False)
-            .annotate(agency_id=F("agency__id"), toptier_name=F("name"))
-            .values("toptier_agency_id", "agency_id", "toptier_code", "toptier_name")
-            .order_by("toptier_agency_id", "-agency__toptier_flag", "agency_id")
-        )
-
-        filters = [
-            self.is_in_provided_def_codes,
-            self.all_closed_defc_submissions,
-            Q(treasury_account__isnull=False),
-        ]
-
-        annotations = {
-            "id": cte.col.agency_id,
-            "code": cte.col.toptier_code,
-            "description": cte.col.toptier_name,
-            # Currently, this endpoint can never have children.
-            "children": Value([], output_field=ArrayField(IntegerField())),
-            "award_count": self.unique_file_d_award_count(),
-            "obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
-            "outlay": Coalesce(
-                Sum(
-                    Case(
-                        When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
-                        default=Value(0),
-                    )
-                ),
-                0,
-            ),
-            "total_budgetary_resources": Value(None, DecimalField()),  # NULL for award spending
-        }
-
-        # Assuming it is more performant to fetch all rows once rather than
-        #  run a count query and fetch only a page's worth of results
-        return (
-            cte.join(FinancialAccountsByAwards, treasury_account__funding_toptier_agency_id=cte.col.toptier_agency_id)
-            .with_cte(cte)
-            .filter(*filters)
-            .annotate(agency_id=cte.col.agency_id, toptier_code=cte.col.toptier_code, toptier_name=cte.col.toptier_name)
-            .values("agency_id", "toptier_code", "toptier_name")
-            .annotate(**annotations)
-            .values(*annotations)
-        )
-
 
 class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDisasterBase):
     """
@@ -225,7 +210,12 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
 
     required_filters = ["def_codes", "award_type_codes", "query"]
-    query_fields = ["funding_toptier_agency_name.contains"]
+    query_fields = [
+        "funding_toptier_agency_name.contains",
+        "funding_toptier_agency_name",
+        "funding_subtier_agency_name.contains",
+        "funding_subtier_agency_name",
+    ]
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
 

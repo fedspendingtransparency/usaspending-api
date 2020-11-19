@@ -130,7 +130,7 @@ def test_swap_keys():
     test = {
         "Recipient Name": "recipient_name",
         "Action Date": "action_date",
-        "Transaction Amount": "transaction_amount",
+        "Transaction Amount": "federal_action_obligation",
     }
 
     results = swap_keys(test)
@@ -138,5 +138,5 @@ def test_swap_keys():
     assert results == {
         "recipient_name": "recipient_name",
         "action_date": "action_date",
-        "transaction_amount": "transaction_amount",
+        "federal_action_obligation": "federal_action_obligation",
     }

@@ -138,6 +138,21 @@ def elasticsearch_award_index(db):
         elastic_search_index.delete_index()
 
 
+@pytest.fixture
+def elasticsearch_account_index(db):
+    """
+    Add this fixture to your test if you intend to use the Elasticsearch
+    account index.  To use, create some mock database data then call
+    elasticsearch_account_index.update_index to populate Elasticsearch.
+
+    See test_account_index_elasticsearch_tests.py for sample usage.
+    """
+    elastic_search_index = TestElasticSearchIndex("covid19_faba")
+    with override_settings(ES_COVID19_FABA_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
+        yield elastic_search_index
+        elastic_search_index.delete_index()
+
+
 @pytest.fixture(scope="session")
 def broker_db_setup(django_db_setup, django_db_use_migrations):
     """Fixture to use during a pytest session if you will run integration tests that requires an actual broker
