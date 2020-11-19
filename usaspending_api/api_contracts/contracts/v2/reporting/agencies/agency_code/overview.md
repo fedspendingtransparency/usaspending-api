@@ -62,7 +62,11 @@ This endpoint returns an overview of government agency submission data.
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "recent_publication_date": "2020-01-10T11:59:21Z",
                         "recent_publication_date_certified": false,
-                        "discrepancy_count": 20,
+                        "tas_account_discrepancies_totals": {
+                            "tas_obligations_total": 66432,
+                            "tas_obligations_not_in_gtas_total": 11543,
+                            "tas_accounts_total": 10
+                        },
                         "obligation_difference": 436376232652.87
                     },
                     {
@@ -71,7 +75,11 @@ This endpoint returns an overview of government agency submission data.
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "recent_publication_date": null,
                         "recent_publication_date_certified": true,
-                        "discrepancy_count": 10,
+                        "tas_account_discrepancies_totals": {
+                            "tas_obligations_total": 66432,
+                            "tas_obligations_not_in_gtas_total": 11543,
+                            "tas_accounts_total": 10
+                        },
                         "obligation_difference": 436376232652.87
                     }
                 ]
@@ -88,13 +96,18 @@ This endpoint returns an overview of government agency submission data.
 + `total` (required, number)
 + `limit` (required, number)
 
+## TASTotalsObject (object)
++ `tas_obligations_total` (required, number)
++ `tas_obligations_not_in_gtas_total` (required, number)
++ `tas_accounts_total` (required, number)
+
 ## AgencyData (object)
 + `fiscal_year` (required, number)
 + `fiscal_period` (required, number)
 + `current_total_budget_authority_amount` (required, number)
 + `recent_publication_date` (required, string, nullable)
 + `recent_publication_date_certified` (required, boolean)
-+ `discrepancy_count` (required, number)
-    A count of agency TAS in GTAS not in file A.
++ `recent_publication_date_certified` (required, boolean)
++ `tas_account_discrepancies_totals` (required, object[TASTotalsObject], fixed-type)
 + `obligation_difference` (required, number)
     The difference in file A and file B obligations.
