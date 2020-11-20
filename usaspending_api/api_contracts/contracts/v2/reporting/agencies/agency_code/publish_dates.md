@@ -16,6 +16,24 @@ This endpoint returns an overview of government agencies submission data.
         The fiscal year.
     + `fiscal_period`: 10 (required, number)
         The fiscal period.
+        + `page` (optional, number)
+        The page of results to return based on the limit.
+        + Default: 1
+    + `limit` (optional, number)
+        The number of results to include per page.
+        + Default: 10
+    + `order` (optional, enum[string])
+        The direction (`asc` or `desc`) that the `sort` field will be sorted in.
+        + Default: `desc`
+        + Members
+            + `asc`
+            + `desc`
+    + `sort` (optional, enum[string])
+        A data field that will be used to sort the response array.
+        + Default: `certification_date`
+        + Members
+            + `publication_date`
+            + `certification_date`
 
 + Response 200 (application/json)
 
@@ -24,6 +42,15 @@ This endpoint returns an overview of government agencies submission data.
     + Body
 
             {
+                "page_metadata": {
+                    "page": 1,
+                    "next": 2,
+                    "previous": 0,
+                    "hasNext": false,
+                    "hasPrevious": false,
+                    "total": 2,
+                    "limit": 10
+                },
                 "results": [
                     {
                         "publication_date": "2020-10-11T11:59:21Z",
@@ -37,6 +64,15 @@ This endpoint returns an overview of government agencies submission data.
             }
 
 # Data Structures
+
+## PageMetadata (object)
++ `page` (required, number)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
++ `hasNext` (required, boolean)
++ `hasPrevious` (required, boolean)
++ `total` (required, number)
++ `limit` (required, number)
 
 ## SubmissionHistory (object)
 + `publication_date` (required, string, nullable)
