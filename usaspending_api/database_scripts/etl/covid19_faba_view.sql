@@ -79,7 +79,7 @@ CREATE VIEW covid19_faba_view AS
     oc.direct_reimbursable,
     defc.group_name AS disaster_emergency_fund_code_group_name,
     awd.total_loan_value,
-    awd.type AS award_type,
+    awd.type,
     awd.generated_unique_award_id
    FROM financial_accounts_by_awards faba
      JOIN submission_attributes sa ON sa.reporting_period_start >= '2020-04-01'::date AND sa.submission_id = faba.submission_id

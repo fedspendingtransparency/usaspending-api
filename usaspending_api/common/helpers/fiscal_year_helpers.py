@@ -111,6 +111,19 @@ def generate_fiscal_date_range(min_date: datetime, max_date: datetime, frequency
         )
         current_date = current_date + relativedelta(months=interval)
 
+    # check if max_date is in new period
+    final_period = {
+        "fiscal_year": generate_fiscal_year(max_date),
+        "fiscal_quarter": generate_fiscal_quarter(max_date),
+        "fiscal_month": generate_fiscal_month(max_date),
+    }
+    if final_period["fiscal_year"] > date_range[-1]["fiscal_year"]:
+        date_range.append(final_period)
+    elif interval == 3 and final_period["fiscal_quarter"] != date_range[-1]["fiscal_quarter"]:
+        date_range.append(final_period)
+    elif interval == 1 and final_period != date_range[-1]:
+        date_range.append(final_period)
+
     return date_range
 
 

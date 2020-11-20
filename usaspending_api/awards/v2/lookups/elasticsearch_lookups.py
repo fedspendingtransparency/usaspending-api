@@ -8,7 +8,7 @@ from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 TRANSACTIONS_LOOKUP = {
     "Recipient Name": "recipient_name.keyword",
     "Action Date": "action_date",
-    "Transaction Amount": "transaction_amount",
+    "Transaction Amount": "federal_action_obligation",
     "Award Type": "type_description.keyword",
     "Awarding Agency": "awarding_toptier_agency_name.keyword",
     "Awarding Sub Agency": "awarding_subtier_agency_name.keyword",
