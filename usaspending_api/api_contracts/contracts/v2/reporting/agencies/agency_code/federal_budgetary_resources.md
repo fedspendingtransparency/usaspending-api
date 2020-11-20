@@ -23,7 +23,7 @@ This endpoint returns federal budgetary resources based on fiscal year and fisca
         + Default: 10
     + `order` (optional, enum[string])
         The direction (`asc` or `desc`) that the `sort` field will be sorted in.
-        + Default: `asc`
+        + Default: `desc`
         + Members
             + `asc`
             + `desc`
