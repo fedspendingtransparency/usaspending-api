@@ -19,12 +19,5 @@ class ReportingAgencyTas(models.Model):
     class Meta:
         db_table = "reporting_agency_tas"
         indexes = [
-            models.Index(
-                fields=[
-                    "fiscal_year",
-                    "fiscal_period",
-                    "toptier_code"
-                ],
-                name="reporting_agency_tas_group_idx"
-            )
+            models.Index(fields=["fiscal_year", "fiscal_period", "toptier_code"], name="reporting_agency_tas_group_idx")
         ]

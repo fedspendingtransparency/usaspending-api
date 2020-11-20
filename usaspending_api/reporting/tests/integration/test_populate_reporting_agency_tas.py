@@ -12,78 +12,60 @@ from model_mommy import mommy
 def setup_test_data(db):
     """ Insert data into DB for testing """
     sub = mommy.make(
-        "submissions.SubmissionAttributes",
-        submission_id=1,
-        reporting_fiscal_year=2019,
-        reporting_fiscal_period=3
+        "submissions.SubmissionAttributes", submission_id=1, reporting_fiscal_year=2019, reporting_fiscal_period=3
     )
-    agency = mommy.make(
-        "references.ToptierAgency",
-        create_date=datetime.now(),
-        toptier_agency_id=1,
-        toptier_code="123")
+    agency = mommy.make("references.ToptierAgency", create_date=datetime.now(), toptier_agency_id=1, toptier_code="123")
 
     treas_accounts = [
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=1,
             funding_toptier_agency_id=agency.toptier_agency_id,
-            tas_rendering_label="tas-1"),
+            tas_rendering_label="tas-1",
+        ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=2,
             funding_toptier_agency_id=agency.toptier_agency_id,
-            tas_rendering_label="tas-2")
+            tas_rendering_label="tas-2",
+        ),
     ]
     approps = [
-        {
-            "sub_id": sub.submission_id,
-            "treasury_account": treas_accounts[0],
-            "ob_incur": 50
-        },
-        {
-            "sub_id": sub.submission_id,
-            "treasury_account": treas_accounts[1],
-            "ob_incur": 12
-        },
-        {
-            "sub_id": sub.submission_id,
-            "treasury_account": treas_accounts[1],
-            "ob_incur": 29
-        }
-
+        {"sub_id": sub.submission_id, "treasury_account": treas_accounts[0], "ob_incur": 50},
+        {"sub_id": sub.submission_id, "treasury_account": treas_accounts[1], "ob_incur": 12},
+        {"sub_id": sub.submission_id, "treasury_account": treas_accounts[1], "ob_incur": 29},
     ]
     for approp in approps:
         mommy.make(
             "accounts.AppropriationAccountBalances",
             submission_id=approp["sub_id"],
             treasury_account_identifier=approp["treasury_account"],
-            obligations_incurred_total_by_tas_cpe=approp["ob_incur"]
+            obligations_incurred_total_by_tas_cpe=approp["ob_incur"],
         )
 
     ocpas = [
         {
             "sub_id": sub.submission_id,
             "treasury_account": treas_accounts[0].treasury_account_identifier,
-            "ob_incur": 20.5
+            "ob_incur": 20.5,
         },
         {
             "sub_id": sub.submission_id,
             "treasury_account": treas_accounts[1].treasury_account_identifier,
-            "ob_incur": 29
+            "ob_incur": 29,
         },
         {
             "sub_id": sub.submission_id,
             "treasury_account": treas_accounts[1].treasury_account_identifier,
-            "ob_incur": 13.3
-        }
+            "ob_incur": 13.3,
+        },
     ]
     for ocpa in ocpas:
         mommy.make(
             "financial_activities.FinancialAccountsByProgramActivityObjectClass",
             submission_id=ocpa["sub_id"],
             treasury_account_id=ocpa["treasury_account"],
-            obligations_incurred_by_program_object_class_cpe=ocpa["ob_incur"]
+            obligations_incurred_by_program_object_class_cpe=ocpa["ob_incur"],
         )
 
 
@@ -97,13 +79,15 @@ def test_run_script(setup_test_data):
     # Executing the SQL and testing the entry with only one record for the period/fiscal year/tas per table
     with connection.cursor() as cursor:
         cursor.execute(test_sql)
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT appropriation_obligated_amount,
                 object_class_pa_obligated_amount,
                 diff_approp_ocpa_obligated_amounts
             FROM reporting_agency_tas
             WHERE fiscal_period = 3 AND fiscal_year = 2019 AND tas_rendering_label = 'tas-1'
-        """)
+        """
+        )
         results = cursor.fetchall()
 
     assert len(results) == 1
@@ -114,13 +98,15 @@ def test_run_script(setup_test_data):
 
     # Testing an entry with multiple rows that roll up into a single period/fiscal year/tas
     with connection.cursor() as cursor:
-        cursor.execute("""
+        cursor.execute(
+            """
                     SELECT appropriation_obligated_amount,
                         object_class_pa_obligated_amount,
                         diff_approp_ocpa_obligated_amounts
                     FROM reporting_agency_tas
                     WHERE fiscal_period = 3 AND fiscal_year = 2019 AND tas_rendering_label = 'tas-2'
-                """)
+                """
+        )
         results = cursor.fetchall()
 
     assert len(results) == 1
