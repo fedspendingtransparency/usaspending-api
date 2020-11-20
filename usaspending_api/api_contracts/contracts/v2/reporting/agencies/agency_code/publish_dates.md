@@ -30,7 +30,7 @@ This endpoint returns an overview of government agencies submission data.
             + `desc`
     + `sort` (optional, enum[string])
         A data field that will be used to sort the response array.
-        + Default: `certification_date`
+        + Default: `publication_date`
         + Members
             + `publication_date`
             + `certification_date`
