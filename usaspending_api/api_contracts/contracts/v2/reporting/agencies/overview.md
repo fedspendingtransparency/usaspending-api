@@ -108,7 +108,7 @@ This endpoint returns an overview of government agencies submission data.
 
 ## AgencyData (object)
 + `name` (required, string)
-+ `abbreviation`: (required, string)
++ `abbreviation` (required, string)
 + `code` (required, string)
 + `current_total_budget_authority_amount` (required, number)
 + `recent_publication_date` (required, string, nullable)
