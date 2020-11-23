@@ -109,7 +109,7 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
-                key: Decimal(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
                 for key, val in self.nested_nonzero_fields.items()
             },
             "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],

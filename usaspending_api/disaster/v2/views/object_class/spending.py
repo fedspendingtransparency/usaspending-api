@@ -171,7 +171,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
-                key: Decimal(float(bucket.get(f"sum_{val}", {"value": 0})["value"]))
+                key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
                 for key, val in self.nested_nonzero_fields.items()
             },
             "parent_data": [

@@ -117,7 +117,7 @@ def test_object_class_query(client, elasticsearch_account_index, basic_faba_with
             "outlay": 0.0,
             "children": [
                 {
-                    "id": 1,
+                    "id": "1",
                     "code": "0001",
                     "description": "0001 name",
                     "award_count": 1,
