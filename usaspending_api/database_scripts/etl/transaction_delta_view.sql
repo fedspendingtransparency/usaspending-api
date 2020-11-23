@@ -12,6 +12,16 @@ SELECT
     "fain",
     "uri",
     "piid",
+    CASE
+        WHEN "detached_award_proc_unique" IS NOT NULL THEN 'CONT_TX_' || "detached_award_proc_unique"
+        WHEN "afa_generated_unique" IS NOT NULL THEN 'ASST_TX_' || "afa_generated_unique"
+        ELSE NULL
+    END AS generated_unique_transaction_id,
+    CASE
+        WHEN "type" IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND "fain" IS NOT NULL THEN "fain"
+        WHEN "piid" IS NOT NULL THEN "piid"  -- contracts. Did it this way to easily handle IDV contracts
+        ELSE "uri"
+    END AS display_award_id,
     "action_date",
     "fiscal_action_date",
     "last_modified_date",
@@ -43,7 +53,6 @@ SELECT
     "ordering_period_end_date",
     "cfda_number",
     "cfda_title",
-    "cfda_id",
     "pop_country_name",
     "pop_country_code",
     "pop_state_code",
@@ -68,8 +77,6 @@ SELECT
     "parent_recipient_unique_id",
     "awarding_agency_id",
     "funding_agency_id",
-    "awarding_toptier_agency_id",
-    "funding_toptier_agency_id",
     "awarding_toptier_agency_name",
     "funding_toptier_agency_name",
     "awarding_subtier_agency_name",
@@ -78,7 +85,6 @@ SELECT
     "funding_toptier_agency_abbreviation",
     "awarding_subtier_agency_abbreviation",
     "funding_subtier_agency_abbreviation",
-    "treasury_account_identifiers",
     "tas_paths",
     "tas_components",
     "federal_accounts",
