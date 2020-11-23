@@ -68,7 +68,6 @@ def test_object_class_adds_value_across_awards(
     setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
-    print(resp.json())
     assert resp.json()["results"][0]["face_value_of_loan"] == 10
 
 
