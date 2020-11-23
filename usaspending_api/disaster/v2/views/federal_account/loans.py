@@ -60,9 +60,9 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
                     # the count of distinct awards contributing to the totals
                     "obligation": temp_results[result["id"]]["obligation"] + result["obligation"],
                     "outlay": temp_results[result["id"]]["outlay"] + result["outlay"],
+                    "children": temp_results[result["id"]]["children"] + result["children"],
                     "face_value_of_loan": temp_results[result["id"]]["face_value_of_loan"]
                     + result["face_value_of_loan"],
-                    "children": temp_results[result["id"]]["children"] + result["children"],
                 }
             else:
                 temp_results[result["id"]] = result
@@ -78,8 +78,8 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
             # the count of distinct awards contributing to the totals
             "obligation": child["obligation"],
             "outlay": child["outlay"],
-            "face_value_of_loan": child["face_value_of_loan"],
             "children": [child],
+            "face_value_of_loan": child["face_value_of_loan"],
         }
 
     def _build_child_json_result(self, bucket: dict):

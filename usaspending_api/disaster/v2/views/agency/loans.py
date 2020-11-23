@@ -76,6 +76,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBas
             "id": int(bucket["key"]),
             "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_code"],
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
+            "children": [],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
