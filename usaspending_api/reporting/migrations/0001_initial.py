@@ -48,6 +48,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='ReportingAgencyMissingTas',
-            index=models.Index(fields=['fiscal_year', 'fiscal_period', 'toptier_code'], name='reporting_agency_missing_tas_group_idx'),
+            index=models.Index(fields=['fiscal_year', 'fiscal_period', 'toptier_code'], name='rpt_agency_missing_tas_grp_idx'),
         ),
     ]
