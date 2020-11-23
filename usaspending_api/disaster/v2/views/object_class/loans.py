@@ -37,6 +37,7 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
     @cache_response()
     def post(self, request):
         self.filters.update({"award_type_codes": ["07", "08"]})
+        self.has_children = True
         return self.perform_elasticsearch_search(loans=True)
 
     @property
