@@ -15,7 +15,7 @@ def setup_test_data(db):
     sub = mommy.make(
         "submissions.SubmissionAttributes", submission_id=1, reporting_fiscal_year=2019, reporting_fiscal_period=3
     )
-    agency = mommy.make("references.ToptierAgency", create_date=datetime.now(), toptier_agency_id=1, toptier_code="123")
+    agency = mommy.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency")
 
     treas_accounts = [
         mommy.make(
