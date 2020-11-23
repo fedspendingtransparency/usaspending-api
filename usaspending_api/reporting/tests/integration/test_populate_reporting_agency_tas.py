@@ -4,8 +4,9 @@ from datetime import datetime
 from decimal import Decimal
 
 from django.conf import settings
-from django.db import connection
 from model_mommy import mommy
+
+from usaspending_api.common.helpers.sql_helpers import get_connection
 
 
 @pytest.fixture
@@ -71,6 +72,7 @@ def setup_test_data(db):
 
 def test_run_script(setup_test_data):
     """ Test that the populate_reporting_agency_tas script acts as expected """
+    connection = get_connection(read_only=False)
     sql_path = str(settings.APP_DIR / "reporting/management/sql/populate_reporting_agency_tas.sql")
 
     with open(sql_path) as f:
