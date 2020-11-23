@@ -77,7 +77,6 @@ def test_federal_account_award_success(client, generic_account_data, monkeypatch
                     "outlay": 111.0,
                     "total_budgetary_resources": None,
                 },
-
             ],
         }
     ]
