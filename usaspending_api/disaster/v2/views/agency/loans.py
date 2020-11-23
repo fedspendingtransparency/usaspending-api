@@ -53,7 +53,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBas
     required_filters = ["def_codes", "query"]
     query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
+    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
     top_hits_fields = [
         "financial_accounts_by_award.funding_toptier_agency_code",
@@ -83,7 +83,6 @@ class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBas
                 for key, val in self.nested_nonzero_fields.items()
             },
             "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
-            "children": [],
         }
 
     @property
