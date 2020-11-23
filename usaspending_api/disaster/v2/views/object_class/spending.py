@@ -1,4 +1,5 @@
 from typing import List
+from decimal import Decimal
 
 from django.db.models import Q, Sum, F, Value, Case, When, Min, TextField, IntegerField
 from django.db.models.functions import Coalesce, Cast
@@ -44,7 +45,6 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
     # Defined for the Elasticsearch implementation of Spending by Award
     agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
     query_fields = [
         "major_object_class_name",
         "major_object_class_name.contains",
@@ -142,8 +142,8 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                     "description": result["description"],
                     "award_count": temp_results[result["code"]]["award_count"] + result["award_count"],
                     # the count of distinct awards contributing to the totals
-                    "obligation": round(temp_results[result["code"]]["obligation"] + result["obligation"], 2),
-                    "outlay": round(temp_results[result["code"]]["outlay"] + result["outlay"], 2),
+                    "obligation": temp_results[result["code"]]["obligation"] + result["obligation"],
+                    "outlay": temp_results[result["code"]]["outlay"] + result["outlay"],
                     "children": temp_results[result["code"]]["children"] + result["children"],
                 }
             else:
@@ -171,7 +171,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
-                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                key: Decimal(float(bucket.get(f"sum_{val}", {"value": 0})["value"]))
                 for key, val in self.nested_nonzero_fields.items()
             },
             "parent_data": [

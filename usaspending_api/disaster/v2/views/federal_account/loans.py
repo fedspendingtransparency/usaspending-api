@@ -1,4 +1,5 @@
 from typing import List
+from decimal import Decimal
 
 from django.db.models import F
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
@@ -17,7 +18,6 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
     agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
     query_fields = [
         "federal_account_symbol",
         "federal_account_symbol.contains",
@@ -90,7 +90,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
-                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                key: Decimal(float(bucket.get(f"sum_{val}", {"value": 0})["value"]))
                 for key, val in self.nested_nonzero_fields.items()
             },
             "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],

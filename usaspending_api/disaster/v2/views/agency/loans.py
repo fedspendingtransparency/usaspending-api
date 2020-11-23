@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import F, Value, IntegerField, Subquery, OuterRef
@@ -54,7 +55,6 @@ class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBas
     query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
     top_hits_fields = [
         "financial_accounts_by_award.funding_toptier_agency_code",
         "financial_accounts_by_award.funding_toptier_agency_name",
@@ -80,7 +80,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBas
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
-                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                key: Decimal(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
                 for key, val in self.nested_nonzero_fields.items()
             },
             "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],

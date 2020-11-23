@@ -1,4 +1,5 @@
 from typing import List
+from decimal import Decimal
 
 from django.db.models import Q, Sum, F, Value, DecimalField, Case, When, OuterRef, Subquery, Func, IntegerField
 from django.db.models.functions import Coalesce
@@ -40,7 +41,6 @@ class SpendingViewSet(
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
     agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
     query_fields = [
         "federal_account_symbol",
         "federal_account_symbol.contains",
@@ -120,7 +120,7 @@ class SpendingViewSet(
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
-                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                key: Decimal(float(bucket.get(f"sum_{val}", {"value": 0})["value"]))
                 for key, val in self.nested_nonzero_fields.items()
             },
             "total_budgetary_resources": None,
