@@ -23,7 +23,6 @@ SELECT
   "recipient_unique_id",
   "recipient_hash",
   "recipient_levels",
-  "recipient_hash",
 
   "parent_recipient_unique_id",
   "business_categories",
@@ -42,6 +41,7 @@ SELECT
   "awarding_agency_id",
   "funding_agency_id",
   "funding_toptier_agency_id",
+  "funding_subtier_agency_id",
   "awarding_toptier_agency_name",
   "funding_toptier_agency_name",
   "awarding_subtier_agency_name",
@@ -81,7 +81,7 @@ SELECT
   "pop_city_code",
 
   "cfda_number",
-  "cfda_title",
+  "cfda_program_title",
 
   "sai_number",
   "type_of_contract_pricing",
