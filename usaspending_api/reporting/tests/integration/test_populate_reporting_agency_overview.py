@@ -14,29 +14,29 @@ from usaspending_api.common.helpers.sql_helpers import get_connection
 def setup_test_data(db):
     """ Insert data into DB for testing """
     sub = mommy.make(
-        "submissions.SubmissionAttributes", submission_id=1, reporting_fiscal_year=2019, reporting_fiscal_period=6
+        "submissions.SubmissionAttributes", submission_id=1, reporting_fiscal_year=2019, reporting_fiscal_period=3
     )
     agencies = [
-        mommy.make("references.ToptierAgency", toptier_code="321", abbreviation="ABC", name="Test Agency"),
-        mommy.make("references.ToptierAgency", toptier_code="789", abbreviation="XYZ", name="Test Agency 2"),
+        mommy.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency"),
+        mommy.make("references.ToptierAgency", toptier_code="987", abbreviation="XYZ", name="Test Agency 2"),
     ]
 
     treas_accounts = [
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            treasury_account_identifier=10,
+            treasury_account_identifier=1,
             funding_toptier_agency_id=agencies[0].toptier_agency_id,
             tas_rendering_label="tas-1-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            treasury_account_identifier=11,
+            treasury_account_identifier=2,
             funding_toptier_agency_id=agencies[0].toptier_agency_id,
             tas_rendering_label="tas-2-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            treasury_account_identifier=12,
+            treasury_account_identifier=3,
             funding_toptier_agency_id=agencies[1].toptier_agency_id,
             tas_rendering_label="tas-3-overview",
         ),
@@ -134,7 +134,7 @@ def test_run_script(setup_test_data):
     with connection.cursor() as cursor:
         cursor.execute(test_sql)
 
-    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=6, toptier_code="789").all()
+    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="987").all()
 
     assert len(results) == 1
     assert results[0].total_dollars_obligated_gtas == Decimal("-3.2")
@@ -142,7 +142,7 @@ def test_run_script(setup_test_data):
     assert results[0].total_diff_approp_ocpa_obligated_amounts == 20.5
 
     # Testing an agency with multiple rows in reporting_agency_tas that roll up into a single period/fiscal year
-    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=6, toptier_code="321").all()
+    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="123").all()
 
     assert len(results) == 1
     assert results[0].total_dollars_obligated_gtas == Decimal("23.54")

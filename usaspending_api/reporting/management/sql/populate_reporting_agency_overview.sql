@@ -1,4 +1,3 @@
-BEGIN;
 DELETE FROM public.reporting_agency_overview;
 ALTER SEQUENCE reporting_agency_overview_reporting_agency_overview_id_seq RESTART WITH 1;
 
@@ -63,4 +62,3 @@ FROM (
         AND sgo.fiscal_period = srat.fiscal_period
         AND sgo.toptier_code = srat.toptier_code
 ) AS reporting_agency_overview_content;
-COMMIT;
