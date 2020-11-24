@@ -56,11 +56,27 @@ def setup_test_data(db):
         )
 
     reporting_tases = [
-        {"year": sub.reporting_fiscal_year, "period": sub.reporting_fiscal_period, "label": treas_accounts[0].tas_rendering_label, "toptier_code": agencies[0].toptier_code, "diff": 29.5},
-        {"year": sub.reporting_fiscal_year, "period": sub.reporting_fiscal_period,
-         "label": treas_accounts[1].tas_rendering_label, "toptier_code": agencies[0].toptier_code, "diff": -1.3},
-        {"year": sub.reporting_fiscal_year, "period": sub.reporting_fiscal_period,
-         "label": treas_accounts[2].tas_rendering_label, "toptier_code": agencies[1].toptier_code, "diff": 20.5}
+        {
+            "year": sub.reporting_fiscal_year,
+            "period": sub.reporting_fiscal_period,
+            "label": treas_accounts[0].tas_rendering_label,
+            "toptier_code": agencies[0].toptier_code,
+            "diff": 29.5,
+        },
+        {
+            "year": sub.reporting_fiscal_year,
+            "period": sub.reporting_fiscal_period,
+            "label": treas_accounts[1].tas_rendering_label,
+            "toptier_code": agencies[0].toptier_code,
+            "diff": -1.3,
+        },
+        {
+            "year": sub.reporting_fiscal_year,
+            "period": sub.reporting_fiscal_period,
+            "label": treas_accounts[2].tas_rendering_label,
+            "toptier_code": agencies[1].toptier_code,
+            "diff": 20.5,
+        },
     ]
     for reporting_tas in reporting_tases:
         mommy.make(
@@ -69,17 +85,34 @@ def setup_test_data(db):
             fiscal_period=reporting_tas["period"],
             tas_rendering_label=reporting_tas["label"],
             toptier_code=reporting_tas["toptier_code"],
-            diff_approp_ocpa_obligated_amounts=reporting_tas["diff"]
+            diff_approp_ocpa_obligated_amounts=reporting_tas["diff"],
         )
 
     gtas_sf133s = [
-        {"year": sub.reporting_fiscal_year, "period": sub.reporting_fiscal_period, "tas_id": treas_accounts[0], "ob_incur": 4},
-        {"year": sub.reporting_fiscal_year, "period": sub.reporting_fiscal_period,
-         "tas_id": treas_accounts[1], "ob_incur": 19.54},
-        {"year": sub.reporting_fiscal_year, "period": sub.reporting_fiscal_period,
-         "tas_id": treas_accounts[2], "ob_incur": -12.4},
-        {"year": sub.reporting_fiscal_year, "period": sub.reporting_fiscal_period,
-         "tas_id": treas_accounts[2], "ob_incur": 9.2}
+        {
+            "year": sub.reporting_fiscal_year,
+            "period": sub.reporting_fiscal_period,
+            "tas_id": treas_accounts[0],
+            "ob_incur": 4,
+        },
+        {
+            "year": sub.reporting_fiscal_year,
+            "period": sub.reporting_fiscal_period,
+            "tas_id": treas_accounts[1],
+            "ob_incur": 19.54,
+        },
+        {
+            "year": sub.reporting_fiscal_year,
+            "period": sub.reporting_fiscal_period,
+            "tas_id": treas_accounts[2],
+            "ob_incur": -12.4,
+        },
+        {
+            "year": sub.reporting_fiscal_year,
+            "period": sub.reporting_fiscal_period,
+            "tas_id": treas_accounts[2],
+            "ob_incur": 9.2,
+        },
     ]
     for sf133 in gtas_sf133s:
         mommy.make(
