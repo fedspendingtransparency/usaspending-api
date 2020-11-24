@@ -20,15 +20,6 @@ def test_federal_account_loans_success(client, generic_account_data, elasticsear
         {
             "children": [
                 {
-                    "code": "2020/98",
-                    "award_count": 1,
-                    "description": "evergreens",
-                    "face_value_of_loan": 3333.0,
-                    "id": 23,
-                    "outlay": 1.0,
-                    "obligation": 1.0,
-                },
-                {
                     "code": "2020/52",
                     "award_count": 1,
                     "description": "ferns",
@@ -36,6 +27,15 @@ def test_federal_account_loans_success(client, generic_account_data, elasticsear
                     "id": 24,
                     "outlay": 333.0,
                     "obligation": 3.0,
+                },
+                {
+                    "code": "2020/98",
+                    "award_count": 1,
+                    "description": "evergreens",
+                    "face_value_of_loan": 3333.0,
+                    "id": 23,
+                    "outlay": 1.0,
+                    "obligation": 1.0,
                 },
             ],
             "code": "000-0000",
