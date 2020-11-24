@@ -1,4 +1,5 @@
 from typing import List
+from decimal import Decimal
 
 from django.db.models import F, Value, TextField, Min
 from django.db.models.functions import Cast
@@ -18,8 +19,7 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/loans.md"
     agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
+    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     query_fields = [
         "major_object_class_name",
         "major_object_class_name.contains",
@@ -37,6 +37,7 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
     @cache_response()
     def post(self, request):
         self.filters.update({"award_type_codes": ["07", "08"]})
+        self.has_children = True
         return self.perform_elasticsearch_search(loans=True)
 
     @property
@@ -108,7 +109,7 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
-                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
                 for key, val in self.nested_nonzero_fields.items()
             },
             "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],

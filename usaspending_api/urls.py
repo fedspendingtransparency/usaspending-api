@@ -47,6 +47,7 @@ urlpatterns = [
     url(r"^api/v2/idvs/", include("usaspending_api.idvs.v2.urls_idvs")),
     url(r"^api/v2/recipient/", include("usaspending_api.recipient.v2.urls")),
     url(r"^api/v2/references/", include("usaspending_api.references.v2.urls")),
+    url(r"^api/v2/reporting/", include("usaspending_api.reporting.v2.urls")),
     url(r"^api/v2/search/", include("usaspending_api.search.v2.urls")),
     url(r"^api/v2/spending/", include("usaspending_api.spending_explorer.v2.urls")),
     url(r"^api/v2/subawards/", include("usaspending_api.awards.v2.urls_subawards")),

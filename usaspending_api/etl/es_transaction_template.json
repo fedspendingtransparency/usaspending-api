@@ -6,7 +6,7 @@
     "index": {
       "number_of_shards" : 5,
       "number_of_replicas" : 0,
-      "sort.field" : ["transaction_amount.keyword", "action_date"],
+      "sort.field" : ["federal_action_obligation.keyword", "action_date"],
       "sort.order" : ["desc", "desc"],
       "sort.missing": ["_last", "_last"]
     },
@@ -218,7 +218,7 @@
         "type": "scaled_float",
         "scaling_factor": 100
       },
-      "transaction_amount": {
+      "federal_action_obligation": {
         "type": "scaled_float",
         "scaling_factor": 100,
         "fields": {
