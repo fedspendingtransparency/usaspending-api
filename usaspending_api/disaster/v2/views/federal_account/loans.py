@@ -1,4 +1,5 @@
 from typing import List
+from decimal import Decimal
 
 from django.db.models import F
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
@@ -16,8 +17,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
     agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
+    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     query_fields = [
         "federal_account_symbol",
         "federal_account_symbol.contains",
@@ -39,6 +39,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
     @cache_response()
     def post(self, request):
         self.filters.update({"award_type_codes": ["07", "08"]})
+        self.has_children = True
         return self.perform_elasticsearch_search(loans=True)
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
@@ -59,9 +60,9 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
                     # the count of distinct awards contributing to the totals
                     "obligation": temp_results[result["id"]]["obligation"] + result["obligation"],
                     "outlay": temp_results[result["id"]]["outlay"] + result["outlay"],
+                    "children": temp_results[result["id"]]["children"] + result["children"],
                     "face_value_of_loan": temp_results[result["id"]]["face_value_of_loan"]
                     + result["face_value_of_loan"],
-                    "children": temp_results[result["id"]]["children"] + result["children"],
                 }
             else:
                 temp_results[result["id"]] = result
@@ -77,8 +78,8 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
             # the count of distinct awards contributing to the totals
             "obligation": child["obligation"],
             "outlay": child["outlay"],
-            "face_value_of_loan": child["face_value_of_loan"],
             "children": [child],
+            "face_value_of_loan": child["face_value_of_loan"],
         }
 
     def _build_child_json_result(self, bucket: dict):
@@ -89,7 +90,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
-                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
                 for key, val in self.nested_nonzero_fields.items()
             },
             "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],

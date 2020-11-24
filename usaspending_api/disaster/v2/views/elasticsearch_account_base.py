@@ -44,7 +44,6 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
 
         # Ensure that only non-zero values are taken into consideration
         filters["nested_nonzero_fields"] = list(self.nested_nonzero_fields.values())
-        filters["nonzero_fields"] = list(self.nonzero_fields.values())
         self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(filters)
         # using a set value here as doing an extra ES query is detrimental to performance
         # And the dimensions on which group-by aggregations are performed so far

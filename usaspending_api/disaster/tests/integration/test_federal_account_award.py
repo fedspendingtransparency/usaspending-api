@@ -51,6 +51,15 @@ def test_federal_account_award_success(client, generic_account_data, monkeypatch
             "total_budgetary_resources": None,
             "children": [
                 {
+                    "code": "2020/52",
+                    "award_count": 1,
+                    "description": "ferns",
+                    "id": 24,
+                    "obligation": 3.0,
+                    "outlay": 333.0,
+                    "total_budgetary_resources": None,
+                },
+                {
                     "code": "2020/98",
                     "award_count": 2,
                     "description": "evergreens",
@@ -66,15 +75,6 @@ def test_federal_account_award_success(client, generic_account_data, monkeypatch
                     "id": 22,
                     "obligation": 100.0,
                     "outlay": 111.0,
-                    "total_budgetary_resources": None,
-                },
-                {
-                    "code": "2020/52",
-                    "award_count": 1,
-                    "description": "ferns",
-                    "id": 24,
-                    "obligation": 3.0,
-                    "outlay": 333.0,
                     "total_budgetary_resources": None,
                 },
             ],

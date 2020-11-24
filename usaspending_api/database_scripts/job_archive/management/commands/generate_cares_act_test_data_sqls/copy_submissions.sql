@@ -43,6 +43,8 @@ insert into submission_attributes (
     update_date,
     reporting_agency_name,
     published_date,
+    is_final_balances_for_fy,
+    submission_window_id,
     _base_submission_id
 )
 select
@@ -65,6 +67,8 @@ select
     '{reporting_period_end}'::date + interval '1 days',  -- update_date
     reporting_agency_name,
     '{reporting_period_end}'::date,   -- published_date
+    is_final_balances_for_fy,
+    (SELECT id FROM dabs_submission_window_schedule dsws WHERE dsws.submission_fiscal_year = {destination_fiscal_year} AND dsws.submission_fiscal_month = {destination_fiscal_period} AND dsws.is_quarter = FALSE) AS submission_window_id,
     _base_submission_id
 from
     submission_attributes
@@ -284,7 +288,8 @@ insert into financial_accounts_by_awards (
     program_activity_id,
     submission_id,
     treasury_account_id,
-    disaster_emergency_fund_code
+    disaster_emergency_fund_code,
+    distinct_award_key
 )
 select
     f.data_source,
@@ -334,7 +339,8 @@ select
     f.program_activity_id,
     sa._base_submission_id + {submission_id_shift},  -- to match submission shift
     f.treasury_account_id,
-    f.disaster_emergency_fund_code
+    f.disaster_emergency_fund_code,
+    UPPER(CONCAT(piid, '|', parent_award_id, '|', fain, '|', uri))
 from
     financial_accounts_by_awards as f
     inner join submission_attributes as sa on sa.submission_id = f.submission_id
