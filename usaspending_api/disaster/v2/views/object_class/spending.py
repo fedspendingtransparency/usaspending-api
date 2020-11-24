@@ -1,4 +1,5 @@
 from typing import List
+from decimal import Decimal
 
 from django.db.models import Q, Sum, F, Value, Case, When, Min, TextField, IntegerField
 from django.db.models.functions import Coalesce, Cast
@@ -43,8 +44,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
     # Defined for the Elasticsearch implementation of Spending by Award
     agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
+    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     query_fields = [
         "major_object_class_name",
         "major_object_class_name.contains",
@@ -61,6 +61,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
+            self.has_children = True
             return self.perform_elasticsearch_search()
         else:
             results = list(self.total_queryset)
@@ -136,7 +137,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             child.pop("parent_data")
             if result["code"] in temp_results.keys():
                 temp_results[result["code"]] = {
-                    "id": int(result["id"]),
+                    "id": result["id"],
                     "code": result["code"],
                     "description": result["description"],
                     "award_count": temp_results[result["code"]]["award_count"] + result["award_count"],
@@ -152,7 +153,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
     def _build_json_result(self, child):
         return {
-            "id": child["parent_data"][1],
+            "id": str(child["parent_data"][1]),
             "code": child["parent_data"][1],
             "description": child["parent_data"][0],
             "award_count": child["award_count"],
@@ -164,13 +165,13 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
     def _build_child_json_result(self, bucket: dict):
         return {
-            "id": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_id"],
+            "id": str(bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_id"]),
             "code": bucket["key"],
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_name"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
-                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
                 for key, val in self.nested_nonzero_fields.items()
             },
             "parent_data": [

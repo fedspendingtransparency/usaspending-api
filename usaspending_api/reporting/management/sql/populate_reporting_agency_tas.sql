@@ -1,4 +1,3 @@
-BEGIN;
 DELETE FROM public.reporting_agency_tas;
 ALTER SEQUENCE reporting_agency_tas_reporting_agency_tas_id_seq RESTART WITH 1;
 
@@ -51,4 +50,3 @@ FROM (
     JOIN toptier_agency AS ta
         ON taa.funding_toptier_agency_id = ta.toptier_agency_id
 ) AS reporting_agency_tas_content;
-COMMIT;

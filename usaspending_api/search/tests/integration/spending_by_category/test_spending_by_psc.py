@@ -41,7 +41,6 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         ],
         "messages": [get_time_period_message()],
     }
-    print(resp.json())
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
     assert resp.json() == expected_response

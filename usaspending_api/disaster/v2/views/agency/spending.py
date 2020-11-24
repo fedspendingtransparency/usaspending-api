@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func, Exists
@@ -63,8 +64,7 @@ class SpendingByAgencyViewSet(
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
     required_filters = ["def_codes", "award_type_codes", "query"]
-    nested_nonzero_fields = {"outlay": "gross_outlay_amount_by_award_cpe", "obligation": "transaction_obligated_amount"}
-    nonzero_fields = {"outlay": "outlay_sum", "obligation": "obligated_sum"}
+    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     query_fields = [
         "funding_toptier_agency_name",
         "funding_toptier_agency_name.contains",
@@ -112,7 +112,7 @@ class SpendingByAgencyViewSet(
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
-                key: round(float(bucket.get(f"sum_{val}", {"value": 0})["value"]), 2)
+                key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
                 for key, val in self.nested_nonzero_fields.items()
             },
             "total_budgetary_resources": None,
