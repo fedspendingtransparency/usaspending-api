@@ -245,6 +245,6 @@ def get_sqs_queue(region_name=settings.USASPENDING_AWS_REGION, queue_name=settin
         return _FakeFileBackedSQSQueue.instance()
     else:
         # stuff that's in get_queue
-        sqs = boto3.resource("sqs", region_name)
+        sqs = boto3.resource("sqs", endpoint_url=f"https://sqs.{region_name}.amazonaws.com", region_name=region_name)
         queue = sqs.get_queue_by_name(QueueName=queue_name)
         return queue
