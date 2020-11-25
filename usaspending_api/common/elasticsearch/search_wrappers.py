@@ -100,3 +100,7 @@ class TransactionSearch(_Search):
 
 class AwardSearch(_Search):
     _index_name = f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*"
+
+
+class AccountSearch(_Search):
+    _index_name = f"{settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX}*"

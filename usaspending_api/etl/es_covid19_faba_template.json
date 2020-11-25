@@ -14,7 +14,7 @@
         "null_value": "NULL",
         "type": "keyword"
       },
-      "award_type": {
+      "type": {
         "null_value": "NULL",
         "type": "keyword"
       },
@@ -341,6 +341,14 @@
         "type": "keyword"
       },
       "total_loan_value": {
+        "scaling_factor": 100,
+        "type": "scaled_float"
+      },
+      "obligated_sum": {
+        "scaling_factor": 100,
+        "type": "scaled_float"
+      },
+      "outlay_sum": {
         "scaling_factor": 100,
         "type": "scaled_float"
       }
