@@ -502,9 +502,10 @@ class SQSWorkDispatcherTests(TestCase):
     def test_faulty_queue_connection_raises_correct_exception(self):
         """When a queue cannot be connected to, it raises the appropriate exception"""
         try:
+            region_name = "us-gov-west-1"
             # note: connection max retries config not in botocore v1.5.x
-            client_config = Config(region_name="us-gov-west-1", connect_timeout=1, read_timeout=1)
-            sqs = boto3.resource("sqs", config=client_config)
+            client_config = Config(region_name=region_name, connect_timeout=1, read_timeout=1)
+            sqs = boto3.resource("sqs", config=client_config, endpoint_url=f"https://sqs.{region_name}.amazonaws.com")
             queue = sqs.Queue("75f4f422-3866-4e4f-9dc9-5364e3de3eaf")
             dispatcher = SQSWorkDispatcher(
                 queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
