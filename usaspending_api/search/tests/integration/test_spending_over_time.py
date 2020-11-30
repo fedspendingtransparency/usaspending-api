@@ -1007,5 +1007,4 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
         data=json.dumps({"group": "fiscal_year", "filters": {"def_codes": ["L"]}}),
     )
     assert resp.status_code == status.HTTP_200_OK
-    print(resp.json().get("results"))
     assert {"aggregated_amount": 10, "time_period": {"fiscal_year": "2020"}} in resp.json().get("results")
