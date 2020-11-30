@@ -1,0 +1,50 @@
+DELETE FROM public.reporting_agency_missing_tas;
+ALTER SEQUENCE reporting_agency_missing_tas_reporting_agency_missing_tas_id_seq RESTART WITH 1;
+
+INSERT INTO public.reporting_agency_missing_tas (
+    fiscal_period,
+    fiscal_year,
+    tas_rendering_label,
+    toptier_code,
+    obligated_amount
+)
+SELECT *
+FROM (
+    WITH summed_appropriation AS (
+        SELECT
+            sa.reporting_fiscal_period AS fiscal_period,
+            sa.reporting_fiscal_year AS fiscal_year,
+            treasury_account_identifier AS tas_id,
+            SUM(obligations_incurred_total_by_tas_cpe) AS appropriation_obligated_amount
+        FROM appropriation_account_balances AS aab
+        JOIN submission_attributes AS sa
+            ON sa.submission_id = aab.submission_id
+        GROUP BY sa.reporting_fiscal_period, sa.reporting_fiscal_year, treasury_account_identifier),
+    summed_object_class_program_activity AS (
+        SELECT
+            sa.reporting_fiscal_period AS fiscal_period,
+            sa.reporting_fiscal_year AS fiscal_year,
+            treasury_account_id AS tas_id,
+            SUM(obligations_incurred_by_program_object_class_cpe) AS object_class_pa_obligated_amount
+        FROM financial_accounts_by_program_activity_object_class AS fapaoc
+        JOIN submission_attributes AS sa
+            ON sa.submission_id = fapaoc.submission_id
+        GROUP BY sa.reporting_fiscal_period, sa.reporting_fiscal_year, treasury_account_id)
+    SELECT
+        sa.fiscal_period,
+        sa.fiscal_year,
+        taa.tas_rendering_label,
+        toptier_code,
+        appropriation_obligated_amount,
+        object_class_pa_obligated_amount,
+        (appropriation_obligated_amount - object_class_pa_obligated_amount) AS diff_approp_ocpa_obligated_amounts
+    FROM summed_appropriation AS sa
+    JOIN summed_object_class_program_activity AS socpa
+        ON socpa.tas_id = sa.tas_id
+        AND socpa.fiscal_period = sa.fiscal_period
+        AND socpa.fiscal_year = sa.fiscal_year
+    JOIN treasury_appropriation_account AS taa
+        ON sa.tas_id = taa.treasury_account_identifier
+    JOIN toptier_agency AS ta
+        ON taa.funding_toptier_agency_id = ta.toptier_agency_id
+) AS reporting_agency_tas_content;
