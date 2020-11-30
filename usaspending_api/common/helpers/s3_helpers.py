@@ -54,4 +54,4 @@ def multipart_upload(bucketname, regionname, source_path, keyname):
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
     config = boto3.s3.transfer.TransferConfig(multipart_chunksize=bytes_per_chunk)
     transfer = boto3.s3.transfer.S3Transfer(s3client, config)
-    transfer.upload_file(source_path, bucketname, Path(keyname).name)
+    transfer.upload_file(source_path, bucketname, Path(keyname).name, extra_args={"ACL": "bucket-owner-full-control"})
