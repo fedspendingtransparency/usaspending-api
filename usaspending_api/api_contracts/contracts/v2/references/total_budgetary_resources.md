@@ -1,20 +1,20 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Total Government Budgetary Resources [/api/v2/references/total_budgetary_resources?{fiscal_year,fiscal_period}]
+# Total Government Budgetary Resources [/api/v2/references/total_budgetary_resources/{?fiscal_year,fiscal_period}]
 
 This endpoint is used to provide information on the federal budgetary resources of the government.
 
 ## GET
 
-This endpoint returns federal budgetary resources based on fiscal year and fiscal period.
+This endpoint returns federal budgetary resources by fiscal year and fiscal period.
 
 + Parameters
 
     + `fiscal_year`(optional, number)
         The fiscal year.
     + `fiscal_period` (optional, number)
-        The fiscal period.
+        The fiscal period. If this optional parameter is provided then `fiscal_year` is a required parameter
 
 + Response 200 (application/json)
 

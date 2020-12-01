@@ -1,14 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Publish Dates [/api/v2/reporting/agencies/{agency_code}/publish_dates?{fiscal_year,search,page,limit,order,sort}]
+# Agency Reporting Publish Dates [/api/v2/reporting/agencies/publish_dates/{?fiscal_year,search,page,limit,order,sort}]
 
-This endpoint is used to power USAspending.gov's about the data submission history modal. This data can be used to better understand the ways agencies submit data.
+This endpoint is used to power USAspending.gov's About the Data \| Agencies submission publication dates.
 
 ## GET
 
 + Parameters
-
     + `fiscal_year`: 2020 (required, number)
         The fiscal year.
     + `search` (optional, string)
@@ -33,12 +32,14 @@ This endpoint is used to power USAspending.gov's about the data submission histo
             + `abbreviation`
             + `code`
             + `current_total_budget_authority_amount`
-            + `period`
+            + `publication_date`
+                When using publication_date, provide the desired fiscal period (2-12) after a comma
+                example: &sort=publication_date,10
 
 + Response 200 (application/json)
 
     + Attributes (object)
-        + `page_metadata` (required, PageMetaDataObject, fixed-type)
+        + `page_metadata` (required, PaginationMetadata, fixed-type)
         + `results` (required, array[Agency], fixed-type)
     + Body
 
@@ -66,7 +67,7 @@ This endpoint is used to power USAspending.gov's about the data submission histo
                                 "certification_date" : "2020-01-21T10:58:21Z"
                             },
                             "quarterly": false,
-                            "submitted": true
+                            "certified": true
                         ]
                     },
                     {
@@ -82,7 +83,7 @@ This endpoint is used to power USAspending.gov's about the data submission histo
                                 "certification_date" : "2020-01-21T10:58:21Z"
                             },
                             "quarterly": false,
-                            "submitted": true
+                            "certified": true
                         ]
                     }
                 ]
@@ -90,7 +91,7 @@ This endpoint is used to power USAspending.gov's about the data submission histo
 
 # Data Structures
 
-## PageMetaDataObject (object)
+## PaginationMetadata (object)
 + `page` (required, number)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
@@ -99,16 +100,16 @@ This endpoint is used to power USAspending.gov's about the data submission histo
 + `total` (required, number)
 + `limit` (required, number)
 
-## SubmissionDates
+## SubmissionDates (object)
 + `publication_date` (required, string, nullable)
 + `certification_date` (required, string, nullable)
 
 ## Period (object)
 + `period` (required, number)
 + `quarter` (required, number)
-+ `submission_dates` (required, object[SubmissionDates], nullable)
++ `submission_dates` (required, array[SubmissionDates], nullable)
 + `quarterly` (required, boolean)
-+ `submitted` (required, boolean)
++ `certified` (required, boolean)
 
 ## Agency (object)
 + `name` (required, string)

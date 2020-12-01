@@ -1,13 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Discrepancies [/api/v2/reporting/agencies/{agency_code}/discrepancies?{fiscal_year,fiscal_period,page,limit,order,sort}]
+# Agency Reporting Discrepancies [/api/v2/reporting/agencies/{agency_code}/discrepancies/{?fiscal_year,fiscal_period,page,limit,order,sort}]
 
-This endpoint is used to power USAspending.gov's about the data tas discrepancies modal. This data can be used to better understand the way an agency submits data.
+This endpoint is used to power USAspending.gov's About the Data \| Agencies TAS discrepencies over a submission period
 
 ## GET
 
-This endpoint returns an overview of government agency tas discrepancies data.
+This endpoint returns an overview of government agency TAS discrepancies data.
 
 + Parameters
     + `agency_code`: `020` (required, string)
@@ -15,7 +15,8 @@ This endpoint returns an overview of government agency tas discrepancies data.
     + `fiscal_year`: 2020 (required, number)
         The fiscal year.
     + `fiscal_period`: 10 (required, number)
-        The fiscal period.
+        The fiscal period. Valid values: 2-12 (2 = November ... 12 = September)
+        For retriving quarterly data, provide the period which equals 'quarter * 3' (e.g. Q2 = P6)
     + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
@@ -38,8 +39,8 @@ This endpoint returns an overview of government agency tas discrepancies data.
 + Response 200 (application/json)
 
     + Attributes (object)
-        + `page_metadata` (required, PageMetaDataObject, fixed-type)
-        + `results` (required, array[Tasdiscrepancies], fixed-type)
+        + `page_metadata` (required, PaginationMetadata, fixed-type)
+        + `results` (required, array[TASDiscrepancies], fixed-type)
     + Body
 
             {
@@ -67,7 +68,7 @@ This endpoint returns an overview of government agency tas discrepancies data.
 
 # Data Structures
 
-## PageMetaDataObject (object)
+## PaginationMetadata (object)
 + `page` (required, number)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
@@ -76,6 +77,6 @@ This endpoint returns an overview of government agency tas discrepancies data.
 + `total` (required, number)
 + `limit` (required, number)
 
-## Tasdiscrepancies (object)
+## TASDiscrepancies (object)
 + `tas` (required, string)
 + `amount` (required, number)

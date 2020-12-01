@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Overview [/api/v2/reporting/agencies/{agency_code}/overview?{page,limit,order,sort}]
+# Agency Reporting Overview [/api/v2/reporting/agencies/{agency_code}/overview/{?page,limit,order,sort}]
 
-This endpoint is used to power USAspending.gov's about the data agency page. This data can be used to better understand the way an agency submits data.
+This endpoint is used to power USAspending.gov's About the Data \| Agencies agency details table.
 
 ## GET
 
@@ -41,7 +41,7 @@ This endpoint returns an overview of government agency submission data.
 + Response 200 (application/json)
 
     + Attributes (object)
-        + `page_metadata` (required, PageMetaDataObject, fixed-type)
+        + `page_metadata` (required, PaginationMetadata, fixed-type)
         + `results` (required, array[AgencyData], fixed-type)
     + Body
 
@@ -87,7 +87,7 @@ This endpoint returns an overview of government agency submission data.
 
 # Data Structures
 
-## PageMetaDataObject (object)
+## PaginationMetadata (object)
 + `page` (required, number)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
@@ -108,6 +108,6 @@ This endpoint returns an overview of government agency submission data.
 + `recent_publication_date` (required, string, nullable)
 + `recent_publication_date_certified` (required, boolean)
 + `recent_publication_date_certified` (required, boolean)
-+ `tas_account_discrepancies_totals` (required, object[TASTotalsObject], fixed-type)
++ `tas_account_discrepancies_totals` (required, array[TASTotalsObject], fixed-type)
 + `obligation_difference` (required, number)
     The difference in file A and file B obligations.

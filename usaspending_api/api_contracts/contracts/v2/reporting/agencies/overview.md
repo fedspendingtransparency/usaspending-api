@@ -1,20 +1,21 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agencies Reporting Overview [/api/v2/reporting/agencies/overview?{fiscal_year,fiscal_period,search,page,limit,order,sort}]
+# Agencies Reporting Overview [/api/v2/reporting/agencies/overview/{?fiscal_year,fiscal_period,search,page,limit,order,sort}]
 
-This endpoint is used to power USAspending.gov's about the data agencies page. This data can be used to better understand the ways agencies submit data.
+This endpoint is used to power USAspending.gov's About the Data \| Agencies Overview table. This data can be used to better understand the ways agencies submit data.
 
 ## GET
 
-This endpoint returns an overview of government agencies submission data.
+This endpoint returns an overview list of government agencies submission data.
 
 + Parameters
 
     + `fiscal_year`: 2020 (required, number)
         The fiscal year.
     + `fiscal_period`: 10 (required, number)
-        The fiscal period.
+        The fiscal period. Valid values: 2-12 (2 = November ... 12 = September)
+        For retriving quarterly data, provide the period which equals 'quarter * 3' (e.g. Q2 = P6)
     + `search` (optional, string)
         The agency name to filter on.
     + `page` (optional, number)
@@ -35,7 +36,7 @@ This endpoint returns an overview of government agencies submission data.
         + Members
             + `code`
             + `current_total_budget_authority_amount`
-            + `discrepancy_count`
+            + `missing_tas_accounts_total`
             + `name`
             + `obligation_difference`
             + `recent_publication_date`
@@ -44,7 +45,7 @@ This endpoint returns an overview of government agencies submission data.
 + Response 200 (application/json)
 
     + Attributes (object)
-        + `page_metadata` (required, PageMetaDataObject, fixed-type)
+        + `page_metadata` (required, PaginationMetadata, fixed-type)
         + `results` (required, array[AgencyData], fixed-type)
     + Body
 
@@ -67,9 +68,8 @@ This endpoint returns an overview of government agencies submission data.
                         "recent_publication_date": "2020-01-10T11:59:21Z",
                         "recent_publication_date_certified": false,
                         "tas_account_discrepancies_totals": {
-                            "tas_obligations_total": 55234,
-                            "tas_obligations_not_in_gtas_total": 22432,
-                            "tas_accounts_total": 20
+                            "gtas_obligation_total": 55234,
+                            "missing_tas_accounts_total": 20
                         },
                         "obligation_difference": 436376232652.87
                     },
@@ -92,7 +92,7 @@ This endpoint returns an overview of government agencies submission data.
 
 # Data Structures
 
-## PageMetaDataObject (object)
+## PaginationMetadata (object)
 + `page` (required, number)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
@@ -101,7 +101,7 @@ This endpoint returns an overview of government agencies submission data.
 + `total` (required, number)
 + `limit` (required, number)
 
-## TASTotalsObject (object)
+## TASTotals (object)
 + `tas_obligations_total` (required, number)
 + `tas_obligations_not_in_gtas_total` (required, number)
 + `tas_accounts_total` (required, number)
@@ -113,6 +113,6 @@ This endpoint returns an overview of government agencies submission data.
 + `current_total_budget_authority_amount` (required, number)
 + `recent_publication_date` (required, string, nullable)
 + `recent_publication_date_certified` (required, boolean)
-+ `tas_account_discrepancies_totals` (required, object[TASTotalsObject], fixed-type)
++ `tas_account_discrepancies_totals` (required, array[TASTotals], fixed-type)
 + `obligation_difference` (required, number)
     The difference in file A and file B obligations.
