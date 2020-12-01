@@ -11,7 +11,7 @@ This endpoint returns an overview of government agency submission data.
 
 + Parameters
     + `agency_code`: `020` (required, string)
-        The specific agency code.
+        The specific agency.
     + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
@@ -28,12 +28,12 @@ This endpoint returns an overview of government agency submission data.
         A data field that will be used to sort the response array.
         + Default: `current_total_budget_authority_amount`
         + Members
-            + `code`
+            + `agency_code`
             + `current_total_budget_authority_amount`
             + `discrepancy_count`
             + `fiscal_year`
             + `fiscal_period`
-            + `name`
+            + `agency_name`
             + `obligation_difference`
             + `recent_publication_date`
             + `recent_publication_date_certified`
@@ -63,9 +63,9 @@ This endpoint returns an overview of government agency submission data.
                         "recent_publication_date": "2020-01-10T11:59:21Z",
                         "recent_publication_date_certified": false,
                         "tas_account_discrepancies_totals": {
-                            "tas_obligations_total": 66432,
+                            "gtas_obligation_total": 66432,
                             "tas_obligations_not_in_gtas_total": 11543,
-                            "tas_accounts_total": 10
+                            "missing_tas_accounts_count": 10
                         },
                         "obligation_difference": 436376232652.87
                     },
@@ -76,9 +76,9 @@ This endpoint returns an overview of government agency submission data.
                         "recent_publication_date": null,
                         "recent_publication_date_certified": true,
                         "tas_account_discrepancies_totals": {
-                            "tas_obligations_total": 66432,
+                            "gtas_obligation_total": 66432,
                             "tas_obligations_not_in_gtas_total": 11543,
-                            "tas_accounts_total": 10
+                            "missing_tas_accounts_count": 10
                         },
                         "obligation_difference": 436376232652.87
                     }
@@ -96,10 +96,10 @@ This endpoint returns an overview of government agency submission data.
 + `total` (required, number)
 + `limit` (required, number)
 
-## TASTotalsObject (object)
-+ `tas_obligations_total` (required, number)
+## TASTotals (object)
++ `gtas_obligation_total` (required, number)
 + `tas_obligations_not_in_gtas_total` (required, number)
-+ `tas_accounts_total` (required, number)
++ `missing_tas_accounts_count` (required, number)
 
 ## AgencyData (object)
 + `fiscal_year` (required, number)
@@ -108,6 +108,6 @@ This endpoint returns an overview of government agency submission data.
 + `recent_publication_date` (required, string, nullable)
 + `recent_publication_date_certified` (required, boolean)
 + `recent_publication_date_certified` (required, boolean)
-+ `tas_account_discrepancies_totals` (required, array[TASTotalsObject], fixed-type)
++ `tas_account_discrepancies_totals` (required, array[TASTotals], fixed-type)
 + `obligation_difference` (required, number)
     The difference in file A and file B obligations.

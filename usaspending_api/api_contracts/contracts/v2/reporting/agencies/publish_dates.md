@@ -28,9 +28,9 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
         A data field that will be used to sort the response array.
         + Default: `current_total_budget_authority_amount`
         + Members
-            + `name`
+            + `agency_name`
             + `abbreviation`
-            + `code`
+            + `agency_code`
             + `current_total_budget_authority_amount`
             + `publication_date`
                 When using publication_date, provide the desired fiscal period (2-12) after a comma
@@ -55,9 +55,9 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
                 },
                 "results": [
                     {
-                        "name": "Department of Health and Human Services",
+                        "agency_name": "Department of Health and Human Services",
                         "abbreviation": "DHHS",
-                        "code": "020",
+                        "agency_code": "020",
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "periods": [
                             "period": 2,
@@ -71,9 +71,9 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
                         ]
                     },
                     {
-                        "name": "Department of Treasury",
+                        "agency_name": "Department of Treasury",
                         "abbreviation": "DOT",
-                        "code": "021",
+                        "agency_code": "021",
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "periods": [
                             "period": 2,
@@ -112,8 +112,8 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
 + `certified` (required, boolean)
 
 ## Agency (object)
-+ `name` (required, string)
++ `agency_name` (required, string)
 + `abbreviation` (required, string)
-+ `code` (required, string)
++ `agency_code` (required, string)
 + `current_total_budget_authority_amount` (required, number)
 + `periods` (required, array[Period], fixed-type)
