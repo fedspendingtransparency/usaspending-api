@@ -1,22 +1,19 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Publish Dates [/api/v2/reporting/agencies/{agency_code}/publish_dates?{fiscal_year,fiscal_period,search,page,limit,order,sort}]
+# Agency Reporting Publish Dates [/api/v2/reporting/agencies/{agency_code}/publish_dates?{fiscal_year,search,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's about the data submission history modal. This data can be used to better understand the ways agencies submit data.
 
 ## GET
 
-This endpoint returns an overview of government agencies submission data.
-
 + Parameters
-    + `agency_code`: `020` (required, string)
-        The specific agency code.
+
     + `fiscal_year`: 2020 (required, number)
         The fiscal year.
-    + `fiscal_period`: 10 (required, number)
-        The fiscal period.
-        + `page` (optional, number)
+    + `search` (optional, string)
+        The agency name to filter on.
+    + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
     + `limit` (optional, number)
@@ -30,15 +27,19 @@ This endpoint returns an overview of government agencies submission data.
             + `desc`
     + `sort` (optional, enum[string])
         A data field that will be used to sort the response array.
-        + Default: `publication_date`
+        + Default: `current_total_budget_authority_amount`
         + Members
-            + `publication_date`
-            + `certification_date`
+            + `name`
+            + `abbreviation`
+            + `code`
+            + `current_total_budget_authority_amount`
+            + `period`
 
 + Response 200 (application/json)
 
     + Attributes (object)
-        + `results` (required, array[AgencyData], fixed-type)
+        + `page_metadata` (required, PageMetaDataObject, fixed-type)
+        + `results` (required, array[Agency], fixed-type)
     + Body
 
             {
@@ -53,19 +54,43 @@ This endpoint returns an overview of government agencies submission data.
                 },
                 "results": [
                     {
-                        "publication_date": "2020-10-11T11:59:21Z",
-                        "certification_date": "2020-10-22T11:59:21Z",
+                        "name": "Department of Health and Human Services",
+                        "abbreviation": "DHHS",
+                        "code": "020",
+                        "current_total_budget_authority_amount": 8361447130497.72,
+                        "periods": [
+                            "period": 2,
+                            "quarter": 1,
+                            "submission_dates": {
+                                "publication_date" : "2020-01-20T11:59:21Z",
+                                "certification_date" : "2020-01-21T10:58:21Z"
+                            },
+                            "quarterly": false,
+                            "submitted": true
+                        ]
                     },
                     {
-                        "publication_date": "2020-07-10T11:59:21Z",
-                        "certification_date": "2020-07-11T11:59:21Z",
+                        "name": "Department of Treasury",
+                        "abbreviation": "DOT",
+                        "code": "021",
+                        "current_total_budget_authority_amount": 8361447130497.72,
+                        "periods": [
+                            "period": 2,
+                            "quarter": 1,
+                            "submission_dates": {
+                                "publication_date" : "2020-01-20T11:59:21Z",
+                                "certification_date" : "2020-01-21T10:58:21Z"
+                            },
+                            "quarterly": false,
+                            "submitted": true
+                        ]
                     }
                 ]
             }
 
 # Data Structures
 
-## PageMetadata (object)
+## PageMetaDataObject (object)
 + `page` (required, number)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
@@ -74,6 +99,20 @@ This endpoint returns an overview of government agencies submission data.
 + `total` (required, number)
 + `limit` (required, number)
 
-## SubmissionHistory (object)
+## SubmissionDates
 + `publication_date` (required, string, nullable)
 + `certification_date` (required, string, nullable)
+
+## Period (object)
++ `period` (required, number)
++ `quarter` (required, number)
++ `submission_dates` (required, object[SubmissionDates], nullable)
++ `quarterly` (required, boolean)
++ `submitted` (required, boolean)
+
+## Agency (object)
++ `name` (required, string)
++ `abbreviation` (required, string)
++ `code` (required, string)
++ `current_total_budget_authority_amount` (required, number)
++ `periods` (required, array[Period], fixed-type)

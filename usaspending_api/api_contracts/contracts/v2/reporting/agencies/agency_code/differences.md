@@ -22,7 +22,7 @@ This endpoint returns an overview of government agency obligation differences da
     + `limit` (optional, number)
         The number of results to include per page.
         + Default: 10
-    + `order`: (optional, enum[string])
+    + `order` (optional, enum[string])
         The direction (`asc` or `desc`) that the `sort` field will be sorted in.
         + Default: `desc`
         + Members
@@ -73,7 +73,7 @@ This endpoint returns an overview of government agency obligation differences da
 
 # Data Structures
 
-## PageMetadata (object)
+## PageMetaDataObject (object)
 + `page` (required, number)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)

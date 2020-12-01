@@ -92,7 +92,7 @@ This endpoint returns an overview of government agencies submission data.
 
 # Data Structures
 
-## PageMetadata (object)
+## PageMetaDataObject (object)
 + `page` (required, number)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
