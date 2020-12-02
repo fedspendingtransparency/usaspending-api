@@ -34,8 +34,8 @@ This endpoint returns an overview of government agency obligation differences da
         + Default: `difference`
         + Members
             + `difference`
-            + `file_a_obligations`
-            + `file_b_obligations`
+            + `file_a_obligation`
+            + `file_b_obligation`
             + `tas`
 
 + Response 200 (application/json)
@@ -59,14 +59,14 @@ This endpoint returns an overview of government agency obligation differences da
                 "results": [
                     {
                         "tas": "210-1503",
-                        "file_a_obligations": 234543543,
-                        "file_b_obligations": 456438768,
+                        "file_a_obligation": 234543543,
+                        "file_b_obligation": 456438768,
                         "difference": -221895225
                     },
                     {
                         "tas": "012-0212",
-                        "file_a_obligations": 43637623,
-                        "file_b_obligations": 20486582,
+                        "file_a_obligation": 43637623,
+                        "file_b_obligation": 20486582,
                         "difference": 23151041
                     }
                 ]
@@ -85,6 +85,6 @@ This endpoint returns an overview of government agency obligation differences da
 
 ## ObligationDifferences (object)
 + `tas` (required, string)
-+ `file_a_obligations` (required, number)
-+ `file_b_obligations` (required, number)
++ `file_a_obligation` (required, number)
++ `file_b_obligation` (required, number)
 + `difference` (required, number)

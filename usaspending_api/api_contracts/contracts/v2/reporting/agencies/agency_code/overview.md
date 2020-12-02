@@ -28,8 +28,6 @@ This endpoint returns an overview of government agency submission data.
         A data field that will be used to sort the response array.
         + Default: `current_total_budget_authority_amount`
         + Members
-            + `agency_code`
-            + `agency_name`
             + `current_total_budget_authority_amount`
             + `fiscal_period`
             + `fiscal_year`
@@ -64,7 +62,8 @@ This endpoint returns an overview of government agency submission data.
                         "recent_publication_date_certified": false,
                         "tas_account_discrepancies_totals": {
                             "gtas_obligation_total": 66432,
-                            "tas_obligations_not_in_gtas_total": 11543,
+                            "tas_accounts_total": 2342,
+                            "tas_obligation_not_in_gtas_total": 11543,
                             "missing_tas_accounts_count": 10
                         },
                         "obligation_difference": 436376232652.87
@@ -77,7 +76,8 @@ This endpoint returns an overview of government agency submission data.
                         "recent_publication_date_certified": true,
                         "tas_account_discrepancies_totals": {
                             "gtas_obligation_total": 66432,
-                            "tas_obligations_not_in_gtas_total": 11543,
+                            "tas_accounts_total": 23903,
+                            "tas_obligation_not_in_gtas_total": 11543,
                             "missing_tas_accounts_count": 10
                         },
                         "obligation_difference": 436376232652.87
@@ -98,7 +98,8 @@ This endpoint returns an overview of government agency submission data.
 
 ## TASTotals (object)
 + `gtas_obligation_total` (required, number)
-+ `tas_obligations_not_in_gtas_total` (required, number)
++ `tas_accounts_total` (required, number)
++ `tas_obligation_not_in_gtas_total` (required, number)
 + `missing_tas_accounts_count` (required, number)
 
 ## AgencyData (object)

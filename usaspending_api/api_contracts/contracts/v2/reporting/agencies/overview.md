@@ -64,12 +64,14 @@ This endpoint returns an overview list of government agencies submission data.
                         "agency_name": "Department of Health and Human Services",
                         "abbreviation": "DHHS",
                         "agency_code": "020",
+                        "agency_id": 123,
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "recent_publication_date": "2020-01-10T11:59:21Z",
                         "recent_publication_date_certified": false,
                         "tas_account_discrepancies_totals": {
                             "gtas_obligation_total": 55234,
-                            "tas_obligations_not_in_gtas_total": 343345,
+                            "tas_accounts_total": 23923,
+                            "tas_obligation_not_in_gtas_total": 343345,
                             "missing_tas_accounts_count": 20
                         },
                         "obligation_difference": 436376232652.87
@@ -78,12 +80,14 @@ This endpoint returns an overview list of government agencies submission data.
                         "agency_name": "Department of Treasury",
                         "abbreviation": "DOT",
                         "agency_code": "021",
+                        "agency_id": 789,
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "recent_publication_date": null,
                         "recent_publication_date_certified": true,
                         "tas_account_discrepancies_totals": {
                             "gtas_obligation_total": 66432,
-                            "tas_obligations_not_in_gtas_total": 11543,
+                            "tas_accounts_total": 23913,
+                            "tas_obligation_not_in_gtas_total": 11543,
                             "missing_tas_accounts_count": 10
                         },
                         "obligation_difference": 436376232652.87
@@ -104,16 +108,18 @@ This endpoint returns an overview list of government agencies submission data.
 
 ## TASTotals (object)
 + `gtas_obligation_total` (required, number)
-+ `tas_obligations_not_in_gtas_total` (required, number)
++ `tas_accounts_total` (required, number)
++ `tas_obligation_not_in_gtas_total` (required, number)
 + `missing_tas_accounts_count` (required, number)
 
 ## AgencyData (object)
 + `agency_name` (required, string)
 + `abbreviation` (required, string)
 + `agency_code` (required, string)
++ `agency_id` (required, number, nullable)
 + `current_total_budget_authority_amount` (required, number)
 + `recent_publication_date` (required, string, nullable)
 + `recent_publication_date_certified` (required, boolean)
 + `tas_account_discrepancies_totals` (required, array[TASTotals], fixed-type)
 + `obligation_difference` (required, number)
-    The difference in file A and file B obligations.
+    The difference in File A and File B obligations.
