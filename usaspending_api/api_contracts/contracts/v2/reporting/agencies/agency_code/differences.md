@@ -31,7 +31,7 @@ This endpoint returns an overview of government agency obligation differences da
             + `desc`
     + `sort` (optional, enum[string])
         A data field that will be used to sort the response array.
-        + Default: `difference`
+        + Default: `tas`
         + Members
             + `difference`
             + `file_a_obligation`
