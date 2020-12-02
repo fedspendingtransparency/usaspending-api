@@ -66,8 +66,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
                                 "publication_date" : "2020-01-20T11:59:21Z",
                                 "certification_date" : "2020-01-21T10:58:21Z"
                             },
-                            "quarterly": false,
-                            "certified": true
+                            "quarterly": false
                         ]
                     },
                     {
@@ -82,8 +81,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
                                 "publication_date" : "2020-01-20T11:59:21Z",
                                 "certification_date" : "2020-01-21T10:58:21Z"
                             },
-                            "quarterly": false,
-                            "certified": true
+                            "quarterly": false
                         ]
                     }
                 ]
@@ -109,7 +107,6 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
 + `quarter` (required, number)
 + `submission_dates` (required, array[SubmissionDates], nullable)
 + `quarterly` (required, boolean)
-+ `certified` (required, boolean)
 
 ## Agency (object)
 + `agency_name` (required, string)

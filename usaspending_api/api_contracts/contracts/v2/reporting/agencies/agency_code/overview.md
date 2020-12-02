@@ -29,14 +29,14 @@ This endpoint returns an overview of government agency submission data.
         + Default: `current_total_budget_authority_amount`
         + Members
             + `agency_code`
-            + `current_total_budget_authority_amount`
-            + `discrepancy_count`
-            + `fiscal_year`
-            + `fiscal_period`
             + `agency_name`
+            + `current_total_budget_authority_amount`
+            + `fiscal_period`
+            + `fiscal_year`
+            + `missing_tas_accounts_count`
             + `obligation_difference`
-            + `recent_publication_date`
             + `recent_publication_date_certified`
+            + `recent_publication_date`
 
 + Response 200 (application/json)
 
