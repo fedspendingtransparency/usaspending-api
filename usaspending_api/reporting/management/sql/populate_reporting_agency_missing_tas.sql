@@ -1,5 +1,5 @@
 DELETE FROM public.reporting_agency_missing_tas;
-ALTER SEQUENCE reporting_agency_missing_tas_reporting_agency_missing_tas_id_seq RESTART WITH 1;
+ALTER SEQUENCE reporting_agency_missing_tas_reporting_agency_missing_tas_i_seq RESTART WITH 1;
 
 INSERT INTO public.reporting_agency_missing_tas (
     toptier_code,
