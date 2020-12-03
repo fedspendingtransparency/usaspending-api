@@ -33,7 +33,7 @@ class BaseAwardSearchModel(models.Model):
     total_obl_bin = models.TextField()
 
     recipient_hash = models.UUIDField()
-    recipient_levels = models.ArrayField(models.TextField(), default=list)
+    recipient_levels = ArrayField(models.TextField(), default=list)
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()

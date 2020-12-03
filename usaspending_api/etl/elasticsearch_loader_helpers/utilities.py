@@ -1,15 +1,12 @@
 import json
 import logging
-
 import psycopg2
 
 from dataclasses import dataclass
 from django.conf import settings
 from pathlib import Path
 from random import choice
-from typing import Any, Generator, List, Optional, Union
-
-from pandas import Series
+from typing import Any, Generator, List, Optional
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -127,110 +124,3 @@ def gen_random_name() -> Generator[str, None, None]:
         if len(previous_names) >= (upper_limit + (upper_limit * full_cycles)):
             full_cycles += 1
             loop = f" {to_roman_numerals(full_cycles)}"
-
-
-def create_agg_key(record: Union[dict, Series], key_name: str):
-    """ Returns the json.dumps() for an Ordered Dictionary representing the agg_key """
-
-    def _recipient_agg_key():
-        if record["recipient_hash"] is None or record["recipient_levels"] is None:
-            return {
-                "name": record["recipient_name"],
-                "unique_id": record["recipient_unique_id"],
-                "hash": None,
-                "levels": None,
-            }
-        return {
-            "name": record["recipient_name"],
-            "unique_id": record["recipient_unique_id"],
-            "hash": str(record["recipient_hash"]),
-            "levels": record["recipient_levels"],
-        }
-
-    def _agency_agg_key(agency_type, agency_tier):
-        if record[f"{agency_type}_{agency_tier}_agency_name"] is None:
-            return None
-        result = {"name": record[f"{agency_type}_{agency_tier}_agency_name"]}
-        if f"{agency_type}_{agency_tier}_agency_abbreviation" in record:
-            result["abbreviation"] = record[f"{agency_type}_{agency_tier}_agency_abbreviation"]
-        if f"{agency_type}_{agency_tier}_agency_code" in record:
-            result["code"] = record[f"{agency_type}_{agency_tier}_agency_code"]
-        result["id"] = record[f"{agency_type}_{agency_tier + '_' if agency_tier == 'toptier' else ''}agency_id"]
-        return result
-
-    def _naics_agg_key():
-        if record["naics_code"] is None:
-            return None
-        return {"code": record["naics_code"], "description": record["naics_description"]}
-
-    def _psc_agg_key():
-        if record["product_or_service_code"] is None:
-            return None
-        return {"code": record["product_or_service_code"], "description": record["product_or_service_description"]}
-
-    def _county_agg_key(location_type):
-        if record[f"{location_type}_state_code"] is None or record[f"{location_type}_county_code"] is None:
-            return None
-        return {
-            "country_code": record[f"{location_type}_country_code"],
-            "state_code": record[f"{location_type}_state_code"],
-            "state_fips": record[f"{location_type}_state_fips"],
-            "county_code": record[f"{location_type}_county_code"],
-            "county_name": record[f"{location_type}_county_name"],
-            "population": record[f"{location_type}_county_population"],
-        }
-
-    def _congressional_agg_key(location_type):
-        if record[f"{location_type}_state_code"] is None or record[f"{location_type}_congressional_code"] is None:
-            return None
-        return {
-            "country_code": record[f"{location_type}_country_code"],
-            "state_code": record[f"{location_type}_state_code"],
-            "state_fips": record[f"{location_type}_state_fips"],
-            "congressional_code": record[f"{location_type}_congressional_code"],
-            "population": record[f"{location_type}_congressional_population"],
-        }
-
-    def _state_agg_key(location_type):
-        if record[f"{location_type}_state_code"] is None:
-            return None
-        return {
-            "country_code": record[f"{location_type}_country_code"],
-            "state_code": record[f"{location_type}_state_code"],
-            "state_name": record[f"{location_type}_state_name"],
-            "population": record[f"{location_type}_state_population"],
-        }
-
-    def _country_agg_key(location_type):
-        if record[f"{location_type}_country_code"] is None:
-            return None
-        return {
-            "country_code": record[f"{location_type}_country_code"],
-            "country_name": record[f"{location_type}_country_name"],
-        }
-
-    agg_key_func_lookup = {
-        "awarding_subtier_agency_agg_key": lambda: _agency_agg_key("awarding", "subtier"),
-        "awarding_toptier_agency_agg_key": lambda: _agency_agg_key("awarding", "toptier"),
-        "funding_subtier_agency_agg_key": lambda: _agency_agg_key("funding", "subtier"),
-        "funding_toptier_agency_agg_key": lambda: _agency_agg_key("funding", "toptier"),
-        "naics_agg_key": _naics_agg_key,
-        "pop_congressional_agg_key": lambda: _congressional_agg_key("pop"),
-        "pop_country_agg_key": lambda: _country_agg_key("pop"),
-        "pop_county_agg_key": lambda: _county_agg_key("pop"),
-        "pop_state_agg_key": lambda: _state_agg_key("pop"),
-        "psc_agg_key": _psc_agg_key,
-        "recipient_agg_key": _recipient_agg_key,
-        "recipient_location_congressional_agg_key": lambda: _congressional_agg_key("recipient_location"),
-        "recipient_location_county_agg_key": lambda: _county_agg_key("recipient_location"),
-        "recipient_location_state_agg_key": lambda: _state_agg_key("recipient_location"),
-    }
-
-    agg_key_func = agg_key_func_lookup.get(key_name)
-    if agg_key_func is None:
-        logger.error(f"The agg_key '{key_name}' is not valid.")
-
-    agg_key = agg_key_func()
-    if agg_key is None:
-        return None
-    return json.dumps(agg_key)

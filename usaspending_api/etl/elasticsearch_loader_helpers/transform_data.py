@@ -4,8 +4,8 @@ from django.conf import settings
 from time import perf_counter
 from typing import Callable, Dict, List, Optional
 
+from usaspending_api.etl.elasticsearch_loader_helpers import aggregate_key_functions as funcs
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
-    create_agg_key,
     convert_postgres_json_array_to_list,
     format_log,
     TaskSpec,
@@ -17,41 +17,41 @@ logger = logging.getLogger("script")
 
 def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     converters = {}
-    agg_keys = [
-        "funding_subtier_agency_agg_key",
-        "funding_toptier_agency_agg_key",
-        "pop_county_agg_key",
-        "pop_congressional_agg_key",
-        "pop_state_agg_key",
-        "recipient_agg_key",
-        "recipient_location_county_agg_key",
-        "recipient_location_congressional_agg_key",
-        "recipient_location_state_agg_key",
-    ]
-    return transform_data(worker, records, converters, agg_keys, settings.ES_ROUTING_FIELD)
+    agg_key_creations = {
+        "funding_subtier_agency_agg_key": funcs.funding_subtier_agency_agg_key,
+        "funding_toptier_agency_agg_key": funcs.funding_toptier_agency_agg_key,
+        "pop_congressional_agg_key": funcs.pop_congressional_agg_key,
+        "pop_county_agg_key": funcs.pop_county_agg_key,
+        "pop_state_agg_key": funcs.pop_state_agg_key,
+        "recipient_agg_key": funcs.recipient_agg_key,
+        "recipient_location_congressional_agg_key": funcs.recipient_location_congressional_agg_key,
+        "recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
+        "recipient_location_state_agg_key": funcs.recipient_location_state_agg_key,
+    }
+    return transform_data(worker, records, converters, agg_key_creations, settings.ES_ROUTING_FIELD)
 
 
 def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     converters = {
         "federal_accounts": convert_postgres_json_array_to_list,
     }
-    agg_keys = [
-        "awarding_subtier_agency_agg_key",
-        "awarding_toptier_agency_agg_key",
-        "funding_subtier_agency_agg_key",
-        "funding_toptier_agency_agg_key",
-        "naics_agg_key",
-        "pop_county_agg_key",
-        "pop_congressional_agg_key",
-        "pop_state_agg_key",
-        "pop_country_agg_key",
-        "psc_agg_key",
-        "recipient_agg_key",
-        "recipient_location_county_agg_key",
-        "recipient_location_congressional_agg_key",
-        "recipient_location_state_agg_key",
-    ]
-    return transform_data(worker, records, converters, agg_keys, settings.ES_ROUTING_FIELD)
+    agg_key_creations = {
+        "awarding_subtier_agency_agg_key": funcs.awarding_subtier_agency_agg_key,
+        "awarding_toptier_agency_agg_key": funcs.awarding_toptier_agency_agg_key,
+        "funding_subtier_agency_agg_key": funcs.funding_subtier_agency_agg_key,
+        "funding_toptier_agency_agg_key": funcs.funding_toptier_agency_agg_key,
+        "naics_agg_key": funcs.naics_agg_key,
+        "pop_congressional_agg_key": funcs.pop_congressional_agg_key,
+        "pop_country_agg_key": funcs.pop_country_agg_key,
+        "pop_county_agg_key": funcs.pop_county_agg_key,
+        "pop_state_agg_key": funcs.pop_state_agg_key,
+        "psc_agg_key": funcs.psc_agg_key,
+        "recipient_agg_key": funcs.recipient_agg_key,
+        "recipient_location_congressional_agg_key": funcs.recipient_location_congressional_agg_key,
+        "recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
+        "recipient_location_state_agg_key": funcs.recipient_location_state_agg_key,
+    }
+    return transform_data(worker, records, converters, agg_key_creations, settings.ES_ROUTING_FIELD)
 
 
 def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
@@ -99,7 +99,7 @@ def transform_data(
     worker: TaskSpec,
     records: List[dict],
     converters: Dict[str, Callable],
-    agg_keys: List[str],
+    agg_key_creations: List[str],
     routing_field: Optional[str] = None,
 ) -> List[dict]:
     logger.info(format_log(f"Transforming data", name=worker.name, action="Transform"))
@@ -109,8 +109,8 @@ def transform_data(
     for record in records:
         for field, converter in converters.items():
             record[field] = converter(record[field])
-        for key in agg_keys:
-            record[key] = create_agg_key(record, key)
+        for key, transform_func in agg_key_creations.items():
+            record[key] = transform_func(record)
 
         # Route all documents with the same recipient to the same shard
         # This allows for accuracy and early-termination of "top N" recipient category aggregation queries
