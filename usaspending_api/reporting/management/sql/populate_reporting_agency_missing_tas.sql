@@ -8,24 +8,34 @@ INSERT INTO public.reporting_agency_missing_tas (
     tas_rendering_label,
     obligated_amount
 )
+WITH app AS (
+    SELECT
+        aab.treasury_account_identifier,
+        sa.reporting_fiscal_year AS fiscal_year,
+        sa.reporting_fiscal_period AS fiscal_period
+    FROM appropriation_account_balances AS aab 
+    INNER JOIN submission_attributes AS sa
+        ON aab.submission_id = sa.submission_id
+)
 SELECT
     ta.toptier_code,
-    sa.reporting_fiscal_year AS fiscal_year,
-    sa.reporting_fiscal_period AS fiscal_period,
+    app.fiscal_year,
+    app.fiscal_period,
     taa.tas_rendering_label,
-    SUM(obligations_incurred_total_by_tas_cpe) AS obligated_amount
-FROM appropriation_account_balances AS aab
-INNER JOIN submission_attributes AS sa
-    ON aab.submission_id = sa.submission_id
+    SUM(gtas.obligations_incurred_total_cpe) AS obligated_amount
+FROM gtas_sf133_balances AS gtas
 INNER JOIN treasury_appropriation_account AS taa
-    ON aab.treasury_account_identifier = taa.treasury_account_identifier
+    ON gtas.treasury_account_identifier = taa.treasury_account_identifier
 INNER JOIN toptier_agency AS ta
     ON taa.funding_toptier_agency_id = ta.toptier_agency_id
-RIGHT OUTER JOIN gtas_sf133_balances AS gsb
-    ON sa.reporting_fiscal_period = gsb.fiscal_period
-    AND sa.reporting_fiscal_year = gsb.fiscal_year
-    AND aab.treasury_account_identifier = gsb.treasury_account_identifier
+LEFT OUTER JOIN app
+    ON app.fiscal_period = gtas.fiscal_period
+    AND app.fiscal_year = gtas.fiscal_year
+    AND app.treasury_account_identifier = gtas.treasury_account_identifier
 WHERE
-    aab.treasury_account_identifier IS NULL
-GROUP BY sa.reporting_fiscal_period, sa.reporting_fiscal_year, taa.tas_rendering_label, ta.toptier_code
+    app.treasury_account_identifier IS NULL
+GROUP BY ta.toptier_code,
+    app.fiscal_year,
+    app.fiscal_period,
+    taa.tas_rendering_label
 ;
