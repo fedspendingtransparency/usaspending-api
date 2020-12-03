@@ -157,6 +157,29 @@ class Command(load_base.Command):
     def get_broker_submission(self):
         self.db_cursor.execute(
             f"""
+                with publish_certify_history as (
+                    select
+                        distinct_pairings.submission_id,
+                        json_agg(
+                            json_build_object(
+                                'published_date', ph.created_at::timestamptz,
+                                'certified_date', ch.created_at::timestamptz
+                            )
+                        ) AS history
+                    from
+                        (select distinct
+                            submission_id,
+                            publish_history_id,
+                            certify_history_id
+                        from published_files_history
+                        where submission_id = %s) as distinct_pairings
+                    left join
+                        publish_history as ph
+                            on distinct_pairings.publish_history_id = ph.publish_history_id
+                    left join
+                        certify_history as ch
+                            on distinct_pairings.certify_history_id = ch.certify_history_id
+                    group by distinct_pairings.submission_id)
                 select
                     s.submission_id,
                     (
@@ -176,11 +199,13 @@ class Command(load_base.Command):
                     s.reporting_fiscal_period,
                     s.is_quarter_format,
                     s.d2_submission,
-                    s.publish_status_id
+                    s.publish_status_id,
+                    pch.history
                 from
                     submission as s
-                where
-                    s.submission_id = %s
+                join
+                    publish_certify_history as pch
+                        on pch.submission_id = s.submission_id
             """,
             [self.submission_id],
         )
