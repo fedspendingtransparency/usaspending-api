@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import connection
 from model_mommy import mommy
 
+from usaspending_api.reporting.models import ReportingAgencyMissingTas
 
 @pytest.fixture
 def setup_test_data(db):
@@ -96,33 +97,32 @@ def setup_test_data(db):
 
 def test_run_script(setup_test_data):
     """ Test that the populate_reporting_agency_missing_tas script acts as expected """
-    sql_path = str(settings.APP_DIR / "reporting/management/sql/populate_reporting_agency_missing_tas.sql")
+    sql_path = settings.APP_DIR / "reporting" / "management" / "sql" / "populate_reporting_agency_missing_tas.sql"
 
     with open(sql_path) as f:
         test_sql = f.read()
 
     with connection.cursor() as cursor:
         cursor.execute(test_sql)
-        cursor.execute("SELECT * FROM reporting_agency_missing_tas ORDER BY fiscal_year, fiscal_period, toptier_code")
-        results = cursor.fetchall()
+    results = ReportingAgencyMissingTas.objects.filter().all()
 
     # Expected results: GTAS rows 3, 4 and 5 & 6 summed
     assert len(results) == 3
 
-    assert results[0][1] == "123"
-    assert results[0][2] == 2019
-    assert results[0][3] == 5
-    assert results[0][4] == "tas-1"
-    assert results[0][5] == Decimal("3")
+    assert results[0].toptier_code == "123"
+    assert results[0].fiscal_year == 2019
+    assert results[0].fiscal_period == 5
+    assert results[0].tas_rendering_label == "tas-1"
+    assert results[0].obligated_amount == Decimal("3")
 
-    assert results[1][1] == "123"
-    assert results[1][2] == 2020
-    assert results[1][3] == 3
-    assert results[1][4] == "tas-1"
-    assert results[1][5] == Decimal("4")
+    assert results[1].toptier_code == "123"
+    assert results[1].fiscal_year == 2020
+    assert results[1].fiscal_period == 3
+    assert results[1].tas_rendering_label == "tas-1"
+    assert results[1].obligated_amount == Decimal("4")
 
-    assert results[2][1] == "123"
-    assert results[2][2] == 2020
-    assert results[2][3] == 3
-    assert results[2][4] == "tas-2"
-    assert results[2][5] == Decimal("11")
+    assert results[2].toptier_code == "123"
+    assert results[2].fiscal_year == 2020
+    assert results[2].fiscal_period == 3
+    assert results[2].tas_rendering_label == "tas-2"
+    assert results[2].obligated_amount == Decimal("11")
