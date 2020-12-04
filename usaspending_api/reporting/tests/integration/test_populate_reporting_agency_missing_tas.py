@@ -7,6 +7,7 @@ from model_mommy import mommy
 
 from usaspending_api.reporting.models import ReportingAgencyMissingTas
 
+
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
