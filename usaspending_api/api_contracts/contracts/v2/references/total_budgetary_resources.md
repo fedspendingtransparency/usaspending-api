@@ -14,7 +14,8 @@ This endpoint returns federal budgetary resources by fiscal year and fiscal peri
     + `fiscal_year`(optional, number)
         The fiscal year.
     + `fiscal_period` (optional, number)
-        The fiscal period. If this optional parameter is provided then `fiscal_year` is a required parameter
+        The fiscal period. If this optional parameter is provided then `fiscal_year` is a required parameter. If `fiscal_period` is provided without `fiscal_year`, a 400 error is returned.
+    + If neither paramater is provided, full history will be returned.
 
 + Response 200 (application/json)
 
