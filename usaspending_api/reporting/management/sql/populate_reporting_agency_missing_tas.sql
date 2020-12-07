@@ -9,10 +9,6 @@ INSERT INTO public.reporting_agency_missing_tas (
     obligated_amount
 )
 
-
-agency_identifier FROM tas_lookup WHERE (financial_indicator2 <> 'F' OR financial_indicator2 IS NULL)
-
-
 WITH missing AS (
     SELECT
         gtas.id
