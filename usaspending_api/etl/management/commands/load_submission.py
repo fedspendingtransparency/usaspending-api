@@ -162,8 +162,8 @@ class Command(load_base.Command):
                         distinct_pairings.submission_id,
                         json_agg(
                             json_build_object(
-                                'published_date', ph.created_at::timestamptz,
-                                'certified_date', ch.created_at::timestamptz
+                                'published_date', ph.updated_at::timestamptz,
+                                'certified_date', ch.updated_at::timestamptz
                             )
                         ) AS history
                     from

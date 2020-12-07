@@ -1,6 +1,7 @@
 import copy
 import pytest
 
+from datetime import datetime, timedelta
 from django.core.management import call_command
 from django.db import connections
 from django.db.models import Q
@@ -10,8 +11,11 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
 
+earlier_time = datetime.now() - timedelta(days=1)
+current_time = datetime.now()
 
-@pytest.mark.usefixtures("broker_db_setup")
+
+@pytest.mark.usefixtures("broker_db_setup", "broker_server_dblink_setup")
 class TestWithMultipleDatabases(TestCase):
     databases = "__all__"
 
@@ -47,7 +51,12 @@ class TestWithMultipleDatabases(TestCase):
         broker_objects_to_insert = {
             "tas_lookup": {"broker_object": _assemble_broker_tas_lookup_records(), "conflict_column": "tas_id"},
             "submission": {"broker_object": _assemble_broker_submission_records(), "conflict_column": "submission_id"},
+            "publish_history": {"broker_object": _assemble_publish_history(), "conflict_column": "publish_history_id"},
             "certify_history": {"broker_object": _assemble_certify_history(), "conflict_column": "certify_history_id"},
+            "published_files_history": {
+                "broker_object": _assemble_published_files_history(),
+                "conflict_column": "published_files_history_id",
+            },
             "certified_award_financial": {
                 "broker_object": _assemble_certified_award_financial_records(),
                 "conflict_column": "certified_award_financial_id",
@@ -428,12 +437,35 @@ def _assemble_certified_award_financial_records() -> list:
     ]
 
 
+def _assemble_publish_history():
+    base_record = {
+        "created_at": earlier_time,
+        "updated_at": earlier_time,
+        "publish_history_id": 1,
+        "submission_id": -9999,
+        "user_id": None,
+    }
+    return [base_record]
+
+
 def _assemble_certify_history():
     base_record = {
-        "created_at": None,
-        "updated_at": None,
+        "created_at": current_time,
+        "updated_at": current_time,
         "certify_history_id": 1,
         "submission_id": -9999,
         "user_id": None,
+    }
+    return [base_record]
+
+
+def _assemble_published_files_history():
+    base_record = {
+        "created_at": None,
+        "updated_at": None,
+        "published_files_history_id": 1,
+        "publish_history_id": 1,
+        "certify_history_id": None,
+        "submission_id": -9999,
     }
     return [base_record]

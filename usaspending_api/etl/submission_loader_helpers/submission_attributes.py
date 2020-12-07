@@ -35,8 +35,7 @@ def attempt_submission_update_only(submission_data):
 
     if submission.certified_date != submission_data["certified_date"]:
         SubmissionAttributes.objects.filter(submission_id=submission_id).update(
-            certified_date=submission_data["certified_date"],
-            history=submission_data["history"]
+            certified_date=submission_data["certified_date"], history=submission_data["history"]
         )
 
     return True
