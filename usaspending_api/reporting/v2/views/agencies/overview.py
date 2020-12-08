@@ -16,7 +16,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class AgenciesOverview(AgencyBase):
-    """Return list of all agencies for a provided fiscal year and period"""
+    """Return list of all agencies and the overview of their spending data for a provided fiscal year and period"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/overview.md"
 
@@ -100,8 +100,6 @@ class AgenciesOverview(AgencyBase):
                     "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
                 }
             )
-            print("tas_obligations", result["tas_obligations"])
-            print("total_dollars_obligated_gtas", result["total_dollars_obligated_gtas"])
         results = sorted(
             results, key=lambda x: x[self.pagination.sort_key], reverse=self.pagination.sort_order == "desc"
         )
@@ -129,10 +127,6 @@ class AgenciesOverview(AgencyBase):
             sort_order=request_data["order"],
         )
 
-    @property
-    def filter(self):
-        return self.request.query_params.get("filter")
-
     @cached_property
     def fiscal_period(self):
         """
@@ -143,3 +137,7 @@ class AgenciesOverview(AgencyBase):
         return self.request.query_params.get(
             "fiscal_period", get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(self.fiscal_year)) or 3
         )
+
+    @property
+    def filter(self):
+        return self.request.query_params.get("filter")
