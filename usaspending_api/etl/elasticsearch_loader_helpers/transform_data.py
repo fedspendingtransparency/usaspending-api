@@ -28,7 +28,22 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
         "recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
         "recipient_location_state_agg_key": funcs.recipient_location_state_agg_key,
     }
-    return transform_data(worker, records, converters, agg_key_creations, settings.ES_ROUTING_FIELD)
+    drop_fields = [
+        "recipient_levels",
+        "funding_toptier_agency_id",
+        "funding_subtier_agency_id",
+        "recipient_location_state_name",
+        "recipient_location_state_fips",
+        "recipient_location_state_population",
+        "recipient_location_county_population",
+        "recipient_location_congressional_population",
+        "pop_state_name",
+        "pop_state_fips",
+        "pop_state_population",
+        "pop_county_population",
+        "pop_congressional_population",
+    ]
+    return transform_data(worker, records, converters, agg_key_creations, drop_fields, settings.ES_ROUTING_FIELD)
 
 
 def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
@@ -51,7 +66,22 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
         "recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
         "recipient_location_state_agg_key": funcs.recipient_location_state_agg_key,
     }
-    return transform_data(worker, records, converters, agg_key_creations, settings.ES_ROUTING_FIELD)
+    drop_fields = [
+        "pop_state_name",
+        "pop_state_fips",
+        "pop_state_population",
+        "pop_county_population",
+        "pop_congressional_population",
+        "recipient_location_state_name",
+        "recipient_location_state_fips",
+        "recipient_location_state_population",
+        "recipient_location_county_population",
+        "recipient_location_congressional_population",
+        "recipient_levels",
+        "awarding_toptier_agency_id",
+        "funding_toptier_agency_id",
+    ]
+    return transform_data(worker, records, converters, agg_key_creations, drop_fields, settings.ES_ROUTING_FIELD)
 
 
 def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
@@ -99,7 +129,8 @@ def transform_data(
     worker: TaskSpec,
     records: List[dict],
     converters: Dict[str, Callable],
-    agg_key_creations: List[str],
+    agg_key_creations: Dict[str, Callable],
+    drop_fields: List[str],
     routing_field: Optional[str] = None,
 ) -> List[dict]:
     logger.info(format_log(f"Transforming data", name=worker.name, action="Transform"))
@@ -126,6 +157,10 @@ def transform_data(
         # from the doc _id field). If explicit routing is done, UPSERTs may cause duplicates,
         # so docs must be deleted before UPSERTed. (More info in streaming_post_to_es(...))
         record["_id"] = record[worker.field_for_es_id]
+
+        # Removing data which were used for creating aggregate keys and aren't necessary standalone
+        for key in drop_fields:
+            record.pop(key)
 
     duration = perf_counter() - start
     logger.info(format_log(f"Transformation operation took {duration:.2f}s", name=worker.name, action="Transform"))

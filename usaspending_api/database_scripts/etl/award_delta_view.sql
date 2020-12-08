@@ -81,7 +81,7 @@ SELECT
   "pop_city_code",
 
   "cfda_number",
-  "cfda_program_title",
+  "cfda_program_title" as cfda_title,
 
   "sai_number",
   "type_of_contract_pricing",
