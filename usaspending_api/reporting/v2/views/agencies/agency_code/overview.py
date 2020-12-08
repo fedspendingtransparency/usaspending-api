@@ -92,6 +92,7 @@ class AgencyOverview(AgencyBase):
     @cached_property
     def pagination(self):
         sortable_columns = [
+            "fiscal_year"
             "current_total_budget_authority_amount",
             "missing_tas_accounts_total",
             "obligation_difference",
