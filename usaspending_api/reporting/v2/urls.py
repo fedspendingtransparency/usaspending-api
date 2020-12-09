@@ -1,6 +1,6 @@
 from django.conf.urls import url
-from usaspending_api.reporting.v2.views.placeholder import Placeholder
+from usaspending_api.reporting.v2.views.differences import Differences
 
 urlpatterns = [
-    url(r"^placeholder/$", Placeholder.as_view()),
+    url(r"^agencies/(?P<agency_code>[0-9]{3,4})/differences/$", Differences.as_view()),
 ]
