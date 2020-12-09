@@ -13,10 +13,7 @@ def setup_test_data(db):
         "submissions.SubmissionAttributes", submission_id=1, reporting_fiscal_year=2019, reporting_fiscal_period=6
     )
     sub2 = mommy.make(
-        "submissions.SubmissionAttributes",
-        submission_id=2,
-        reporting_fiscal_year=2020,
-        reporting_fiscal_period=12,
+        "submissions.SubmissionAttributes", submission_id=2, reporting_fiscal_year=2020, reporting_fiscal_period=12,
     )
     agency = mommy.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency")
 
@@ -141,9 +138,10 @@ def test_basic_success(setup_test_data, client):
                 "missing_tas_accounts_count": None,
             },
             "obligation_difference": 0.0,
-        }
+        },
     ]
     assert response["results"] == expected_results
+
 
 def test_pagination(setup_test_data, client):
     resp = client.get(url + "?sort=current_total_budget_authority_amount&order=asc")
@@ -176,6 +174,6 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": None,
             },
             "obligation_difference": 84931.95,
-        }
+        },
     ]
     assert response["results"] == expected_results

@@ -6,15 +6,14 @@ from django.utils.functional import cached_property
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
-from usaspending_api.references.models import ToptierAgency
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas
 from usaspending_api.submissions.models import SubmissionAttributes
+
 
 class AgencyOverview(AgencyBase):
     """Returns an overview of the specified agency's submission data"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/agency_code/overview.md"
-
 
     def get(self, request, toptier_code):
         results = self.get_agency_overview()
@@ -32,7 +31,7 @@ class AgencyOverview(AgencyBase):
         agency_filters = [
             Q(reporting_fiscal_year=OuterRef("fiscal_year")),
             Q(reporting_fiscal_period=OuterRef("fiscal_period")),
-            Q(toptier_code=OuterRef("toptier_code"))
+            Q(toptier_code=OuterRef("toptier_code")),
         ]
         result_list = (
             ReportingAgencyOverview.objects.filter(toptier_code=self.toptier_code)
@@ -86,7 +85,11 @@ class AgencyOverview(AgencyBase):
                 }
             )
         results = sorted(
-            results, key=lambda x: x[self.pagination.sort_key], reverse=self.pagination.sort_order == "desc"
+            results,
+            key=lambda x: x["tas_account_discrepancies_totals"]["tas_accounts_total"]
+            if self.pagination.sort_key == "missing_tas_accounts_total"
+            else x[self.pagination.sort_key],
+            reverse=self.pagination.sort_order == "desc",
         )
         return results
 
@@ -98,6 +101,7 @@ class AgencyOverview(AgencyBase):
             "missing_tas_accounts_total",
             "obligation_difference",
             "recent_publication_date",
+            "recent_publication_date_certified",
         ]
         default_sort_column = "current_total_budget_authority_amount"
         model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
