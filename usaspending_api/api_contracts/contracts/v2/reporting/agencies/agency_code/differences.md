@@ -49,25 +49,25 @@ This endpoint returns an overview of government agency obligation differences da
 
                 "page_metadata": {
                     "page": 1,
+                    "total": 10,
+                    "limit": 2,
                     "next": 2,
-                    "previous": 0,
-                    "hasNext": false,
-                    "hasPrevious": false,
-                    "total": 2,
-                    "limit": 10
+                    "previous": null,
+                    "hasNext": true,
+                    "hasPrevious": false
                 },
                 "results": [
                     {
-                        "tas": "210-1503",
-                        "file_a_obligation": 234543543,
-                        "file_b_obligation": 456438768,
-                        "difference": -221895225
+                        "tas": "011-X-8345-000",
+                        "file_a_obligation": 47425.37,
+                        "file_b_obligation": 240066.32,
+                        "difference": -192640.95
                     },
                     {
-                        "tas": "012-0212",
-                        "file_a_obligation": 43637623,
-                        "file_b_obligation": 20486582,
-                        "difference": 23151041
+                        "tas": "011-X-8245-000",
+                        "file_a_obligation": 428508.11,
+                        "file_b_obligation": 2358478.83,
+                        "difference": -1929970.72
                     }
                 ]
             }
