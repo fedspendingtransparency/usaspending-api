@@ -92,11 +92,10 @@ class Differences(AgencyBase):
             }
         )
 
-    @staticmethod
-    def get_differences_queryset(request_data):
+    def get_differences_queryset(self, request_data):
         filters = [
             Q(toptier_code=request_data["agency_code"].toptier_code),
-            Q(fiscal_year=request_data["fiscal_year"]),
+            Q(fiscal_year=self.fiscal_year),
             Q(fiscal_period=request_data["fiscal_period"]),
             ~Q(diff_approp_ocpa_obligated_amounts=0),
         ]
