@@ -106,7 +106,11 @@ class AgenciesOverview(AgencyBase):
                 }
             )
         results = sorted(
-            results, key=lambda x: x[self.pagination.sort_key], reverse=self.pagination.sort_order == "desc"
+            results,
+            key=lambda x: x["tas_account_discrepancies_totals"]["tas_accounts_total"]
+            if self.pagination.sort_key == "missing_tas_accounts_total"
+            else x[self.pagination.sort_key],
+            reverse=self.pagination.sort_order == "desc",
         )
         return results
 
@@ -119,6 +123,7 @@ class AgenciesOverview(AgencyBase):
             "agency_name",
             "obligation_difference",
             "recent_publication_date",
+            "recent_publication_date_certified"
         ]
         default_sort_column = "current_total_budget_authority_amount"
         model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
