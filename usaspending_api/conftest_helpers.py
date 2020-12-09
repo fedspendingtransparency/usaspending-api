@@ -1,13 +1,12 @@
 from builtins import Exception
-
-from django.core.serializers.json import json, DjangoJSONEncoder
-
 from datetime import datetime, timezone
 from django.conf import settings
+from django.core.serializers.json import json, DjangoJSONEncoder
 from django.db import connection, DEFAULT_DB_ALIAS
 from elasticsearch import Elasticsearch
 from pathlib import Path
 from string import Template
+from typing import Optional, List
 
 from usaspending_api.common.sqs.sqs_handler import (
     UNITTEST_FAKE_QUEUE_NAME,
@@ -127,11 +126,11 @@ class TestElasticSearchIndex:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
             routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
             routing_value = record.get(routing_key)
-            es_id_value = record.get(es_id)
-            if self.index_type == "transaction":
-                record["federal_accounts"] = self.convert_json_arrays_to_list(record["federal_accounts"])
-            if self.index_type == "covid19_faba":
+
+            if "_id" in record:
                 es_id_value = record.pop("_id")
+            else:
+                es_id_value = record.get(es_id)
 
             self.client.index(
                 index=self.index_name,
