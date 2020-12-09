@@ -6,6 +6,7 @@ from django.utils.functional import cached_property
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
+from usaspending_api.references.models import ToptierAgency
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -92,7 +93,7 @@ class AgencyOverview(AgencyBase):
     @cached_property
     def pagination(self):
         sortable_columns = [
-            "fiscal_year"
+            "fiscal_year",
             "current_total_budget_authority_amount",
             "missing_tas_accounts_total",
             "obligation_difference",
@@ -106,6 +107,6 @@ class AgencyOverview(AgencyBase):
             limit=request_data["limit"],
             lower_limit=(request_data["page"] - 1) * request_data["limit"],
             upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", "current_total_budget_authority_amount"),
+            sort_key=request_data.get("sort", default_sort_column),
             sort_order=request_data["order"],
         )
