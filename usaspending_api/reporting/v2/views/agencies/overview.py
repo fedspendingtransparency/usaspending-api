@@ -10,7 +10,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 )
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models import ToptierAgency, Agency
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -89,6 +89,11 @@ class AgenciesOverview(AgencyBase):
                     "agency_name": result["agency_name"],
                     "abbreviation": result["abbreviation"],
                     "agency_code": result["toptier_code"],
+                    "agency_id": Agency.objects.filter(
+                        toptier_agency__toptier_code=result["toptier_code"], toptier_flag=True
+                    )
+                    .first()
+                    .id,
                     "current_total_budget_authority_amount": result["total_budgetary_resources"],
                     "recent_publication_date": result["recent_publication_date"],
                     "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,

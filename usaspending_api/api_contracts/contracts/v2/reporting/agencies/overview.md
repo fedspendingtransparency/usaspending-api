@@ -71,7 +71,6 @@ This endpoint returns an overview list of government agencies submission data.
                         "tas_account_discrepancies_totals": {
                             "gtas_obligation_total": 55234,
                             "tas_accounts_total": 23923,
-                            "tas_obligation_not_in_gtas_total": 343345,
                             "missing_tas_accounts_count": 20
                         },
                         "obligation_difference": 436376232652.87
@@ -87,7 +86,6 @@ This endpoint returns an overview list of government agencies submission data.
                         "tas_account_discrepancies_totals": {
                             "gtas_obligation_total": 66432,
                             "tas_accounts_total": 23913,
-                            "tas_obligation_not_in_gtas_total": 11543,
                             "missing_tas_accounts_count": 10
                         },
                         "obligation_difference": 436376232652.87
@@ -109,7 +107,6 @@ This endpoint returns an overview list of government agencies submission data.
 ## TASTotals (object)
 + `gtas_obligation_total` (required, number)
 + `tas_accounts_total` (required, number)
-+ `tas_obligation_not_in_gtas_total` (required, number)
 + `missing_tas_accounts_count` (required, number)
 
 ## AgencyData (object)
