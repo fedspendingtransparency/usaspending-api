@@ -2,7 +2,7 @@ import json
 
 from decimal import Decimal
 from django.db.models import QuerySet, F, Case, When, Value, IntegerField
-from typing import List
+from typing import List, Optional
 
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.recipient.models import RecipientProfile
@@ -61,20 +61,28 @@ class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
         )
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
+        def _return_one_level(levels: List[str]) -> Optional[str]:
+            """Return the most-desireable recipient level"""
+            for level in ("C", "R", "P"):  # Child, "Recipient" or Parent
+                if level in levels:
+                    return level
+            else:
+                return None
+
         results = []
         location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in location_info_buckets:
             recipient_info = json.loads(bucket.get("key"))
 
             if recipient_info["hash"] is not None and recipient_info["levels"] is not None:
-                recipient_id = f"{recipient_info['hash']}-{recipient_info['levels']}"
+                recipient_hash_and_level = f"{recipient_info['hash']}-{_return_one_level(recipient_info['levels'])}"
             else:
-                recipient_id = None
+                recipient_hash_and_level = None
 
             results.append(
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                    "recipient_id": recipient_id,
+                    "recipient_id": recipient_hash_and_level,
                     "name": recipient_info["name"] or None,
                     "code": recipient_info["unique_id"] or "DUNS Number not provided",
                 }

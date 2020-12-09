@@ -67,15 +67,16 @@ def test_statement_timeout_no_decorator():
 
     start = perf_counter()
     pg_sleep_in_seconds = 5
+    min_sleep_wait = 4.999  # allows for slight rounding or timing differences between tools
 
     def test_timeout_success():
         with connection.cursor() as cursor:
             # pg_sleep takes in a parameter corresponding to seconds
-            cursor.execute("SELECT pg_sleep({:d})".format(pg_sleep_in_seconds))
+            cursor.execute(f"SELECT pg_sleep({pg_sleep_in_seconds:d})")
 
     try:
         test_timeout_success()
     except Exception:
         assert False
     else:
-        assert (perf_counter() - start) >= pg_sleep_in_seconds
+        assert (perf_counter() - start) >= min_sleep_wait

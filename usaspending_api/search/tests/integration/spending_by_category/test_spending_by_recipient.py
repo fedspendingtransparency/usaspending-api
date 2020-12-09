@@ -249,12 +249,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "name": "RECIPIENT 3",
                 "recipient_id": "d2894d22-67fc-f9cb-4005-33fa6a29ef86-C",
             },
-            {
-                "amount": 50.0,
-                "code": "456789123",
-                "name": "RECIPIENT 2",
-                "recipient_id": "3c92491a-f2cd-ec7d-294b-7daf91511866-R",
-            },
+            {"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None},
             {
                 "amount": 5.0,
                 "code": "DUNS Number not provided",
