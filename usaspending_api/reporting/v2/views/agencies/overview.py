@@ -123,7 +123,7 @@ class AgenciesOverview(AgencyBase):
             "agency_name",
             "obligation_difference",
             "recent_publication_date",
-            "recent_publication_date_certified"
+            "recent_publication_date_certified",
         ]
         default_sort_column = "current_total_budget_authority_amount"
         model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
