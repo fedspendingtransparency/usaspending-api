@@ -34,6 +34,16 @@ def differences_data():
         object_class_pa_obligated_amount=1000,
         diff_approp_ocpa_obligated_amounts=-500,
     )
+    mommy.make(
+        "reporting.ReportingAgencyTas",
+        toptier_code=ta1.toptier_code,
+        fiscal_year=2020,
+        fiscal_period=3,
+        tas_rendering_label="TAS-3",
+        appropriation_obligated_amount=100,
+        object_class_pa_obligated_amount=100,
+        diff_approp_ocpa_obligated_amounts=0,
+    )
 
 
 @pytest.mark.django_db
