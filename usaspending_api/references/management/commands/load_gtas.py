@@ -11,7 +11,6 @@ logger = logging.getLogger("console")
 
 DERIVED_COLUMNS = {
     "budget_authority_unobligated_balance_brought_forward_cpe": [1000],
-    "adjustments_to_unobligated_balance_brought_forward_cpe": list(range(1010, 1066)),
     "obligations_incurred_total_cpe": [2190],
     "budget_authority_appropriation_amount_cpe": [1160, 1180, 1260, 1280],
     "borrowing_authority_amount": [1340, 1440],
@@ -23,8 +22,19 @@ DERIVED_COLUMNS = {
     "unobligated_balance_cpe": [2490],
     "total_budgetary_resources_cpe": [1910],
 }
+
 INVERTED_DERIVED_COLUMNS = {
     "gross_outlay_amount_by_tas_cpe": [3020],
+}
+
+# The before_year list of items is applied to records before the change_year fiscal year.
+# The year_and_after list is applied to the change_year and subsequent fiscal years.
+DERIVED_COLUMNS_DYNAMIC = {
+    "adjustments_to_unobligated_balance_brought_forward_cpe": {
+        "before_year": list(range(1010, 1043)),
+        "year_and_after": list(range(1010, 1066)),
+        "change_year": 2021,
+    }
 }
 
 
@@ -79,16 +89,29 @@ class Command(mixins.ETLMixin, BaseCommand):
         """
 
     def column_statements(self):
-        return "\n".join(
-            [
-                f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount ELSE 0 END), 0.0) AS {key},"""
-                for key, val in DERIVED_COLUMNS.items()
-            ]
-        ) + "\n".join(
-            [
-                f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount * -1 ELSE 0 END), 0.0) AS {key},"""
-                for key, val in INVERTED_DERIVED_COLUMNS.items()
-            ]
+        return (
+            "\n".join(
+                [
+                    f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount ELSE 0 END), 0.0) AS {key},"""
+                    for key, val in DERIVED_COLUMNS.items()
+                ]
+            )
+            + "\n".join(
+                [
+                    f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount * -1 ELSE 0 END), 0.0) AS {key},"""
+                    for key, val in INVERTED_DERIVED_COLUMNS.items()
+                ]
+            )
+            + "\n".join(
+                [
+                    f"""COALESCE(SUM(CASE
+                        WHEN line IN ({','.join([str(elem) for elem in val["before_year"]])}) AND fiscal_year < {val["change_year"]} THEN sf.amount * -1
+                        WHEN line IN ({','.join([str(elem) for elem in val["year_and_after"]])}) AND fiscal_year >= {val["change_year"]} THEN sf.amount * -1
+                        ELSE 0
+                    END), 0.0) AS {key},"""
+                    for key, val in DERIVED_COLUMNS_DYNAMIC.items()
+                ]
+            )
         )
 
     def tas_fk_sql(self):
