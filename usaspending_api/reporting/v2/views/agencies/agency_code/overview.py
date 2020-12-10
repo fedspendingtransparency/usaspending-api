@@ -86,8 +86,8 @@ class AgencyOverview(AgencyBase):
             )
         results = sorted(
             results,
-            key=lambda x: x["tas_account_discrepancies_totals"]["tas_accounts_total"]
-            if self.pagination.sort_key == "missing_tas_accounts_total"
+            key=lambda x: x["tas_account_discrepancies_totals"]["missing_tas_accounts_count"]
+            if self.pagination.sort_key == "missing_tas_accounts_count"
             else x[self.pagination.sort_key],
             reverse=self.pagination.sort_order == "desc",
         )

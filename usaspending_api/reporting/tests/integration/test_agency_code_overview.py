@@ -177,3 +177,43 @@ def test_pagination(setup_test_data, client):
         },
     ]
     assert response["results"] == expected_results
+
+    resp = client.get(url + "?limit=1")
+    response = resp.json()
+    assert len(response["results"]) == 1
+    expected_results = [
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 6,
+            "current_total_budget_authority_amount": 22478810.97,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 1788370.03,
+                "tas_accounts_total": 100.00,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": 84931.95,
+        }
+    ]
+    assert response["results"] == expected_results
+
+    resp = client.get(url + "?limit=1&page=2")
+    response = resp.json()
+    assert len(response["results"]) == 1
+    expected_results = [
+        {
+            "fiscal_year": 2020,
+            "fiscal_period": 12,
+            "current_total_budget_authority_amount": 100.0,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 18.6,
+                "tas_accounts_total": 100.00,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": 0.0,
+        }
+    ]
+    assert response["results"] == expected_results
