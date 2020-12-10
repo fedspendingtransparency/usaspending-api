@@ -107,8 +107,8 @@ class AgenciesOverview(AgencyBase):
             )
         results = sorted(
             results,
-            key=lambda x: x["tas_account_discrepancies_totals"]["tas_accounts_total"]
-            if self.pagination.sort_key == "missing_tas_accounts_total"
+            key=lambda x: x["tas_account_discrepancies_totals"]["missing_tas_accounts_count"]
+            if self.pagination.sort_key == "missing_tas_accounts_count"
             else x[self.pagination.sort_key],
             reverse=self.pagination.sort_order == "desc",
         )
@@ -119,7 +119,7 @@ class AgenciesOverview(AgencyBase):
         sortable_columns = [
             "agency_code",
             "current_total_budget_authority_amount",
-            "missing_tas_accounts_total",
+            "missing_tas_accounts_count",
             "agency_name",
             "obligation_difference",
             "recent_publication_date",
@@ -133,7 +133,7 @@ class AgenciesOverview(AgencyBase):
             limit=request_data["limit"],
             lower_limit=(request_data["page"] - 1) * request_data["limit"],
             upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", "current_total_budget_authority_amount"),
+            sort_key=request_data.get("sort", default_sort_column),
             sort_order=request_data["order"],
         )
 
