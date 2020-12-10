@@ -7,7 +7,7 @@ from usaspending_api.common.etl import mixins
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models import GTASSF133Balances
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 DERIVED_COLUMNS = {
     "budget_authority_unobligated_balance_brought_forward_cpe": [1000],
@@ -89,30 +89,23 @@ class Command(mixins.ETLMixin, BaseCommand):
         """
 
     def column_statements(self):
-        return (
-            "\n".join(
-                [
-                    f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount ELSE 0 END), 0.0) AS {key},"""
-                    for key, val in DERIVED_COLUMNS.items()
-                ]
-            )
-            + "\n".join(
-                [
-                    f"""COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount * -1 ELSE 0 END), 0.0) AS {key},"""
-                    for key, val in INVERTED_DERIVED_COLUMNS.items()
-                ]
-            )
-            + "\n".join(
-                [
-                    f"""COALESCE(SUM(CASE
+        simple_fields = [
+            f"COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount ELSE 0 END), 0.0) AS {key},"
+            for key, val in DERIVED_COLUMNS.items()
+        ]
+        inverted_fields = [
+            f"COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount * -1 ELSE 0 END), 0.0) AS {key},"
+            for key, val in INVERTED_DERIVED_COLUMNS.items()
+        ]
+        year_specific_fields = [
+            f"""COALESCE(SUM(CASE
                         WHEN line IN ({','.join([str(elem) for elem in val["before_year"]])}) AND fiscal_year < {val["change_year"]} THEN sf.amount * -1
                         WHEN line IN ({','.join([str(elem) for elem in val["year_and_after"]])}) AND fiscal_year >= {val["change_year"]} THEN sf.amount * -1
                         ELSE 0
                     END), 0.0) AS {key},"""
-                    for key, val in DERIVED_COLUMNS_DYNAMIC.items()
-                ]
-            )
-        )
+            for key, val in DERIVED_COLUMNS_DYNAMIC.items()
+        ]
+        return "\n".join(simple_fields + inverted_fields + year_specific_fields)
 
     def tas_fk_sql(self):
         return """UPDATE gtas_sf133_balances
