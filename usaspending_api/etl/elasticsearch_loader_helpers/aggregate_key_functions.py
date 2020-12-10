@@ -1,21 +1,16 @@
 import json
 import logging
 
-from typing import Optional
+from typing import Optional, List
 
 
 logger = logging.getLogger("script")
 
 
-def recipient_agg_key(record: dict) -> str:
+def award_recipient_agg_key(record: dict) -> str:
     if record["recipient_hash"] is None or record["recipient_levels"] is None:
         return json.dumps(
-            {
-                "name": record["recipient_name"],
-                "unique_id": record["recipient_unique_id"],
-                "hash": None,
-                "levels": None,
-            }
+            {"name": record["recipient_name"], "unique_id": record["recipient_unique_id"], "hash": "", "levels": ""}
         )
     return json.dumps(
         {
@@ -25,6 +20,29 @@ def recipient_agg_key(record: dict) -> str:
             "levels": record["recipient_levels"],
         }
     )
+
+
+def transaction_recipient_agg_key(record: dict) -> str:
+    if record["recipient_hash"] is None or record["recipient_levels"] is None:
+        return json.dumps(
+            {"name": record["recipient_name"], "unique_id": record["recipient_unique_id"], "hash_with_level": ""}
+        )
+    return json.dumps(
+        {
+            "name": record["recipient_name"],
+            "unique_id": record["recipient_unique_id"],
+            "hash_with_level": f"{record['recipient_hash']}-{_return_one_level(record['recipient_levels'])}",
+        }
+    )
+
+
+def _return_one_level(levels: List[str]) -> Optional[str]:
+    """Return the most-desirable recipient level"""
+    for level in ("C", "R", "P"):  # Child, "Recipient," or Parent
+        if level in levels:
+            return level
+    else:
+        return None
 
 
 def awarding_subtier_agency_agg_key(record: dict) -> Optional[str]:
@@ -51,7 +69,7 @@ def _agency_agg_key(agency_type, agency_tier, record: dict) -> Optional[str]:
         result["abbreviation"] = record[f"{agency_type}_{agency_tier}_agency_abbreviation"]
     if f"{agency_type}_{agency_tier}_agency_code" in record:
         result["code"] = record[f"{agency_type}_{agency_tier}_agency_code"]
-    result["id"] = record[f"{agency_type}_{agency_tier + '_' if agency_tier == 'toptier' else ''}agency_id"]
+    result["id"] = record[f"{agency_type}_toptier_agency_id"]
     return json.dumps(result)
 
 

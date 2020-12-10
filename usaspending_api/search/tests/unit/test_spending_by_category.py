@@ -1,6 +1,5 @@
 import pytest
 
-from decimal import Decimal
 from model_mommy import mommy
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
@@ -750,20 +749,15 @@ def test_category_recipient_duns_awards(recipient_test_data, monkeypatch, elasti
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
+            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": "DUNS Number not provided", "recipient_id": None},
             {
-                "amount": Decimal("15"),
-                "name": "MULTIPLE RECIPIENTS",
-                "code": "DUNS Number not provided",
-                "recipient_id": None,
-            },
-            {
-                "amount": Decimal("11"),
+                "amount": 11,
                 "name": "JOHN DOE",
                 "code": "1234JD4321",
                 "recipient_id": "0b54895d-2393-ea12-48e3-deae990614d9-C",
             },
             {
-                "amount": Decimal("2"),
+                "amount": 2,
                 "name": "UNIVERSITY OF PAWNEE",
                 "code": "00UOP00",
                 "recipient_id": "2af2a5a5-3126-2c76-3681-dec2cf148f1a-P",
