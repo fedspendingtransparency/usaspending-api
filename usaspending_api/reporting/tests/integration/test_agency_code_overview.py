@@ -105,6 +105,30 @@ def setup_test_data(db):
         total_budgetary_resources=100,
         total_diff_approp_ocpa_obligated_amounts=0,
     )
+    mommy.make(
+        "reporting.ReportingAgencyMissingTas",
+        toptier_code=123,
+        fiscal_year=2019,
+        fiscal_period=6,
+        tas_rendering_label="TAS 1",
+        obligated_amount=10.0,
+    )
+    mommy.make(
+        "reporting.ReportingAgencyMissingTas",
+        toptier_code=123,
+        fiscal_year=2019,
+        fiscal_period=6,
+        tas_rendering_label="TAS 2",
+        obligated_amount=1.0,
+    )
+    mommy.make(
+        "reporting.ReportingAgencyMissingTas",
+        toptier_code=123,
+        fiscal_year=2020,
+        fiscal_period=12,
+        tas_rendering_label="TAS 2",
+        obligated_amount=12.0,
+    )
 
 
 def test_basic_success(setup_test_data, client):
@@ -122,7 +146,7 @@ def test_basic_success(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
                 "tas_accounts_total": 100.00,
-                "missing_tas_accounts_count": None,
+                "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
         },
@@ -135,7 +159,7 @@ def test_basic_success(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
                 "tas_accounts_total": 100.00,
-                "missing_tas_accounts_count": None,
+                "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
         },
@@ -158,7 +182,7 @@ def test_pagination(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
                 "tas_accounts_total": 100.00,
-                "missing_tas_accounts_count": None,
+                "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
         },
@@ -171,7 +195,7 @@ def test_pagination(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
                 "tas_accounts_total": 100.00,
-                "missing_tas_accounts_count": None,
+                "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
         },
@@ -191,7 +215,7 @@ def test_pagination(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
                 "tas_accounts_total": 100.00,
-                "missing_tas_accounts_count": None,
+                "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
         }
@@ -211,7 +235,7 @@ def test_pagination(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
                 "tas_accounts_total": 100.00,
-                "missing_tas_accounts_count": None,
+                "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
         }

@@ -1,4 +1,4 @@
-from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q
+from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField
 from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from django.utils.functional import cached_property
@@ -6,7 +6,7 @@ from django.utils.functional import cached_property
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
-from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas
+from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -52,6 +52,16 @@ class AgencyOverview(AgencyBase):
                     .values("the_sum"),
                     output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
+                missing_tas_accounts=Subquery(
+                    ReportingAgencyMissingTas.objects.filter(
+                        fiscal_year=self.fiscal_year,
+                        fiscal_period=self.fiscal_period,
+                        toptier_code=OuterRef("toptier_code"),
+                    )
+                    .annotate(count=Func(F("tas_rendering_label"), function="COUNT"))
+                    .values("count"),
+                    output_field=IntegerField(),
+                ),
             )
             .values(
                 "fiscal_year",
@@ -62,6 +72,7 @@ class AgencyOverview(AgencyBase):
                 "recent_publication_date",
                 "recent_publication_date_certified",
                 "tas_obligations",
+                "missing_tas_accounts",
             )
         )
         return self.format_results(result_list)
@@ -79,7 +90,7 @@ class AgencyOverview(AgencyBase):
                     "tas_account_discrepancies_totals": {
                         "gtas_obligation_total": result["total_dollars_obligated_gtas"],
                         "tas_accounts_total": result["tas_obligations"],
-                        "missing_tas_accounts_count": None,
+                        "missing_tas_accounts_count": result["missing_tas_accounts"],
                     },
                     "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
                 }
