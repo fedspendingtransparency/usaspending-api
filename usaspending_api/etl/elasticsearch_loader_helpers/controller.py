@@ -173,7 +173,11 @@ def extract_transform_load(task: TaskSpec) -> None:
             f"Prematurely ending partition #{task.partition_number} due to error in another process"
             logger.warning(format_log(msg, name=task.name))
             return
-        success, fail = load_data(task, records, client)
+        if len(records) > 0:
+            success, fail = load_data(task, records, client)
+        else:
+            logger.info(format_log("No records to index", name=task.name))
+            success, fail = 0, 0
         with total_doc_success.get_lock():
             total_doc_success.value += success
         with total_doc_fail.get_lock():

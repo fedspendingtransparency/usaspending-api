@@ -195,7 +195,6 @@
         ") AND recipient_name IS NOT NULL",
         "AND recipient_level != 'P'",
       "GROUP BY recipient_hash, recipient_unique_id",
-      "LIMIT 1",
     ") recipient_profile ON TRUE",
     "LEFT JOIN (",
     "  -- Get awards with COVID-related data",
