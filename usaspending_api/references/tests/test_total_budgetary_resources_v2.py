@@ -5,13 +5,20 @@ from decimal import Decimal
 
 
 @pytest.fixture
-def create_agency_data():
+def create_gtas_data():
     mommy.make("references.GTASSF133Balances", id=1, fiscal_year=2020, fiscal_period=2, total_budgetary_resources_cpe=2)
     mommy.make("references.GTASSF133Balances", id=2, fiscal_year=2020, fiscal_period=2, total_budgetary_resources_cpe=3)
 
 
+# Test cases:
+#     just FY
+#     FP & FY
+    # FY, bad FP
+    # money summed
+    # data not in results
+
 @pytest.mark.django_db
-def test_award_type_endpoint(client, create_agency_data):
+def test_award_type_endpoint(client, create_gtas_data):
 
     """Test the total_budgetary_resources endpoint with bad parameters."""
     resp = client.get("/api/v2/references/total_budgetary_resources/?fiscal_period=3")

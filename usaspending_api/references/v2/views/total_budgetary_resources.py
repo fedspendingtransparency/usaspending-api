@@ -2,14 +2,16 @@ from django.db.models import Sum
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
 
 
 class TotalBudgetaryResources(APIView):
+    
     @cache_response()
-    def get(self, request, format=None):
+    def get(self, request: Request) -> Response:
         fiscal_year = request.query_params.get("fiscal_year")
         fiscal_period = request.query_params.get("fiscal_period")
         gtas = {}
@@ -18,6 +20,9 @@ class TotalBudgetaryResources(APIView):
             if not fiscal_year:
                 raise InvalidParameterException("fiscal_period was provided without any fiscal_year.")
             else:
+                if fiscal_period < 1 or fiscal_period > 12:
+                    raise UnprocessableEntityException(f"fiscal_period must be in the range 1-12")
+
                 gtas = (
                     GTASSF133Balances.objects.filter(fiscal_year=fiscal_year)
                     .filter(fiscal_period=fiscal_period)
