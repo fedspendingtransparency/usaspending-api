@@ -11,7 +11,7 @@ This endpoint returns federal budgetary resources by fiscal year and fiscal peri
 
 + Parameters
 
-    + `fiscal_year`(optional, number)
+    + `fiscal_year` (optional, number)
         The fiscal year.
     + `fiscal_period` (optional, number)
         The fiscal period. If this optional parameter is provided then `fiscal_year` is a required parameter. If `fiscal_period` is provided without `fiscal_year`, a 400 error is returned.
@@ -26,14 +26,14 @@ This endpoint returns federal budgetary resources by fiscal year and fiscal peri
             {
                 "results": [
                     {
-                        "total_budgetary_resources": 8361447130497.72,
                         "fiscal_year": 2020,
                         "fiscal_period": 6
+                        "total_budgetary_resources": 8361447130497.72,
                     },
                     {
-                        "total_budgetary_resources": 234525.72,
                         "fiscal_year": 2020,
                         "fiscal_period": 5
+                        "total_budgetary_resources": 234525.72,
                     }
                 ]
             }
@@ -41,6 +41,6 @@ This endpoint returns federal budgetary resources by fiscal year and fiscal peri
 # Data Structures
 
 ## FederalBudgetaryResources (object)
-+ `total_budgetary_resources` (required, number)
 + `fiscal_year` (required, number)
 + `fiscal_period` (required, number)
++ `total_budgetary_resources` (required, number)
