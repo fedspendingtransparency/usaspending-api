@@ -41,12 +41,16 @@ This endpoint returns an overview list of government agencies submission data.
             + `obligation_difference`
             + `recent_publication_date`
             + `recent_publication_date_certified`
+            + `tas_obligation_not_in_gtas_total`
 
 + Response 200 (application/json)
 
     + Attributes (object)
         + `page_metadata` (required, PaginationMetadata, fixed-type)
         + `results` (required, array[AgencyData], fixed-type)
+        + `messages` (optional, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
+
     + Body
 
             {

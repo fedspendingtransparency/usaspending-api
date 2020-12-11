@@ -25,7 +25,7 @@ class AgenciesOverview(AgencyBase):
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         return Response(
-            {"page_metadata": page_metadata, "results": results, "messages": self.standard_response_messages,}
+            {"page_metadata": page_metadata, "results": results, "messages": self.standard_response_messages}
         )
 
     def get_agency_overview(self):
