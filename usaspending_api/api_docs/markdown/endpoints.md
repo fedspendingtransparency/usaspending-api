@@ -120,6 +120,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/recipient/state/<FIPS\>/](/api/v2/recipient/state/51/)|GET| Returns basic information about the specified state |
 |[/api/v2/recipient/state/](/api/v2/recipient/state/)|GET| Returns basic information about the specified state |
 |[/api/v2/recipient/state/awards/<FIPS\>/](/api/v2/recipient/state/awards/51/)|GET| Returns award breakdown based on FIPS |
+|[/api/v2/reporting/agencies/<TOPTIER_CODE\>/differences/](/api/v2/reporting/agencies/097/differences/)|GET| Returns About the Data information about differences in account balance and spending obligations for a specific agency/year/period |
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency |
 |[/api/v2/references/award_types/](/api/v2/references/award_types/)|GET| Returns a map of award types by award grouping. |
 |[/api/v2/references/cfda/totals/<CFDA/>/](/api/v2/references/cfda/totals/10.555/)|GET| Provides total values for provided CFDA |
@@ -141,6 +142,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/references/submission_periods/](/api/v2/references/submission_periods/)|GET| Returns a list of all available submission periods with essential information about start and end dates. |
 |[/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/)|GET| Returns all toptier agencies and related, relevant data. |
 |[/api/v2/reporting/agencies/<TOPTIER_CODE\>/overview/](/api/v2/reporting/agencies/020/overview/)|GET| Returns a list of submission data for the provided agency. |
+|[/api/v2/reporting/agencies/overview/](/api/v2/reporting/agencies/overview/)|GET| Returns About the Data information about all agencies with submissions in a provided fiscal year and period|
 |[/api/v2/search/new_awards_over_time/](/api/v2/search/new_awards_over_time/)|POST| Returns a list of time periods with the new awards in the appropriate period within the provided time range |
 |[/api/v2/search/spending_by_award/](/api/v2/search/spending_by_award/)|POST| Returns the fields of the filtered awards |
 |[/api/v2/search/spending_by_award_count/](/api/v2/search/spending_by_award_count/)|POST| Returns the number of awards in each award type (Contracts, IDV, Loans, Direct Payments, Grants, and Other) |
