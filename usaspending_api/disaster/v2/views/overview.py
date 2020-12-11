@@ -116,5 +116,6 @@ class OverviewViewSet(DisasterBase):
             or 0.0
         )
 
-    def sum_values(self, obj, key):
-        return Decimal(sum([elem[key] for elem in obj]))
+    @staticmethod
+    def sum_values(list_of_objects: list, key_to_extract: str) -> Decimal:
+        return Decimal(sum([elem[key_to_extract] for elem in list_of_objects]))
