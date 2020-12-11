@@ -44,6 +44,7 @@ class Controller:
 
     def __init__(self, config):
         self.config = config
+        self.tasks = []
 
     def prepare_for_etl(self) -> None:
         if self.config["process_deletes"]:
