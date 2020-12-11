@@ -59,7 +59,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
                         "abbreviation": "DHHS",
                         "agency_code": "020",
                         "current_total_budget_authority_amount": 8361447130497.72,
-                        "periods": [
+                        "periods": [{
                             "period": 2,
                             "quarter": 1,
                             "submission_dates": {
@@ -67,14 +67,14 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
                                 "certification_date" : "2020-01-21T10:58:21Z"
                             },
                             "quarterly": false
-                        ]
+                        }]
                     },
                     {
                         "agency_name": "Department of Treasury",
                         "abbreviation": "DOT",
                         "agency_code": "021",
                         "current_total_budget_authority_amount": 8361447130497.72,
-                        "periods": [
+                        "periods": [{
                             "period": 2,
                             "quarter": 1,
                             "submission_dates": {
@@ -82,7 +82,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
                                 "certification_date" : "2020-01-21T10:58:21Z"
                             },
                             "quarterly": false
-                        ]
+                        }]
                     }
                 ]
             }
