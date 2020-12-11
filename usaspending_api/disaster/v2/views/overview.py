@@ -26,10 +26,8 @@ class OverviewViewSet(DisasterBase):
 
         request_values = self._parse_and_validate(request.GET)
         self.defc = request_values["def_codes"].split(",")
-        funding = self.funding()
-        unobligated_balance = self.unobligated_balance()
+        funding, self.total_budget_authority = self.funding()
 
-        self.total_budget_authority = self.extract_amount(funding) - self.extract_amount(unobligated_balance)
         return Response(
             {"funding": funding, "total_budget_authority": self.total_budget_authority, "spending": self.spending()}
         )
@@ -50,25 +48,24 @@ class OverviewViewSet(DisasterBase):
         return TinyShield(models).block(request)
 
     def funding(self):
-        return list(
-            latest_gtas_of_each_year_queryset()
-            .filter(disaster_emergency_fund_code__in=self.defc)
-            .values("disaster_emergency_fund_code")
-            .annotate(def_code=F("disaster_emergency_fund_code"), amount=Sum("total_budgetary_resources_cpe"),)
-            .values("def_code", "amount")
-        )
-
-    def unobligated_balance(self):
-        return list(
+        funding = list(
             latest_gtas_of_each_year_queryset()
             .filter(disaster_emergency_fund_code__in=self.defc)
             .values("disaster_emergency_fund_code")
             .annotate(
                 def_code=F("disaster_emergency_fund_code"),
-                amount=Sum("budget_authority_unobligated_balance_brought_forward_cpe"),
+                amount=Sum("total_budgetary_resources_cpe"),
+                unobligated_balance=Sum("budget_authority_unobligated_balance_brought_forward_cpe"),
             )
-            .values("def_code", "amount")
+            .values("def_code", "amount", "unobligated_balance")
         )
+
+        total_budget_authority = self.sum_values(funding, "amount") - self.sum_values(funding, "unobligated_balance")
+
+        for entry in funding:
+            del entry["unobligated_balance"]
+
+        return funding, total_budget_authority
 
     def spending(self):
         remaining_balances = self.remaining_balances()
@@ -119,5 +116,5 @@ class OverviewViewSet(DisasterBase):
             or 0.0
         )
 
-    def extract_amount(self, obj):
-        return Decimal(sum([elem["amount"] for elem in obj]))
+    def sum_values(self, obj, key):
+        return Decimal(sum([elem[key] for elem in obj]))
