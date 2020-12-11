@@ -44,8 +44,8 @@ class AgencyOverview(AgencyBase):
                 ),
                 tas_obligations=Subquery(
                     ReportingAgencyTas.objects.filter(
-                        fiscal_year=self.fiscal_year,
-                        fiscal_period=self.fiscal_period,
+                        fiscal_year=OuterRef("fiscal_year"),
+                        fiscal_period=OuterRef("fiscal_period"),
                         toptier_code=OuterRef("toptier_code"),
                     )
                     .annotate(the_sum=Func(F("appropriation_obligated_amount"), function="SUM"))
@@ -54,8 +54,8 @@ class AgencyOverview(AgencyBase):
                 ),
                 missing_tas_accounts=Subquery(
                     ReportingAgencyMissingTas.objects.filter(
-                        fiscal_year=self.fiscal_year,
-                        fiscal_period=self.fiscal_period,
+                        fiscal_year=OuterRef("fiscal_year"),
+                        fiscal_period=OuterRef("fiscal_period"),
                         toptier_code=OuterRef("toptier_code"),
                     )
                     .annotate(count=Func(F("tas_rendering_label"), function="COUNT"))
@@ -80,6 +80,7 @@ class AgencyOverview(AgencyBase):
     def format_results(self, result_list):
         results = []
         for result in result_list:
+            print(result["missing_tas_accounts"])
             results.append(
                 {
                     "fiscal_year": result["fiscal_year"],
