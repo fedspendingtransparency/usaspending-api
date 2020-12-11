@@ -214,7 +214,7 @@ def test_pagination(setup_test_data, client):
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
-                "tas_accounts_total": 100.00,
+                "tas_accounts_total": 200.00,
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,

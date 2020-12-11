@@ -80,7 +80,6 @@ class AgencyOverview(AgencyBase):
     def format_results(self, result_list):
         results = []
         for result in result_list:
-            print(result["missing_tas_accounts"])
             results.append(
                 {
                     "fiscal_year": result["fiscal_year"],
