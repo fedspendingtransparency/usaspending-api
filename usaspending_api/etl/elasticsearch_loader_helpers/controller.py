@@ -23,6 +23,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     TaskSpec,
     toggle_refresh_on,
 )
+from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
 
 logger = logging.getLogger("script")
 
@@ -95,6 +96,8 @@ class Controller:
             else:
                 logger.info(format_log("Closing old indices and adding aliases"))
                 swap_aliases(client, self.config)
+
+        close_all_django_db_conns()
 
         if self.config["is_incremental_load"]:
             toggle_refresh_on(client, self.config["index_name"])
