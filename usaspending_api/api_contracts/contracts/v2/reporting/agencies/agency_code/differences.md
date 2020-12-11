@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Differences [/api/v2/reporting/agencies/{agency_code}/differences/{?fiscal_year,fiscal_period,page,limit,order,sort}]
+# Agency Reporting Differences [/api/v2/reporting/agencies/{toptier_code}/differences/{?fiscal_year,fiscal_period,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's About the Data \| Agencies reported balance and spending differences over a submission period
 
@@ -10,7 +10,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies repo
 This endpoint returns an overview of government agency obligation differences data.
 
 + Parameters
-    + `agency_code`: `020` (required, string)
+    + `toptier_code`: `020` (required, string)
         The specific agency code.
     + `fiscal_year`: 2020 (required, number)
         The fiscal year.
@@ -43,33 +43,36 @@ This endpoint returns an overview of government agency obligation differences da
     + Attributes (object)
         + `page_metadata` (required, PaginationMetadata, fixed-type)
         + `results` (required, array[ObligationDifferences], fixed-type)
+        + `messages` (required, array[string], fixed-type)
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
             {
 
                 "page_metadata": {
                     "page": 1,
+                    "total": 10,
+                    "limit": 2,
                     "next": 2,
-                    "previous": 0,
-                    "hasNext": false,
-                    "hasPrevious": false,
-                    "total": 2,
-                    "limit": 10
+                    "previous": null,
+                    "hasNext": true,
+                    "hasPrevious": false
                 },
                 "results": [
                     {
-                        "tas": "210-1503",
-                        "file_a_obligation": 234543543,
-                        "file_b_obligation": 456438768,
-                        "difference": -221895225
+                        "tas": "011-X-8345-000",
+                        "file_a_obligation": 47425.37,
+                        "file_b_obligation": 240066.32,
+                        "difference": -192640.95
                     },
                     {
-                        "tas": "012-0212",
-                        "file_a_obligation": 43637623,
-                        "file_b_obligation": 20486582,
-                        "difference": 23151041
+                        "tas": "011-X-8245-000",
+                        "file_a_obligation": 428508.11,
+                        "file_b_obligation": 2358478.83,
+                        "difference": -1929970.72
                     }
-                ]
+                ],
+                "messages": []
             }
 
 # Data Structures
