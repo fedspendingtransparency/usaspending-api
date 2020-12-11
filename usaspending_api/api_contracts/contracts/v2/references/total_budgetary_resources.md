@@ -21,6 +21,8 @@ This endpoint returns federal budgetary resources by fiscal year and fiscal peri
 
     + Attributes (object)
         + `results` (required, array[FederalBudgetaryResources], fixed-type)
+        + `messages` (required, array[string], fixed-type)
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
             {
@@ -35,7 +37,8 @@ This endpoint returns federal budgetary resources by fiscal year and fiscal peri
                         "fiscal_period": 5
                         "total_budgetary_resources": 234525.72,
                     }
-                ]
+                ],
+                "messages": []
             }
 
 # Data Structures
