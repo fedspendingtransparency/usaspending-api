@@ -57,7 +57,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         logger.info("Inserting GTAS total obligations records into website")
         total_obligation_objs = [GTASSF133Balances(**values) for values in total_obligation_values]
-        GTASSF133Balances.objects.bulk_create(total_obligation_objs, batch_size=100000)
+        GTASSF133Balances.objects.bulk_create(total_obligation_objs)
 
         self._execute_dml_sql(self.tas_fk_sql(), "Populating TAS foreign keys")
 
