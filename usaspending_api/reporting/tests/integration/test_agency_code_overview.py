@@ -146,6 +146,7 @@ def test_basic_success(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
                 "tas_accounts_total": 200.00,
+                "tas_obligation_not_in_gtas_total": 11.0,
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
@@ -159,6 +160,7 @@ def test_basic_success(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
                 "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 12.0,
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
@@ -182,6 +184,7 @@ def test_pagination(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
                 "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 12.0,
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
@@ -195,6 +198,7 @@ def test_pagination(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
                 "tas_accounts_total": 200.00,
+                "tas_obligation_not_in_gtas_total": 11.0,
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
@@ -215,6 +219,7 @@ def test_pagination(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
                 "tas_accounts_total": 200.00,
+                "tas_obligation_not_in_gtas_total": 11.0,
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
@@ -235,6 +240,7 @@ def test_pagination(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
                 "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 12.0,
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
