@@ -159,8 +159,8 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     submission_id,
                     updated_at
                 ) (values
-                    (1, 1, '2000-01-01'), (2, 2, '2000-01-02'), (3, 3, '2000-01-03'), (4, 4, '2000-01-04'),
-                    (5, 5, '2000-01-05'), (6, 6, '2000-01-06'), (7, 7, '2000-01-07')
+                    (1, 1, '1999-01-01'), (2, 2, '2000-01-02'), (3, 3, '2000-01-03'), (4, 4, '2000-01-04'),
+                    (5, 5, '2000-01-05'), (6, 6, '2000-01-06'), (7, 7, '2000-01-07'), (8, 1, '2000-01-01')
                 )
                 """
             )
@@ -173,6 +173,22 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     updated_at
                 ) (values
                     (1, 1, '2000-02-01'), (3, 3, '2000-02-03'), (5, 5, '2000-02-05'), (7, 7, '2000-02-07')
+                )
+                """
+            )
+
+            cursor.execute(
+                """
+                insert into published_files_history (
+                    published_files_history_id,
+                    submission_id,
+                    publish_history_id,
+                    certify_history_id,
+                    updated_at
+                ) (values
+                    (1, 1, 1, NULL, '1999-01-01'), (2, 2, 2, NULL, '2000-01-02'), (3, 3, 3, 3, '2000-01-03'),
+                    (4, 4, 4, NULL, '2000-01-04'), (5, 5, 5, 5, '2000-01-05'), (6, 6, 6, NULL, '2000-01-06'),
+                    (7, 7, 7, 7, '2000-01-07'), (8, 1, 8, 1, '2000-01-01')
                 )
                 """
             )
@@ -352,6 +368,10 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 "is_final_balances_for_fy": False,
                 "published_date": datetime(2000, 1, 1, 0, 0, tzinfo=timezone.utc),
                 "submission_window_id": 2000041,
+                "history": [
+                    {"certified_date": None, "published_date": "1999-01-01T00:00:00+00:00"},
+                    {"certified_date": "2000-02-01T00:00:00+00:00", "published_date": "2000-01-01T00:00:00+00:00"},
+                ],
             }
 
             cursor.execute(
