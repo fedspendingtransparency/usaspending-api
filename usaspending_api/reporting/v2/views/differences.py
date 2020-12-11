@@ -2,7 +2,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
 from django.db.models import Q
-from rest_framework.exceptions import NotFound
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 
@@ -11,7 +10,6 @@ from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
-from usaspending_api.references.models import ToptierAgency
 from usaspending_api.reporting.models import ReportingAgencyTas
 
 
@@ -20,17 +18,7 @@ class Differences(AgencyBase):
         Obtain the differences between file A obligations and file B obligations for a specific agency/period
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/agency_code/differences.md"
-
-    def validate_agency(self):
-        # We don't have to do any validation to make sure it exists because Django has already checked this to be
-        # either a three or four digit numeric string based on the regex pattern in our route url. However we need
-        # to check that it's a valid code
-        code_string = self.kwargs["agency_code"]
-        agency_code = ToptierAgency.objects.account_agencies().filter(toptier_code=code_string).first()
-        if not agency_code:
-            raise NotFound(f"Agency with a toptier code of '{code_string}' does not exist")
-        return agency_code
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/toptier_code/differences.md"
 
     @staticmethod
     def validate_fiscal_period(request_data):
@@ -72,7 +60,7 @@ class Differences(AgencyBase):
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         request_data = self._parse_and_validate_request(request.query_params)
-        request_data["agency_code"] = self.validate_agency()
+        request_data["toptier_agency"] = self.toptier_agency
         self.validate_fiscal_period(request_data)
         pagination = Pagination(
             page=request_data["page"],
@@ -89,12 +77,13 @@ class Differences(AgencyBase):
             {
                 "page_metadata": page_metadata,
                 "results": formatted_results[pagination.lower_limit : pagination.upper_limit],
+                "messages": self.standard_response_messages,
             }
         )
 
     def get_differences_queryset(self, request_data):
         filters = [
-            Q(toptier_code=request_data["agency_code"].toptier_code),
+            Q(toptier_code=request_data["toptier_agency"].toptier_code),
             Q(fiscal_year=self.fiscal_year),
             Q(fiscal_period=request_data["fiscal_period"]),
             ~Q(diff_approp_ocpa_obligated_amounts=0),

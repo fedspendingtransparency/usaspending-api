@@ -1,6 +1,3 @@
-from django.conf.urls import url
-from usaspending_api.reporting.v2.views.differences import Differences
+from django.conf.urls import url, include
 
-urlpatterns = [
-    url(r"^agencies/(?P<agency_code>[0-9]{3,4})/differences/$", Differences.as_view()),
-]
+urlpatterns = [url(r"^agencies/", include("usaspending_api.reporting.v2.views.agencies.urls"))]

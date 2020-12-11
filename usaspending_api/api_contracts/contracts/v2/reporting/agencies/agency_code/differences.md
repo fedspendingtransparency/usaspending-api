@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Differences [/api/v2/reporting/agencies/{agency_code}/differences/{?fiscal_year,fiscal_period,page,limit,order,sort}]
+# Agency Reporting Differences [/api/v2/reporting/agencies/{toptier_code}/differences/{?fiscal_year,fiscal_period,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's About the Data \| Agencies reported balance and spending differences over a submission period
 
@@ -10,7 +10,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies repo
 This endpoint returns an overview of government agency obligation differences data.
 
 + Parameters
-    + `agency_code`: `020` (required, string)
+    + `toptier_code`: `020` (required, string)
         The specific agency code.
     + `fiscal_year`: 2020 (required, number)
         The fiscal year.
@@ -43,6 +43,8 @@ This endpoint returns an overview of government agency obligation differences da
     + Attributes (object)
         + `page_metadata` (required, PaginationMetadata, fixed-type)
         + `results` (required, array[ObligationDifferences], fixed-type)
+        + `messages` (required, array[string], fixed-type)
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
             {
@@ -69,7 +71,8 @@ This endpoint returns an overview of government agency obligation differences da
                         "file_b_obligation": 2358478.83,
                         "difference": -1929970.72
                     }
-                ]
+                ],
+                "messages": []
             }
 
 # Data Structures
