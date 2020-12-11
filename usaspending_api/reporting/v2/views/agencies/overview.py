@@ -43,22 +43,22 @@ class AgenciesOverview(AgencyBase):
                 abbreviation=Subquery(ToptierAgency.objects.filter(*agency_filters).values("abbreviation")),
                 recent_publication_date=Subquery(
                     SubmissionAttributes.objects.filter(
-                        reporting_fiscal_year=self.fiscal_year,
-                        reporting_fiscal_period=self.fiscal_period,
+                        reporting_fiscal_year=OuterRef("fiscal_year"),
+                        reporting_fiscal_period=OuterRef("fiscal_period"),
                         toptier_code=OuterRef("toptier_code"),
                     ).values("published_date")
                 ),
                 recent_publication_date_certified=Subquery(
                     SubmissionAttributes.objects.filter(
-                        reporting_fiscal_year=self.fiscal_year,
-                        reporting_fiscal_period=self.fiscal_period,
+                        reporting_fiscal_year=OuterRef("fiscal_year"),
+                        reporting_fiscal_period=OuterRef("fiscal_period"),
                         toptier_code=OuterRef("toptier_code"),
                     ).values("certified_date")
                 ),
                 tas_obligations=Subquery(
                     ReportingAgencyTas.objects.filter(
-                        fiscal_year=self.fiscal_year,
-                        fiscal_period=self.fiscal_period,
+                        fiscal_year=OuterRef("fiscal_year"),
+                        fiscal_period=OuterRef("fiscal_period"),
                         toptier_code=OuterRef("toptier_code"),
                     )
                     .annotate(the_sum=Func(F("appropriation_obligated_amount"), function="SUM"))
@@ -67,8 +67,8 @@ class AgenciesOverview(AgencyBase):
                 ),
                 missing_tas_accounts=Subquery(
                     ReportingAgencyMissingTas.objects.filter(
-                        fiscal_year=self.fiscal_year,
-                        fiscal_period=self.fiscal_period,
+                        fiscal_year=OuterRef("fiscal_year"),
+                        fiscal_period=OuterRef("fiscal_period"),
                         toptier_code=OuterRef("toptier_code"),
                     )
                     .annotate(count=Func(F("tas_rendering_label"), function="COUNT"))
