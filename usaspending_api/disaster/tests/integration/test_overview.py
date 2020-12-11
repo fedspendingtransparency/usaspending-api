@@ -31,7 +31,9 @@ LATE_GTAS_OUTLAY = Decimal(f"{LATE_GTAS_OUTLAY}")
 QUARTERLY_GTAS_BUDGETARY_RESOURCES = Decimal(f"{QUARTERLY_GTAS_BUDGETARY_RESOURCES}")
 EARLY_GTAS_BUDGETARY_RESOURCES = Decimal(f"{EARLY_GTAS_BUDGETARY_RESOURCES}")
 EARLY_GTAS_OUTLAY = Decimal(f"{EARLY_GTAS_OUTLAY}")
-EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE = Decimal(f"{EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE}")
+EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE = Decimal(
+    f"{EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE}"
+)
 UNOBLIGATED_GTAS_BUDGETARY_RESOURCES = Decimal(f"{UNOBLIGATED_GTAS_BUDGETARY_RESOURCES}")
 YEAR_TWO_GTAS_BUDGETARY_RESOURCES = Decimal(f"{YEAR_TWO_GTAS_BUDGETARY_RESOURCES}")
 YEAR_TWO_GTAS_UNOBLIGATED_BALANCE = Decimal(f"{YEAR_TWO_GTAS_UNOBLIGATED_BALANCE}")
@@ -45,11 +47,13 @@ def test_basic_data_set(client, monkeypatch, helpers, defc_codes, basic_ref_data
     resp = client.get(OVERVIEW_URL)
     assert resp.data == {
         "funding": BASIC_FUNDING,
-        "total_budget_authority": EARLY_GTAS_BUDGETARY_RESOURCES - EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE,
+        "total_budget_authority": EARLY_GTAS_BUDGETARY_RESOURCES
+        - EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE,
         "spending": {
             "award_obligations": Decimal("0.0"),
             "award_outlays": Decimal("0"),
-            "total_obligations": EARLY_GTAS_BUDGETARY_RESOURCES - EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE,
+            "total_obligations": EARLY_GTAS_BUDGETARY_RESOURCES
+            - EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE,
             "total_outlays": EARLY_GTAS_OUTLAY,
         },
     }
@@ -98,8 +102,14 @@ def test_exclude_gtas_for_incompleted_period(
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data["funding"] == [{"amount": Decimal("0.2"), "def_code": "M"}]
-    assert resp.data["total_budget_authority"] == EARLY_GTAS_BUDGETARY_RESOURCES - EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE
-    assert resp.data["spending"]["total_obligations"] == EARLY_GTAS_BUDGETARY_RESOURCES - EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE
+    assert (
+        resp.data["total_budget_authority"]
+        == EARLY_GTAS_BUDGETARY_RESOURCES - EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE
+    )
+    assert (
+        resp.data["spending"]["total_obligations"]
+        == EARLY_GTAS_BUDGETARY_RESOURCES - EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE
+    )
     assert resp.data["spending"]["total_outlays"] == EARLY_GTAS_OUTLAY
 
 
