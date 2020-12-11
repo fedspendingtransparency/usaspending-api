@@ -35,15 +35,20 @@ This endpoint returns an overview of government agency submission data.
             + `obligation_difference`
             + `recent_publication_date_certified`
             + `recent_publication_date`
+            + `tas_obligation_not_in_gtas_total`
 
 + Response 200 (application/json)
 
     + Attributes (object)
         + `page_metadata` (required, PaginationMetadata, fixed-type)
         + `results` (required, array[AgencyData], fixed-type)
+        + `messages` (optional, array[string])
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
+
     + Body
 
             {
+                "messages": [],
                 "page_metadata": {
                     "page": 1,
                     "next": 2,
@@ -63,7 +68,7 @@ This endpoint returns an overview of government agency submission data.
                         "tas_account_discrepancies_totals": {
                             "gtas_obligation_total": 66432,
                             "tas_accounts_total": 2342,
-                            "tas_obligation_not_in_gtas_total": 11543,
+                            "tas_obligation_not_in_gtas_total": 343345,
                             "missing_tas_accounts_count": 10
                         },
                         "obligation_difference": 436376232652.87
