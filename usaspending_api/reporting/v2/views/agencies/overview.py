@@ -25,11 +25,7 @@ class AgenciesOverview(AgencyBase):
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         return Response(
-            {
-                "page_metadata": page_metadata,
-                "results": results[: self.pagination.limit],
-                "messages": self.standard_response_messages,
-            }
+            {"page_metadata": page_metadata, "results": results, "messages": self.standard_response_messages,}
         )
 
     def get_agency_overview(self):
@@ -65,6 +61,16 @@ class AgenciesOverview(AgencyBase):
                     .values("the_sum"),
                     output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
+                tas_obligation_not_in_gtas_total=Subquery(
+                    ReportingAgencyMissingTas.objects.filter(
+                        fiscal_year=OuterRef("fiscal_year"),
+                        fiscal_period=OuterRef("fiscal_period"),
+                        toptier_code=OuterRef("toptier_code"),
+                    )
+                    .annotate(the_sum=Func(F("obligated_amount"), function="SUM"))
+                    .values("the_sum"),
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
+                ),
                 missing_tas_accounts=Subquery(
                     ReportingAgencyMissingTas.objects.filter(
                         fiscal_year=OuterRef("fiscal_year"),
@@ -87,39 +93,43 @@ class AgenciesOverview(AgencyBase):
                 "recent_publication_date",
                 "recent_publication_date_certified",
                 "tas_obligations",
+                "tas_obligation_not_in_gtas_total",
                 "missing_tas_accounts",
             )
         )
         return self.format_results(result_list)
 
     def format_results(self, result_list):
-        results = []
-        for result in result_list:
-            results.append(
-                {
-                    "agency_name": result["agency_name"],
-                    "abbreviation": result["abbreviation"],
-                    "agency_code": result["toptier_code"],
-                    "agency_id": Agency.objects.filter(
-                        toptier_agency__toptier_code=result["toptier_code"], toptier_flag=True
-                    )
-                    .first()
-                    .id,
-                    "current_total_budget_authority_amount": result["total_budgetary_resources"],
-                    "recent_publication_date": result["recent_publication_date"],
-                    "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
-                    "tas_account_discrepancies_totals": {
-                        "gtas_obligation_total": result["total_dollars_obligated_gtas"],
-                        "tas_accounts_total": result["tas_obligations"],
-                        "missing_tas_accounts_count": result["missing_tas_accounts"],
-                    },
-                    "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
-                }
-            )
+        results = [
+            {
+                "agency_name": result["agency_name"],
+                "abbreviation": result["abbreviation"],
+                "agency_code": result["toptier_code"],
+                "agency_id": Agency.objects.filter(
+                    toptier_agency__toptier_code=result["toptier_code"], toptier_flag=True
+                )
+                .first()
+                .id,
+                "current_total_budget_authority_amount": result["total_budgetary_resources"],
+                "recent_publication_date": result["recent_publication_date"],
+                "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
+                "tas_account_discrepancies_totals": {
+                    "gtas_obligation_total": result["total_dollars_obligated_gtas"],
+                    "tas_accounts_total": result["tas_obligations"],
+                    "tas_obligation_not_in_gtas_total": result["tas_obligation_not_in_gtas_total"] or 0.0,
+                    "missing_tas_accounts_count": result["missing_tas_accounts"],
+                },
+                "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
+            }
+            for result in result_list
+        ]
         results = sorted(
             results,
-            key=lambda x: x["tas_account_discrepancies_totals"]["missing_tas_accounts_count"]
-            if self.pagination.sort_key == "missing_tas_accounts_count"
+            key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key]
+            if (
+                self.pagination.sort_key == "missing_tas_accounts_count"
+                or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
+            )
             else x[self.pagination.sort_key],
             reverse=self.pagination.sort_order == "desc",
         )
@@ -135,6 +145,7 @@ class AgenciesOverview(AgencyBase):
             "obligation_difference",
             "recent_publication_date",
             "recent_publication_date_certified",
+            "tas_obligation_not_in_gtas_total",
         ]
         default_sort_column = "current_total_budget_authority_amount"
         model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
