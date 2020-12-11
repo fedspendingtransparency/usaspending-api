@@ -95,7 +95,7 @@ class AgencyOverview(AgencyBase):
                 "tas_account_discrepancies_totals": {
                     "gtas_obligation_total": result["total_dollars_obligated_gtas"],
                     "tas_accounts_total": result["tas_obligations"],
-                    "tas_obligation_not_in_gtas_total": result["tas_obligation_not_in_gtas_total"],
+                    "tas_obligation_not_in_gtas_total": result["tas_obligation_not_in_gtas_total"] or 0.0,
                     "missing_tas_accounts_count": result["missing_tas_accounts"],
                 },
                 "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
@@ -104,8 +104,11 @@ class AgencyOverview(AgencyBase):
         ]
         results = sorted(
             results,
-            key=lambda x: x["tas_account_discrepancies_totals"]["missing_tas_accounts_count"]
-            if self.pagination.sort_key == "missing_tas_accounts_count"
+            key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key]
+            if (
+                self.pagination.sort_key == "missing_tas_accounts_count"
+                or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
+            )
             else x[self.pagination.sort_key],
             reverse=self.pagination.sort_order == "desc",
         )
@@ -120,6 +123,7 @@ class AgencyOverview(AgencyBase):
             "obligation_difference",
             "recent_publication_date",
             "recent_publication_date_certified",
+            "tas_obligation_not_in_gtas_total",
         ]
         default_sort_column = "current_total_budget_authority_amount"
         model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
