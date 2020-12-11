@@ -8,7 +8,6 @@ from pathlib import Path
 from random import choice
 from typing import Any, Generator, List, Optional
 
-
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 logger = logging.getLogger("script")
@@ -48,8 +47,6 @@ def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
         return None
     result = []
     for j in json_array:
-        for key, value in j.items():
-            j[key] = "" if value is None else str(j[key])
         result.append(json.dumps(j, sort_keys=True))
     return result
 

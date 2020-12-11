@@ -33,8 +33,8 @@ class BaseAwardSearchModel(models.Model):
     total_obl_bin = models.TextField()
 
     recipient_hash = models.UUIDField()
+    recipient_levels = ArrayField(models.TextField(), default=list)
     recipient_name = models.TextField()
-    recipient_agg_key = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
     business_categories = ArrayField(models.TextField(), default=list)
@@ -53,6 +53,8 @@ class BaseAwardSearchModel(models.Model):
 
     awarding_agency_id = models.IntegerField()
     funding_agency_id = models.IntegerField()
+    funding_toptier_agency_id = models.IntegerField()
+    funding_subtier_agency_id = models.IntegerField()
     awarding_toptier_agency_name = models.TextField()
     funding_toptier_agency_name = models.TextField()
     awarding_subtier_agency_name = models.TextField()
@@ -62,8 +64,6 @@ class BaseAwardSearchModel(models.Model):
     funding_toptier_agency_code = models.TextField()
     awarding_subtier_agency_code = models.TextField()
     funding_subtier_agency_code = models.TextField()
-    funding_toptier_agency_agg_key = models.TextField()
-    funding_subtier_agency_agg_key = models.TextField()
 
     recipient_location_country_code = models.TextField()
     recipient_location_country_name = models.TextField()
@@ -73,6 +73,11 @@ class BaseAwardSearchModel(models.Model):
     recipient_location_zip5 = models.TextField()
     recipient_location_congressional_code = models.TextField()
     recipient_location_city_name = models.TextField()
+    recipient_location_state_name = models.TextField()
+    recipient_location_state_fips = models.TextField()
+    recipient_location_state_population = models.IntegerField()
+    recipient_location_county_population = models.IntegerField()
+    recipient_location_congressional_population = models.IntegerField()
 
     pop_country_code = models.TextField()
     pop_country_name = models.TextField()
@@ -83,6 +88,11 @@ class BaseAwardSearchModel(models.Model):
     pop_zip5 = models.TextField()
     pop_congressional_code = models.TextField()
     pop_city_name = models.TextField()
+    pop_state_name = models.TextField()
+    pop_state_fips = models.TextField()
+    pop_state_population = models.IntegerField()
+    pop_county_population = models.IntegerField()
+    pop_congressional_population = models.IntegerField()
 
     cfda_program_title = models.TextField()
     cfda_number = models.TextField()
@@ -95,14 +105,6 @@ class BaseAwardSearchModel(models.Model):
     product_or_service_description = models.TextField()
     naics_code = models.TextField()
     naics_description = models.TextField()
-
-    recipient_location_county_agg_key = models.TextField()
-    recipient_location_congressional_agg_key = models.TextField()
-    recipient_location_state_agg_key = models.TextField()
-
-    pop_county_agg_key = models.TextField()
-    pop_congressional_agg_key = models.TextField()
-    pop_state_agg_key = models.TextField()
 
     tas_paths = ArrayField(models.TextField(), default=list)
     tas_components = ArrayField(models.TextField(), default=list)

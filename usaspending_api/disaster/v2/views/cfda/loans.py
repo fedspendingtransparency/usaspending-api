@@ -22,7 +22,6 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
-
         cfda_prefetch_pks = [bucket.get("key") for bucket in info_buckets]
         prefetched_cfdas = {
             cfda["program_number"]: cfda for cfda in Cfda.objects.filter(program_number__in=cfda_prefetch_pks).values()
