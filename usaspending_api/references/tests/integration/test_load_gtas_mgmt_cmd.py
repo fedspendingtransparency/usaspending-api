@@ -27,9 +27,9 @@ def test_program_activity_fresh_load(monkeypatch):
     expected_results = {
         "count": 3,
         "row_tuples": [
-            (1600, -1, -10.00, -11.00, -11.00, -11.00, 11),
-            (1600, -2, -9.00, -12.00, -12.00, -12.00, 12),
-            (1601, -1, -8.00, -13.00, -13.00, -13.00, 13),
+            (1600, -1, -11.00, -11.00, -10.00, -11.00, -11.00, -11.00, -11.00, -11.00, -11.00, -11.00, -11.00, 11),
+            (1600, -2, -12.00, -12.00, -9.00, -12.00, -12.00, -12.00, -12.00, -12.00, -12.00, -12.00, -12.00, 12),
+            (1601, -1, -13.00, -13.00, -8.00, -13.00, -13.00, -13.00, -13.00, -13.00, -13.00, -13.00, -13.00, 13),
         ],
     }
 
@@ -39,9 +39,16 @@ def test_program_activity_fresh_load(monkeypatch):
             GTASSF133Balances.objects.values_list(
                 "fiscal_year",
                 "fiscal_period",
+                "budget_authority_unobligated_balance_brought_forward_cpe",
+                "adjustments_to_unobligated_balance_brought_forward_cpe",
                 "obligations_incurred_total_cpe",
                 "budget_authority_appropriation_amount_cpe",
+                "borrowing_authority_amount",
+                "contract_authority_amount",
+                "spending_authority_from_offsetting_collections_amount",
                 "other_budgetary_resources_amount_cpe",
+                "obligations_incurred",
+                "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
                 "unobligated_balance_cpe",
                 "total_budgetary_resources_cpe",
             )
