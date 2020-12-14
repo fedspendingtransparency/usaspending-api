@@ -39,7 +39,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Funding Subtier Agency 6", "code": "SA6", "id": 1006},
+            {"amount": 10.0, "name": "Funding Subtier Agency 6", "code": "SA6", "id": 1002},
             {"amount": 5.0, "name": "Funding Subtier Agency 4", "code": "SA4", "id": 1004},
         ],
         "messages": [get_time_period_message()],

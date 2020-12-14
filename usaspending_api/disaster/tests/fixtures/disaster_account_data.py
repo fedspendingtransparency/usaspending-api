@@ -17,7 +17,7 @@ def disaster_account_data():
 
     ag1 = mommy.make("references.Agency", id=1, toptier_agency=ta1, subtier_agency=sa1, toptier_flag=True)
     ag2 = mommy.make("references.Agency", id=2, toptier_agency=ta2, subtier_agency=sa2, toptier_flag=True)
-    ag3 = mommy.make("references.Agency", id=3, toptier_agency=ta2, subtier_agency=sa3)
+    ag3 = mommy.make("references.Agency", id=3, toptier_agency=ta2, subtier_agency=sa3, toptier_flag=False)
     mommy.make("references.Agency", id=4, toptier_agency=ta3, subtier_agency=sa4, toptier_flag=True)
 
     dsws1 = mommy.make(

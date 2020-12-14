@@ -111,7 +111,7 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
     results = []
     for bucket in response["aggregations"]["results"]["buckets"]:
         results.append({"key": bucket["key"], "sum": bucket["sum_agg"]["value"]})
-    print(results)
+
     assert len(results) == 1
     assert results[0]["key"] == str(
         recipient1

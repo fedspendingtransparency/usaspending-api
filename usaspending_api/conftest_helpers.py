@@ -1,11 +1,7 @@
 from builtins import Exception
-
-import json
-
 from datetime import datetime, timezone
-from typing import Optional, List
 from django.conf import settings
-from django.core.serializers.json import DjangoJSONEncoder
+from django.core.serializers.json import json, DjangoJSONEncoder
 from django.db import connection, DEFAULT_DB_ALIAS
 from elasticsearch import Elasticsearch
 from pathlib import Path
@@ -21,8 +17,11 @@ from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetche
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     create_award_type_aliases,
-    transform_covid19_faba_data,
+    execute_sql_statement,
     TaskSpec,
+    transform_award_data,
+    transform_covid19_faba_data,
+    transform_transaction_data,
 )
 from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
@@ -46,6 +45,20 @@ class TestElasticSearchIndex:
             "verbose": False,
             "write_alias": self.index_name + "-alias",
         }
+        self.worker = TaskSpec(
+            base_table=None,
+            base_table_id=None,
+            execute_sql_func=execute_sql_statement,
+            field_for_es_id="award_id" if self.index_type == "award" else "transaction_id",
+            index=self.index_name,
+            is_incremental=None,
+            name=f"{self.index_type} test worker",
+            partition_number=None,
+            primary_key="award_id" if self.index_type == "award" else "transaction_id",
+            sql=None,
+            transform_func=None,
+            view=None,
+        )
 
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
@@ -87,7 +100,11 @@ class TestElasticSearchIndex:
             cursor.execute(f"SELECT * FROM {view_name};")
             records = ordered_dictionary_fetcher(cursor)
             cursor.execute(f"DROP VIEW {view_name};")
-            if self.index_type == "covid19_faba":
+            if self.index_type == "award":
+                records = transform_award_data(self.worker, records)
+            elif self.index_type == "transaction":
+                records = transform_transaction_data(self.worker, records)
+            elif self.index_type == "covid19_faba":
                 records = transform_covid19_faba_data(
                     TaskSpec(
                         name="worker",
@@ -103,15 +120,17 @@ class TestElasticSearchIndex:
                     ),
                     records,
                 )
+
         for record in records:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
             routing_key = options.get("routing", settings.ES_ROUTING_FIELD)
             routing_value = record.get(routing_key)
-            es_id_value = record.get(es_id)
-            if self.index_type == "transaction":
-                record["federal_accounts"] = self.convert_json_arrays_to_list(record["federal_accounts"])
-            if self.index_type == "covid19_faba":
+
+            if "_id" in record:
                 es_id_value = record.pop("_id")
+            else:
+                es_id_value = record.get(es_id)
+
             self.client.index(
                 index=self.index_name,
                 body=json.dumps(record, cls=DjangoJSONEncoder),
@@ -123,20 +142,7 @@ class TestElasticSearchIndex:
 
     @classmethod
     def _generate_index_name(cls):
-        return "test-{}-{}".format(
-            datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S-%f"), generate_random_string()
-        )
-
-    @staticmethod
-    def convert_json_arrays_to_list(json_array: Optional[List[dict]]) -> Optional[List[str]]:
-        if json_array is None:
-            return None
-        result = []
-        for j in json_array:
-            for key, value in j.items():
-                j[key] = "" if value is None else str(j[key])
-            result.append(json.dumps(j, sort_keys=True))
-        return result
+        return f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}-{generate_random_string()}"
 
 
 def ensure_broker_server_dblink_exists():

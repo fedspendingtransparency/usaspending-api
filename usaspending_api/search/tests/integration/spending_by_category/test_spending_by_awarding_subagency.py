@@ -39,7 +39,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005},
+            {"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1003},
             {"amount": 5.0, "name": "Awarding Subtier Agency 1", "code": "SA1", "id": 1001},
         ],
         "messages": [get_time_period_message()],
@@ -76,7 +76,7 @@ def test_filtering_subtier_with_toptier(
         "category": "awarding_subagency",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005}],
+        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1003}],
         "messages": [get_time_period_message()],
     }
 
