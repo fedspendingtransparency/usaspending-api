@@ -9,7 +9,6 @@ from usaspending_api.common.exceptions import InvalidParameterException, Unproce
 
 
 class TotalBudgetaryResources(APIView):
-    
     @cache_response()
     def get(self, request: Request) -> Response:
         fiscal_year = request.query_params.get("fiscal_year")
@@ -24,23 +23,17 @@ class TotalBudgetaryResources(APIView):
                     raise UnprocessableEntityException(f"fiscal_period must be in the range 1-12")
 
                 gtas = (
-                    GTASSF133Balances.objects.filter(fiscal_year=fiscal_year)
-                    .filter(fiscal_period=fiscal_period)
-                    .values("fiscal_year")
-                    .values("fiscal_period")
-                    .annotate(
-                        total_budgetary_resources=Sum("total_budgetary_resources_cpe"),
-                    )
+                    GTASSF133Balances.objects.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
+                    .values("fiscal_year", "fiscal_period")
+                    .annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe"),)
                 )
         else:
             gtas = (
-                GTASSF133Balances.objects.values("fiscal_year")
-                .values("fiscal_period")
-                .annotate(
-                    total_budgetary_resources=Sum("total_budgetary_resources_cpe"),
-                )
+                GTASSF133Balances.objects.values("fiscal_year", "fiscal_period")
+                .annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe"),)
             )
 
+        print(gtas.query)
         print(gtas)
 
         response = {"results": []}
