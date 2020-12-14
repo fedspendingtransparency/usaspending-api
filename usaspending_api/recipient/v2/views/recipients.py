@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 
@@ -12,7 +13,6 @@ from rest_framework.views import APIView
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -285,12 +285,12 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
     for bucket in recipient_info_buckets:
         result = {}
         if children:
-            recipient_info = json_str_to_dict(bucket.get("key"))
+            recipient_info = json.loads(bucket.get("key"))
             hash_with_level = recipient_info.get("hash_with_level") or None
             result = {
                 "recipient_hash": hash_with_level[:-2] if hash_with_level else None,
-                "recipient_unique_id": recipient_info.get("unique_id") or None,
-                "recipient_name": recipient_info.get("name") or None,
+                "recipient_unique_id": recipient_info.get("unique_id"),
+                "recipient_name": recipient_info.get("name"),
             }
         loan_info = bucket.get("filter_loans", {})
         result.update(
@@ -436,7 +436,7 @@ class ChildRecipients(APIView):
                 )
 
         # Add state/provinces to each result
-        child_hashes = [result["recipient_id"][:-2] for result in results]
+        child_hashes = [result["recipient_id"][:-2] for result in results if result is not None]
         states_qs = RecipientLookup.objects.filter(recipient_hash__in=child_hashes).values("recipient_hash", "state")
         state_map = {str(state_result["recipient_hash"]): state_result["state"] for state_result in list(states_qs)}
         for result in results:

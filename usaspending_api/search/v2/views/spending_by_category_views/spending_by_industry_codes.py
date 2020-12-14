@@ -1,10 +1,11 @@
+import json
+
 from abc import ABCMeta
 from decimal import Decimal
 from django.db.models import QuerySet, F
 from enum import Enum
 from typing import List
 
-from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.references.models import Cfda
 from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_cfda_id_title_by_number,
@@ -40,14 +41,14 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                 industry_code_info = {"code": bucket.get("key")}
                 cfda_code_list.append(industry_code_info["code"])
             else:
-                industry_code_info = json_str_to_dict(bucket.get("key"))
+                industry_code_info = json.loads(bucket.get("key"))
 
             results.append(
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "code": industry_code_info.get("code"),
-                    "id": int(industry_code_info.get("id")) if industry_code_info.get("id") else None,
-                    "name": industry_code_info.get("description") or None,
+                    "id": industry_code_info.get("id"),
+                    "name": industry_code_info.get("description"),
                 }
             )
 
