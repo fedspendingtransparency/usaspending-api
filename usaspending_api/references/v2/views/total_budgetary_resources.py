@@ -9,12 +9,11 @@ from usaspending_api.common.exceptions import InvalidParameterException, Unproce
 
 
 class TotalBudgetaryResources(APIView):
-    
     @cache_response()
     def get(self, request: Request) -> Response:
         fiscal_year = request.query_params.get("fiscal_year")
         fiscal_period = request.query_params.get("fiscal_period")
-        gtas = {}
+        gtas_queryset = {}
 
         if fiscal_period:
             if not fiscal_year:
@@ -23,7 +22,7 @@ class TotalBudgetaryResources(APIView):
                 if fiscal_period < 1 or fiscal_period > 12:
                     raise UnprocessableEntityException(f"fiscal_period must be in the range 1-12")
 
-                gtas = (
+                gtas_queryset = (
                     GTASSF133Balances.objects.filter(fiscal_year=fiscal_year)
                     .filter(fiscal_period=fiscal_period)
                     .values("fiscal_year")
@@ -33,7 +32,7 @@ class TotalBudgetaryResources(APIView):
                     )
                 )
         else:
-            gtas = (
+            gtas_queryset = (
                 GTASSF133Balances.objects.values("fiscal_year")
                 .values("fiscal_period")
                 .annotate(
@@ -41,14 +40,16 @@ class TotalBudgetaryResources(APIView):
                 )
             )
 
-        print(gtas)
+        print(gtas_queryset)
 
         response = {"results": []}
-        response["results"] = [
-            {
-                "fiscal_year": fiscal_year,
-                "fiscal_period": fiscal_period,
-                "total_budgetary_resources": float(gtas["total_budgetary_resources"]),
-            },
-        ]
+        for gtas in gtas_queryset:
+            response["results"].append(
+                {
+                    "fiscal_year": gtas.fiscal_year,
+                    "fiscal_period": gtas.fiscal_period,
+                    "total_budgetary_resources": float(gtas.total_budgetary_resources),
+                },
+            )
+
         return Response(response)
