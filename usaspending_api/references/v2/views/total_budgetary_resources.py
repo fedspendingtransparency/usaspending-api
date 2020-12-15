@@ -13,37 +13,27 @@ class TotalBudgetaryResources(APIView):
     def get(self, request: Request) -> Response:
         fiscal_year = request.query_params.get("fiscal_year")
         fiscal_period = request.query_params.get("fiscal_period")
-        gtas_queryset = {}
+        gtas_queryset = GTASSF133Balances.objects.values("fiscal_year", "fiscal_period")
 
         if fiscal_period:
             if not fiscal_year:
                 raise InvalidParameterException("fiscal_period was provided without any fiscal_year.")
             else:
-                if fiscal_period < 1 or fiscal_period > 12:
-                    raise UnprocessableEntityException(f"fiscal_period must be in the range 1-12")
+                if int(fiscal_period) < 1 or int(fiscal_period) > 12:
+                    raise UnprocessableEntityException("fiscal_period must be in the range 1-12")
+                gtas_queryset = gtas_queryset.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
 
-                gtas_queryset = (
-                    GTASSF133Balances.objects.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
-                    .values("fiscal_year", "fiscal_period")
-                    .annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe"),)
-                )
-        else:
-            gtas_queryset = (
-                GTASSF133Balances.objects.values("fiscal_year", "fiscal_period")
-                .annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe"),)
-            )
+        elif fiscal_year:
+            gtas_queryset = gtas_queryset.filter(fiscal_year=fiscal_year)
 
-        print(gtas_queryset.query)
-        print(gtas_queryset)
-
-        response = {"results": []}
-        for gtas in gtas_queryset:
-            response["results"].append(
+        results = []
+        for gtas in gtas_queryset.annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe")):
+            results.append(
                 {
-                    "fiscal_year": gtas.fiscal_year,
-                    "fiscal_period": gtas.fiscal_period,
-                    "total_budgetary_resources": float(gtas.total_budgetary_resources),
+                    "fiscal_year": gtas["fiscal_year"],
+                    "fiscal_period": gtas["fiscal_period"],
+                    "total_budgetary_resources": float(gtas["total_budgetary_resources"]),
                 },
             )
 
-        return Response(response)
+        return Response({"results": results, "messages": []})
