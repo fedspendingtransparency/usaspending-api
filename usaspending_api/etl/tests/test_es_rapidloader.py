@@ -1,4 +1,5 @@
 import pytest
+from django.conf import settings
 
 from collections import OrderedDict
 from datetime import datetime, timezone
@@ -12,6 +13,9 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     check_awards_for_deletes,
     get_deleted_award_ids,
     Controller,
+    execute_sql_statement,
+    transform_award_data,
+    transform_transaction_data,
 )
 
 
@@ -91,22 +95,44 @@ def award_data_fixture(db):
     mommy.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
 
 
-config = {
-    "query_alias_prefix": "award-query",
-    "processing_start_datetime": datetime(2019, 12, 13, 16, 10, 33, 729108, tzinfo=timezone.utc),
-    "verbose": False,
-    "load_type": "awards",
-    "process_deletes": False,
-    "directory": Path(__file__).resolve().parent,
-    "skip_counts": False,
-    "index_name": f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}-{generate_random_string()}",
+award_config = {
     "create_new_index": True,
-    "snapshot": False,
+    "data_type": "award",
+    "data_transform_func": transform_award_data,
+    "directory": Path(__file__).resolve().parent,
     "fiscal_years": [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
-    "starting_date": datetime(2007, 10, 1, 0, 0, tzinfo=timezone.utc),
-    "max_query_size": 10000,
+    "index_name": f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}-{generate_random_string()}",
     "is_incremental_load": False,
-    "ingest_wait": 0.001,
+    "max_query_size": 10000,
+    "process_deletes": False,
+    "processing_start_datetime": datetime(2019, 12, 13, 16, 10, 33, 729108, tzinfo=timezone.utc),
+    "query_alias_prefix": "award-query",
+    "skip_counts": False,
+    "snapshot": False,
+    "starting_date": datetime(2007, 10, 1, 0, 0, tzinfo=timezone.utc),
+    "unique_key_field": "award_id",
+    "verbose": False,
+}
+
+transaction_config = {
+    "base_table": "transaction_normalized",
+    "base_table_id": "id",
+    "create_award_type_aliases": True,
+    "data_transform_func": transform_transaction_data,
+    "data_type": "transaction",
+    "execute_sql_func": execute_sql_statement,
+    "extra_null_partition": False,
+    "field_for_es_id": "transaction_id",
+    "initial_datetime": datetime(2019, 12, 13, 16, 10, 33, 729108, tzinfo=timezone.utc),
+    "max_query_size": 50000,
+    "optional_predicate": """WHERE "update_date" >= '{starting_date}'""",
+    "primary_key": "transaction_id",
+    "query_alias_prefix": "transaction-query",
+    "required_index_name": settings.ES_TRANSACTIONS_NAME_SUFFIX,
+    "sql_view": settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
+    "stored_date_key": "es_transactions",
+    "unique_key_field": "generated_unique_transaction_id",
+    "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
 }
 
 ################################################################################
@@ -125,11 +151,11 @@ def test_es_award_loader_class(award_data_fixture, elasticsearch_award_index, mo
         "usaspending_api.etl.elasticsearch_loader_helpers.utilities.execute_sql_statement", mock_execute_sql
     )
     elasticsearch_client = instantiate_elasticsearch_client()
-    loader = Controller(config, elasticsearch_client)
+    loader = Controller(award_config, elasticsearch_client)
     assert loader.__class__.__name__ == "Controller"
     loader.run_load_steps()
-    assert elasticsearch_client.indices.exists(config["index_name"])
-    elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
+    assert elasticsearch_client.indices.exists(award_config["index_name"])
+    elasticsearch_client.indices.delete(index=award_config["index_name"], ignore_unavailable=False)
 
 
 @pytest.mark.skip
@@ -137,14 +163,12 @@ def test_es_transaction_loader_class(award_data_fixture, elasticsearch_transacti
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.utilities.execute_sql_statement", mock_execute_sql
     )
-    config["query_alias_prefix"] = "transaction-query"
-    config["load_type"] = "transactions"
     elasticsearch_client = instantiate_elasticsearch_client()
-    loader = Controller(config, elasticsearch_client)
+    loader = Controller(transaction_config, elasticsearch_client)
     assert loader.__class__.__name__ == "Controller"
     loader.run_load_steps()
-    assert elasticsearch_client.indices.exists(config["index_name"])
-    elasticsearch_client.indices.delete(index=config["index_name"], ignore_unavailable=False)
+    assert elasticsearch_client.indices.exists(transaction_config["index_name"])
+    elasticsearch_client.indices.delete(index=transaction_config["index_name"], ignore_unavailable=False)
 
 
 # SQL method is being mocked here since the `execute_sql_statement` used
@@ -166,11 +190,9 @@ def test_award_delete_sql(award_data_fixture, monkeypatch, db):
     assert awards == [OrderedDict([("generated_unique_award_id", "CONT_AWD_WHATEVER")])]
 
 
-def test_get_award_ids(award_data_fixture, elasticsearch_transaction_index):
-    elasticsearch_transaction_index.update_index()
-    id_list = [{"key": 1, "col": "transaction_id"}]
-    config["query_alias_prefix"] = "transaction-query"
-    config["load_type"] = "transactions"
-    client = elasticsearch_transaction_index.client
-    ids = get_deleted_award_ids(client, id_list, config, index=elasticsearch_transaction_index.index_name)
+def test_get_award_ids(award_data_fixture, elasticsearch_award_index):
+    elasticsearch_award_index.update_index()
+    id_list = [{"key": 1, "col": "award_id"}]
+    client = elasticsearch_award_index.client
+    ids = get_deleted_award_ids(client, id_list, award_config, index=elasticsearch_award_index.index_name)
     assert ids == ["CONT_AWD_IND12PB00323"]

@@ -1,6 +1,5 @@
-from django.conf.urls import url
-from usaspending_api.reporting.v2.views.placeholder import Placeholder
+from django.conf.urls import url, include
 
 urlpatterns = [
-    url(r"^placeholder/$", Placeholder.as_view()),
+    url(r"^agencies/", include("usaspending_api.reporting.v2.views.agencies.urls")),
 ]

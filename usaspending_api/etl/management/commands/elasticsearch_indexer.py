@@ -111,7 +111,7 @@ class Command(BaseCommand):
         start_msg = "target index: {index_name} | Starting from: {starting_date}"
         logger.info(format_log(start_msg.format(**config)))
 
-        ensure_view_exists(config["sql_view"])
+        ensure_view_exists(config["sql_view"], force=True)
         error_addition = ""
         loader = Controller(config)
 

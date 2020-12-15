@@ -22,6 +22,7 @@ QUARTERLY_GTAS_BUDGETARY_RESOURCES = 0.26
 
 EARLY_GTAS_BUDGETARY_RESOURCES = 0.20
 EARLY_GTAS_OUTLAY = 0.02
+EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE = 0.05
 
 UNOBLIGATED_GTAS_BUDGETARY_RESOURCES = 1.5
 
@@ -62,6 +63,7 @@ def late_gtas(defc_codes):
         total_budgetary_resources_cpe=LATE_GTAS_BUDGETARY_RESOURCES,
         budget_authority_appropriation_amount_cpe=LATE_GTAS_APPROPRIATION,
         other_budgetary_resources_amount_cpe=0.1,
+        budget_authority_unobligated_balance_brought_forward_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=LATE_GTAS_OUTLAY,
     )
 
@@ -78,6 +80,7 @@ def quarterly_gtas(defc_codes):
         total_budgetary_resources_cpe=QUARTERLY_GTAS_BUDGETARY_RESOURCES,
         budget_authority_appropriation_amount_cpe=0.25,
         other_budgetary_resources_amount_cpe=0.0,
+        budget_authority_unobligated_balance_brought_forward_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.02,
     )
 
@@ -93,6 +96,7 @@ def early_gtas(defc_codes):
         total_budgetary_resources_cpe=EARLY_GTAS_BUDGETARY_RESOURCES,
         budget_authority_appropriation_amount_cpe=0.19,
         other_budgetary_resources_amount_cpe=0.0,
+        budget_authority_unobligated_balance_brought_forward_cpe=EARLY_GTAS_BUDGET_AUTHORITY_UNOBLIGATED_BALANCE_BROUGHT_FORWARD_CPE,
         gross_outlay_amount_by_tas_cpe=0.02,
     )
 
@@ -108,6 +112,7 @@ def non_covid_gtas(defc_codes):
         total_budgetary_resources_cpe=0.32,
         budget_authority_appropriation_amount_cpe=0.31,
         other_budgetary_resources_amount_cpe=0.0,
+        budget_authority_unobligated_balance_brought_forward_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.13,
     )
 
@@ -123,6 +128,7 @@ def unobligated_balance_gtas(defc_codes):
         total_budgetary_resources_cpe=1.5,
         budget_authority_appropriation_amount_cpe=0.74,
         other_budgetary_resources_amount_cpe=0.74,
+        budget_authority_unobligated_balance_brought_forward_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.0,
     )
 
@@ -138,6 +144,7 @@ def other_budget_authority_gtas(defc_codes):
         total_budgetary_resources_cpe=0.85,
         budget_authority_appropriation_amount_cpe=0.69,
         other_budgetary_resources_amount_cpe=0.14,
+        budget_authority_unobligated_balance_brought_forward_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=0.02,
     )
 
@@ -168,6 +175,7 @@ def _year_2_gtas(code):
         total_budgetary_resources_cpe=YEAR_TWO_GTAS_BUDGETARY_RESOURCES,
         budget_authority_appropriation_amount_cpe=YEAR_TWO_GTAS_APPROPRIATION,
         other_budgetary_resources_amount_cpe=0.0,
+        budget_authority_unobligated_balance_brought_forward_cpe=0.0,
         gross_outlay_amount_by_tas_cpe=YEAR_TWO_OUTLAY,
     )
 

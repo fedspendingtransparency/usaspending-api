@@ -1,10 +1,11 @@
+import json
+
 from abc import ABCMeta
 from decimal import Decimal
 from django.db.models import QuerySet, F
 from enum import Enum
 from typing import List
 
-from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_country_name_from_code,
     fetch_state_name_from_code,
@@ -33,14 +34,14 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
         results = []
         location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in location_info_buckets:
-            location_info = json_str_to_dict(bucket.get("key"))
+            location_info = json.loads(bucket.get("key"))
 
             if self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
                 if location_info.get("congressional_code") == "90":
                     congressional_code = "MULTIPLE DISTRICTS"
                 else:
-                    congressional_code = location_info.get("congressional_code")
-                name = f"{location_info.get('state_code')}-{congressional_code}"
+                    congressional_code = location_info.get("congressional_code") or ""
+                name = f"{location_info.get('state_code') or ''}-{congressional_code}"
             else:
                 name = location_info.get(f"{self.location_type.value}_name")
 
