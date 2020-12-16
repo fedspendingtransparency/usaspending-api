@@ -23,6 +23,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     TaskSpec,
     toggle_refresh_on,
 )
+from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
 
 logger = logging.getLogger("script")
 
@@ -44,6 +45,7 @@ class Controller:
 
     def __init__(self, config):
         self.config = config
+        self.tasks = []
 
     def prepare_for_etl(self) -> None:
         if self.config["process_deletes"]:
@@ -94,6 +96,8 @@ class Controller:
             else:
                 logger.info(format_log("Closing old indices and adding aliases"))
                 swap_aliases(client, self.config)
+
+        close_all_django_db_conns()
 
         if self.config["is_incremental_load"]:
             toggle_refresh_on(client, self.config["index_name"])
@@ -173,7 +177,11 @@ def extract_transform_load(task: TaskSpec) -> None:
             f"Prematurely ending partition #{task.partition_number} due to error in another process"
             logger.warning(format_log(msg, name=task.name))
             return
-        success, fail = load_data(task, records, client)
+        if len(records) > 0:
+            success, fail = load_data(task, records, client)
+        else:
+            logger.info(format_log("No records to index", name=task.name))
+            success, fail = 0, 0
         with total_doc_success.get_lock():
             total_doc_success.value += success
         with total_doc_fail.get_lock():

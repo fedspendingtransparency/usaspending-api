@@ -1,8 +1,9 @@
+import json
+
 from decimal import Decimal
 from django.db.models import QuerySet, F, Case, When, Value, IntegerField
 from typing import List
 
-from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
@@ -60,10 +61,11 @@ class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
         )
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
+
         results = []
         location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in location_info_buckets:
-            recipient_info = json_str_to_dict(bucket.get("key"))
+            recipient_info = json.loads(bucket.get("key"))
 
             results.append(
                 {

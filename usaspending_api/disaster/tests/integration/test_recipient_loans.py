@@ -16,7 +16,7 @@ def test_correct_response_defc_no_results(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["N"])
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["N"], sort="obligation")
     expected_results = []
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
@@ -26,7 +26,7 @@ def test_correct_response_defc_no_results(
 def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L"])
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L"], sort="obligation")
     expected_results = [
         {
             "code": "987654321",
@@ -66,7 +66,7 @@ def test_correct_response_multiple_defc(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"])
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], sort="obligation")
     expected_results = [
         {
             "code": "987654321",
@@ -157,7 +157,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="rec")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="rec", sort="obligation")
     expected_results = [
         {
             "code": "987654321",

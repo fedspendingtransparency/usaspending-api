@@ -1,13 +1,8 @@
-# Stdlib imports
-from time import perf_counter
-
-# Core Django imports
-from django.db import connection
-
-# Third-party app imports
 import pytest
 
-# Imports from your apps
+from django.db import connection
+from time import perf_counter
+
 from usaspending_api.common.helpers.decorators import set_db_timeout
 
 
@@ -17,14 +12,14 @@ def test_statement_timeout_successfully_times_out():
     Test the django statement timeout setting
     """
 
-    test_timeout_in_seconds = 1
+    test_timeout_in_seconds = 0.5
     pg_sleep_in_seconds = 10
 
     @set_db_timeout(test_timeout_in_seconds)
     def test_timeout_success():
         with connection.cursor() as cursor:
             # pg_sleep takes in a parameter corresponding to seconds
-            cursor.execute("SELECT pg_sleep(%d)" % pg_sleep_in_seconds)
+            cursor.execute(f"SELECT pg_sleep({pg_sleep_in_seconds:.2f})")
 
     start = perf_counter()
     try:
@@ -43,14 +38,14 @@ def test_statement_timeout_successfully_runs_within_timeout():
     Test the django statement timeout setting
     """
 
-    test_timeout_in_seconds = 2
-    pg_sleep_in_seconds = 1
+    test_timeout_in_seconds = 1
+    pg_sleep_in_seconds = 0.5
 
     @set_db_timeout(test_timeout_in_seconds)
     def test_timeout_success():
         with connection.cursor() as cursor:
             # pg_sleep takes in a parameter corresponding to seconds
-            cursor.execute("SELECT pg_sleep(%d)" % pg_sleep_in_seconds)
+            cursor.execute(f"SELECT pg_sleep({pg_sleep_in_seconds:.2f})")
 
     try:
         start = perf_counter()
@@ -66,16 +61,17 @@ def test_statement_timeout_no_decorator():
     """Test the django statement timeout setting"""
 
     start = perf_counter()
-    pg_sleep_in_seconds = 5
+    pg_sleep_in_seconds = 2
+    tiny_offset = 0.001  # allows for slight rounding or timing differences between tools
 
     def test_timeout_success():
         with connection.cursor() as cursor:
             # pg_sleep takes in a parameter corresponding to seconds
-            cursor.execute("SELECT pg_sleep({:d})".format(pg_sleep_in_seconds))
+            cursor.execute(f"SELECT pg_sleep({pg_sleep_in_seconds:.2f})")
 
     try:
         test_timeout_success()
     except Exception:
         assert False
     else:
-        assert (perf_counter() - start) >= pg_sleep_in_seconds
+        assert (perf_counter() - start) >= (pg_sleep_in_seconds - tiny_offset)
