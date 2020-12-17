@@ -121,7 +121,10 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
         #  run a count query and fetch only a page's worth of results
         return (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
-            .values("object_class__major_object_class", "object_class__major_object_class_name",)
+            .values(
+                "object_class__major_object_class",
+                "object_class__major_object_class_name",
+            )
             .annotate(**annotations)
             .values(*annotations.keys())
         )

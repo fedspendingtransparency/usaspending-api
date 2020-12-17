@@ -323,8 +323,8 @@ def test_extract_parent_from_hash():
 
 @pytest.mark.django_db
 def test_extract_parent_from_hash_failure():
-    """ Testing extracting parent duns/name from recipient hash but with recipient lookup removed
-        as there may be cases where the parent recipient is not found/listed
+    """Testing extracting parent duns/name from recipient hash but with recipient lookup removed
+    as there may be cases where the parent recipient is not found/listed
     """
     # This one specifically has to be a child
     recipient_id = "392052ae-92ab-f3f4-d9fa-b57f45b7750b-C"
@@ -428,7 +428,9 @@ def test_obtain_recipient_totals_year(monkeypatch, elasticsearch_transaction_ind
         "awardee_or_recipient_uniqu": "000000002",
         "ultimate_parent_unique_ide": "000000001",
     }
-    create_transaction_test_data([transaction_recipient_data] * len(TEST_SUMMARY_TRANSACTION_RECIPIENT),)
+    create_transaction_test_data(
+        [transaction_recipient_data] * len(TEST_SUMMARY_TRANSACTION_RECIPIENT),
+    )
 
     # load recipient lookup
     create_recipient_lookup_test_data(TEST_RECIPIENT_LOOKUPS[recipient_hash])

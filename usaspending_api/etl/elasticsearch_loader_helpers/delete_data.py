@@ -34,17 +34,17 @@ def delete_from_es(
     task_id: Optional[Tuple[int, str]] = None,
 ) -> None:
     """
-        id_list = [
-            {key: 'key1', col: 'tranaction_id'},
-            {key: 'key2', col: 'generated_unique_transaction_id'},
-            ...
-        ]
-        - or -
-        id_list = [
-            {key: 'key1', col: 'award_id'},
-            {key: 'key2', col: 'generated_unique_award_id'},
-            ...
-        ]
+    id_list = [
+        {key: 'key1', col: 'tranaction_id'},
+        {key: 'key2', col: 'generated_unique_transaction_id'},
+        ...
+    ]
+    - or -
+    id_list = [
+        {key: 'key1', col: 'award_id'},
+        {key: 'key2', col: 'generated_unique_award_id'},
+        ...
+    ]
 
     """
     start = perf_counter()
@@ -141,10 +141,10 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
 
 def get_deleted_award_ids(client: Elasticsearch, id_list: list, config: dict, index: Optional[str] = None) -> list:
     """
-        id_list = [{key:'key1',col:'transaction_id'},
-                   {key:'key2',col:'generated_unique_transaction_id'}],
-                   ...]
-     """
+    id_list = [{key:'key1',col:'transaction_id'},
+               {key:'key2',col:'generated_unique_transaction_id'}],
+               ...]
+    """
     if index is None:
         index = f"{config['query_alias_prefix']}-*"
     col_to_items_dict = defaultdict(list)
@@ -257,7 +257,8 @@ def gather_deleted_ids(config: dict) -> list:
 
     logger.info(
         format_log(
-            f"Gathering {len(deleted_ids):,} deleted transactions took {perf_counter() - start:.2f}s", action="Delete",
+            f"Gathering {len(deleted_ids):,} deleted transactions took {perf_counter() - start:.2f}s",
+            action="Delete",
         )
     )
     return deleted_ids

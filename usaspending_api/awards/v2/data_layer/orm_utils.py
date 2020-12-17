@@ -26,21 +26,21 @@ def delete_keys_from_dict(dictionary):
 
 def split_mapper_into_qs(mapper):
     """
-        Django ORM has trouble using .annotate() when the destination field conflicts with an
-        existing model field, even if it's the same source field (no renaming occuring)
+    Django ORM has trouble using .annotate() when the destination field conflicts with an
+    existing model field, even if it's the same source field (no renaming occuring)
 
-        Assuming there is a dictionary with model fieldnames as keys and the target field as the value,
-        Split that into two objects:
-            values_list: a list of fields which you wish to retrive without renaming
-                aka when `key` == `value`
-            annotate_dict: a dictionary/OrderedDict of target and source fields to rename
+    Assuming there is a dictionary with model fieldnames as keys and the target field as the value,
+    Split that into two objects:
+        values_list: a list of fields which you wish to retrive without renaming
+            aka when `key` == `value`
+        annotate_dict: a dictionary/OrderedDict of target and source fields to rename
 
-        parameters
-            - mapper:  dictionary/OrderedDict
+    parameters
+        - mapper:  dictionary/OrderedDict
 
-        return:
-            - values_list: list
-            -annotate_dict:  OrderedDict
+    return:
+        - values_list: list
+        -annotate_dict:  OrderedDict
     """
     values_list = [k for k, v in mapper.items() if k == v]
     annotate_dict = OrderedDict([(v, F(k)) for k, v in mapper.items() if k != v])

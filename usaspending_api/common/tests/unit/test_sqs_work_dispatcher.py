@@ -44,11 +44,11 @@ def _patch_get_sqs_queue(fake_sqs_queue, monkeypatch):
 @pytest.mark.usefixtures("_patch_get_sqs_queue")
 class SQSWorkDispatcherTests(TestCase):
     def test_dispatch_with_default_numeric_message_body_succeeds(self):
-        """ SQSWorkDispatcher can execute work on a numeric message body successfully
+        """SQSWorkDispatcher can execute work on a numeric message body successfully
 
-            - Given a numeric message body
-            - When on a SQSWorkDispatcher.dispatch() is called
-            - Then the default message_transformer provides it as an argument to the job
+        - Given a numeric message body
+        - When on a SQSWorkDispatcher.dispatch() is called
+        - Then the default message_transformer provides it as an argument to the job
         """
         queue = get_sqs_queue()
         queue.send_message(MessageBody=1234)
@@ -76,14 +76,14 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertEqual(0, dispatcher._worker_process.exitcode)
 
     def test_dispatch_with_single_dict_item_message_transformer_succeeds(self):
-        """ SQSWorkDispatcher can execute work on a numeric message body provided from the message
-            transformer as a dict
+        """SQSWorkDispatcher can execute work on a numeric message body provided from the message
+        transformer as a dict
 
-            - Given a numeric message body
-            - When on a SQSWorkDispatcher.dispatch() is called
-            - And a message_transformer wraps that message body into a dict,
-                keyed by the name of the single param of the job
-            - Then the dispatcher provides the dict item's value to the job when invoked
+        - Given a numeric message body
+        - When on a SQSWorkDispatcher.dispatch() is called
+        - And a message_transformer wraps that message body into a dict,
+            keyed by the name of the single param of the job
+        - Then the dispatcher provides the dict item's value to the job when invoked
         """
         queue = get_sqs_queue()
         queue.send_message(MessageBody=1234)
@@ -111,11 +111,11 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertEqual(0, dispatcher._worker_process.exitcode)
 
     def test_dispatch_with_multi_arg_message_transformer_succeeds(self):
-        """ SQSWorkDispatcher can execute work when a message_transformer provides tuple-based args to use
+        """SQSWorkDispatcher can execute work when a message_transformer provides tuple-based args to use
 
-            - Given a message_transformer that returns a tuple as the arguments
-            - When on a SQSWorkDispatcher.dispatch() is called
-            - Then the given job will run with those unnamed (positional) args
+        - Given a message_transformer that returns a tuple as the arguments
+        - When on a SQSWorkDispatcher.dispatch() is called
+        - Then the given job will run with those unnamed (positional) args
         """
         queue = get_sqs_queue()
         queue.send_message(MessageBody=1234)
@@ -144,11 +144,11 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertEqual(0, dispatcher._worker_process.exitcode)
 
     def test_dispatch_with_multi_kwarg_message_transformer_succeeds(self):
-        """ SQSWorkDispatcher can execute work when a message_transformer provides dict-based args to use
+        """SQSWorkDispatcher can execute work when a message_transformer provides dict-based args to use
 
-            - Given a message_transformer that returns a tuple as the arguments
-            - When on a SQSWorkDispatcher.dispatch() is called
-            - Then the given job will run with those unnamed (positional) args
+        - Given a message_transformer that returns a tuple as the arguments
+        - When on a SQSWorkDispatcher.dispatch() is called
+        - Then the given job will run with those unnamed (positional) args
         """
         queue = get_sqs_queue()
         queue.send_message(MessageBody=1234)
@@ -179,10 +179,10 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertEqual(0, dispatcher._worker_process.exitcode)
 
     def test_additional_job_args_can_be_passed(self):
-        """ Additional args can be passed to the job to execute
+        """Additional args can be passed to the job to execute
 
-            This should combine the singular element arg from the message transformer with the additional
-            tuple-based args given as positional args
+        This should combine the singular element arg from the message transformer with the additional
+        tuple-based args given as positional args
         """
         queue = get_sqs_queue()
         queue.send_message(MessageBody=1234)
@@ -212,10 +212,10 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertEqual(0, dispatcher._worker_process.exitcode)
 
     def test_additional_job_kwargs_can_be_passed(self):
-        """ Additional args can be passed to the job to execute
+        """Additional args can be passed to the job to execute
 
-            This should combine the singular element arg from the message transformer with the additional
-            dictionary-based args given as keyword arguments
+        This should combine the singular element arg from the message transformer with the additional
+        dictionary-based args given as keyword arguments
         """
         queue = get_sqs_queue()
         queue.send_message(MessageBody=1234)
@@ -245,10 +245,10 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertEqual(0, dispatcher._worker_process.exitcode)
 
     def test_additional_job_kwargs_can_be_passed_alongside_dict_args_from_message_transformer(self):
-        """ Additional args can be passed to the job to execute.
+        """Additional args can be passed to the job to execute.
 
-            This should combine the dictionary-based args from the message transformer with the additional
-            dictionary-based args given as keyword arguments
+        This should combine the dictionary-based args from the message transformer with the additional
+        dictionary-based args given as keyword arguments
         """
         queue = get_sqs_queue()
         queue.send_message(MessageBody=1234)
@@ -278,12 +278,12 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertEqual(0, dispatcher._worker_process.exitcode)
 
     def test_dispatching_by_message_attribute_succeeds_with_job_args(self):
-        """ SQSWorkDispatcher can read a message attribute to determine which function to call
+        """SQSWorkDispatcher can read a message attribute to determine which function to call
 
-            - Given a message with a user-defined message attribute
-            - When on a SQSWorkDispatcher.dispatch_by_message_attribute() is called
-            - And a message_transformer is given to route execution based on that message attribute
-            - Then the correct function is executed
+        - Given a message with a user-defined message attribute
+        - When on a SQSWorkDispatcher.dispatch_by_message_attribute() is called
+        - And a message_transformer is given to route execution based on that message attribute
+        - Then the correct function is executed
         """
         queue = get_sqs_queue()
         message_attr = {"work_type": {"DataType": "String", "StringValue": "a"}}
@@ -326,14 +326,14 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertEqual(0, dispatcher._worker_process.exitcode)
 
     def test_dispatching_by_message_attribute_succeeds_with_job_kwargs(self):
-        """ SQSWorkDispatcher can read a message attribute to determine which function to call
+        """SQSWorkDispatcher can read a message attribute to determine which function to call
 
-            - Given a message with a user-defined message attribute
-            - When on a SQSWorkDispatcher.dispatch_by_message_attribute() is called
-            - And a message_transformer is given to route execution based on that message attribute
-            - Then the correct function is executed
-            - And it can get its keyword arguments for execution from the job_kwargs item of the
-                message_transformer's returned dictionary
+        - Given a message with a user-defined message attribute
+        - When on a SQSWorkDispatcher.dispatch_by_message_attribute() is called
+        - And a message_transformer is given to route execution based on that message attribute
+        - Then the correct function is executed
+        - And it can get its keyword arguments for execution from the job_kwargs item of the
+            message_transformer's returned dictionary
         """
         queue = get_sqs_queue()
         message_attr = {"work_type": {"DataType": "String", "StringValue": "a"}}
@@ -376,14 +376,14 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertEqual(0, dispatcher._worker_process.exitcode)
 
     def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs(self):
-        """ SQSWorkDispatcher can read a message attribute to determine which function to call
+        """SQSWorkDispatcher can read a message attribute to determine which function to call
 
-            - Given a message with a user-defined message attribute
-            - When on a SQSWorkDispatcher.dispatch_by_message_attribute() is called
-            - And a message_transformer is given to route execution based on that message attribute
-            - Then the correct function is executed
-            - And it can get its args from the job_args item and keyword arguments for execution from the job_kwargs
-                item of the message_transformer's returned dictionary
+        - Given a message with a user-defined message attribute
+        - When on a SQSWorkDispatcher.dispatch_by_message_attribute() is called
+        - And a message_transformer is given to route execution based on that message attribute
+        - Then the correct function is executed
+        - And it can get its args from the job_args item and keyword arguments for execution from the job_kwargs
+            item of the message_transformer's returned dictionary
         """
         queue = get_sqs_queue()
         message_attr = {"work_type": {"DataType": "String", "StringValue": "a"}}
@@ -428,15 +428,15 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertEqual(0, dispatcher._worker_process.exitcode)
 
     def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs_and_additional(self):
-        """ SQSWorkDispatcher can read a message attribute to determine which function to call
+        """SQSWorkDispatcher can read a message attribute to determine which function to call
 
-            - Given a message with a user-defined message attribute
-            - When on a SQSWorkDispatcher.dispatch_by_message_attribute() is called
-            - And a message_transformer is given to route execution based on that message attribute
-            - Then the correct function is executed
-            - And it can get its args from the job_args item and keyword arguments for execution from the job_kwargs
-                item of the message_transformer's returned dictionary
-            - And can append to those additional args and additional kwargs
+        - Given a message with a user-defined message attribute
+        - When on a SQSWorkDispatcher.dispatch_by_message_attribute() is called
+        - And a message_transformer is given to route execution based on that message attribute
+        - Then the correct function is executed
+        - And it can get its args from the job_args item and keyword arguments for execution from the job_kwargs
+            item of the message_transformer's returned dictionary
+        - And can append to those additional args and additional kwargs
         """
         queue = get_sqs_queue()
         message_attr = {"work_type": {"DataType": "String", "StringValue": "a"}}
@@ -522,13 +522,13 @@ class SQSWorkDispatcherTests(TestCase):
             )
 
     def test_failed_job_detected(self):
-        """ SQSWorkDispatcher handles failed work within the child process
+        """SQSWorkDispatcher handles failed work within the child process
 
-            - Given a numeric message body
-            - When on a SQSWorkDispatcher.dispatch() is called
-            - And the function to execute in the child process fails
-            - Then a QueueWorkerProcessError exception is raised
-            - And the exit code of the worker process is > 0
+        - Given a numeric message body
+        - When on a SQSWorkDispatcher.dispatch() is called
+        - And the function to execute in the child process fails
+        - Then a QueueWorkerProcessError exception is raised
+        - And the exit code of the worker process is > 0
         """
         with self.assertRaises(QueueWorkerProcessError):
             queue = get_sqs_queue()
@@ -548,11 +548,11 @@ class SQSWorkDispatcherTests(TestCase):
         self.assertGreater(dispatcher._worker_process.exitcode, 0)
 
     def test_separate_signal_handlers_for_child_process(self):
-        """ Demonstrate (via log output) that a forked child process will inherit signal-handling of the parent
-            process, but that can be overridden, while maintaining the original signal handling of the parent.
+        """Demonstrate (via log output) that a forked child process will inherit signal-handling of the parent
+        process, but that can be overridden, while maintaining the original signal handling of the parent.
 
-            NOTE: Test is not provable with asserts. Reading STDOUT proves it, but a place to store shared state among
-            processes other than STDOUT was not found to be asserted on.
+        NOTE: Test is not provable with asserts. Reading STDOUT proves it, but a place to store shared state among
+        processes other than STDOUT was not found to be asserted on.
         """
 
         def fire_alarm():
@@ -589,9 +589,9 @@ class SQSWorkDispatcherTests(TestCase):
         fire_alarm()  # prove that clearing in one child process, left the handler intact in the parent process
 
     def test_terminated_job_triggers_exit_signal_handling_with_retry(self):
-        """ The child worker process is terminated, and exits indicating the exit signal of the termination. The
-            parent monitors this, and initiates exit-handling. Because the dispatcher allows retries, this message
-            should be made receivable again on the queue.
+        """The child worker process is terminated, and exits indicating the exit signal of the termination. The
+        parent monitors this, and initiates exit-handling. Because the dispatcher allows retries, this message
+        should be made receivable again on the queue.
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
         logger.setLevel(logging.DEBUG)
@@ -635,9 +635,9 @@ class SQSWorkDispatcherTests(TestCase):
             self._fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
     def test_terminated_job_triggers_exit_signal_handling_to_dlq(self):
-        """ The child worker process is terminated, and exits indicating the exit signal of the termination. The
-            parent monitors this, and initiates exit-handling. Because the dispatcher does not allow retries, the
-            message is copied to teh dead letter queue, and deleted from the queue.
+        """The child worker process is terminated, and exits indicating the exit signal of the termination. The
+        parent monitors this, and initiates exit-handling. Because the dispatcher does not allow retries, the
+        message is copied to teh dead letter queue, and deleted from the queue.
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
         logger.setLevel(logging.DEBUG)
@@ -685,9 +685,9 @@ class SQSWorkDispatcherTests(TestCase):
             self._fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
     def test_terminated_parent_dispatcher_exits_with_negative_signal_code(self):
-        """ After a parent dispatcher process receives an exit signal, and kills its child worker process, it itself
-            exits. Verify that the exit code it exits with is the negative value of the signal received, consistent with
-            how Python handles this.
+        """After a parent dispatcher process receives an exit signal, and kills its child worker process, it itself
+        exits. Verify that the exit code it exits with is the negative value of the signal received, consistent with
+        how Python handles this.
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
         logger.setLevel(logging.DEBUG)
@@ -745,8 +745,8 @@ class SQSWorkDispatcherTests(TestCase):
             self._fail_runaway_processes(logger, dispatcher=parent_dispatcher)
 
     def test_exit_handler_can_receive_queue_message_as_arg(self):
-        """ Verify that exit_handlers provided whose signatures allow keyword args can receive the queue message
-            as a keyword arg
+        """Verify that exit_handlers provided whose signatures allow keyword args can receive the queue message
+        as a keyword arg
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
         logger.setLevel(logging.DEBUG)
@@ -819,8 +819,8 @@ class SQSWorkDispatcherTests(TestCase):
             self._fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
     def test_default_to_queue_long_poll_works(self):
-        """ Same as testing exit handling when allowing retries, but not setting the long_poll_seoconds value,
-            to leave it to the default setting.
+        """Same as testing exit handling when allowing retries, but not setting the long_poll_seoconds value,
+        to leave it to the default setting.
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
         logger.setLevel(logging.DEBUG)
@@ -862,11 +862,11 @@ class SQSWorkDispatcherTests(TestCase):
             self._fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
     def test_hanging_cleanup_of_signaled_child_fails_dispatcher_and_sends_to_dlq(self):
-        """ When detecting the child worker process received an exit signal, and the parent dispatcher
-            process is handling cleanup and termination of the child worker process, if the cleanup hangs for longer
-            than the allowed exit_handling_timeout, it will short-circuit, and retry a 2nd time. If that also hangs
-            longer than exit_handling_timeout, the message will be put on the dead letter queue, deleted from the
-            origin queue, and :exc:`QueueWorkDispatcherError` will be raised stating unable to do exit handling
+        """When detecting the child worker process received an exit signal, and the parent dispatcher
+        process is handling cleanup and termination of the child worker process, if the cleanup hangs for longer
+        than the allowed exit_handling_timeout, it will short-circuit, and retry a 2nd time. If that also hangs
+        longer than exit_handling_timeout, the message will be put on the dead letter queue, deleted from the
+        origin queue, and :exc:`QueueWorkDispatcherError` will be raised stating unable to do exit handling
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
         logger.setLevel(logging.DEBUG)
@@ -952,13 +952,13 @@ class SQSWorkDispatcherTests(TestCase):
             self._fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
     def test_hanging_cleanup_of_signaled_parent_fails_dispatcher_and_sends_to_dlq(self):
-        """ When detecting the parent dispatcher process received an exit signal, and the parent dispatcher
-            process is handling cleanup and termination of the child worker process, if the cleanup hangs for longer
-            than the allowed exit_handling_timeout, it will short-circuit, and retry a 2nd time. If that also hangs
-            longer than exit_handling_timeout, the message will be put on the dead letter queue, deleted from the
+        """When detecting the parent dispatcher process received an exit signal, and the parent dispatcher
+        process is handling cleanup and termination of the child worker process, if the cleanup hangs for longer
+        than the allowed exit_handling_timeout, it will short-circuit, and retry a 2nd time. If that also hangs
+        longer than exit_handling_timeout, the message will be put on the dead letter queue, deleted from the
 
-            Slight differences from :meth:`test_hanging_cleanup_fails_dispatcher_and_sends_to_dlq` is that the child
-            worker process is not "dead" when doing these exit_handling cleanups.
+        Slight differences from :meth:`test_hanging_cleanup_fails_dispatcher_and_sends_to_dlq` is that the child
+        worker process is not "dead" when doing these exit_handling cleanups.
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
         logger.setLevel(logging.DEBUG)
@@ -1068,15 +1068,15 @@ class SQSWorkDispatcherTests(TestCase):
             self._fail_runaway_processes(logger, dispatcher=parent_dispatcher)
 
     def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(self):
-        """ Simulate an exit_handler that interferes with work that was being done by the worker, to see that we can
-            kill it and resume trying the exit handler.
+        """Simulate an exit_handler that interferes with work that was being done by the worker, to see that we can
+        kill it and resume trying the exit handler.
 
-            When detecting the parent dispatcher process received an exit signal, and the parent dispatcher
-            process is handling cleanup and termination of the child worker process, if the cleanup hangs for longer
-            than the allowed exit_handling_timeout, it will short-circuit, and retry a 2nd time. Before attempting
-            that second time, it will kill the worker process. This test configured the exit_handler to hang if the
-            worker is detected to still be alive, and proceeds with "cleanup" if it is detected as killed. It
-            therefore simulates successful cleanup on the 2nd try.
+        When detecting the parent dispatcher process received an exit signal, and the parent dispatcher
+        process is handling cleanup and termination of the child worker process, if the cleanup hangs for longer
+        than the allowed exit_handling_timeout, it will short-circuit, and retry a 2nd time. Before attempting
+        that second time, it will kill the worker process. This test configured the exit_handler to hang if the
+        worker is detected to still be alive, and proceeds with "cleanup" if it is detected as killed. It
+        therefore simulates successful cleanup on the 2nd try.
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
         logger.setLevel(logging.DEBUG)
@@ -1221,8 +1221,8 @@ class SQSWorkDispatcherTests(TestCase):
             self._fail_runaway_processes(logger, dispatcher=parent_dispatcher)
 
     def test_cleanup_second_try_succeeds_after_killing_worker_with_retry(self):
-        """ Same as :meth:`test_cleanup_second_try_succeeds_after_killing_worker_with_dlq`, but this queue allows
-            retries. Changes asserts to ensure the message gets retried after cleanup.
+        """Same as :meth:`test_cleanup_second_try_succeeds_after_killing_worker_with_dlq`, but this queue allows
+        retries. Changes asserts to ensure the message gets retried after cleanup.
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
         logger.setLevel(logging.DEBUG)
@@ -1459,7 +1459,9 @@ class SQSWorkDispatcherTests(TestCase):
         def raise_exc_with_qmsg_and_worker_process_name_and_message():
             fake_queue_message.body = 1166
             raise QueueWorkerProcessError(
-                "Custom Message about THIS", worker_process_name="MyJob", queue_message=fake_queue_message,
+                "Custom Message about THIS",
+                worker_process_name="MyJob",
+                queue_message=fake_queue_message,
             )
 
         with self.assertRaises(QueueWorkerProcessError) as err_ctx6:

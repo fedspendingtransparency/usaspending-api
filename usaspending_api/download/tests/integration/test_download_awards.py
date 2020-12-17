@@ -168,7 +168,11 @@ def test_download_awards_bad_filter_type_raises(client, monkeypatch, download_te
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     payload = {"filters": "01", "columns": []}
-    resp = client.post("/api/v2/download/awards/", content_type="application/json", data=json.dumps(payload),)
+    resp = client.post(
+        "/api/v2/download/awards/",
+        content_type="application/json",
+        data=json.dumps(payload),
+    )
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Filters parameter not provided as a dict"

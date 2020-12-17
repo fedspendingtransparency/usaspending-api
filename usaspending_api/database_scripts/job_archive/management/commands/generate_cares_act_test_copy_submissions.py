@@ -139,7 +139,8 @@ class Command(BaseCommand):
                     reporting_period_start=period_start,
                     reporting_period_end=period_end,
                     quarter_reporting_period_start=helper.get_quarter_start_date_from_period(
-                        self.destination_fiscal_year, self.destination_fiscal_period,
+                        self.destination_fiscal_year,
+                        self.destination_fiscal_period,
                     ),
                 )
             )

@@ -39,9 +39,9 @@ def chunks(items: List[Any], size: int) -> List[Any]:
 
 def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
     """
-        Postgres JSON arrays (jsonb) are stored in CSVs as strings. Since we want to avoid nested types
-        in Elasticsearch the JSON arrays are converted to dictionaries to make parsing easier and then
-        converted back into a formatted string.
+    Postgres JSON arrays (jsonb) are stored in CSVs as strings. Since we want to avoid nested types
+    in Elasticsearch the JSON arrays are converted to dictionaries to make parsing easier and then
+    converted back into a formatted string.
     """
     if json_array is None or len(json_array) == 0:
         return None
@@ -85,9 +85,9 @@ def format_log(msg: str, action: str = None, name: str = None) -> str:
 
 def gen_random_name() -> Generator[str, None, None]:
     """
-        Generate over 5000 unique names in a random order.
-        Successive calls past the unique name combinations will infinitely
-        continue to generate additional unique names w/ roman numerals appended.
+    Generate over 5000 unique names in a random order.
+    Successive calls past the unique name combinations will infinitely
+    continue to generate additional unique names w/ roman numerals appended.
     """
     name_dict = json.loads(Path(settings.APP_DIR / "data" / "multiprocessing_worker_names.json").read_text())
     attributes = list(set(name_dict["attributes"]))

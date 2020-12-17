@@ -587,7 +587,9 @@ def federal_accounts_test_data(db):
     mommy.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=2, award_id=2, treasury_account_id=1)
 
     mommy.make(
-        "accounts.TreasuryAppropriationAccount", treasury_account_identifier=1, federal_account_id=10,
+        "accounts.TreasuryAppropriationAccount",
+        treasury_account_identifier=1,
+        federal_account_id=10,
     )
 
     mommy.make(

@@ -31,7 +31,9 @@ class AgnosticTransactionLoader:
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
 
         mutually_exclusive_group.add_argument(
-            "--ids", nargs="+", help=f"Load/Reload transactions using this {self.shared_pk} list (space-separated)",
+            "--ids",
+            nargs="+",
+            help=f"Load/Reload transactions using this {self.shared_pk} list (space-separated)",
         )
         mutually_exclusive_group.add_argument(
             "--date",

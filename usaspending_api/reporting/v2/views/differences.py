@@ -15,7 +15,7 @@ from usaspending_api.reporting.models import ReportingAgencyTas
 
 class Differences(AgencyBase):
     """
-        Obtain the differences between file A obligations and file B obligations for a specific agency/period
+    Obtain the differences between file A obligations and file B obligations for a specific agency/period
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/agency_code/differences.md"

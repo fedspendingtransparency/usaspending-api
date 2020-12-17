@@ -227,21 +227,30 @@ def cfda_awards_and_transactions(db):
 
     # Transaction FABS
     mommy.make(
-        "awards.TransactionFABS", transaction_id=10, cfda_number="10.100",
+        "awards.TransactionFABS",
+        transaction_id=10,
+        cfda_number="10.100",
     )
     mommy.make(
-        "awards.TransactionFABS", transaction_id=20, cfda_number="20.200",
+        "awards.TransactionFABS",
+        transaction_id=20,
+        cfda_number="20.200",
     )
     mommy.make(
-        "awards.TransactionFABS", transaction_id=30, cfda_number="20.200",
+        "awards.TransactionFABS",
+        transaction_id=30,
+        cfda_number="20.200",
     )
     mommy.make(
-        "awards.TransactionFABS", transaction_id=40, cfda_number="30.300",
+        "awards.TransactionFABS",
+        transaction_id=40,
+        cfda_number="30.300",
     )
 
     # Transaction FPDS
     mommy.make(
-        "awards.TransactionFPDS", transaction_id=50,
+        "awards.TransactionFPDS",
+        transaction_id=50,
     )
 
     # References CFDA

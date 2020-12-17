@@ -13,19 +13,19 @@ from usaspending_api.references.models import RefProgramActivity
 @pytest.mark.django_db
 def test_program_activity_fresh_load():
     """
-        Test the program activity load to ensure data is loaded with the following expectations:
-            1. Program activity name is uppercased
-            2. Duplicate entries are not loaded
+    Test the program activity load to ensure data is loaded with the following expectations:
+        1. Program activity name is uppercased
+        2. Duplicate entries are not loaded
 
-        TODO: future rework will redefine what defines a duplicate by removing 'budget_year' from the definition
+    TODO: future rework will redefine what defines a duplicate by removing 'budget_year' from the definition
 
-        A unique set is defined by the following columns:
-            program_activity_code
-            program_activity_name
-            responsible_agency_id
-            allocation_transfer_agency_id
-            main_account_code
-            budget_year'
+    A unique set is defined by the following columns:
+        program_activity_code
+        program_activity_name
+        responsible_agency_id
+        allocation_transfer_agency_id
+        main_account_code
+        budget_year'
     """
 
     call_command("load_program_activity", "usaspending_api/references/tests/data/program_activity.csv")

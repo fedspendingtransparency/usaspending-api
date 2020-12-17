@@ -308,10 +308,10 @@ def get_connection(model=Award, read_only=True):
 
 def close_all_django_db_conns() -> None:
     """
-        Helper function to close all DB connetions
-        Sometimes we have to kill any DB connections before forking processes
-        as Django will want to share the single connection with all processes
-        and we don't want to have any deadlock/SSL problems due to that.
-     """
+    Helper function to close all DB connetions
+    Sometimes we have to kill any DB connections before forking processes
+    as Django will want to share the single connection with all processes
+    and we don't want to have any deadlock/SSL problems due to that.
+    """
 
     connections.close_all()

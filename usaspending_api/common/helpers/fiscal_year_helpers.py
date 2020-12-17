@@ -153,18 +153,18 @@ def create_full_time_periods(min_date, max_date, group, columns):
 
 
 def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type, columns):
-    """ Given the following, generate a list of dict results split by fiscal years/quarters/months
+    """Given the following, generate a list of dict results split by fiscal years/quarters/months
 
-        Args:
-            filter_time_periods: list of time_period objects usually provided by filters
-                - {'start_date':..., 'end_date':...}
-            queryset: the resulting data to split into these results
-            date_range_type: how the results are split
-                - 'fy', 'quarter', or 'month'
-            columns: dictionary of columns to include from the queryset
-                - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
-        Returns:
-            list of dict results split by fiscal years/quarters/months
+    Args:
+        filter_time_periods: list of time_period objects usually provided by filters
+            - {'start_date':..., 'end_date':...}
+        queryset: the resulting data to split into these results
+        date_range_type: how the results are split
+            - 'fy', 'quarter', or 'month'
+        columns: dictionary of columns to include from the queryset
+            - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
+    Returns:
+        list of dict results split by fiscal years/quarters/months
     """
     min_date, max_date = min_and_max_from_date_ranges(filter_time_periods)
     results = create_full_time_periods(min_date, max_date, date_range_type, columns)

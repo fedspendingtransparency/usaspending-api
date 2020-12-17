@@ -19,10 +19,18 @@ def test_delete_fabs_success():
     # Award kept despite having one of their associated transactions removed
     mommy.make(Award, id=2, latest_transaction_id=2, generated_unique_award_id="TEST_AWARD_2")
     mommy.make(
-        TransactionNormalized, id=2, award_id=2, action_date="2019-01-01", unique_award_key="TEST_AWARD_2",
+        TransactionNormalized,
+        id=2,
+        award_id=2,
+        action_date="2019-01-01",
+        unique_award_key="TEST_AWARD_2",
     )
     mommy.make(
-        TransactionNormalized, id=3, award_id=2, action_date="2019-01-02", unique_award_key="TEST_AWARD_2",
+        TransactionNormalized,
+        id=3,
+        award_id=2,
+        action_date="2019-01-02",
+        unique_award_key="TEST_AWARD_2",
     )
     mommy.make(
         TransactionFABS, transaction_id=2, published_award_financial_assistance_id=302, unique_award_key="TEST_AWARD_2"

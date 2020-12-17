@@ -384,7 +384,9 @@ def test_award_update_assistance_executive_comp():
         "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="ASST_ONE"
     )
     mommy.make(
-        "awards.TransactionFABS", transaction=txn3, unique_award_key="ASST_ONE",
+        "awards.TransactionFABS",
+        transaction=txn3,
+        unique_award_key="ASST_ONE",
     )
 
     update_assistance_awards()
@@ -408,16 +410,28 @@ def test_award_update_transaction_fk():
         unique_award_key="FAKE_award_YELLOW_12",
     )
     mommy.make(
-        "awards.TransactionNormalized", award=award, action_date="2012-10-01", unique_award_key="FAKE_award_YELLOW_12",
+        "awards.TransactionNormalized",
+        award=award,
+        action_date="2012-10-01",
+        unique_award_key="FAKE_award_YELLOW_12",
     )
     mommy.make(
-        "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="FAKE_award_YELLOW_12",
+        "awards.TransactionNormalized",
+        award=award,
+        action_date="2013-10-01",
+        unique_award_key="FAKE_award_YELLOW_12",
     )
     mommy.make(
-        "awards.TransactionNormalized", award=award, action_date="2014-10-01", unique_award_key="FAKE_award_YELLOW_12",
+        "awards.TransactionNormalized",
+        award=award,
+        action_date="2014-10-01",
+        unique_award_key="FAKE_award_YELLOW_12",
     )
     mommy.make(
-        "awards.TransactionNormalized", award=award, action_date="2015-10-01", unique_award_key="FAKE_award_YELLOW_12",
+        "awards.TransactionNormalized",
+        award=award,
+        action_date="2015-10-01",
+        unique_award_key="FAKE_award_YELLOW_12",
     )
     txn6 = mommy.make(
         "awards.TransactionNormalized",

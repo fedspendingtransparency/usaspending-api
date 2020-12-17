@@ -370,7 +370,11 @@ def test_correct_response_with_different_spending_types(
 
 def _test_correct_response_for_obligation(client):
     resp = post(
-        client, def_codes=["L", "M"], geo_layer="state", geo_layer_filters=["SC", "WA"], spending_type="obligation",
+        client,
+        def_codes=["L", "M"],
+        geo_layer="state",
+        geo_layer_filters=["SC", "WA"],
+        spending_type="obligation",
     )
     expected_response = {
         "geo_layer": "state",
@@ -404,7 +408,11 @@ def _test_correct_response_for_obligation(client):
 
 def _test_correct_response_for_outlay(client):
     resp = post(
-        client, def_codes=["L", "M"], geo_layer="state", geo_layer_filters=["SC", "WA"], spending_type="outlay",
+        client,
+        def_codes=["L", "M"],
+        geo_layer="state",
+        geo_layer_filters=["SC", "WA"],
+        spending_type="outlay",
     )
     expected_response = {
         "geo_layer": "state",
@@ -812,7 +820,12 @@ def _test_correct_response_for_pop_state_without_geo_filters(client):
 
 
 def _test_correct_response_for_recipient_location_county_without_geo_filters(client):
-    resp = post(client, def_codes=["L", "M"], geo_layer="county", spending_type="obligation",)
+    resp = post(
+        client,
+        def_codes=["L", "M"],
+        geo_layer="county",
+        spending_type="obligation",
+    )
     expected_response = {
         "geo_layer": "county",
         "scope": "recipient_location",
@@ -860,7 +873,12 @@ def _test_correct_response_for_recipient_location_county_without_geo_filters(cli
 
 
 def _test_correct_response_for_recipient_location_district_without_geo_filters(client):
-    resp = post(client, def_codes=["L", "M"], geo_layer="district", spending_type="obligation",)
+    resp = post(
+        client,
+        def_codes=["L", "M"],
+        geo_layer="district",
+        spending_type="obligation",
+    )
     expected_response = {
         "geo_layer": "district",
         "scope": "recipient_location",
@@ -916,7 +934,12 @@ def _test_correct_response_for_recipient_location_district_without_geo_filters(c
 
 
 def _test_correct_response_for_recipient_location_state_without_geo_filters(client):
-    resp = post(client, def_codes=["L", "M"], geo_layer="state", spending_type="obligation",)
+    resp = post(
+        client,
+        def_codes=["L", "M"],
+        geo_layer="state",
+        spending_type="obligation",
+    )
     expected_response = {
         "geo_layer": "state",
         "scope": "recipient_location",

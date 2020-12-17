@@ -93,7 +93,13 @@ def mock_tas_data(db):
     )
 
     mommy.make(
-        "awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piid", type="A", awarding_agency_id=1,
+        "awards.Award",
+        id=1,
+        is_fpds=True,
+        latest_transaction_id=1,
+        piid="piid",
+        type="A",
+        awarding_agency_id=1,
     )
     mommy.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=1, piid="piid2", type="B")
     mommy.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", type="C")
