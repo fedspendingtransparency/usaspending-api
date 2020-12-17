@@ -19,12 +19,12 @@ FPDS and FABS are pulled in nightly in the form of transactions. Transactions ar
 
 During the File C to D linkage process, File C records are attempted to be matched to an award ingested from FPDS/FABS (File D). The linkage logic is defined below.
 
-## Two Methods for Linkages
+## Two Linkage Phases
 
-There are two phases in the nightly pipeline that create File C to D linkages. The linkage logic below focuses on only the second phase.
+There are two phases in the nightly pipeline that create File C to D linkages.
 
-1. When submissions are loaded from broker into usaspending in the nightly pipeline, File C records from these submissions are attempted to be linked to File D awards.
-2. After new FABS/FPDS records are loaded from broker, SQL scripts (described in the logic below) are used to attempt to link File C records from already loaded submissions.
+1. When submissions are loaded from broker into usaspending in the nightly pipeline
+2. After new FABS/FPDS records are loaded from broker
 
 ## Linkage Logic
 
