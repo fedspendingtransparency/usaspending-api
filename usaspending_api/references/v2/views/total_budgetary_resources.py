@@ -9,6 +9,9 @@ from usaspending_api.common.exceptions import InvalidParameterException, Unproce
 
 
 class TotalBudgetaryResources(APIView):
+    """
+    This route sends a request to the backend to retrieve GTAS totals by FY/FP.
+    """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/total_budgetary_resources.md"
 
