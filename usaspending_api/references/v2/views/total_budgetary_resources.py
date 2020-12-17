@@ -16,7 +16,7 @@ class TotalBudgetaryResources(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/total_budgetary_resources.md"
 
     @cache_response()
-    def get(self, request: Request) -> Response:
+    def get(self, request: Request):
         fiscal_year = request.query_params.get("fiscal_year")
         fiscal_period = request.query_params.get("fiscal_period")
         gtas_queryset = GTASSF133Balances.objects.values("fiscal_year", "fiscal_period")
