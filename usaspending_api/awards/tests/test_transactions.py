@@ -26,7 +26,7 @@ def test_transaction_endpoint_v2_award_fk(client):
     )
     mommy.make("awards.TransactionNormalized", description="this should match", _fill_optional=True, award=awd)
 
-    resp = client.post("/api/v2/transactions/", {"award_id": "10"})
+    resp = client.post("/api/v2/transactions/", {"award_id": 10})
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["results"][0]["description"] == "this should match"
 
