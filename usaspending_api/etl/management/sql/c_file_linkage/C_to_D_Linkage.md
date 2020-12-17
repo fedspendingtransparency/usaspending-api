@@ -4,9 +4,9 @@
 
 ## Background
 
-File C (Award Financial) is submitted by agencies on a quartlery basis. Each record in File C represents an Award and its details, details which include an associated TAS.
+File C (Award Financial) data is submitted by agencies as a part of quarterly or monthly DABS. Each record in File C represents an Award and its details, details which include an associated TAS.
 
-FPDS and FABS are pulled in nightly in the form of transactions. Transactions are grouped into awards based on the grouping of the following fields:
+FPDS and FABS are pulled in nightly in the form of transactions. Transactions are grouped into awards based on the following fields:
 * Contracts
     * agency_id
     * referenced_idv_agency_iden
@@ -17,28 +17,26 @@ FPDS and FABS are pulled in nightly in the form of transactions. Transactions ar
     * fain
     * uri
 
+During the File C to D linkage process, File C records are attempted to be matched to an award ingested from FPDS/FABS (File D). The linkage logic is defined below.
 
-File C records should be a subset of the Awards data ingested from FPDS/FABS. The linkage logic is defined below.
+## Two Methods for Linkages
+
+There are two phases in the nightly pipeline that create File C to D linkages. The linkage logic below focuses on only the second phase.
+
+1. When submissions are loaded from broker into usaspending in the nightly pipeline, File C records from these submissions are attempted to be linked to File D awards.
+2. After new FABS/FPDS records are loaded from broker, SQL scripts (described in the logic below) are used to attempt to link File C records from already loaded submissions.
 
 ## Linkage Logic
 
-1. If PIID is not null, assume it's a contract and look for an award with either a matching PIID, or a matching PIID and Parent PIID if and only if a Parent PIID is present in the File C record.
-    * if 0 awards found, no link is made
-    * if > 1 awards found, no link is made
-    * if exactly 1 award is found, the row is linked to the award
-2. If PIID is null, assume it's financial assistance and look for an award with matching FAIN or URI
-    1. if FAIN is not null and URI is null, look for award only based on fain
-        * if 0 awards found, no link is made
-        * if > 1 awards found, no link is made
-        * if exactly 1 award is found, the row is linked to the award
+In all the below scenarios, only unlinked File C records are considered for updates. Additionally, links are only made when a File C record matches **EXACTLY ONE** award. If zero or more than one award is matched, no link is made.
+
+1. If PIID is not null, assume it's a **contract** (FPDS) and look for an award with either a matching PIID, or a matching PIID and Parent PIID
+    1. if PIID is not null and Parent PIID is not null, look for an award based on both
+    2. if PIID is not null and Parent PIID is null, look for an award based on PIID
+2. If PIID is null, assume it's **financial assistance** (FABS) and look for an award with matching FAIN or URI
+    1. if FAIN is not null and URI is null, look for award only based on FAIN
     2. if URI is not null and FAIN is null, look for award only based on URI
-        * if 0 awards found, no link is made
-        * if > 1 awards found, no link is made
-        * if exactly 1 award is found, the row is linked to the award
     3. if FAIN and URI are both not null, look for a distinct award id in the transactions based on the FAIN. If that does not yield an exact match, use the URI.
-        * if 0 unique awards found, no link is made
-        * if > 1 unique awards found, no link is made
-        * if exactly 1 award is found, the row is linked to the award
 
 ## Execution
 
