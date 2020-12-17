@@ -2,7 +2,6 @@ from django.db.models import Sum
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
