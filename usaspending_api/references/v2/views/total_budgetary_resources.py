@@ -9,6 +9,9 @@ from usaspending_api.common.exceptions import InvalidParameterException, Unproce
 
 
 class TotalBudgetaryResources(APIView):
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/total_budgetary_resources.md"
+
     @cache_response()
     def get(self, request: Request) -> Response:
         fiscal_year = request.query_params.get("fiscal_year")
