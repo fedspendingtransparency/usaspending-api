@@ -30,19 +30,18 @@ Prefix|Change Type|Examples
 
 
 ## Code Style
-Use of these tools locally creates an excellent chance of passing our automated CI tests
+Use of these tools locally creates an excellent chance of passing our automated CI tests.
 * [flake8](http://flake8.pycqa.org/en/latest/index.html#)
     * Will be installed when following the steps in the [readme](README.md)
-    * from repo root dir: `flake8`
+    * From repo root dir, run: `flake8`
+    * If using a plugin in an IDE or code editor, ensure the configuration matches the `[flake8]` section in [setup.cfg](setup.cfg)
 * [black](https://github.com/python/black)
-    * See instructions for installing black and integrating with your develop env. Currently black requires a newer version of Python than the usaspending-api application.
-    * Recommendation is to _only_ run black on the files you are touching in your feature branch (ignoring django migration files)
-        * If using a plugin in your IDE/editor, ensure the black tool configuration matches the `[tool.black]` section in [pyproject.toml](pyproject.toml)
-        * Using the cli will automatically find the config when running from the project root directory:
-            * from repo root dir: `black usaspending_api/<path to file>`
+    * Will be installed when following the steps in the [readme](README.md)
+    * From repo root dir, run: `black .`
+    * If using a plugin in an IDE or code editor, ensure the black tool configuration matches the `[tool.black]` section in [pyproject.toml](pyproject.toml)
 
 ## Pull Requests
-When opening a PR to improve or fix something, the description will auto-populate with a template found [here](.github/pull_request_template.md)
+When opening a PR, the description will auto-populate with a template found [here](.github/pull_request_template.md)
 
 ### Stepping through the PR Template Requirements
 
@@ -59,16 +58,17 @@ When opening a PR to improve or fix something, the description will auto-populat
     - For bug fixes, add new tests to verify the desired behavior and detect future regressions
 2. **API documentation updated**
     - API Blueprint markdown files are located in `usaspending_api/api_contracts/`
-    - Must be completed when any API call is modified!
+    - If the API contract exists and the API endpoint definition was modified, the contract needs to be updated.
+    - If a contract does not exist, it must be created alongside the new endpoint, the contract needs to be vetted for good design and the API endpoint behavior needs to match the contract.
 3. **Necessary PR reviewers:**
     - Required: `Backend`
     - Several options: (Frontend|Operations|Domain Expert)
     - When a PR contains changes which should be validated by a representative of another team include a checkbox for that team.
     - Requires communication outside of GitHub to notify the reviewer(s)
 4. **Matview impact assessment completed**
-    - When anything dealing with the materialized view creation (JSON files, indexes, SQL generator script) write in the "Technical details" or a PR comment what the impact is, what the changes to operations are, and any concerns for the re-create.
+    - If anything dealing with the materialized view creation (JSON files, indexes, SQL generator script) is modified, write in the "Technical details" or a PR comment what the impact is, what the changes to operations are, and any concerns for the re-create.
 5. **Frontend impact assessment completed**
-    - If the PR creates or changes any API endpoint, Front-end needs to be notified and allow them to work on a sister-PR before this PR is merged
+    - If the PR creates or changes any API endpoint, a Frontend developer needs to be notified and allow them to work on a sister-PR before this PR is merged
 6. **Data validation completed**
     - Perform basic data validation and include the results in the JIRA ticket
     - Using SQL or the API as appropriate to the PR changes
