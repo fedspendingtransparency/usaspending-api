@@ -21,10 +21,10 @@ class TotalBudgetaryResources(APIView):
             {"key": "fiscal_year", "name": "fiscal_year", "type": "integer", "optional": True},
             {"key": "fiscal_period", "name": "fiscal_period", "type": "integer", "optional": True},
         ]
-        validated = TinyShield(model).block(request)
+        validated = TinyShield(model).block(request.query_params)
 
-        fiscal_year = validated["fiscal_year"]
-        fiscal_period = validated["fiscal_period"]
+        fiscal_year = validated.get("fiscal_year", None)
+        fiscal_period = validated.get("fiscal_period", None)
         gtas_queryset = GTASSF133Balances.objects.values("fiscal_year", "fiscal_period")
 
         if fiscal_period:

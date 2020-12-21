@@ -65,5 +65,5 @@ def test_bad_params(client, create_gtas_data):
     resp = client.get("/api/v2/references/total_budgetary_resources/?fiscal_period=3")
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
-    resp = client.get("/api/v2/references/total_budgetary_resources/?fiscal_year=2015&fiscal_period=0")
+    resp = client.get("/api/v2/references/total_budgetary_resources/?fiscal_year=2015&fiscal_period=1")
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
