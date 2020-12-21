@@ -55,7 +55,7 @@ def test_fy_and_fp(client, create_gtas_data):
         "messages": [],
     }
 
-    resp = client.get("/api/v2/references/total_budgetary_resources/?fiscal_year=2019&fiscal_period=1")
+    resp = client.get("/api/v2/references/total_budgetary_resources/?fiscal_year=2019&fiscal_period=4")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == {"results": [], "messages": []}
 
