@@ -18,7 +18,7 @@ def agency_data():
         toptier_code="001",
         abbreviation="ABBR",
         name="NAME",
-        agency_id="ID",
+        toptier_agency_id=534,
         mission="TO BOLDLY GO",
         about_agency_data="ABOUT",
         website="HTTP",
@@ -45,7 +45,7 @@ def test_happy_path(client, agency_data):
     assert resp.data["toptier_code"] == "001"
     assert resp.data["abbreviation"] == "ABBR"
     assert resp.data["name"] == "NAME"
-    assert resp.data["agency_id"] == "ID"
+    assert resp.data["agency_id"] == 534
     assert resp.data["mission"] == "TO BOLDLY GO"
     assert resp.data["about_agency_data"] == "ABOUT"
     assert resp.data["website"] == "HTTP"
