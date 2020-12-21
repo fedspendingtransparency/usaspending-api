@@ -1,11 +1,11 @@
+from decimal import Decimal
 from django.db.models import Sum
-from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
-
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
-
+from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 
 class TotalBudgetaryResources(APIView):
     """
@@ -39,7 +39,7 @@ class TotalBudgetaryResources(APIView):
                 {
                     "fiscal_year": gtas["fiscal_year"],
                     "fiscal_period": gtas["fiscal_period"],
-                    "total_budgetary_resources": float(gtas["total_budgetary_resources"]),
+                    "total_budgetary_resources": Decimal(gtas["total_budgetary_resources"]),
                 },
             )
 
