@@ -26,7 +26,7 @@ Returns some basic information regarding the agency for the fiscal year specifie
         + `toptier_code` (required, string)
         + `name` (required, string)
         + `abbreviation` (required, string, nullable)
-        + `agency_id` (required, string)
+        + `agency_id` (required, number)
         + `icon_filename` (required, string, nullable)
         + `mission` (required, string, nullable)
         + `website` (required, string, nullable)
