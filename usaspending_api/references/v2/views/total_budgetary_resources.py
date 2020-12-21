@@ -24,8 +24,8 @@ class TotalBudgetaryResources(APIView):
             if not fiscal_year:
                 raise InvalidParameterException("fiscal_period was provided without any fiscal_year.")
             else:
-                if int(fiscal_period) < 1 or int(fiscal_period) > 12:
-                    raise UnprocessableEntityException("fiscal_period must be in the range 1-12")
+                if int(fiscal_period) < 2 or int(fiscal_period) > 12:
+                    raise UnprocessableEntityException("fiscal_period must be in the range 2-12")
                 gtas_queryset = gtas_queryset.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
 
         elif fiscal_year:
