@@ -1,5 +1,5 @@
--- When only URI is populated, update File C assistance records to link to a corresponding award if there is an exact
--- match based on URI.
+-- When only URI is populated in File C, update File C assistance records to
+-- link to a corresponding award if there is a single exact match based on URI.
 WITH update_cte as (
     UPDATE financial_accounts_by_awards AS faba
     SET
@@ -37,4 +37,5 @@ SET
 FROM
     update_cte
 WHERE
-    id = update_cte.award_id;
+    id = update_cte.award_id
+;

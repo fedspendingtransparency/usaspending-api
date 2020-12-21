@@ -1,5 +1,6 @@
--- When PIID is populated, update File C contract records to link to a corresponding award if there is an exact
--- match based on PIID and where Parent PIID also matches using IS NOT DISTINCT FROM so it can match NULL values.
+-- When PIID and Parent PIID are populated, update File C contract records to
+--  link to a corresponding award if there is a single exact match based on PIID
+--  and Parent PIID
 WITH update_cte AS (
     UPDATE financial_accounts_by_awards AS faba
     SET
@@ -40,8 +41,12 @@ SET
 FROM
     update_cte
 WHERE
-    id = update_cte.award_id;
+    id = update_cte.award_id
+;
 
+-- When PIID is populated and Parent PIID is NULL, update File C contract
+--  records to link to a corresponding award if there is a single exact match
+-- based on PIID
 WITH update_cte AS (
     UPDATE financial_accounts_by_awards AS faba
     SET
@@ -80,4 +85,5 @@ SET
 FROM
     update_cte
 WHERE
-    id = update_cte.award_id;
+    id = update_cte.award_id
+;
