@@ -7,6 +7,7 @@ from usaspending_api.common.exceptions import InvalidParameterException, Unproce
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 
+
 class TotalBudgetaryResources(APIView):
     """
     This route sends a request to the backend to retrieve GTAS totals by FY/FP.
@@ -16,8 +17,14 @@ class TotalBudgetaryResources(APIView):
 
     @cache_response()
     def get(self, request):
-        fiscal_year = request.query_params.get("fiscal_year")
-        fiscal_period = request.query_params.get("fiscal_period")
+        model = [
+            {"key": "fiscal_year", "name": "fiscal_year", "type": "integer", "optional": True},
+            {"key": "fiscal_period", "name": "fiscal_period", "type": "integer", "optional": True},
+        ]
+        validated = TinyShield(model).block(request)
+
+        fiscal_year = validated["fiscal_year"]
+        fiscal_period = validated["fiscal_period"]
         gtas_queryset = GTASSF133Balances.objects.values("fiscal_year", "fiscal_period")
 
         if fiscal_period:
