@@ -81,3 +81,18 @@ class ListMixin:
     @property
     def filter(self):
         return self.request.query_params.get("filter")
+
+
+class PaginationMixin:
+    @cached_property
+    def pagination(self):
+        model = customize_pagination_with_sort_columns(self.sortable_columns, self.default_sort_column)
+        request_data = TinyShield(model).block(self.request.query_params)
+        return Pagination(
+            page=request_data["page"],
+            limit=request_data["limit"],
+            lower_limit=(request_data["page"] - 1) * request_data["limit"],
+            upper_limit=(request_data["page"] * request_data["limit"]),
+            sort_key=request_data.get("sort", self.default_sort_column),
+            sort_order=request_data["order"],
+        )

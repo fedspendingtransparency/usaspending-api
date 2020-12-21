@@ -1,26 +1,35 @@
 from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField
 from rest_framework.response import Response
-from usaspending_api.agency.v2.views.agency_base import AgencyBase
+from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from django.utils.functional import cached_property
 
-from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     get_final_period_of_quarter,
     calculate_last_completed_fiscal_quarter,
 )
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import ToptierAgency, Agency
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-class AgenciesOverview(AgencyBase):
+class AgenciesOverview(AgencyBase, PaginationMixin):
     """Return list of all agencies and the overview of their spending data for a provided fiscal year and period"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/overview.md"
 
     def get(self, request):
+        self.sortable_columns = [
+            "agency_code",
+            "current_total_budget_authority_amount",
+            "missing_tas_accounts_count",
+            "agency_name",
+            "obligation_difference",
+            "recent_publication_date",
+            "recent_publication_date_certified",
+            "tas_obligation_not_in_gtas_total",
+        ]
+        self.default_sort_column = "current_total_budget_authority_amount"
         results = self.get_agency_overview()
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
@@ -134,30 +143,6 @@ class AgenciesOverview(AgencyBase):
             reverse=self.pagination.sort_order == "desc",
         )
         return results
-
-    @cached_property
-    def pagination(self):
-        sortable_columns = [
-            "agency_code",
-            "current_total_budget_authority_amount",
-            "missing_tas_accounts_count",
-            "agency_name",
-            "obligation_difference",
-            "recent_publication_date",
-            "recent_publication_date_certified",
-            "tas_obligation_not_in_gtas_total",
-        ]
-        default_sort_column = "current_total_budget_authority_amount"
-        model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
-        request_data = TinyShield(model).block(self.request.query_params)
-        return Pagination(
-            page=request_data["page"],
-            limit=request_data["limit"],
-            lower_limit=(request_data["page"] - 1) * request_data["limit"],
-            upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", default_sort_column),
-            sort_order=request_data["order"],
-        )
 
     @cached_property
     def fiscal_period(self):
