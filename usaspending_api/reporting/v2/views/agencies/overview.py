@@ -120,6 +120,8 @@ class AgenciesOverview(AgencyBase):
                     "missing_tas_accounts_count": result["missing_tas_accounts"],
                 },
                 "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
+                "unlinked_contract_award_count": 0,
+                "unlinked_assistance_award_count": 0,
             }
             for result in result_list
         ]
@@ -146,6 +148,8 @@ class AgenciesOverview(AgencyBase):
             "recent_publication_date",
             "recent_publication_date_certified",
             "tas_obligation_not_in_gtas_total",
+            "unlinked_contract_award_count",
+            "unlinked_assistance_award_count",
         ]
         default_sort_column = "current_total_budget_authority_amount"
         model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
