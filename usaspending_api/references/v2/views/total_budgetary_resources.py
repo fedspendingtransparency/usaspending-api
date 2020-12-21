@@ -32,7 +32,9 @@ class TotalBudgetaryResources(APIView):
             gtas_queryset = gtas_queryset.filter(fiscal_year=fiscal_year)
 
         results = []
-        for gtas in gtas_queryset.annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe")):
+        for gtas in gtas_queryset.annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe")).order_by(
+            "fiscal_year", "fiscal_period"
+        ):
             results.append(
                 {
                     "fiscal_year": gtas["fiscal_year"],
