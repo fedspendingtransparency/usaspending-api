@@ -28,13 +28,13 @@ This endpoint returns federal budgetary resources by fiscal year and fiscal peri
                 "results": [
                     {
                         "fiscal_year": 2020,
-                        "fiscal_period": 6
-                        "total_budgetary_resources": 8361447130497.72,
+                        "fiscal_period": 5
+                        "total_budgetary_resources": 234525.72,
                     },
                     {
                         "fiscal_year": 2020,
-                        "fiscal_period": 5
-                        "total_budgetary_resources": 234525.72,
+                        "fiscal_period": 6
+                        "total_budgetary_resources": 8361447130497.72,
                     }
                 ],
                 "messages": []
