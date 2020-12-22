@@ -26,9 +26,13 @@ class SubmissionHistory(AgencyBase, PaginationMixin):
         ]
         self.default_sort_column = "publication_date"
         self.validate_fiscal_period(fiscal_period)
-        results = SubmissionAttributes.objects.filter(
-            toptier_code=toptier_code, reporting_fiscal_year=fiscal_year, reporting_fiscal_period=fiscal_period,
-        ).values("published_date", "certified_date")
+        results = (
+            SubmissionAttributes.objects.filter(
+                toptier_code=toptier_code, reporting_fiscal_year=fiscal_year, reporting_fiscal_period=fiscal_period,
+            )
+            .order_by("-published_date")
+            .values("published_date", "certified_date")
+        )
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         return Response(
