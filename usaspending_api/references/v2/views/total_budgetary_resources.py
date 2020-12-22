@@ -6,6 +6,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
+from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 
 
 class TotalBudgetaryResources(APIView):
@@ -50,4 +51,9 @@ class TotalBudgetaryResources(APIView):
                 },
             )
 
-        return Response({"results": results, "messages": []})
+        return Response(
+            {
+                "results": results,
+                "messages": [get_account_data_time_period_message()] if fiscal_year and fiscal_year < 2017 else [],
+            }
+        )
