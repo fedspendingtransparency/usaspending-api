@@ -22,32 +22,32 @@ During the File C to D linkage process, File C records are attempted to be match
 There are two phases in the nightly pipeline that create File C to D linkages.
 
 1. When submissions are loaded from Broker into USAspending
-2. After new FABS/FPDS records are loaded from broker
+2. After new FABS/FPDS records are loaded from Broker
 
 ## Linkage Logic
 
-In all the below scenarios, *only unlinked File C records are considered for updates*. Additionally, links are only made when a File C record matches **EXACTLY ONE** award. If zero or more than one award is matched, no link is made. To help with downstream ETL scripts, if a File C record is linked to a File D award, the FIle D record has it's `update_date` touched so other scripts can re-calculate award details using the new File C-D linkage.
+In all the below scenarios, *only unlinked File C records are considered for updates*. Additionally, links are only made when a File C record matches **EXACTLY ONE** award. If zero or more than one award is matched, no link is made. To help with downstream ETL scripts, if a File C record is linked to a File D award, the File D record has it's `update_date` touched so other scripts can re-calculate award details using the new File C-D linkage.
 
 Note: the predicates described below are only applied to File C awards (stored in `financial_accounts_by_awards`). For example, when linking procurement awards, if `parent_award_id` is null, that is not verified to be null in `awards`. This was re-confirmed at the desired approach December 2020.
 
 1. **Procurement** (FPDS) look for an award with either a matching PIID, or a matching PIID and Parent PIID
-    1. if File C `piid` is not null and File C `parent_award_id` is not null, look for an award based on both
+    1. If File C `piid` is not null and File C `parent_award_id` is not null, look for an award based on both
         * Upper-case `piid` and `parent_award_id` values in both `financial_accounts_by_awards` and `awards`
         * Create link if `upper(financial_accounts_by_awards.piid)` == `upper(awards.piid)` and `upper(financial_accounts_by_awards.parent_award_id)` == `upper(awards.parent_award_piid)`
-    2. if File C `piid` is not null and File C `parent_award_id` is null, look for a File D award based on `piid`
+    2. If File C `piid` is not null and File C `parent_award_id` is null, look for a File D award based on `piid`
         * Upper-case `piid` values in both `financial_accounts_by_awards` and `awards`
         * Create link if `upper(financial_accounts_by_awards.piid)` == `upper(awards.piid)`
             * This ignores the value in File D Award's `parent_award_piid`
 2. **Financial Assistance** (FABS) look for an award with matching FAIN or URI
-    1. if File C `fain` is not null and File C `uri` is null, look for award only based on `fain`
+    1. If File C `fain` is not null and File C `uri` is null, look for award only based on `fain`
         * Upper-case `fain` values in both `financial_accounts_by_awards` and `awards`
         * Create link if `upper(financial_accounts_by_awards.fain)` == `upper(awards.fain)`
             * This ignores the value in File D Award's `uri`
-    2. if File C `fain` is null and File C `uri` is not null, look for award only based on `uri`
+    2. If File C `fain` is null and File C `uri` is not null, look for award only based on `uri`
         * Upper-case `uri` values in both `financial_accounts_by_awards` and `awards`
         * Create link if `upper(financial_accounts_by_awards.uri)` == `upper(awards.uri)`
             * This ignores the value in File D Award's `fain`
-    3. if File C `fain` is not null and File C `uri` is not null, look for a distinct award id based on the `fain`. If that does not yield an exact match, use the `uri`.
+    3. If File C `fain` is not null and File C `uri` is not null, look for a distinct award id based on the `fain`. If that does not yield an exact match, use the `uri`.
         * Each check is separate and logic is identical to #1 and #2 above with the exception that the predicate include only non-null `fain` and `uri` records in File C
 
 ## ETL scripts
