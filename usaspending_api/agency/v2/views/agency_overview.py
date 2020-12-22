@@ -24,7 +24,7 @@ class AgencyOverview(AgencyBase):
                 "toptier_code": self.toptier_agency.toptier_code,
                 "name": self.toptier_agency.name,
                 "abbreviation": self.toptier_agency.abbreviation,
-                "agency_id": self.toptier_agency.toptier_agency_id,
+                "agency_id": self.agency_id,
                 "icon_filename": self.toptier_agency.icon_filename,
                 "mission": self.toptier_agency.mission,
                 "website": self.toptier_agency.website,
