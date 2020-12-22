@@ -3,7 +3,7 @@ from model_mommy import mommy
 from rest_framework import status
 
 
-url = "/api/v2/reporting/agencies/submission_history/"
+url = "/api/v2/reporting/agencies/{agency_data}/submission_history/"
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ def setup_test_data(db):
 
 
 def test_basic_success(client, setup_test_data):
-    resp = client.get(url + "020/2019/6/")
+    resp = client.get(url.format(agency_data="020/2019/6"))
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
     assert len(response["results"]) == 1
@@ -58,7 +58,7 @@ def test_basic_success(client, setup_test_data):
 
 
 def test_multiple_submissions(client, setup_test_data):
-    resp = client.get(url + "020/2019/7/")
+    resp = client.get(url.format(agency_data="020/2019/7"))
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
     assert len(response["results"]) == 2
@@ -66,7 +66,7 @@ def test_multiple_submissions(client, setup_test_data):
         {"published_date": "2020-08-17T22:37:21.605023Z", "certified_date": "2020-08-17T22:37:21.605023Z"},
         {"published_date": "2017-08-14T18:17:00.729315Z", "certified_date": "2017-08-14T18:17:00.729315Z"},
     ]
-    resp = client.get(url + "075/2019/7/")
+    resp = client.get(url.format(agency_data="075/2019/7"))
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
     assert len(response["results"]) == 1

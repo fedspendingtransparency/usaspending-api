@@ -10,7 +10,7 @@ urlpatterns = [
     url(r"^(?P<toptier_code>[0-9]{3,4})/differences/$", Differences.as_view()),
     url(r"^(?P<toptier_code>[0-9]{3,4})/overview/$", AgencyOverview.as_view()),
     url(
-        r"^submission_history/(?P<toptier_code>[0-9]{3,4})/(?P<fiscal_year>[0-9]{4})/(?P<fiscal_period>[0-9]{1,2})/$",
+        r"^(?P<toptier_code>[0-9]{3,4})/(?P<fiscal_year>[0-9]{4})/(?P<fiscal_period>[0-9]{1,2})/submission_history/$",
         SubmissionHistory.as_view(),
     ),
 ]
