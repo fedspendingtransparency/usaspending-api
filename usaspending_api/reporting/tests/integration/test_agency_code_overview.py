@@ -150,6 +150,8 @@ def test_basic_success(setup_test_data, client):
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
+            "unlinked_contract_award_count": 0,
+            "unlinked_assistance_award_count": 0,
         },
         {
             "fiscal_year": 2020,
@@ -164,6 +166,8 @@ def test_basic_success(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
+            "unlinked_contract_award_count": 0,
+            "unlinked_assistance_award_count": 0,
         },
     ]
     assert response["results"] == expected_results
@@ -188,6 +192,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
+            "unlinked_contract_award_count": 0,
+            "unlinked_assistance_award_count": 0,
         },
         {
             "fiscal_year": 2019,
@@ -202,6 +208,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
+            "unlinked_contract_award_count": 0,
+            "unlinked_assistance_award_count": 0,
         },
     ]
     assert response["results"] == expected_results
@@ -223,6 +231,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
+            "unlinked_contract_award_count": 0,
+            "unlinked_assistance_award_count": 0,
         }
     ]
     assert response["results"] == expected_results
@@ -244,6 +254,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
+            "unlinked_contract_award_count": 0,
+            "unlinked_assistance_award_count": 0,
         }
     ]
     assert response["results"] == expected_results

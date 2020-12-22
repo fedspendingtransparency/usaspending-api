@@ -36,6 +36,8 @@ This endpoint returns an overview of government agency submission data.
             + `recent_publication_date_certified`
             + `recent_publication_date`
             + `tas_obligation_not_in_gtas_total`
+            + `unlinked_contract_award_count`
+            + `unlinked_assistance_award_count`
 
 + Response 200 (application/json)
 
@@ -71,7 +73,9 @@ This endpoint returns an overview of government agency submission data.
                             "tas_obligation_not_in_gtas_total": 343345,
                             "missing_tas_accounts_count": 10
                         },
-                        "obligation_difference": 436376232652.87
+                        "obligation_difference": 436376232652.87,
+                        "unlinked_contract_award_count": 0,
+                        "unlinked_assistance_award_count": 0
                     },
                     {
                         "fiscal_year": 2020,
@@ -85,7 +89,9 @@ This endpoint returns an overview of government agency submission data.
                             "tas_obligation_not_in_gtas_total": 11543,
                             "missing_tas_accounts_count": 10
                         },
-                        "obligation_difference": 436376232652.87
+                        "obligation_difference": 436376232652.87,
+                        "unlinked_contract_award_count": 0,
+                        "unlinked_assistance_award_count": 0
                     }
                 ]
             }
@@ -117,3 +123,5 @@ This endpoint returns an overview of government agency submission data.
 + `tas_account_discrepancies_totals` (required, array[TASTotals], fixed-type)
 + `obligation_difference` (required, number)
     The difference in file A and file B obligations.
++ `unlinked_contract_award_count` (required, number)
++ `unlinked_assistance_award_count` (required, number)
