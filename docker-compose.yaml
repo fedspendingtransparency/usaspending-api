@@ -1,16 +1,19 @@
 version: '3.7'
 
+volumes:
+  local_pg_data:
+    driver: local
+
 # See run instructions in accompanying Dockerfile
 services:
 
   usaspending-db:
     container_name: usaspending-db
-    image: postgres:10.6-alpine
+    image: postgres:10.13-alpine
     volumes:
-      - type: bind
-        source: ${POSTGRES_CLUSTER_DIR}
+      - type: volume
+        source: local_pg_data
         target: /var/lib/postgresql/data
-    restart: on-failure:3 # Will attempt to start the db 3 times
     ports:
       - ${POSTGRES_PORT}:5432
     environment:

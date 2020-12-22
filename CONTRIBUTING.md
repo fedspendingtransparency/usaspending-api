@@ -6,18 +6,17 @@ Everything in this Github repository is a work-in-progress following the agile m
 # Submitting Changes
 
 ## Making a Branch
-If you have write access to the Github repository, create a git branch from where you want to base your work
-    - Typically, this will be `dev`
+If you have write access to the Github repository, create a git branch from where you want to base your work - Typically, this will be `dev`
 
 Otherwise, clone the repo and base your changes from the `dev` branch of your repo and submit a PR into the `dev` branch of this repo.
 
 Try to follow these naming conventions so branches will be organized in a list, easily distinguished, and easily traced to the work involved.
 
-In general, follow the form `prefix/[dev|gh]-###-short-description`
+In general, follow the form `<prefix>/[dev|gh]-###-short-description`
 
-* `prefix` options are described below.
+* `<prefix>` options are described below.
 * `[DEV|GH]`choose "DEV" if the work follows a Jira ticket, "GH" if it is a Github issue.
-* `###` is the associated Jira ticket or Github issue number (or the primary ID when multiple).
+* `###` is the associated Jira ticket or Github issue number (or the primary ID if multiple tickets or issues apply).
 * `short-description` a few words to concisely summarize what it is.
 
 Prefix|Change Type|Examples
@@ -30,15 +29,26 @@ Prefix|Change Type|Examples
 
 
 ## Code Style
-Use of these tools locally creates an excellent chance of passing our automated CI tests.
-* [flake8](http://flake8.pycqa.org/en/latest/index.html#)
+Use of these tools locally creates an excellent chance of passing our automated CI syntax checks.
+* [flake8](https://flake8.pycqa.org/en/latest/)
     * Will be installed when following the steps in the [readme](README.md)
     * From repo root dir, run: `flake8`
     * If using a plugin in an IDE or code editor, ensure the configuration matches the `[flake8]` section in [setup.cfg](setup.cfg)
-* [black](https://github.com/python/black)
+* [black](https://black.readthedocs.io/en/stable/)
     * Will be installed when following the steps in the [readme](README.md)
     * From repo root dir, run: `black .`
     * If using a plugin in an IDE or code editor, ensure the black tool configuration matches the `[tool.black]` section in [pyproject.toml](pyproject.toml)
+
+## Automated Tests
+In conjunction with the above code syntax checks, it is recommended to run tests locally before pushing code and opening PRs
+* [pytest](https://pytest.org/)
+    * Will be installed when following the steps in the [readme](README.md)
+    * Requires `DATABASE_URL` being set with a connection string to a working postgres database and `ES_HOSTNAME` to a functional Elasticsearch cluster
+    * From repo root dir, run: `pytest`
+        * There are many flags which can be used to help with the local testing process. Please read official documentation to understand the various flags. To reduce the output and stop at the first non-passing test, use this example:
+            * `pytest --no-cov --sw --disable-warnings`
+        * A directory or file path can also be provided to limit which tests are run. Example:
+            * `pytest usaspending_api/awards/tests/integration/`
 
 ## Pull Requests
 When opening a PR, the description will auto-populate with a template found [here](.github/pull_request_template.md)

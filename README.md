@@ -62,7 +62,7 @@ See below for basic setup instructions. For help with Docker Compose:
 
 - **If you run a local database**, set `POSTGRES_HOST` in `.env` to `host.docker.internal`. `POSTGRES_PORT` should be changed if it isn't 5432.
 
-    - `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.
+    - `docker-compose up usaspending-db` will create and run a Postgres database.
 
     - `docker-compose run usaspending-manage python3 -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
 
@@ -94,6 +94,10 @@ Some of the API endpoints reach into Elasticsearch for data.
 - You can update environment variables in `settings.py` (buckets, elasticsearch, local paths) and they will be mounted and used when you run this.
 
 The application will now be available at `http://localhost:8000`.
+
+Note: if the code was run outside of Docker then compiled Python files will potentially trip up the docker environment. A useful command to run for clearing out the files on your host is:
+
+    find . | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf
 
 ### Using the API
 
