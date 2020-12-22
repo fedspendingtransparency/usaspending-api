@@ -3,7 +3,7 @@ from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
+from usaspending_api.common.exceptions import InvalidParameterException  # , UnprocessableEntityException
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
@@ -19,8 +19,25 @@ class TotalBudgetaryResources(APIView):
     @cache_response()
     def get(self, request):
         model = [
-            {"key": "fiscal_year", "name": "fiscal_year", "type": "integer", "optional": True},
-            {"key": "fiscal_period", "name": "fiscal_period", "type": "integer", "optional": True},
+            {
+                "key": "fiscal_year",
+                "name": "fiscal_year",
+                "type": "integer",
+                "min": 2017,
+                "optional": True,
+                "default": None,
+                "allow_nulls": True,
+            },
+            {
+                "key": "fiscal_period",
+                "name": "fiscal_period",
+                "type": "integer",
+                "min": 2,
+                "max": 12,
+                "optional": True,
+                "default": None,
+                "allow_nulls": True,
+            },
         ]
         validated = TinyShield(model).block(request.query_params)
 
@@ -30,10 +47,10 @@ class TotalBudgetaryResources(APIView):
 
         if fiscal_period:
             if not fiscal_year:
-                raise InvalidParameterException("fiscal_period was provided without any fiscal_year.")
+                raise InvalidParameterException("fiscal_period was provided without fiscal_year.")
             else:
-                if int(fiscal_period) < 2 or int(fiscal_period) > 12:
-                    raise UnprocessableEntityException("fiscal_period must be in the range 2-12")
+                # if int(fiscal_period) < 2 or int(fiscal_period) > 12:
+                #     raise UnprocessableEntityException("fiscal_period must be in the range 2-12")
                 gtas_queryset = gtas_queryset.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
 
         elif fiscal_year:
@@ -41,7 +58,7 @@ class TotalBudgetaryResources(APIView):
 
         results = []
         for gtas in gtas_queryset.annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe")).order_by(
-            "fiscal_year", "fiscal_period"
+            "-fiscal_year", "-fiscal_period"
         ):
             results.append(
                 {
