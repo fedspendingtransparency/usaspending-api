@@ -3,7 +3,7 @@ from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import InvalidParameterException  # , UnprocessableEntityException
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
@@ -49,28 +49,18 @@ class TotalBudgetaryResources(APIView):
             if not fiscal_year:
                 raise InvalidParameterException("fiscal_period was provided without fiscal_year.")
             else:
-                # if int(fiscal_period) < 2 or int(fiscal_period) > 12:
-                #     raise UnprocessableEntityException("fiscal_period must be in the range 2-12")
                 gtas_queryset = gtas_queryset.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
 
         elif fiscal_year:
             gtas_queryset = gtas_queryset.filter(fiscal_year=fiscal_year)
 
-        results = []
-        for gtas in gtas_queryset.annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe")).order_by(
+        results = gtas_queryset.annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe")).order_by(
             "-fiscal_year", "-fiscal_period"
-        ):
-            results.append(
-                {
-                    "fiscal_year": gtas["fiscal_year"],
-                    "fiscal_period": gtas["fiscal_period"],
-                    "total_budgetary_resources": Decimal(gtas["total_budgetary_resources"]),
-                },
-            )
+        )
 
         return Response(
             {
-                "results": results,
+                "results": list(results),
                 "messages": [get_account_data_time_period_message()] if not fiscal_year or fiscal_year < 2017 else [],
             }
         )
