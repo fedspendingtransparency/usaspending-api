@@ -99,6 +99,8 @@ class AgencyOverview(AgencyBase):
                     "missing_tas_accounts_count": result["missing_tas_accounts"],
                 },
                 "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
+                "unlinked_contract_award_count": 0,
+                "unlinked_assistance_award_count": 0,
             }
             for result in result_list
         ]
@@ -109,6 +111,8 @@ class AgencyOverview(AgencyBase):
                 self.pagination.sort_key == "missing_tas_accounts_count"
                 or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
             )
+            else (x[self.pagination.sort_key], x[self.pagination.secondary_sort_key])
+            if self.pagination.secondary_sort_key is not None
             else x[self.pagination.sort_key],
             reverse=self.pagination.sort_order == "desc",
         )
@@ -124,15 +128,20 @@ class AgencyOverview(AgencyBase):
             "recent_publication_date",
             "recent_publication_date_certified",
             "tas_obligation_not_in_gtas_total",
+            "unlinked_contract_award_count",
+            "unlinked_assistance_award_count",
         ]
         default_sort_column = "current_total_budget_authority_amount"
         model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
         request_data = TinyShield(model).block(self.request.query_params)
+        sort_key = request_data.get("sort", default_sort_column)
+        secondary_sort = "fiscal_period" if sort_key == "fiscal_year" else None
         return Pagination(
             page=request_data["page"],
             limit=request_data["limit"],
             lower_limit=(request_data["page"] - 1) * request_data["limit"],
             upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", default_sort_column),
+            sort_key=sort_key,
             sort_order=request_data["order"],
+            secondary_sort_key=secondary_sort,
         )
