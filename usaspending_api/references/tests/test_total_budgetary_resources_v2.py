@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 
+
 @pytest.fixture
 def create_gtas_data():
     mommy.make("references.GTASSF133Balances", id=1, fiscal_year=2020, fiscal_period=2, total_budgetary_resources_cpe=1)
