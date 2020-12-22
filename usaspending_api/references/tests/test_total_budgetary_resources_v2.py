@@ -3,6 +3,7 @@ from model_mommy import mommy
 from rest_framework import status
 from decimal import Decimal
 
+from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 
 @pytest.fixture
 def create_gtas_data():
@@ -22,7 +23,7 @@ def test_no_params(client, create_gtas_data):
             {"fiscal_year": 2020, "fiscal_period": 2, "total_budgetary_resources": Decimal(3)},
             {"fiscal_year": 2020, "fiscal_period": 3, "total_budgetary_resources": Decimal(4)},
         ],
-        "messages": [],
+        "messages": [get_account_data_time_period_message()],
     }
 
 

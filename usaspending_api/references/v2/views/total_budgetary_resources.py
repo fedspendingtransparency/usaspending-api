@@ -54,6 +54,6 @@ class TotalBudgetaryResources(APIView):
         return Response(
             {
                 "results": results,
-                "messages": [get_account_data_time_period_message()] if fiscal_year and fiscal_year < 2017 else [],
+                "messages": [get_account_data_time_period_message()] if not fiscal_year or fiscal_year < 2017 else [],
             }
         )
