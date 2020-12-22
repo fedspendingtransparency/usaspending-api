@@ -106,6 +106,8 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                     "missing_tas_accounts_count": result["missing_tas_accounts"],
                 },
                 "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
+                "unlinked_contract_award_count": 0,
+                "unlinked_assistance_award_count": 0,
             }
             for result in result_list
         ]
