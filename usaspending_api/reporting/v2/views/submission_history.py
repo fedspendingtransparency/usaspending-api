@@ -18,7 +18,7 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
             "certified_date",
         ]
         self.default_sort_column = "publication_date"
-        self.validate_fiscal_period({"fiscal_period": fiscal_period})
+        self.validate_fiscal_period({"fiscal_period": int(fiscal_period)})
         results = (
             SubmissionAttributes.objects.filter(
                 toptier_code=toptier_code, reporting_fiscal_year=fiscal_year, reporting_fiscal_period=fiscal_period,
