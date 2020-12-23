@@ -2,6 +2,7 @@
 UPDATE
     financial_accounts_by_awards
 SET
-    transaction_obligated_amount=0
+    transaction_obligated_amount = 0
 WHERE
-    transaction_obligated_amount='nan';
+    transaction_obligated_amount = 'nan'
+;
