@@ -126,9 +126,7 @@ class SQSWorkDispatcher:
                 "Otherwise job duplication can occur"
             )
             raise QueueWorkDispatcherError(
-                msg,
-                worker_process_name=self.worker_process_name,
-                queue_message=self._current_sqs_message,
+                msg, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
             )
 
         # Map handler functions for each of the exit signals we want to handle on the parent dispatcher process
@@ -444,9 +442,7 @@ class SQSWorkDispatcher:
             )
         except (EndpointConnectionError, ClientError, NoCredentialsError, NoRegionError) as conn_exc:
             log_dispatcher_message(
-                self,
-                message="SQS connection issue. See Traceback and investigate settings",
-                is_exception=True,
+                self, message="SQS connection issue. See Traceback and investigate settings", is_exception=True
             )
             raise SystemExit(1) from conn_exc
         except Exception as exc:
@@ -553,9 +549,7 @@ class SQSWorkDispatcher:
                 )
                 log_dispatcher_message(self, message=error, is_error=True)
                 raise QueueWorkDispatcherError(
-                    error,
-                    worker_process_name=self.worker_process_name,
-                    queue_message=self._current_sqs_message,
+                    error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
                 )
 
             redrive_json = json.loads(redrive_policy)
@@ -568,9 +562,7 @@ class SQSWorkDispatcher:
                 )
                 log_dispatcher_message(self, message=error, is_error=True)
                 raise QueueWorkDispatcherError(
-                    error,
-                    worker_process_name=self.worker_process_name,
-                    queue_message=self._current_sqs_message,
+                    error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
                 )
             dlq_name = dlq_arn.split(":")[-1]
 
@@ -663,9 +655,7 @@ class SQSWorkDispatcher:
                 )
                 log_dispatcher_message(self, message=message, is_error=True)
                 raise QueueWorkerProcessError(
-                    message,
-                    worker_process_name=self.worker_process_name,
-                    queue_message=self._current_sqs_message,
+                    message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
                 )
             elif self._worker_process.exitcode < 0:
                 # If process exits with a negative code, process was terminated by a signal since

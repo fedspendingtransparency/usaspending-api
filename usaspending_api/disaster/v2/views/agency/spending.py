@@ -57,12 +57,7 @@ def route_agency_spending_backend(**initkwargs):
     return route_agency_spending_backend
 
 
-class SpendingByAgencyViewSet(
-    PaginationMixin,
-    SpendingMixin,
-    FabaOutlayMixin,
-    ElasticsearchAccountDisasterBase,
-):
+class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase):
     """ Returns disaster spending by agency. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"

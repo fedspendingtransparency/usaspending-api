@@ -1459,9 +1459,7 @@ class SQSWorkDispatcherTests(TestCase):
         def raise_exc_with_qmsg_and_worker_process_name_and_message():
             fake_queue_message.body = 1166
             raise QueueWorkerProcessError(
-                "Custom Message about THIS",
-                worker_process_name="MyJob",
-                queue_message=fake_queue_message,
+                "Custom Message about THIS", worker_process_name="MyJob", queue_message=fake_queue_message
             )
 
         with self.assertRaises(QueueWorkerProcessError) as err_ctx6:

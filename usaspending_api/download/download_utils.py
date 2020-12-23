@@ -27,10 +27,7 @@ def create_unique_filename(json_request, origination=None):
         data_quarters = construct_data_date_range(json_request["filters"])
 
         download_name = file_name_template.format(
-            agency=agency,
-            data_quarters=data_quarters,
-            level=level,
-            timestamp=timestamp,
+            agency=agency, data_quarters=data_quarters, level=level, timestamp=timestamp
         )
     else:  # "award" downloads
         agency = ""

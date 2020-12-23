@@ -123,11 +123,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        award_type_codes=["A", "07", "02"],
-        def_codes=["L", "M", "N", "O", "P"],
-        spending_type="award",
+        client, url, award_type_codes=["A", "07", "02"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     expected_results = [
         {
@@ -179,11 +175,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     assert resp.json()["results"] == expected_results
 
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        award_type_codes=["A"],
-        def_codes=["L", "M", "N", "O", "P"],
-        spending_type="award",
+        client, url, award_type_codes=["A"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     expected_results = [
         {
@@ -210,11 +202,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     assert resp.json()["results"] == expected_results
 
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        award_type_codes=["02"],
-        def_codes=["L", "M", "N", "O", "P"],
-        spending_type="award",
+        client, url, award_type_codes=["02"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     expected_results = [
         {
@@ -249,11 +237,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     assert resp.json()["results"] == expected_results
 
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        award_type_codes=["IDV_A"],
-        def_codes=["L", "M", "N", "O", "P"],
-        spending_type="award",
+        client, url, award_type_codes=["IDV_A"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == []
@@ -320,11 +304,7 @@ def test_query_search(client, disaster_account_data, elasticsearch_account_index
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        query="Agency 008",
-        def_codes=["L", "M", "N", "O", "P"],
-        spending_type="award",
+        client, url, query="Agency 008", def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     expected_results = [
         {

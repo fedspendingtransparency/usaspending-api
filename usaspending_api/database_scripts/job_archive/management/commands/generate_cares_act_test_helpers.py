@@ -54,42 +54,26 @@ class OneLineTimer(ScriptTimer):
 
 def add_argument_destination_fiscal_period(parser):
     parser.add_argument(
-        "destination fiscal period",
-        type=argparse_fiscal_period,
-        help="Fiscal period to copy submissions to.",
+        "destination fiscal period", type=argparse_fiscal_period, help="Fiscal period to copy submissions to."
     )
 
 
 def add_argument_destination_fiscal_year(parser):
     parser.add_argument(
-        "destination fiscal year",
-        type=argparse_fiscal_year,
-        help="Fiscal year to copy submissions to.",
+        "destination fiscal year", type=argparse_fiscal_year, help="Fiscal year to copy submissions to."
     )
 
 
 def add_argument_fiscal_period(parser):
-    parser.add_argument(
-        "fiscal period",
-        type=argparse_fiscal_period,
-        help='Fiscal period to be "enhanced".',
-    )
+    parser.add_argument("fiscal period", type=argparse_fiscal_period, help='Fiscal period to be "enhanced".')
 
 
 def add_argument_fiscal_quarter(parser):
-    parser.add_argument(
-        "fiscal quarter",
-        type=argparse_fiscal_quarter,
-        help='Fiscal quarter to be "enhanced".',
-    )
+    parser.add_argument("fiscal quarter", type=argparse_fiscal_quarter, help='Fiscal quarter to be "enhanced".')
 
 
 def add_argument_fiscal_year(parser):
-    parser.add_argument(
-        "fiscal year",
-        type=argparse_fiscal_year,
-        help='Fiscal year to be "enhanced".',
-    )
+    parser.add_argument("fiscal year", type=argparse_fiscal_year, help='Fiscal year to be "enhanced".')
 
 
 def add_argument_nuclear_option(parser):
@@ -114,25 +98,17 @@ def add_argument_rds(parser):
 
 def add_argument_source_fiscal_period(parser):
     parser.add_argument(
-        "source fiscal period",
-        type=argparse_fiscal_period,
-        help="Fiscal period to copy submissions from.",
+        "source fiscal period", type=argparse_fiscal_period, help="Fiscal period to copy submissions from."
     )
 
 
 def add_argument_source_fiscal_year(parser):
-    parser.add_argument(
-        "source fiscal year",
-        type=argparse_fiscal_year,
-        help="Fiscal year to copy submissions from.",
-    )
+    parser.add_argument("source fiscal year", type=argparse_fiscal_year, help="Fiscal year to copy submissions from.")
 
 
 def add_argument_vacuum(parser):
     parser.add_argument(
-        "--vacuum",
-        action="store_true",
-        help="If you'd like the script to perform a little housekeeping for you.",
+        "--vacuum", action="store_true", help="If you'd like the script to perform a little housekeeping for you."
     )
 
 
@@ -227,9 +203,7 @@ def period_has_submissions(fiscal_year, fiscal_period):
 def quarter_has_monthly_data(fiscal_year, fiscal_quarter):
     return (
         SubmissionAttributes.objects.filter(
-            reporting_fiscal_year=fiscal_year,
-            reporting_fiscal_quarter=fiscal_quarter,
-            quarter_format_flag=False,
+            reporting_fiscal_year=fiscal_year, reporting_fiscal_quarter=fiscal_quarter, quarter_format_flag=False
         ).count()
         > 0
     )
