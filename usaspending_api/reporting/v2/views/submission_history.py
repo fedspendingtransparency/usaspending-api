@@ -24,8 +24,7 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
             SubmissionAttributes.objects.filter(
                 toptier_code=toptier_code, reporting_fiscal_year=fiscal_year, reporting_fiscal_period=fiscal_period,
             )
-            .annotate(publication_date=F("published_date"))
-            .annotate(certification_date=F("certified_date"))
+            .annotate(publication_date=F("published_date"), certification_date=F("certified_date"))
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
             .values("publication_date", "certification_date")
         )
