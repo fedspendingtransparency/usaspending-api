@@ -26,6 +26,7 @@ Returns some basic information regarding the agency for the fiscal year specifie
         + `toptier_code` (required, string)
         + `name` (required, string)
         + `abbreviation` (required, string, nullable)
+        + `agency_id` (required, number)
         + `icon_filename` (required, string, nullable)
         + `mission` (required, string, nullable)
         + `website` (required, string, nullable)
@@ -42,6 +43,7 @@ Returns some basic information regarding the agency for the fiscal year specifie
                 "toptier_code": "020",
                 "name": "Department of the Treasury",
                 "abbreviation": "TREAS",
+                "agency_id": 22,
                 "icon_filename": "DOT.jpg",
                 "mission": "Maintain a strong economy and create economic and job opportunities...",
                 "website": "https://www.treasury.gov/",
