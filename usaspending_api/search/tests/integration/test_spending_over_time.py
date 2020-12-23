@@ -918,9 +918,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_transac
 
     # Fails with no filters
     resp = client.post(
-        "/api/v2/search/spending_over_time",
-        content_type="application/json",
-        data=json.dumps({"group": "fiscal_year"}),
+        "/api/v2/search/spending_over_time", content_type="application/json", data=json.dumps({"group": "fiscal_year"})
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json().get("detail") == "Missing request parameters: filters", "Expected to fail with missing filters"
@@ -970,15 +968,8 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
         title="TITLE FOR CODE L",
         group_name="covid_19",
     )
-    mommy.make(
-        "accounts.FederalAccount",
-        id=99,
-    )
-    mommy.make(
-        "accounts.TreasuryAppropriationAccount",
-        federal_account_id=99,
-        treasury_account_identifier=99,
-    )
+    mommy.make("accounts.FederalAccount", id=99)
+    mommy.make("accounts.TreasuryAppropriationAccount", federal_account_id=99, treasury_account_identifier=99)
     mommy.make(
         "awards.FinancialAccountsByAwards", pk=1, award_id=99, disaster_emergency_fund=defc1, treasury_account_id=99
     )
@@ -1002,10 +993,7 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
         is_fpds=True,
         type="A",
     )
-    mommy.make(
-        "awards.TransactionFPDS",
-        transaction_id=100,
-    )
+    mommy.make("awards.TransactionFPDS", transaction_id=100)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     resp = client.post(
         "/api/v2/search/spending_over_time",

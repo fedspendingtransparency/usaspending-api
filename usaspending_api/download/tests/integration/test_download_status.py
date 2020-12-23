@@ -216,9 +216,7 @@ def test_download_contract_status(client, download_test_data):
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award_financial", "treasury_account"),
-        ("idv_transaction_history", "d1"),
-        ("subaward", "d1"),
+        ("award_financial", "treasury_account"), ("idv_transaction_history", "d1"), ("subaward", "d1")
     )
 
     assert resp.status_code == status.HTTP_200_OK

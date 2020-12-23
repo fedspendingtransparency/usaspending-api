@@ -257,8 +257,7 @@ def gather_deleted_ids(config: dict) -> list:
 
     logger.info(
         format_log(
-            f"Gathering {len(deleted_ids):,} deleted transactions took {perf_counter() - start:.2f}s",
-            action="Delete",
+            f"Gathering {len(deleted_ids):,} deleted transactions took {perf_counter() - start:.2f}s", action="Delete"
         )
     )
     return deleted_ids

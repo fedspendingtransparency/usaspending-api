@@ -17,7 +17,6 @@ def setup_elasticsearch_test(monkeypatch, index_fixture, **options):
         raise Exception("Invalid index type")
 
     monkeypatch.setattr(
-        f"usaspending_api.common.elasticsearch.search_wrappers.{search_wrapper}._index_name",
-        query_alias,
+        f"usaspending_api.common.elasticsearch.search_wrappers.{search_wrapper}._index_name", query_alias
     )
     index_fixture.update_index(**options)

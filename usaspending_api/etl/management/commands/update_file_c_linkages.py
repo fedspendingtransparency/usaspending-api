@@ -11,10 +11,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--submission-ids",
-            help=("One or more Broker submission_ids to be updated."),
-            nargs="+",
-            type=int,
+            "--submission-ids", help=("One or more Broker submission_ids to be updated."), nargs="+", type=int
         )
 
     def handle(self, *args, **options):

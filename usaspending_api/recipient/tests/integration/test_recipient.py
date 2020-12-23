@@ -428,9 +428,7 @@ def test_obtain_recipient_totals_year(monkeypatch, elasticsearch_transaction_ind
         "awardee_or_recipient_uniqu": "000000002",
         "ultimate_parent_unique_ide": "000000001",
     }
-    create_transaction_test_data(
-        [transaction_recipient_data] * len(TEST_SUMMARY_TRANSACTION_RECIPIENT),
-    )
+    create_transaction_test_data([transaction_recipient_data] * len(TEST_SUMMARY_TRANSACTION_RECIPIENT))
 
     # load recipient lookup
     create_recipient_lookup_test_data(TEST_RECIPIENT_LOOKUPS[recipient_hash])

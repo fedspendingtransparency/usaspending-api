@@ -172,11 +172,7 @@ def test_download_transactions_bad_column_list_raises(
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     payload = {"filters": {"award_type_codes": []}, "columns": ["modification_number", "bogus_column"]}
-    resp = client.post(
-        "/api/v2/download/transactions/",
-        content_type="application/json",
-        data=json.dumps(payload),
-    )
+    resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert "Unknown columns" in resp.json()["detail"]
     assert "bogus_column" in resp.json()["detail"]
@@ -189,10 +185,6 @@ def test_download_transactions_bad_filter_type_raises(
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     payload = {"filters": "01", "columns": []}
-    resp = client.post(
-        "/api/v2/download/transactions/",
-        content_type="application/json",
-        data=json.dumps(payload),
-    )
+    resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Filters parameter not provided as a dict"

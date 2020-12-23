@@ -13,10 +13,7 @@ def setup_test_data(db):
         "submissions.SubmissionAttributes", submission_id=1, reporting_fiscal_year=2019, reporting_fiscal_period=6
     )
     sub2 = mommy.make(
-        "submissions.SubmissionAttributes",
-        submission_id=2,
-        reporting_fiscal_year=2020,
-        reporting_fiscal_period=12,
+        "submissions.SubmissionAttributes", submission_id=2, reporting_fiscal_year=2020, reporting_fiscal_period=12
     )
     agency = mommy.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency")
 
