@@ -65,6 +65,12 @@ class AgencyBase(APIView):
     def filter(self):
         return self.request.query_params.get("filter")
 
+    @staticmethod
+    def validate_fiscal_period(request_data):
+        fiscal_period = request_data["fiscal_period"]
+        if fiscal_period < 2 or fiscal_period > 12:
+            raise UnprocessableEntityException(f"fiscal_period must be in the range 2-12")
+
 
 class PaginationMixin:
     @cached_property

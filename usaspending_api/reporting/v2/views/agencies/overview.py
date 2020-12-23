@@ -28,6 +28,8 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             "recent_publication_date",
             "recent_publication_date_certified",
             "tas_obligation_not_in_gtas_total",
+            "unlinked_contract_award_count",
+            "unlinked_assistance_award_count",
         ]
         self.default_sort_column = "current_total_budget_authority_amount"
         results = self.get_agency_overview()
