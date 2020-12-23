@@ -16,7 +16,7 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
         self.fiscal_year = int(fiscal_year)
         self.sortable_columns = [
             "publication_date",
-            "certified_date",
+            "certification_date",
         ]
         self.default_sort_column = "publication_date"
         self.validate_fiscal_period({"fiscal_period": int(fiscal_period)})
@@ -25,8 +25,9 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
                 toptier_code=toptier_code, reporting_fiscal_year=fiscal_year, reporting_fiscal_period=fiscal_period,
             )
             .annotate(publication_date=F("published_date"))
+            .annotate(certification_date=F("certified_date"))
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
-            .values("publication_date", "certified_date")
+            .values("publication_date", "certification_date")
         )
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
