@@ -28,10 +28,10 @@ class AgencyBase(APIView):
     def agency_id(self):
         from usaspending_api.references.models import Agency
 
-        agency = Agency.objects.filter(toptier_flag=True, toptier_agency_id=self.toptier_agency.toptier_agency_id).values("id")
+        agency = Agency.objects.filter(toptier_flag=True, toptier_agency=self.toptier_agency).values("id")
         if not agency:
-            raise NotFound(f"Cannot find Agency ID for toptier code of '{self.toptier_code}'")
-        return agency["id"]
+            raise NotFound(f"Cannot find Agency for toptier code of '{self.toptier_code}'")
+        return agency[0]["id"]
 
     @cached_property
     def fiscal_year(self):

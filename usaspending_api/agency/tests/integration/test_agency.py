@@ -27,8 +27,8 @@ def agency_data():
     ta2 = mommy.make("references.ToptierAgency", toptier_code="002")
     sa1 = mommy.make("references.SubtierAgency", subtier_code="ST1")
     sa2 = mommy.make("references.SubtierAgency", subtier_code="ST2")
-    a1 = mommy.make("references.Agency", toptier_agency=ta1, subtier_agency=sa1)
-    mommy.make("references.Agency", toptier_agency=ta2, subtier_agency=sa2)
+    a1 = mommy.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
+    mommy.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2)
     tas1 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta1)
     tas2 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta2)
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
@@ -44,7 +44,7 @@ def test_happy_path(client, agency_data):
     assert resp.data["toptier_code"] == "001"
     assert resp.data["abbreviation"] == "ABBR"
     assert resp.data["name"] == "NAME"
-    assert resp.data["agency_id"] == agency_data.a1["id"]
+    assert resp.data["agency_id"] == 1
     assert resp.data["mission"] == "TO BOLDLY GO"
     assert resp.data["about_agency_data"] == "ABOUT"
     assert resp.data["website"] == "HTTP"
@@ -69,6 +69,7 @@ def test_happy_path(client, agency_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["fiscal_year"] == current_fiscal_year()
     assert resp.data["toptier_code"] == "002"
+    assert resp.data["agency_id"] == 2
     assert resp.data["subtier_agency_count"] == 0
 
 
