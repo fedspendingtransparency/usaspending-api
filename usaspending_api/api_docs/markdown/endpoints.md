@@ -141,6 +141,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/references/naics/](/api/v2/references/naics/)|GET| Returns all Tier 1 (2-digit) NAICS and related, relevant data. |
 |[/api/v2/references/submission_periods/](/api/v2/references/submission_periods/)|GET| Returns a list of all available submission periods with essential information about start and end dates. |
 |[/api/v2/references/toptier_agencies/](/api/v2/references/toptier_agencies/)|GET| Returns all toptier agencies and related, relevant data. |
+|[/api/v2/references/total_budgetary_resources/](/api/v2/references/total_budgetary_resources/)|GET| Returns a list of total budgetary resources totalled by fiscal year and period. |
 |[/api/v2/reporting/agencies/<TOPTIER_CODE\>/overview/](/api/v2/reporting/agencies/020/overview/)|GET| Returns a list of submission data for the provided agency. |
 |[/api/v2/reporting/agencies/overview/](/api/v2/reporting/agencies/overview/)|GET| Returns About the Data information about all agencies with submissions in a provided fiscal year and period|
 |[/api/v2/reporting/agencies/<TOPTIER_CODE\>/<FISCAL_YEAR\>/<FISCAL_PERIOD\>/submission_history/](/api/v2/reporting/agencies/020/2020/12/submission_history/)|GET| Returns a list of submission publication dates and certified dates for the provided agency for the provided fiscal year and period. |

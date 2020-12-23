@@ -118,6 +118,8 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                 self.pagination.sort_key == "missing_tas_accounts_count"
                 or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
             )
+            else (x[self.pagination.sort_key], x[self.pagination.secondary_sort_key])
+            if self.pagination.secondary_sort_key is not None
             else x[self.pagination.sort_key],
             reverse=self.pagination.sort_order == "desc",
         )
