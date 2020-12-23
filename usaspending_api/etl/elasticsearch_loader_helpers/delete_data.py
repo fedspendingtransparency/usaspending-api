@@ -56,8 +56,8 @@ def delete_from_es(
     start_ = client.count(index=index)["count"]
     logger.info(format_log(f"Starting amount of indices ----- {start_:,}", name=task_id, action="Delete"))
     col_to_items_dict = defaultdict(list)
-    for l in id_list:
-        col_to_items_dict[l["col"]].append(l["key"])
+    for line in id_list:
+        col_to_items_dict[line["col"]].append(line["key"])
 
     for column, values in col_to_items_dict.items():
         logger.info(format_log(f"Deleting {len(values):,} of '{column}'", name=task_id, action="Delete"))
@@ -148,8 +148,8 @@ def get_deleted_award_ids(client: Elasticsearch, id_list: list, config: dict, in
     if index is None:
         index = f"{config['query_alias_prefix']}-*"
     col_to_items_dict = defaultdict(list)
-    for l in id_list:
-        col_to_items_dict[l["col"]].append(l["key"])
+    for line in id_list:
+        col_to_items_dict[line["col"]].append(line["key"])
     awards = []
     for column, values in col_to_items_dict.items():
         values_generator = chunks(values, 1000)

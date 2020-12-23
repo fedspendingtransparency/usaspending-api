@@ -33,11 +33,11 @@ from dateutil import parser as date_parser
 from os import environ
 
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent / "etl"))
-from award_helpers import (
+from award_helpers import (  # noqa: E402
     general_award_update_sql_string,
     fpds_award_update_sql_string,
     fabs_award_update_sql_string,
-)  # noqa
+)
 
 try:
     CONNECTION_STRING = environ["DATABASE_URL"]

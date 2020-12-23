@@ -111,7 +111,7 @@ def get_fabs_transaction_ids(ids, afa_ids, start_datetime, end_datetime):
 
 def read_afa_ids_from_file(afa_id_file_path):
     with RetrieveFileFromUri(afa_id_file_path).get_file_object() as f:
-        return {l.decode("utf-8").rstrip() for l in f if l}
+        return {line.decode("utf-8").rstrip() for line in f if line}
 
 
 class Command(BaseCommand):
