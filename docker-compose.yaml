@@ -3,6 +3,8 @@ version: '3.7'
 volumes:
   local_pg_data:
     driver: local
+  local_es_data:
+    driver: local
 
 # See run instructions in accompanying Dockerfile
 services:
@@ -25,9 +27,24 @@ services:
     build: .
     volumes:
      - .:/dockermount
+    depends_on:
+      - usaspending-db
     command: python3 -u manage.py shell
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
+      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
+
+  usaspending-test:
+    build: .
+    volumes:
+     - .:/dockermount
+    depends_on:
+      - usaspending-db
+      - usaspending-es
+    command: pytest
+    environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
@@ -40,6 +57,7 @@ services:
       - 8000:8000
     depends_on:
       - usaspending-db
+      - usaspending-es
     restart: on-failure:3 # 3 max attempt, and then it will stop restarting
     # Must wait on postgres db to be up (~9s)
     command: /bin/sh -c "sleep 9s; python3 -u manage.py runserver --verbosity 2 0.0.0.0:8000"
@@ -86,8 +104,8 @@ services:
           soft: -1
           hard: -1
       volumes:
-      - type: bind
-        source: ${ES_CLUSTER_DIR}
+      - type: volume
+        source: local_es_data
         target: /usr/share/elasticsearch/data
       ports:
         - 9200:9200
