@@ -7,7 +7,7 @@ from collections import defaultdict
 from datetime import date
 
 from django.core.management.base import BaseCommand
-from xlrd import open_workbook
+from xlrd3 import open_workbook
 
 from usaspending_api.accounts.models import BudgetAuthority
 from usaspending_api.common.helpers.date_helper import fy
@@ -71,7 +71,7 @@ class Command(BaseCommand):
         frec_map_path = os.path.join(self.directory, "broker_rules_fr_entity.xlsx")
 
         workbook = open_workbook(frec_map_path)
-        sheet = workbook.sheets()[1]
+        sheet = list(workbook.sheets())[1]
         headers = [cell.value for cell in sheet.row(3)]
 
         FrecMap.objects.all().delete()
@@ -108,7 +108,7 @@ class Command(BaseCommand):
         amount_column = "Q{}_AMT".format(quarter)
         for filename in glob.glob(quarterly_path):
             workbook = open_workbook(filename)
-            sheet = workbook.sheets()[0]
+            sheet = list(workbook.sheets())[0]
             headers = [cell.value for cell in sheet.row(0)]
             for i in range(1, sheet.nrows):
                 row = dict(zip(headers, (cell.value for cell in sheet.row(i))))
