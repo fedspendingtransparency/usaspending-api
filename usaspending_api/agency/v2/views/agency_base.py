@@ -68,23 +68,27 @@ class AgencyBase(APIView):
     def standard_response_messages(self):
         return [get_account_data_time_period_message()] if self.fiscal_year < 2017 else []
 
+    @property
+    def filter(self):
+        return self.request.query_params.get("filter")
 
-class ListMixin:
+    @staticmethod
+    def validate_fiscal_period(request_data):
+        fiscal_period = request_data["fiscal_period"]
+        if fiscal_period < 2 or fiscal_period > 12:
+            raise UnprocessableEntityException(f"fiscal_period must be in the range 2-12")
+
+
+class PaginationMixin:
     @cached_property
     def pagination(self):
-        sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
-        default_sort_column = "obligated_amount"
-        model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
+        model = customize_pagination_with_sort_columns(self.sortable_columns, self.default_sort_column)
         request_data = TinyShield(model).block(self.request.query_params)
         return Pagination(
             page=request_data["page"],
             limit=request_data["limit"],
             lower_limit=(request_data["page"] - 1) * request_data["limit"],
             upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", "obligated_amount"),
+            sort_key=request_data.get("sort", self.default_sort_column),
             sort_order=request_data["order"],
         )
-
-    @property
-    def filter(self):
-        return self.request.query_params.get("filter")
