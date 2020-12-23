@@ -2,13 +2,13 @@ from django.db.models import Q, Sum
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, ListMixin, PaginationMixin
+from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
-class BudgetFunctionList(ListMixin, AgencyBase, PaginationMixin):
+class BudgetFunctionList(PaginationMixin, AgencyBase):
     """
     Obtain the count of budget functions for a specific agency in a single
     fiscal year based on whether or not that budget function has ever

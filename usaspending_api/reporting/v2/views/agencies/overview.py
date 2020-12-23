@@ -156,7 +156,3 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
         return self.request.query_params.get(
             "fiscal_period", get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(self.fiscal_year)) or 3
         )
-
-    @property
-    def filter(self):
-        return self.request.query_params.get("filter")

@@ -61,8 +61,6 @@ class AgencyBase(APIView):
     def standard_response_messages(self):
         return [get_account_data_time_period_message()] if self.fiscal_year < 2017 else []
 
-
-class ListMixin:
     @property
     def filter(self):
         return self.request.query_params.get("filter")

@@ -2,13 +2,13 @@ from django.db.models import Q, Sum, F
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, List
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, ListMixin, PaginationMixin
+from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.references.models import ObjectClass
 
 
-class ObjectClassList(ListMixin, AgencyBase, PaginationMixin):
+class ObjectClassList(PaginationMixin, AgencyBase):
     """
     Obtain the list of object classes for a specific agency in a single
     fiscal year based on whether or not that object class has ever
