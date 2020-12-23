@@ -15,7 +15,6 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
 from usaspending_api.references.models import ToptierAgency
-from usaspending_api.references.models import Agency
 
 
 class AgencyBase(APIView):
@@ -27,6 +26,8 @@ class AgencyBase(APIView):
 
     @cached_property
     def agency_id(self):
+        from usaspending_api.references.models import Agency
+
         agency = Agency.objects.filter(toptier_flag=True, toptier_agency_id=self.toptier_agency.toptier_agency_id).values("id")
         if not agency:
             raise NotFound(f"Cannot find Agency ID for toptier code of '{self.toptier_code}'")
