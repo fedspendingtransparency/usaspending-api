@@ -14,7 +14,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 )
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models import ToptierAgency, Agency
 
 
 class AgencyBase(APIView):
@@ -23,6 +23,13 @@ class AgencyBase(APIView):
         # We don't have to do any validation here because Django has already checked this to be
         # either a three or four digit numeric string based on the regex pattern in our route url.
         return self.kwargs["toptier_code"]
+
+    @cached_property
+    def agency_id(self):
+        agency = Agency.objects.filter(toptier_flag=True, toptier_agency=self.toptier_agency).values("id")
+        if not agency:
+            raise NotFound(f"Cannot find Agency for toptier code of '{self.toptier_code}'")
+        return agency[0]["id"]
 
     @cached_property
     def fiscal_year(self):
