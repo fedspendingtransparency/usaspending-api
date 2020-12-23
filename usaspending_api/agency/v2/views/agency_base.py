@@ -63,21 +63,6 @@ class AgencyBase(APIView):
 
 
 class ListMixin:
-    @cached_property
-    def pagination(self):
-        sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
-        default_sort_column = "obligated_amount"
-        model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
-        request_data = TinyShield(model).block(self.request.query_params)
-        return Pagination(
-            page=request_data["page"],
-            limit=request_data["limit"],
-            lower_limit=(request_data["page"] - 1) * request_data["limit"],
-            upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", "obligated_amount"),
-            sort_order=request_data["order"],
-        )
-
     @property
     def filter(self):
         return self.request.query_params.get("filter")

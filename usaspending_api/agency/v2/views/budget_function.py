@@ -2,13 +2,13 @@ from django.db.models import Q, Sum
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, ListMixin
+from usaspending_api.agency.v2.views.agency_base import AgencyBase, ListMixin, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
-class BudgetFunctionList(ListMixin, AgencyBase):
+class BudgetFunctionList(ListMixin, AgencyBase, PaginationMixin):
     """
     Obtain the count of budget functions for a specific agency in a single
     fiscal year based on whether or not that budget function has ever
@@ -39,6 +39,8 @@ class BudgetFunctionList(ListMixin, AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        self.sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
+        self.default_sort_column = "obligated_amount"
         results = self.format_results(list(self.get_budget_function_queryset()))
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
