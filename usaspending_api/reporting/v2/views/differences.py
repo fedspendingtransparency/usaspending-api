@@ -7,7 +7,6 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
 from usaspending_api.reporting.models import ReportingAgencyTas
@@ -19,12 +18,6 @@ class Differences(AgencyBase):
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/agency_code/differences.md"
-
-    @staticmethod
-    def validate_fiscal_period(request_data):
-        fiscal_period = request_data["fiscal_period"]
-        if fiscal_period < 2 or fiscal_period > 12:
-            raise UnprocessableEntityException(f"fiscal_period must be in the range 2-12")
 
     @staticmethod
     def _parse_and_validate_request(request_dict) -> dict:
