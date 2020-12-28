@@ -221,9 +221,7 @@ class DisasterBase(APIView):
 
         base_values = With(
             FinancialAccountsByAwards.objects.filter(
-                Q(award__type__in=loan_type_mapping),
-                self.all_closed_defc_submissions,
-                self.is_in_provided_def_codes,
+                Q(award__type__in=loan_type_mapping), self.all_closed_defc_submissions, self.is_in_provided_def_codes
             )
             .annotate(
                 grouping_key=grouping_key,
@@ -260,23 +258,14 @@ class DisasterBase(APIView):
             .values("grouping_key")
             .annotate(
                 obligation=Coalesce(Sum("transaction_obligated_amount"), 0),
-                outlay=Coalesce(
-                    Sum(
-                        Case(
-                            When(q, then=F("gross_outlay_amount_by_award_cpe")),
-                            default=Value(0),
-                        )
-                    ),
-                    0,
-                ),
+                outlay=Coalesce(Sum(Case(When(q, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0))), 0),
             )
             .values("grouping_key", "obligation", "outlay"),
             "aggregate_faba",
         )
 
         distinct_awards = With(
-            base_values.queryset().values("grouping_key", "award_id", "total_loan_value").distinct(),
-            "distinct_awards",
+            base_values.queryset().values("grouping_key", "award_id", "total_loan_value").distinct(), "distinct_awards"
         )
 
         aggregate_awards = With(
