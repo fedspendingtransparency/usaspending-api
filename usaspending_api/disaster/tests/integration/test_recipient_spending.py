@@ -86,20 +86,20 @@ def test_correct_response_multiple_defc(
             "outlay": 1.0,
         },
         {
-            "code": "096354360",
-            "award_count": 1,
-            "description": "MULTIPLE RECIPIENTS",
-            "id": None,
-            "obligation": 20000.0,
-            "outlay": 10000.0,
-        },
-        {
             "code": "DUNS Number not provided",
             "award_count": 1,
             "description": "MULTIPLE RECIPIENTS",
             "id": None,
             "obligation": 2000000.0,
             "outlay": 1000000.0,
+        },
+        {
+            "code": "096354360",
+            "award_count": 1,
+            "description": "MULTIPLE RECIPIENTS",
+            "id": None,
+            "obligation": 20000.0,
+            "outlay": 10000.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK

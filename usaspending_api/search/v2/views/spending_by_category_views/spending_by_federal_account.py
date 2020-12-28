@@ -1,10 +1,11 @@
+import json
+
 from abc import ABCMeta
 from decimal import Decimal
 from django.db.models import QuerySet
 from enum import Enum
 from typing import List
 
-from usaspending_api.common.elasticsearch.json_helpers import json_str_to_dict
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
     AbstractSpendingByCategoryViewSet,
@@ -26,12 +27,12 @@ class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMet
         results = []
         account_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in account_info_buckets:
-            account_info = json_str_to_dict(bucket.get("key"))
+            account_info = json.loads(bucket.get("key"))
             results.append(
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                    "id": int(account_info.get("id")) if account_info.get("id") else None,
-                    "code": account_info.get("federal_account_code") or None,
+                    "id": account_info.get("id"),
+                    "code": account_info.get("federal_account_code"),
                     "name": account_info.get("account_title"),
                 }
             )
