@@ -1,5 +1,3 @@
-import logging
-
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,23 +9,18 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models import NAICS
 from usaspending_api.references.v2.views.filter_tree.filter_tree import DEFAULT_CHILDREN
 
-logger = logging.getLogger("console")
-
-
-def get_six_digit_naics_count(code: str) -> int:
-    return NAICS.objects.annotate(text_len=Length("code")).filter(code__startswith=code, text_len=6).count()
-
 
 class NAICSViewSet(APIView):
-    """
-    Return a list of NAICS or a filtered list of NAICS
-    """
+    """Return a list of NAICS or a filtered list of NAICS"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/naics.md"
+    naics_queryset = NAICS.objects.annotate(text_len=Length("code"))
+
+    def get_six_digit_naics_count(self, code: str) -> int:
+        return self.naics_queryset.filter(code__startswith=code, text_len=6).count()
 
     def _parse_and_validate_request(self, requested_naics: str, request_data) -> dict:
-        naics_filter = request_data.get("filter")
-        data = {"code": requested_naics, "filter": naics_filter}
+        data = {"code": requested_naics, "filter": request_data.get("filter")}
         models = [
             {"key": "code", "name": "code", "type": "integer", "allow_nulls": True, "optional": True},
             {
@@ -43,21 +36,15 @@ class NAICSViewSet(APIView):
         return TinyShield(models).block(data)
 
     def _fetch_children(self, naics_code) -> list:
-        results = []
-
-        naics_list = NAICS.objects.annotate(text_len=Length("code")).filter(
-            code__startswith=naics_code, text_len=len(naics_code) + 2
-        )
-        for naics in naics_list:
-            if len(naics.code) < 6:
-                result = {
-                    "naics": naics.code,
-                    "naics_description": naics.description,
-                    "count": get_six_digit_naics_count(naics.code),
-                }
-            else:
-                result = {"naics": naics.code, "naics_description": naics.description, "count": DEFAULT_CHILDREN}
-            results.append(result)
+        length = len(naics_code) + 2
+        results = [
+            {
+                "naics": naics.code,
+                "naics_description": naics.description,
+                "count": self.get_six_digit_naics_count(naics.code) if len(naics.code) < 6 else DEFAULT_CHILDREN,
+            }
+            for naics in self.naics_queryset.filter(code__startswith=naics_code, text_len=length)
+        ]
 
         return sorted(results, key=lambda x: x["naics"])
 
@@ -69,10 +56,10 @@ class NAICSViewSet(APIView):
         tier1_codes = set()
         tier2_codes = set()
         tier3_codes = set()
-        naics_list = list(NAICS.objects.annotate(text_len=Length("code")).filter(search_filter))
-        tier3_naics = [naics for naics in naics_list if len(naics.code) == 6]
-        tier2_naics = [naics for naics in naics_list if len(naics.code) == 4]
-        tier1_naics = [naics for naics in naics_list if len(naics.code) == 2]
+        naics_list = list(self.naics_queryset.filter(search_filter))
+        tier3_naics = [naics for naics in naics_list if naics.text_len == 6]
+        tier2_naics = [naics for naics in naics_list if naics.text_len == 4]
+        tier1_naics = [naics for naics in naics_list if naics.text_len == 2]
         for naics in tier3_naics:
             tier3_codes.add(naics.code)
             tier2_codes.add(naics.code[:4])
@@ -82,8 +69,8 @@ class NAICSViewSet(APIView):
             tier2_codes.add(naics.code)
             tier1_codes.add(naics.code[:2])
 
-        extra_tier2_naics = NAICS.objects.annotate(text_len=Length("code")).filter(code__in=tier2_codes, text_len=4)
-        extra_tier1_naics = NAICS.objects.annotate(text_len=Length("code")).filter(code__in=tier1_codes, text_len=2)
+        extra_tier2_naics = self.naics_queryset.filter(code__in=tier2_codes, text_len=4)
+        extra_tier1_naics = self.naics_queryset.filter(code__in=tier1_codes, text_len=2)
         tier2 = set(list(tier2_naics)) | set(list(extra_tier2_naics))
         tier1 = set(list(tier1_naics)) | set(list(extra_tier1_naics))
         tier2_results = {}
@@ -92,7 +79,7 @@ class NAICSViewSet(APIView):
             result = {
                 "naics": naics.code,
                 "naics_description": naics.description,
-                "count": get_six_digit_naics_count(naics.code),
+                "count": self.get_six_digit_naics_count(naics.code),
                 "children": [],
             }
             tier2_results[naics.code] = result
@@ -110,28 +97,25 @@ class NAICSViewSet(APIView):
             result = {
                 "naics": naics.code,
                 "naics_description": naics.description,
-                "count": get_six_digit_naics_count(naics.code),
+                "count": self.get_six_digit_naics_count(naics.code),
                 "children": [],
             }
             tier1_results[naics.code] = result
         for key in tier2_results.keys():
             tier1_results[key[:2]]["children"].append(tier2_results[key])
             tier1_results[key[:2]]["children"].sort(key=lambda x: x["naics"])
-        results = []
-        for key in tier1_results.keys():
-            results.append(tier1_results[key])
 
+        results = [tier1_results[key] for key in tier1_results.keys()]
         return {"results": sorted(results, key=lambda x: x["naics"])}
 
     def _default_view(self) -> dict:
-        naics_list = NAICS.objects.annotate(text_len=Length("code")).filter(text_len=2)
         results = [
             {
                 "naics": naics.code,
                 "naics_description": naics.description,
-                "count": get_six_digit_naics_count(naics.code),
+                "count": self.get_six_digit_naics_count(naics.code),
             }
-            for naics in naics_list
+            for naics in self.naics_queryset.filter(text_len=2)
         ]
 
         return {"results": sorted(results, key=lambda x: x["naics"])}
@@ -144,19 +128,18 @@ class NAICSViewSet(APIView):
         if not code and not description:
             return self._default_view()
         if code:
-            naics_filter.update({"code": request_data.get("code")})
+            naics_filter.update({"code": code})
         if description:
             naics_filter.update({"description__icontains": description})
             return self._filter_search(naics_filter)
 
-        naics_list = NAICS.objects.filter(**naics_filter)
         results = []
-        for naics in naics_list:
-            if len(naics.code) < 6:
+        for naics in self.naics_queryset.filter(Q(**naics_filter)):
+            if naics.text_len < 6:
                 result = {
                     "naics": naics.code,
                     "naics_description": naics.description,
-                    "count": get_six_digit_naics_count(naics.code),
+                    "count": self.get_six_digit_naics_count(naics.code),
                     "children": self._fetch_children(naics.code),
                 }
             else:
