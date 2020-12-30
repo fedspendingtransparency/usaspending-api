@@ -37,7 +37,16 @@ Use of these tools locally creates an excellent chance of passing our automated 
 * [black](https://black.readthedocs.io/en/stable/)
     * Will be installed when following the steps in the [readme](README.md)
     * From repo root dir, run: `black .`
-    * If using a plugin in an IDE or code editor, ensure the black tool configuration matches the `[tool.black]` section in [pyproject.toml](pyproject.toml)
+    * If using a plugin in an IDE or code editor, ensure the Black tool configuration matches the `[tool.black]` section in [pyproject.toml](pyproject.toml)
+
+### Pre-commit Hooks
+To assist developers it is possible to leverage pre-commit hooks to run several checks before git creates a commit. The Python dependency is included in the requirements files. To get started, run
+
+    pre-commit install
+
+Which will add itself to your local git repo config and begin to operate in the background. If you do not wish to participate in pre-commits, you can either uninstall pre-commit or commit your code with the --no-verify switch. Code checks will continue to occur in Travis, this is just a way to short circuit certain common errors that can be quickly and easily caught before wasting precious Travis time/energy/resources.
+
+**IMPORTANT** If Black updates any files, the commit will fail and those files will be moved out of the git staging area (obviously, since they have been edited). You will need to re-add those files to staging (`git add` or however you do it using the GUI) before you re-commit your commit.
 
 ## Automated Tests
 In conjunction with the above code syntax checks, it is recommended to run tests locally before pushing code and opening PRs
