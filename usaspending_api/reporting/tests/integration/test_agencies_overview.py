@@ -170,6 +170,8 @@ def setup_test_data(db):
         tas_rendering_label="TAS 2",
         obligated_amount=12.0,
     )
+    mommy.make("references.GTASSF133Balances", id=1, fiscal_year=current_fiscal_year(), fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())), total_budgetary_resources_cpe=200)
+    mommy.make("references.GTASSF133Balances", id=2, fiscal_year=2019, fiscal_period=6, total_budgetary_resources_cpe=22478810.97)
 
 
 def test_basic_success(setup_test_data, client):
@@ -184,6 +186,8 @@ def test_basic_success(setup_test_data, client):
             "agency_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
+            "total_budgetary_resources": ,
+            "percent_of_total_budgetary_resources": ,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -202,6 +206,8 @@ def test_basic_success(setup_test_data, client):
             "agency_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
+            "total_budgetary_resources": ,
+            "percent_of_total_budgetary_resources": ,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -230,6 +236,8 @@ def test_filter(setup_test_data, client):
             "agency_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
+            "total_budgetary_resources": ,
+            "percent_of_total_budgetary_resources": ,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -258,6 +266,8 @@ def test_pagination(setup_test_data, client):
             "agency_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
+            "total_budgetary_resources": ,
+            "percent_of_total_budgetary_resources": ,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -284,6 +294,8 @@ def test_pagination(setup_test_data, client):
             "agency_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
+            "total_budgetary_resources": ,
+            "percent_of_total_budgetary_resources": ,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -310,6 +322,8 @@ def test_pagination(setup_test_data, client):
             "agency_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
+            "total_budgetary_resources": ,
+            "percent_of_total_budgetary_resources": ,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -328,6 +342,8 @@ def test_pagination(setup_test_data, client):
             "agency_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
+            "total_budgetary_resources": ,
+            "percent_of_total_budgetary_resources": ,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -357,6 +373,8 @@ def test_fiscal_year_period_selection(setup_test_data, client):
             "agency_code": "123",
             "agency_id": 1,
             "current_total_budget_authority_amount": 22478810.97,
+            "total_budgetary_resources": ,
+            "percent_of_total_budgetary_resources": ,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
