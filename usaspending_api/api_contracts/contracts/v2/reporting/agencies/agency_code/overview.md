@@ -29,6 +29,7 @@ This endpoint returns an overview of government agency submission data.
         + Default: `current_total_budget_authority_amount`
         + Members
             + `current_total_budget_authority_amount`
+            + `percent_of_total_budgetary_resources`
             + `fiscal_period`
             + `fiscal_year`
             + `missing_tas_accounts_count`
@@ -65,6 +66,8 @@ This endpoint returns an overview of government agency submission data.
                         "fiscal_year": 2020,
                         "fiscal_period": 12,
                         "current_total_budget_authority_amount": 8361447130497.72,
+                        "total_budgetary_resources": ,
+                        "percent_of_total_budgetary_resources": ,
                         "recent_publication_date": "2020-01-10T11:59:21Z",
                         "recent_publication_date_certified": false,
                         "tas_account_discrepancies_totals": {
@@ -81,7 +84,9 @@ This endpoint returns an overview of government agency submission data.
                         "fiscal_year": 2020,
                         "fiscal_period": 9,
                         "current_total_budget_authority_amount": 8361447130497.72,
-                        "recent_publication_date": null,
+                        "total_budgetary_resources": ,
+                        "percent_of_total_budgetary_resources": ,
+.                        "recent_publication_date": null,
                         "recent_publication_date_certified": true,
                         "tas_account_discrepancies_totals": {
                             "gtas_obligation_total": 66432,
@@ -117,6 +122,8 @@ This endpoint returns an overview of government agency submission data.
 + `fiscal_year` (required, number)
 + `fiscal_period` (required, number)
 + `current_total_budget_authority_amount` (required, number)
++ `total_budgetary_resources` (required, number)
++ `percent_of_total_budgetary_resources` (required, number)
 + `recent_publication_date` (required, string, nullable)
 + `recent_publication_date_certified` (required, boolean)
 + `recent_publication_date_certified` (required, boolean)
