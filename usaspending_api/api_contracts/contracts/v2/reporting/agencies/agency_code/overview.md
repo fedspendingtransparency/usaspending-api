@@ -86,7 +86,7 @@ This endpoint returns an overview of government agency submission data.
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "total_budgetary_resources": ,
                         "percent_of_total_budgetary_resources": ,
-.                        "recent_publication_date": null,
+                        "recent_publication_date": null,
                         "recent_publication_date_certified": true,
                         "tas_account_discrepancies_totals": {
                             "gtas_obligation_total": 66432,
