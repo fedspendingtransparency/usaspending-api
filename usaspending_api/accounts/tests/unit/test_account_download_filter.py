@@ -261,7 +261,7 @@ def test_tas_account_filter_later_qtr_federal(submissions):
     assert queryset.count() == 1
 
 
-def test_tas_account_filter_duplciate_tas_account_balances(submissions):
+def test_tas_account_filter_duplicate_tas_account_balances(submissions):
     """ Ensure the fiscal year and quarter filter is working, duplicate tas for account balances """
     # Create FederalAccount models
     fed_acct1 = mommy.make("accounts.FederalAccount")
@@ -279,7 +279,7 @@ def test_tas_account_filter_duplciate_tas_account_balances(submissions):
     assert queryset.count() == 1
 
 
-def test_tas_account_filter_duplciate_tas_financial_accounts_program_object(submissions):
+def test_tas_account_filter_duplicate_tas_financial_accounts_program_object(submissions):
     """ Ensure the fiscal year and quarter filter is working, duplicate tas for financial accounts """
     # Create FederalAccount models
     fed_acct1 = mommy.make("accounts.FederalAccount")
