@@ -238,7 +238,7 @@ def test_award_update_contract_txn_with_list():
     assert count == 1
     assert awards[0].base_and_all_options_value == 1000
 
-    # update multipe awards
+    # update multiple awards
     txn1 = mommy.make(
         "awards.TransactionNormalized", award=awards[1], unique_award_key=awards[1].generated_unique_award_id
     )

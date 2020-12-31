@@ -22,7 +22,7 @@ def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_code
 
 
 @pytest.fixture
-def double_fpds_awards_with_distict_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
+def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
     transaction_normalized = mommy.make(
         "awards.TransactionNormalized", award_id=200, action_date="2022-05-01", is_fpds=True
     )

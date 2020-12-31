@@ -76,9 +76,9 @@ class Controller:
             create_index(self.config["index_name"], instantiate_elasticsearch_client())
 
     def dispatch_tasks(self) -> None:
-        _abort = Event()  # Event which when set signals an error occured in a subprocess
-        parellel_procs = self.config["processes"]
-        with Pool(parellel_procs, maxtasksperchild=1, initializer=init_shared_abort, initargs=(_abort,)) as pool:
+        _abort = Event()  # Event which when set signals an error occurred in a subprocess
+        parallel_procs = self.config["processes"]
+        with Pool(parallel_procs, maxtasksperchild=1, initializer=init_shared_abort, initargs=(_abort,)) as pool:
             pool.map(extract_transform_load, self.tasks)
 
         msg = f"Total documents indexed: {total_doc_success.value}, total document fails: {total_doc_fail.value}"
@@ -107,7 +107,7 @@ class Controller:
             update_last_load_date(f"{self.config['stored_date_key']}", self.config["processing_start_datetime"])
 
     def determine_partitions(self) -> int:
-        """Create partion size less than or equal to max_size for more even distribution"""
+        """Create partition size less than or equal to max_size for more even distribution"""
         if self.config["partition_size"] > (self.max_id - self.min_id):
             return 1
         # return ceil(self.record_count / self.config["partition_size"])

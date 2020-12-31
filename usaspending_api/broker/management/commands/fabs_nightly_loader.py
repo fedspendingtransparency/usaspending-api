@@ -31,7 +31,7 @@ UPDATED_AT_MODIFIER_MS = 1
 def get_incremental_load_start_datetime():
     """
     This function is designed to help prevent two issues we've discovered with the FABS nightly
-    pipline:
+    pipeline:
 
      #1 LAST_LOAD_LOOKBACK_MINUTES are subtracted from last load datetime to counter a very rare
         race condition where database commits are saved ever so slightly out of order when compared

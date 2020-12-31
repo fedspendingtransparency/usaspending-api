@@ -203,7 +203,7 @@ def main():
                     curr_time = datetime.now(timezone.utc)
                     next_run_estimated_end_datetime = curr_time + timedelta(seconds=ITERATION_ESTIMATED_SECONDS)
                     dt_str = next_run_estimated_end_datetime.isoformat()
-                    logging.info("=> Expected interation duration: {} ".format(ITERATION_ESTIMATED_SECONDS))
+                    logging.info("=> Expected iteration duration: {} ".format(ITERATION_ESTIMATED_SECONDS))
                     logging.info("=> Estimated loop end datetime of: {}".format(dt_str))
                     if next_run_estimated_end_datetime >= CLOSING_TIME:
                         logging.info("===== Suspending job due to --closing-time flag")

@@ -149,7 +149,7 @@ def convert_composable_query_to_string(sql, model=Award, cursor=None):
 
     sql    - Can be either a sql string statement or a psycopg2 Composable
              object (Identifier, Literal, SQL, etc).
-    model  - A Django model that represents a database table germaine to your
+    model  - A Django model that represents a database table germane to your
              query.  If one is not supplied, Award will be used since it is
              fairly central to the database as a whole.
     cursor - If you happen to have a database cursor, feel free to pass that in.
@@ -230,7 +230,7 @@ def execute_sql(sql, model=Award, fetcher=fetchall_fetcher, read_only=True):
 
     sql         - Can be either a sql string statement or a psycopg2 Composable
                   object (Identifier, Literal, SQL, etc).
-    model       - A Django model that represents a database table germaine to your
+    model       - A Django model that represents a database table germane to your
                   query.  If one is not supplied, Award will be used since it is
                   fairly central to the database as a whole.
     fetcher     - A function that accepts a live, post-execute cursor and returns
@@ -287,7 +287,7 @@ def get_connection(model=Award, read_only=True):
     Award model will be used as it is fairly central to the database as a whole
     and will work for nearly all queries.
 
-    model     - A Django model that represents a database table germaine to
+    model     - A Django model that represents a database table germane to
                 your query.  If one is not supplied, Award will be used since
                 it is fairly central to the database as a whole.
     read_only - Unfortunately, Django cannot understand SQL so we need to
@@ -308,7 +308,7 @@ def get_connection(model=Award, read_only=True):
 
 def close_all_django_db_conns() -> None:
     """
-    Helper function to close all DB connetions
+    Helper function to close all DB connections
     Sometimes we have to kill any DB connections before forking processes
     as Django will want to share the single connection with all processes
     and we don't want to have any deadlock/SSL problems due to that.

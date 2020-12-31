@@ -980,7 +980,7 @@ class SQSWorkDispatcher:
                     log_dispatcher_message(
                         self,
                         message=f"Attempting to terminate child process with PID [{spawn_of_worker.pid}] and name "
-                        f"[{spawn_of_worker.name}] using singal [{with_signal}]",
+                        f"[{spawn_of_worker.name}] using signal [{with_signal}]",
                         is_warning=True,
                     )
                     try:

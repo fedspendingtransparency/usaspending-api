@@ -53,7 +53,7 @@ class Command(BaseCommand):
         broker_where += ";"
         usaspending_where += ";"
 
-        sql_statment = """
+        sql_statement = """
         CREATE TEMPORARY TABLE {table_type}_agencies_to_update_{fy} AS
         SELECT * FROM dblink('{broker_server}',
         '
@@ -97,7 +97,7 @@ class Command(BaseCommand):
             usaspending_where=usaspending_where,
             broker_server=settings.DATA_BROKER_DBLINK_NAME,
         )
-        return sql_statment
+        return sql_statement
 
     @staticmethod
     def update_website(fiscal_year, table_type, sub_tiers=None, year_range=None):

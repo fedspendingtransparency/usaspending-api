@@ -21,7 +21,7 @@ logger = logging.getLogger("script")
 
 
 class AgnosticTransactionLoader:
-    begining_of_time = "1970-01-01"
+    beginning_of_time = "1970-01-01"
     chunk_size = 25000
     is_incremental = False
     successful_run = False
@@ -86,7 +86,7 @@ class AgnosticTransactionLoader:
         if self.options["process_deletes"]:
             delete_date = self.options["datetime"]
             if not delete_date:
-                delete_date = self.begining_of_time
+                delete_date = self.beginning_of_time
 
             with Timer(message="Processing deletes"):
                 delete_job_status = call_command(self.delete_management_command, f"--date={delete_date}")
@@ -114,12 +114,12 @@ class AgnosticTransactionLoader:
             self.file_path, self.total_ids_to_process = self.compile_transactions_to_process()
 
         logger.info(f"{self.total_ids_to_process:,} IDs stored")
-        with Timer(message="Transfering Data"):
+        with Timer(message="Transferring Data"):
             self.copy_broker_table_data(self.broker_source_table_name, self.destination_table_name, self.shared_pk)
 
     def cleanup(self) -> None:
         """Finalize the execution and cleanup for the next script run"""
-        logger.info(f"Processed {self.upsert_records:,} transction records (insert/update)")
+        logger.info(f"Processed {self.upsert_records:,} transaction records (insert/update)")
         if self.successful_run and (self.is_incremental or self.options["reload_all"]):
             logger.info("Updated last run time for next incremental load")
             update_last_load_date(self.last_load_record, self.start_time)
