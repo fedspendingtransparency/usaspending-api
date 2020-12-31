@@ -28,7 +28,6 @@ TEMPLATE = {
 
 CLUSTERING_INDEX = None
 COMPONENT_DIR = "componentized/"
-DEST_FOLDER = "../matviews/"
 HERE = os.path.abspath(os.path.dirname(__file__))
 MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
 
@@ -192,9 +191,9 @@ def make_stats_sql(sql_json, matview_name, unique_string):
 
 def split_indexes_chunks(index_list, file_count):
     """
-        loop through all index strings (only the lines which start with "CREATE") and populate
-        sublists with the full-set in a round-robin ordering to spread-out similar indexes
-        to different workers as a poorman's averaging of the execution times
+    loop through all index strings (only the lines which start with "CREATE") and populate
+    sublists with the full-set in a round-robin ordering to spread-out similar indexes
+    to different workers as a poorman's averaging of the execution times
     """
     results = [list() for _ in range(file_count)]  # create empty lists for the index SQL strings
     for i, index in enumerate([index for index in index_list if index.startswith("CREATE")]):

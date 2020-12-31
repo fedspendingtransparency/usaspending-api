@@ -6,18 +6,17 @@ Everything in this Github repository is a work-in-progress following the agile m
 # Submitting Changes
 
 ## Making a Branch
-If you have write access to the Github repository, create a git branch from where you want to base your work
-    - Typically, this will be `dev`
+If you have write access to the Github repository, create a git branch from where you want to base your work - Typically, this will be `dev`
 
 Otherwise, clone the repo and base your changes from the `dev` branch of your repo and submit a PR into the `dev` branch of this repo.
 
 Try to follow these naming conventions so branches will be organized in a list, easily distinguished, and easily traced to the work involved.
 
-In general, follow the form `prefix/[dev|gh]-###-short-description`
+In general, follow the form `<prefix>/[dev|gh]-###-short-description`
 
-* `prefix` options are described below.
+* `<prefix>` options are described below.
 * `[DEV|GH]`choose "DEV" if the work follows a Jira ticket, "GH" if it is a Github issue.
-* `###` is the associated Jira ticket or Github issue number (or the primary ID when multiple).
+* `###` is the associated Jira ticket or Github issue number (or the primary ID if multiple tickets or issues apply).
 * `short-description` a few words to concisely summarize what it is.
 
 Prefix|Change Type|Examples
@@ -30,19 +29,38 @@ Prefix|Change Type|Examples
 
 
 ## Code Style
-Use of these tools locally creates an excellent chance of passing our automated CI tests
-* [flake8](http://flake8.pycqa.org/en/latest/index.html#)
+Use of these tools locally creates an excellent chance of passing our automated CI syntax checks.
+* [flake8](https://flake8.pycqa.org/en/latest/)
     * Will be installed when following the steps in the [readme](README.md)
-    * from repo root dir: `flake8`
-* [black](https://github.com/python/black)
-    * See instructions for installing black and integrating with your develop env. Currently black requires a newer version of Python than the usaspending-api application.
-    * Recommendation is to _only_ run black on the files you are touching in your feature branch (ignoring django migration files)
-        * If using a plugin in your IDE/editor, ensure the black tool configuration matches the `[tool.black]` section in [pyproject.toml](pyproject.toml)
-        * Using the cli will automatically find the config when running from the project root directory:
-            * from repo root dir: `black usaspending_api/<path to file>`
+    * From repo root dir, run: `flake8`
+    * If using a plugin in an IDE or code editor, ensure the configuration matches the `[flake8]` section in [setup.cfg](setup.cfg)
+* [black](https://black.readthedocs.io/en/stable/)
+    * Will be installed when following the steps in the [readme](README.md)
+    * From repo root dir, run: `black .`
+    * If using a plugin in an IDE or code editor, ensure the Black tool configuration matches the `[tool.black]` section in [pyproject.toml](pyproject.toml)
+
+### Pre-commit Hooks
+To assist developers it is possible to leverage pre-commit hooks to run several checks before git creates a commit. The Python dependency is included in the requirements files. To get started, run
+
+    pre-commit install
+
+Which will add itself to your local git repo config and begin to operate in the background. If you do not wish to participate in pre-commits, you can either uninstall pre-commit or commit your code with the --no-verify switch. Code checks will continue to occur in Travis, this is just a way to short circuit certain common errors that can be quickly and easily caught before wasting precious Travis time/energy/resources.
+
+**IMPORTANT** If Black updates any files, the commit will fail and those files will be moved out of the git staging area (obviously, since they have been edited). You will need to re-add those files to staging (`git add` or however you do it using the GUI) before you re-commit your commit.
+
+## Automated Tests
+In conjunction with the above code syntax checks, it is recommended to run tests locally before pushing code and opening PRs
+* [pytest](https://pytest.org/)
+    * Will be installed when following the steps in the [readme](README.md)
+    * Requires `DATABASE_URL` being set with a connection string to a working postgres database and `ES_HOSTNAME` to a functional Elasticsearch cluster
+    * From repo root dir, run: `pytest`
+        * There are many flags which can be used to help with the local testing process. Please read official documentation to understand the various flags. To reduce the output and stop at the first non-passing test, use this example:
+            * `pytest --no-cov --sw --disable-warnings`
+        * A directory or file path can also be provided to limit which tests are run. Example:
+            * `pytest usaspending_api/awards/tests/integration/`
 
 ## Pull Requests
-When opening a PR to improve or fix something, the description will auto-populate with a template found [here](.github/pull_request_template.md)
+When opening a PR, the description will auto-populate with a template found [here](.github/pull_request_template.md)
 
 ### Stepping through the PR Template Requirements
 
@@ -59,16 +77,17 @@ When opening a PR to improve or fix something, the description will auto-populat
     - For bug fixes, add new tests to verify the desired behavior and detect future regressions
 2. **API documentation updated**
     - API Blueprint markdown files are located in `usaspending_api/api_contracts/`
-    - Must be completed when any API call is modified!
+    - If the API contract exists and the API endpoint definition was modified, the contract needs to be updated.
+    - If a contract does not exist, it must be created alongside the new endpoint, the contract needs to be vetted for good design and the API endpoint behavior needs to match the contract.
 3. **Necessary PR reviewers:**
     - Required: `Backend`
     - Several options: (Frontend|Operations|Domain Expert)
     - When a PR contains changes which should be validated by a representative of another team include a checkbox for that team.
     - Requires communication outside of GitHub to notify the reviewer(s)
 4. **Matview impact assessment completed**
-    - When anything dealing with the materialized view creation (JSON files, indexes, SQL generator script) write in the "Technical details" or a PR comment what the impact is, what the changes to operations are, and any concerns for the re-create.
+    - If anything dealing with the materialized view creation (JSON files, indexes, SQL generator script) is modified, write in the "Technical details" or a PR comment what the impact is, what the changes to operations are, and any concerns for the re-create.
 5. **Frontend impact assessment completed**
-    - If the PR creates or changes any API endpoint, Front-end needs to be notified and allow them to work on a sister-PR before this PR is merged
+    - If the PR creates or changes any API endpoint, a Frontend developer needs to be notified and allow them to work on a sister-PR before this PR is merged
 6. **Data validation completed**
     - Perform basic data validation and include the results in the JIRA ticket
     - Using SQL or the API as appropriate to the PR changes
