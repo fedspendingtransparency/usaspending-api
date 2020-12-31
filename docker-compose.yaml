@@ -1,16 +1,21 @@
 version: '3.7'
 
+volumes:
+  local_pg_data:
+    driver: local
+  local_es_data:
+    driver: local
+
 # See run instructions in accompanying Dockerfile
 services:
 
   usaspending-db:
     container_name: usaspending-db
-    image: postgres:10.6-alpine
+    image: postgres:10.13-alpine
     volumes:
-      - type: bind
-        source: ${POSTGRES_CLUSTER_DIR}
+      - type: volume
+        source: local_pg_data
         target: /var/lib/postgresql/data
-    restart: on-failure:3 # Will attempt to start the db 3 times
     ports:
       - ${POSTGRES_PORT}:5432
     environment:
@@ -22,12 +27,52 @@ services:
     build: .
     volumes:
      - .:/dockermount
+    depends_on:
+      - usaspending-db
     command: python3 -u manage.py shell
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
+
+  usaspending-test:
+    build: .
+    volumes:
+     - .:/dockermount
+    depends_on:
+      - usaspending-db
+      - usaspending-es
+    command: pytest
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
+      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
+
+  usaspending-ci:
+    build: .
+    volumes:
+     - .:/dockermount
+    depends_on:
+      - usaspending-db
+      - usaspending-es
+    command:
+      - sh
+      - -c
+      - |
+        printf "==============\nChecking code format:\n"
+        black --check --diff .
+        printf -- "-------\nChecking code syntax:\n"
+        flake8 && echo "Successfully passed"
+        printf -- "-------\nChecking API documentation files:\n"
+        python3 manage.py check_for_endpoint_documentation
+        printf -- "-------\nRunning unit and integration tests:\n"
+        pytest --sw --disable-warnings --no-cov
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
+      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
+
 
   usaspending-api:
     build: .
@@ -37,6 +82,7 @@ services:
       - 8000:8000
     depends_on:
       - usaspending-db
+      - usaspending-es
     restart: on-failure:3 # 3 max attempt, and then it will stop restarting
     # Must wait on postgres db to be up (~9s)
     command: /bin/sh -c "sleep 9s; python3 -u manage.py runserver --verbosity 2 0.0.0.0:8000"
@@ -83,8 +129,8 @@ services:
           soft: -1
           hard: -1
       volumes:
-      - type: bind
-        source: ${ES_CLUSTER_DIR}
+      - type: volume
+        source: local_es_data
         target: /usr/share/elasticsearch/data
       ports:
         - 9200:9200
