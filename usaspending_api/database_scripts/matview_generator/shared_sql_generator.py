@@ -28,7 +28,6 @@ TEMPLATE = {
 
 CLUSTERING_INDEX = None
 COMPONENT_DIR = "componentized/"
-DEST_FOLDER = "../matviews/"
 HERE = os.path.abspath(os.path.dirname(__file__))
 MAX_NAME_LENGTH = 45  # postgres max 63 ascii chars
 

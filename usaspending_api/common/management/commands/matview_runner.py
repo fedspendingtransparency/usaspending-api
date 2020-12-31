@@ -113,6 +113,7 @@ class Command(BaseCommand):
     def cleanup(self):
         """Cleanup files after run"""
         recursive_delete(self.matview_dir)
+        recursive_delete(self.matview_chunked_dir)
 
     def create_views(self):
         loop = asyncio.new_event_loop()
