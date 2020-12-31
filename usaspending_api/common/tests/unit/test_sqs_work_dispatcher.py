@@ -637,7 +637,7 @@ class SQSWorkDispatcherTests(TestCase):
     def test_terminated_job_triggers_exit_signal_handling_to_dlq(self):
         """ The child worker process is terminated, and exits indicating the exit signal of the termination. The
             parent monitors this, and initiates exit-handling. Because the dispatcher does not allow retries, the
-            message is copied to teh dead letter queue, and deleted from the queue.
+            message is copied to the dead letter queue, and deleted from the queue.
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
         logger.setLevel(logging.DEBUG)
@@ -819,7 +819,7 @@ class SQSWorkDispatcherTests(TestCase):
             self._fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
     def test_default_to_queue_long_poll_works(self):
-        """ Same as testing exit handling when allowing retries, but not setting the long_poll_seoconds value,
+        """ Same as testing exit handling when allowing retries, but not setting the long_poll_seconds value,
             to leave it to the default setting.
         """
         logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])

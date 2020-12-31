@@ -136,5 +136,5 @@ def test_exceeding_max_changes(disable_vacuuming):
     with pytest.raises(RuntimeError):
         call_command("load_city_county_state_code", TEST_TXT_FILE)
 
-    # But this should succeeed.
+    # But this should succeed.
     call_command("load_city_county_state_code", TEST_TXT_FILE, "--force")

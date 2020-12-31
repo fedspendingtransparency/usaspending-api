@@ -158,7 +158,7 @@ daims_maps = {
         "A": "Full and Open Competition",
         "B": "Not Available for Competition",
         "C": "Not Competed",
-        "D": "Full and Open Competiton after exclusion of sources",
+        "D": "Full and Open Competition after exclusion of sources",
         "E Civ": "Follow On to Competed Action",
         "F": "Competed under SAP",
         "G": "Not Competed under SAP",
@@ -221,7 +221,7 @@ daims_maps = {
     "place_of_manufacture_map": {
         "A": "Performed or Manufactured in US, but services performed by a foreign concern or more than 50% foreign "
         "content ",
-        "B": "Performed or Manufactored outside US",
+        "B": "Performed or Manufactured outside US",
         "C": "Not a manufactured end product",
         "D": "Manufactured in U.S.",
         "E": "Manufactured outside U.S.",
@@ -342,9 +342,9 @@ daims_maps = {
     },
     "type_set_aside_map": {
         "NONE": "No Set Aside Used",
-        "SBA": "Small Busness Set-Aside - Total",
+        "SBA": "Small Business Set-Aside - Total",
         "8A": "8A Competed",
-        "SBP": "Small Busness Set-Aside - Partial",
+        "SBP": "Small Business Set-Aside - Partial",
         "HMT": "HBCU or MI Set-Aside - Total",
         "HMP": "HBCU or MI Set-Aside - Partial",
         "VSBCiv": "Very Small Business Set-Aside",
