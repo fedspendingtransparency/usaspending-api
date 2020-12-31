@@ -168,7 +168,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        periods = self.retreive_recent_periods()
+        periods = self.retrieve_recent_periods()
 
         submission_reveal_date = periods["this_month"]["submission_reveal_date"]
         dry_run = options["dry_run"]
@@ -195,7 +195,7 @@ class Command(BaseCommand):
 
         self.execute_sql(formatted_update_sql, dry_run)
 
-    def retreive_recent_periods(self):
+    def retrieve_recent_periods(self):
         # Open connection to database
         with connection.cursor() as cursor:
 

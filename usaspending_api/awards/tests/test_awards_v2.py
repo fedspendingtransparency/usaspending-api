@@ -968,7 +968,7 @@ def test_award_endpoint_parent_award(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["parent_award"] is None
 
 
-def test_award_mulitple_cfdas(client, awards_and_transactions):
+def test_award_multiple_cfdas(client, awards_and_transactions):
 
     resp = client.get("/api/v2/awards/3/")
     assert resp.status_code == status.HTTP_200_OK

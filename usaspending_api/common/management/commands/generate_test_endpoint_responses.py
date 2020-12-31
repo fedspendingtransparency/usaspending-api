@@ -14,7 +14,7 @@ class Command(BaseCommand):
     logger = logging.getLogger("console")
 
     def handle(self, *args, **options):
-        # Note, you shold load the test fixture into your db after a flush
+        # Note, you should load the test fixture into your db after a flush
         # It is not performed in this management command for you because
         # we don't want to accidentally delete important data
         json_data = open(

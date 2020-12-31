@@ -77,7 +77,7 @@ def create_index_string(matview_name, index_name, idx):
 
     idx_cols = []
     for col in idx["columns"]:
-        index_def = [col["name"]]  # Critial to have col or expression. Exception if missing
+        index_def = [col["name"]]  # Critical to have col or expression. Exception if missing
         if col.get("order", None):  # if missing, skip and let postgres default to ASC
             index_def.append(col["order"])
         if col.get("collation", None):  # if missing, skip and let postgres use default

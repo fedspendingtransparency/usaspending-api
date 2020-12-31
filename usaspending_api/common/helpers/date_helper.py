@@ -110,7 +110,7 @@ def datetime_is_lt(first_datetime: datetime, second_datetime: datetime) -> bool:
 
 
 def _compare_datetimes(first_datetime: datetime, second_datetime: datetime, op_func: Callable) -> bool:
-    """Comparision of datetimes using provided function. If TZ-unaware, assumes UTC"""
+    """Comparison of datetimes using provided function. If TZ-unaware, assumes UTC"""
     dt_1 = cast_datetime_to_utc(first_datetime)
     dt_2 = cast_datetime_to_utc(second_datetime)
     return bool(op_func(dt_1, dt_2))

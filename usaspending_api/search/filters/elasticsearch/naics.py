@@ -39,7 +39,7 @@ class NaicsCodes(_Filter, HierarchicalFilter):
 
     @staticmethod
     def naics_code_to_naics_code_path(code):
-        """Special scotch-tape code to convert a single naics into a path to match the heirarchical filter API"""
+        """Special scotch-tape code to convert a single naics into a path to match the hierarchical filter API"""
         retval = []
         if len(code) > 2:
             retval.append(code[:2])

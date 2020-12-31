@@ -34,6 +34,6 @@ class Command(BaseCommand):
             rows = cursor.rowcount
         logger.info("Removed {} django_migrations records for apps {}".format(rows, app_list))
 
-        # fake the intial migrations
+        # fake the initial migrations
         for app in app_list:
             call_command("migrate", app_label=app, fake_initial=True, interactive=False)

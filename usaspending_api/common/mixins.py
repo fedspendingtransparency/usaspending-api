@@ -1,12 +1,8 @@
 from django.db.models import Avg, Count, F, Q, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
-from django.utils.timezone import now
 
 from usaspending_api.common.api_request_utils import FilterGenerator, AutoCompleteHandler
 from usaspending_api.common.exceptions import InvalidParameterException
-from rest_framework_tracking.mixins import LoggingMixin
-
-import logging
 
 
 class AggregateQuerysetMixin(object):
@@ -168,7 +164,7 @@ class FilterQuerysetMixin(object):
 
         # If there is data in the request body, use that to create filters. Otherwise, use information in the request's
         # query params to create filters. Eventually, we should refactor the filter creation process to accept a list
-        # of paramaters and create filters without needing to know about the structure of the request itself.
+        # of parameters and create filters without needing to know about the structure of the request itself.
         filters = None
         filter_map = kwargs.get("filter_map", {})
         fg = FilterGenerator(queryset.model, filter_map=filter_map)
@@ -229,90 +225,3 @@ class AutocompleteResponseMixin(object):
         params.update(request.data.copy())
 
         return AutoCompleteHandler.handle(queryset, params, serializer)
-
-
-class SuperLoggingMixin(LoggingMixin):
-
-    events_logger = logging.getLogger("events")
-
-    """Mixin to log requests - customized to disable DB logging, remove this method to re-enable"""
-
-    def initial(self, request, *args, **kwargs):
-        """Set current time on request"""
-
-        # check if request method is being logged
-        if self.logging_methods != "__all__" and request.method not in self.logging_methods:
-            super(LoggingMixin, self).initial(request, *args, **kwargs)
-            return None
-
-        # get IP
-        ipaddr = request.META.get("HTTP_X_FORWARDED_FOR", None)
-        if ipaddr:
-            # X_FORWARDED_FOR returns client1, proxy1, proxy2,...
-            ipaddr = [x.strip() for x in ipaddr.split(",")][0]
-        else:
-            ipaddr = request.META.get("REMOTE_ADDR", "")
-
-        # get view
-        view_name = ""
-        try:
-            method = request.method.lower()
-            attributes = getattr(self, method)
-            view_name = type(attributes.__self__).__module__ + "." + type(attributes.__self__).__name__
-        except Exception:
-            pass
-
-        # get the method of the view
-        if hasattr(self, "action"):
-            view_method = self.action if self.action else ""
-        else:
-            view_method = method.lower()
-
-        # save to log (as a dict, instead of to the db)
-        request.log = {
-            "requested_at": now(),
-            "path": request.path,
-            "view": view_name,
-            "view_method": view_method,
-            "remote_addr": ipaddr,
-            "host": request.get_host(),
-            "method": request.method,
-            "query_params": request.query_params.dict(),
-        }
-
-        # regular initial, including auth check
-        super(LoggingMixin, self).initial(request, *args, **kwargs)
-
-        # add user to log after auth
-        user = request.user
-        if user.is_anonymous():
-            user = None
-        request.log["user"] = user
-
-        # get data dict
-        try:
-            # Accessing request.data *for the first time* parses the request body, which may raise
-            # ParseError and UnsupportedMediaType exceptions. It's important not to swallow these,
-            # as (depending on implementation details) they may only get raised this once, and
-            # DRF logic needs them to be raised by the view for error handling to work correctly.
-            request.log["data"] = request.data.dict()
-        except AttributeError:  # if already a dict, can't dictify
-            request.log["data"] = request.data
-
-    def finalize_response(self, request, response, *args, **kwargs):
-        response = super(LoggingMixin, self).finalize_response(request, response, *args, **kwargs)
-
-        # check if request method is being logged
-        if self.logging_methods != "__all__" and request.method not in self.logging_methods:
-            return response
-
-        # compute response time
-        response_timedelta = now() - request.log["requested_at"]
-        response_ms = int(response_timedelta.total_seconds() * 1000)
-
-        request.log["status_code"] = response.status_code
-        request.log["response_ms"] = response_ms
-
-        self.events_logger.info(request.log)
-        # Return response
-        return response
