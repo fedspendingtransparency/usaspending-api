@@ -51,7 +51,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--leave-old",
             action="store_true",
-            help="Leave the old materialzied views instead of dropping them from the DB.",
+            help="Leave the old materialized views instead of dropping them from the DB.",
         )
         parser.add_argument(
             "--temp-dir",
@@ -113,6 +113,7 @@ class Command(BaseCommand):
     def cleanup(self):
         """Cleanup files after run"""
         recursive_delete(self.matview_dir)
+        recursive_delete(self.matview_chunked_dir)
 
     def create_views(self):
         loop = asyncio.new_event_loop()

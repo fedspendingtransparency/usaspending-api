@@ -161,10 +161,10 @@ class Command(BaseCommand):
 
         change_count = deleted_count + updated_count + inserted_count
         current_record_count = CityCountyStateCode.objects.count()
-        max_change_theshold = int(current_record_count * MAX_CHANGE_PERCENT / 100.0)
-        if current_record_count > 0 and change_count > max_change_theshold and not self.force:
+        max_change_threshold = int(current_record_count * MAX_CHANGE_PERCENT / 100.0)
+        if current_record_count > 0 and change_count > max_change_threshold and not self.force:
             raise RuntimeError(
-                f"Exceeded maximum number of allowed changes {max_change_theshold:,} ({MAX_CHANGE_PERCENT}%).  "
+                f"Exceeded maximum number of allowed changes {max_change_threshold:,} ({MAX_CHANGE_PERCENT}%).  "
                 f"Use --force switch if this was intentional."
             )
 
@@ -180,7 +180,7 @@ class Command(BaseCommand):
             with open(self.working_file, encoding="utf-8-sig") as csv_file:
                 header = csv_file.readline()
             if header != expected_header:
-                raise RuntimeError(f"Found header does not match exected header.  Invalid file format.")
+                raise RuntimeError(f"Found header does not match expected header.  Invalid file format.")
 
     def _create_staging_table(self):
         with Timer("Create temporary staging table"):

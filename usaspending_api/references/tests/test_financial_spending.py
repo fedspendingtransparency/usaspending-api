@@ -117,11 +117,11 @@ def test_award_type_endpoint_no_object_class(client, financial_spending_data):
     """Test the award_type endpoint in the major object class 00 special case.
 
     Object class 00 should be reported as 'Unknown Object Type' despite
-    nme in database."""
+    name in database."""
 
     resp = client.get("/api/v2/financial_spending/major_object_class/?fiscal_year=2018&funding_agency_id=1")
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
 
-    # verify that object class name has been overriden
+    # verify that object class name has been overridden
     assert resp.data["results"][0]["major_object_class_name"] == "Unknown Object Type"

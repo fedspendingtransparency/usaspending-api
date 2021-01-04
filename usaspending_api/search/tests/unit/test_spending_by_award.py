@@ -29,7 +29,7 @@ def get_spending_by_award_url():
     return "/api/v2/search/spending_by_award/"
 
 
-def test_no_interesction():
+def test_no_intersection():
     view = SpendingByAwardVisualizationViewSet()
     view.filters = {}
     view.filters["award_type_codes"] = ["one", "two", "three"]

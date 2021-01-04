@@ -65,7 +65,7 @@ def agency_data(db):
     a = mommy.make(
         "references.Agency",
         id=6,
-        toptier_agency__name="Department of Defence",
+        toptier_agency__name="Department of Defense",
         subtier_agency__name="Department of the Army",
         subtier_agency__abbreviation="USA",
         toptier_flag=False,
