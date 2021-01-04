@@ -1,7 +1,6 @@
 import pytest
 from model_mommy import mommy
 from rest_framework import status
-from datetime import datetime
 
 url = "/api/v2/reporting/agencies/123/overview/"
 
@@ -382,6 +381,68 @@ def test_secondary_sort(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": 84931.96,
+            "unlinked_contract_award_count": 0,
+            "unlinked_assistance_award_count": 0,
+        },
+        {
+            "fiscal_year": 2020,
+            "fiscal_period": 12,
+            "current_total_budget_authority_amount": 100.0,
+            "total_budgetary_resources": 100000000,
+            "percent_of_total_budgetary_resources": 0.0001,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 18.6,
+                "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 12.0,
+                "missing_tas_accounts_count": 1,
+            },
+            "obligation_difference": 0.0,
+            "unlinked_contract_award_count": 0,
+            "unlinked_assistance_award_count": 0,
+        },
+    ]
+    assert response["results"] == expected_results
+
+    resp = client.get(url + "?sort=percent_of_total_budgetary_resources&order=desc")
+    assert resp.status_code == status.HTTP_200_OK
+    response = resp.json()
+    assert len(response["results"]) == 3
+    expected_results = [
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 9,
+            "current_total_budget_authority_amount": 22478810.98,
+            "total_budgetary_resources": 150000000,
+            "percent_of_total_budgetary_resources": 14.985873986666667,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 1788370.04,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": 84931.96,
+            "unlinked_contract_award_count": 0,
+            "unlinked_assistance_award_count": 0,
+        },
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 6,
+            "current_total_budget_authority_amount": 22478810.97,
+            "total_budgetary_resources": 200000000,
+            "percent_of_total_budgetary_resources": 11.239405485,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 1788370.03,
+                "tas_accounts_total": 200.00,
+                "tas_obligation_not_in_gtas_total": 11.0,
+                "missing_tas_accounts_count": 2,
+            },
+            "obligation_difference": 84931.95,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
         },

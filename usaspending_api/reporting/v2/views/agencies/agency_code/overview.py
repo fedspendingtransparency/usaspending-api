@@ -24,6 +24,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
             "tas_obligation_not_in_gtas_total",
             "unlinked_contract_award_count",
             "unlinked_assistance_award_count",
+            "percent_of_total_budgetary_resources",
         ]
         self.default_sort_column = "current_total_budget_authority_amount"
         results = self.get_agency_overview()
@@ -104,9 +105,6 @@ class AgencyOverview(AgencyBase, PaginationMixin):
         return self.format_results(result_list)
 
     def format_results(self, result_list):
-
-        print(result_list)
-
         results = [
             {
                 "fiscal_year": result["fiscal_year"],
