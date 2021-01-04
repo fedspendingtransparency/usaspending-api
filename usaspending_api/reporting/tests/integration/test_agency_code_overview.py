@@ -141,7 +141,6 @@ def setup_test_data(db):
     mommy.make(
         "references.GTASSF133Balances",
         id=1,
-        # create_date=datetime(2020, 1, 1, 12, 0, 0),
         fiscal_year=2019,
         fiscal_period=6,
         total_budgetary_resources_cpe=200000000,
@@ -149,7 +148,6 @@ def setup_test_data(db):
     mommy.make(
         "references.GTASSF133Balances",
         id=2,
-        # create_date=datetime(2020, 1, 1, 12, 0, 0),
         fiscal_year=2019,
         fiscal_period=9,
         total_budgetary_resources_cpe=150000000,
@@ -157,7 +155,6 @@ def setup_test_data(db):
     mommy.make(
         "references.GTASSF133Balances",
         id=3,
-        # create_date=datetime(2020, 1, 1, 12, 0, 0),
         fiscal_year=2020,
         fiscal_period=12,
         total_budgetary_resources_cpe=100000000,
