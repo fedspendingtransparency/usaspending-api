@@ -9,6 +9,9 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 )
 
 url = "/api/v2/reporting/agencies/overview/"
+prev_fiscal_year = current_fiscal_year() - 1
+prev_fiscal_qtr = get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(prev_fiscal_year))
+print(prev_fiscal_year, prev_fiscal_qtr)
 
 
 @pytest.fixture
@@ -20,10 +23,8 @@ def setup_test_data(db):
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
-        reporting_fiscal_year=current_fiscal_year(),
-        reporting_fiscal_period=get_final_period_of_quarter(
-            calculate_last_completed_fiscal_quarter(current_fiscal_year())
-        ),
+        reporting_fiscal_year=prev_fiscal_year,
+        reporting_fiscal_period=prev_fiscal_qtr,
     )
     mommy.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True)
     mommy.make("references.Agency", id=2, toptier_agency_id=2, toptier_flag=True)
@@ -130,8 +131,8 @@ def setup_test_data(db):
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=2,
         toptier_code=987,
-        fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())),
+        fiscal_year=prev_fiscal_year,
+        fiscal_period=prev_fiscal_qtr,
         total_dollars_obligated_gtas=18.6,
         total_budgetary_resources=100,
         total_diff_approp_ocpa_obligated_amounts=0,
@@ -140,8 +141,8 @@ def setup_test_data(db):
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=3,
         toptier_code="001",
-        fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())),
+        fiscal_year=prev_fiscal_year,
+        fiscal_period=prev_fiscal_qtr,
         total_dollars_obligated_gtas=20.0,
         total_budgetary_resources=10.0,
         total_diff_approp_ocpa_obligated_amounts=10.0,
@@ -170,14 +171,15 @@ def setup_test_data(db):
         tas_rendering_label="TAS 2",
         obligated_amount=12.0,
     )
-    mommy.make("references.GTASSF133Balances", id=1, fiscal_year=current_fiscal_year(), fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())), total_budgetary_resources_cpe=200)
-    mommy.make("references.GTASSF133Balances", id=2, fiscal_year=2019, fiscal_period=6, total_budgetary_resources_cpe=22478810.97)
 
 
 def test_basic_success(setup_test_data, client):
     resp = client.get(url)
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
+
+    print(response)
+
     assert len(response["results"]) == 2
     expected_results = [
         {
@@ -186,8 +188,8 @@ def test_basic_success(setup_test_data, client):
             "agency_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "total_budgetary_resources": ,
-            "percent_of_total_budgetary_resources": ,
+            "total_budgetary_resources": 0,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -206,8 +208,8 @@ def test_basic_success(setup_test_data, client):
             "agency_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
-            "total_budgetary_resources": ,
-            "percent_of_total_budgetary_resources": ,
+            "total_budgetary_resources": 0,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -236,8 +238,8 @@ def test_filter(setup_test_data, client):
             "agency_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "total_budgetary_resources": ,
-            "percent_of_total_budgetary_resources": ,
+            "total_budgetary_resources": 0,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -266,8 +268,8 @@ def test_pagination(setup_test_data, client):
             "agency_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "total_budgetary_resources": ,
-            "percent_of_total_budgetary_resources": ,
+            "total_budgetary_resources": 0,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -294,8 +296,8 @@ def test_pagination(setup_test_data, client):
             "agency_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
-            "total_budgetary_resources": ,
-            "percent_of_total_budgetary_resources": ,
+            "total_budgetary_resources": 0,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -322,8 +324,8 @@ def test_pagination(setup_test_data, client):
             "agency_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
-            "total_budgetary_resources": ,
-            "percent_of_total_budgetary_resources": ,
+            "total_budgetary_resources": 0,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -342,8 +344,8 @@ def test_pagination(setup_test_data, client):
             "agency_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "total_budgetary_resources": ,
-            "percent_of_total_budgetary_resources": ,
+            "total_budgetary_resources": 0,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -373,8 +375,8 @@ def test_fiscal_year_period_selection(setup_test_data, client):
             "agency_code": "123",
             "agency_id": 1,
             "current_total_budget_authority_amount": 22478810.97,
-            "total_budgetary_resources": ,
-            "percent_of_total_budgetary_resources": ,
+            "total_budgetary_resources": 0,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -388,4 +390,8 @@ def test_fiscal_year_period_selection(setup_test_data, client):
             "unlinked_assistance_award_count": 0,
         }
     ]
+
+    print(response["results"])
+
     assert response["results"] == expected_results
+
