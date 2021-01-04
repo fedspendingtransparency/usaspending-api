@@ -10,7 +10,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies agen
 This endpoint returns an overview of government agency submission data.
 
 + Parameters
-    + `agency_code` (required, string)
+    + `agency_code`: `020` (required, string)
         The specific agency.
     + `page` (optional, number)
         The page of results to return based on the limit.
