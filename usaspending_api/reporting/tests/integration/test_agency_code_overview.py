@@ -172,7 +172,7 @@ def test_basic_success(setup_test_data, client):
             "fiscal_period": 9,
             "current_total_budget_authority_amount": 22478810.98,
             "total_budgetary_resources": 150000000,
-            "percent_of_total_budgetary_resources": 14.985873986666667,
+            "percent_of_total_budgetary_resources": 14.99,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -190,7 +190,7 @@ def test_basic_success(setup_test_data, client):
             "fiscal_period": 6,
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
-            "percent_of_total_budgetary_resources": 11.239405485,
+            "percent_of_total_budgetary_resources": 11.24,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -208,7 +208,7 @@ def test_basic_success(setup_test_data, client):
             "fiscal_period": 12,
             "current_total_budget_authority_amount": 100.0,
             "total_budgetary_resources": 100000000,
-            "percent_of_total_budgetary_resources": 0.0001,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -236,7 +236,7 @@ def test_pagination(setup_test_data, client):
             "fiscal_period": 12,
             "current_total_budget_authority_amount": 100.0,
             "total_budgetary_resources": 100000000,
-            "percent_of_total_budgetary_resources": 0.0001,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -254,7 +254,7 @@ def test_pagination(setup_test_data, client):
             "fiscal_period": 6,
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
-            "percent_of_total_budgetary_resources": 11.239405485,
+            "percent_of_total_budgetary_resources": 11.24,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -272,7 +272,7 @@ def test_pagination(setup_test_data, client):
             "fiscal_period": 9,
             "current_total_budget_authority_amount": 22478810.98,
             "total_budgetary_resources": 150000000,
-            "percent_of_total_budgetary_resources": 14.985873986666667,
+            "percent_of_total_budgetary_resources": 14.99,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -297,7 +297,7 @@ def test_pagination(setup_test_data, client):
             "fiscal_period": 9,
             "current_total_budget_authority_amount": 22478810.98,
             "total_budgetary_resources": 150000000,
-            "percent_of_total_budgetary_resources": 14.985873986666667,
+            "percent_of_total_budgetary_resources": 14.99,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -322,7 +322,7 @@ def test_pagination(setup_test_data, client):
             "fiscal_period": 6,
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
-            "percent_of_total_budgetary_resources": 11.239405485,
+            "percent_of_total_budgetary_resources": 11.24,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -350,7 +350,7 @@ def test_secondary_sort(setup_test_data, client):
             "fiscal_period": 6,
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
-            "percent_of_total_budgetary_resources": 11.239405485,
+            "percent_of_total_budgetary_resources": 11.24,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -368,7 +368,7 @@ def test_secondary_sort(setup_test_data, client):
             "fiscal_period": 9,
             "current_total_budget_authority_amount": 22478810.98,
             "total_budgetary_resources": 150000000,
-            "percent_of_total_budgetary_resources": 14.985873986666667,
+            "percent_of_total_budgetary_resources": 14.99,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -386,7 +386,7 @@ def test_secondary_sort(setup_test_data, client):
             "fiscal_period": 12,
             "current_total_budget_authority_amount": 100.0,
             "total_budgetary_resources": 100000000,
-            "percent_of_total_budgetary_resources": 0.0001,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -412,7 +412,7 @@ def test_secondary_sort(setup_test_data, client):
             "fiscal_period": 9,
             "current_total_budget_authority_amount": 22478810.98,
             "total_budgetary_resources": 150000000,
-            "percent_of_total_budgetary_resources": 14.985873986666667,
+            "percent_of_total_budgetary_resources": 14.99,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -430,7 +430,7 @@ def test_secondary_sort(setup_test_data, client):
             "fiscal_period": 6,
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
-            "percent_of_total_budgetary_resources": 11.239405485,
+            "percent_of_total_budgetary_resources": 11.24,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -448,7 +448,7 @@ def test_secondary_sort(setup_test_data, client):
             "fiscal_period": 12,
             "current_total_budget_authority_amount": 100.0,
             "total_budgetary_resources": 100000000,
-            "percent_of_total_budgetary_resources": 0.0001,
+            "percent_of_total_budgetary_resources": 0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {

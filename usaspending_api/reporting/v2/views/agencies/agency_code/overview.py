@@ -79,7 +79,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                     .values("count"),
                     output_field=IntegerField(),
                 ),
-                gtas_total_budgetary_resources=Subquery(  # question for reviewer: since this is a dividend, are there circumstances that it would be 0 or nonexistent?
+                gtas_total_budgetary_resources=Subquery(
                     GTASSF133Balances.objects.filter(
                         fiscal_year=OuterRef("fiscal_year"), fiscal_period=OuterRef("fiscal_period")
                     )
@@ -111,9 +111,9 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                 "fiscal_period": result["fiscal_period"],
                 "current_total_budget_authority_amount": result["total_budgetary_resources"],
                 "total_budgetary_resources": result["gtas_total_budgetary_resources"],
-                "percent_of_total_budgetary_resources": result["total_budgetary_resources"]
-                * 100
-                / result["gtas_total_budgetary_resources"],
+                "percent_of_total_budgetary_resources": round(
+                    result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2
+                ),
                 "recent_publication_date": result["recent_publication_date"],
                 "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
                 "tas_account_discrepancies_totals": {
