@@ -22,8 +22,9 @@ def setup_test_data(db):
         submission_id=2,
         reporting_fiscal_year=current_fiscal_year(),
         reporting_fiscal_period=get_final_period_of_quarter(
-            calculate_last_completed_fiscal_quarter(current_fiscal_year()) or 3
-        ),
+            calculate_last_completed_fiscal_quarter(current_fiscal_year())
+        )
+        or 3,
     )
     mommy.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True)
     mommy.make("references.Agency", id=2, toptier_agency_id=2, toptier_flag=True)
