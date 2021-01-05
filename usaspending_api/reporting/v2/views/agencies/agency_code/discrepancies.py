@@ -6,7 +6,6 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 
-
 from usaspending_api.reporting.models import ReportingAgencyMissingTas
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -54,16 +53,11 @@ class AgencyDiscrepancies(AgencyBase, PaginationMixin):
         )
 
     def get_agency_discrepancies(self):
+        print(ReportingAgencyMissingTas.objects.values("tas_rendering_label", "obligated_amount"))
         result_list = ReportingAgencyMissingTas.objects.filter(
             toptier_code=self.toptier_code, fiscal_year=self.fiscal_year, fiscal_period=self.fiscal_period
         ).values("tas_rendering_label", "obligated_amount")
-        return self.format_results(result_list)
-
-    def format_results(self, result_list):
         results = [
-            {"tas": result["tas_rendering_label"], "amount": result["obligated_amount"],} for result in result_list
+            {"tas": result["tas_rendering_label"], "amount": result["obligated_amount"]} for result in result_list
         ]
-        results = sorted(
-            results, key=lambda x: x[self.pagination.sort_key], reverse=self.pagination.sort_order == "desc",
-        )
-        return results
+        return sorted(results, key=lambda x: x[self.pagination.sort_key], reverse=self.pagination.sort_order == "desc")
