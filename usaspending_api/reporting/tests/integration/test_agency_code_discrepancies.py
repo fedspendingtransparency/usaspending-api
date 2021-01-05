@@ -72,9 +72,9 @@ def test_sort(setup_test_data, client):
     expected_results = [{"tas": "TAS 2", "amount": 1.0}, {"tas": "TAS 1", "amount": 10.0}]
     assert response["results"] == expected_results
 
-    resp = client.get(url + "&order=desc&limit=1&page=2")
+    resp = client.get(url + "&order=asc&limit=1&page=2")
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
     assert len(response["results"]) == 1
-    expected_results = [{"tas": "TAS 2", "amount": 1.0}]
+    expected_results = [{"tas": "TAS 1", "amount": 10.0}]
     assert response["results"] == expected_results
