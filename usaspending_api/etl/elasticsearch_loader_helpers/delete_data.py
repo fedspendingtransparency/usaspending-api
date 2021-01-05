@@ -35,7 +35,7 @@ def delete_from_es(
 ) -> None:
     """
         id_list = [
-            {key: 'key1', col: 'tranaction_id'},
+            {key: 'key1', col: 'transaction_id'},
             {key: 'key2', col: 'generated_unique_transaction_id'},
             ...
         ]
@@ -90,7 +90,7 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
 
     Args:
         client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
-        key (str): name of filed in targeted elasticearch index that shoudld have a unique value for
+        key (str): name of filed in targeted elasticsearch index that should have a unique value for
             every doc in the index. Ideally the field or sub-field provided is of ``keyword`` type.
         value_list (list): if key field has these values, the document will be deleted
         task_id (str): name of ES ETL job being run, used in logging

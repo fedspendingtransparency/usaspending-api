@@ -236,7 +236,7 @@ def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
 
 
 def obtain_recipient_totals(recipient_id, children=False, year="latest"):
-    """ Extract the total amount and transaction count for the recipient_hash given the timeframe
+    """ Extract the total amount and transaction count for the recipient_hash given the time frame
 
         Args:
             recipient_id: string of hash(duns, name)-[recipient-level]

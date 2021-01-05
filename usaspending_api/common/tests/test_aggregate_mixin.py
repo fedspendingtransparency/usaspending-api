@@ -66,7 +66,7 @@ def test_agg_fields(monkeypatch, aggregate_models):
     a = AggregateQuerysetMixin()
     agg = a.aggregate(request=request, queryset=Award.objects.all())
 
-    # Test number of returned recrods
+    # Test number of returned records
     assert agg.count() == 3
 
     # Query should return three field names: 'item' - legacy and deprecated, 'aggregate', and 'type'
@@ -284,7 +284,7 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     assert agg_list[0]["aggregate"] == 10.0
     assert agg_list[1]["aggregate"] == 30.0
 
-    # Allow null aggregate fileds
+    # Allow null aggregate fields
     request.data = {
         "field": "federal_action_obligation",
         "group": ["assistance_data__cfda_number", "contract_data__naics"],

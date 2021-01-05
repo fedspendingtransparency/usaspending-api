@@ -27,6 +27,8 @@ Ensure the following dependencies are installed and working prior to continuing:
 - [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 7.1
 - Python 3.7 environment
   - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
+  - See [Required Python Libraries](#required-python-libraries) for an example using `pyenv`
+
 
 
 ### Cloning the Repository
@@ -62,13 +64,13 @@ See below for basic setup instructions. For help with Docker Compose:
 
 - **If you run a local database**, set `POSTGRES_HOST` in `.env` to `host.docker.internal`. `POSTGRES_PORT` should be changed if it isn't 5432.
 
-    - `docker-compose up usaspending-db` will create and run a Postgres database in the `POSTGRES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder *outside* of the usaspending-api project directory so it does not get copied to other containers in subsequent steps.
+    - `docker-compose up usaspending-db` will create and run a Postgres database.
 
-    - `docker-compose run usaspending-manage python3 -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
+    - `docker-compose run --rm usaspending-manage python3 -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
 
-    - `docker-compose run usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
+    - `docker-compose run --rm usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
 
-    - `docker-compose run usaspending-manage python3 -u manage.py matview_runner --dependencies`  will provision the materialized views which are required by certain API endpoints.
+    - `docker-compose run --rm usaspending-manage python3 -u manage.py matview_runner --dependencies`  will provision the materialized views which are required by certain API endpoints.
 
 ##### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
@@ -95,6 +97,10 @@ Some of the API endpoints reach into Elasticsearch for data.
 
 The application will now be available at `http://localhost:8000`.
 
+Note: if the code was run outside of Docker then compiled Python files will potentially trip up the docker environment. A useful command to run for clearing out the files on your host is:
+
+    find . | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf
+
 ### Using the API
 
 In your local development environment, available API endpoints may be found at `http://localhost:8000/docs/endpoints`
@@ -112,14 +118,19 @@ For details on how our data loaders modify incoming data, see [data_reformatting
 ## Running Tests
 
 ### Test Setup
-To run tests, you need:
+
+To run all tests in the docker services run
+
+    docker-compose run --rm usaspending-test
+
+To run tests locally and not in the docker services, you need:
 
 1. **Postgres** A running PostgreSQL database server _(See [Database Setup above](#database-setup))_
 1. **Elasticsearch** A running Elasticsearch cluster _(See [Elasticsearch Setup above](#elasticsearch-setup))_
 1. **Required Python Libraries** Python package dependencies downloaded and discoverable _(See below)_
 1. **Environment Variables** Tell python where to connect to the various data stores _(See below)_
 
-Once these are satisfied, simply run:
+Once these are satisfied, run:
 
     (usaspending-api) $ pytest
 
