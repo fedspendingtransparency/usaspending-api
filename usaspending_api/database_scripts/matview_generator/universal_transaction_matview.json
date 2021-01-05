@@ -1,6 +1,6 @@
 {
   "final_name": "universal_transaction_matview",
-  "destination_table_name": "universal_transaction",
+  "destination_table_name": "transaction_search",
   "refresh": true,
   "matview_sql": [
     "SELECT",

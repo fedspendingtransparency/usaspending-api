@@ -31,14 +31,14 @@ from usaspending_api.awards.v2.filters.award_filters import (
 )
 from usaspending_api.awards.v2.filters.search import (
     universal_award_matview_filter,
-    universal_transaction_filter,
+    transaction_search_filter,
 )
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.download.helpers.download_annotation_functions import (
-    universal_transaction_annotations,
+    transaction_search_annotations,
     universal_award_matview_annotations,
     subaward_annotations,
     idv_order_annotations,
@@ -95,8 +95,8 @@ VALUE_MAPPINGS = {
         "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
         "contract_data": "transaction__contract_data",
         "assistance_data": "transaction__assistance_data",
-        "filter_function": universal_transaction_filter,
-        "annotations_function": universal_transaction_annotations,
+        "filter_function": transaction_search_filter,
+        "annotations_function": transaction_search_annotations,
     },
     # Elasticsearch Transaction Level
     "elasticsearch_transactions": {
@@ -108,7 +108,7 @@ VALUE_MAPPINGS = {
         "contract_data": "transaction__contract_data",
         "assistance_data": "transaction__assistance_data",
         "filter_function": TransactionsElasticsearchDownload.query,
-        "annotations_function": universal_transaction_annotations,
+        "annotations_function": transactions_search_annotations,
     },
     # SubAward Level
     "sub_awards": {

@@ -137,7 +137,7 @@ class Command(BaseCommand):
         loop.close()
 
         if "universal_transaction_matview" in self.chunked_matviews:
-            logger.info("Inserting data from universal_transaction_matview chunks into universal_transaction table.")
+            logger.info("Inserting data from universal_transaction_matview chunks into transaction_search table.")
             call_command(
                 "combine_universal_transaction_matview_chunks",
                 chunk_count=self.chunk_count,

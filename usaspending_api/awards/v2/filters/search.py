@@ -6,7 +6,7 @@ from django.db.models import Q
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.search.filters.postgres.psc import PSCCodes
-from usaspending_api.search.models import AwardSearchView, TransactionSearch 
+from usaspending_api.search.models import AwardSearchView, TransactionSearch
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException, NotImplementedException
@@ -26,7 +26,7 @@ def universal_award_matview_filter(filters):
     return matview_search_filter(filters, AwardSearchView, for_downloads=True)
 
 
-def universal_transaction_filter(filters):
+def transaction_search_filter(filters):
     return matview_search_filter(filters, TransactionSearch, for_downloads=True)
 
 

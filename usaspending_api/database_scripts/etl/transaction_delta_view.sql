@@ -101,5 +101,5 @@ SELECT
   "tas_components",
   "federal_accounts",
   "disaster_emergency_fund_codes"
-FROM "universal_transaction"
+FROM "transaction_search"
 WHERE "action_date" >= '2007-10-01';
