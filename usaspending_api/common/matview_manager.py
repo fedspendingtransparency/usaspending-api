@@ -124,7 +124,7 @@ CHUNKED_MATERIALIZED_VIEWS = OrderedDict(
         (
             "universal_transaction_matview",
             {
-                "model": mv.UniversalTransactionView,
+                "model": mv.UniversalTransaction,
                 "json_filepath": str(JSON_DIR / "universal_transaction_matview.json"),
                 "sql_filename": "universal_transaction_matview.sql",
             },

@@ -104,7 +104,7 @@ def make_matview_refresh(matview_name, concurrently="CONCURRENTLY "):
     return statement_list
 
 
-def make_indexes_sql(sql_json, matview_name, unique_string, progress_sql, quiet):
+def make_indexes_sql(sql_json, entity_name, unique_string, progress_sql, quiet):
     unique_name_list = []
     create_indexes = []
     rename_old_indexes = []
@@ -119,7 +119,7 @@ def make_indexes_sql(sql_json, matview_name, unique_string, progress_sql, quiet)
         tmp_index = final_index + "_temp"
         old_index = final_index + "_old"
 
-        idx_str = create_index_string(matview_name, tmp_index, idx)
+        idx_str = create_index_string(entity_name, tmp_index, idx)
 
         create_indexes.append(idx_str)
         rename_old_indexes.append(TEMPLATE["rename_index"].format("IF EXISTS ", final_index, old_index))
@@ -142,15 +142,15 @@ def make_indexes_sql(sql_json, matview_name, unique_string, progress_sql, quiet)
     return indexes_and_msg, rename_old_indexes, rename_new_indexes
 
 
-def make_modification_sql(matview_name, quiet):
+def make_modification_sql(entity_name, quiet):
     global CLUSTERING_INDEX
     sql_strings = []
     if CLUSTERING_INDEX:
         if not quiet:
             print("*** This matview will be clustered on {} ***".format(CLUSTERING_INDEX))
-        sql_strings.append(TEMPLATE["cluster_matview"].format(matview_name, CLUSTERING_INDEX))
-    sql_strings.append(TEMPLATE["analyze"].format(matview_name))
-    sql_strings.append(TEMPLATE["grant_select"].format(matview_name, "readonly"))
+        sql_strings.append(TEMPLATE["cluster_matview"].format(entity_name, CLUSTERING_INDEX))
+    sql_strings.append(TEMPLATE["analyze"].format(entity_name))
+    sql_strings.append(TEMPLATE["grant_select"].format(entity_name, "readonly"))
     return sql_strings
 
 
@@ -201,22 +201,3 @@ def split_indexes_chunks(index_list, file_count):
         results[i % file_count].append(index)
     for result in results:
         yield result
-
-
-def make_table_inserts(table_name, chunk_count):
-    table_temp_name = table_name + "_temp"
-    sql_strings = []
-    for i in range(chunk_count):
-        matview_name = f"{table_name}_{i}"
-        sql_strings.append(TEMPLATE["insert_into_table"].format(table_temp_name, matview_name))
-
-    return sql_strings
-
-
-def make_matview_empty(matview_name, chunk_count):
-    sql_strings = []
-    for i in range(chunk_count):
-        chunk_name = f"{matview_name}_{i}"
-        sql_strings.append(TEMPLATE["empty_matview"].format(chunk_name))
-
-    return sql_strings

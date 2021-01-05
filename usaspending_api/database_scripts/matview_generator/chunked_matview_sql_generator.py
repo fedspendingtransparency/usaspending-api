@@ -14,8 +14,6 @@ from shared_sql_generator import (
     make_indexes_sql,
     make_modification_sql,
     make_table_drops,
-    make_table_inserts,
-    make_matview_empty,
     make_matview_refresh,
     TEMPLATE,
 )
@@ -80,13 +78,13 @@ def make_matview_create(final_matview_name, sql):
     return [TEMPLATE["create_matview"].format(final_matview_name, matview_sql, "")]
 
 
-def make_table_create(table_name):
-    table_temp_name = table_name + "_temp"
-    # Use the first Matview as the table definition
-    matview_name = table_name + "_0"
+def make_temp_table_create(table_name, table_temp_name):
+    """ Creates sql to create a temporary table based off an existing table definition.
+        Includes sql to drop the temporary table in case it already exists.
+    """
     return [
         TEMPLATE["drop_table"].format(table_temp_name),
-        TEMPLATE["create_table"].format(table_temp_name, matview_name),
+        TEMPLATE["create_table"].format(table_temp_name, table_name),
     ]
 
 
@@ -141,32 +139,51 @@ def write_sql_file(str_list, filename):
         f.write("\n")
 
 
+def make_table_inserts(table_name, matview_name, chunk_count):
+    sql_strings = []
+    for i in range(chunk_count):
+        matview_chunk_name = f"{matview_name}_{i}"
+        sql_strings.append(TEMPLATE["insert_into_table"].format(table_name, matview_chunk_name))
+
+    return sql_strings
+
+
+def make_matview_empty(matview_name, chunk_count):
+    sql_strings = []
+    for i in range(chunk_count):
+        chunk_name = f"{matview_name}_{i}"
+        sql_strings.append(TEMPLATE["empty_matview"].format(chunk_name))
+
+    return sql_strings
+
+
 def create_componentized_files(sql_json):
-    table_name = sql_json["final_name"]
-    table_temp_name = table_name + "_temp"
+    matview_name = sql_json["final_name"]
+    dest_table_name = sql_json["destination_table_name"]
+    dest_table_temp_name = dest_table_name + "_temp"
     filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json["final_name"])
 
-    create_table = make_table_create(table_name)
+    create_table = make_temp_table_create(dest_table_name, dest_table_temp_name)
     write_sql_file(create_table, filename_base + "__create")
 
-    insert_into_table = make_table_inserts(table_name, GLOBAL_ARGS.chunk_count)
+    insert_into_table = make_table_inserts(dest_table_temp_name, matview_name, GLOBAL_ARGS.chunk_count)
     write_sql_file(insert_into_table, filename_base + "__inserts")
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
-        sql_json, table_temp_name, UNIQUE_STRING, False, GLOBAL_ARGS.quiet
+        sql_json, dest_table_temp_name, UNIQUE_STRING, False, GLOBAL_ARGS.quiet
     )
     write_sql_file(create_indexes, filename_base + "__indexes")
 
-    sql_strings = make_rename_sql(table_name, rename_old_indexes, rename_new_indexes)
+    sql_strings = make_rename_sql(dest_table_name, rename_old_indexes, rename_new_indexes)
     write_sql_file(sql_strings, filename_base + "__renames")
 
-    sql_strings = make_modification_sql(table_name, GLOBAL_ARGS.quiet)
+    sql_strings = make_modification_sql(dest_table_name, GLOBAL_ARGS.quiet)
     write_sql_file(sql_strings, filename_base + "__mods")
 
-    sql_strings = make_table_drops(table_name)
+    sql_strings = make_table_drops(dest_table_name)
     write_sql_file(sql_strings, filename_base + "__drops")
 
-    sql_strings = make_matview_empty(table_name, GLOBAL_ARGS.chunk_count)
+    sql_strings = make_matview_empty(matview_name, GLOBAL_ARGS.chunk_count)
     write_sql_file(sql_strings, filename_base + "__empty")
 
 
