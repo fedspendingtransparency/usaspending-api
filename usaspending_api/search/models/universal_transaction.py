@@ -32,21 +32,11 @@ class UniversalTransaction(models.Model):
     type_description = models.TextField(null=True)
     award_category = models.TextField(null=True)
     transaction_description = models.TextField(null=True)
-    award_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    generated_pragmatic_obligation = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    federal_action_obligation = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    original_loan_subsidy_cost = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    face_value_loan_guarantee = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    award_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
 
     business_categories = ArrayField(models.TextField(), null=True)
     naics_code = models.TextField(null=True)
