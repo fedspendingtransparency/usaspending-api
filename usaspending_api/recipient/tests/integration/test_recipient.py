@@ -391,7 +391,7 @@ def test_extract_business_categories(monkeypatch):
 
     utm_objects = Mock()
     utm_objects.filter().order_by().values().first.return_value = {"business_categories": business_categories}
-    monkeypatch.setattr("usaspending_api.search.models.UniversalTransactionView.objects", utm_objects)
+    monkeypatch.setattr("usaspending_api.search.models.TransactionSearch.objects", utm_objects)
 
     mommy.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[recipient_hash])
 

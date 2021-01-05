@@ -1,10 +1,10 @@
-from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
+from django.db import models
 
 from usaspending_api.awards.models import TransactionNormalized
 
 
-class UniversalTransaction(models.Model):
+class TransactionSearch(models.Model):
     transaction = models.OneToOneField(TransactionNormalized, on_delete=models.DO_NOTHING, primary_key=True)
     award_id = models.BigIntegerField(null=True)
     modification_number = models.TextField(null=True)
@@ -107,4 +107,4 @@ class UniversalTransaction(models.Model):
     recipient_location_state_population = models.IntegerField(null=True)
 
     class Meta:
-        db_table = "universal_transaction"
+        db_table = "transaction_search"

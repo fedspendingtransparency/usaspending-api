@@ -18,7 +18,7 @@ from usaspending_api.download.helpers.elasticsearch_download_functions import (
     TransactionsElasticsearchDownload,
 )
 from usaspending_api.download.helpers.disaster_filter_functions import disaster_filter_function
-from usaspending_api.search.models import AwardSearchView, UniversalTransaction, SubawardView
+from usaspending_api.search.models import AwardSearchView, TransactionSearch, SubawardView
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
     idv_transaction_filter,
@@ -89,7 +89,7 @@ VALUE_MAPPINGS = {
     # Transaction Level
     "transactions": {
         "source_type": "award",
-        "table": UniversalTransaction,
+        "table": TransactionSearch,
         "table_name": "transaction",
         "type_name": "PrimeTransactions",
         "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
@@ -101,7 +101,7 @@ VALUE_MAPPINGS = {
     # Elasticsearch Transaction Level
     "elasticsearch_transactions": {
         "source_type": "award",
-        "table": UniversalTransaction,
+        "table": TransactionSearch,
         "table_name": "transaction",
         "type_name": "PrimeTransactions",
         "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",

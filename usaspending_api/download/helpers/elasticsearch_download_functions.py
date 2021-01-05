@@ -9,7 +9,7 @@ from elasticsearch_dsl import A
 
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.models import AwardSearchView, UniversalTransaction
+from usaspending_api.search.models import AwardSearchView, TransactionSearch 
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
 
     @classmethod
     def query(cls, filters: dict) -> QuerySet:
-        base_queryset = UniversalTransaction.objects.all()
+        base_queryset = TransactionSearch.objects.all()
         flat_ids = cls._get_download_ids(filters)
         queryset = base_queryset.extra(
             where=[f'"transaction_normalized"."id" = ANY(SELECT UNNEST(ARRAY{flat_ids}::INTEGER[]))']
