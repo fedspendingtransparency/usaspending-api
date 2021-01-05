@@ -67,7 +67,7 @@ This endpoint returns an overview of government agency submission data.
                         "fiscal_period": 7,
                         "current_total_budget_authority_amount": 192340342676.75,
                         "total_budgetary_resources": 13105812389531.01,
-                        "percent_of_total_budgetary_resources": 1.4675957274529006,
+                        "percent_of_total_budgetary_resources": 1.47,
                         "recent_publication_date": "2020-08-13T13:40:21.181994Z",
                         "recent_publication_date_certified": true,
                         "tas_account_discrepancies_totals": {
@@ -85,7 +85,7 @@ This endpoint returns an overview of government agency submission data.
                         "fiscal_period": 6,
                         "current_total_budget_authority_amount": 192243648186.87,
                         "total_budgetary_resources": 10127796351165.57,
-                        "percent_of_total_budgetary_resources": 1.8981784538424826,
+                        "percent_of_total_budgetary_resources": 1.90,
                         "recent_publication_date": "2020-05-14T13:08:23.624634Z",
                         "recent_publication_date_certified": true,
                         "tas_account_discrepancies_totals": {
