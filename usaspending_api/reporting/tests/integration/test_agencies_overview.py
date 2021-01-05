@@ -22,7 +22,7 @@ def setup_test_data(db):
         submission_id=2,
         reporting_fiscal_year=current_fiscal_year(),
         reporting_fiscal_period=get_final_period_of_quarter(
-            calculate_last_completed_fiscal_quarter(current_fiscal_year())
+            calculate_last_completed_fiscal_quarter(current_fiscal_year()) or 3
         ),
     )
     mommy.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True)
@@ -131,7 +131,7 @@ def setup_test_data(db):
         reporting_agency_overview_id=2,
         toptier_code=987,
         fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())),
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
         total_dollars_obligated_gtas=18.6,
         total_budgetary_resources=100,
         total_diff_approp_ocpa_obligated_amounts=0,
@@ -141,7 +141,7 @@ def setup_test_data(db):
         reporting_agency_overview_id=3,
         toptier_code="001",
         fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())),
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
         total_dollars_obligated_gtas=20.0,
         total_budgetary_resources=10.0,
         total_diff_approp_ocpa_obligated_amounts=10.0,
@@ -165,8 +165,8 @@ def setup_test_data(db):
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=987,
-        fiscal_year=2020,
-        fiscal_period=12,
+        fiscal_year=current_fiscal_year(),
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
         tas_rendering_label="TAS 2",
         obligated_amount=12.0,
     )
