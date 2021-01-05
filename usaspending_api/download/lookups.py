@@ -29,7 +29,7 @@ from usaspending_api.awards.v2.filters.award_filters import (
     awards_subaward_filter,
     awards_treasury_account_funding_filter,
 )
-from usaspending_api.awards.v2.filters.download_filters import (
+from usaspending_api.awards.v2.filters.search import (
     universal_award_matview_filter,
     universal_transaction_filter,
 )
