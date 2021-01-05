@@ -38,11 +38,9 @@ def setup_test_data(db):
 def test_basic_success(setup_test_data, client):
     resp = client.get("/api/v2/reporting/agencies/123/discrepancies/?fiscal_year=2020&fiscal_period=3")
     assert resp.status_code == status.HTTP_200_OK
-    response = resp.json()
-    assert len(response["results"]) == 0
+    assert len(resp.json()["results"]) == 0
 
     resp = client.get(url)
-    print(resp.json())
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
     assert len(response["results"]) == 2
