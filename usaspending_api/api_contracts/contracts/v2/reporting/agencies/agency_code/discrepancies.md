@@ -13,7 +13,7 @@ This endpoint returns an overview of government agency TAS discrepancies data.
     + `agency_code`: `020` (required, string)
         The specific agency code.
     + `fiscal_year`: 2020 (required, number)
-        The fiscal year.
+        The fiscal year (2017 or later).
     + `fiscal_period`: 10 (required, number)
         The fiscal period. Valid values: 2-12 (2 = November ... 12 = September)
         For retrieving quarterly data, provide the period which equals 'quarter * 3' (e.g. Q2 = P6)
