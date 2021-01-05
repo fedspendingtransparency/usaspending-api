@@ -12,7 +12,7 @@ url = "/api/v2/agency/{code}/federal_account/{query_params}"
 def test_federal_account_list_success(client, agency_account_data):
     resp = client.get(url.format(code="007", query_params=""))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -163,10 +163,10 @@ def test_federal_account_list_bad_order(client, agency_account_data):
 
 @pytest.mark.django_db
 def test_federal_account_list_sort_by_name(client, agency_account_data):
-    query_params = "?fiscal_year=2020&order=asc&sort=name"
+    query_params = f"?fiscal_year={current_fiscal_year()}&order=asc&sort=name"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -227,10 +227,10 @@ def test_federal_account_list_sort_by_name(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = "?fiscal_year=2020&order=desc&sort=name"
+    query_params = f"?fiscal_year={current_fiscal_year()}&order=desc&sort=name"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -294,10 +294,10 @@ def test_federal_account_list_sort_by_name(client, agency_account_data):
 
 @pytest.mark.django_db
 def test_federal_account_list_sort_by_obligated_amount(client, agency_account_data):
-    query_params = "?fiscal_year=2020&order=asc&sort=obligated_amount"
+    query_params = f"?fiscal_year={current_fiscal_year()}&order=asc&sort=obligated_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -358,10 +358,10 @@ def test_federal_account_list_sort_by_obligated_amount(client, agency_account_da
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = "?fiscal_year=2020&order=desc&sort=obligated_amount"
+    query_params = f"?fiscal_year={current_fiscal_year()}&order=desc&sort=obligated_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -425,10 +425,10 @@ def test_federal_account_list_sort_by_obligated_amount(client, agency_account_da
 
 @pytest.mark.django_db
 def test_federal_account_list_sort_by_gross_outlay_amount(client, agency_account_data):
-    query_params = "?fiscal_year=2020&order=asc&sort=gross_outlay_amount"
+    query_params = f"?fiscal_year={current_fiscal_year()}&order=asc&sort=gross_outlay_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -489,10 +489,10 @@ def test_federal_account_list_sort_by_gross_outlay_amount(client, agency_account
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = "?fiscal_year=2020&order=desc&sort=gross_outlay_amount"
+    query_params = f"?fiscal_year={current_fiscal_year()}&order=desc&sort=gross_outlay_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -556,10 +556,10 @@ def test_federal_account_list_sort_by_gross_outlay_amount(client, agency_account
 
 @pytest.mark.django_db
 def test_federal_account_list_search(client, agency_account_data):
-    query_params = "?fiscal_year=2020&filter=FA 3"
+    query_params = f"?fiscal_year={current_fiscal_year()}&filter=FA 3"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -592,10 +592,10 @@ def test_federal_account_list_search(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = "?fiscal_year=2020&filter=TA 5"
+    query_params = f"?fiscal_year={current_fiscal_year()}&filter=TA 5"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -631,10 +631,10 @@ def test_federal_account_list_search(client, agency_account_data):
 
 @pytest.mark.django_db
 def test_federal_account_list_pagination(client, agency_account_data):
-    query_params = "?fiscal_year=2020&limit=2&page=1"
+    query_params = f"?fiscal_year={current_fiscal_year()}&limit=2&page=1"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -681,10 +681,10 @@ def test_federal_account_list_pagination(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = "?fiscal_year=2020&limit=2&page=2"
+    query_params = f"?fiscal_year={current_fiscal_year()}&limit=2&page=2"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": 2020,
+        "fiscal_year": current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
