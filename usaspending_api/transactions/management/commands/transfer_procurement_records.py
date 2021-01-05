@@ -11,6 +11,7 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     destination_table_name = SourceProcurementTransaction().table_name
     extra_predicate = []
     last_load_record = "source_procurement_transaction"
+    last_load_record_downstream = "fpds"
     lookback_minutes = 0
     shared_pk = "detached_award_proc_unique"
     working_file_prefix = "procurement_load_ids"

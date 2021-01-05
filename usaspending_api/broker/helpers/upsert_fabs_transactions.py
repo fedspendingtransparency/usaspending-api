@@ -18,7 +18,7 @@ from usaspending_api.etl.management.load_base import load_data_into_model, forma
 from usaspending_api.references.models import Agency
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 BATCH_FETCH_SIZE = 25000
 
@@ -37,11 +37,12 @@ def fetch_fabs_data_generator(dap_uid_list):
         max_index = i + BATCH_FETCH_SIZE if i + BATCH_FETCH_SIZE < total_uid_count else total_uid_count
         fabs_ids_batch = dap_uid_list[i:max_index]
 
-        logger.info(f"Fetching {i + 1}-{max_index} out of {total_uid_count} records from source table")
+        logger.info(f"Fetching {i + 1:,}-{max_index:,} out of {total_uid_count:,} records from source table")
         db_cursor.execute(db_query, [tuple(fabs_ids_batch)])
-        logger.info("Fetching records took {:.2f}s".format(time.perf_counter() - start_time))
+        logger.info(f"Fetching records consumed {time.perf_counter() - start_time:.2f}s")
 
         yield dictfetchall(db_cursor)
+        logger.info(f"Processed approximately {max_index * 100.0/total_uid_count:.2f}% of records")
 
 
 @transaction.atomic

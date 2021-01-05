@@ -121,7 +121,8 @@ class AgnosticTransactionLoader:
         """Finalize the execution and cleanup for the next script run"""
         logger.info(f"Processed {self.upsert_records:,} transction records (insert/update)")
         if self.successful_run and (self.is_incremental or self.options["reload_all"]):
-            logger.info("Updated last run time for next incremental load")
+            self.additional_incremental_cleanup()
+            logger.info(f"Update last run time for next incremental load to {self.start_time}")
             update_last_load_date(self.last_load_record, self.start_time)
 
         if hasattr(self, "file_path") and self.file_path.exists():
@@ -200,4 +201,48 @@ class AgnosticTransactionLoader:
             else:
                 transactions_remaining_count = 0
             self.upsert_records += record_count
-            logger.info(f"{self.upsert_records:,} successful upserts, {transactions_remaining_count:,} remaining.")
+            logger.info(
+                f"{self.upsert_records:,} successful upserts, "
+                f"{transactions_remaining_count:,} remaining. "
+                f"[{self.upsert_records * 100 / self.total_ids_to_process:.2f}%]"
+            )
+
+    def additional_incremental_cleanup(self):
+        """
+        There is a gap of time between when this transfer script starts and
+        when the next ETL script starts. That gap of time allows transferred
+        records to be missed by the next downstream ETL script run
+
+        Example for FABS transactions (applies to FPDS as well):
+            Three transaction's update_at datetimes in Broker:
+                txn_a | 2020/09/01 12:00:00
+                txn_b | 2020/09/01 12:10:00
+                txn_c | 2020/09/01 12:20:00
+
+            1. transfer_assistance_records.py run on 2020/09/01 12:05:00
+                1.a copies txn_a
+                1.b records 2020/09/01 12:05:00 as the next datetime to start
+            2. fabs_nightly_loader starts at 2020/09/01 12:15:00 (example lag)
+                2.a copies txn_a
+                2.b records 2020/09/01 12:15:00 as the next datetime to start
+            -- Following runs --
+            3. transfer_assistance_records.py run on 2020/09/01 12:25:00
+                3.a copies txn_b & txn_c (since the stored datetime was 2020/09/01 12:05:00)
+                3.b records 2020/09/01 12:25:00 as the next datetime to start
+            4. fabs_nightly_loader starts at 2020/09/01 12:30:00 (example lag)
+                2.a copies txn_c
+                2.b records 2020/09/01 12:30:00 as the next datetime to start
+
+            Problem:
+                txn_b was transferred to USAspending's source_assistance_transaction
+                BUT IS ABSENT in transaction_fabs (and awards and Elasticsearch indexes)
+
+            This method syncs the stored downstream ETL start date to the datetime
+            used by the transfer script's execution run (if the ETL datetime
+            is greater/more recent) which will effectively close the time gap
+
+        """
+        previous_etl = get_last_load_date(self.last_load_record_downstream)
+        if previous_etl >= self.options["datetime"]:
+            logger.info(f"Updating downstream ETL start datetime to {self.options['datetime']}")
+            update_last_load_date(self.last_load_record_downstream, self.options["datetime"])

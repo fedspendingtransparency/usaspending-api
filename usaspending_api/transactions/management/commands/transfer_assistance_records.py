@@ -11,6 +11,7 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     destination_table_name = SourceAssistanceTransaction().table_name
     extra_predicate = [{"field": "is_active", "op": "EQUAL", "value": "true"}]
     last_load_record = "source_assistance_transaction"
+    last_load_record_downstream = "fabs"
     lookback_minutes = 15
     shared_pk = "afa_generated_unique"
     working_file_prefix = "assistance_load_ids"
