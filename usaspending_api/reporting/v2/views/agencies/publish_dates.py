@@ -36,7 +36,7 @@ class PublishDates(AgencyBase, PaginationMixin):
     # },
     def get_agency_data(self):
         results = (
-            SubmissionAttributes.objects.filter(reporting_fiscal_year=self.fiscal_year)
+            SubmissionAttributes.objects.filter(reporting_fiscal_year=self.fiscal_year).values("toptier_code")
             .annotate(
                 agency_name=Subquery(
                     ToptierAgency.objects.filter(toptier_code=OuterRef("toptier_code")).values("name")
@@ -69,7 +69,8 @@ class PublishDates(AgencyBase, PaginationMixin):
                 ),
             )
             .values("agency_name", "abbreviation", "toptier_code", "current_total_budget_authority_amount", "periods")
-            .order_by("toptier_code")
+            .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
+
         )
         # ReportingAgencyOverview.objects.filter(fiscal_year=self.fiscal_year)
         # .annotate(
