@@ -1,13 +1,8 @@
-from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField
 from rest_framework.response import Response
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.validator.tinyshield import TinyShield
-
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-
 from usaspending_api.reporting.models import ReportingAgencyMissingTas
-from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class AgencyDiscrepancies(AgencyBase, PaginationMixin):
