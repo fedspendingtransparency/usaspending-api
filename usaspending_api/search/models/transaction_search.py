@@ -108,3 +108,4 @@ class TransactionSearch(models.Model):
 
     class Meta:
         db_table = "transaction_search"
+    
