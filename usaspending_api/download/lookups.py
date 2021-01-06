@@ -108,7 +108,7 @@ VALUE_MAPPINGS = {
         "contract_data": "transaction__contract_data",
         "assistance_data": "transaction__assistance_data",
         "filter_function": TransactionsElasticsearchDownload.query,
-        "annotations_function": transactions_search_annotations,
+        "annotations_function": transaction_search_annotations,
     },
     # SubAward Level
     "sub_awards": {

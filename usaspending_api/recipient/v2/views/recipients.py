@@ -20,7 +20,7 @@ from usaspending_api.recipient.models import RecipientProfile, RecipientLookup, 
 from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters, get_duns_business_types_mapping
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode
-from usaspending_api.search.models import TransactionSearch
+from usaspending_api.search.models import TransactionSearch as TransactionSearchModel
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_transactions,
@@ -222,7 +222,7 @@ def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
 
     # combine with latest transaction's business categories
     latest_transaction = (
-        TransactionSearch.objects.filter(
+        TransactionSearchModel.objects.filter(
             recipient_hash=recipient_hash, action_date__gte=settings.API_SEARCH_MIN_DATE
         )
         .order_by("-action_date", "-transaction_id")
