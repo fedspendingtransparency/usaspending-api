@@ -75,15 +75,12 @@ class Command(BaseCommand):
         with connection.cursor() as cursor:
             sql = (self.matview_dir / "componentized" / "transaction_search__create.sql").read_text()
             cursor.execute(sql)
-        
 
     def insert_matview_data(self, chunk_count):
         loop = asyncio.new_event_loop()
         tasks = []
 
-        insert_table_sql = (
-            (self.matview_dir / "componentized" / "transaction_search__inserts.sql").read_text().strip()
-        )
+        insert_table_sql = (self.matview_dir / "componentized" / "transaction_search__inserts.sql").read_text().strip()
 
         for i, sql in enumerate(sqlparse.split(insert_table_sql)):
             tasks.append(
@@ -101,9 +98,7 @@ class Command(BaseCommand):
             async with semaphore:
                 return await async_run_creates(sql, wrapper=Timer(f"Creating Index {index}"),)
 
-        index_table_sql = (
-            (self.matview_dir / "componentized" / "transaction_search__indexes.sql").read_text().strip()
-        )
+        index_table_sql = (self.matview_dir / "componentized" / "transaction_search__indexes.sql").read_text().strip()
 
         for i, sql in enumerate(sqlparse.split(index_table_sql)):
             logger.info(f"Creating future for index: {i} - SQL: {sql}")
@@ -123,7 +118,6 @@ class Command(BaseCommand):
 
         with connection.cursor() as cursor:
             cursor.execute(swap_sql)
-
 
     def remove_old_data(self, chunk_count):
 

@@ -45,7 +45,9 @@ def pytest_addoption(parser):
 
 def rename_tables_for_tests():
     """
-
+    Outside of testing, the transaction_search table is created by using a series of chunked matviews that are combined
+    into a Django managed table. When unit testing transaction_search is created as a single matview. To prevent a
+    naming conflict, the unused Django managed table is renamed while testing.
     """
     with connection.cursor() as cursor:
         try:
@@ -118,6 +120,7 @@ def django_db_setup(
 
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)
+
 
 @pytest.fixture
 def elasticsearch_transaction_index(db):

@@ -1,12 +1,17 @@
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 
-from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.awards.models import TransactionNormalized, Award
 
 
 class TransactionSearch(models.Model):
+    """
+    Fields in this model have all, with the exception of primary/foreign keys, been made nullable because it 
+    is directly populated by the contents of a materialized view. The fields used to create the materialized view
+    may or may not be nullable, but those constraints are not enforced in this table.
+    """
     transaction = models.OneToOneField(TransactionNormalized, on_delete=models.DO_NOTHING, primary_key=True)
-    award_id = models.BigIntegerField(null=True)
+    award = models.OneToOneField(Award, on_delete=models.DO_NOTHING)
     modification_number = models.TextField(null=True)
     detached_award_proc_unique = models.TextField(null=True)
     afa_generated_unique = models.TextField(null=True)
@@ -15,9 +20,9 @@ class TransactionSearch(models.Model):
     uri = models.TextField(null=True)
     piid = models.TextField(null=True)
 
-    action_date = models.DateField(null=False)
-    fiscal_action_date = models.DateField(null=False)
-    last_modified_date = models.DateField(null=False)
+    action_date = models.DateField(null=True)
+    fiscal_action_date = models.DateField(null=True)
+    last_modified_date = models.DateField(null=True)
 
     fiscal_year = models.IntegerField(null=True)
     award_certified_date = models.DateField(null=True)
@@ -69,9 +74,13 @@ class TransactionSearch(models.Model):
     recipient_location_country_name = models.TextField(null=True)
     recipient_location_state_name = models.TextField(null=True)
     recipient_location_state_code = models.TextField(null=True)
+    recipient_location_state_fips = models.TextField(null=True)
+    recipient_location_state_population = models.IntegerField(null=True)
     recipient_location_county_code = models.TextField(null=True)
     recipient_location_county_name = models.TextField(null=True)
+    recipient_location_county_population = models.IntegerField(null=True)
     recipient_location_congressional_code = models.TextField(null=True)
+    recipient_location_congressional_population = models.IntegerField(null=True)
     recipient_location_zip5 = models.TextField(null=True)
     recipient_location_city_name = models.TextField(null=True)
 
@@ -100,11 +109,7 @@ class TransactionSearch(models.Model):
     tas_paths = ArrayField(models.TextField(), null=True)
     tas_components = ArrayField(models.TextField(), null=True)
     federal_accounts = JSONField(null=True)
-    disaster_emergency_fund_codes = ArrayField(models.CharField(max_length=1), null=True)
-    recipient_location_state_fips = models.TextField(null=True)
-    recipient_location_congressional_population = models.IntegerField(null=True)
-    recipient_location_county_population = models.IntegerField(null=True)
-    recipient_location_state_population = models.IntegerField(null=True)
+    disaster_emergency_fund_codes = ArrayField(models.TextField(), null=True)
 
     class Meta:
         db_table = "transaction_search"
