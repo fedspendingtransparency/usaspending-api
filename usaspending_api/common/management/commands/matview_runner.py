@@ -136,10 +136,10 @@ class Command(BaseCommand):
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
 
-        if "universal_transaction_matview" in self.chunked_matviews:
-            logger.info("Inserting data from universal_transaction_matview chunks into transaction_search table.")
+        if "transaction_search" in self.chunked_matviews:
+            logger.info("Inserting data from transaction_search chunks into transaction_search table.")
             call_command(
-                "combine_universal_transaction_matview_chunks",
+                "combine_transaction_search_chunks",
                 chunk_count=self.chunk_count,
                 index_concurrency=20,
                 matview_dir=self.matview_chunked_dir,

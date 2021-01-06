@@ -6,7 +6,7 @@ import tempfile
 
 from django.conf import settings
 from django.core.management import call_command
-from django.db import connections
+from django.db import connections, connection
 from django.test import override_settings
 from pathlib import Path
 
@@ -41,6 +41,17 @@ def pytest_configure():
 
 def pytest_addoption(parser):
     parser.addoption("--local", action="store", default="true")
+
+
+def rename_tables_for_tests():
+    """
+
+    """
+    with connection.cursor() as cursor:
+        try:
+            cursor.execute("ALTER TABLE IF EXISTS transaction_search RENAME TO transaction_search_moved_for_tests;")
+        except Exception:
+            pass
 
 
 @pytest.fixture(scope="session")
@@ -91,6 +102,7 @@ def django_db_setup(
                 "being skipped. "
             )
         else:
+            rename_tables_for_tests()
             generate_matviews(materialized_views_as_traditional_views=True)
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
@@ -106,7 +118,6 @@ def django_db_setup(
 
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)
-
 
 @pytest.fixture
 def elasticsearch_transaction_index(db):

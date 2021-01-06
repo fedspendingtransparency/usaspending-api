@@ -159,28 +159,27 @@ def make_matview_empty(matview_name, chunk_count):
 
 def create_componentized_files(sql_json):
     matview_name = sql_json["final_name"]
-    dest_table_name = sql_json["destination_table_name"]
-    dest_table_temp_name = dest_table_name + "_temp"
+    matview_temp_name = matview_name + "_temp"
     filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json["final_name"])
 
-    create_table = make_temp_table_create(dest_table_name, dest_table_temp_name)
+    create_table = make_temp_table_create(matview_name, matview_temp_name)
     write_sql_file(create_table, filename_base + "__create")
 
-    insert_into_table = make_table_inserts(dest_table_temp_name, matview_name, GLOBAL_ARGS.chunk_count)
+    insert_into_table = make_table_inserts(matview_temp_name, matview_name, GLOBAL_ARGS.chunk_count)
     write_sql_file(insert_into_table, filename_base + "__inserts")
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
-        sql_json, dest_table_temp_name, UNIQUE_STRING, False, GLOBAL_ARGS.quiet
+        sql_json, matview_temp_name, UNIQUE_STRING, False, GLOBAL_ARGS.quiet
     )
     write_sql_file(create_indexes, filename_base + "__indexes")
 
-    sql_strings = make_rename_sql(dest_table_name, rename_old_indexes, rename_new_indexes)
+    sql_strings = make_rename_sql(matview_name, rename_old_indexes, rename_new_indexes)
     write_sql_file(sql_strings, filename_base + "__renames")
 
-    sql_strings = make_modification_sql(dest_table_name, GLOBAL_ARGS.quiet)
+    sql_strings = make_modification_sql(matview_name, GLOBAL_ARGS.quiet)
     write_sql_file(sql_strings, filename_base + "__mods")
 
-    sql_strings = make_table_drops(dest_table_name)
+    sql_strings = make_table_drops(matview_name)
     write_sql_file(sql_strings, filename_base + "__drops")
 
     sql_strings = make_matview_empty(matview_name, GLOBAL_ARGS.chunk_count)

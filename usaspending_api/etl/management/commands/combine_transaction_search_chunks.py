@@ -73,27 +73,16 @@ class Command(BaseCommand):
 
     def recreate_matview(self):
         with connection.cursor() as cursor:
-            # This table was previously a Matview, so the DROP may fail
-            try:
-                sql = (self.matview_dir / "componentized" / "universal_transaction_matview__create.sql").read_text()
-                cursor.execute(sql)
-            except Exception as e:
-                if "is not a table" in str(e):
-                    logger.warning(
-                        "universal_transaction_matview_temp existed, but not as table. This may be because this "
-                        + "command is being run for the first time. Trying to drop as Matview instead..."
-                    )
-                    sql = sql.replace("DROP TABLE", "DROP MATERIALIZED VIEW")
-                    cursor.execute(sql)
-                else:
-                    raise
+            sql = (self.matview_dir / "componentized" / "transaction_search__create.sql").read_text()
+            cursor.execute(sql)
+        
 
     def insert_matview_data(self, chunk_count):
         loop = asyncio.new_event_loop()
         tasks = []
 
         insert_table_sql = (
-            (self.matview_dir / "componentized" / "universal_transaction_matview__inserts.sql").read_text().strip()
+            (self.matview_dir / "componentized" / "transaction_search__inserts.sql").read_text().strip()
         )
 
         for i, sql in enumerate(sqlparse.split(insert_table_sql)):
@@ -113,7 +102,7 @@ class Command(BaseCommand):
                 return await async_run_creates(sql, wrapper=Timer(f"Creating Index {index}"),)
 
         index_table_sql = (
-            (self.matview_dir / "componentized" / "universal_transaction_matview__indexes.sql").read_text().strip()
+            (self.matview_dir / "componentized" / "transaction_search__indexes.sql").read_text().strip()
         )
 
         for i, sql in enumerate(sqlparse.split(index_table_sql)):
@@ -130,38 +119,27 @@ class Command(BaseCommand):
     @transaction.atomic
     def swap_matviews(self):
 
-        swap_sql = (self.matview_dir / "componentized" / "universal_transaction_matview__renames.sql").read_text()
+        swap_sql = (self.matview_dir / "componentized" / "transaction_search__renames.sql").read_text()
 
         with connection.cursor() as cursor:
-            # This table was previously a Matview, so the DROP may fail
-            try:
-                cursor.execute(swap_sql)
-            except Exception as e:
-                if "is not a table" in str(e):
-                    logger.warning(
-                        "universal_transaction_matview_old existed, but not as table. This may be because this "
-                        + "command is being run for the first time. Trying to drop as Matview instead..."
-                    )
-                    swap_sql = swap_sql.replace("DROP TABLE", "DROP MATERIALIZED VIEW")
-                    cursor.execute(swap_sql)
-                else:
-                    raise
+            cursor.execute(swap_sql)
+
 
     def remove_old_data(self, chunk_count):
 
-        drop_sql = (self.matview_dir / "componentized" / "universal_transaction_matview__drops.sql").read_text()
+        drop_sql = (self.matview_dir / "componentized" / "transaction_search__drops.sql").read_text()
 
         with connection.cursor() as cursor:
             cursor.execute(drop_sql)
 
     def empty_matviews(self):
-        empty_sql = (self.matview_dir / "componentized" / "universal_transaction_matview__empty.sql").read_text()
+        empty_sql = (self.matview_dir / "componentized" / "transaction_search__empty.sql").read_text()
 
         with connection.cursor() as cursor:
             cursor.execute(empty_sql)
 
     def grant_matview_permissions(self):
-        mods_sql = (self.matview_dir / "componentized" / "universal_transaction_matview__mods.sql").read_text()
+        mods_sql = (self.matview_dir / "componentized" / "transaction_search__mods.sql").read_text()
 
         with connection.cursor() as cursor:
             cursor.execute(mods_sql)
