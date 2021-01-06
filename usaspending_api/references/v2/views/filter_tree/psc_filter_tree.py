@@ -102,7 +102,7 @@ class PSCFilterTree(FilterTree):
                     "children": None,
                 }
             )
-        return retval
+        return sorted(retval, key=lambda x: x["id"])
 
     def tier_2_search(self, ancestor_array, filter_string, lower_tier_nodes=None) -> list:
         filters = [
@@ -152,7 +152,7 @@ class PSCFilterTree(FilterTree):
                     "children": None,
                 }
             )
-        return retval
+        return sorted(retval, key=lambda x: x["id"])
 
     def tier_1_search(self, ancestor_array, filter_string, lower_tier_nodes=None) -> list:
         filters = [Q(Q(Q(length=1) & Q(code__in=PSC_GROUPS["Service"]["terms"])) | Q(length=2))]
@@ -186,7 +186,7 @@ class PSCFilterTree(FilterTree):
                     "children": None,
                 }
             )
-        return retval
+        return sorted(retval, key=lambda x: x["id"])
 
     def toptier_search(self, filter_string, tier1_nodes=None):
         retval = []
@@ -208,7 +208,7 @@ class PSCFilterTree(FilterTree):
                             "children": None,
                         }
                     )
-        return retval
+        return sorted(retval, key=lambda x: x["id"])
 
     def _combine_nodes(self, upper_tier, lower_tier):
         for upper_node in upper_tier:
@@ -217,9 +217,8 @@ class PSCFilterTree(FilterTree):
             for lower_node in lower_tier:
                 if upper_node["id"] in lower_node["ancestors"] and lower_node["id"] not in node_ids:
                     children.append(lower_node)
-            sorted(children, key=lambda x: x["id"])
             if len(children) > 0:
-                upper_node["children"] = children
+                upper_node["children"] = sorted(children, key=lambda x: x["id"])
         return upper_tier
 
     def _path_is_valid(self, path: list) -> bool:
