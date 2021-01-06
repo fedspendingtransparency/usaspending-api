@@ -1,3 +1,4 @@
+import re
 from builtins import next, enumerate
 from copy import deepcopy
 
@@ -11,6 +12,7 @@ from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 
 from usaspending_api.common.data_classes import Pagination
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
@@ -19,10 +21,17 @@ from usaspending_api.reporting.models import ReportingAgencyOverview
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
+
 class PublishDates(AgencyBase, PaginationMixin):
     """Placeholder"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/publish_dates.md"
+
+    def validate_pagination_sort(self, sort_key):
+        regex_string = r"^publication_date,[1-9]|1[0-2]"
+        if not re.match(regex_string, sort_key):
+            raise UnprocessableEntityException("publication_date sort must be in the format 'publication_date,<fiscal_period>'")
+
 
     def get_agency_data(self):
         results = (
@@ -82,8 +91,8 @@ class PublishDates(AgencyBase, PaginationMixin):
         return results
 
     def get(self, request):
-
         if "publication_date" in self.pagination.sort_key:
+            self.validate_pagination_sort(self.pagination.sort_key)
             sort_key = deepcopy(self.pagination.sort_key)
             pub_sort = sort_key.split(",")[1]
             self.pagination.sort_key = "publication_date"
