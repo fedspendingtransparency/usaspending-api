@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agencies Reporting Overview [/api/v2/reporting/agencies/overview/{?fiscal_year,fiscal_period,search,page,limit,order,sort}]
+# Agencies Reporting Overview [/api/v2/reporting/agencies/overview/{?fiscal_year,fiscal_period,filter,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's About the Data \| Agencies Overview table. This data can be used to better understand the ways agencies submit data.
 
@@ -16,7 +16,7 @@ This endpoint returns an overview list of government agencies submission data.
     + `fiscal_period`: 10 (required, number)
         The fiscal period. Valid values: 2-12 (2 = November ... 12 = September)
         For retriving quarterly data, provide the period which equals 'quarter * 3' (e.g. Q2 = P6)
-    + `search` (optional, string)
+    + `filter` (optional, string)
         The agency name to filter on.
     + `page` (optional, number)
         The page of results to return based on the limit.
