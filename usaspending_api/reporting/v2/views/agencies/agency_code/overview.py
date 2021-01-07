@@ -54,6 +54,9 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                 recent_publication_date_certified=Subquery(
                     SubmissionAttributes.objects.filter(*agency_filters).values("certified_date")
                 ),
+                submission_is_quarter=Subquery(
+                    SubmissionAttributes.objects.filter(*agency_filters).values("quarter_format_flag")
+                ),
                 tas_obligations=Subquery(
                     ReportingAgencyTas.objects.filter(
                         fiscal_year=OuterRef("fiscal_year"),
@@ -99,6 +102,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                 "toptier_code",
                 "fiscal_year",
                 "fiscal_period",
+                "submission_is_quarter",
                 "total_dollars_obligated_gtas",
                 "total_budgetary_resources",
                 "gtas_total_budgetary_resources",

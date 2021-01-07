@@ -62,6 +62,13 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                         toptier_code=OuterRef("toptier_code"),
                     ).values("certified_date")
                 ),
+                submission_is_quarter=Subquery(
+                    SubmissionAttributes.objects.filter(
+                        reporting_fiscal_year=OuterRef("fiscal_year"),
+                        reporting_fiscal_period=OuterRef("fiscal_period"),
+                        toptier_code=OuterRef("toptier_code"),
+                    ).values("quarter_format_flag")
+                ),
                 tas_obligations=Subquery(
                     ReportingAgencyTas.objects.filter(
                         fiscal_year=OuterRef("fiscal_year"),
@@ -108,6 +115,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "missing_tas_accounts",
                 "fiscal_year",
                 "fiscal_period",
+                "submission_is_quarter",
             )
         )
         return self.format_results(result_list)

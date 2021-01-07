@@ -80,16 +80,24 @@ class AgencyBase(APIView):
 
     @staticmethod
     def create_assurance_statement_url(result):
+        """
+        Results requires the following five keys to generate the assurance statement url:
+        agency_name, abbreviation, toptier_code, fiscal_year, fiscal_period
+        """
         agency_name_split = result["agency_name"].split(" ")
-        abbreviation_wrapped = f'({result["abbreviation"]})'
+        abbreviation_wrapped = f"({result['abbreviation']})"
         toptier_code = result["toptier_code"]
         fiscal_year = result["fiscal_year"]
-        fiscal_period = str(result["fiscal_period"]).zfill(2)
 
-        host = "files.usaspending.gov"
+        if result["submission_is_quarter"]:
+            fiscal_period = f"Q{int(result['fiscal_period'] / 3)}"
+        else:
+            fiscal_period = f"P{str(result['fiscal_period']).zfill(2)}"
+
+        host = settings.FILES_SERVER_BASE_URL
         agency_directory = "%20".join([toptier_code, "-", *agency_name_split, abbreviation_wrapped])
-        file_name = f"{fiscal_year}-P{fiscal_period}-{toptier_code}_" + "%20".join([*agency_name_split, abbreviation_wrapped]) + "-Assurance_Statement.txt"
-        return f"""https://{host}/agency_submissions/Raw%20DATA%20Act%20Files/{fiscal_year}/P{fiscal_period}/{agency_directory}/{file_name}"""
+        file_name = f"{fiscal_year}-{fiscal_period}-{toptier_code}_" + "%20".join([*agency_name_split, abbreviation_wrapped]) + "-Assurance_Statement.txt"
+        return f"{host}/agency_submissions/Raw%20DATA%20Act%20Files/{fiscal_year}/{fiscal_period}/{agency_directory}/{file_name}"
 
 
 class PaginationMixin:
