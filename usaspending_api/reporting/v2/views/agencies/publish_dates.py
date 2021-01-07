@@ -3,7 +3,7 @@ from builtins import next, enumerate
 from copy import deepcopy
 
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import OuterRef, Subquery, TextField, F, Value, Func, DecimalField
+from django.db.models import OuterRef, Subquery, TextField, F, Value, Func, DecimalField, Q
 from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 from jsonpickle import json
@@ -21,29 +21,28 @@ from usaspending_api.reporting.models import ReportingAgencyOverview
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-
 class PublishDates(AgencyBase, PaginationMixin):
     """Placeholder"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/publish_dates.md"
 
-    def validate_pagination_sort(self, sort_key):
-        regex_string = r"^publication_date,[1-9]|1[0-2]"
+    def validate_publication_sort(self, sort_key):
+        regex_string = r"publication_date,([1-9]|1[0-2])"
         if not re.match(regex_string, sort_key):
-            raise UnprocessableEntityException("publication_date sort must be in the format 'publication_date,<fiscal_period>'")
-
+            raise UnprocessableEntityException(
+                "publication_date sort param must be in the format 'publication_date,<fiscal_period>'"
+            )
 
     def get_agency_data(self):
+        agency_filters = [Q(toptier_code=OuterRef("toptier_code"))]
+        if self.filter is not None:
+            agency_filters.append(Q(name__icontains=self.filter))
         results = (
             SubmissionAttributes.objects.filter(reporting_fiscal_year=self.fiscal_year)
             .values("toptier_code")
             .annotate(
-                agency_name=Subquery(
-                    ToptierAgency.objects.filter(toptier_code=OuterRef("toptier_code")).values("name")
-                ),
-                abbreviation=Subquery(
-                    ToptierAgency.objects.filter(toptier_code=OuterRef("toptier_code")).values("abbreviation")
-                ),
+                agency_name=Subquery(ToptierAgency.objects.filter(*agency_filters).values("name")),
+                abbreviation=Subquery(ToptierAgency.objects.filter(*agency_filters).values("abbreviation")),
                 current_total_budget_authority_amount=Subquery(
                     ReportingAgencyOverview.objects.filter(
                         toptier_code=OuterRef("toptier_code"), fiscal_year=OuterRef("reporting_fiscal_year")
@@ -68,6 +67,7 @@ class PublishDates(AgencyBase, PaginationMixin):
                     )
                 ),
             )
+            .exclude(agency_name__isnull=True)
             .values("agency_name", "abbreviation", "toptier_code", "current_total_budget_authority_amount", "periods")
         )
         return self.format_results(results)
@@ -92,7 +92,7 @@ class PublishDates(AgencyBase, PaginationMixin):
 
     def get(self, request):
         if "publication_date" in self.pagination.sort_key:
-            self.validate_pagination_sort(self.pagination.sort_key)
+            self.validate_publication_sort(self.pagination.sort_key)
             sort_key = deepcopy(self.pagination.sort_key)
             pub_sort = sort_key.split(",")[1]
             self.pagination.sort_key = "publication_date"
@@ -127,15 +127,15 @@ class PublishDates(AgencyBase, PaginationMixin):
             "publication_date",
         ]
         default_sort_column = "current_total_budget_authority_amount"
-        model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
-
+        models = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
+        models.extend([{"key": "fiscal_year", "name": "fiscal_year", "type": "integer", "optional": False}])
         if self.request.query_params.get("sort") and "publication_date" in self.request.query_params.get("sort"):
             modified_query_params = deepcopy(self.request.query_params)
             modified_query_params.pop("sort")
-            request_data = TinyShield(model).block(modified_query_params)
+            request_data = TinyShield(models).block(modified_query_params)
             request_data["sort"] = self.request.query_params.get("sort")
         else:
-            request_data = TinyShield(model).block(self.request.query_params)
+            request_data = TinyShield(models).block(self.request.query_params)
         # since publication_date requires a variable that we can't check for using the enum check, we're doing it seperately
         return Pagination(
             page=request_data["page"],
