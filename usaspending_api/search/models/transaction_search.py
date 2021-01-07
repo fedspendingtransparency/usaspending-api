@@ -6,10 +6,11 @@ from usaspending_api.awards.models import TransactionNormalized, Award
 
 class TransactionSearch(models.Model):
     """
-    Fields in this model have all, with the exception of primary/foreign keys, been made nullable because it 
+    Fields in this model have all, with the exception of primary/foreign keys, been made nullable because it
     is directly populated by the contents of a materialized view. The fields used to create the materialized view
     may or may not be nullable, but those constraints are not enforced in this table.
     """
+
     transaction = models.OneToOneField(TransactionNormalized, on_delete=models.DO_NOTHING, primary_key=True)
     # award_id = models.BigIntegerField(null=True)
     award = models.OneToOneField(Award, on_delete=models.DO_NOTHING)
