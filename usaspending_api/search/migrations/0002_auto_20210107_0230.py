@@ -18,6 +18,7 @@ class Migration(migrations.Migration):
             name='TransactionSearch',
             fields=[
                 ('transaction', models.OneToOneField(on_delete=django.db.models.deletion.DO_NOTHING, primary_key=True, serialize=False, to='awards.TransactionNormalized')),
+                ('award', models.OneToOneField(on_delete=django.db.models.deletion.DO_NOTHING, to='awards.Award')),
                 ('modification_number', models.TextField(null=True)),
                 ('detached_award_proc_unique', models.TextField(null=True)),
                 ('afa_generated_unique', models.TextField(null=True)),
@@ -107,7 +108,6 @@ class Migration(migrations.Migration):
                 ('tas_components', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), null=True, size=None)),
                 ('federal_accounts', django.contrib.postgres.fields.jsonb.JSONField(null=True)),
                 ('disaster_emergency_fund_codes', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), null=True, size=None)),
-                ('award', models.OneToOneField(on_delete=django.db.models.deletion.DO_NOTHING, to='awards.Award')),
             ],
             options={
                 'db_table': 'transaction_search',
