@@ -27,7 +27,7 @@ class PublishDates(AgencyBase, PaginationMixin):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/publish_dates.md"
 
     def validate_publication_sort(self, sort_key):
-        regex_string = r"publication_date,([1-9]|1[0-2])"
+        regex_string = r"publication_date,([2-9]|1[0-2])"
         if not re.match(regex_string, sort_key):
             raise UnprocessableEntityException(
                 "publication_date sort param must be in the format 'publication_date,<fiscal_period>'"
