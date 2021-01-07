@@ -29,6 +29,7 @@ This endpoint returns an overview of government agency submission data.
         + Default: `current_total_budget_authority_amount`
         + Members
             + `current_total_budget_authority_amount`
+            + `percent_of_total_budgetary_resources`
             + `fiscal_period`
             + `fiscal_year`
             + `missing_tas_accounts_count`
@@ -63,33 +64,37 @@ This endpoint returns an overview of government agency submission data.
                 "results": [
                     {
                         "fiscal_year": 2020,
-                        "fiscal_period": 12,
-                        "current_total_budget_authority_amount": 8361447130497.72,
-                        "recent_publication_date": "2020-01-10T11:59:21Z",
-                        "recent_publication_date_certified": false,
+                        "fiscal_period": 7,
+                        "current_total_budget_authority_amount": 192340342676.75,
+                        "total_budgetary_resources": 13105812389531.01,
+                        "percent_of_total_budgetary_resources": 1.47,
+                        "recent_publication_date": "2020-08-13T13:40:21.181994Z",
+                        "recent_publication_date_certified": true,
                         "tas_account_discrepancies_totals": {
-                            "gtas_obligation_total": 66432,
-                            "tas_accounts_total": 2342,
-                            "tas_obligation_not_in_gtas_total": 343345,
-                            "missing_tas_accounts_count": 10
+                            "gtas_obligation_total": 62668762422.57,
+                            "tas_accounts_total": 62659366681.07,
+                            "tas_obligation_not_in_gtas_total": 9395741.5,
+                            "missing_tas_accounts_count": 9
                         },
-                        "obligation_difference": 436376232652.87,
+                        "obligation_difference": 12581114.45,
                         "unlinked_contract_award_count": 0,
                         "unlinked_assistance_award_count": 0
                     },
                     {
                         "fiscal_year": 2020,
-                        "fiscal_period": 9,
-                        "current_total_budget_authority_amount": 8361447130497.72,
-                        "recent_publication_date": null,
+                        "fiscal_period": 6,
+                        "current_total_budget_authority_amount": 192243648186.87,
+                        "total_budgetary_resources": 10127796351165.57,
+                        "percent_of_total_budgetary_resources": 1.90,
+                        "recent_publication_date": "2020-05-14T13:08:23.624634Z",
                         "recent_publication_date_certified": true,
                         "tas_account_discrepancies_totals": {
-                            "gtas_obligation_total": 66432,
-                            "tas_accounts_total": 23903,
-                            "tas_obligation_not_in_gtas_total": 11543,
-                            "missing_tas_accounts_count": 10
+                            "gtas_obligation_total": 42417596510.72,
+                            "tas_accounts_total": 42417271495.34,
+                            "tas_obligation_not_in_gtas_total": 325015.38,
+                            "missing_tas_accounts_count": 2
                         },
-                        "obligation_difference": 436376232652.87,
+                        "obligation_difference": 14702670.23,
                         "unlinked_contract_award_count": 0,
                         "unlinked_assistance_award_count": 0
                     }
@@ -117,6 +122,8 @@ This endpoint returns an overview of government agency submission data.
 + `fiscal_year` (required, number)
 + `fiscal_period` (required, number)
 + `current_total_budget_authority_amount` (required, number)
++ `total_budgetary_resources` (required, number)
++ `percent_of_total_budgetary_resources` (required, number)
 + `recent_publication_date` (required, string, nullable)
 + `recent_publication_date_certified` (required, boolean)
 + `recent_publication_date_certified` (required, boolean)
