@@ -22,7 +22,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class PublishDates(AgencyBase, PaginationMixin):
-    """Placeholder"""
+    """Returns list of agency submission information, included published and certified dates for the fiscal year"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/publish_dates.md"
 
