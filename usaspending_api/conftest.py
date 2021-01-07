@@ -51,7 +51,7 @@ def rename_tables_for_tests():
     """
     with connection.cursor() as cursor:
         try:
-            cursor.execute("ALTER TABLE IF EXISTS transaction_search RENAME TO transaction_search_moved_for_tests;")
+            cursor.execute("DROP TABLE IF EXISTS transaction_search;")
         except Exception:
             pass
 
