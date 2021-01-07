@@ -78,6 +78,19 @@ class AgencyBase(APIView):
         if fiscal_period < 2 or fiscal_period > 12:
             raise UnprocessableEntityException(f"fiscal_period must be in the range 2-12")
 
+    @staticmethod
+    def create_assurance_statement_url(result):
+        agency_name_split = result["agency_name"].split(" ")
+        abbreviation_wrapped = f'({result["abbreviation"]})'
+        toptier_code = result["toptier_code"]
+        fiscal_year = result["fiscal_year"]
+        fiscal_period = str(result["fiscal_period"]).zfill(2)
+
+        host = "files.usaspending.gov"
+        agency_directory = "%20".join([toptier_code, "-", *agency_name_split, abbreviation_wrapped])
+        file_name = f"{fiscal_year}-P{fiscal_period}-{toptier_code}_" + "%20".join([*agency_name_split, abbreviation_wrapped]) + "-Assurance_Statement.txt"
+        return f"""https://{host}/agency_submissions/Raw%20DATA%20Act%20Files/{fiscal_year}/P{fiscal_period}/{agency_directory}/{file_name}"""
+
 
 class PaginationMixin:
     @cached_property
