@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Publish Dates [/api/v2/reporting/agencies/publish_dates/{?fiscal_year,search,page,limit,order,sort}]
+# Agency Reporting Publish Dates [/api/v2/reporting/agencies/publish_dates/{?fiscal_year,filter,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's About the Data \| Agencies submission publication dates.
 
@@ -10,7 +10,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
 + Parameters
     + `fiscal_year`: 2020 (required, number)
         The fiscal year.
-    + `search` (optional, string)
+    + `filter` (optional, string)
         The agency name to filter on.
     + `page` (optional, number)
         The page of results to return based on the limit.
