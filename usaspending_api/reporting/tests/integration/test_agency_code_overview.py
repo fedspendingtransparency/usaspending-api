@@ -2,6 +2,8 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
+from usaspending_api.agency.v2.views.agency_base import AgencyBase
+
 url = "/api/v2/reporting/agencies/123/overview/"
 
 
@@ -164,6 +166,8 @@ def setup_test_data(db):
 assurance_statement_2019_9 = "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2019/P09/123%20-%20Test%20Agency%20(ABC)/2019-P09-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
 assurance_statement_2019_6 = "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2019/P06/123%20-%20Test%20Agency%20(ABC)/2019-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
 assurance_statement_2020_12 = "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2020/P12/123%20-%20Test%20Agency%20(ABC)/2020-P12-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
+
+assurance_statement_quarter = "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2019/Q3/123%20-%20Quarterly%20Agency%20(QA)/2019-Q3-123_Quarterly%20Agency%20(QA)-Assurance_Statement.txt"
 
 
 def test_basic_success(setup_test_data, client):
@@ -482,3 +486,18 @@ def test_secondary_sort(setup_test_data, client):
         },
     ]
     assert response["results"] == expected_results
+
+
+def test_quarterly_assurance_statements():
+    results = {
+        "agency_name": "Quarterly Agency",
+        "abbreviation": "QA",
+        "toptier_code": "123",
+        "fiscal_year": 2019,
+        "fiscal_period": 9,
+        "submission_is_quarter": True,
+    }
+
+    assurance_statement = AgencyBase.create_assurance_statement_url(results)
+
+    assert assurance_statement == assurance_statement_quarter
