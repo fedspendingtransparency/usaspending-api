@@ -30,7 +30,7 @@ class PublishDates(AgencyBase, PaginationMixin):
         regex_string = r"publication_date,([2-9]|1[0-2])"
         if not re.match(regex_string, sort_key):
             raise UnprocessableEntityException(
-                "publication_date sort param must be in the format 'publication_date,<fiscal_period> where <fiscal_period> is in the range 2-12'"
+                "publication_date sort param must be in the format 'publication_date,<fiscal_period>' where <fiscal_period> is in the range 2-12"
             )
 
     def get_agency_data(self):

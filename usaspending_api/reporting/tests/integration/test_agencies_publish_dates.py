@@ -541,7 +541,7 @@ def test_publication_date_sort(client, publish_dates_data):
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     response = resp.json()
     assert response == {
-        "detail": "publication_date sort param must be in the format 'publication_date,<fiscal_period>'"
+        "detail": "publication_date sort param must be in the format 'publication_date,<fiscal_period>' where <fiscal_period> is in the range 2-12"
     }
     dabs5 = mommy.make(
         "submissions.DABSSubmissionWindowSchedule", pk=5, submission_reveal_date="2020-01-05 00:00:00.000000+00"
