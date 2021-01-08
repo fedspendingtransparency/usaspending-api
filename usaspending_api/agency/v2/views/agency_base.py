@@ -1,3 +1,6 @@
+import logging
+import json
+
 from django.conf import settings
 from django.utils.functional import cached_property
 from re import fullmatch
@@ -15,6 +18,8 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
 from usaspending_api.references.models import ToptierAgency, Agency
+
+logger = logging.getLogger(__name__)
 
 
 class AgencyBase(APIView):
@@ -81,22 +86,31 @@ class AgencyBase(APIView):
     @staticmethod
     def create_assurance_statement_url(result):
         """
-        Results requires the following five keys to generate the assurance statement url:
-        agency_name, abbreviation, toptier_code, fiscal_year, fiscal_period
+        Results requires the following keys to generate the assurance statement url:
+        agency_name, abbreviation, toptier_code, fiscal_year, fiscal_period, submission_is_quarter
         """
-        agency_name_split = result["agency_name"].split(" ")
-        abbreviation_wrapped = f"({result['abbreviation']})"
-        toptier_code = result["toptier_code"]
-        fiscal_year = result["fiscal_year"]
+        try:
+            agency_name_split = result["agency_name"].split(" ")
+            abbreviation_wrapped = f"({result['abbreviation']})"
+            toptier_code = result["toptier_code"]
+            fiscal_year = result["fiscal_year"]
 
-        if result["submission_is_quarter"]:
-            fiscal_period = f"Q{int(result['fiscal_period'] / 3)}"
-        else:
-            fiscal_period = f"P{str(result['fiscal_period']).zfill(2)}"
+            if result["submission_is_quarter"]:
+                fiscal_period = f"Q{int(result['fiscal_period'] / 3)}"
+            else:
+                fiscal_period = f"P{str(result['fiscal_period']).zfill(2)}"
+        except Exception:
+            logger.error("Missing fields in result. Can't create assurance statement url.")
+            logger.error(f"Result object includes: {json.dumps(result)}")
+            return None
 
         host = settings.FILES_SERVER_BASE_URL
         agency_directory = "%20".join([toptier_code, "-", *agency_name_split, abbreviation_wrapped])
-        file_name = f"{fiscal_year}-{fiscal_period}-{toptier_code}_" + "%20".join([*agency_name_split, abbreviation_wrapped]) + "-Assurance_Statement.txt"
+        file_name = (
+            f"{fiscal_year}-{fiscal_period}-{toptier_code}_"
+            + "%20".join([*agency_name_split, abbreviation_wrapped])
+            + "-Assurance_Statement.txt"
+        )
         return f"{host}/agency_submissions/Raw%20DATA%20Act%20Files/{fiscal_year}/{fiscal_period}/{agency_directory}/{file_name}"
 
 

@@ -161,6 +161,11 @@ def setup_test_data(db):
     )
 
 
+assurance_statement_2019_9 = "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2019/P09/123%20-%20Test%20Agency%20(ABC)/2019-P09-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
+assurance_statement_2019_6 = "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2019/P06/123%20-%20Test%20Agency%20(ABC)/2019-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
+assurance_statement_2020_12 = "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2020/P12/123%20-%20Test%20Agency%20(ABC)/2020-P12-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
+
+
 def test_basic_success(setup_test_data, client):
     resp = client.get(url)
     assert resp.status_code == status.HTTP_200_OK
@@ -184,6 +189,7 @@ def test_basic_success(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2019_9,
         },
         {
             "fiscal_year": 2019,
@@ -202,6 +208,7 @@ def test_basic_success(setup_test_data, client):
             "obligation_difference": 84931.95,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2019_6,
         },
         {
             "fiscal_year": 2020,
@@ -220,6 +227,7 @@ def test_basic_success(setup_test_data, client):
             "obligation_difference": 0.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2020_12,
         },
     ]
     assert response["results"] == expected_results
@@ -248,6 +256,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 0.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2020_12,
         },
         {
             "fiscal_year": 2019,
@@ -266,6 +275,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 84931.95,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2019_6,
         },
         {
             "fiscal_year": 2019,
@@ -284,6 +294,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2019_9,
         },
     ]
     assert response["results"] == expected_results
@@ -309,6 +320,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2019_9,
         }
     ]
     assert response["results"] == expected_results
@@ -334,6 +346,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 84931.95,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2019_6,
         }
     ]
     assert response["results"] == expected_results
@@ -362,6 +375,7 @@ def test_secondary_sort(setup_test_data, client):
             "obligation_difference": 84931.95,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2019_6,
         },
         {
             "fiscal_year": 2019,
@@ -380,6 +394,7 @@ def test_secondary_sort(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2019_9,
         },
         {
             "fiscal_year": 2020,
@@ -398,6 +413,7 @@ def test_secondary_sort(setup_test_data, client):
             "obligation_difference": 0.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2020_12,
         },
     ]
     assert response["results"] == expected_results
@@ -424,6 +440,7 @@ def test_secondary_sort(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2019_9,
         },
         {
             "fiscal_year": 2019,
@@ -442,6 +459,7 @@ def test_secondary_sort(setup_test_data, client):
             "obligation_difference": 84931.95,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2019_6,
         },
         {
             "fiscal_year": 2020,
@@ -460,6 +478,7 @@ def test_secondary_sort(setup_test_data, client):
             "obligation_difference": 0.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2020_12,
         },
     ]
     assert response["results"] == expected_results

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.references.models import ToptierAgency, Agency
+from usaspending_api.references.models import ToptierAgency
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
 from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.submissions.models import SubmissionAttributes
