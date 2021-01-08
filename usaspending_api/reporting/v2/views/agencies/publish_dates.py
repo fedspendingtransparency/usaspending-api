@@ -1,5 +1,4 @@
 import re
-from builtins import next, enumerate
 from copy import deepcopy
 
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -10,9 +9,10 @@ from jsonpickle import json
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
-
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.common.helpers.fiscal_year_helpers import get_quarter_from_period
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
@@ -34,58 +34,77 @@ class PublishDates(AgencyBase, PaginationMixin):
             )
 
     def get_agency_data(self):
-        agency_filters = [Q(toptier_code=OuterRef("toptier_code"))]
+
+        agency_filters = []
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter))
         results = (
-            SubmissionAttributes.objects.filter(reporting_fiscal_year=self.fiscal_year)
-            .values("toptier_code")
+            ToptierAgency.objects.account_agencies()
+            .filter(*agency_filters)
             .annotate(
-                agency_name=Subquery(ToptierAgency.objects.filter(*agency_filters).values("name")),
-                abbreviation=Subquery(ToptierAgency.objects.filter(*agency_filters).values("abbreviation")),
                 current_total_budget_authority_amount=Subquery(
                     ReportingAgencyOverview.objects.filter(
-                        toptier_code=OuterRef("toptier_code"), fiscal_year=OuterRef("reporting_fiscal_year")
+                        toptier_code=OuterRef("toptier_code"), fiscal_year=self.fiscal_year
                     )
                     .annotate(the_sum=Func(F("total_budgetary_resources"), function="SUM"))
                     .values("the_sum"),
                     output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
-                periods=ArrayAgg(
-                    ConcatAll(
-                        Value('{"reporting_fiscal_period": "'),
-                        Cast("reporting_fiscal_period", output_field=TextField()),
-                        Value('", "reporting_fiscal_quarter": "'),
-                        Cast("reporting_fiscal_quarter", output_field=TextField()),
-                        Value('", "submission_dates":{ "publication_date": "'),
-                        Cast("published_date", output_field=TextField()),
-                        Value('", "certification_date": "'),
-                        Cast("certified_date", output_field=TextField()),
-                        Value('"}, "quarterly": "'),
-                        Cast("quarter_format_flag", output_field=TextField()),
-                        Value('"}'),
+                periods=Subquery(
+                    SubmissionAttributes.objects.filter(
+                        reporting_fiscal_year=self.fiscal_year,
+                        toptier_code=OuterRef("toptier_code"),
+                        submission_window__submission_reveal_date__lte=now(),
                     )
+                    .values("toptier_code")
+                    .annotate(
+                        period=ArrayAgg(
+                            ConcatAll(
+                                Value('{"reporting_fiscal_period": '),
+                                Cast("reporting_fiscal_period", output_field=TextField()),
+                                Value(', "reporting_fiscal_quarter": '),
+                                Cast("reporting_fiscal_quarter", output_field=TextField()),
+                                Value(', "submission_dates":{ "publication_date": "'),
+                                Cast("published_date", output_field=TextField()),
+                                Value('", "certification_date": "'),
+                                Cast("certified_date", output_field=TextField()),
+                                Value('"}, "quarterly": '),
+                                Cast("quarter_format_flag", output_field=TextField()),
+                                Value("}"),
+                                output_field=TextField(),
+                            )
+                        )
+                    )
+                    .values("period"),
+                    output_field=TextField(),
                 ),
             )
-            .exclude(agency_name__isnull=True)
-            .values("agency_name", "abbreviation", "toptier_code", "current_total_budget_authority_amount", "periods")
+            .values("name", "toptier_code", "abbreviation", "current_total_budget_authority_amount", "periods")
         )
         return self.format_results(results)
 
     def format_results(self, result_list):
         results = []
         for result in result_list:
+            periods = [json.loads(x) for x in result["periods"]] if result.get("periods") else []
+            existing_periods = set([int(x["reporting_fiscal_period"]) for x in periods])
+            missing_periods = set({2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}).difference(existing_periods)
+            for x in missing_periods:
+                periods.append(
+                    {
+                        "reporting_fiscal_period": x,
+                        "reporting_fiscal_quarter": get_quarter_from_period(x),
+                        "submission_dates": {"publication_date": "", "certification_date": ""},
+                        "quarterly": x in [3, 6, 9, 12],
+                    }
+                )
             results.append(
                 {
-                    "agency_name": result["agency_name"],
+                    "agency_name": result["name"],
                     "abbreviation": result["abbreviation"],
                     "agency_code": result["toptier_code"],
-                    "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
-                    "periods": sorted(
-                        [json.loads(x) for x in result["periods"]], key=lambda x: x["reporting_fiscal_period"]
-                    )
-                    if result.get("periods")
-                    else None,
+                    "current_total_budget_authority_amount": result["current_total_budget_authority_amount"] or 0.00,
+                    "periods": sorted(periods, key=lambda x: x["reporting_fiscal_period"]),
                 }
             )
         return results
@@ -94,15 +113,12 @@ class PublishDates(AgencyBase, PaginationMixin):
         if "publication_date" in self.pagination.sort_key:
             self.validate_publication_sort(self.pagination.sort_key)
             sort_key = deepcopy(self.pagination.sort_key)
-            pub_sort = sort_key.split(",")[1]
+            # we get the index of the periods by subtracting 2, since we index from 0 and have no period 1
+            pub_sort = int(sort_key.split(",")[1]) - 2
             self.pagination.sort_key = "publication_date"
             results = sorted(
                 self.get_agency_data(),
-                key=lambda x: x["periods"][
-                    next(
-                        (index for (index, d) in enumerate(x["periods"]) if d["reporting_fiscal_period"] == pub_sort), 0
-                    )
-                ]["submission_dates"]["publication_date"],
+                key=lambda x: x["periods"][pub_sort]["submission_dates"]["publication_date"],
                 reverse=(self.pagination.sort_order == "desc"),
             )
         else:
