@@ -29,13 +29,14 @@ This endpoint returns an overview of government agency submission data.
         + Default: `current_total_budget_authority_amount`
         + Members
             + `current_total_budget_authority_amount`
-            + `percent_of_total_budgetary_resources`
             + `fiscal_period`
             + `fiscal_year`
             + `missing_tas_accounts_count`
+            + `missing_tas_accounts_total`
             + `obligation_difference`
-            + `recent_publication_date_certified`
+            + `percent_of_total_budgetary_resources`
             + `recent_publication_date`
+            + `recent_publication_date_certified`
             + `tas_obligation_not_in_gtas_total`
             + `unlinked_contract_award_count`
             + `unlinked_assistance_award_count`

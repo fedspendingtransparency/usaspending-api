@@ -16,16 +16,17 @@ class AgencyOverview(AgencyBase, PaginationMixin):
 
     def get(self, request, toptier_code):
         self.sortable_columns = [
-            "fiscal_year",
             "current_total_budget_authority_amount",
+            "fiscal_year",
+            "missing_tas_accounts_count",
             "missing_tas_accounts_total",
             "obligation_difference",
+            "percent_of_total_budgetary_resources",
             "recent_publication_date",
             "recent_publication_date_certified",
             "tas_obligation_not_in_gtas_total",
             "unlinked_contract_award_count",
             "unlinked_assistance_award_count",
-            "percent_of_total_budgetary_resources",
         ]
         self.default_sort_column = "current_total_budget_authority_amount"
         results = self.get_agency_overview()
@@ -146,6 +147,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
             key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key]
             if (
                 self.pagination.sort_key == "missing_tas_accounts_count"
+                or self.pagination.sort_key == "missing_tas_accounts_total"
                 or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
             )
             else (x[self.pagination.sort_key], x[self.pagination.secondary_sort_key])
