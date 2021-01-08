@@ -58,10 +58,10 @@ class AgencyDiscrepancies(AgencyBase, PaginationMixin):
             .exclude(obligated_amount=0)
             .values("tas_rendering_label", "obligated_amount")
             .annotate(tas=F("tas_rendering_label"), amount=F("obligated_amount"))
+            .values("tas", "amount")
         )
-        results = [{"tas": result["tas"], "amount": result["amount"]} for result in result_list]
         return sorted(
-            results,
+            result_list,
             key=lambda x: (x["amount"], x["tas"]) if self.pagination.sort_key == "amount" else x["tas"],
             reverse=self.pagination.sort_order == "desc",
         )
