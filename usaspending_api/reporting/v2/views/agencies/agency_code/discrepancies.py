@@ -56,7 +56,6 @@ class AgencyDiscrepancies(AgencyBase, PaginationMixin):
                 toptier_code=self.toptier_code, fiscal_year=fiscal_year, fiscal_period=fiscal_period
             )
             .exclude(obligated_amount=0)
-            .values("tas_rendering_label", "obligated_amount")
             .annotate(tas=F("tas_rendering_label"), amount=F("obligated_amount"))
             .values("tas", "amount")
         )
