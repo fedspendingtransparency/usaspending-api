@@ -60,9 +60,9 @@ class PublishDates(AgencyBase, PaginationMixin):
                     .annotate(
                         period=ArrayAgg(
                             ConcatAll(
-                                Value('{"reporting_fiscal_period": '),
+                                Value('{"period": '),
                                 Cast("reporting_fiscal_period", output_field=TextField()),
-                                Value(', "reporting_fiscal_quarter": '),
+                                Value(', "quarter": '),
                                 Cast("reporting_fiscal_quarter", output_field=TextField()),
                                 Value(', "submission_dates":{ "publication_date": "'),
                                 Cast("published_date", output_field=TextField()),
@@ -87,15 +87,15 @@ class PublishDates(AgencyBase, PaginationMixin):
         results = []
         for result in result_list:
             periods = [json.loads(x) for x in result["periods"]] if result.get("periods") else []
-            existing_periods = set([x["reporting_fiscal_period"] for x in periods])
+            existing_periods = set([x["period"] for x in periods])
             missing_periods = set({2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}).difference(existing_periods)
             for x in missing_periods:
                 periods.append(
                     {
-                        "reporting_fiscal_period": x,
-                        "reporting_fiscal_quarter": get_quarter_from_period(x),
+                        "period": x,
+                        "quarter": get_quarter_from_period(x),
                         "submission_dates": {"publication_date": "", "certification_date": ""},
-                        "quarterly": x in [3, 6, 9, 12],
+                        "quarterly": False,
                     }
                 )
             results.append(
@@ -104,7 +104,7 @@ class PublishDates(AgencyBase, PaginationMixin):
                     "abbreviation": result["abbreviation"],
                     "agency_code": result["toptier_code"],
                     "current_total_budget_authority_amount": result["current_total_budget_authority_amount"] or 0.00,
-                    "periods": sorted(periods, key=lambda x: x["reporting_fiscal_period"]),
+                    "periods": sorted(periods, key=lambda x: x["period"]),
                 }
             )
         return results
