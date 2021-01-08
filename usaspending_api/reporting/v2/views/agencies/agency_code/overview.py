@@ -4,6 +4,7 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMi
 
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
+from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -14,10 +15,12 @@ class AgencyOverview(AgencyBase, PaginationMixin):
 
     def get(self, request, toptier_code):
         self.sortable_columns = [
-            "fiscal_year",
             "current_total_budget_authority_amount",
+            "fiscal_year",
+            "missing_tas_accounts_count",
             "missing_tas_accounts_total",
             "obligation_difference",
+            "percent_of_total_budgetary_resources",
             "recent_publication_date",
             "recent_publication_date_certified",
             "tas_obligation_not_in_gtas_total",
@@ -77,12 +80,21 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                     .values("count"),
                     output_field=IntegerField(),
                 ),
+                gtas_total_budgetary_resources=Subquery(
+                    GTASSF133Balances.objects.filter(
+                        fiscal_year=OuterRef("fiscal_year"), fiscal_period=OuterRef("fiscal_period")
+                    )
+                    .annotate(the_sum=Func(F("total_budgetary_resources_cpe"), function="SUM"))
+                    .values("the_sum"),
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
+                ),
             )
             .values(
                 "fiscal_year",
                 "fiscal_period",
                 "total_dollars_obligated_gtas",
                 "total_budgetary_resources",
+                "gtas_total_budgetary_resources",
                 "total_diff_approp_ocpa_obligated_amounts",
                 "recent_publication_date",
                 "recent_publication_date_certified",
@@ -99,6 +111,10 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                 "fiscal_year": result["fiscal_year"],
                 "fiscal_period": result["fiscal_period"],
                 "current_total_budget_authority_amount": result["total_budgetary_resources"],
+                "total_budgetary_resources": result["gtas_total_budgetary_resources"],
+                "percent_of_total_budgetary_resources": round(
+                    result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2
+                ),
                 "recent_publication_date": result["recent_publication_date"],
                 "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
                 "tas_account_discrepancies_totals": {
@@ -118,6 +134,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
             key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key]
             if (
                 self.pagination.sort_key == "missing_tas_accounts_count"
+                or self.pagination.sort_key == "missing_tas_accounts_total"
                 or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
             )
             else (x[self.pagination.sort_key], x[self.pagination.secondary_sort_key])
