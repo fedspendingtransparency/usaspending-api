@@ -121,6 +121,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/recipient/state/](/api/v2/recipient/state/)|GET| Returns basic information about the specified state |
 |[/api/v2/recipient/state/awards/<FIPS\>/](/api/v2/recipient/state/awards/51/)|GET| Returns award breakdown based on FIPS |
 |[/api/v2/reporting/agencies/<TOPTIER_CODE\>/differences/](/api/v2/reporting/agencies/097/differences/)|GET| Returns About the Data information about differences in account balance and spending obligations for a specific agency/year/period |
+|[/api/v2/reporting/agencies/<TOPTIER_CODE\>/discrepancies/](/api/v2/reporting/agencies/097/discrepancies/)|GET| Returns TAS discrepancies of the specified agency's submission data for a specific FY/FP |
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency |
 |[/api/v2/references/award_types/](/api/v2/references/award_types/)|GET| Returns a map of award types by award grouping. |
 |[/api/v2/references/cfda/totals/<CFDA/>/](/api/v2/references/cfda/totals/10.555/)|GET| Provides total values for provided CFDA |
