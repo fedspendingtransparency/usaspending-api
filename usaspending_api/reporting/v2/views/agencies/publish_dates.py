@@ -30,7 +30,7 @@ class PublishDates(AgencyBase, PaginationMixin):
         regex_string = r"publication_date,([2-9]|1[0-2])"
         if not re.match(regex_string, sort_key):
             raise UnprocessableEntityException(
-                "publication_date sort param must be in the format 'publication_date,<fiscal_period>'"
+                "publication_date sort param must be in the format 'publication_date,<fiscal_period> where <fiscal_period> is in the range 2-12'"
             )
 
     def get_agency_data(self):
@@ -87,7 +87,7 @@ class PublishDates(AgencyBase, PaginationMixin):
         results = []
         for result in result_list:
             periods = [json.loads(x) for x in result["periods"]] if result.get("periods") else []
-            existing_periods = set([int(x["reporting_fiscal_period"]) for x in periods])
+            existing_periods = set([x["reporting_fiscal_period"] for x in periods])
             missing_periods = set({2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}).difference(existing_periods)
             for x in missing_periods:
                 periods.append(
@@ -152,7 +152,7 @@ class PublishDates(AgencyBase, PaginationMixin):
             request_data["sort"] = self.request.query_params.get("sort")
         else:
             request_data = TinyShield(models).block(self.request.query_params)
-        # since publication_date requires a variable that we can't check for using the enum check, we're doing it seperately
+        # since publication_date requires a variable that we can't check for using the enum check, we're doing it separately
         return Pagination(
             page=request_data["page"],
             limit=request_data["limit"],
