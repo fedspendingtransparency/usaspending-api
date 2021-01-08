@@ -5,7 +5,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import OuterRef, Subquery, TextField, F, Value, Func, DecimalField, Q
 from django.db.models.functions import Cast
 from django.utils.functional import cached_property
-from jsonpickle import json
+import json
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
@@ -90,6 +90,7 @@ class PublishDates(AgencyBase, PaginationMixin):
             existing_periods = set([x["period"] for x in periods])
             missing_periods = set({2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}).difference(existing_periods)
             for x in missing_periods:
+                # cannot always infer if the missing periods for 3, 6, 9, 12 should/would have been submitted as a quarterly, so defaulting to monthly for consistency
                 periods.append(
                     {
                         "period": x,
