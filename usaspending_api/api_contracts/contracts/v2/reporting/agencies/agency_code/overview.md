@@ -135,4 +135,4 @@ This endpoint returns an overview of government agency submission data.
     The difference in file A and file B obligations.
 + `unlinked_contract_award_count` (required, number)
 + `unlinked_assistance_award_count` (required, number)
-+ `assurance_statement_url` (required, number)
++ `assurance_statement_url` (required, string, nullable)
