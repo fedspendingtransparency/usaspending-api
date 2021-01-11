@@ -82,7 +82,8 @@ This endpoint returns an overview list of government agencies submission data.
                         },
                         "obligation_difference": 436376232652.87,
                         "unlinked_contract_award_count": 0,
-                        "unlinked_assistance_award_count": 0
+                        "unlinked_assistance_award_count": 0,
+                        "assurance_statement_url": "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2020/P09/075%20-%20Department%20of%20Health%20and%20Human%20Services%20(HHS)/2020-P09-075_Department%20of%20Health%20and%20Human%20Services%20(HHS)-Assurance_Statement.txt"
                     },
                     {
                         "agency_name": "Department of Treasury",
@@ -100,7 +101,8 @@ This endpoint returns an overview list of government agencies submission data.
                         },
                         "obligation_difference": 436376232652.87,
                         "unlinked_contract_award_count": 0,
-                        "unlinked_assistance_award_count": 0
+                        "unlinked_assistance_award_count": 0,
+                        "assurance_statement_url": "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2020/P09/020%20-%20Department%20of%20the%20Treasury%20(TREAS)/2020-P09-020_Department%20of%20the%20Treasury%20(TREAS)-Assurance_Statement.txt"
                     }
                 ]
             }
@@ -135,3 +137,4 @@ This endpoint returns an overview list of government agencies submission data.
     The difference in File A and File B obligations.
 + `unlinked_contract_award_count` (required, number)
 + `unlinked_assistance_award_count` (required, number)
++ `assurance_statement_url` (required, string, nullable)

@@ -62,6 +62,13 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                         toptier_code=OuterRef("toptier_code"),
                     ).values("certified_date")
                 ),
+                submission_is_quarter=Subquery(
+                    SubmissionAttributes.objects.filter(
+                        reporting_fiscal_year=OuterRef("fiscal_year"),
+                        reporting_fiscal_period=OuterRef("fiscal_period"),
+                        toptier_code=OuterRef("toptier_code"),
+                    ).values("quarter_format_flag")
+                ),
                 tas_obligations=Subquery(
                     ReportingAgencyTas.objects.filter(
                         fiscal_year=OuterRef("fiscal_year"),
@@ -106,6 +113,9 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "tas_obligations",
                 "tas_obligation_not_in_gtas_total",
                 "missing_tas_accounts",
+                "fiscal_year",
+                "fiscal_period",
+                "submission_is_quarter",
             )
         )
         return self.format_results(result_list)
@@ -133,6 +143,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
                 "unlinked_contract_award_count": 0,
                 "unlinked_assistance_award_count": 0,
+                "assurance_statement_url": self.create_assurance_statement_url(result),
             }
             for result in result_list
         ]

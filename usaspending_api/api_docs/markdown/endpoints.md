@@ -121,6 +121,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/recipient/state/](/api/v2/recipient/state/)|GET| Returns basic information about the specified state |
 |[/api/v2/recipient/state/awards/<FIPS\>/](/api/v2/recipient/state/awards/51/)|GET| Returns award breakdown based on FIPS |
 |[/api/v2/reporting/agencies/<TOPTIER_CODE\>/differences/](/api/v2/reporting/agencies/097/differences/)|GET| Returns About the Data information about differences in account balance and spending obligations for a specific agency/year/period |
+|[/api/v2/reporting/agencies/<TOPTIER_CODE\>/discrepancies/](/api/v2/reporting/agencies/097/discrepancies/)|GET| Returns TAS discrepancies of the specified agency's submission data for a specific FY/FP |
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency |
 |[/api/v2/references/award_types/](/api/v2/references/award_types/)|GET| Returns a map of award types by award grouping. |
 |[/api/v2/references/cfda/totals/<CFDA/>/](/api/v2/references/cfda/totals/10.555/)|GET| Provides total values for provided CFDA |
@@ -144,6 +145,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/references/total_budgetary_resources/](/api/v2/references/total_budgetary_resources/)|GET| Returns a list of total budgetary resources totalled by fiscal year and period. |
 |[/api/v2/reporting/agencies/<TOPTIER_CODE\>/overview/](/api/v2/reporting/agencies/020/overview/)|GET| Returns a list of submission data for the provided agency. |
 |[/api/v2/reporting/agencies/overview/](/api/v2/reporting/agencies/overview/)|GET| Returns About the Data information about all agencies with submissions in a provided fiscal year and period|
+|[/api/v2/reporting/agencies/publish_dates/](/api/v2/reporting/agencies/publish_dates/)|GET| Returns submission publication and certification information about all agencies with submissions in a provided fiscal year and period|
 |[/api/v2/reporting/agencies/<TOPTIER_CODE\>/<FISCAL_YEAR\>/<FISCAL_PERIOD\>/submission_history/](/api/v2/reporting/agencies/020/2020/12/submission_history/)|GET| Returns a list of submission publication dates and certified dates for the provided agency for the provided fiscal year and period. |
 |[/api/v2/search/new_awards_over_time/](/api/v2/search/new_awards_over_time/)|POST| Returns a list of time periods with the new awards in the appropriate period within the provided time range |
 |[/api/v2/search/spending_by_award/](/api/v2/search/spending_by_award/)|POST| Returns the fields of the filtered awards |
