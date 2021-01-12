@@ -2,13 +2,13 @@ from django.db.models import Sum, Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, List
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, ListMixin
+from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
-class FederalAccountList(ListMixin, AgencyBase):
+class FederalAccountList(PaginationMixin, AgencyBase):
     """
     Obtain the list of federal accounts and treasury accounts for a specific agency in a
     single fiscal year based on whether or not that federal account/treasury account has ever
@@ -51,6 +51,8 @@ class FederalAccountList(ListMixin, AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        self.sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
+        self.default_sort_column = "obligated_amount"
         results = self.format_results(self.get_federal_account_list())
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(

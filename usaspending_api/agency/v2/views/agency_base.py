@@ -14,7 +14,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 )
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models import ToptierAgency, Agency
 
 
 class AgencyBase(APIView):
@@ -23,6 +23,13 @@ class AgencyBase(APIView):
         # We don't have to do any validation here because Django has already checked this to be
         # either a three or four digit numeric string based on the regex pattern in our route url.
         return self.kwargs["toptier_code"]
+
+    @cached_property
+    def agency_id(self):
+        agency = Agency.objects.filter(toptier_flag=True, toptier_agency=self.toptier_agency).values("id")
+        if not agency:
+            raise NotFound(f"Cannot find Agency for toptier code of '{self.toptier_code}'")
+        return agency[0]["id"]
 
     @cached_property
     def fiscal_year(self):
@@ -61,23 +68,27 @@ class AgencyBase(APIView):
     def standard_response_messages(self):
         return [get_account_data_time_period_message()] if self.fiscal_year < 2017 else []
 
+    @property
+    def filter(self):
+        return self.request.query_params.get("filter")
 
-class ListMixin:
+    @staticmethod
+    def validate_fiscal_period(request_data):
+        fiscal_period = request_data["fiscal_period"]
+        if fiscal_period < 2 or fiscal_period > 12:
+            raise UnprocessableEntityException(f"fiscal_period must be in the range 2-12")
+
+
+class PaginationMixin:
     @cached_property
     def pagination(self):
-        sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
-        default_sort_column = "obligated_amount"
-        model = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
+        model = customize_pagination_with_sort_columns(self.sortable_columns, self.default_sort_column)
         request_data = TinyShield(model).block(self.request.query_params)
         return Pagination(
             page=request_data["page"],
             limit=request_data["limit"],
             lower_limit=(request_data["page"] - 1) * request_data["limit"],
             upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", "obligated_amount"),
+            sort_key=request_data.get("sort", self.default_sort_column),
             sort_order=request_data["order"],
         )
-
-    @property
-    def filter(self):
-        return self.request.query_params.get("filter")
