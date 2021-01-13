@@ -14,11 +14,13 @@ SUBMISSION_WINDOW_DAYS = 45
 
 
 def current_fiscal_date() -> FiscalDateTime:
-    return FiscalDateTime.today()
+    """FiscalDateTime.today() returns calendar date! Add 3 months to convert to fiscal"""
+    return FiscalDateTime.today() + relativedelta(months=3)
 
 
 def current_fiscal_year() -> int:
-    return current_fiscal_date().year
+    """Return the year from the fiscal date"""
+    return current_fiscal_date().year  # Don't use `.fiscal_year` since the datetime is already offset
 
 
 def create_fiscal_year_list(start_year=2000, end_year=None):

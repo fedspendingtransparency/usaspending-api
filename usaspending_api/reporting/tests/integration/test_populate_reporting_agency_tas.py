@@ -112,9 +112,13 @@ def test_run_script(setup_test_data):
     assert results[0].diff_approp_ocpa_obligated_amounts == Decimal("-1.30")
 
     # Making sure that 2 different agencies under the same year/period don't get rolled up together
-    results = ReportingAgencyTas.objects.filter(fiscal_year=2019, fiscal_period=3).all()
+    results = (
+        ReportingAgencyTas.objects.filter(fiscal_year=2019, fiscal_period=3)
+        .order_by("diff_approp_ocpa_obligated_amounts")
+        .all()
+    )
 
     assert len(results) == 3
-    assert results[0].diff_approp_ocpa_obligated_amounts == 29.5
-    assert results[1].diff_approp_ocpa_obligated_amounts == Decimal("-1.30")
-    assert results[2].diff_approp_ocpa_obligated_amounts == 20.5
+    assert results[0].diff_approp_ocpa_obligated_amounts == Decimal("-1.30")
+    assert results[1].diff_approp_ocpa_obligated_amounts == 20.5
+    assert results[2].diff_approp_ocpa_obligated_amounts == 29.5
