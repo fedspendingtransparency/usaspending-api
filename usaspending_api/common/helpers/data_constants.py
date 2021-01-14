@@ -18,7 +18,7 @@ state_to_code_dict = {
     "kansas": "KS",
     "kentucky": "KY",
     "louisiana": "LA",
-    "manine": "ME",
+    "maine": "ME",
     "maryland": "MD",
     "massachusetts": "MA",
     "michigan": "MI",

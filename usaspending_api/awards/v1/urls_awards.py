@@ -3,7 +3,7 @@ from django.conf.urls import url
 from usaspending_api.awards.v1 import views
 from usaspending_api.common.views import RemovedEndpointView
 
-# map reqest types to viewset method; replace this with a router
+# map request types to viewset method; replace this with a router
 award_list = views.AwardListViewSet.as_view({"get": "list", "post": "list"})
 award_detail = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
 award_total = views.AwardAggregateViewSet.as_view({"get": "list", "post": "list"})

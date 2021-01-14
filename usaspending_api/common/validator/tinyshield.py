@@ -49,7 +49,7 @@ VALIDATORS = {
 # Decorator
 
 # Note: Because we are using class based views, this is the only way to create a decorator that takes arguments.
-# With CBVs, the 'post' function recieves an instance of the CBV itself, rather than a request object
+# With CBVs, the 'post' function receives an instance of the CBV itself, rather than a request object
 # As a result, this decorator specifies that it decorates the 'post' function using the method_decorator
 # util function. In later iterations, we will need to add GET decorators that handle the GET data
 # somewhat differently.

@@ -1,6 +1,7 @@
 import logging
-import subprocess
 import re
+import shutil
+import subprocess
 import time
 
 from calendar import monthrange, isleap
@@ -111,7 +112,7 @@ def generate_matviews(materialized_views_as_traditional_views=False):
     with connection.cursor() as cursor:
         cursor.execute(CREATE_READONLY_SQL)
         cursor.execute(DEPENDENCY_FILEPATH.read_text())
-        subprocess.call("python {} --quiet".format(MATVIEW_GENERATOR_FILE), shell=True)
+        subprocess.call(f"python3 {MATVIEW_GENERATOR_FILE} --dest {DEFAULT_MATIVEW_DIR} --quiet", shell=True)
         for matview_sql_file in TEMP_SQL_FILES:
             sql = matview_sql_file.read_text()
             if materialized_views_as_traditional_views:
@@ -119,6 +120,8 @@ def generate_matviews(materialized_views_as_traditional_views=False):
             cursor.execute(sql)
         for view_sql_file in OVERLAY_VIEWS:
             cursor.execute(view_sql_file.read_text())
+
+    shutil.rmtree(DEFAULT_MATIVEW_DIR)
 
 
 def get_pagination(results, limit, page, benchmarks=False):

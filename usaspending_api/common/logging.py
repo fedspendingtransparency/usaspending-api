@@ -76,7 +76,7 @@ class LoggingMiddleware(MiddlewareMixin):
 
     def process_response(self, request, response):
         """
-        Func gets called before reponse is returned from server, stores response fields and logs
+        Func gets called before response is returned from server, stores response fields and logs
         request and response to server.log
         """
 
