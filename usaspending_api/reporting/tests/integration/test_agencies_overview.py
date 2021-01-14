@@ -1,4 +1,6 @@
 import pytest
+
+from django.conf import settings
 from model_mommy import mommy
 from rest_framework import status
 
@@ -23,7 +25,8 @@ def setup_test_data(db):
         reporting_fiscal_year=current_fiscal_year(),
         reporting_fiscal_period=get_final_period_of_quarter(
             calculate_last_completed_fiscal_quarter(current_fiscal_year())
-        ),
+        )
+        or 3,
     )
     mommy.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True)
     mommy.make("references.Agency", id=2, toptier_agency_id=2, toptier_flag=True)
@@ -131,7 +134,7 @@ def setup_test_data(db):
         reporting_agency_overview_id=2,
         toptier_code=987,
         fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())),
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
         total_dollars_obligated_gtas=18.6,
         total_budgetary_resources=100,
         total_diff_approp_ocpa_obligated_amounts=0,
@@ -141,7 +144,7 @@ def setup_test_data(db):
         reporting_agency_overview_id=3,
         toptier_code="001",
         fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())),
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
         total_dollars_obligated_gtas=20.0,
         total_budgetary_resources=10.0,
         total_diff_approp_ocpa_obligated_amounts=10.0,
@@ -165,11 +168,16 @@ def setup_test_data(db):
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=987,
-        fiscal_year=2020,
-        fiscal_period=12,
+        fiscal_year=current_fiscal_year(),
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
         tas_rendering_label="TAS 2",
         obligated_amount=12.0,
     )
+
+
+assurance_statement_1 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/P06/123%20-%20Test%20Agency%20(ABC)/2019-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
+assurance_statement_2 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2021/P03/987%20-%20Test%20Agency%202%20(XYZ)/2021-P03-987_Test%20Agency%202%20(XYZ)-Assurance_Statement.txt"
+assurance_statement_3 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2021/P03/001%20-%20Test%20Agency%203%20(AAA)/2021-P03-001_Test%20Agency%203%20(AAA)-Assurance_Statement.txt"
 
 
 def test_basic_success(setup_test_data, client):
@@ -195,6 +203,7 @@ def test_basic_success(setup_test_data, client):
             "obligation_difference": 0.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2,
         },
         {
             "agency_name": "Test Agency 3",
@@ -213,6 +222,7 @@ def test_basic_success(setup_test_data, client):
             "obligation_difference": 10.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_3,
         },
     ]
     assert response["results"] == expected_results
@@ -241,6 +251,7 @@ def test_filter(setup_test_data, client):
             "obligation_difference": 0.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2,
         }
     ]
     assert response["results"] == expected_results
@@ -269,6 +280,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 0.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2,
         }
     ]
     assert response["results"] == expected_results
@@ -295,6 +307,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 10.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_3,
         }
     ]
     assert response["results"] == expected_results
@@ -321,6 +334,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 10.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_3,
         },
         {
             "agency_name": "Test Agency 2",
@@ -339,6 +353,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 0.0,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_2,
         },
     ]
     assert response["results"] == expected_results
@@ -368,6 +383,7 @@ def test_fiscal_year_period_selection(setup_test_data, client):
             "obligation_difference": 84931.95,
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_1,
         }
     ]
     assert response["results"] == expected_results

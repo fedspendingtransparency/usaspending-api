@@ -200,7 +200,7 @@ def remove_unittest_queue_data_files(queue_to_tear_down):
     """
     q = queue_to_tear_down
 
-    # Check that it's the unit test queue before removings
+    # Check that it's the unit test queue before removing
     assert q.url.split("/")[-1] == UNITTEST_FAKE_QUEUE_NAME
     queue_data_file = q._QUEUE_DATA_FILE
     lock_file_path = Path(queue_data_file + ".lock")

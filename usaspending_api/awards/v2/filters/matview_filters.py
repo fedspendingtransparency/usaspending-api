@@ -299,7 +299,7 @@ def matview_search_filter(filters, model, for_downloads=False):
                 or_queryset |= Q(extent_competed__exact=v)
             queryset = queryset.filter(or_queryset)
 
-        # Because these two filters OR with each other, we need to know about the presense of both filters to know what to do
+        # Because these two filters OR with each other, we need to know about the presence of both filters to know what to do
         # This filter was picked arbitrarily to be the one that checks for the other
         elif key == TasCodes.underscore_name:
             q = TasCodes.build_tas_codes_filter(queryset, value)
