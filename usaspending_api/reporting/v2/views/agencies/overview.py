@@ -82,7 +82,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                     .values("the_sum"),
                     output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
-                missing_tas_accounts=Subquery(
+                missing_tas_accounts_count=Subquery(
                     ReportingAgencyMissingTas.objects.filter(
                         fiscal_year=OuterRef("fiscal_year"),
                         fiscal_period=OuterRef("fiscal_period"),
@@ -105,8 +105,11 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "recent_publication_date_certified",
                 "tas_obligations",
                 "tas_obligation_not_in_gtas_total",
-                "missing_tas_accounts",
-            )
+                "missing_tas_accounts_count",
+                "fiscal_year",
+                "fiscal_period",
+                "submission_is_quarter",
+            ).order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
         )
         return self.format_results(result_list)
 
@@ -128,7 +131,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                     "gtas_obligation_total": result["total_dollars_obligated_gtas"],
                     "tas_accounts_total": result["tas_obligations"],
                     "tas_obligation_not_in_gtas_total": result["tas_obligation_not_in_gtas_total"] or 0.0,
-                    "missing_tas_accounts_count": result["missing_tas_accounts"],
+                    "missing_tas_accounts_count": result["missing_tas_accounts_count"],
                 },
                 "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
                 "unlinked_contract_award_count": 0,
@@ -136,16 +139,6 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             }
             for result in result_list
         ]
-        results = sorted(
-            results,
-            key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key]
-            if (
-                self.pagination.sort_key == "missing_tas_accounts_count"
-                or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
-            )
-            else x[self.pagination.sort_key],
-            reverse=self.pagination.sort_order == "desc",
-        )
         return results
 
     @cached_property
