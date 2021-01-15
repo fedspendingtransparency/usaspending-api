@@ -1,11 +1,15 @@
-from rest_framework.response import Response
+import logging
 from rest_framework.views import APIView
 from requests import post
+from rest_framework import status
+from rest_framework.response import Response
 from time import sleep
 from django.conf import settings
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.exceptions import NoDataFoundException, InternalServerError, ServiceUnavailable
 
 CFDA_DICTIONARY = None
+logger = logging.getLogger("console")
 
 
 class CFDAViewSet(APIView):
@@ -26,15 +30,19 @@ class CFDAViewSet(APIView):
             result = CFDA_DICTIONARY.get(cfda)
 
             if not result:
-                return Response(status=404)
+                raise NoDataFoundException(f"I can't find CFDA code '{cfda}' in my list; please check that is this the correct code.")
 
-            response = {
-                "cfda": result["cfda"],
-                "posted": result["posted"],
-                "closed": result["closed"],
-                "archived": result["archived"],
-                "forecasted": result["forecasted"],
-            }
+            try:
+                response = {
+                    "cfda": result["cfda"],
+                    "posted": result["posted"],
+                    "closed": result["closed"],
+                    "archived": result["archived"],
+                    "forecasted": result["forecasted"],
+                }
+            except KeyError:
+                raise InternalServerError("I can't process the data I received about CFDAs.")
+
         else:
             response = {"results": CFDA_DICTIONARY.values()}
 
@@ -57,7 +65,22 @@ class CFDAViewSet(APIView):
             CFDA_DICTIONARY = response
 
     def _request_from_grants_api(self):
-        return post(
+
+        settings.GRANTS_API_KEY = 'ADCE6A94FB706D16E05400144FF910B3'
+
+        # from http.client import HTTPConnection
+        # HTTPConnection.debuglevel = 1
+        # logging.basicConfig()
+        # logging.getLogger().setLevel(logging.DEBUG)
+        # requests_log = logging.getLogger("requests.packages.urllib3")
+        # requests_log.setLevel(logging.DEBUG)
+        # requests_log.propagate = True
+        
+        grants_response = post(
             "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals",
             headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
-        ).json()["cfdas"]
+        )
+        if grants_response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+            raise ServiceUnavailable("Could not get list of CFDAs from the grants website.")
+        
+        return grants_response.json()["cfdas"]
