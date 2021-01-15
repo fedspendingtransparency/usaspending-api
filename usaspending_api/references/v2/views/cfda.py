@@ -41,6 +41,7 @@ class CFDAViewSet(APIView):
                     "forecasted": result["forecasted"],
                 }
             except KeyError:
+                logger.exception("")
                 raise InternalServerError("I can't process the data I received about CFDAs.")
 
         else:
@@ -65,8 +66,6 @@ class CFDAViewSet(APIView):
             CFDA_DICTIONARY = response
 
     def _request_from_grants_api(self):
-
-        settings.GRANTS_API_KEY = 'ADCE6A94FB706D16E05400144FF910B3'
 
         # from http.client import HTTPConnection
         # HTTPConnection.debuglevel = 1
