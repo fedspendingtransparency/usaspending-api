@@ -41,7 +41,7 @@ class CFDAViewSet(APIView):
                     "forecasted": result["forecasted"],
                 }
             except KeyError:
-                logger.exception("")
+                logger.exception(f"Dictionary from https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not in expected format: {response}")
                 raise InternalServerError("I can't process the data I received about CFDAs.")
 
         else:
@@ -80,6 +80,7 @@ class CFDAViewSet(APIView):
             headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
         )
         if grants_response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+            logger.exception("https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)")
             raise ServiceUnavailable("Could not get list of CFDAs from the grants website.")
         
         return grants_response.json()["cfdas"]
