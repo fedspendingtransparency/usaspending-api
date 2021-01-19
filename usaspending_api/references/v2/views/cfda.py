@@ -30,7 +30,9 @@ class CFDAViewSet(APIView):
             result = CFDA_DICTIONARY.get(cfda)
 
             if not result:
-                raise NoDataFoundException(f"I can't find CFDA code '{cfda}' in my list; please check that is this the correct code.")
+                raise NoDataFoundException(
+                    f"I can't find CFDA code '{cfda}' in my list; please check that is this the correct code."
+                )
 
             try:
                 response = {
@@ -41,7 +43,9 @@ class CFDAViewSet(APIView):
                     "forecasted": result["forecasted"],
                 }
             except KeyError:
-                logger.exception(f"Dictionary from https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not in expected format: {response}")
+                logger.exception(
+                    f"Dictionary from https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not in expected format: {response}"
+                )
                 raise InternalServerError("I can't process the data I received about CFDAs.")
 
         else:
@@ -66,18 +70,17 @@ class CFDAViewSet(APIView):
             CFDA_DICTIONARY = response
 
     def _request_from_grants_api(self):
-
-        # settings.GRANTS_API_KEY = 'ADCE6A94FB706D16E05400144FF910B3'
-
         grants_response = post(
             "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals",
             headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
         )
 
         print(grants_response)
-        
-        if grants_response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
-            logger.exception("https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)")
+
+        if grants_response["status_code"] == status.HTTP_503_SERVICE_UNAVAILABLE:
+            logger.exception(
+                "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)"
+            )
             raise ServiceUnavailable("Could not get list of CFDAs from the grants website.")
-        
+
         return grants_response.json()["cfdas"]
