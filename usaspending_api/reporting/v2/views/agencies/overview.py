@@ -114,7 +114,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             .order_by(
                 f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key if self.pagination.sort_key not in ['unlinked_contract_award_count','unlinked_assistance_award_count'] else self.default_sort_column}"
             )
-            # currently we are just returning 0 for the unlinked awards, once this is removed, we should be able to 
+            # currently we are just returning 0 for the unlinked awards, once this is removed, we should be able to remove this conditional
         )
         return self.format_results(result_list)
 
