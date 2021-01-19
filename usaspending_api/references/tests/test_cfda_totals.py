@@ -1,45 +1,32 @@
 import pytest
+import requests
+from mock import patch, Mock
+from rest_framework import status
 
-from django.conf import settings
-from django.core.management import call_command
+# @patch("requests.post")
+# def mock503():
+#     return {"status_code": status.HTTP_503_SERVICE_UNAVAILABLE}
 
-from usaspending_api.references.models import Cfda
+
+class Mock503:
+    @staticmethod
+    def status_code():
+        return status.HTTP_503_SERVICE_UNAVAILABLE
+
+    @staticmethod
+    def json():
+        return {"cfdas": None}
 
 
-# Scoping to module would save time, but db object is function-scoped
-@pytest.fixture(scope="function")
 @pytest.mark.django_db
-def cfda_data(db):
-    "Load from small test CSV to test database"
-    file_path = settings.APP_DIR / "references" / "management" / "commands" / "cfda_sample.csv"
-    fullpath = "file://{}".format(file_path)
+def test_service_unavailable(client, monkeypatch):
+    def mock_post(*args, **kwargs):
+        return Mock503()
 
-    call_command("loadcfda", fullpath)
+    monkeypatch.setattr(requests, "post", mock_post)
 
+    with pytest.raises(Exception) as e_info:
+        client.get("/api/v2/references/cfda/totals/")
+    print(e_info)
+    assert e_info == 0
 
-# @pytest.mark.django_db
-def test_cfda_load(cfda_data):
-    """
-    Ensure cfda data can can be loaded from source file
-    """
-
-    pass
-
-
-# @pytest.mark.django_db
-def test_program_number(cfda_data):
-    """
-    Make sure an instance of a program number is properly created
-    """
-
-    Cfda.objects.get(program_number="10.054", program_title="Emergency Conservation Program")
-
-
-# @pytest.mark.django_db
-def test_account_identification(cfda_data):
-    """
-    Make sure a account identification is properly mapped to program_number
-    """
-    Cfda.objects.get(program_number="10.03", account_identification="12-1600-0-1-352;")
-
-    #        assert(subtier.department == department)

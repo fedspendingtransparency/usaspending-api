@@ -67,18 +67,15 @@ class CFDAViewSet(APIView):
 
     def _request_from_grants_api(self):
 
-        # from http.client import HTTPConnection
-        # HTTPConnection.debuglevel = 1
-        # logging.basicConfig()
-        # logging.getLogger().setLevel(logging.DEBUG)
-        # requests_log = logging.getLogger("requests.packages.urllib3")
-        # requests_log.setLevel(logging.DEBUG)
-        # requests_log.propagate = True
-        
+        # settings.GRANTS_API_KEY = 'ADCE6A94FB706D16E05400144FF910B3'
+
         grants_response = post(
             "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals",
             headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
         )
+
+        print(grants_response)
+        
         if grants_response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
             logger.exception("https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)")
             raise ServiceUnavailable("Could not get list of CFDAs from the grants website.")
