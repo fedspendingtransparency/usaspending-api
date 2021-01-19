@@ -117,10 +117,10 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "missing_tas_accounts_count",
                 "fiscal_year",
                 "fiscal_period",
-                "missing_tas_accounts",
+                "missing_tas_accounts_count",
                 "fiscal_year",
                 "fiscal_period",
-                "submission_is_quarter"
+                "submission_is_quarter",
             )
             .order_by(
                 f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key if self.pagination.sort_key not in ['unlinked_contract_award_count','unlinked_assistance_award_count'] else self.default_sort_column}"
