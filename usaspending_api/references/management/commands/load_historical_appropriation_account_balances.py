@@ -2,7 +2,7 @@
 This is a quick and dirty loader for a "one off" dump of CARS File A data to support the Agency 2.0
 feature on USAspending.  It is expected that this dump will be regenerated several times during
 feature development to include more fields and more fiscal years.  I have made the assumption that
-writing a loader for this will shorten development cycles as we recieve new files since the loader
+writing a loader for this will shorten development cycles as we receive new files since the loader
 SHOULD only need minor tweaks moving forward to support new files.
 
 The process:

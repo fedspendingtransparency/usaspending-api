@@ -4,7 +4,7 @@ from zipfile import ZipFile
 def extract_single_file_zip(zip_file_path, destination_directory_path):
     """
     Accepts a zip file path and destination directory path then extracts a single file from zip file
-    into the desintation directory.  ZIP archive must contain one and only one file.
+    into the destination directory.  ZIP archive must contain one and only one file.
 
     Returns the file path of the extracted file.
     """

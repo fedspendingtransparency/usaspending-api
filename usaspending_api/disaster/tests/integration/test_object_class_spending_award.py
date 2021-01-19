@@ -87,7 +87,7 @@ def test_object_class_spending_filters_on_defc(
 
 
 @pytest.mark.django_db
-def test_object_class_spending_filters_on_object_class_existance(
+def test_object_class_spending_filters_on_object_class_existence(
     client, elasticsearch_account_index, award_count_sub_schedule, basic_faba, monkeypatch, helpers
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)

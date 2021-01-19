@@ -38,7 +38,7 @@ def test_program_number(cfda_data):
 # @pytest.mark.django_db
 def test_account_identification(cfda_data):
     """
-    Make sure a account identication is properly mapped to program_number
+    Make sure a account identification is properly mapped to program_number
     """
     Cfda.objects.get(program_number="10.03", account_identification="12-1600-0-1-352;")
 

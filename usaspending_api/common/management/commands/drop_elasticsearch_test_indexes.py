@@ -24,7 +24,7 @@ class Command(BaseCommand):
         else:
             logger.warning(
                 "Attempted to drop All Elasticsearch indexes matching '{}' from {} but did "
-                "not receive a positive acknowledgement.  Is that a problem?  ¯\\_(ツ)_/¯".format(
+                "not receive a positive acknowledgment.  Is that a problem?  ¯\\_(ツ)_/¯".format(
                     TEST_INDEX_NAME_PATTERN, settings.ES_HOSTNAME
                 )
             )

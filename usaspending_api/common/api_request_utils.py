@@ -84,7 +84,7 @@ class FilterGenerator:
     # We should refactor create_from_query_params
     # and create_from_request_body into a single
     # method that can create filters based on passed-in
-    # paramaters without needing to know about the structure
+    # parameters without needing to know about the structure
     # of the request itself (e.g., GET vs POST)
     def create_from_query_params(self, parameters):
         """

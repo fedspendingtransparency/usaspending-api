@@ -153,10 +153,10 @@ class Command(BaseCommand):
             " (only applies if --local is also provided).",
         )
         parser.add_argument(
-            "--empty-asssistance-file",
-            dest="empty_asssistance_file",
+            "--empty-assistance-file",
+            dest="empty_assistance_file",
             default="",
-            help="Empty assisstance file for uploading",
+            help="Empty assistance file for uploading",
         )
         parser.add_argument(
             "--empty-contracts-file", dest="empty_contracts_file", default="", help="Empty contracts file for uploading"
@@ -182,9 +182,9 @@ class Command(BaseCommand):
         fiscal_years = options["fiscal_years"]
         placeholders = options["placeholders"]
         cleanup = options["cleanup"]
-        empty_asssistance_file = options["empty_asssistance_file"]
+        empty_assistance_file = options["empty_assistance_file"]
         empty_contracts_file = options["empty_contracts_file"]
-        if placeholders and (not empty_asssistance_file or not empty_contracts_file):
+        if placeholders and (not empty_assistance_file or not empty_contracts_file):
             raise Exception("Placeholder arg provided but empty files not provided")
 
         current_date = datetime.date.today()
@@ -232,7 +232,7 @@ class Command(BaseCommand):
                         logger.info(f"Skipping already uploaded: {full_file_name}")
                         continue
                     if placeholders:
-                        empty_file = empty_contracts_file if award_type == "contracts" else empty_asssistance_file
+                        empty_file = empty_contracts_file if award_type == "contracts" else empty_assistance_file
                         self.upload_placeholder(file_name=full_file_name, empty_file=empty_file)
                     else:
                         self.download(
