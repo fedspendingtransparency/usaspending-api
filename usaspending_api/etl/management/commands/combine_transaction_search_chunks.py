@@ -97,9 +97,15 @@ class Command(BaseCommand):
             constraint_name_temp = constraint_name + "_temp"
             constraint_name_old = constraint_name + "_old"
 
-            create_temp_constraints.append(f"ALTER TABLE public.{TABLE_NAME}_temp ADD CONSTRAINT {constraint_name_temp} {row[1]};")
-            rename_constraints_old.append(f"ALTER TABLE public.{TABLE_NAME}_old RENAME CONSTRAINT {constraint_name} TO {constraint_name_old};")
-            rename_constraints_temp.append(f"ALTER TABLE public.{TABLE_NAME} RENAME CONSTRAINT {constraint_name_temp} TO {constraint_name};")
+            create_temp_constraints.append(
+                f"ALTER TABLE public.{TABLE_NAME}_temp ADD CONSTRAINT {constraint_name_temp} {row[1]};"
+            )
+            rename_constraints_old.append(
+                f"ALTER TABLE public.{TABLE_NAME}_old RENAME CONSTRAINT {constraint_name} TO {constraint_name_old};"
+            )
+            rename_constraints_temp.append(
+                f"ALTER TABLE public.{TABLE_NAME} RENAME CONSTRAINT {constraint_name_temp} TO {constraint_name};"
+            )
 
             self.constraint_names.append(constraint_name)
 
@@ -123,7 +129,9 @@ class Command(BaseCommand):
             # Ensure that the index hasn't already been created by a constraint
             if index_name not in self.constraint_names:
                 create_temp_index_sql = row[1].replace(index_name, index_name_temp)
-                create_temp_index_sql = create_temp_index_sql.replace(f"public.{TABLE_NAME}", f"public.{TABLE_NAME}_temp")
+                create_temp_index_sql = create_temp_index_sql.replace(
+                    f"public.{TABLE_NAME}", f"public.{TABLE_NAME}_temp"
+                )
                 create_temp_indexes.append(create_temp_index_sql)
 
                 rename_indexes_old.append(f"ALTER INDEX IF EXISTS {index_name} RENAME TO {index_name_old};")
