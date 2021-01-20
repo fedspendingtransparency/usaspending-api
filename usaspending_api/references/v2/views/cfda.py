@@ -1,4 +1,3 @@
-import logging
 from rest_framework.views import APIView
 from requests import post
 from rest_framework import status
@@ -9,7 +8,6 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import NoDataFoundException, InternalServerError, ServiceUnavailable
 
 CFDA_DICTIONARY = None
-logger = logging.getLogger("console")
 
 
 class CFDAViewSet(APIView):
@@ -43,10 +41,9 @@ class CFDAViewSet(APIView):
                     "forecasted": result["forecasted"],
                 }
             except KeyError:
-                logger.exception(
+                raise InternalServerError(
                     f"Dictionary from https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not in expected format: {response}"
                 )
-                raise InternalServerError("I can't process the data I received about CFDAs.")
 
         else:
             response = {"results": CFDA_DICTIONARY.values()}
@@ -74,8 +71,6 @@ class CFDAViewSet(APIView):
             "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals",
             headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
         )
-
-        print(grants_response)
 
         if grants_response["status_code"] == status.HTTP_503_SERVICE_UNAVAILABLE:
             logger.exception(
