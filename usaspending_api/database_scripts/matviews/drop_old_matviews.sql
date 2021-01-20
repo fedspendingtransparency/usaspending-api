@@ -10,4 +10,3 @@ DROP MATERIALIZED VIEW IF EXISTS mv_pre2008_award_search_old;
 DROP MATERIALIZED VIEW IF EXISTS subaward_view_old;
 DROP MATERIALIZED VIEW IF EXISTS summary_state_view_old;
 DROP MATERIALIZED VIEW IF EXISTS tas_autocomplete_matview_old;
-DROP MATERIALIZED VIEW IF EXISTS transaction_search_old;

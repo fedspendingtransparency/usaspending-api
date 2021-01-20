@@ -13,7 +13,7 @@ class TransactionSearch(models.Model):
     """
 
     transaction = models.OneToOneField(TransactionNormalized, on_delete=models.DO_NOTHING, primary_key=True)
-    award = models.OneToOneField(Award, on_delete=models.DO_NOTHING)
+    award = models.ForeignKey(Award, on_delete=models.DO_NOTHING)
     modification_number = models.TextField(null=True)
     detached_award_proc_unique = models.TextField(null=True)
     afa_generated_unique = models.TextField(null=True)

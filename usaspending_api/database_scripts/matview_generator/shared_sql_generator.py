@@ -23,6 +23,8 @@ TEMPLATE = {
     "grant_select": "GRANT SELECT ON {} TO {};",
     "sql_print_output": "DO $$ BEGIN RAISE NOTICE '{}'; END $$;",
     "insert_into_table": "INSERT INTO {} SELECT * FROM {};",
+    "read_indexes": "SELECT indexname, indexdef FROM pg_indexes WHERE tablename = '{}';",
+    "read_constraints": "select conname, pg_get_constraintdef(oid) from pg_constraint where contype IN ('p', 'f') and conrelid = '{}'::regclass;",
 }
 
 

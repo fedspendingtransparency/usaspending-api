@@ -11,6 +11,8 @@ from usaspending_api.common.matview_manager import DEFAULT_CHUNKED_MATIVEW_DIR
 
 logger = logging.getLogger("script")
 
+TABLE_NAME = "transaction_search"
+
 
 class Command(BaseCommand):
 
@@ -18,6 +20,8 @@ class Command(BaseCommand):
     This script combines the chunked Universal Transaction Matviews and
     combines them into a single table.
     """
+
+    constraint_names = []
 
     def add_arguments(self, parser):
         parser.add_argument("--chunk-count", default=10, help="Number of chunked matviews to read from", type=int)
@@ -48,17 +52,24 @@ class Command(BaseCommand):
 
         logger.info(f"Chunk Count: {chunk_count}")
 
+        # Constraints must be read first, so indexes created by pk/fk are not repeated
+        create_temp_constraints, rename_constraints = self.read_constraint_definitions()
+        create_temp_indexes, rename_indexes = self.read_index_definitions()
+
         with Timer("Recreating table"):
             self.recreate_matview()
 
         with Timer("Inserting data into table"):
             self.insert_matview_data(chunk_count)
 
+        with Timer("Creating table constraints"):
+            self.create_constraints(create_temp_constraints)
+
         with Timer("Creating table indexes"):
-            self.create_indexes(index_concurrency)
+            self.create_indexes(create_temp_indexes, index_concurrency)
 
         with Timer("Swapping Tables/Indexes"):
-            self.swap_matviews()
+            self.swap_matviews(rename_indexes, rename_constraints)
 
         if not options["keep_old_data"]:
             with Timer("Clearing old table"):
@@ -70,6 +81,55 @@ class Command(BaseCommand):
 
         with Timer("Granting Table Permissions"):
             self.grant_matview_permissions()
+
+    def read_constraint_definitions(self):
+        indexes_sql = (self.matview_dir / "componentized" / "transaction_search__constraints.sql").read_text()
+
+        with connection.cursor() as cursor:
+            cursor.execute(indexes_sql)
+            rows = cursor.fetchall()
+
+        create_temp_constraints = []
+        rename_constraints_old = []
+        rename_constraints_temp = []
+        for row in rows:
+            constraint_name = row[0]
+            constraint_name_temp = constraint_name + "_temp"
+            constraint_name_old = constraint_name + "_old"
+
+            create_temp_constraints.append(f"ALTER TABLE public.{TABLE_NAME}_temp ADD CONSTRAINT {constraint_name_temp} {row[1]};")
+            rename_constraints_old.append(f"ALTER TABLE public.{TABLE_NAME}_old RENAME CONSTRAINT {constraint_name} TO {constraint_name_old};")
+            rename_constraints_temp.append(f"ALTER TABLE public.{TABLE_NAME} RENAME CONSTRAINT {constraint_name_temp} TO {constraint_name};")
+
+            self.constraint_names.append(constraint_name)
+
+        return create_temp_constraints, rename_constraints_old + rename_constraints_temp
+
+    def read_index_definitions(self):
+        indexes_sql = (self.matview_dir / "componentized" / "transaction_search__indexes.sql").read_text()
+
+        with connection.cursor() as cursor:
+            cursor.execute(indexes_sql)
+            rows = cursor.fetchall()
+
+        create_temp_indexes = []
+        rename_indexes_old = []
+        rename_indexes_temp = []
+        for row in rows:
+            index_name = row[0]
+            index_name_temp = index_name + "_temp"
+            index_name_old = index_name + "_old"
+
+            # Ensure that the index hasn't already been created by a constraint
+            if index_name not in self.constraint_names:
+                create_temp_index_sql = row[1].replace(index_name, index_name_temp)
+                create_temp_index_sql = create_temp_index_sql.replace(f"public.{TABLE_NAME}", f"public.{TABLE_NAME}_temp")
+                create_temp_indexes.append(create_temp_index_sql)
+
+                rename_indexes_old.append(f"ALTER INDEX IF EXISTS {index_name} RENAME TO {index_name_old};")
+                rename_indexes_temp.append(f"ALTER INDEX IF EXISTS {index_name_temp} RENAME TO {index_name};")
+
+        return create_temp_indexes, rename_indexes_old + rename_indexes_temp
 
     def recreate_matview(self):
         with connection.cursor() as cursor:
@@ -90,7 +150,21 @@ class Command(BaseCommand):
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
 
-    async def index_with_concurrency(self, index_concurrency):
+    def create_constraints(self, constraint_definitions):
+
+        constraint_sql = "\n".join(constraint_definitions)
+
+        logger.debug(constraint_sql)
+
+        with connection.cursor() as cursor:
+            cursor.execute(constraint_sql)
+
+    def create_indexes(self, index_definitions, index_concurrency):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.index_with_concurrency(index_definitions, index_concurrency))
+        loop.close()
+
+    async def index_with_concurrency(self, index_definitions, index_concurrency):
         semaphore = asyncio.Semaphore(index_concurrency)
         tasks = []
 
@@ -98,23 +172,20 @@ class Command(BaseCommand):
             async with semaphore:
                 return await async_run_creates(sql, wrapper=Timer(f"Creating Index {index}"),)
 
-        index_table_sql = (self.matview_dir / "componentized" / "transaction_search__indexes.sql").read_text().strip()
-
-        for i, sql in enumerate(sqlparse.split(index_table_sql)):
+        for i, sql in enumerate(index_definitions):
             logger.info(f"Creating future for index: {i} - SQL: {sql}")
             tasks.append(create_with_sem(sql, i))
 
         return await asyncio.gather(*tasks)
 
-    def create_indexes(self, index_concurrency):
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.index_with_concurrency(index_concurrency))
-        loop.close()
-
     @transaction.atomic
-    def swap_matviews(self):
+    def swap_matviews(self, rename_indexes, rename_constraints):
 
         swap_sql = (self.matview_dir / "componentized" / "transaction_search__renames.sql").read_text()
+
+        swap_sql += "\n".join(rename_indexes + rename_constraints)
+
+        logger.debug(swap_sql)
 
         with connection.cursor() as cursor:
             cursor.execute(swap_sql)
