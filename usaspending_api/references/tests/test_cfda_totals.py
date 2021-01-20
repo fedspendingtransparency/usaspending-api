@@ -10,8 +10,5 @@ from usaspending_api.common.exceptions import NoDataFoundException, InternalServ
 )
 @pytest.mark.django_db
 def test_service_unavailable(client):
-    # with pytest.raises(Exception) as e_info:
-    print("something")
-    print(client.get("/api/v2/references/cfda/totals/"))
-    # print(e_info)
-    # assert e_info == 0
+    response = client.get("/api/v2/references/cfda/totals/")
+    assert response.json()["detail"] == "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)"

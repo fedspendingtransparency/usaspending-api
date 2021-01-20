@@ -73,9 +73,8 @@ class CFDAViewSet(APIView):
         )
 
         if grants_response["status_code"] == status.HTTP_503_SERVICE_UNAVAILABLE:
-            logger.exception(
+            raise ServiceUnavailable(
                 "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)"
             )
-            raise ServiceUnavailable("Could not get list of CFDAs from the grants website.")
 
         return grants_response.json()["cfdas"]
