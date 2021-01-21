@@ -28,10 +28,9 @@ class Command(BaseCommand):
 
     1. DB extraction should be very fast if the query is straightforward.
         We have seen 1-2 seconds or less per 10k rows on a db.r5.4xl instance with 10K IOPS
-    2. Generally speaking, parallelization performance is largely based on number of vCPUs available to
-        the pool of parallel processes. Ideally have 1 vCPU per process. This is mostly true for
-        CPU-heavy tasks. If the ETL is primarily I/O then the number of processes per vCPU can be
-        significantly increased.
+    2. Generally speaking, parallelization performance is largely based on number of vCPUs available to the
+        pool of parallel processes. Ideally have 1 vCPU per process. This is mostly true for CPU-heavy tasks.
+        If the ETL is primarily I/O then the number of processes per vCPU can be significantly increased.
     3. Elasticsearch indexing appears to become a bottleneck when the prior 2 parts are taken care of.
         Further simplifying SQL, increasing the DB size, and increasing the worker node vCPUs/memory
         yielded the same overall runtime, due to ES indexing backpressure. Presumably adding more
