@@ -43,11 +43,11 @@ def pytest_addoption(parser):
     parser.addoption("--local", action="store", default="true")
 
 
-def rename_tables_for_tests():
+def delete_tables_for_tests():
     """
     Outside of testing, the transaction_search table is created by using a series of chunked matviews that are combined
     into a Django managed table. When unit testing transaction_search is created as a single matview. To prevent a
-    naming conflict, the unused Django managed table is renamed while testing.
+    naming conflict, the unused Django managed table is deleted while testing.
     """
     with connection.cursor() as cursor:
         try:
