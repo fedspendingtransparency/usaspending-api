@@ -49,6 +49,12 @@ class Command(BaseCommand):
             "to calculate deleted records and remove from the target index",
         )
         parser.add_argument(
+            "--deletes-only",
+            action="store_true",
+            help="When this flag is set, the script will skip any steps not related"
+            "to deleting records from target index",
+        )
+        parser.add_argument(
             "--index-name",
             type=str,
             help="Provide name for new index about to be created. Only used when --create-new-index is provided",
@@ -119,8 +125,12 @@ class Command(BaseCommand):
             toggle_refresh_off(elasticsearch_client, config["index_name"])  # Turned back on at end.
 
         try:
-            loader.prepare_for_etl()
-            loader.dispatch_tasks()
+            if config["process_deletes"]:
+                loader.run_deletes()
+
+            if not config["deletes_only"]:
+                loader.prepare_for_etl()
+                loader.dispatch_tasks()
         except Exception as e:
             logger.error(f"{str(e)}")
             error_addition = "before encountering a problem during execution.... "
@@ -146,6 +156,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         "load_type",
         "partition_size",
         "process_deletes",
+        "deletes_only",
         "processes",
         "skip_counts",
         "skip_delete_index",
