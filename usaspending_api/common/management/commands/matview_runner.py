@@ -152,7 +152,9 @@ class Command(BaseCommand):
                         asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(chunked_matview)), loop=loop)
                     )
 
-        loop.run_until_complete(asyncio.gather(*tasks))
+        if len(tasks) > 0:
+            loop.run_until_complete(asyncio.gather(*tasks))
+
         loop.close()
 
         if "transaction_search" in self.chunked_matviews and self.include_chunked_matviews:
