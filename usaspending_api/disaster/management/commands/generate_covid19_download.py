@@ -99,13 +99,11 @@ class Command(BaseCommand):
         return [
             (
                 sql_dir / "disaster_covid19_file_a.sql",
-                self.working_dir_path
-                / f"FY2020P07-Present_All_TAS_AccountBalances_{short_timestamp}",
+                self.working_dir_path / f"FY2020P07-Present_All_TAS_AccountBalances_{short_timestamp}",
             ),
             (
                 sql_dir / "disaster_covid19_file_b.sql",
-                self.working_dir_path
-                / f"FY2020P07-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
+                self.working_dir_path / f"FY2020P07-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
             ),
             (
                 sql_dir / "disaster_covid19_file_d1_awards.sql",
