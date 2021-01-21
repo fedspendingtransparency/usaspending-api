@@ -29,9 +29,7 @@ class CFDAViewSet(APIView):
             result = CFDA_DICTIONARY.get(cfda)
 
             if not result:
-                raise NoDataFoundException(
-                    f"I can't find CFDA code '{cfda}' in my list; please check that is this the correct code."
-                )
+                raise NoDataFoundException(f"No grant records found for '{cfda}'.")
 
             try:
                 response = {
@@ -70,13 +68,10 @@ class CFDAViewSet(APIView):
             CFDA_URL,
             headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
         )
-
-        print(cfda_response.json())
-
-        if cfda_response.get("status_code") == status.HTTP_503_SERVICE_UNAVAILABLE:
+        if cfda_response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
             raise ServiceUnavailable(f"{CFDA_URL} not available (status 503)")
 
         if cfda_response.json()["errorMsgs"] != []:
-            raise InternalServerError(f"Error returned by {CFDA_URL}: {grants_response.json()['errorMsgs']}")
+            raise InternalServerError(f"Error returned by {CFDA_URL}: {cfda_response.json()['errorMsgs']}")
 
         return cfda_response.json()["cfdas"]
