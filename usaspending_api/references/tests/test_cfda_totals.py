@@ -1,5 +1,5 @@
 import pytest
-from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 from rest_framework import status
 
 # from rest_framework.response import Response
@@ -22,7 +22,7 @@ def mock_api_response(*args, **kwargs):
 
 
 @patch(
-    "requests.post",
+    "usaspending_api.references.v2.views.cfda.requests.post",
     MagicMock(return_value=mock_api_response(200, {"cfdas": [], "errorMsgs": []})),
 )
 @pytest.mark.django_db
