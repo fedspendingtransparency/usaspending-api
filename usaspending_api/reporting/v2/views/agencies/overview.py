@@ -23,6 +23,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             "agency_code",
             "current_total_budget_authority_amount",
             "missing_tas_accounts_count",
+            "missing_tas_accounts_total",
             "agency_name",
             "obligation_difference",
             "recent_publication_date",
@@ -46,6 +47,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
         result_list = (
             ReportingAgencyOverview.objects.filter(fiscal_year=self.fiscal_year, fiscal_period=self.fiscal_period)
             .annotate(
+                agency_code=F("toptier_code"),
                 current_total_budget_authority_amount=F("total_budgetary_resources"),
                 obligation_difference=F("total_diff_approp_ocpa_obligated_amounts"),
                 agency_name=Subquery(ToptierAgency.objects.filter(*agency_filters).values("name")),
@@ -71,7 +73,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                         toptier_code=OuterRef("toptier_code"),
                     ).values("quarter_format_flag")
                 ),
-                tas_obligations=Subquery(
+                missing_tas_accounts_total=Subquery(
                     ReportingAgencyTas.objects.filter(
                         fiscal_year=OuterRef("fiscal_year"),
                         fiscal_period=OuterRef("fiscal_period"),
@@ -106,17 +108,15 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             .values(
                 "agency_name",
                 "abbreviation",
+                "agency_code",
                 "toptier_code",
                 "total_dollars_obligated_gtas",
                 "current_total_budget_authority_amount",
                 "obligation_difference",
                 "recent_publication_date",
                 "recent_publication_date_certified",
-                "tas_obligations",
+                "missing_tas_accounts_total",
                 "tas_obligation_not_in_gtas_total",
-                "missing_tas_accounts_count",
-                "fiscal_year",
-                "fiscal_period",
                 "missing_tas_accounts_count",
                 "fiscal_year",
                 "fiscal_period",
@@ -134,9 +134,9 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             {
                 "agency_name": result["agency_name"],
                 "abbreviation": result["abbreviation"],
-                "agency_code": result["toptier_code"],
+                "agency_code": result["agency_code"],
                 "agency_id": Agency.objects.filter(
-                    toptier_agency__toptier_code=result["toptier_code"], toptier_flag=True
+                    toptier_agency__toptier_code=result["agency_code"], toptier_flag=True
                 )
                 .first()
                 .id,
@@ -145,7 +145,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
                 "tas_account_discrepancies_totals": {
                     "gtas_obligation_total": result["total_dollars_obligated_gtas"],
-                    "tas_accounts_total": result["tas_obligations"],
+                    "tas_accounts_total": result["missing_tas_accounts_total"],
                     "tas_obligation_not_in_gtas_total": result["tas_obligation_not_in_gtas_total"] or 0.0,
                     "missing_tas_accounts_count": result["missing_tas_accounts_count"],
                 },
