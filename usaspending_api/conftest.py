@@ -104,7 +104,7 @@ def django_db_setup(
                 "being skipped. "
             )
         else:
-            rename_tables_for_tests()
+            delete_tables_for_tests()
             generate_matviews(materialized_views_as_traditional_views=True)
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
