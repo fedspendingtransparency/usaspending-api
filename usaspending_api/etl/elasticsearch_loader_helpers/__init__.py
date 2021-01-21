@@ -17,6 +17,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     swap_aliases,
     toggle_refresh_off,
     toggle_refresh_on,
+    check_new_index_name_is_ok,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.load_data import load_data
 from usaspending_api.etl.elasticsearch_loader_helpers.transform_data import (
@@ -56,6 +57,7 @@ __all__ = [
     "TaskSpec",
     "toggle_refresh_off",
     "toggle_refresh_on",
+    "check_new_index_name_is_ok",
     "transform_award_data",
     "transform_covid19_faba_data",
     "transform_transaction_data",

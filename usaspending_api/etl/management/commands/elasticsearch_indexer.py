@@ -17,6 +17,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     transform_award_data,
     transform_covid19_faba_data,
     transform_transaction_data,
+    check_new_index_name_is_ok,
 )
 
 logger = logging.getLogger("script")
@@ -27,19 +28,15 @@ class Command(BaseCommand):
 
     1. DB extraction should be very fast if the query is straightforward.
         We have seen 1-2 seconds or less per 10k rows on a db.r5.4xl instance with 10K IOPS
-    2. Generally speaking, parallelization performance is largely based on number
-        of vCPUs available to the pool of parallel processes. Ideally have 1 vCPU
-        per process. This is mostly true for CPU-heavy tasks. If the ETL is primarily
-        I/O then the number of processes per vCPU can be significantly increased.
-    3. Elasticsearch indexing appears to become a bottleneck when the prior
-        2 parts are taken care of. Further simplifying SQL, increasing the
-        DB size, and increasing the worker node vCPUs/memory yielded the same
-        overall runtime, due to ES indexing backpressure. Presumably adding more
-        nodes, or increasing node size in the ES cluster may reduce this pressure,
-        but not (yet) tested.
+    2. Generally speaking, parallelization performance is largely based on number of vCPUs available to
+        the pool of parallel processes. Ideally have 1 vCPU per process. This is mostly true for
+        CPU-heavy tasks. If the ETL is primarily I/O then the number of processes per vCPU can be
+        significantly increased.
+    3. Elasticsearch indexing appears to become a bottleneck when the prior 2 parts are taken care of.
+        Further simplifying SQL, increasing the DB size, and increasing the worker node vCPUs/memory
+        yielded the same overall runtime, due to ES indexing backpressure. Presumably adding more
+        nodes, or increasing node size in the ES cluster may reduce this pressure, but not (yet) tested.
     """
-
-    help = """Hopefully the code comments are helpful enough to figure this out...."""
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -68,8 +65,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--start-datetime",
             type=datetime_command_line_argument_type(naive=False),
-            help="Processes transactions updated on or after the UTC date/time provided. yyyy-mm-dd hh:mm:ss is always "
-            "a safe format. Wrap in quotes if date/time contains spaces.",
+            help="Processes transactions updated on or after the UTC date/time provided. yyyy-mm-dd hh:mm:ss "
+            "is always a safe format. Wrap in quotes if date/time contains spaces.",
             metavar="",
         )
         parser.add_argument(
@@ -96,9 +93,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--partition-size",
             type=int,
-            help="Set the target size of a single data partition. A partition "
-            "might be slightly larger or slightly smaller depending on the "
-            " distribution of the data to process",
+            help="Set the target size of a single data partition. A partition might be slightly "
+            "larger or slightly smaller depending on the distribution of the data to process",
             default=250000,
             metavar="(default: 250,000)",
         )
@@ -282,8 +278,3 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
     )
 
     return config
-
-
-def check_new_index_name_is_ok(provided_name: str, suffix: str) -> None:
-    if not provided_name.endswith(suffix):
-        raise SystemExit(f"new index name doesn't end with the expected pattern: '{suffix}'")
