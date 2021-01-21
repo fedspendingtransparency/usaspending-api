@@ -8,6 +8,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import NoDataFoundException, InternalServerError, ServiceUnavailable
 
 CFDA_DICTIONARY = None
+CFDA_URL = "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals"
 
 
 class CFDAViewSet(APIView):
@@ -41,9 +42,7 @@ class CFDAViewSet(APIView):
                     "forecasted": result["forecasted"],
                 }
             except KeyError:
-                raise InternalServerError(
-                    f"Dictionary from https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not in expected format: {response}"
-                )
+                raise InternalServerError(f"Dictionary from {CFDA_URL} not in expected format: {response}")
 
         else:
             response = {"results": CFDA_DICTIONARY.values()}
@@ -67,14 +66,17 @@ class CFDAViewSet(APIView):
             CFDA_DICTIONARY = response
 
     def _request_from_grants_api(self):
-        grants_response = post(
-            "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals",
+        cfda_response = post(
+            CFDA_URL,
             headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
         )
 
-        if grants_response["status_code"] == status.HTTP_503_SERVICE_UNAVAILABLE:
-            raise ServiceUnavailable(
-                "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)"
-            )
+        print(cfda_response.json())
 
-        return grants_response.json()["cfdas"]
+        if cfda_response.get("status_code") == status.HTTP_503_SERVICE_UNAVAILABLE:
+            raise ServiceUnavailable(f"{CFDA_URL} not available (status 503)")
+
+        if cfda_response.json()["errorMsgs"] != []:
+            raise InternalServerError(f"Error returned by {CFDA_URL}: {grants_response.json()['errorMsgs']}")
+
+        return cfda_response.json()["cfdas"]
