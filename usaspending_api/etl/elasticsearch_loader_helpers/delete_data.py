@@ -11,6 +11,10 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q as ES_Q
 
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
+    ES_AWARDS_UNIQUE_KEY_FIELD,
+    ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
+)
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     execute_sql_statement,
     format_log,
@@ -21,11 +25,11 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
 logger = logging.getLogger("script")
 
 
-def delete_query(response: dict) -> dict:
+def _delete_query(response: dict) -> dict:
     return {"query": {"ids": {"values": [i["_id"] for i in response["hits"]["hits"]]}}}
 
 
-def delete_from_es(
+def _delete_from_es(
     client: Elasticsearch,
     id_list: List[dict],
     index: str,
@@ -68,7 +72,7 @@ def delete_from_es(
             # time of this comment, we are migrating to using a single index.
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=max_query_size)
-            delete_body = delete_query(response)
+            delete_body = _delete_query(response)
             try:
                 client.delete_by_query(index=index, body=json.dumps(delete_body), refresh=True, size=max_query_size)
             except Exception:
@@ -139,12 +143,29 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
     return deleted
 
 
-def get_deleted_award_ids(client: Elasticsearch, id_list: list, config: dict, index: Optional[str] = None) -> list:
+def _lookup_deleted_award_ids(client: Elasticsearch, id_list: list, config: dict, index: Optional[str] = None) -> list:
+    """Lookup deleted transactions to derive parent awards to be deleted
+
+    This fetches a list of all unique award keys compiled from the ``ES_ES_AWARDS_UNIQUE_KEY_FIELD`` field of
+    any document in the transaction index that matches the query, which looks up deleted transaction ES
+    documents by their ``ES_ES_TRANSACTIONS_UNIQUE_KEY_FIELD`` field.
+
+    Args:
+        client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
+        id_list (list): A list of dictionaries, each having two keys, in this format::
+
+            id_list = [
+                {key:'<value_of_col>', col:'<unique_key_col_name>'},
+                {key:'<value_of_col>', col:'<unique_key_col_name>'},
+                ...,
+            ]
+
+        config (dict): collection of key-value pairs that encapsulates runtime arguments for this ES management task
+        index (str): Optional name, alias, or pattern of index this query will target. Looks up via config if not
+                     provided
+
+    Returns: None
     """
-        id_list = [{key:'key1',col:'transaction_id'},
-                   {key:'key2',col:'generated_unique_transaction_id'}],
-                   ...]
-     """
     if index is None:
         index = f"{config['query_alias_prefix']}-*"
     col_to_items_dict = defaultdict(list)
@@ -157,32 +178,48 @@ def get_deleted_award_ids(client: Elasticsearch, id_list: list, config: dict, in
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
             if response["hits"]["total"]["value"] != 0:
-                awards = [x["_source"]["generated_unique_award_id"] for x in response["hits"]["hits"]]
+                awards = [x["_source"][ES_AWARDS_UNIQUE_KEY_FIELD] for x in response["hits"]["hits"]]
     return awards
 
 
 def deleted_awards(client: Elasticsearch, config: dict) -> None:
+    """Delete all awards in the Elasticsearch awards index that were deleted in the source database.
+
+    This performs the deletes of award documents in ES in a series of batches, as there could be many. Millions of
+    awards deleted may take a prohibitively long time, and it could be better to just re-index all documents from
+    the DB instead.
+
+    This requires looking-up the awards-to-delete by finding the unique-key of each parent award to any deleted
+    transaction, and then getting the distinct list of unique-award-keys that are NOT present in the database; then
+    deleting those in the ES awards index.
+    - The deleted transactions are recorded in a CSV delete log file in S3.
+    - NOTE!! This order of operations therefore requires that ES award deletes be processed BEFORE transaction
+      ES deletes are (both deletes cannot run in parallel).
+
+    Args:
+        client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
+        config (dict): collection of key-value pairs that encapsulates runtime arguments for this ES management task
+
+    Returns: None
     """
-    so we have to find all the awards connected to these transactions,
-    if we can't find the awards in the database, then we have to delete them from es
-    """
-    deleted_ids = gather_deleted_ids(config)
-    id_list = [{"key": deleted_id, "col": config["unique_key_field"]} for deleted_id in deleted_ids]
-    award_ids = get_deleted_award_ids(client, id_list, config, settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*")
+    deleted_ids = _gather_deleted_ids(config)
+    # While extracting unique award keys, the lookup is on transactions and must match against the unique transaction id
+    id_list = [{"key": deleted_id, "col": ES_TRANSACTIONS_UNIQUE_KEY_FIELD} for deleted_id in deleted_ids]
+    award_ids = _lookup_deleted_award_ids(client, id_list, config, settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*")
     if (len(award_ids)) == 0:
         logger.info(format_log(f"No related awards require deletion", action="Delete"))
         return
 
-    deleted_award_ids = check_awards_for_deletes(award_ids)
+    deleted_award_ids = _check_awards_for_deletes(award_ids)
     if len(deleted_award_ids) == 0:
         logger.info(format_log(f"No related awards require deletion", action="Delete"))
         return
 
     award_id_list = [
-        {"key": deleted_award["generated_unique_award_id"], "col": config["unique_key_field"]}
+        {"key": deleted_award[config["unique_key_field"]], "col": config["unique_key_field"]}
         for deleted_award in deleted_award_ids
     ]
-    delete_from_es(
+    _delete_from_es(
         client,
         award_id_list,
         index=config["query_alias_prefix"],
@@ -194,14 +231,14 @@ def deleted_awards(client: Elasticsearch, config: dict) -> None:
 
 
 def deleted_transactions(client: Elasticsearch, config: dict) -> None:
-    deleted_ids = gather_deleted_ids(config)
+    deleted_ids = _gather_deleted_ids(config)
     id_list = [{"key": deleted_id, "col": config["unique_key_field"]} for deleted_id in deleted_ids]
-    delete_from_es(
+    _delete_from_es(
         client, id_list, index=config["query_alias_prefix"], max_query_size=config["max_query_size"], use_aliases=True
     )
 
 
-def gather_deleted_ids(config: dict) -> list:
+def _gather_deleted_ids(config: dict) -> list:
     """
     Connect to S3 and gather all of the transaction ids stored in CSV files
     generated by the broker when transactions are removed from the DB.
@@ -263,7 +300,7 @@ def gather_deleted_ids(config: dict) -> list:
     return deleted_ids
 
 
-def check_awards_for_deletes(id_list: list) -> list:
+def _check_awards_for_deletes(id_list: list) -> list:
     formatted_value_ids = ""
     for x in id_list:
         formatted_value_ids += "('" + x + "'),"
