@@ -6,6 +6,7 @@ from pathlib import Path
 from django.db import connection, transaction
 from django.core.management.base import BaseCommand
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
+from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.common.matview_manager import DEFAULT_CHUNKED_MATIVEW_DIR
 
@@ -57,7 +58,7 @@ class Command(BaseCommand):
         create_temp_indexes, rename_indexes = self.read_index_definitions()
 
         with Timer("Recreating table"):
-            self.recreate_matview()
+            execute_sql_simple((self.matview_dir / "componentized" / f"{TABLE_NAME}__create.sql").read_text())
 
         with Timer("Inserting data into table"):
             self.insert_matview_data(chunk_count)
@@ -69,21 +70,21 @@ class Command(BaseCommand):
             self.create_indexes(create_temp_indexes, index_concurrency)
 
         with Timer("Swapping Tables/Indexes"):
-            self.swap_matviews(rename_indexes, rename_constraints)
+            self.swap_tables(rename_indexes, rename_constraints)
 
         if not options["keep_old_data"]:
             with Timer("Clearing old table"):
-                self.remove_old_data(chunk_count)
+                execute_sql_simple((self.matview_dir / "componentized" / f"{TABLE_NAME}__drops.sql").read_text())
 
         if not options["keep_matview_data"]:
             with Timer("Emptying Matviews"):
-                self.empty_matviews()
+                execute_sql_simple((self.matview_dir / "componentized" / f"{TABLE_NAME}__empty.sql").read_text())
 
         with Timer("Granting Table Permissions"):
-            self.grant_matview_permissions()
+            execute_sql_simple((self.matview_dir / "componentized" / f"{TABLE_NAME}__mods.sql").read_text())
 
     def read_constraint_definitions(self):
-        indexes_sql = (self.matview_dir / "componentized" / "transaction_search__constraints.sql").read_text()
+        indexes_sql = (self.matview_dir / "componentized" / f"{TABLE_NAME}__constraints.sql").read_text()
 
         with connection.cursor() as cursor:
             cursor.execute(indexes_sql)
@@ -112,7 +113,7 @@ class Command(BaseCommand):
         return create_temp_constraints, rename_constraints_old + rename_constraints_temp
 
     def read_index_definitions(self):
-        indexes_sql = (self.matview_dir / "componentized" / "transaction_search__indexes.sql").read_text()
+        indexes_sql = (self.matview_dir / "componentized" / f"{TABLE_NAME}__indexes.sql").read_text()
 
         with connection.cursor() as cursor:
             cursor.execute(indexes_sql)
@@ -139,16 +140,11 @@ class Command(BaseCommand):
 
         return create_temp_indexes, rename_indexes_old + rename_indexes_temp
 
-    def recreate_matview(self):
-        with connection.cursor() as cursor:
-            sql = (self.matview_dir / "componentized" / "transaction_search__create.sql").read_text()
-            cursor.execute(sql)
-
     def insert_matview_data(self, chunk_count):
         loop = asyncio.new_event_loop()
         tasks = []
 
-        insert_table_sql = (self.matview_dir / "componentized" / "transaction_search__inserts.sql").read_text().strip()
+        insert_table_sql = (self.matview_dir / "componentized" / f"{TABLE_NAME}__inserts.sql").read_text().strip()
 
         for i, sql in enumerate(sqlparse.split(insert_table_sql)):
             tasks.append(
@@ -187,9 +183,9 @@ class Command(BaseCommand):
         return await asyncio.gather(*tasks)
 
     @transaction.atomic
-    def swap_matviews(self, rename_indexes, rename_constraints):
+    def swap_tables(self, rename_indexes, rename_constraints):
 
-        swap_sql = (self.matview_dir / "componentized" / "transaction_search__renames.sql").read_text()
+        swap_sql = (self.matview_dir / "componentized" / f"{TABLE_NAME}__renames.sql").read_text()
 
         swap_sql += "\n".join(rename_indexes + rename_constraints)
 
@@ -197,22 +193,3 @@ class Command(BaseCommand):
 
         with connection.cursor() as cursor:
             cursor.execute(swap_sql)
-
-    def remove_old_data(self, chunk_count):
-
-        drop_sql = (self.matview_dir / "componentized" / "transaction_search__drops.sql").read_text()
-
-        with connection.cursor() as cursor:
-            cursor.execute(drop_sql)
-
-    def empty_matviews(self):
-        empty_sql = (self.matview_dir / "componentized" / "transaction_search__empty.sql").read_text()
-
-        with connection.cursor() as cursor:
-            cursor.execute(empty_sql)
-
-    def grant_matview_permissions(self):
-        mods_sql = (self.matview_dir / "componentized" / "transaction_search__mods.sql").read_text()
-
-        with connection.cursor() as cursor:
-            cursor.execute(mods_sql)

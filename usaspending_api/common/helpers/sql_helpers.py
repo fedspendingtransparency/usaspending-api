@@ -2,7 +2,7 @@ import os
 
 from collections import namedtuple, OrderedDict
 from django.conf import settings
-from django.db import connections, router, DEFAULT_DB_ALIAS
+from django.db import connection, connections, router, DEFAULT_DB_ALIAS
 from psycopg2.sql import Composable, Identifier, SQL
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -247,6 +247,11 @@ def execute_sql(sql, model=Award, fetcher=fetchall_fetcher, read_only=True):
         # we need to convert the query to a string before executing it.
         cursor.execute(convert_composable_query_to_string(sql, cursor=cursor))
         return fetcher(cursor)
+
+
+def execute_sql_simple(sql):
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
 
 
 def execute_dml_sql(sql, model=Award):
