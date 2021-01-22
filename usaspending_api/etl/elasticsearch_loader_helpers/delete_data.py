@@ -146,9 +146,9 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
 def _lookup_deleted_award_ids(client: Elasticsearch, id_list: list, config: dict, index: Optional[str] = None) -> list:
     """Lookup deleted transactions to derive parent awards to be deleted
 
-    This fetches a list of all unique award keys compiled from the ``ES_ES_AWARDS_UNIQUE_KEY_FIELD`` field of
+    This fetches a list of all unique award keys compiled from the ``ES_AWARDS_UNIQUE_KEY_FIELD`` field of
     any document in the transaction index that matches the query, which looks up deleted transaction ES
-    documents by their ``ES_ES_TRANSACTIONS_UNIQUE_KEY_FIELD`` field.
+    documents by their ``ES_TRANSACTIONS_UNIQUE_KEY_FIELD`` field.
 
     Args:
         client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
