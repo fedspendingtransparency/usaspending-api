@@ -11,11 +11,8 @@ from shared_sql_generator import (
     generate_uid,
     HERE,
     ingest_json,
-    make_indexes_sql,
     make_modification_sql,
     make_table_drops,
-    make_table_inserts,
-    make_matview_empty,
     make_matview_refresh,
     TEMPLATE,
 )
@@ -48,22 +45,7 @@ EXAMPLE SQL DESCRIPTION JSON FILE:
     "  action_date >= '2000-10-01'",
     "ORDER BY",
     "  action_date DESC"
-
-    ],
-    "index": {
-        "name": "<name>",
-        "columns": [
-            {
-                "name": "<col name>",
-                "order": "DESC|ASC NULLS FIRST|LAST",
-                "collation": "<collation>",
-                "opclass": "<opclass"
-            }
-        ],
-        "where": "<where clause>",
-        "unique": true,
-        "method": "<method>"
-    }
+    ]
 }
 """
 
@@ -80,34 +62,32 @@ def make_matview_create(final_matview_name, sql):
     return [TEMPLATE["create_matview"].format(final_matview_name, matview_sql, "")]
 
 
-def make_table_create(table_name):
-    table_temp_name = table_name + "_temp"
-    # Use the first Matview as the table definition
-    matview_name = table_name + "_0"
+def make_temp_table_create(table_name, table_temp_name):
+    """Creates sql to create a temporary table based off an existing table definition.
+    Includes sql to drop the temporary table in case it already exists.
+    """
     return [
         TEMPLATE["drop_table"].format(table_temp_name),
-        TEMPLATE["create_table"].format(table_temp_name, matview_name),
+        TEMPLATE["create_table"].format(table_temp_name, table_name),
     ]
 
 
-def make_index_rename_sql(old_indexes, new_indexes):
-    sql_strings = []
-    sql_strings += old_indexes
-    sql_strings.append("")
-    sql_strings += new_indexes
-    return sql_strings
+def make_read_indexes(table_name):
+    return [TEMPLATE["read_indexes"].format(table_name)]
 
 
-def make_rename_sql(table_name, old_indexes, new_indexes):
+def make_read_constraints(table_name):
+    return [TEMPLATE["read_constraints"].format(table_name)]
+
+
+def make_rename_sql(table_name):
     table_temp_name = table_name + "_temp"
     table_archive_name = table_name + "_old"
     sql_strings = []
     sql_strings.append(TEMPLATE["drop_table"].format(table_archive_name))
     sql_strings.append(TEMPLATE["rename_table"].format("IF EXISTS ", table_name, table_archive_name))
-    sql_strings += old_indexes
     sql_strings.append("")
     sql_strings.append(TEMPLATE["rename_table"].format("", table_temp_name, table_name))
-    sql_strings += new_indexes
     sql_strings.append("")
     return sql_strings
 
@@ -141,33 +121,52 @@ def write_sql_file(str_list, filename):
         f.write("\n")
 
 
+def make_table_inserts(table_name, matview_name, chunk_count):
+    sql_strings = []
+    for i in range(chunk_count):
+        matview_chunk_name = f"{matview_name}_{i}"
+        sql_strings.append(TEMPLATE["insert_into_table"].format(table_name, matview_chunk_name))
+
+    return sql_strings
+
+
+def make_matview_empty(matview_name, chunk_count):
+    sql_strings = []
+    for i in range(chunk_count):
+        chunk_name = f"{matview_name}_{i}"
+        sql_strings.append(TEMPLATE["empty_matview"].format(chunk_name))
+
+    return sql_strings
+
+
 def create_componentized_files(sql_json):
-    table_name = sql_json["final_name"]
-    table_temp_name = table_name + "_temp"
+    matview_name = sql_json["final_name"]
+    matview_temp_name = matview_name + "_temp"
     filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json["final_name"])
 
-    create_table = make_table_create(table_name)
+    create_table = make_temp_table_create(matview_name, matview_temp_name)
     write_sql_file(create_table, filename_base + "__create")
 
-    insert_into_table = make_table_inserts(table_name, GLOBAL_ARGS.chunk_count)
+    insert_into_table = make_table_inserts(matview_temp_name, matview_name, GLOBAL_ARGS.chunk_count)
     write_sql_file(insert_into_table, filename_base + "__inserts")
 
-    create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
-        sql_json, table_temp_name, UNIQUE_STRING, False, GLOBAL_ARGS.quiet
-    )
-    write_sql_file(create_indexes, filename_base + "__indexes")
-
-    sql_strings = make_rename_sql(table_name, rename_old_indexes, rename_new_indexes)
+    sql_strings = make_rename_sql(matview_name)
     write_sql_file(sql_strings, filename_base + "__renames")
 
-    sql_strings = make_modification_sql(table_name, GLOBAL_ARGS.quiet)
+    sql_strings = make_modification_sql(matview_name, GLOBAL_ARGS.quiet)
     write_sql_file(sql_strings, filename_base + "__mods")
 
-    sql_strings = make_table_drops(table_name)
+    sql_strings = make_table_drops(matview_name)
     write_sql_file(sql_strings, filename_base + "__drops")
 
-    sql_strings = make_matview_empty(table_name, GLOBAL_ARGS.chunk_count)
+    sql_strings = make_matview_empty(matview_name, GLOBAL_ARGS.chunk_count)
     write_sql_file(sql_strings, filename_base + "__empty")
+
+    sql_strings = make_read_indexes(matview_name)
+    write_sql_file(sql_strings, filename_base + "__indexes")
+
+    sql_strings = make_read_constraints(matview_name)
+    write_sql_file(sql_strings, filename_base + "__constraints")
 
 
 def create_chunked_componentized_files(sql_json):

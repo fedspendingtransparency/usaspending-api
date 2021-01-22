@@ -1967,7 +1967,7 @@ query_paths["idv_orders"] = {
 }
 
 # Likewise, IDV Transactions start directly in TransactionFPDS instead of
-# UniversalTransactionView.
+# TransactionSearch.
 query_paths["idv_transaction_history"] = {
     "d1": OrderedDict(
         [
