@@ -1,9 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
 from rest_framework import status
-
-# from rest_framework.response import Response
-# from django.http import JsonResponse
 
 
 def mock_api_response(*args, **kwargs):
@@ -12,33 +8,36 @@ def mock_api_response(*args, **kwargs):
             self.status = status
             self.json_data = json_data
 
+        @property
         def status_code(self):
             return self.status
 
         def json(self):
             return self.json_data
 
-    return MockResponse(args[0], args[1])
+    return MockResponse(status=args[0], json_data=args[1])
 
 
-@patch(
-    "usaspending_api.references.v2.views.cfda.requests.post",
-    MagicMock(return_value=mock_api_response(200, {"cfdas": [], "errorMsgs": []})),
-)
 @pytest.mark.django_db
-def test_no_data(client):
+def test_api_err(client, monkeypatch):
+    monkeypatch.setattr(
+        "requests.post", lambda *args, **kwargs: mock_api_response(status.HTTP_200_OK, {"errorMsgs": ["error msg"]})
+    )
+
     response = client.get("/api/v2/references/cfda/totals/")
-    print("response.json()['detail']")
-    print(response.json()["detail"])
     assert (
         response.json()["detail"]
-        == "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)"
+        == "Error returned by https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals: ['error msg']"
     )
 
 
 # @patch(
 #     "requests.post",
-#     MagicMock(return_value={"status_code": status.HTTP_503_SERVICE_UNAVAILABLE}),
+#     MagicMock(return_value=mock_api_response(status.HTTP_503_SERVICE_UNAVAILABLE, {})),
+# )
+# @patch(
+#     "requests.post",
+#     MagicMock(return_value=RESPONSE_MAP.pop(0)),
 # )
 # @pytest.mark.django_db
 # def test_service_unavailable(client):
@@ -47,3 +46,16 @@ def test_no_data(client):
 #         response.json()["detail"]
 #         == "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)"
 #     )
+
+
+# # @pytest.mark.django_db
+# # def test_service_unavailable(client, monkeypatch):
+# #     monkeypatch.setattr(
+# #         "requests.post", lambda *args, **kwargs: mock_api_response(status.HTTP_503_SERVICE_UNAVAILABLE, {})
+# #     )
+
+# #     response = client.get("/api/v2/references/cfda/totals/")
+# #     assert (
+# #         response.json()["detail"]
+# #         == "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)"
+# #     )
