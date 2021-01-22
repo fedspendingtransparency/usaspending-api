@@ -171,8 +171,8 @@ def _handle_queue_error(exc):
 
 
 class DownloadJobNoneError(ValueError):
-    """ Custom fatal exception representing the scenario where the DownloadJob object to be processed does not
-        exist in the database with the given ID.
+    """Custom fatal exception representing the scenario where the DownloadJob object to be processed does not
+    exist in the database with the given ID.
     """
 
     def __init__(self, download_job_id, *args, **kwargs):

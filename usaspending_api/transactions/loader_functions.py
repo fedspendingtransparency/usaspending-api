@@ -7,7 +7,7 @@ from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 def store_ids_in_file(id_iter: List, file_name: str = "temp_file", is_numeric: bool = True) -> Tuple[Path, int]:
     """Store the provided values in a file
-        returning filepath and count of ids
+    returning filepath and count of ids
     """
     total_ids = 0
     file_path = Path(file_name)

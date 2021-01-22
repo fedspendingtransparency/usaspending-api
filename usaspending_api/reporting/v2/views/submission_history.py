@@ -14,15 +14,12 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
 
     def get(self, request, toptier_code, fiscal_year, fiscal_period):
         self.fiscal_year = int(fiscal_year)
-        self.sortable_columns = [
-            "publication_date",
-            "certification_date",
-        ]
+        self.sortable_columns = ["publication_date", "certification_date"]
         self.default_sort_column = "publication_date"
         self.validate_fiscal_period({"fiscal_period": int(fiscal_period)})
         results = (
             SubmissionAttributes.objects.filter(
-                toptier_code=toptier_code, reporting_fiscal_year=fiscal_year, reporting_fiscal_period=fiscal_period,
+                toptier_code=toptier_code, reporting_fiscal_year=fiscal_year, reporting_fiscal_period=fiscal_period
             )
             .annotate(publication_date=F("published_date"), certification_date=F("certified_date"))
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")

@@ -6,17 +6,17 @@ from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
 def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_unique_id, is_parent_recipient=False):
-    """ Return a valid string to be used for api/v2/recipient/duns/<recipient-hash>/ (or None)
+    """Return a valid string to be used for api/v2/recipient/duns/<recipient-hash>/ (or None)
 
-        Keyword Arguments:
-        recipient_name -- Legal Entity Name from the record
-        recipient_unique_id -- DUNS from the record
-        parent_recipient_unique_id -- parent DUNS from the record
-        is_parent_recipient -- boolean flag to force the recipient level to be "P" (default False)
-            By the nature of transaction records, the listed recipient can only be "R" or "C"
-            This flag is for the parent recipient link (as appropriate)
+    Keyword Arguments:
+    recipient_name -- Legal Entity Name from the record
+    recipient_unique_id -- DUNS from the record
+    parent_recipient_unique_id -- parent DUNS from the record
+    is_parent_recipient -- boolean flag to force the recipient level to be "P" (default False)
+        By the nature of transaction records, the listed recipient can only be "R" or "C"
+        This flag is for the parent recipient link (as appropriate)
 
-        Return example string: 11fcdf15-3490-cdad-3df4-3b410f3d9b20-C
+    Return example string: 11fcdf15-3490-cdad-3df4-3b410f3d9b20-C
 
     """
     if (is_parent_recipient and not recipient_unique_id) or not (recipient_unique_id or recipient_name):

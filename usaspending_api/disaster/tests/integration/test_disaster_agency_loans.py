@@ -47,7 +47,7 @@ def test_award_type_codes(
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(
-        client, url, award_type_codes=["07", "08"], def_codes=["L", "M", "N", "O", "P"], spending_type="award",
+        client, url, award_type_codes=["07", "08"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     expected_results = [
         {
@@ -75,7 +75,7 @@ def test_award_type_codes(
     assert resp.json()["results"] == expected_results
 
     resp = helpers.post_for_spending_endpoint(
-        client, url, award_type_codes=["08"], def_codes=["L", "M", "N", "O", "P"], spending_type="award",
+        client, url, award_type_codes=["08"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
 
     assert resp.status_code == status.HTTP_200_OK

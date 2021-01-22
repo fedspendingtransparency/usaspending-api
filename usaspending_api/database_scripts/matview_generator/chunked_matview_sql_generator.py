@@ -93,10 +93,10 @@ def make_rename_sql(table_name):
 
 
 def create_all_sql_strings(sql_json):
-    """ Desired ordering of steps for final SQL:
-        1. Drop existing "_temp" and "_old" matviews
-        2. Create new matview
-        3. analyze verbose <matview>
+    """Desired ordering of steps for final SQL:
+    1. Drop existing "_temp" and "_old" matviews
+    2. Create new matview
+    3. analyze verbose <matview>
     """
     final_sql_strings = []
 
