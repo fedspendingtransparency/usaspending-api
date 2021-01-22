@@ -1,9 +1,7 @@
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
-    check_awards_for_deletes,
     delete_docs_by_unique_key,
     deleted_awards,
     deleted_transactions,
-    get_deleted_award_ids,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import (
     count_of_records_to_process,
@@ -34,7 +32,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import Controller
 
 __all__ = [
-    "check_awards_for_deletes",
     "chunks",
     "Controller",
     "count_of_records_to_process",
@@ -47,7 +44,6 @@ __all__ = [
     "extract_records",
     "format_log",
     "gen_random_name",
-    "get_deleted_award_ids",
     "load_data",
     "obtain_extract_sql",
     "set_final_index_config",
