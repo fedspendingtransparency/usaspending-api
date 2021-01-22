@@ -122,11 +122,11 @@ MATERIALIZED_VIEWS = OrderedDict(
 CHUNKED_MATERIALIZED_VIEWS = OrderedDict(
     [
         (
-            "universal_transaction_matview",
+            "transaction_search",
             {
-                "model": mv.UniversalTransactionView,
-                "json_filepath": str(JSON_DIR / "universal_transaction_matview.json"),
-                "sql_filename": "universal_transaction_matview.sql",
+                "model": mv.TransactionSearch,
+                "json_filepath": str(JSON_DIR / "transaction_search.json"),
+                "sql_filename": "transaction_search.sql",
             },
         ),
     ]
