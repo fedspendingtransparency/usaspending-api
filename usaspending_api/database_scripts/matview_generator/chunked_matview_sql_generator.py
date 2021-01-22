@@ -63,8 +63,8 @@ def make_matview_create(final_matview_name, sql):
 
 
 def make_temp_table_create(table_name, table_temp_name):
-    """ Creates sql to create a temporary table based off an existing table definition.
-        Includes sql to drop the temporary table in case it already exists.
+    """Creates sql to create a temporary table based off an existing table definition.
+    Includes sql to drop the temporary table in case it already exists.
     """
     return [
         TEMPLATE["drop_table"].format(table_temp_name),
