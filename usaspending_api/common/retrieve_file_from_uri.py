@@ -26,10 +26,10 @@ class RetrieveFileFromUri:
 
     def get_file_object(self, text=False):
         """
-            return a file object (aka file handler) to either:
-                the local file,
-                a temporary file that was loaded from the pulled external file
-            Recommendation is to use this method as a context manager
+        return a file object (aka file handler) to either:
+            the local file,
+            a temporary file that was loaded from the pulled external file
+        Recommendation is to use this method as a context manager
         """
         if self.parsed_url_obj.scheme == "s3":
             return self._handle_s3(text)
@@ -42,8 +42,8 @@ class RetrieveFileFromUri:
 
     def copy(self, dest_file_path):
         """
-            create a copy of the file and place at "dest_file_path" which
-            currently must be a filesystem path (not s3 or http).
+        create a copy of the file and place at "dest_file_path" which
+        currently must be a filesystem path (not s3 or http).
         """
         if self.parsed_url_obj.scheme == "s3":
             file_path = self.parsed_url_obj.path[1:]  # remove leading '/' character

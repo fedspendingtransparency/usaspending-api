@@ -33,8 +33,8 @@ total_doc_fail = Value("i", 0, lock=True)
 
 def init_shared_abort(a: Event) -> None:
     """
-        Odd mechanism to set a global abort event in each subprocess
-        Inspired by https://stackoverflow.com/a/59984671
+    Odd mechanism to set a global abort event in each subprocess
+    Inspired by https://stackoverflow.com/a/59984671
     """
     global abort
     abort = a

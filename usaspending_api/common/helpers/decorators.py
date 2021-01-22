@@ -9,26 +9,26 @@ logger = logging.getLogger(__name__)
 
 
 def set_db_timeout(timeout_in_seconds):
-    """ Decorator used to set the database statement timeout within the Django app scope
+    """Decorator used to set the database statement timeout within the Django app scope
 
-        Args:
-            timeout_in_seconds (required): timeout value, in seconds
+    Args:
+        timeout_in_seconds (required): timeout value, in seconds
 
-        NOTE:
-            The statement_timeout is only set for this specific connection. The timeout is reset to 0 at the end of
-            each call so that even idle connections that may be reused aren't bound by the timeout settings from an
-            old API call.
+    NOTE:
+        The statement_timeout is only set for this specific connection. The timeout is reset to 0 at the end of
+        each call so that even idle connections that may be reused aren't bound by the timeout settings from an
+        old API call.
 
-        Examples:
-            @set_db_timeout(test_timeout_in_ms)
-            def func_running_db_call(...):
-                ...
+    Examples:
+        @set_db_timeout(test_timeout_in_ms)
+        def func_running_db_call(...):
+            ...
 
-            OR
+        OR
 
-            @set_db_timeout()  # This will use the default value in settings
-            def func_running_db_call(...):
-                ...
+        @set_db_timeout()  # This will use the default value in settings
+        def func_running_db_call(...):
+            ...
     """
     timeout_in_ms = int(timeout_in_seconds * 1000)
 
