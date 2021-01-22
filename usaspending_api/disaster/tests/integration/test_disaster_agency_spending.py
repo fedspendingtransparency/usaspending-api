@@ -29,7 +29,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
             "award_count": None,
             "obligation": 11000000.0,
             "outlay": 11.0,
-            "total_budgetary_resources": 23984723890.78,
+            "total_budgetary_resources": 23984722890.78,
         },
         {
             "id": 2,
@@ -39,7 +39,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
             "award_count": None,
             "obligation": 1000.0,
             "outlay": 10000.0,
-            "total_budgetary_resources": 8927431230.12,
+            "total_budgetary_resources": 8927429230.12,
         },
         {
             "id": 1,
@@ -56,7 +56,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"obligation": 11001000.0, "outlay": 10011.0, "total_budgetary_resources": 32912155120.9}
+    expected_totals = {"obligation": 11001000.0, "outlay": 10011.0, "total_budgetary_resources": 32912152120.9}
     assert resp.json()["totals"] == expected_totals
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "L"], spending_type="total")

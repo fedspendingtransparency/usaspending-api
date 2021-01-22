@@ -14,9 +14,10 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
+    FabaOutlayMixin,
+    latest_gtas_of_each_year_queryset,
     PaginationMixin,
     SpendingMixin,
-    FabaOutlayMixin,
 )
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
@@ -24,7 +25,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
 )
 from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.references.models import GTASSF133Balances, Agency, ToptierAgency
+from usaspending_api.references.models import Agency, ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
@@ -176,14 +177,19 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
             "outlay": cte.col.outlay,
             "total_budgetary_resources": Coalesce(
                 Subquery(
-                    GTASSF133Balances.objects.filter(
+                    latest_gtas_of_each_year_queryset()
+                    .filter(
                         disaster_emergency_fund_code__in=self.def_codes,
-                        fiscal_period=self.latest_reporting_period["submission_fiscal_month"],
-                        fiscal_year=self.latest_reporting_period["submission_fiscal_year"],
                         treasury_account_identifier__funding_toptier_agency_id=OuterRef("toptier_agency_id"),
                     )
-                    .annotate(amount=Func("total_budgetary_resources_cpe", function="Sum"))
-                    .values("amount"),
+                    .annotate(
+                        amount=Func("total_budgetary_resources_cpe", function="Sum"),
+                        unobligated_balance=Func(
+                            "budget_authority_unobligated_balance_brought_forward_cpe", function="Sum"
+                        ),
+                    )
+                    .annotate(total_budget_authority=F("amount") - F("unobligated_balance"))
+                    .values("total_budget_authority"),
                     output_field=DecimalField(),
                 ),
                 0,
