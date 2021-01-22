@@ -35,12 +35,12 @@ def alias_response(field_to_alias_dict, results):
 def raise_if_award_types_not_valid_subset(award_type_codes, is_subaward=False):
     """Test to ensure the award types are a subset of only one group.
 
-        For Awards: contracts, idvs, direct_payments, loans, grants, other assistance
-        For Sub-Awards: procurement, assistance
+    For Awards: contracts, idvs, direct_payments, loans, grants, other assistance
+    For Sub-Awards: procurement, assistance
 
-        If the types are not a valid subset:
-            Raise API exception with a JSON response describing the award type groupings
-        """
+    If the types are not a valid subset:
+        Raise API exception with a JSON response describing the award type groupings
+    """
     msg_head = '"message": "\'award_type_codes\' must only contain types from one group.","award_type_groups": '
     if is_subaward:
         if not subaward_types_are_valid_groups(award_type_codes):
@@ -75,8 +75,8 @@ def raise_if_award_types_not_valid_subset(award_type_codes, is_subaward=False):
 def raise_if_sort_key_not_valid(sort_key, field_list, is_subaward=False):
     """Test to ensure sort key is present for the group of Awards or Sub-Awards
 
-        Raise API exception if sort key is not present
-        """
+    Raise API exception if sort key is not present
+    """
     msg_prefix = ""
     if is_subaward:
         msg_prefix = "Sub-"

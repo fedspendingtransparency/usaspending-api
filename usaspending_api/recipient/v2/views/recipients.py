@@ -30,17 +30,17 @@ logger = logging.getLogger(__name__)
 
 
 def validate_recipient_id(recipient_id):
-    """ Validate [duns+name]-[recipient_type] hash
+    """Validate [duns+name]-[recipient_type] hash
 
-        Args:
-            recipient_id: str of the hash+duns to look up
+    Args:
+        recipient_id: str of the hash+duns to look up
 
-        Returns:
-            uuid of hash
-            recipient level
+    Returns:
+        uuid of hash
+        recipient level
 
-        Raises:
-            InvalidParameterException for invalid hashes
+    Raises:
+        InvalidParameterException for invalid hashes
     """
     if "-" not in recipient_id:
         raise InvalidParameterException("ID ('{}') doesn't include Recipient-Level".format(hash))
@@ -58,13 +58,13 @@ def validate_recipient_id(recipient_id):
 
 
 def extract_name_duns_from_hash(recipient_hash):
-    """ Extract the name and duns from the recipient hash
+    """Extract the name and duns from the recipient hash
 
-        Args:
-            recipient_hash: uuid of the hash+duns to look up
+    Args:
+        recipient_hash: uuid of the hash+duns to look up
 
-        Returns:
-            duns and name
+    Returns:
+        duns and name
     """
     name_duns_qs = (
         RecipientLookup.objects.filter(recipient_hash=recipient_hash).values("duns", "legal_business_name").first()
@@ -76,16 +76,16 @@ def extract_name_duns_from_hash(recipient_hash):
 
 
 def extract_parents_from_hash(recipient_hash):
-    """ Extract the parent name and parent duns from the recipient hash
+    """Extract the parent name and parent duns from the recipient hash
 
-        Args:
-            recipient_hash: uuid of the hash+duns to look up
+    Args:
+        recipient_hash: uuid of the hash+duns to look up
 
-        Returns:
-            List of dictionaries (or empty)
-                parent_id
-                parent_duns
-                parent_name
+    Returns:
+        List of dictionaries (or empty)
+            parent_id
+            parent_duns
+            parent_name
     """
     parents = []
     affiliations = (
@@ -107,13 +107,13 @@ def extract_parents_from_hash(recipient_hash):
 
 
 def cleanup_location(location):
-    """ Various little fixes to cleanup the location object, given bad data from transactions
+    """Various little fixes to cleanup the location object, given bad data from transactions
 
-        Args:
-            location: dictionary object representing the location
+    Args:
+        location: dictionary object representing the location
 
-        Returns:
-            dict of cleaned location info
+    Returns:
+        dict of cleaned location info
     """
     # Older transactions mix country code and country name
     if location.get("country_code", None) == "UNITED STATES":
@@ -136,13 +136,13 @@ def cleanup_location(location):
 
 
 def extract_location(recipient_hash):
-    """ Extract the location data via the recipient hash
+    """Extract the location data via the recipient hash
 
-        Args:
-            recipient_hash: uuid of the hash+duns to look up
+    Args:
+        recipient_hash: uuid of the hash+duns to look up
 
-        Returns:
-            dict of location info
+    Returns:
+        dict of location info
     """
     location = {
         "address_line1": None,
@@ -187,15 +187,15 @@ def extract_location(recipient_hash):
 
 
 def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
-    """ Extract the business categories via the recipient hash
+    """Extract the business categories via the recipient hash
 
-        Args:
-            recipient_name: name of the recipient
-            recipient_duns: duns of the recipient
-            recipient_hash: hash of name and duns
+    Args:
+        recipient_name: name of the recipient
+        recipient_duns: duns of the recipient
+        recipient_hash: hash of name and duns
 
-        Returns:
-            list of business categories
+    Returns:
+        list of business categories
     """
     business_categories = set()
     if recipient_name in SPECIAL_CASES:
@@ -236,14 +236,14 @@ def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
 
 
 def obtain_recipient_totals(recipient_id, children=False, year="latest"):
-    """ Extract the total amount and transaction count for the recipient_hash given the time frame
+    """Extract the total amount and transaction count for the recipient_hash given the time frame
 
-        Args:
-            recipient_id: string of hash(duns, name)-[recipient-level]
-            children: whether or not to group by children
-            year: the year the totals/counts are based on
-        Returns:
-            list of dictionaries representing hashes and their totals/counts
+    Args:
+        recipient_id: string of hash(duns, name)-[recipient-level]
+        children: whether or not to group by children
+        year: the year the totals/counts are based on
+    Returns:
+        list of dictionaries representing hashes and their totals/counts
     """
     filters = reshape_filters(recipient_id=recipient_id, year=year)
     filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters)
@@ -366,13 +366,13 @@ class RecipientOverView(APIView):
 
 
 def extract_hash_name_from_duns(duns):
-    """ Extract the all the names and hashes associated with the DUNS provided
+    """Extract the all the names and hashes associated with the DUNS provided
 
-        Args:
-            duns: duns to find the equivalent hash and name
+    Args:
+        duns: duns to find the equivalent hash and name
 
-        Returns:
-            list of dictionaries containing hashes and names
+    Returns:
+        list of dictionaries containing hashes and names
     """
     qs_hash = RecipientLookup.objects.filter(duns=duns).values("recipient_hash", "legal_business_name").first()
     if not qs_hash:

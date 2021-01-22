@@ -18,8 +18,8 @@ from usaspending_api.references.models import RefProgramActivity
 @pytest.mark.django_db
 def test_federal_account_spending_by_category_unique_program_activity_names(client):
     """
-        Test the spending by category endpoint for the federal account profile page to ensure a unique set of
-        program activity names are returned
+    Test the spending by category endpoint for the federal account profile page to ensure a unique set of
+    program activity names are returned
     """
 
     models_to_mock = [
