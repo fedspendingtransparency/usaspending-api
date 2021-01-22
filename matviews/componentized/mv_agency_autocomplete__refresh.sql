@@ -1,2 +1,0 @@
-REFRESH MATERIALIZED VIEW CONCURRENTLY mv_agency_autocomplete WITH DATA;
-VACUUM ANALYZE VERBOSE mv_agency_autocomplete;

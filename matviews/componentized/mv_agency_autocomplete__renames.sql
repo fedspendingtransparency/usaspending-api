@@ -1,7 +1,0 @@
-ALTER MATERIALIZED VIEW IF EXISTS mv_agency_autocomplete RENAME TO mv_agency_autocomplete_old;
-ALTER INDEX IF EXISTS idx_8790aea5$ba3_agency_autocomplete_id RENAME TO idx_8790aea5$ba3_agency_autocomplete_id_old;
-
-
-ALTER MATERIALIZED VIEW mv_agency_autocomplete_temp RENAME TO mv_agency_autocomplete;
-ALTER INDEX idx_8790aea5$ba3_agency_autocomplete_id_temp RENAME TO idx_8790aea5$ba3_agency_autocomplete_id;
-

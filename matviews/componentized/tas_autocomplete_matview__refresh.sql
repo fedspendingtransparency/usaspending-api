@@ -1,2 +1,0 @@
-REFRESH MATERIALIZED VIEW CONCURRENTLY tas_autocomplete_matview WITH DATA;
-VACUUM ANALYZE VERBOSE tas_autocomplete_matview;

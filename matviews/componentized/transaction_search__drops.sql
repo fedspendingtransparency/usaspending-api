@@ -1,2 +1,0 @@
-DROP MATERIALIZED VIEW IF EXISTS transaction_search_temp CASCADE;
-DROP MATERIALIZED VIEW IF EXISTS transaction_search_old CASCADE;
