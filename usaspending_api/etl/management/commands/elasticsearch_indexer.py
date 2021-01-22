@@ -175,7 +175,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         config["starting_date"] = get_last_load_date(config["stored_date_key"], default=config["initial_datetime"])
 
     config["is_incremental_load"] = not bool(config["create_new_index"]) and (
-        config["starting_date"] != config["initial_datetime"]
+        config["starting_date"] != config["initial_datetime"] and not config["deletes_only"]
     )
 
     if config["is_incremental_load"]:
@@ -186,7 +186,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
             logger.error(f"Write alias '{config['write_alias']}' is missing")
             raise SystemExit(1)
     else:
-        if es_client.indices.exists(config["index_name"]):
+        if config["index_name"] and es_client.indices.exists(config["index_name"]):
             logger.error(f"Data load into existing index. Change index name or run an incremental load")
             raise SystemExit(1)
 
