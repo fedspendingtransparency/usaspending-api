@@ -281,8 +281,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
 
 @pytest.fixture(scope="session")
 def broker_server_dblink_setup(django_db_blocker, broker_db_setup):
-    """Fixture to use during a pytest session if you will run integration tests connecting to the broker DB via dblink.
-    """
+    """Fixture to use during a pytest session if you will run integration tests connecting to the broker DB via dblink."""
     with django_db_blocker.unblock():
         ensure_broker_server_dblink_exists()
 

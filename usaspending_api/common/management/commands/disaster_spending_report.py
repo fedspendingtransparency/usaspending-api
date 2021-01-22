@@ -39,7 +39,7 @@ def dump_to_csv(filepath, data_lines):
 
 def generate_tas_rendering_label(tas_dict):
     """
-        Copied from usaspending_api/accounts/models.py and change to use a dict instead of separate parameters
+    Copied from usaspending_api/accounts/models.py and change to use a dict instead of separate parameters
     """
     tas_rendering_label = "-".join(filter(None, (tas_dict["ATA"], tas_dict["AID"])))
 
@@ -56,11 +56,11 @@ def generate_tas_rendering_label(tas_dict):
 
 class Command(BaseCommand):
     """
-        Management Command to generate a "more expansive" Custom Account Download for specific TAS
-        Essentially, it is Account + Award data for each TAS
-          - It needs a TAS list (initially provided as an XLSX and stored in usaspending_api/data/)
-          - Will create two files for each fiscal quarter of data (one for contracts, another for assistance)
-          - Zips the CSVs and compresses for easier transport
+    Management Command to generate a "more expansive" Custom Account Download for specific TAS
+    Essentially, it is Account + Award data for each TAS
+      - It needs a TAS list (initially provided as an XLSX and stored in usaspending_api/data/)
+      - Will create two files for each fiscal quarter of data (one for contracts, another for assistance)
+      - Zips the CSVs and compresses for easier transport
     """
 
     help = "Generate CSV files for provided TAS to help track disaster spending"

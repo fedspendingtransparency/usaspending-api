@@ -7,14 +7,14 @@ from usaspending_api.common.custom_django_fields import NumericField, NaiveTimes
 class SourceProcurementTransaction(models.Model):
     """Raw procurement transaction record originating from FPDS-NG
 
-        Model contains a 100% duplicate copy of award modifications
-        (aka transactions) stored in detached_award_procurement from a
-        Broker database which is obtained source data from FPDS-NG:
-            https://www.fpds.gov/fpdsng_cms/index.php/en/
+    Model contains a 100% duplicate copy of award modifications
+    (aka transactions) stored in detached_award_procurement from a
+    Broker database which is obtained source data from FPDS-NG:
+        https://www.fpds.gov/fpdsng_cms/index.php/en/
 
-        NO DATA MANIPULATION SHOULD BE PERFORMED BY DATA ETL
+    NO DATA MANIPULATION SHOULD BE PERFORMED BY DATA ETL
 
-        Put non-null fields on the top, all other fields sort alphabetically
+    Put non-null fields on the top, all other fields sort alphabetically
     """
 
     detached_award_procurement_id = models.IntegerField(

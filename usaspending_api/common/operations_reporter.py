@@ -4,10 +4,10 @@ from datetime import datetime, timezone
 
 class OpsReporter:
     """
-        Object to load useful operational metrics during routine script executions
-        When instantiating a new OpsReporter class, metrics can be loaded as keyword args
-        Later, additional data can be added just like adding/updating values in a dictionary.
-        At the end of the script, send the JSON to the intended destination.
+    Object to load useful operational metrics during routine script executions
+    When instantiating a new OpsReporter class, metrics can be loaded as keyword args
+    Later, additional data can be added just like adding/updating values in a dictionary.
+    At the end of the script, send the JSON to the intended destination.
     """
 
     required_keys = ("job_name", "duration", "iso_start_datetime", "end_status")

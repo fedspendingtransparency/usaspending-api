@@ -74,10 +74,10 @@ class _FakeFileBackedSQSQueue:
 
     def reset_instance_state(self):
         """Because multiple tests in a single test session may be using the same FAKE_QUEUE instance, this method can
-           and should be used to reset any changed state/config on the queue back to its original state when it was
-           instantiated.
+        and should be used to reset any changed state/config on the queue back to its original state when it was
+        instantiated.
 
-           Using a loose implementation of the memento pattern.
+        Using a loose implementation of the memento pattern.
         """
         if not self._instance_state_memento:
             raise ValueError("Prior instance state to restore was not saved. Saved instance state is None")
