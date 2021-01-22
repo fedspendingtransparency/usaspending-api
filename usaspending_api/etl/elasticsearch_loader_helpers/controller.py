@@ -97,7 +97,7 @@ class Controller:
 
         close_all_django_db_conns()
 
-        if self.config["is_incremental_load"] and not self.config["deletes_only"]:
+        if self.config["is_incremental_load"]:
             toggle_refresh_on(client, self.config["index_name"])
             logger.info(
                 format_log(f"Storing datetime {self.config['processing_start_datetime']} for next incremental load")
