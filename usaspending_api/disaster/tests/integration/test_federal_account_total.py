@@ -21,7 +21,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                     "id": 22,
                     "obligation": 100.0,
                     "outlay": 111.0,
-                    "total_budgetary_resources": 43580.0,
+                    "total_budgetary_resources": 42580.0,
                 }
             ],
             "code": "000-0000",
@@ -30,7 +30,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
             "id": 21,
             "obligation": 100.0,
             "outlay": 111.0,
-            "total_budgetary_resources": 43580.0,
+            "total_budgetary_resources": 42580.0,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -47,7 +47,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                     "id": 24,
                     "obligation": 3.0,
                     "outlay": 333.0,
-                    "total_budgetary_resources": 392480.0,
+                    "total_budgetary_resources": 389480.0,
                 },
                 {
                     "code": "2020/98",
@@ -56,7 +56,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                     "id": 23,
                     "obligation": 201.0,
                     "outlay": 223.0,
-                    "total_budgetary_resources": 1092370.0,
+                    "total_budgetary_resources": 1090370.0,
                 },
                 {
                     "code": "2020/99",
@@ -65,7 +65,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                     "id": 22,
                     "obligation": 100.0,
                     "outlay": 111.0,
-                    "total_budgetary_resources": 43580.0,
+                    "total_budgetary_resources": 42580.0,
                 },
             ],
             "code": "000-0000",
@@ -74,13 +74,13 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
             "id": 21,
             "obligation": 304.0,
             "outlay": 667.0,
-            "total_budgetary_resources": 1528430.0,
+            "total_budgetary_resources": 1522430.0,
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"obligation": 304.0, "outlay": 667.0, "total_budgetary_resources": 1528430.0}
+    expected_totals = {"obligation": 304.0, "outlay": 667.0, "total_budgetary_resources": 1522430.0}
     assert resp.json()["totals"] == expected_totals
 
 
