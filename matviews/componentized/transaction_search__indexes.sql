@@ -1,0 +1,14 @@
+CREATE UNIQUE INDEX idx_21c979c6$49d_transaction_id_temp ON transaction_search_temp USING BTREE(transaction_id ASC NULLS LAST) WITH (fillfactor = 97);
+CREATE INDEX idx_21c979c6$49d_action_date_temp ON transaction_search_temp USING BTREE(action_date DESC NULLS LAST) WITH (fillfactor = 97) WHERE action_date >= '2007-10-01';
+CREATE INDEX idx_21c979c6$49d_last_modified_date_temp ON transaction_search_temp USING BTREE(last_modified_date DESC NULLS LAST) WITH (fillfactor = 97);
+CREATE INDEX idx_21c979c6$49d_fiscal_year_temp ON transaction_search_temp USING BTREE(fiscal_year DESC NULLS LAST) WITH (fillfactor = 97) WHERE action_date >= '2007-10-01';
+CREATE INDEX idx_21c979c6$49d_type_temp ON transaction_search_temp USING BTREE(type) WITH (fillfactor = 97) WHERE type IS NOT NULL AND action_date >= '2007-10-01';
+CREATE INDEX idx_21c979c6$49d_award_id_temp ON transaction_search_temp USING BTREE(award_id) WITH (fillfactor = 97) WHERE action_date >= '2007-10-01';
+CREATE INDEX idx_21c979c6$49d_pop_zip5_temp ON transaction_search_temp USING BTREE(pop_zip5) WITH (fillfactor = 97) WHERE pop_zip5 IS NOT NULL AND action_date >= '2007-10-01';
+CREATE INDEX idx_21c979c6$49d_recipient_unique_id_temp ON transaction_search_temp USING BTREE(recipient_unique_id) WITH (fillfactor = 97) WHERE recipient_unique_id IS NOT NULL AND action_date >= '2007-10-01';
+CREATE INDEX idx_21c979c6$49d_parent_recipient_unique_id_temp ON transaction_search_temp USING BTREE(parent_recipient_unique_id) WITH (fillfactor = 97) WHERE parent_recipient_unique_id IS NOT NULL AND action_date >= '2007-10-01';
+CREATE INDEX idx_21c979c6$49d_simple_pop_geolocation_temp ON transaction_search_temp USING BTREE(pop_state_code, action_date) WITH (fillfactor = 97) WHERE pop_country_code = 'USA' AND pop_state_code IS NOT NULL AND action_date >= '2007-10-01';
+DO $$ BEGIN RAISE NOTICE '10 indexes created, 3 remaining'; END $$;
+CREATE INDEX idx_21c979c6$49d_recipient_hash_temp ON transaction_search_temp USING BTREE(recipient_hash) WITH (fillfactor = 97) WHERE action_date >= '2007-10-01';
+CREATE INDEX idx_21c979c6$49d_action_date_pre2008_temp ON transaction_search_temp USING BTREE(action_date) WITH (fillfactor = 97) WHERE action_date < '2007-10-01';
+CREATE INDEX idx_21c979c6$49d_etl_update_date_temp ON transaction_search_temp USING BTREE(etl_update_date) WITH (fillfactor = 97);

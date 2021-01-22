@@ -1,0 +1,2 @@
+DROP MATERIALIZED VIEW IF EXISTS mv_agency_autocomplete_temp CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS mv_agency_autocomplete_old CASCADE;

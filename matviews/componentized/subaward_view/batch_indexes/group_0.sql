@@ -1,0 +1,18 @@
+CREATE UNIQUE INDEX idx_47293de1$f21_subaward_id_temp ON subaward_view_temp USING BTREE(subaward_id) WITH (fillfactor = 97);
+CREATE UNIQUE INDEX idx_47293de1$f21_broker_subaward_id_temp ON subaward_view_temp USING BTREE(broker_subaward_id) WITH (fillfactor = 97);
+CREATE INDEX idx_47293de1$f21_ordered_award_type_temp ON subaward_view_temp USING BTREE(award_type DESC NULLS LAST) WITH (fillfactor = 97);
+CREATE INDEX idx_47293de1$f21_amount_temp ON subaward_view_temp USING BTREE(amount) WITH (fillfactor = 97) WHERE amount IS NOT NULL;
+CREATE INDEX idx_47293de1$f21_gin_recipient_name_temp ON subaward_view_temp USING GIN(recipient_name gin_trgm_ops);
+CREATE INDEX idx_47293de1$f21_parent_recipient_unique_id_temp ON subaward_view_temp USING BTREE(parent_recipient_unique_id) WITH (fillfactor = 97) WHERE parent_recipient_unique_id IS NOT NULL;
+CREATE INDEX idx_47293de1$f21_fiscal_year_temp ON subaward_view_temp USING BTREE(fiscal_year DESC NULLS LAST) WITH (fillfactor = 97);
+CREATE INDEX idx_47293de1$f21_ordered_awarding_toptier_agency_name_temp ON subaward_view_temp USING BTREE(awarding_toptier_agency_name DESC NULLS LAST) WITH (fillfactor = 97);
+CREATE INDEX idx_47293de1$f21_awarding_subtier_agency_name_temp ON subaward_view_temp USING BTREE(awarding_subtier_agency_name) WITH (fillfactor = 97) WHERE awarding_subtier_agency_name IS NOT NULL;
+CREATE INDEX idx_47293de1$f21_recipient_location_country_code_temp ON subaward_view_temp USING BTREE(recipient_location_country_code) WITH (fillfactor = 97) WHERE recipient_location_country_code IS NOT NULL;
+CREATE INDEX idx_47293de1$f21_recipient_location_zip5_temp ON subaward_view_temp USING BTREE(recipient_location_zip5) WITH (fillfactor = 97) WHERE recipient_location_zip5 IS NOT NULL;
+CREATE INDEX idx_47293de1$f21_pop_country_code_temp ON subaward_view_temp USING BTREE(pop_country_code) WITH (fillfactor = 97) WHERE pop_country_code IS NOT NULL;
+CREATE INDEX idx_47293de1$f21_pop_zip5_temp ON subaward_view_temp USING BTREE(pop_zip5) WITH (fillfactor = 97) WHERE pop_zip5 IS NOT NULL;
+CREATE INDEX idx_47293de1$f21_cfda_number_temp ON subaward_view_temp USING BTREE(cfda_number) WITH (fillfactor = 97) WHERE cfda_number IS NOT NULL;
+CREATE INDEX idx_47293de1$f21_type_set_aside_temp ON subaward_view_temp USING BTREE(type_set_aside) WITH (fillfactor = 97) WHERE type_set_aside IS NOT NULL;
+CREATE INDEX idx_47293de1$f21_gin_business_categories_temp ON subaward_view_temp USING GIN(business_categories);
+CREATE INDEX idx_47293de1$f21_recipient_name_ts_vector_temp ON subaward_view_temp USING GIN(recipient_name_ts_vector);
+CREATE INDEX idx_47293de1$f21_compound_cfda_action_date_temp ON subaward_view_temp USING BTREE(cfda_number, action_date) WITH (fillfactor = 97);

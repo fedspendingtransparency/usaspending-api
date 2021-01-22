@@ -1,0 +1,21 @@
+ALTER MATERIALIZED VIEW IF EXISTS tas_autocomplete_matview RENAME TO tas_autocomplete_matview_old;
+ALTER INDEX IF EXISTS idx_17cb5682$aa5_tas_autocomplete_id RENAME TO idx_17cb5682$aa5_tas_autocomplete_id_old;
+ALTER INDEX IF EXISTS idx_17cb5682$aa5_allocation_transfer_agency_id RENAME TO idx_17cb5682$aa5_allocation_transfer_agency_id_old;
+ALTER INDEX IF EXISTS idx_17cb5682$aa5_agency_id RENAME TO idx_17cb5682$aa5_agency_id_old;
+ALTER INDEX IF EXISTS idx_17cb5682$aa5_beginning_period_of_availability RENAME TO idx_17cb5682$aa5_beginning_period_of_availability_old;
+ALTER INDEX IF EXISTS idx_17cb5682$aa5_ending_period_of_availability RENAME TO idx_17cb5682$aa5_ending_period_of_availability_old;
+ALTER INDEX IF EXISTS idx_17cb5682$aa5_availability_type_code RENAME TO idx_17cb5682$aa5_availability_type_code_old;
+ALTER INDEX IF EXISTS idx_17cb5682$aa5_main_account_code RENAME TO idx_17cb5682$aa5_main_account_code_old;
+ALTER INDEX IF EXISTS idx_17cb5682$aa5_sub_account_code RENAME TO idx_17cb5682$aa5_sub_account_code_old;
+
+
+ALTER MATERIALIZED VIEW tas_autocomplete_matview_temp RENAME TO tas_autocomplete_matview;
+ALTER INDEX idx_17cb5682$aa5_tas_autocomplete_id_temp RENAME TO idx_17cb5682$aa5_tas_autocomplete_id;
+ALTER INDEX idx_17cb5682$aa5_allocation_transfer_agency_id_temp RENAME TO idx_17cb5682$aa5_allocation_transfer_agency_id;
+ALTER INDEX idx_17cb5682$aa5_agency_id_temp RENAME TO idx_17cb5682$aa5_agency_id;
+ALTER INDEX idx_17cb5682$aa5_beginning_period_of_availability_temp RENAME TO idx_17cb5682$aa5_beginning_period_of_availability;
+ALTER INDEX idx_17cb5682$aa5_ending_period_of_availability_temp RENAME TO idx_17cb5682$aa5_ending_period_of_availability;
+ALTER INDEX idx_17cb5682$aa5_availability_type_code_temp RENAME TO idx_17cb5682$aa5_availability_type_code;
+ALTER INDEX idx_17cb5682$aa5_main_account_code_temp RENAME TO idx_17cb5682$aa5_main_account_code;
+ALTER INDEX idx_17cb5682$aa5_sub_account_code_temp RENAME TO idx_17cb5682$aa5_sub_account_code;
+

@@ -1,0 +1,21 @@
+ALTER MATERIALIZED VIEW IF EXISTS mv_pre2008_award_search RENAME TO mv_pre2008_award_search_old;
+ALTER INDEX IF EXISTS idx_e4637983$86c_id RENAME TO idx_e4637983$86c_id_old;
+ALTER INDEX IF EXISTS idx_e4637983$86c_recipient_hash RENAME TO idx_e4637983$86c_recipient_hash_old;
+ALTER INDEX IF EXISTS idx_e4637983$86c_recipient_unique_id RENAME TO idx_e4637983$86c_recipient_unique_id_old;
+ALTER INDEX IF EXISTS idx_e4637983$86c_action_date RENAME TO idx_e4637983$86c_action_date_old;
+ALTER INDEX IF EXISTS idx_e4637983$86c_funding_agency_id RENAME TO idx_e4637983$86c_funding_agency_id_old;
+ALTER INDEX IF EXISTS idx_e4637983$86c_recipient_location_state_code RENAME TO idx_e4637983$86c_recipient_location_state_code_old;
+ALTER INDEX IF EXISTS idx_e4637983$86c_recipient_location_county_code RENAME TO idx_e4637983$86c_recipient_location_county_code_old;
+ALTER INDEX IF EXISTS idx_e4637983$86c_recipient_location_cong_code RENAME TO idx_e4637983$86c_recipient_location_cong_code_old;
+
+
+ALTER MATERIALIZED VIEW mv_pre2008_award_search_temp RENAME TO mv_pre2008_award_search;
+ALTER INDEX idx_e4637983$86c_id_temp RENAME TO idx_e4637983$86c_id;
+ALTER INDEX idx_e4637983$86c_recipient_hash_temp RENAME TO idx_e4637983$86c_recipient_hash;
+ALTER INDEX idx_e4637983$86c_recipient_unique_id_temp RENAME TO idx_e4637983$86c_recipient_unique_id;
+ALTER INDEX idx_e4637983$86c_action_date_temp RENAME TO idx_e4637983$86c_action_date;
+ALTER INDEX idx_e4637983$86c_funding_agency_id_temp RENAME TO idx_e4637983$86c_funding_agency_id;
+ALTER INDEX idx_e4637983$86c_recipient_location_state_code_temp RENAME TO idx_e4637983$86c_recipient_location_state_code;
+ALTER INDEX idx_e4637983$86c_recipient_location_county_code_temp RENAME TO idx_e4637983$86c_recipient_location_county_code;
+ALTER INDEX idx_e4637983$86c_recipient_location_cong_code_temp RENAME TO idx_e4637983$86c_recipient_location_cong_code;
+

@@ -13,7 +13,7 @@ class TransactionSearch(models.Model):
     """
 
     transaction = models.OneToOneField(TransactionNormalized, on_delete=models.DO_NOTHING, primary_key=True)
-    award = models.ForeignKey(Award, on_delete=models.DO_NOTHING)
+    award = models.ForeignKey(Award, on_delete=models.DO_NOTHING, null=True)
     modification_number = models.TextField(null=True)
     detached_award_proc_unique = models.TextField(null=True)
     afa_generated_unique = models.TextField(null=True)
@@ -125,30 +125,30 @@ class TransactionSearch(models.Model):
                 fields=["-fiscal_year"], name="ts_idx_fiscal_year", condition=Q(action_date__gte="2007-10-01")
             ),
             models.Index(
-                fields=["type"], name="ts_idx_type", condition=Q(action_date__gte="2007-10-01") & Q(type__isnull=False)
+                fields=["type"], name="ts_idx_type", condition=Q(type__isnull=False) & Q(action_date__gte="2007-10-01") 
             ),
             models.Index(fields=["award"], name="ts_idx_award_id", condition=Q(action_date__gte="2007-10-01")),
             models.Index(
                 fields=["pop_zip5"],
                 name="ts_idx_pop_zip5",
-                condition=Q(action_date__gte="2007-10-01") & Q(pop_zip5__isnull=False),
+                condition=Q(pop_zip5__isnull=False) & Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 fields=["recipient_unique_id"],
                 name="ts_idx_recipient_unique_id",
-                condition=Q(action_date__gte="2007-10-01") & Q(recipient_unique_id__isnull=False),
+                condition=Q(recipient_unique_id__isnull=False) & Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 fields=["parent_recipient_unique_id"],
                 name="ts_idx_parent_recipient_unique",
-                condition=Q(action_date__gte="2007-10-01") & Q(parent_recipient_unique_id__isnull=False),
+                condition=Q(parent_recipient_unique_id__isnull=False) & Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 fields=["pop_state_code", "action_date"],
                 name="ts_idx_simple_pop_geolocation",
-                condition=Q(action_date__gte="2007-10-01")
-                & Q(pop_country_code="USA")
-                & Q(pop_state_code__isnull=False),
+                condition=Q(pop_country_code="USA")
+                & Q(pop_state_code__isnull=False)
+                & Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 fields=["recipient_hash"], name="ts_idx_recipient_hash", condition=Q(action_date__gte="2007-10-01")

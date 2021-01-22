@@ -1,0 +1,2 @@
+DROP MATERIALIZED VIEW IF EXISTS mv_loan_award_search_temp CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS mv_loan_award_search_old CASCADE;

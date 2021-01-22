@@ -1,0 +1,2 @@
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_other_award_search WITH DATA;
+VACUUM ANALYZE VERBOSE mv_other_award_search;
