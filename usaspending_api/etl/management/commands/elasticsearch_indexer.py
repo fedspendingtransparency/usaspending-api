@@ -18,6 +18,11 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     transform_covid19_faba_data,
     transform_transaction_data,
 )
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
+    ES_AWARDS_UNIQUE_KEY_FIELD,
+    ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
+    ES_COVID19_FABA_UNIQUE_KEY_FIELD,
+)
 
 logger = logging.getLogger("script")
 
@@ -212,7 +217,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_AWARDS_NAME_SUFFIX,
             "sql_view": settings.ES_AWARDS_ETL_VIEW_NAME,
             "stored_date_key": "es_awards",
-            "unique_key_field": "generated_unique_award_id",
+            "unique_key_field": ES_AWARDS_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
         }
     elif arg_parse_options["load_type"] == "transaction":
@@ -233,7 +238,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_TRANSACTIONS_NAME_SUFFIX,
             "sql_view": settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
             "stored_date_key": "es_transactions",
-            "unique_key_field": "generated_unique_transaction_id",
+            "unique_key_field": ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
         }
     elif arg_parse_options["load_type"] == "covid19-faba":
@@ -254,7 +259,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_COVID19_FABA_NAME_SUFFIX,
             "sql_view": settings.ES_COVID19_FABA_ETL_VIEW_NAME,
             "stored_date_key": ...,
-            "unique_key_field": "distinct_award_key",
+            "unique_key_field": ES_COVID19_FABA_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_COVID19_FABA_WRITE_ALIAS,
         }
     else:
