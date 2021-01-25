@@ -1,6 +1,7 @@
 from builtins import Exception
 from datetime import datetime, timezone
 from django.conf import settings
+from django.core.management import call_command
 from django.core.serializers.json import json, DjangoJSONEncoder
 from django.db import connection, DEFAULT_DB_ALIAS
 from elasticsearch import Elasticsearch
@@ -40,10 +41,13 @@ class TestElasticSearchIndex:
         self.template = retrieve_index_template(f"{self.index_type}_template")
         self.mappings = json.loads(self.template)["mappings"]
         self.etl_config = {
+            "load_type": self.index_type,
             "index_name": self.index_name,
             "query_alias_prefix": self.alias_prefix,
             "verbose": False,
+            "verbosity": 0,
             "write_alias": self.index_name + "-alias",
+            "process_deletes": True
         }
         self.worker = TaskSpec(
             base_table=None,
@@ -73,6 +77,7 @@ class TestElasticSearchIndex:
         self.client.indices.create(index=self.index_name, body=self.template)
         create_award_type_aliases(self.client, self.etl_config)
         self._add_contents(**options)
+        call_command("es_configure", "--load-type", self.index_type)
 
     def _add_contents(self, **options):
         """
