@@ -10,12 +10,14 @@ from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_di
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 
 from usaspending_api.etl.elasticsearch_loader_helpers import (
-    check_awards_for_deletes,
-    get_deleted_award_ids,
     Controller,
     execute_sql_statement,
     transform_award_data,
     transform_transaction_data,
+)
+from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
+    _check_awards_for_deletes,
+    _lookup_deleted_award_ids,
 )
 
 
@@ -182,11 +184,11 @@ def test_award_delete_sql(award_data_fixture, monkeypatch, db):
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
     )
     id_list = ["CONT_AWD_IND12PB00323"]
-    awards = check_awards_for_deletes(id_list)
+    awards = _check_awards_for_deletes(id_list)
     assert awards == []
 
     id_list = ["CONT_AWD_WHATEVER", "CONT_AWD_IND12PB00323"]
-    awards = check_awards_for_deletes(id_list)
+    awards = _check_awards_for_deletes(id_list)
     assert awards == [OrderedDict([("generated_unique_award_id", "CONT_AWD_WHATEVER")])]
 
 
@@ -194,5 +196,5 @@ def test_get_award_ids(award_data_fixture, elasticsearch_award_index):
     elasticsearch_award_index.update_index()
     id_list = [{"key": 1, "col": "award_id"}]
     client = elasticsearch_award_index.client
-    ids = get_deleted_award_ids(client, id_list, award_config, index=elasticsearch_award_index.index_name)
+    ids = _lookup_deleted_award_ids(client, id_list, award_config, index=elasticsearch_award_index.index_name)
     assert ids == ["CONT_AWD_IND12PB00323"]
