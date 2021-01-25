@@ -70,7 +70,6 @@ class CFDAViewSet(APIView):
         )
         if cfda_response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
             raise ServiceUnavailable(f"{CFDA_URL} not available (status 503)")
-
         if cfda_response.json()["errorMsgs"] != []:
             raise InternalServerError(f"Error returned by {CFDA_URL}: {cfda_response.json()['errorMsgs']}")
 
