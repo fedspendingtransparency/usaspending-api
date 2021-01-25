@@ -38,7 +38,7 @@ class TestElasticSearchIndex:
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_index_template(f"{self.index_type}_template")
+        self.template = retrieve_index_template(f"{self.index_type.replace('-', '_')}_template")
         self.mappings = json.loads(self.template)["mappings"]
         self.etl_config = {
             "load_type": self.index_type,
@@ -88,7 +88,7 @@ class TestElasticSearchIndex:
             view_sql_file = f"{settings.ES_AWARDS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_AWARDS_ETL_VIEW_NAME
             es_id = f"{self.index_type}_id"
-        elif self.index_type == "covid19_faba":
+        elif self.index_type == "covid19-faba":
             view_sql_file = f"{settings.ES_COVID19_FABA_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
             es_id = "financial_account_distinct_award_key"
@@ -109,7 +109,7 @@ class TestElasticSearchIndex:
                 records = transform_award_data(self.worker, records)
             elif self.index_type == "transaction":
                 records = transform_transaction_data(self.worker, records)
-            elif self.index_type == "covid19_faba":
+            elif self.index_type == "covid19-faba":
                 records = transform_covid19_faba_data(
                     TaskSpec(
                         name="worker",
