@@ -5,7 +5,7 @@ import pytest
 from usaspending_api.download.lookups import CFO_CGACS
 
 # intentionally out of order to test CFO agency sorting
-aribitrary_cfo_cgac_sample = [2, 1, 3, 13, 7]
+arbitrary_cfo_cgac_sample = [2, 1, 3, 13, 7]
 
 
 @pytest.fixture
@@ -15,7 +15,7 @@ def basic_agency(db):
 
 @pytest.fixture
 def cfo_agencies(db):
-    [_complete_agency(int(CFO_CGACS[id])) for id in aribitrary_cfo_cgac_sample]
+    [_complete_agency(int(CFO_CGACS[id])) for id in arbitrary_cfo_cgac_sample]
 
 
 @pytest.fixture

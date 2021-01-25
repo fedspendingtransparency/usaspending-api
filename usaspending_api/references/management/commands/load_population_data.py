@@ -32,7 +32,7 @@ logger = logging.getLogger("script")
 
 class Command(BaseCommand):
 
-    help = "Load CSV files contianing population data. "
+    help = "Load CSV files containing population data. "
 
     def add_arguments(self, parser):
 

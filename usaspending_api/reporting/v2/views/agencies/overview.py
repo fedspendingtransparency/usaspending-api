@@ -23,6 +23,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             "agency_code",
             "current_total_budget_authority_amount",
             "missing_tas_accounts_count",
+            "missing_tas_accounts_total",
             "agency_name",
             "obligation_difference",
             "recent_publication_date",
@@ -46,6 +47,9 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
         result_list = (
             ReportingAgencyOverview.objects.filter(fiscal_year=self.fiscal_year, fiscal_period=self.fiscal_period)
             .annotate(
+                agency_code=F("toptier_code"),
+                current_total_budget_authority_amount=F("total_budgetary_resources"),
+                obligation_difference=F("total_diff_approp_ocpa_obligated_amounts"),
                 agency_name=Subquery(ToptierAgency.objects.filter(*agency_filters).values("name")),
                 abbreviation=Subquery(ToptierAgency.objects.filter(*agency_filters).values("abbreviation")),
                 recent_publication_date=Subquery(
@@ -62,7 +66,14 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                         toptier_code=OuterRef("toptier_code"),
                     ).values("certified_date")
                 ),
-                tas_obligations=Subquery(
+                submission_is_quarter=Subquery(
+                    SubmissionAttributes.objects.filter(
+                        reporting_fiscal_year=OuterRef("fiscal_year"),
+                        reporting_fiscal_period=OuterRef("fiscal_period"),
+                        toptier_code=OuterRef("toptier_code"),
+                    ).values("quarter_format_flag")
+                ),
+                missing_tas_accounts_total=Subquery(
                     ReportingAgencyTas.objects.filter(
                         fiscal_year=OuterRef("fiscal_year"),
                         fiscal_period=OuterRef("fiscal_period"),
@@ -82,7 +93,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                     .values("the_sum"),
                     output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
-                missing_tas_accounts=Subquery(
+                missing_tas_accounts_count=Subquery(
                     ReportingAgencyMissingTas.objects.filter(
                         fiscal_year=OuterRef("fiscal_year"),
                         fiscal_period=OuterRef("fiscal_period"),
@@ -97,16 +108,24 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             .values(
                 "agency_name",
                 "abbreviation",
+                "agency_code",
                 "toptier_code",
                 "total_dollars_obligated_gtas",
-                "total_budgetary_resources",
-                "total_diff_approp_ocpa_obligated_amounts",
+                "current_total_budget_authority_amount",
+                "obligation_difference",
                 "recent_publication_date",
                 "recent_publication_date_certified",
-                "tas_obligations",
+                "missing_tas_accounts_total",
                 "tas_obligation_not_in_gtas_total",
-                "missing_tas_accounts",
+                "missing_tas_accounts_count",
+                "fiscal_year",
+                "fiscal_period",
+                "submission_is_quarter",
             )
+            .order_by(
+                f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key if self.pagination.sort_key not in ['unlinked_contract_award_count','unlinked_assistance_award_count'] else self.default_sort_column}"
+            )
+            # currently we are just returning 0 for the unlinked awards, once this is removed, we should be able to remove this conditional
         )
         return self.format_results(result_list)
 
@@ -115,37 +134,28 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             {
                 "agency_name": result["agency_name"],
                 "abbreviation": result["abbreviation"],
-                "agency_code": result["toptier_code"],
+                "agency_code": result["agency_code"],
                 "agency_id": Agency.objects.filter(
-                    toptier_agency__toptier_code=result["toptier_code"], toptier_flag=True
+                    toptier_agency__toptier_code=result["agency_code"], toptier_flag=True
                 )
                 .first()
                 .id,
-                "current_total_budget_authority_amount": result["total_budgetary_resources"],
+                "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
                 "recent_publication_date": result["recent_publication_date"],
                 "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
                 "tas_account_discrepancies_totals": {
                     "gtas_obligation_total": result["total_dollars_obligated_gtas"],
-                    "tas_accounts_total": result["tas_obligations"],
+                    "tas_accounts_total": result["missing_tas_accounts_total"],
                     "tas_obligation_not_in_gtas_total": result["tas_obligation_not_in_gtas_total"] or 0.0,
-                    "missing_tas_accounts_count": result["missing_tas_accounts"],
+                    "missing_tas_accounts_count": result["missing_tas_accounts_count"],
                 },
-                "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
+                "obligation_difference": result["obligation_difference"],
                 "unlinked_contract_award_count": 0,
                 "unlinked_assistance_award_count": 0,
+                "assurance_statement_url": self.create_assurance_statement_url(result),
             }
             for result in result_list
         ]
-        results = sorted(
-            results,
-            key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key]
-            if (
-                self.pagination.sort_key == "missing_tas_accounts_count"
-                or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
-            )
-            else x[self.pagination.sort_key],
-            reverse=self.pagination.sort_order == "desc",
-        )
         return results
 
     @cached_property

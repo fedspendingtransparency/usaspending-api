@@ -22,7 +22,7 @@ from usaspending_api.disaster.tests.fixtures.award_count_data import (
 from usaspending_api.disaster.tests.fixtures.recipient_count_data import (
     basic_fabs_award,
     basic_fpds_award,
-    double_fpds_awards_with_distict_recipients,
+    double_fpds_awards_with_distinct_recipients,
     double_fpds_awards_with_same_recipients,
     double_fpds_awards_with_same_special_case_recipients,
     award_with_no_outlays,
@@ -87,7 +87,7 @@ __all__ = [
     "basic_object_class_multiple_faba_with_loan_value_with_single_object_class",
     "basic_object_class_multiple_faba_with_loan_value_with_two_object_classes",
     "cfda_awards_and_transactions",
-    "double_fpds_awards_with_distict_recipients",
+    "double_fpds_awards_with_distinct_recipients",
     "double_fpds_awards_with_same_recipients",
     "double_fpds_awards_with_same_special_case_recipients",
     "obligations_incurred_award",

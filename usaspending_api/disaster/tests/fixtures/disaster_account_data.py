@@ -51,6 +51,7 @@ def disaster_account_data():
         submission_fiscal_month=8,
         submission_reveal_date="2020-5-15",
     )
+    # Unclosed submission window
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=2021120,

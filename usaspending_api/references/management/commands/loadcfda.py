@@ -75,7 +75,7 @@ class Command(BaseCommand):
         external_data_df = load_from_url(options["cfda-data-uri"])
         database_df = load_cfda_table_into_pandas()
 
-        logger.info("Remodeling DataFrames for comparision")
+        logger.info("Remodeling DataFrames for comparison")
         external_data_df = fully_order_pandas_dataframe(external_data_df, "program_number")
         database_df = fully_order_pandas_dataframe(database_df, "program_number")
 

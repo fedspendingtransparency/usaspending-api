@@ -36,8 +36,7 @@ class TASFilterTree(FilterTree):
             for lower_node in lower_tier:
                 if upper_node["id"] in lower_node["ancestors"]:
                     children.append(lower_node)
-            sorted(children, key=lambda x: x["id"])
-            upper_node["children"] = children
+            upper_node["children"] = sorted(children, key=lambda x: x["id"])
         return upper_tier
 
     def tier_2_search(self, ancestor_array, filter_string) -> list:
@@ -71,7 +70,7 @@ class TASFilterTree(FilterTree):
                     "children": None,
                 }
             )
-        return retval
+        return sorted(retval, key=lambda x: x["id"])
 
     def tier_1_search(self, ancestor_array, filter_string, tier2_nodes=None) -> list:
         filters = [Q(has_faba=True)]
@@ -98,19 +97,19 @@ class TASFilterTree(FilterTree):
             .values("federal_account__federal_account_code", "federal_account__account_title", "agency")
             .annotate(count=Count("treasury_account_identifier"))
         )
-        retval = []
-        for item in data:
-            ancestor_array = [item["agency"]]
-            retval.append(
-                {
-                    "id": item["federal_account__federal_account_code"],
-                    "ancestors": ancestor_array,
-                    "description": item["federal_account__account_title"],
-                    "count": item["count"],
-                    "children": None,
-                }
-            )
-        return retval
+
+        retval = [
+            {
+                "id": item["federal_account__federal_account_code"],
+                "ancestors": [item["agency"]],
+                "description": item["federal_account__account_title"],
+                "count": item["count"],
+                "children": None,
+            }
+            for item in data
+        ]
+
+        return sorted(retval, key=lambda x: x["id"])
 
     def toptier_search(self, filter_string=None, tier1_nodes=None):
         filters = [Q(has_faba=True)]
