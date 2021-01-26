@@ -57,7 +57,7 @@ def test_bad_format(client, monkeypatch):
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert (
         response.json()["detail"]
-        == "Dictionary from https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not in expected format: {'code': '00.000', 'posted': 1, 'closed': 3, 'archived': 962, 'forecasted': 0}"
+        == "Data from https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not in expected format: {'code': '00.000', 'posted': 1, 'closed': 3, 'archived': 962, 'forecasted': 0}"
     )
 
 
