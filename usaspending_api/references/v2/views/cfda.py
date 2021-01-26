@@ -40,7 +40,7 @@ class CFDAViewSet(APIView):
                     "forecasted": result["forecasted"],
                 }
             except KeyError:
-                raise InternalServerError(f"Dictionary from {CFDA_URL} not in expected format: {response}")
+                raise InternalServerError(f"Dictionary from {CFDA_URL} not in expected format: {result}")
 
         else:
             response = {"results": CFDA_DICTIONARY.values()}
