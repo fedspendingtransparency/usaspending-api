@@ -7,7 +7,7 @@ def build_file_description(source_file_template, sources):
 
     # Read in file description ignoring lines that start with #.
     with RetrieveFileFromUri(source_file_template).get_file_object() as f:
-        file_description_text = "".join(tuple(l.decode("utf-8") for l in f if not l.startswith(b"#")))
+        file_description_text = "".join(tuple(line.decode("utf-8") for line in f if not line.startswith(b"#")))
 
     # Replace source.source_type keys with source.file_name values.
     return file_description_text.format(**{source.source_type: source.file_name for source in sources})

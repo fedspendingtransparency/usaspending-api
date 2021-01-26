@@ -14,11 +14,13 @@ SUBMISSION_WINDOW_DAYS = 45
 
 
 def current_fiscal_date() -> FiscalDateTime:
-    return FiscalDateTime.today()
+    """FiscalDateTime.today() returns calendar date! Add 3 months to convert to fiscal"""
+    return FiscalDateTime.today() + relativedelta(months=3)
 
 
 def current_fiscal_year() -> int:
-    return current_fiscal_date().year
+    """Return the year from the fiscal date"""
+    return current_fiscal_date().year  # Don't use `.fiscal_year` since the datetime is already offset
 
 
 def create_fiscal_year_list(start_year=2000, end_year=None):
@@ -153,18 +155,18 @@ def create_full_time_periods(min_date, max_date, group, columns):
 
 
 def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type, columns):
-    """ Given the following, generate a list of dict results split by fiscal years/quarters/months
+    """Given the following, generate a list of dict results split by fiscal years/quarters/months
 
-        Args:
-            filter_time_periods: list of time_period objects usually provided by filters
-                - {'start_date':..., 'end_date':...}
-            queryset: the resulting data to split into these results
-            date_range_type: how the results are split
-                - 'fy', 'quarter', or 'month'
-            columns: dictionary of columns to include from the queryset
-                - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
-        Returns:
-            list of dict results split by fiscal years/quarters/months
+    Args:
+        filter_time_periods: list of time_period objects usually provided by filters
+            - {'start_date':..., 'end_date':...}
+        queryset: the resulting data to split into these results
+        date_range_type: how the results are split
+            - 'fy', 'quarter', or 'month'
+        columns: dictionary of columns to include from the queryset
+            - {'name of field to be included in the resulting dict': 'column to be pulled from the queryset'}
+    Returns:
+        list of dict results split by fiscal years/quarters/months
     """
     min_date, max_date = min_and_max_from_date_ranges(filter_time_periods)
     results = create_full_time_periods(min_date, max_date, date_range_type, columns)

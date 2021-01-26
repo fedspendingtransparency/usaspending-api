@@ -13,11 +13,11 @@ class BaseAutocompleteViewSet(APIView):
     @staticmethod
     def get_request_payload(request):
         """
-            Retrieves all the request attributes needed for the autocomplete endpoints.
+        Retrieves all the request attributes needed for the autocomplete endpoints.
 
-            Current attributes:
-            * search_text : string to search for
-            * limit : number of items to return
+        Current attributes:
+        * search_text : string to search for
+        * limit : number of items to return
         """
 
         json_request = request.data

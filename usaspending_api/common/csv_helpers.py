@@ -7,14 +7,14 @@ from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 def count_rows_in_delimited_file(filename, has_header=True, safe=True, delimiter=","):
     """
-        Simple and efficient utility function to provide the rows in a valid delimited file
-        If a header is not present, set head_header parameter to False
+    Simple and efficient utility function to provide the rows in a valid delimited file
+    If a header is not present, set head_header parameter to False
 
-        Added "safe" mode which will handle any NUL BYTE characters in delimited files
-        It does increase the function runtime by approx 10%.
-            Example:
-                "non-safe" counting ~1 million records in a delimited file takes 9s
-                using "safe mode", it now takes 10s
+    Added "safe" mode which will handle any NUL BYTE characters in delimited files
+    It does increase the function runtime by approx 10%.
+        Example:
+            "non-safe" counting ~1 million records in a delimited file takes 9s
+            using "safe mode", it now takes 10s
 
     """
     with codecs.open(filename, "r") as f:

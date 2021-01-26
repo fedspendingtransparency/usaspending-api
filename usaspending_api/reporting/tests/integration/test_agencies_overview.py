@@ -1,4 +1,6 @@
 import pytest
+
+from django.conf import settings
 from model_mommy import mommy
 from rest_framework import status
 
@@ -173,9 +175,9 @@ def setup_test_data(db):
     )
 
 
-assurance_statement_1 = "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2019/P06/123%20-%20Test%20Agency%20(ABC)/2019-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
-assurance_statement_2 = "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2021/P03/987%20-%20Test%20Agency%202%20(XYZ)/2021-P03-987_Test%20Agency%202%20(XYZ)-Assurance_Statement.txt"
-assurance_statement_3 = "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2021/P03/001%20-%20Test%20Agency%203%20(AAA)/2021-P03-001_Test%20Agency%203%20(AAA)-Assurance_Statement.txt"
+assurance_statement_1 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/P06/123%20-%20Test%20Agency%20(ABC)/2019-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
+assurance_statement_2 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2021/P03/987%20-%20Test%20Agency%202%20(XYZ)/2021-P03-987_Test%20Agency%202%20(XYZ)-Assurance_Statement.txt"
+assurance_statement_3 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2021/P03/001%20-%20Test%20Agency%203%20(AAA)/2021-P03-001_Test%20Agency%203%20(AAA)-Assurance_Statement.txt"
 
 
 def test_basic_success(setup_test_data, client):

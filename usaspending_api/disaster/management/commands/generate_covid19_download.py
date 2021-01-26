@@ -50,7 +50,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """
-            Generates a download data package specific to COVID-19 spending
+        Generates a download data package specific to COVID-19 spending
         """
         self.upload = not options["skip_upload"]
         self.zip_file_path = (

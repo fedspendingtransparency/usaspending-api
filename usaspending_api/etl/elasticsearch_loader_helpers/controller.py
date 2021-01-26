@@ -33,8 +33,8 @@ total_doc_fail = Value("i", 0, lock=True)
 
 def init_shared_abort(a: Event) -> None:
     """
-        Odd mechanism to set a global abort event in each subprocess
-        Inspired by https://stackoverflow.com/a/59984671
+    Odd mechanism to set a global abort event in each subprocess
+    Inspired by https://stackoverflow.com/a/59984671
     """
     global abort
     abort = a
@@ -48,8 +48,6 @@ class Controller:
         self.tasks = []
 
     def prepare_for_etl(self) -> None:
-        if self.config["process_deletes"]:
-            self.run_deletes()
         logger.info(format_log("Assessing data to process"))
         self.record_count, self.min_id, self.max_id = count_of_records_to_process(self.config)
 
