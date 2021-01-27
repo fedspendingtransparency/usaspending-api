@@ -148,13 +148,7 @@ class Command(BaseCommand):
 
         for i, sql in enumerate(sqlparse.split(insert_table_sql)):
             tasks.append(
-                asyncio.ensure_future(
-                    async_run_creates(
-                        sql,
-                        wrapper=Timer(f"Insert into table {i}"),
-                    ),
-                    loop=loop,
-                )
+                asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(f"Insert into table {i}"),), loop=loop,)
             )
 
         loop.run_until_complete(asyncio.gather(*tasks))
@@ -180,10 +174,7 @@ class Command(BaseCommand):
 
         async def create_with_sem(sql, index):
             async with semaphore:
-                return await async_run_creates(
-                    sql,
-                    wrapper=Timer(f"Creating Index {index}"),
-                )
+                return await async_run_creates(sql, wrapper=Timer(f"Creating Index {index}"),)
 
         for i, sql in enumerate(index_definitions):
             logger.info(f"Creating future for index: {i} - SQL: {sql}")

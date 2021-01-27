@@ -47,7 +47,7 @@ class TestElasticSearchIndex:
             "verbose": False,
             "verbosity": 0,
             "write_alias": self.index_name + "-alias",
-            "process_deletes": True
+            "process_deletes": True,
         }
         self.worker = TaskSpec(
             base_table=None,

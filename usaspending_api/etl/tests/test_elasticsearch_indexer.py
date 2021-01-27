@@ -3,6 +3,7 @@ from django.conf import settings
 
 from collections import OrderedDict
 from datetime import datetime, timezone
+from elasticsearch import Elasticsearch
 from model_mommy import mommy
 from pathlib import Path
 
@@ -254,7 +255,7 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     TransactionFABS.objects.all().delete()
     Award.objects.all().delete()
 
-    client = elasticsearch_award_index.client  # type: elasticsearch.Elasticsearch
+    client = elasticsearch_award_index.client  # type: Elasticsearch
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
     es_etl_config = set_config([], elasticsearch_award_index.etl_config)
@@ -286,7 +287,7 @@ def test_delete_awards_zero_for_unmatched_transactions(award_data_fixture, elast
         },
     )
 
-    client = elasticsearch_award_index.client  # type: elasticsearch.Elasticsearch
+    client = elasticsearch_award_index.client  # type: Elasticsearch
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == Award.objects.count()
     config = set_config([], elasticsearch_award_index.etl_config)
@@ -321,7 +322,7 @@ def test_delete_one_assistance_award(
     tx.award.delete()
     tx.delete()
 
-    client = elasticsearch_award_index.client  # type: elasticsearch.Elasticsearch
+    client = elasticsearch_award_index.client  # type: Elasticsearch
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
     es_etl_config = set_config([], elasticsearch_award_index.etl_config)
@@ -334,9 +335,7 @@ def test_delete_one_assistance_award(
     assert es_award_docs == original_db_awards_count - 1
 
 
-def test_delete_one_assistance_transaction(
-    award_data_fixture, elasticsearch_transaction_index, monkeypatch, db
-):
+def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_transaction_index, monkeypatch, db):
     """Ensure that transactions not logged for delete don't get deleted but those logged for delete do"""
     elasticsearch_transaction_index.update_index()
 
@@ -356,7 +355,7 @@ def test_delete_one_assistance_transaction(
     tx.award.delete()
     tx.delete()
 
-    client = elasticsearch_transaction_index.client  # type: elasticsearch.Elasticsearch
+    client = elasticsearch_transaction_index.client  # type: Elasticsearch
     es_award_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_award_docs == original_db_tx_count
     es_etl_config = set_config([], elasticsearch_transaction_index.etl_config)
