@@ -15,8 +15,8 @@ class FilterEndpoint(APIView):
     @staticmethod
     def create_hash(payload):
         """
-            Create a MD5 hash from a Python dict
-            (Some tomfoolery here due to Python's handling of byte strings)
+        Create a MD5 hash from a Python dict
+        (Some tomfoolery here due to Python's handling of byte strings)
         """
         m = hashlib.md5()
         m.update(payload)

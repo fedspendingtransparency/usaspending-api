@@ -18,12 +18,12 @@ def reset_object_class_cache():
 def get_object_class_row(row):
     """Lookup an object class record.
 
-       (As ``get_object_class``, but arguments are bunched into a ``row`` object.)
+    (As ``get_object_class``, but arguments are bunched into a ``row`` object.)
 
-        Args:
-            row.object_class: object class from the broker
-            row.by_direct_reimbursable_fun: direct/reimbursable flag from the broker
-                (used only when the object_class is 3 digits instead of 4)
+     Args:
+         row.object_class: object class from the broker
+         row.by_direct_reimbursable_fun: direct/reimbursable flag from the broker
+             (used only when the object_class is 3 digits instead of 4)
     """
     global OBJECT_CLASSES
     if OBJECT_CLASSES is None:
@@ -70,10 +70,10 @@ def get_object_class_row(row):
 def get_object_class(row_object_class, row_direct_reimbursable):
     """Lookup an object class record.
 
-        Args:
-            row_object_class: object class from the broker
-            row_direct_reimbursable: direct/reimbursable flag from the broker
-                (used only when the object_class is 3 digits instead of 4)
+    Args:
+        row_object_class: object class from the broker
+        row_direct_reimbursable: direct/reimbursable flag from the broker
+            (used only when the object_class is 3 digits instead of 4)
     """
 
     row = Bunch(object_class=row_object_class, by_direct_reimbursable_fun=row_direct_reimbursable)

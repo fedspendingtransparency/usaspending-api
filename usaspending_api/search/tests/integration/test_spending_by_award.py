@@ -394,7 +394,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index
 @pytest.mark.django_db
 def test_inclusive_naics_code(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
-        Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
+    Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
     """
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -424,7 +424,7 @@ def test_inclusive_naics_code(client, monkeypatch, spending_by_award_test_data, 
 @pytest.mark.django_db
 def test_exclusive_naics_code(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
-        Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
+    Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
     """
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -454,7 +454,7 @@ def test_exclusive_naics_code(client, monkeypatch, spending_by_award_test_data, 
 @pytest.mark.django_db
 def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
-        Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
+    Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
     """
 
     mommy.make(

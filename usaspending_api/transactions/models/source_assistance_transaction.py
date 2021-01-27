@@ -7,13 +7,13 @@ from usaspending_api.common.custom_django_fields import NumericField, NaiveTimes
 class SourceAssistanceTransaction(models.Model):
     """Raw assistance transaction record originating from Broker
 
-        Model contains a 100% duplicate copy of *active*
-        award modifications (aka transactions) stored in
-        published_award_financial_assistance from a Broker database.
+    Model contains a 100% duplicate copy of *active*
+    award modifications (aka transactions) stored in
+    published_award_financial_assistance from a Broker database.
 
-        NO DATA MANIPULATION SHOULD BE PERFORMED BY DATA ETL
+    NO DATA MANIPULATION SHOULD BE PERFORMED BY DATA ETL
 
-        Put non-null fields on the top, all other fields sort alphabetically
+    Put non-null fields on the top, all other fields sort alphabetically
     """
 
     published_award_financial_assistance_id = models.IntegerField(

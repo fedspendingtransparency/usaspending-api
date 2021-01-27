@@ -13,11 +13,11 @@ from usaspending_api.recipient.models import StateData
 @pytest.mark.django_db
 def test_program_activity_fresh_load():
     """
-        Test the state data load to ensure data is loaded
+    Test the state data load to ensure data is loaded
 
-        A unique set is defined by the following columns:
-            fips code
-            year
+    A unique set is defined by the following columns:
+        fips code
+        year
     """
 
     call_command("load_state_data", "usaspending_api/recipient/tests/data/CensusStateData.csv")

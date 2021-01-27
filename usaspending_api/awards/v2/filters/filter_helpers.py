@@ -22,12 +22,12 @@ Range = namedtuple("Range", ["start", "end"])
 
 def merge_date_ranges(date_range_list):
     """
-        Given a list of date ranges (using the defined namedtuple "Range"), combine overlapping date ranges
-        While adjacent fiscal years do not overlap the desired behavior is to combine them
-            FY2010 ends on 2010-09-30, FY2011 start on 2010-10-01.
-        To address this, when comparing ranges 1 day is removed from the start date and 1 day is added to the end date
-        Then the overlapping ranges must be > 1 instead of > 0
-        Inspired by Raymond Hettinger [https://stackoverflow.com/a/9044111]
+    Given a list of date ranges (using the defined namedtuple "Range"), combine overlapping date ranges
+    While adjacent fiscal years do not overlap the desired behavior is to combine them
+        FY2010 ends on 2010-09-30, FY2011 start on 2010-10-01.
+    To address this, when comparing ranges 1 day is removed from the start date and 1 day is added to the end date
+    Then the overlapping ranges must be > 1 instead of > 0
+    Inspired by Raymond Hettinger [https://stackoverflow.com/a/9044111]
     """
     ordered_list = sorted([sorted(t) for t in date_range_list])
     saved_range = Range(start=ordered_list[0][0], end=ordered_list[0][1])
@@ -142,7 +142,7 @@ def total_obligation_queryset(amount_obj, model, filters):
 
 def can_use_month_aggregation(time_period):
     """
-        time_period is the list of action_date ranges from API
+    time_period is the list of action_date ranges from API
     """
     try:
         for v in time_period:
@@ -173,7 +173,7 @@ def can_use_total_obligation_enum(amount_obj):
 
 def only_action_date_type(time_period):
     """
-        if a date_type is last_modified_date, don't use the matview this applies to
+    if a date_type is last_modified_date, don't use the matview this applies to
     """
     try:
         for v in time_period:
