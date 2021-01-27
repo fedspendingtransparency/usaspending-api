@@ -24,22 +24,14 @@ def mock_api_response(monkeypatch, status, json_data):
 def test_api_err(client, monkeypatch):
     mock_api_response(monkeypatch=monkeypatch, status=status.HTTP_200_OK, json_data={"errorMsgs": ["error msg"]})
     response = client.get("/api/v2/references/cfda/totals/")
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    assert (
-        response.json()["detail"]
-        == "Error returned by https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals: ['error msg']"
-    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 @pytest.mark.django_db
 def test_service_unavailable(client, monkeypatch):
     mock_api_response(monkeypatch=monkeypatch, status=status.HTTP_503_SERVICE_UNAVAILABLE, json_data={})
     response = client.get("/api/v2/references/cfda/totals/")
-    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
-    assert (
-        response.json()["detail"]
-        == "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not available (status 503)"
-    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 @pytest.mark.django_db
@@ -53,12 +45,7 @@ def test_bad_format(client, monkeypatch):
         },
     )
     response = client.get("/api/v2/references/cfda/totals/00.000/")
-    print(response.json())
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    assert (
-        response.json()["detail"]
-        == "Data from https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals not in expected format: {'code': '00.000', 'posted': 1, 'closed': 3, 'archived': 962, 'forecasted': 0}"
-    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 @pytest.mark.django_db

@@ -1,14 +1,12 @@
 from rest_framework.views import APIView
 from requests import post
-from rest_framework import status
 from rest_framework.response import Response
 from time import sleep
 from django.conf import settings
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import NoDataFoundException, InternalServerError, ServiceUnavailable
+from usaspending_api.common.exceptions import NoDataFoundException
 
 CFDA_DICTIONARY = None
-CFDA_URL = "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals"
 
 
 class CFDAViewSet(APIView):
@@ -40,7 +38,7 @@ class CFDAViewSet(APIView):
                     "forecasted": result["forecasted"],
                 }
             except KeyError:
-                raise InternalServerError(f"Data from {CFDA_URL} not in expected format: {result}")
+                raise NoDataFoundException(f"Data from grants API not in expected format: {result}")
 
         else:
             response = {"results": CFDA_DICTIONARY.values()}
@@ -53,6 +51,7 @@ class CFDAViewSet(APIView):
             response = self._request_from_grants_api()
 
             #  grants API is brittle in practice, so if we don't get results retry at a polite rate
+            # update 1/27/21 now that we're checking status & results, is there any value in this loop?
             remaining_tries = 30  # 30 attempts two seconds apart gives the max wait time for the API
             while not response:
                 if remaining_tries == 0:
@@ -65,12 +64,12 @@ class CFDAViewSet(APIView):
 
     def _request_from_grants_api(self):
         cfda_response = post(
-            CFDA_URL,
+            "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals",
             headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
         )
-        if cfda_response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
-            raise ServiceUnavailable(f"{CFDA_URL} not available (status 503)")
+        if cfda_response.status_code != 200:
+            raise NoDataFoundException(f"Status returned by grants API: {cfda_response.status_code}")
         if cfda_response.json()["errorMsgs"] != []:
-            raise InternalServerError(f"Error returned by {CFDA_URL}: {cfda_response.json()['errorMsgs']}")
+            raise NoDataFoundException(f"Error returned by grants API: {cfda_response.json()['errorMsgs']}")
 
         return cfda_response.json()["cfdas"]
