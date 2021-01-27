@@ -12,8 +12,6 @@ from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_di
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 
 from usaspending_api.etl.elasticsearch_loader_helpers import (
-    check_awards_for_deletes,
-    get_deleted_award_ids,
     Controller,
     execute_sql_statement,
     transform_award_data,
@@ -22,6 +20,10 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     delete_transactions,
 )
 from usaspending_api.etl.management.commands.elasticsearch_indexer import set_config
+from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
+    _check_awards_for_deletes,
+    _lookup_deleted_award_ids,
+)
 
 
 @pytest.fixture
@@ -198,25 +200,25 @@ def mock_execute_sql(sql, results, verbosity=None):
     return execute_sql_to_ordered_dictionary(sql)
 
 
-def test_award_delete_sql(award_data_fixture, monkeypatch, db):
+def test__lookup_deleted_award_ids(award_data_fixture, elasticsearch_award_index):
+    elasticsearch_award_index.update_index()
+    id_list = [{"key": 1, "col": "award_id"}]
+    client = elasticsearch_award_index.client
+    ids = _lookup_deleted_award_ids(client, id_list, award_config, index=elasticsearch_award_index.index_name)
+    assert ids == ["CONT_AWD_IND12PB00323"]
+
+
+def test__check_awards_for_deletes(award_data_fixture, monkeypatch, db):
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
     )
     id_list = ["CONT_AWD_IND12PB00323"]
-    awards = check_awards_for_deletes(id_list)
+    awards = _check_awards_for_deletes(id_list)
     assert awards == []
 
     id_list = ["CONT_AWD_WHATEVER", "CONT_AWD_IND12PB00323"]
-    awards = check_awards_for_deletes(id_list)
+    awards = _check_awards_for_deletes(id_list)
     assert awards == [OrderedDict([("generated_unique_award_id", "CONT_AWD_WHATEVER")])]
-
-
-def test_get_award_ids(award_data_fixture, elasticsearch_award_index):
-    elasticsearch_award_index.update_index()
-    id_list = [{"key": 1, "col": "award_id"}]
-    client = elasticsearch_award_index.client
-    ids = get_deleted_award_ids(client, id_list, award_config, index=elasticsearch_award_index.index_name)
-    assert ids == ["CONT_AWD_IND12PB00323"]
 
 
 def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db):
@@ -241,9 +243,8 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     deleted_tx = {key: {"timestamp": datetime.now()} for key in fpds_keys + fabs_keys}
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
-    # TODO: Change function name back to _gather_deleted_ids after downmerge from master
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.gather_deleted_ids", lambda cfg: deleted_tx
+        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_ids", lambda cfg: deleted_tx
     )
 
     original_db_awards_count = Award.objects.count()
@@ -276,9 +277,8 @@ def test_delete_awards_zero_for_unmatched_transactions(award_data_fixture, elast
 
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
-    # TODO: Change function name back to _gather_deleted_ids after downmerge from master
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.gather_deleted_ids",
+        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_ids",
         lambda cfg: {
             "unmatchable_tx_key1": {"timestamp": datetime.now()},
             "unmatchable_tx_key2": {"timestamp": datetime.now()},
@@ -311,9 +311,8 @@ def test_delete_one_assistance_award(
     deleted_tx = {fabs_key: {"timestamp": datetime.now()}}
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
-    # TODO: Change function name back to _gather_deleted_ids after downmerge from master
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.gather_deleted_ids", lambda cfg: deleted_tx
+        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_ids", lambda cfg: deleted_tx
     )
 
     original_db_awards_count = Award.objects.count()
@@ -335,9 +334,7 @@ def test_delete_one_assistance_award(
     assert es_award_docs == original_db_awards_count - 1
 
 
-def test_delete_one_assistance_transaction(
-    award_data_fixture, elasticsearch_transaction_index, monkeypatch, db
-):
+def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_transaction_index, monkeypatch, db):
     """Ensure that transactions not logged for delete don't get deleted but those logged for delete do"""
     elasticsearch_transaction_index.update_index()
 
@@ -347,9 +344,8 @@ def test_delete_one_assistance_transaction(
     deleted_tx = {fabs_key: {"timestamp": datetime.now()}}
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
-    # TODO: Change function name back to _gather_deleted_ids after downmerge from master
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.gather_deleted_ids", lambda cfg: deleted_tx
+        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_ids", lambda cfg: deleted_tx
     )
 
     original_db_tx_count = TransactionNormalized.objects.count()
