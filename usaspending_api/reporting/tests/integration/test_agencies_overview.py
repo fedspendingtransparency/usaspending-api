@@ -229,10 +229,6 @@ def test_basic_success(setup_test_data, client):
 
 
 def test_filter(setup_test_data, client):
-    resp = client.get(url + "?filter=Test Agency 2")
-    assert resp.status_code == status.HTTP_200_OK
-    response = resp.json()
-    assert len(response["results"]) == 1
     expected_results = [
         {
             "agency_name": "Test Agency 2",
@@ -254,6 +250,17 @@ def test_filter(setup_test_data, client):
             "assurance_statement_url": assurance_statement_2,
         }
     ]
+
+    resp = client.get(url + "?filter=Test Agency 2")
+    assert resp.status_code == status.HTTP_200_OK
+    response = resp.json()
+    assert len(response["results"]) == 1
+    assert response["results"] == expected_results
+
+    resp = client.get(url + "?filter=xYz")
+    assert resp.status_code == status.HTTP_200_OK
+    response = resp.json()
+    assert len(response["results"]) == 1
     assert response["results"] == expected_results
 
 
