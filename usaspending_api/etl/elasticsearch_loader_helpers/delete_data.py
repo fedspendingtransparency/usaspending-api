@@ -6,10 +6,12 @@ from collections import defaultdict
 from datetime import datetime
 from django.conf import settings
 from time import perf_counter
-from typing import Tuple, List, Optional, Dict, Any
+from typing import Tuple, List, Optional, Dict
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q as ES_Q
+from elasticsearch_dsl.mapping import Mapping
+
 
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
@@ -116,6 +118,14 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
     if not index:
         raise RuntimeError("index name must be provided")
 
+    if not _check_keyword_field(client, key, index):
+        msg = (
+            f"This function can only perform deletes by key if the key field is of type keyword. "
+            f'In index "{index}" the "{key}" was either not of type keyword, or not found.'
+        )
+        logger.error(format_log(msg=msg, action="Delete", name=task_id))
+        raise RuntimeError(msg)
+
     deleted = 0
     is_error = False
     try:
@@ -141,6 +151,18 @@ def delete_docs_by_unique_key(client: Elasticsearch, key: str, value_list: list,
         logger.info(format_log(msg, action="Delete", name=task_id))
 
     return deleted
+
+
+def _check_keyword_field(client: Elasticsearch, key_field: str, index: str) -> bool:
+    """Return ``True`` if the given field's mapping in the given index is of type ``keyword``. Otherwise ``False``"""
+    if key_field == "_id":
+        # Special case. It is a reserved field, without a type, but can effectively be treated as a keyword field
+        return True
+
+    es_field_type = Mapping().from_es(using=client, index=index).resolve_field(key_field)
+    if es_field_type != "keyword":
+        return False
+    return True
 
 
 def _lookup_deleted_award_ids(client: Elasticsearch, id_list: list, config: dict, index: Optional[str] = None) -> list:
