@@ -49,14 +49,6 @@ class UnprocessableEntityException(APIException):
     default_code = "invalid_request"
 
 
-class InternalServerError(APIException):
-    """Exception for general server error."""
-
-    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    default_detail = "Server could not process response"
-    default_code = "internal_server_error"
-
-
 class ElasticsearchConnectionException(APIException):
     """Exception for invalid request parameters."""
 
@@ -71,14 +63,6 @@ class NotImplementedException(APIException):
     status_code = status.HTTP_501_NOT_IMPLEMENTED
     default_detail = "Functionality Not (yet) Implemented"
     default_code = "invalid_request"
-
-
-class ServiceUnavailable(APIException):
-    """Exception for when the request was valid, but the server is not available to process or return results."""
-
-    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    default_detail = "Request was valid but server is not available at this time"
-    default_code = "service_unavailable"
 
 
 class EndpointTimeoutException(APIException):

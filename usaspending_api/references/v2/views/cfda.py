@@ -7,6 +7,7 @@ from usaspending_api.common.exceptions import NoDataFoundException
 import logging
 
 logger = logging.getLogger(__name__)
+CFDA_DICTIONARY = None
 
 
 class CFDAViewSet(APIView):
@@ -21,8 +22,9 @@ class CFDAViewSet(APIView):
         """
         Return the CFDA's opportunity totals from grants.gov, or totals for all current CFDAs.
         """
-
-        CFDA_DICTIONARY = self.get_cfdas()
+        global CFDA_DICTIONARY
+        if not CFDA_DICTIONARY:
+            CFDA_DICTIONARY = self.get_cfdas()
 
         if cfda:
             result = CFDA_DICTIONARY.get(cfda)
@@ -63,7 +65,7 @@ class CFDAViewSet(APIView):
             # check response for expected details
             if response.get("cfdas"):
                 cfdas = response["cfdas"]
-                key_check = {"cfda": None, "posted": None, "closed": None, "archived": None, "forecasted": None}
+                key_check = {"cfda", "posted", "closed", "archived", "forecasted"}
                 for cfda in cfdas.values():
                     if set(key_check) - set(cfda):
                         logger.error(f"Data from grants API not in expected format: {cfdas}")
