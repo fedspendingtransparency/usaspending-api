@@ -52,9 +52,9 @@ def filter_by_latest_closed_periods(submission_query_path: str = "") -> Q:
 
 def filter_by_defc_closed_periods() -> Q:
     """
-        These filters should only be used when looking at submission data
-        that includes DEF Codes, which only started appearing in submission
-        for FY2020 P07 (Apr 1, 2020) and after
+    These filters should only be used when looking at submission data
+    that includes DEF Codes, which only started appearing in submission
+    for FY2020 P07 (Apr 1, 2020) and after
     """
     q = Q()
     for sub in final_submissions_for_all_fy():
@@ -76,8 +76,8 @@ def filter_by_defc_closed_periods() -> Q:
 @lru_cache(maxsize=1)
 def final_submissions_for_all_fy() -> List[tuple]:
     """
-        Returns a list the latest monthly and quarterly submission for each
-        fiscal year IF it is "closed" aka ready for display on USAspending.gov
+    Returns a list the latest monthly and quarterly submission for each
+    fiscal year IF it is "closed" aka ready for display on USAspending.gov
     """
     return (
         DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=now())
@@ -221,7 +221,7 @@ class DisasterBase(APIView):
 
         base_values = With(
             FinancialAccountsByAwards.objects.filter(
-                Q(award__type__in=loan_type_mapping), self.all_closed_defc_submissions, self.is_in_provided_def_codes,
+                Q(award__type__in=loan_type_mapping), self.all_closed_defc_submissions, self.is_in_provided_def_codes
             )
             .annotate(
                 grouping_key=grouping_key,
@@ -258,14 +258,14 @@ class DisasterBase(APIView):
             .values("grouping_key")
             .annotate(
                 obligation=Coalesce(Sum("transaction_obligated_amount"), 0),
-                outlay=Coalesce(Sum(Case(When(q, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0),)), 0,),
+                outlay=Coalesce(Sum(Case(When(q, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0))), 0),
             )
             .values("grouping_key", "obligation", "outlay"),
             "aggregate_faba",
         )
 
         distinct_awards = With(
-            base_values.queryset().values("grouping_key", "award_id", "total_loan_value").distinct(), "distinct_awards",
+            base_values.queryset().values("grouping_key", "award_id", "total_loan_value").distinct(), "distinct_awards"
         )
 
         aggregate_awards = With(

@@ -33,16 +33,25 @@ class Command(BaseCommand):
         self.matviews = MATERIALIZED_VIEWS
         self.chunked_matviews = CHUNKED_MATERIALIZED_VIEWS
         if args["only"]:
-            self.matviews = {args["only"]: MATERIALIZED_VIEWS[args["only"]]}
+            if args["only"] == "none":
+                self.matviews = {}
+            else:
+                self.matviews = {args["only"]: MATERIALIZED_VIEWS[args["only"]]}
         self.matview_dir = args["temp_dir"]
         self.matview_chunked_dir = args["temp_chunked_dir"]
         self.no_cleanup = args["leave_sql"]
         self.remove_matviews = not args["leave_old"]
         self.run_dependencies = args["dependencies"]
         self.chunk_count = args["chunk_count"]
+        self.include_chunked_matviews = args["include_chunked_matviews"]
+        self.index_concurrency = args["index_concurrency"]
 
     def add_arguments(self, parser):
-        parser.add_argument("--only", choices=list(MATERIALIZED_VIEWS.keys()))
+        parser.add_argument(
+            "--only",
+            choices=list(MATERIALIZED_VIEWS.keys()) + ["none"],
+            help="If matviews are listed with this option, only those matviews will be run. 'none' will result in no matviews being run",
+        )
         parser.add_argument(
             "--leave-sql",
             action="store_true",
@@ -71,6 +80,12 @@ class Command(BaseCommand):
         parser.add_argument(
             "--chunk-count", default=10, help="Number of chunks to split chunked matviews into", type=int
         )
+        parser.add_argument(
+            "--include-chunked-matviews",
+            action="store_true",
+            help="Chunked Transaction Search matviews will be refreshed and inserted into table",
+        )
+        parser.add_argument("--index-concurrency", default=20, help="Number of indexes to be created at once", type=int)
 
     def handle(self, *args, **options):
         """Overloaded Command Entrypoint"""
@@ -100,15 +115,16 @@ class Command(BaseCommand):
         exec_str = f"python3 {MATVIEW_GENERATOR_FILE} --quiet --dest={self.matview_dir}/ --batch_indexes=3"
         subprocess.call(exec_str, shell=True)
 
-        # Create SQL files for Chunked Universal Transaction Matviews
-        for matview, config in self.chunked_matviews.items():
-            exec_str = (
-                f"python3 {CHUNKED_MATVIEW_GENERATOR_FILE} --quiet"
-                f" --file {config['json_filepath']}"
-                f" --chunk-count {self.chunk_count}"
-                f" --dest={self.matview_chunked_dir}"
-            )
-            subprocess.call(exec_str, shell=True)
+        if self.include_chunked_matviews:
+            # Create SQL files for Chunked Universal Transaction Matviews
+            for matview, config in self.chunked_matviews.items():
+                exec_str = (
+                    f"python3 {CHUNKED_MATVIEW_GENERATOR_FILE} --quiet"
+                    f" --file {config['json_filepath']}"
+                    f" --chunk-count {self.chunk_count}"
+                    f" --dest={self.matview_chunked_dir}"
+                )
+                subprocess.call(exec_str, shell=True)
 
     def cleanup(self):
         """Cleanup files after run"""
@@ -126,22 +142,27 @@ class Command(BaseCommand):
             tasks.append(asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(matview)), loop=loop))
 
         # Create Chunked Matviews
-        for matview, config in self.chunked_matviews.items():
-            for current_chunk in range(self.chunk_count):
-                chunked_matview = f"{matview}_{current_chunk}"
-                logger.info(f"Creating Future for chunked matview {chunked_matview}")
-                sql = (self.matview_chunked_dir / f"{chunked_matview}.sql").read_text()
-                tasks.append(asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(chunked_matview)), loop=loop))
+        if self.include_chunked_matviews:
+            for matview, config in self.chunked_matviews.items():
+                for current_chunk in range(self.chunk_count):
+                    chunked_matview = f"{matview}_{current_chunk}"
+                    logger.info(f"Creating Future for chunked matview {chunked_matview}")
+                    sql = (self.matview_chunked_dir / f"{chunked_matview}.sql").read_text()
+                    tasks.append(
+                        asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(chunked_matview)), loop=loop)
+                    )
 
-        loop.run_until_complete(asyncio.gather(*tasks))
+        if len(tasks) > 0:
+            loop.run_until_complete(asyncio.gather(*tasks))
+
         loop.close()
 
-        if "universal_transaction_matview" in self.chunked_matviews:
-            logger.info("Inserting data from universal_transaction_matview chunks into single table.")
+        if "transaction_search" in self.chunked_matviews and self.include_chunked_matviews:
+            logger.info("Inserting data from transaction_search chunks into transaction_search table.")
             call_command(
-                "combine_universal_transaction_matview_chunks",
+                "combine_transaction_search_chunks",
                 chunk_count=self.chunk_count,
-                index_concurrency=20,
+                index_concurrency=self.index_concurrency,
                 matview_dir=self.matview_chunked_dir,
             )
 

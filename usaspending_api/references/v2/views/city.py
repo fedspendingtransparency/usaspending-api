@@ -86,13 +86,13 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
 
 def create_es_search(scope, search_text, country=None, state=None):
     """
-        Providing the parameters, create a dictionary representing the bool-query conditional clauses for elasticsearch
+    Providing the parameters, create a dictionary representing the bool-query conditional clauses for elasticsearch
 
-        Args:
-            scope: which city field was chosen for searching `pop` (place of performance) or `recipient_location`
-            search_text: the text the user is typing in and sent to the backend
-            country: optional country selected by user
-            state: optional state selected by user
+    Args:
+        scope: which city field was chosen for searching `pop` (place of performance) or `recipient_location`
+        search_text: the text the user is typing in and sent to the backend
+        country: optional country selected by user
+        state: optional state selected by user
     """
     # The base query that will do a wildcard term-level query
     query = {"must": [{"wildcard": {"{}_city_name.keyword".format(scope): search_text + "*"}}]}

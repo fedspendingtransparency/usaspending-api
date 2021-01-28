@@ -33,9 +33,7 @@ def construct_response(results: list, pagination: Pagination):
     }
 
 
-class SpendingViewSet(
-    SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase, PaginationMixin,
-):
+class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase, PaginationMixin):
     """ Returns disaster spending by federal account. """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"

@@ -135,12 +135,12 @@ class TransactionSummaryVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request):
         """
-            Returns a summary of transactions which match the award search filter
-                Desired values:
-                    total number of transactions `award_count`
-                    The federal_action_obligation sum of all those transactions `award_spending`
+        Returns a summary of transactions which match the award search filter
+            Desired values:
+                total number of transactions `award_count`
+                The federal_action_obligation sum of all those transactions `award_spending`
 
-            *Note* Only deals with prime awards, future plans to include sub-awards.
+        *Note* Only deals with prime awards, future plans to include sub-awards.
         """
 
         models = [

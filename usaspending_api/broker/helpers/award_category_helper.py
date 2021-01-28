@@ -1,16 +1,16 @@
 def award_types(row):
     """
-        "Award Type" for FPDS transactions
-            if award <> IDV (`pulled_from` <> 'IDV'): use `contract_award_type`
-            elif `idv_type` == B &`type_of_idc` is present: use "IDV_B_" + `type_of_idc`
-            elif `idv_type` == B & ("case" for type_of_idc_description for specific IDC type): use IDV_B_*
-            else use "IDV_" + `idv_type`
+    "Award Type" for FPDS transactions
+        if award <> IDV (`pulled_from` <> 'IDV'): use `contract_award_type`
+        elif `idv_type` == B &`type_of_idc` is present: use "IDV_B_" + `type_of_idc`
+        elif `idv_type` == B & ("case" for type_of_idc_description for specific IDC type): use IDV_B_*
+        else use "IDV_" + `idv_type`
 
-        "Award Type Description" for FPDS transactions
-            if award <> IDV (`pulled_from` <> 'IDV'): use `contract_award_type_desc`
-            elif `idv_type` == B & `type_of_idc_description` <> null/NAN: use `type_of_idc_description`
-            elif `idv_type` == B: use "INDEFINITE DELIVERY CONTRACT"
-            else: use `idv_type_description`
+    "Award Type Description" for FPDS transactions
+        if award <> IDV (`pulled_from` <> 'IDV'): use `contract_award_type_desc`
+        elif `idv_type` == B & `type_of_idc_description` <> null/NAN: use `type_of_idc_description`
+        elif `idv_type` == B: use "INDEFINITE DELIVERY CONTRACT"
+        else: use `idv_type_description`
     """
     pulled_from = row.get("pulled_from", None)
     idv_type = row.get("idv_type", None)

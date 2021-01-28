@@ -38,7 +38,7 @@ class ETLMixin:
         """
         Read in a SQL file and execute it.  Assumes the file's path has already been
         determined.  If no message is provided, the file named will be logged (if logging
-        is enabled). """
+        is enabled)."""
 
         file_path = Path(file_path)
         return self._execute_dml_sql(file_path.read_text(), timer_message or file_path.stem)
