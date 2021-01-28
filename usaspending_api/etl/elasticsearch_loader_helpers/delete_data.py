@@ -178,7 +178,7 @@ def _lookup_deleted_award_ids(client: Elasticsearch, id_list: list, config: dict
             body = filter_query(column, v)
             response = client.search(index=index, body=json.dumps(body), size=config["max_query_size"])
             if response["hits"]["total"]["value"] != 0:
-                awards = [x["_source"][ES_AWARDS_UNIQUE_KEY_FIELD] for x in response["hits"]["hits"]]
+                awards += [x["_source"][ES_AWARDS_UNIQUE_KEY_FIELD] for x in response["hits"]["hits"]]
     return awards
 
 
