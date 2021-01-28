@@ -224,7 +224,7 @@ def test__lookup_deleted_award_keys_multiple_chunks(award_data_fixture, elastics
         ["CONT_TX_FPDS_TRANSACTION_ID_1", "ASST_TX_FABS_TRANSACTION_ID_2"],
         award_config,
         index=elasticsearch_transaction_index.index_name,
-        lookup_chunk_size=1
+        lookup_chunk_size=1,
     )
     assert "CONT_AWD_IND12PB00323" in ids and "ASST_NON_P063P100612" in ids
     assert len(ids) == 2

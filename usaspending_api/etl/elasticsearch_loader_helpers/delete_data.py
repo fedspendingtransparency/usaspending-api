@@ -136,7 +136,7 @@ def delete_docs_by_unique_key(
     if not _is_allowed_key_field_type(client, key, index):
         msg = (
             f'Cannot perform deletes in index "{index}" by key field "{key}" because its type is not one of '
-            f'the allowed field types, or the field was not found in that index.'
+            f"the allowed field types, or the field was not found in that index."
         )
         logger.error(format_log(msg=msg, action="Delete", name=task_id))
         raise RuntimeError(msg)
@@ -224,7 +224,7 @@ def _lookup_deleted_award_keys(
     if not _is_allowed_key_field_type(client, lookup_key, index):
         msg = (
             f'Cannot perform lookups in index "{index}" with key field "{lookup_key}" because its type is not one of '
-            f'the allowed field types, or the field was not found in that index.'
+            f"the allowed field types, or the field was not found in that index."
         )
         logger.error(format_log(msg=msg, action="Delete"))
         raise RuntimeError(msg)
