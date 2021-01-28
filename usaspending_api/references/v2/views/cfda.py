@@ -53,7 +53,7 @@ class CFDAViewSet(APIView):
                 headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
             )
             if response.status_code != 200:
-                logger.error(f"Status returned by grants API: {response.status_code}")
+                logger.error(f"Error returned by grants API: {response}")
                 raise NoDataFoundException("Grant data is not currently available.")
             response = response.json()
             if response.get("errorMsgs") and response["errorMsgs"] != []:
