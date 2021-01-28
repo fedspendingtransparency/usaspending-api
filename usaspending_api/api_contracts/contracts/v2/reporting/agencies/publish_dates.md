@@ -11,7 +11,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
     + `fiscal_year`: 2020 (required, number)
         The fiscal year.
     + `filter` (optional, string)
-        The agency name to filter on.
+        The agency name or abbreviation to filter on (partial match, case insesitive).
     + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1

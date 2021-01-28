@@ -443,10 +443,6 @@ def test_different_agencies(client, publish_dates_data):
 
 
 def test_filter(client, publish_dates_data):
-    resp = client.get(url + "?fiscal_year=2019&filter=Agency 2")
-    assert resp.status_code == status.HTTP_200_OK
-    response = resp.json()
-    assert len(response["results"]) == 1
     expected_results = [
         {
             "agency_name": "Test Agency 2",
@@ -526,6 +522,16 @@ def test_filter(client, publish_dates_data):
             ],
         }
     ]
+    resp = client.get(url + "?fiscal_year=2019&filter=Agency 2")
+    assert resp.status_code == status.HTTP_200_OK
+    response = resp.json()
+    assert len(response["results"]) == 1
+    assert response["results"] == expected_results
+
+    resp = client.get(url + "?fiscal_year=2019&filter=a2")
+    assert resp.status_code == status.HTTP_200_OK
+    response = resp.json()
+    assert len(response["results"]) == 1
     assert response["results"] == expected_results
 
 
