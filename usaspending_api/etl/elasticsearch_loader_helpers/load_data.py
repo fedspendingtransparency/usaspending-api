@@ -72,7 +72,7 @@ def streaming_post_to_es(
     try:
         if delete_before_index:
             value_list = [doc[delete_key] for doc in chunk]
-            delete_docs_by_unique_key(client, delete_key, value_list, job_name, index_name)
+            delete_docs_by_unique_key(client, delete_key, value_list, job_name, index_name, refresh_after=False)
         for ok, item in helpers.streaming_bulk(
             client,
             actions=chunk,
