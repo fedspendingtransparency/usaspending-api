@@ -1,4 +1,4 @@
-import boto3
+import boto3  # noqa
 import csv
 import logging
 import re
@@ -56,11 +56,11 @@ def retrieve_deleted_transactions(
 
 
 def limit_objects_to_date_range(
-    objects: List[boto3.resources.factory.s3.ObjectSummary],
+    objects: List["boto3.resources.factory.s3.ObjectSummary"],
     regex_pattern: str,
     start_datetime: datetime,
     end_datetime: Optional[datetime] = None,
-) -> List[boto3.resources.factory.s3.ObjectSummary]:
+) -> List["boto3.resources.factory.s3.ObjectSummary"]:
     results = []
     for obj in objects or []:
 
