@@ -1,7 +1,6 @@
 from rest_framework.views import APIView
 from requests import post
 from rest_framework.response import Response
-from time import sleep
 from django.conf import settings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import NoDataFoundException
