@@ -40,7 +40,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
             {
                 "filter": {
-                    "def_codes": ["L", "M", "N", "O", "P"]
+                    "def_codes": ["L", "M", "N", "O", "P", "R"]
                 },
                 "geo_layer": "state",
                 "geo_layer_filters": ["NE", "WY", "CO", "IA", "IL", "MI", "IN", "TX"],
@@ -104,7 +104,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-    Return an award if an of the DEF Codes match the supplied filter since an Award can have multiple DEF Codes.
+    Return an award if any of the DEF Codes match the supplied filter since an Award can have multiple DEF Codes.
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
 
 ## GeographyTypeResult (object)

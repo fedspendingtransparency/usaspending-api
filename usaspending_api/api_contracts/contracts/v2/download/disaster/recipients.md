@@ -15,7 +15,7 @@ Creates a new download job for the requested filters. Returns a link to a zipped
 
             {
                 "filters": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "def_codes": ["L", "M", "N", "O", "P", "R"],
                     "award_type_codes": ["A", "B", "C", "D"]
                 }
             }
@@ -60,7 +60,8 @@ Creates a new download job for the requested filters. Returns a link to a zipped
                             "M",
                             "N",
                             "O",
-                            "P"
+                            "P",
+                            "R"
                         ]
                     }
                 }

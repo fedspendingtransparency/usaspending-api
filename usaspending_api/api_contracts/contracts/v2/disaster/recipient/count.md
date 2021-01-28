@@ -54,6 +54,7 @@ Will filter on File D records that have at least one File C with the provided DE
 + `N`
 + `O`
 + `P`
++ `R`
 
 ## AwardTypeCodes (enum[string])
 List of procurement and assistance award type codes supported by USAspending.gov

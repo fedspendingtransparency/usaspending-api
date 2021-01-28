@@ -25,7 +25,7 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
 
             {
                 "filter": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "def_codes": ["L", "M", "N", "O", "P", "R"],
                     "award_type_codes": ["07", "08"]
                 },
                 "pagination": {

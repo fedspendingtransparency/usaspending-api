@@ -17,7 +17,7 @@ Creates a new download job for the requested account and award. Returns a link t
 
             {
                 "filters": {
-                    "def_codes": ["L", "M", "N", "O", "P"]
+                    "def_codes": ["L", "M", "N", "O", "P", "R"]
                 }
             }
 

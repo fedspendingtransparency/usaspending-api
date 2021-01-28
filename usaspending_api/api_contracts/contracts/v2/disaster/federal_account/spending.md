@@ -30,9 +30,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
 
             {
                 "filter": {
-                    "def_codes": [
-                        "L", "M", "N", "O", "P"
-                    ]
+                    "def_codes": ["L", "M", "N", "O", "P", "R"]
                 },
                 "spending_type": "total",
                 "pagination": {

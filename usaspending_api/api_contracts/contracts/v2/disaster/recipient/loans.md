@@ -25,7 +25,7 @@ Returns loan spending details of recipients receiving supplemental funding budge
 
             {
                 "filter": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "def_codes": ["L", "M", "N", "O", "P", "R"],
                     "award_type_codes": ["07", "08"]
                 },
                 "pagination": {

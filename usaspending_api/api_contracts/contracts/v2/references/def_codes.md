@@ -26,7 +26,7 @@ This endpoint returns a JSON object describing all Disaster and Emergency Fundin
                         "public_law": "Future Disaster and P.L. To Be Determined",
                         "title": "Future Disaster and P.L. To Be Determined",
                         "urls": null,
-                        "disaster": null
+                        "disaster": "covid_19"
                     },
                     {
                         "code": "S",
