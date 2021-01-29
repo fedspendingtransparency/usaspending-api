@@ -43,7 +43,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
     def get_agency_overview(self):
         agency_filters = [Q(toptier_code=OuterRef("toptier_code"))]
         if self.filter is not None:
-            agency_filters.append(Q(name__icontains=self.filter))
+            agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
         result_list = (
             ReportingAgencyOverview.objects.filter(fiscal_year=self.fiscal_year, fiscal_period=self.fiscal_period)
             .annotate(
