@@ -17,7 +17,7 @@ This endpoint returns an overview list of government agencies submission data.
         The fiscal period. Valid values: 2-12 (2 = November ... 12 = September)
         For retriving quarterly data, provide the period which equals 'quarter * 3' (e.g. Q2 = P6)
     + `filter` (optional, string)
-        The agency name to filter on.
+        The agency name or abbreviation to filter on (partial match, case insesitive).
     + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
