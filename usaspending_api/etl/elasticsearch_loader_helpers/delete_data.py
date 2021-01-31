@@ -96,7 +96,13 @@ def _delete_from_es(
 
 
 def delete_docs_by_unique_key(
-    client: Elasticsearch, key: str, value_list: list, task_id: str, index, refresh_after: bool = True
+    client: Elasticsearch,
+    key: str,
+    value_list: list,
+    task_id: str,
+    index,
+    refresh_after: bool = True,
+    use_aliases: bool = False,
 ) -> int:
     """
     Bulk delete a batch of documents whose field identified by ``key`` matches any value provided in the
@@ -120,6 +126,7 @@ def delete_docs_by_unique_key(
             called, or a elasticsearch.exceptions.ConflictError will be raised due to an ES doc version_conflict
             error response. NOTE: This param will be ignored and a refresh will be attempted if this function
             errors-out during execution, in order to not leave un-refreshed deletes in the index.
+        use_aliases (bool): If true, assume an alias for the true index is passed in, and needs wildcards appended
 
     Returns: Number of ES documents deleted
     """
@@ -132,6 +139,9 @@ def delete_docs_by_unique_key(
     logger.info(format_log(f"Deleting up to {len(value_list):,} document(s)", action="Delete", name=task_id))
     if not index:
         raise RuntimeError("index name must be provided")
+
+    if use_aliases:
+        index = f"{index}-*"
 
     if not _is_allowed_key_field_type(client, key, index):
         msg = (
@@ -187,7 +197,10 @@ def _is_allowed_key_field_type(client: Elasticsearch, key_field: str, index: str
         # Special case. It is a reserved field, without a type, but can effectively be treated as a keyword field
         return True
 
-    es_field_type = Mapping().from_es(using=client, index=index).resolve_field(key_field)
+    # Get true index name from alias, if provided an alias
+    response = client.indices.get(index)
+    aliased_index_name = list(response.keys())[0]
+    es_field_type = Mapping().from_es(using=client, index=aliased_index_name).resolve_field(key_field)
     # This is the allowed types whitelist. More can be added as-needed if compatible with terms(s) queries.
     if es_field_type and es_field_type.name in ["keyword", "integer"]:
         return True
@@ -238,12 +251,21 @@ def _lookup_deleted_award_keys(
         logger.error(format_log(msg=msg, action="Delete"))
         raise RuntimeError(msg)
 
+    if lookup_chunk_size > config["max_query_size"]:
+        # Some keys would be left undiscovered if our chunk was cut short by the query only returning a lesser subset
+        msg = (
+            f"{lookup_chunk_size} is greater {config['max_query_size']}, which is the max number of query "
+            f"results returnable from this index. Use a smaller chunk or increase query size for this index."
+        )
+        logger.error(format_log(msg=msg, action="Delete"))
+        raise RuntimeError(msg)
+
     award_key_list = []
     values_generator = chunks(value_list, lookup_chunk_size)
     for chunk_of_values in values_generator:
         # Creates an Elasticsearch query criteria
         q = ES_Q("terms", **{lookup_key: chunk_of_values})
-        response = Search(using=client, index=index).filter(q).execute()
+        response = Search(using=client, index=index).filter(q)[0:config["max_query_size"]].execute()
         if response["hits"]["total"]["value"] != 0:
             award_key_list += [x["_source"][ES_AWARDS_UNIQUE_KEY_FIELD] for x in response["hits"]["hits"]]
     return award_key_list
@@ -293,6 +315,7 @@ def delete_awards(client: Elasticsearch, config: dict) -> int:
         value_list=deleted_award_keys,
         task_id="Sync DB Deletes",
         index=config["query_alias_prefix"],
+        use_aliases=True,
     )
 
 
@@ -320,6 +343,7 @@ def delete_transactions(client: Elasticsearch, config: dict) -> int:
         value_list=[*deleted_tx_keys],
         task_id="Sync DB Deletes",
         index=config["query_alias_prefix"],
+        use_aliases=True,
     )
 
 
