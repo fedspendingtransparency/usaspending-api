@@ -265,7 +265,7 @@ def _lookup_deleted_award_keys(
     for chunk_of_values in values_generator:
         # Creates an Elasticsearch query criteria
         q = ES_Q("terms", **{lookup_key: chunk_of_values})
-        response = Search(using=client, index=index).filter(q)[0:config["max_query_size"]].execute()
+        response = Search(using=client, index=index).filter(q)[0 : config["max_query_size"]].execute()
         if response["hits"]["total"]["value"] != 0:
             award_key_list += [x["_source"][ES_AWARDS_UNIQUE_KEY_FIELD] for x in response["hits"]["hits"]]
     return award_key_list
