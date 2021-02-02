@@ -1,16 +1,18 @@
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from requests import post
-from time import sleep
+from rest_framework.response import Response
 from django.conf import settings
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.exceptions import NoDataFoundException
+import logging
 
+logger = logging.getLogger(__name__)
 CFDA_DICTIONARY = None
 
 
 class CFDAViewSet(APIView):
     """
-    Return an agency name and active fy.
+    Returns opportunity totals for a CFDA or all opportunity totals.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/cfda/totals.md"
@@ -18,15 +20,16 @@ class CFDAViewSet(APIView):
     @cache_response()
     def get(self, request, cfda=None):
         """
-        Return the view's queryset.
+        Return the CFDA's opportunity totals from grants.gov, or totals for all current CFDAs.
         """
-        self._populate_cfdas_if_needed()
+        global CFDA_DICTIONARY
+        if not CFDA_DICTIONARY:
+            CFDA_DICTIONARY = self.get_cfdas()
 
         if cfda:
             result = CFDA_DICTIONARY.get(cfda)
-
             if not result:
-                return Response(status=404)
+                raise NoDataFoundException(f"No grant records found for '{cfda}'.")
 
             response = {
                 "cfda": result["cfda"],
@@ -35,29 +38,42 @@ class CFDAViewSet(APIView):
                 "archived": result["archived"],
                 "forecasted": result["forecasted"],
             }
+
         else:
             response = {"results": CFDA_DICTIONARY.values()}
 
         return Response(response)
 
-    def _populate_cfdas_if_needed(self):
-        global CFDA_DICTIONARY
-        if not CFDA_DICTIONARY:
-            response = self._request_from_grants_api()
+    def get_cfdas(self):
+        cdfas = {}
+        remaining_tries = 10
 
-            #  grants API is brittle in practice, so if we don't get results retry at a polite rate
-            remaining_tries = 30  # 30 attempts two seconds apart gives the max wait time for the API
-            while not response:
-                if remaining_tries == 0:
-                    raise Exception("Failed to get successful response from Grants API!")
-                sleep(2)
-                response = self._request_from_grants_api()
-                remaining_tries = remaining_tries - 1
+        while not cdfas and remaining_tries:
+            remaining_tries -= 1
+            response = post(
+                "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals",
+                headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
+            )
+            if response.status_code != 200:
+                logger.error(f"Error returned by grants API: {response}")
+                raise NoDataFoundException("Grant data is not currently available.")
+            response = response.json()
+            if response.get("errorMsgs") and response["errorMsgs"] != []:
+                logger.error(f"Error returned by grants API: {response['errorMsgs']}")
+                raise NoDataFoundException("Grant data is not currently available.")
 
-            CFDA_DICTIONARY = response
+            if response.get("cfdas"):
+                return self.check_response(response)
 
-    def _request_from_grants_api(self):
-        return post(
-            "https://www.grants.gov/grantsws/rest/opportunities/search/cfda/totals",
-            headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
-        ).json()["cfdas"]
+    def check_response(self, response):
+        cfdas = response.get("cfdas")
+        if not cfdas:
+            logger.error(f"Response from grants API missing 'cfdas' key, full response: {response}")
+            raise NoDataFoundException("Grant data is not currently available.")
+        else:
+            key_check = {"cfda", "posted", "closed", "archived", "forecasted"}
+            for cfda in cfdas.values():
+                if key_check - set(cfda):
+                    logger.error(f"Data from grants API not in expected format: {cfdas}")
+                    raise NoDataFoundException("Grant data is not currently available.")
+        return cfdas
