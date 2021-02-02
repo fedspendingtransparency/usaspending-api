@@ -8,7 +8,7 @@ from elasticsearch import Elasticsearch
 from pathlib import Path
 from string import Template
 
-from etl.elasticsearch_loader_helpers.index_config import create_load_alias
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import create_load_alias
 from usaspending_api.common.sqs.sqs_handler import (
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,

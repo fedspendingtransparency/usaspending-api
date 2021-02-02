@@ -5,9 +5,9 @@ from datetime import datetime, timezone
 from elasticsearch import Elasticsearch
 from model_mommy import mommy
 
-from common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
-from conftest_helpers import TestElasticSearchIndex
-from etl.elasticsearch_loader_helpers import set_final_index_config
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
+from usaspending_api.conftest_helpers import TestElasticSearchIndex
+from usaspending_api.etl.elasticsearch_loader_helpers import set_final_index_config
 from usaspending_api.awards.models import Award, TransactionFABS, TransactionFPDS, TransactionNormalized
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.etl.management.commands.elasticsearch_indexer import (
