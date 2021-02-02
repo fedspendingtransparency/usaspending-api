@@ -8,6 +8,7 @@ from elasticsearch import Elasticsearch
 from pathlib import Path
 from string import Template
 
+from etl.elasticsearch_loader_helpers.index_config import create_load_alias
 from usaspending_api.common.sqs.sqs_handler import (
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
@@ -46,7 +47,7 @@ class TestElasticSearchIndex:
             "query_alias_prefix": self.alias_prefix,
             "verbose": False,
             "verbosity": 0,
-            "write_alias": self.index_name + "-alias",
+            "write_alias": self.index_name + "-load-alias",
             "process_deletes": True,
         }
         self.worker = TaskSpec(
@@ -67,7 +68,7 @@ class TestElasticSearchIndex:
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
 
-    def update_index(self, **options):
+    def update_index(self, load_index: bool = True, **options):
         """
         To ensure a fresh Elasticsearch index, delete the old one, update the
         materialized views, re-create the Elasticsearch index, create aliases
@@ -76,8 +77,13 @@ class TestElasticSearchIndex:
         self.delete_index()
         self.client.indices.create(index=self.index_name, body=self.template)
         create_award_type_aliases(self.client, self.etl_config)
-        self._add_contents(**options)
+        create_load_alias(self.client, self.etl_config)
         call_command("es_configure", "--load-type", self.index_type)
+        # max_result_window is not set on the index until its settings are updated with es_configure command
+        idx_settings = self.client.indices.get_settings(index=self.index_name)
+        self.etl_config["max_query_size"] = int(idx_settings[self.index_name]["settings"]["index"]["max_result_window"])
+        if load_index:
+            self._add_contents(**options)
 
     def _add_contents(self, **options):
         """
@@ -145,9 +151,19 @@ class TestElasticSearchIndex:
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)
 
-    @classmethod
-    def _generate_index_name(cls):
-        return f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}-{generate_random_string()}"
+    def _generate_index_name(self):
+        required_suffix = ""
+        if self.index_type == "award":
+            required_suffix = "-" + settings.ES_AWARDS_NAME_SUFFIX
+        elif self.index_type == "transaction":
+            required_suffix = "-" + settings.ES_TRANSACTIONS_NAME_SUFFIX
+        elif self.index_type == "covid19-faba":
+            required_suffix = "-" + settings.ES_COVID19_FABA_NAME_SUFFIX
+        return (
+            f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}"
+            f"-{generate_random_string()}"
+            f"{required_suffix}"
+        )
 
 
 def ensure_broker_server_dblink_exists():

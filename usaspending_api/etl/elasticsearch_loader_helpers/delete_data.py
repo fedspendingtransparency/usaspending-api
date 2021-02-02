@@ -215,11 +215,11 @@ def _lookup_deleted_award_keys(
     index: Optional[str] = None,
     lookup_chunk_size=50000,
 ) -> list:
-    """Lookup deleted transactions to derive parent awards to be deleted
+    """Derive a list of award keys given a target index, Lookup field, and lookup values
 
-    This fetches a list of all unique award keys compiled from the ``ES_AWARDS_UNIQUE_KEY_FIELD`` field of
-    any document in the transaction index that matches the query, which looks up deleted transaction ES
-    documents by their ``lookup_key`` field.
+    This returns a list of all unique award keys, which  arecompiled from the ``ES_AWARDS_UNIQUE_KEY_FIELD`` field of
+    any document in the given ``index`` that matches the query. The matching query is a terms query that will return
+    the doc if its ``lookup_key`` field has any value provided in ``value_list``.
 
     Args:
         client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster

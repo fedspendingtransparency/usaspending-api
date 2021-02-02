@@ -149,7 +149,7 @@ class Command(BaseCommand):
 
 
 def parse_cli_args(options: dict, es_client) -> dict:
-    passthrough_values = (
+    passthrough_values = [
         "create_new_index",
         "drop_db_view",
         "index_name",
@@ -160,7 +160,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         "processes",
         "skip_counts",
         "skip_delete_index",
-    )
+    ]
     config = set_config(passthrough_values, options)
 
     if config["create_new_index"] and not config["index_name"]:

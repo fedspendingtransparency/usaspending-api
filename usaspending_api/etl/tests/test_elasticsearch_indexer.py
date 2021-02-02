@@ -1,26 +1,25 @@
 import pytest
-from django.conf import settings
 
 from collections import OrderedDict
 from datetime import datetime, timezone
 from elasticsearch import Elasticsearch
 from model_mommy import mommy
-from pathlib import Path
 
+from common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
+from conftest_helpers import TestElasticSearchIndex
+from etl.elasticsearch_loader_helpers import set_final_index_config
 from usaspending_api.awards.models import Award, TransactionFABS, TransactionFPDS, TransactionNormalized
-from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.common.helpers.text_helpers import generate_random_string
-
+from usaspending_api.etl.management.commands.elasticsearch_indexer import (
+    Command as ElasticsearchIndexerCommand,
+    parse_cli_args,
+    set_config,
+)
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     Controller,
-    execute_sql_statement,
-    transform_award_data,
-    transform_transaction_data,
     delete_awards,
     delete_transactions,
 )
-from usaspending_api.etl.management.commands.elasticsearch_indexer import set_config
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     _check_awards_for_deletes,
     _lookup_deleted_award_keys,
@@ -119,86 +118,163 @@ def award_data_fixture(db):
     mommy.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
 
 
-award_config = {
-    "create_new_index": True,
-    "data_type": "award",
-    "data_transform_func": transform_award_data,
-    "directory": Path(__file__).resolve().parent,
-    "fiscal_years": [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
-    "index_name": f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}-{generate_random_string()}",
-    "is_incremental_load": False,
-    "max_query_size": 10000,
-    "process_deletes": False,
-    "processing_start_datetime": datetime(2019, 12, 13, 16, 10, 33, 729108, tzinfo=timezone.utc),
-    "query_alias_prefix": "award-query",
-    "skip_counts": False,
-    "snapshot": False,
-    "starting_date": datetime(2007, 10, 1, 0, 0, tzinfo=timezone.utc),
-    "unique_key_field": "award_id",
-    "verbose": False,
-}
-
-transaction_config = {
-    "base_table": "transaction_normalized",
-    "base_table_id": "id",
-    "create_award_type_aliases": True,
-    "data_transform_func": transform_transaction_data,
-    "data_type": "transaction",
-    "execute_sql_func": execute_sql_statement,
-    "extra_null_partition": False,
-    "field_for_es_id": "transaction_id",
-    "initial_datetime": datetime(2019, 12, 13, 16, 10, 33, 729108, tzinfo=timezone.utc),
-    "max_query_size": 50000,
-    "optional_predicate": """WHERE "update_date" >= '{starting_date}'""",
-    "primary_key": "transaction_id",
-    "query_alias_prefix": "transaction-query",
-    "required_index_name": settings.ES_TRANSACTIONS_NAME_SUFFIX,
-    "sql_view": settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
-    "stored_date_key": "es_transactions",
-    "unique_key_field": "generated_unique_transaction_id",
-    "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
-}
-
-################################################################################
-# Originally the ES ETL would create a new index even if there was no data.
-# A few simple changes led to these two tests failing because the entire ETL
-#  needs to run and that would require monkeypatching the PSQL CSV copy steps
-#  which would be laborious and fragile. Leaving tests in-place to document this
-#  testing shortcoming. It may be addressed in the near future (time-permitting)
-#  if some refactoring occurs and allows more flexibility. -- from Aug 2020
-################################################################################
-
-
-@pytest.mark.skip
-def test_es_award_loader_class(award_data_fixture, elasticsearch_award_index, monkeypatch):
-    monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.utilities.execute_sql_statement", mock_execute_sql
-    )
-    elasticsearch_client = instantiate_elasticsearch_client()
-    loader = Controller(award_config, elasticsearch_client)
-    assert loader.__class__.__name__ == "Controller"
-    loader.run_load_steps()
-    assert elasticsearch_client.indices.exists(award_config["index_name"])
-    elasticsearch_client.indices.delete(index=award_config["index_name"], ignore_unavailable=False)
-
-
-@pytest.mark.skip
-def test_es_transaction_loader_class(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
-    monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.utilities.execute_sql_statement", mock_execute_sql
-    )
-    elasticsearch_client = instantiate_elasticsearch_client()
-    loader = Controller(transaction_config, elasticsearch_client)
-    assert loader.__class__.__name__ == "Controller"
-    loader.run_load_steps()
-    assert elasticsearch_client.indices.exists(transaction_config["index_name"])
-    elasticsearch_client.indices.delete(index=transaction_config["index_name"], ignore_unavailable=False)
-
-
-# SQL method is being mocked here since the `execute_sql_statement` used
-#  doesn't use the same DB connection to avoid multiprocessing errors
 def mock_execute_sql(sql, results, verbosity=None):
+    """SQL method is being mocked here since the `execute_sql_statement` used
+    doesn't use the same DB connection to avoid multiprocessing errors
+    """
     return execute_sql_to_ordered_dictionary(sql)
+
+
+def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch):
+    """Test the ``elasticsearch_loader`` django management command to create a new awards index and load it
+    with data from the DB
+    """
+    client = elasticsearch_award_index.client  # type: Elasticsearch
+
+    # Ensure index is not yet created
+    assert not client.indices.exists(elasticsearch_award_index.index_name)
+    original_db_awards_count = Award.objects.count()
+
+    # Inject ETL arg into config for this run, which loads a newly created index
+    elasticsearch_award_index.etl_config["create_new_index"] = True
+    es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index)
+
+    # Must use mock sql function to share test DB conn+transaction in ETL code
+    # Patching on the module into which it is imported, not the module where it is defined
+    monkeypatch.setattr(
+        "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement", mock_execute_sql
+    )
+    # Also override SQL function listed in config object with the mock one
+    es_etl_config["execute_sql_func"] = mock_execute_sql
+    loader = Controller(es_etl_config)
+    assert loader.__class__.__name__ == "Controller"
+    loader.prepare_for_etl()
+    loader.dispatch_tasks()
+    # Along with other things, this will refresh the index, to surface loaded docs
+    set_final_index_config(client, elasticsearch_award_index.index_name)
+
+    assert client.indices.exists(elasticsearch_award_index.index_name)
+    es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
+    assert es_award_docs == original_db_awards_count
+
+
+def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
+    """Test the ``elasticsearch_loader`` django management command to create a new transactions index and load it
+    with data from the DB
+    """
+    client = elasticsearch_transaction_index.client  # type: Elasticsearch
+
+    # Ensure index is not yet created
+    assert not client.indices.exists(elasticsearch_transaction_index.index_name)
+    original_db_tx_count = TransactionNormalized.objects.count()
+
+    # Inject ETL arg into config for this run, which loads a newly created index
+    elasticsearch_transaction_index.etl_config["create_new_index"] = True
+    es_etl_config = _process_es_etl_test_config(client, elasticsearch_transaction_index)
+
+    # Must use mock sql function to share test DB conn+transaction in ETL code
+    # Patching on the module into which it is imported, not the module where it is defined
+    monkeypatch.setattr(
+        "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement", mock_execute_sql
+    )
+    # Also override SQL function listed in config object with the mock one
+    es_etl_config["execute_sql_func"] = mock_execute_sql
+    loader = Controller(es_etl_config)
+    assert loader.__class__.__name__ == "Controller"
+    loader.prepare_for_etl()
+    loader.dispatch_tasks()
+    # Along with other things, this will refresh the index, to surface loaded docs
+    set_final_index_config(client, elasticsearch_transaction_index.index_name)
+
+    assert client.indices.exists(elasticsearch_transaction_index.index_name)
+    es_award_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
+    assert es_award_docs == original_db_tx_count
+
+
+def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch):
+    """Test the ``elasticsearch_loader`` django management command to incrementally load updated data into the awards ES
+    index from the DB, overwriting the doc that was already there
+    """
+    original_db_awards_count = Award.objects.count()
+    elasticsearch_award_index.update_index()
+    client = elasticsearch_award_index.client  # type: Elasticsearch
+    assert client.indices.exists(elasticsearch_award_index.index_name)
+    es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
+    assert es_award_docs == original_db_awards_count
+
+    # Inject ETL arg into config for this run, to suppress processing deletes. Test incremental load only
+    elasticsearch_award_index.etl_config["process_deletes"] = False
+    elasticsearch_award_index.etl_config["start_datetime"] = datetime.now(timezone.utc)
+    es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index)
+
+    # Now modify one of the DB objects
+    awd = Award.objects.first()  # type: Award
+    awd.total_obligation = 9999
+    awd.save()
+
+    # Must use mock sql function to share test DB conn+transaction in ETL code
+    # Patching on the module into which it is imported, not the module where it is defined
+    monkeypatch.setattr(
+        "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement", mock_execute_sql
+    )
+    # Also override SQL function listed in config object with the mock one
+    es_etl_config["execute_sql_func"] = mock_execute_sql
+    ensure_view_exists(es_etl_config["sql_view"], force=True)
+    loader = Controller(es_etl_config)
+    assert loader.__class__.__name__ == "Controller"
+    loader.prepare_for_etl()
+    loader.dispatch_tasks()
+    client.indices.refresh(elasticsearch_award_index.index_name)
+
+    assert client.indices.exists(elasticsearch_award_index.index_name)
+    es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
+    assert es_award_docs == original_db_awards_count
+    es_awards = client.search(index=elasticsearch_award_index.index_name)
+    updated_award = [a for a in es_awards["hits"]["hits"] if a["_source"]["award_id"] == awd.id][0]
+    assert int(updated_award["_source"]["total_obligation"]) == 9999
+
+
+def test_incremental_load_into_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
+    """Test the ``elasticsearch_loader`` django management command to incrementally load updated data into
+    the transactions ES index from the DB, overwriting the doc that was already there
+    """
+    original_db_txs_count = TransactionNormalized.objects.count()
+    elasticsearch_transaction_index.update_index()
+    client = elasticsearch_transaction_index.client  # type: Elasticsearch
+    assert client.indices.exists(elasticsearch_transaction_index.index_name)
+    es_tx_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
+    assert es_tx_docs == original_db_txs_count
+
+    # Inject ETL arg into config for this run, to suppress processing deletes. Test incremental load only
+    elasticsearch_transaction_index.etl_config["process_deletes"] = False
+    elasticsearch_transaction_index.etl_config["start_datetime"] = datetime.now(timezone.utc)
+    es_etl_config = _process_es_etl_test_config(client, elasticsearch_transaction_index)
+
+    # Now modify one of the DB objects
+    tx = TransactionNormalized.objects.first()  # type: TransactionNormalized
+    tx.federal_action_obligation = 9999
+    tx.save()
+
+    # Must use mock sql function to share test DB conn+transaction in ETL code
+    # Patching on the module into which it is imported, not the module where it is defined
+    monkeypatch.setattr(
+        "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement", mock_execute_sql
+    )
+    # Also override SQL function listed in config object with the mock one
+    es_etl_config["execute_sql_func"] = mock_execute_sql
+    ensure_view_exists(es_etl_config["sql_view"], force=True)
+    loader = Controller(es_etl_config)
+    assert loader.__class__.__name__ == "Controller"
+    loader.prepare_for_etl()
+    loader.dispatch_tasks()
+    client.indices.refresh(elasticsearch_transaction_index.index_name)
+
+    assert client.indices.exists(elasticsearch_transaction_index.index_name)
+    es_tx_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
+    assert es_tx_docs == original_db_txs_count
+    es_txs = client.search(index=elasticsearch_transaction_index.index_name)
+    updated_tx = [t for t in es_txs["hits"]["hits"] if t["_source"]["transaction_id"] == tx.id][0]
+    assert int(updated_tx["_source"]["federal_action_obligation"]) == 9999
 
 
 def test__lookup_deleted_award_keys(award_data_fixture, elasticsearch_transaction_index):
@@ -208,7 +284,7 @@ def test__lookup_deleted_award_keys(award_data_fixture, elasticsearch_transactio
         client,
         "afa_generated_unique",
         ["FABS_TRANSACTION_ID_2"],
-        award_config,
+        elasticsearch_transaction_index.etl_config,
         index=elasticsearch_transaction_index.index_name,
     )
     assert ids == ["ASST_NON_P063P100612"]
@@ -222,7 +298,7 @@ def test__lookup_deleted_award_keys_multiple_chunks(award_data_fixture, elastics
         client,
         "generated_unique_transaction_id",
         ["CONT_TX_FPDS_TRANSACTION_ID_1", "ASST_TX_FABS_TRANSACTION_ID_2"],
-        award_config,
+        elasticsearch_transaction_index.etl_config,
         index=elasticsearch_transaction_index.index_name,
         lookup_chunk_size=1,
     )
@@ -231,9 +307,12 @@ def test__lookup_deleted_award_keys_multiple_chunks(award_data_fixture, elastics
 
 
 def test__lookup_deleted_award_keys_by_int(award_data_fixture, elasticsearch_award_index):
+    """Looks up awards off of an awards index using award_id as the lookup_key field"""
     elasticsearch_award_index.update_index()
     client = elasticsearch_award_index.client
-    ids = _lookup_deleted_award_keys(client, "award_id", [1], award_config, index=elasticsearch_award_index.index_name)
+    ids = _lookup_deleted_award_keys(
+        client, "award_id", [1], elasticsearch_award_index.etl_config, index=elasticsearch_award_index.index_name
+    )
     assert ids == ["CONT_AWD_IND12PB00323"]
 
 
@@ -403,3 +482,17 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
     assert delete_count == 1
     es_award_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_award_docs == original_db_tx_count - 1
+
+
+def _process_es_etl_test_config(client: Elasticsearch, test_es_index: TestElasticSearchIndex):
+    """Use the Django mgmt cmd to extract args with default values, then update those with test ETL config values"""
+    cmd = ElasticsearchIndexerCommand()
+    cmd_name = cmd.__module__.split(".")[-1]  # should give "elasticsearch_indexer" unless name changed
+    parser = cmd.create_parser("", cmd_name)
+    # Changes dict of arg k-v pairs into a flat list of ordered ["k1", "v1", "k2", "v2" ...] items
+    list_of_arg_kvs = [["--" + k.replace("_", "-"), str(v)] for k, v in test_es_index.etl_config.items()]
+    test_args = [arg_item for kvpair in list_of_arg_kvs for arg_item in kvpair]
+    cli_args, _ = parser.parse_known_args(args=test_args)  # parse the known args programmatically
+    cli_opts = {**vars(cli_args), **test_es_index.etl_config}  # update defaults with test config
+    es_etl_config = parse_cli_args(cli_opts, client)  # use command's config parser for final config for testing ETL
+    return es_etl_config

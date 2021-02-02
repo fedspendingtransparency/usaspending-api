@@ -142,7 +142,7 @@ class Controller:
         )
 
     def get_id_range_for_partition(self, partition_number: int) -> Tuple[int, int]:
-        range_size = ceil((self.max_id - self.min_id) / self.config["partitions"])
+        range_size = ((self.max_id - self.min_id) // self.config["partitions"]) + 1
         lower_bound = self.min_id + (range_size * partition_number)
         upper_bound = min(self.min_id + ((range_size * (partition_number + 1) - 1)), self.max_id)
 
