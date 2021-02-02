@@ -1,18 +1,14 @@
-import json
 import logging
-import warnings
 
 import pandas as pd
 
-from collections import defaultdict
 from django.conf import settings
 from time import perf_counter
-from typing import Tuple, List, Optional, Dict, Any, Union
+from typing import Optional, Dict, Union, Any
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q as ES_Q
 from elasticsearch_dsl.mapping import Mapping
-
 
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
@@ -23,76 +19,9 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     execute_sql_statement,
     format_log,
     chunks,
-    filter_query,
 )
 
 logger = logging.getLogger("script")
-
-
-def _delete_query(response: dict) -> dict:
-    return {"query": {"ids": {"values": [i["_id"] for i in response["hits"]["hits"]]}}}
-
-
-def _delete_from_es(
-    client: Elasticsearch,
-    id_list: List[dict],
-    index: str,
-    max_query_size: int,
-    use_aliases: bool = False,
-    task_id: Optional[Tuple[int, str]] = None,
-) -> None:
-    """Fetch docs by a key field using ``match_phrase``, then run a `_delete_by_query`` against their ``_id`` fields.
-
-    Deprecated: Using ``delete_docs_by_unique_key`` will execute a more efficient delete query, but requires the key
-    is of type ``keyword``.
-
-    id_list = [
-        {key: 'key1', col: 'transaction_id'},
-        {key: 'key2', col: 'generated_unique_transaction_id'},
-        ...
-    ]
-    - or -
-    id_list = [
-        {key: 'key1', col: 'award_id'},
-        {key: 'key2', col: 'generated_unique_award_id'},
-        ...
-    ]
-    """
-    warnings.warn("_delete_from_es is deprecated; use delete_docs_by_unique_key", DeprecationWarning)
-    start = perf_counter()
-    msg = f"Deleting up to {len(id_list):,} document{'s' if len(id_list) != 1 else ''}"
-    logger.info(format_log(msg, name=task_id, action="Delete"))
-
-    if use_aliases:
-        index = f"{index}-*"
-    start_ = client.count(index=index)["count"]
-    logger.info(format_log(f"Starting amount of indices ----- {start_:,}", name=task_id, action="Delete"))
-    col_to_items_dict = defaultdict(list)
-    for line in id_list:
-        col_to_items_dict[line["col"]].append(line["key"])
-
-    for column, values in col_to_items_dict.items():
-        logger.info(format_log(f"Deleting {len(values):,} of '{column}'", name=task_id, action="Delete"))
-        values_generator = chunks(values, 1000)
-        for v in values_generator:
-            # IMPORTANT: This delete routine looks at just 1 index at a time. If there are duplicate records across
-            # multiple indexes, those duplicates will not be caught by this routine. It is left as is because at the
-            # time of this comment, we are migrating to using a single index.
-            body = filter_query(column, v)
-            response = client.search(index=index, body=json.dumps(body), size=max_query_size)
-            delete_body = _delete_query(response)
-            try:
-                client.delete_by_query(index=index, body=json.dumps(delete_body), refresh=True, size=max_query_size)
-            except Exception:
-                logger.exception(format_log("", name=task_id, action="Delete"))
-                raise SystemExit(1)
-
-    end_ = client.count(index=index)["count"]
-    record_count = start_ - end_
-    duration = perf_counter() - start
-    msg = f"Delete operation took {duration:.2f}s. Removed {record_count:,} document{'s' if record_count != 1 else ''}"
-    logger.info(format_log(msg, name=task_id, action="Delete"))
-    return
 
 
 def delete_docs_by_unique_key(
@@ -157,12 +86,11 @@ def delete_docs_by_unique_key(
         # 65,536 is max number of terms that can be added to an ES terms filter query
         values_generator = chunks(value_list, 50000)
         for chunk_of_values in values_generator:
-            # Creates an Elasticsearch query criteria for the _delete_by_query call
-            q = ES_Q("terms", **{key: chunk_of_values})
             # Invoking _delete_by_query as per the elasticsearch-dsl docs:
             #   https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#delete-by-query
             # _refresh is deferred til the end
-            response = Search(using=client, index=index).filter(q).delete()
+            q = Search(using=client, index=index).filter("terms", **{key: chunk_of_values})
+            response = q.delete()
             chunk_deletes = response["deleted"]
             deleted += chunk_deletes
     except Exception:
@@ -255,7 +183,7 @@ def _lookup_deleted_award_keys(
         # Some keys would be left undiscovered if our chunk was cut short by the query only returning a lesser subset
         msg = (
             f"{lookup_chunk_size} is greater {config['max_query_size']}, which is the max number of query "
-            f"results returnable from this index. Use a smaller chunk or increase query size for this index."
+            f"results returnable from this index. Use a smaller chunk or increase max_result_window for this index."
         )
         logger.error(format_log(msg=msg, action="Delete"))
         raise RuntimeError(msg)
@@ -301,18 +229,30 @@ def delete_awards(client: Elasticsearch, config: dict) -> int:
         settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*",
     )
     if (len(award_keys)) == 0:
-        logger.info(format_log(f"No related awards require deletion", action="Delete"))
+        logger.info(
+            format_log(
+                f"No related awards found for deletion. Zero transaction docs found from which to derive awards.",
+                action="Delete",
+            )
+        )
         return 0
 
-    deleted_award_keys = _check_awards_for_deletes(award_keys)
-    if len(deleted_award_keys) == 0:
-        logger.info(format_log(f"No related awards require deletion", action="Delete"))
+    deleted_award_kvs = _check_awards_for_deletes(award_keys)
+    if len(deleted_award_kvs) == 0:
+        # In this case it could be an award's transaction was deleted, but not THE LAST transaction of that award.
+        # i.e. the deleted transaction's "siblings" are still in the DB and therefore the parent award should remain
+        logger.info(
+            format_log(
+                f"No related awards found will be deleted. All derived awards are still in the DB.", action="Delete"
+            )
+        )
         return 0
 
+    values_list = [v for d in deleted_award_kvs for v in d.values()]
     return delete_docs_by_unique_key(
         client,
         key=config["unique_key_field"],
-        value_list=deleted_award_keys,
+        value_list=values_list,
         task_id="Sync DB Deletes",
         index=config["query_alias_prefix"],
         use_aliases=True,
