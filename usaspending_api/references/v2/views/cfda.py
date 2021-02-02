@@ -68,7 +68,6 @@ class CFDAViewSet(APIView):
                 logger.error(f"Response from grants API missing 'cfdas' key, full response: {response}")
                 raise NoDataFoundException("Grant data is not currently available.")
             else:
-                response["cfdas"]
                 key_check = {"cfda", "posted", "closed", "archived", "forecasted"}
                 for cfda in cfdas.values():
                     if key_check - set(cfda):
