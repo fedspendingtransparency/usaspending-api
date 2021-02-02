@@ -62,16 +62,19 @@ class CFDAViewSet(APIView):
                 logger.error(f"Error returned by grants API: {response['errorMsgs']}")
                 raise NoDataFoundException("Grant data is not currently available.")
 
-            # check response for expected details
-            cfdas = response.get("cfdas")
-            if not cfdas:
-                logger.error(f"Response from grants API missing 'cfdas' key, full response: {response}")
-                raise NoDataFoundException("Grant data is not currently available.")
-            else:
-                key_check = {"cfda", "posted", "closed", "archived", "forecasted"}
-                for cfda in cfdas.values():
-                    if key_check - set(cfda):
-                        logger.error(f"Data from grants API not in expected format: {cfdas}")
-                        raise NoDataFoundException("Grant data is not currently available.")
+            if response.get("cfdas"):
+                return check_response(response.get("cfdas"))
 
-        return cdfas
+    def check_response(self, cfdas):
+        if not cfdas:
+            logger.error(f"Response from grants API missing 'cfdas' key, full response: {response}")
+            raise NoDataFoundException("Grant data is not currently available.")
+        else:
+            key_check = {"cfda", "posted", "closed", "archived", "forecasted"}
+            for cfda in cfdas.values():
+                if key_check - set(cfda):
+                    logger.error(f"Data from grants API not in expected format: {cfdas}")
+                    raise NoDataFoundException("Grant data is not currently available.")
+
+       return cdfas
+                
