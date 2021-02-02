@@ -20,30 +20,6 @@ class TempTableName(Enum):
 
 OVERVIEW_TABLE_NAME = "reporting_agency_overview"
 
-
-"""
-STEPS:
-- Create temporary tables:
-    - Valid File D
-    - Valid File C
-    - Unlinked File C
-    - Unlinked File D
-    - Linked File C and File D Awards
-- Create indexes on tables to increase performance
-    - Should test with and without the indexes
-- Load Valid File C
-    - include quarter format flag to determine period (when possible) for Valid File D
-- Load Valid File D
-    - only include Period, but use CASE statement to determine final value
-- In parallel
-    - Load Unlinked File C
-    - Load Unlinked File D
-    - Linked Awards
-- Create Reporting Agency Overview table
-    - Maybe use CTE to create in memory?
-    - Join Reporting Agency Overview to counts from Unlinked File C, Unlinked File D, and Linked Awards
-"""
-
 CREATE_AND_PREP_TEMP_TABLES = f"""
     DROP TABLE IF EXISTS {TempTableName.VALID_FILE_C.value};
     DROP TABLE IF EXISTS {TempTableName.VALID_FILE_D.value};
