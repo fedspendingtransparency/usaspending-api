@@ -189,7 +189,7 @@ def extract_transform_load(task: TaskSpec) -> None:
             msg = f"Partition #{task.partition_number} failed after an error was previously encountered"
             logger.warning(format_log(msg, name=task.name))
         else:
-            logger.error(format_log(f"{task.name} failed!", name=task.name))
+            logger.exception(format_log(f"{task.name} failed!", name=task.name))
             abort.set()
     else:
         msg = f"Partition #{task.partition_number} was successfully processed in {perf_counter() - start:.2f}s"

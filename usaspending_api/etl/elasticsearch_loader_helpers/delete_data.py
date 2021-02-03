@@ -89,14 +89,26 @@ def delete_docs_by_unique_key(
             # Invoking _delete_by_query as per the elasticsearch-dsl docs:
             #   https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#delete-by-query
             # _refresh is deferred til the end
-            q = Search(using=client, index=index).filter("terms", **{key: chunk_of_values})
+            # And if a doc delete is attempted more than once, a version_conflict will be raised,
+            # but conflicts="proceed" ignores it
+            q = Search(using=client, index=index).filter("terms", **{key: chunk_of_values})  # type: Search
+            q = q.params(conflicts="proceed")
             response = q.delete()
-            chunk_deletes = response["deleted"]
-            deleted += chunk_deletes
+            logger.info(
+                format_log(
+                    f"Processed delete chunk-size of {len(chunk_of_values)} in {int(response['took'])/1000:.2f}s, "
+                    f"deleted {response['deleted']} docs, "
+                    f"at a rate of {response['requests_per_second']} (search+delete) requests/sec, "
+                    f"and ignored {response['version_conflicts']} version conflicts",
+                    action="Delete",
+                    name=task_id,
+                )
+            )
+            deleted += response["deleted"]
     except Exception:
         is_error = True
         logger.exception(format_log("", name=task_id, action="Delete"))
-        raise SystemExit(1)
+        raise
     finally:
         if deleted > 0 and (refresh_after or is_error):
             if not is_error:
