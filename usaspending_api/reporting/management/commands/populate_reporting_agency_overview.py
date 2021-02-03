@@ -83,7 +83,7 @@ TEMP_TABLE_CONTENTS = {
             ta.toptier_code,
             faba.award_id,
             faba.distinct_award_key,
-            CASE WHEN faba.piid IS NULL THEN true ELSE false END AS is_fpds,
+            CASE WHEN faba.piid IS NOT NULL THEN true ELSE false END AS is_fpds,
             sa.reporting_fiscal_year AS fiscal_year,
             sa.reporting_fiscal_quarter as fiscal_quarter,
             sa.reporting_fiscal_period AS fiscal_period,
@@ -259,12 +259,12 @@ TEMP_TABLE_CONTENTS = {
                 COUNT(CASE WHEN is_fpds = True THEN 1 ELSE NULL END) AS procurement,
                 COUNT(CASE WHEN is_fpds = False THEN 1 ELSE NULL END) AS assistance
             FROM
-                {TempTableName.VALID_FILE_D.value}
+                {TempTableName.VALID_FILE_D.value} AS vfd
             WHERE
                 NOT EXISTS (
                     SELECT 1
                     FROM financial_accounts_by_awards AS faba
-                    WHERE faba.award_id = award_id
+                    WHERE faba.award_id = vfd.award_id
                 )
             GROUP BY
                 toptier_code,
@@ -316,8 +316,8 @@ TEMP_TABLE_CONTENTS = {
             fiscal_period,
             COALESCE(uc.procurement, 0) AS unlinked_procurement_c_awards,
             COALESCE(uc.assistance, 0) AS unlinked_assistance_c_awards,
-            COALESCE(ud.procurement, 0) AS unlinked_d1_awards,
-            COALESCE(ud.assistance, 0) AS unlinked_d2_awards,
+            COALESCE(ud.procurement, 0) AS unlinked_procurement_d_awards,
+            COALESCE(ud.assistance, 0) AS unlinked_assistance_d_awards,
             COALESCE(lcd.procurement, 0) AS linked_procurement_awards,
             COALESCE(lcd.assistance, 0) AS linked_assistance_awards
         FROM
@@ -342,8 +342,8 @@ CREATE_OVERVIEW_SQL = f"""
         total_diff_approp_ocpa_obligated_amounts,
         unlinked_procurement_c_awards,
         unlinked_assistance_c_awards,
-        unlinked_d1_awards,
-        unlinked_d2_awards,
+        unlinked_procurement_d_awards,
+        unlinked_assistance_d_awards,
         linked_procurement_awards,
         linked_assistance_awards
     )
@@ -358,8 +358,8 @@ CREATE_OVERVIEW_SQL = f"""
             rao.total_diff_approp_ocpa_obligated_amounts,
             COALESCE(ac.unlinked_procurement_c_awards, 0) AS unlinked_procurement_c_awards,
             COALESCE(ac.unlinked_assistance_c_awards, 0) AS unlinked_assistance_c_awards,
-            COALESCE(ac.unlinked_d1_awards, 0) AS unlinked_d1_awards,
-            COALESCE(ac.unlinked_d2_awards, 0) AS unlinked_d2_awards,
+            COALESCE(ac.unlinked_d1_awards, 0) AS unlinked_procurement_d_awards,
+            COALESCE(ac.unlinked_d2_awards, 0) AS unlinked_assistance_d_awards,
             COALESCE(ac.linked_procurement_awards, 0) AS linked_procurement_awards,
             COALESCE(ac.linked_assistance_awards, 0) AS linked_assistance_awards
         FROM

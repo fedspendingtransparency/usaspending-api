@@ -58,8 +58,8 @@ class ReportingAgencyOverview(models.Model):
     total_diff_approp_ocpa_obligated_amounts = models.DecimalField(max_digits=23, decimal_places=2)
     unlinked_procurement_c_awards = models.IntegerField()
     unlinked_assistance_c_awards = models.IntegerField()
-    unlinked_d1_awards = models.IntegerField()
-    unlinked_d2_awards = models.IntegerField()
+    unlinked_procurement_d_awards = models.IntegerField()
+    unlinked_assistance_d_awards = models.IntegerField()
     linked_procurement_awards = models.IntegerField()
     linked_assistance_awards = models.IntegerField()
 

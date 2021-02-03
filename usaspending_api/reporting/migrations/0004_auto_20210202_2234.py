@@ -22,12 +22,12 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='reportingagencyoverview',
-            name='unlinked_d1_awards',
+            name='unlinked_procurement_d_awards',
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
             model_name='reportingagencyoverview',
-            name='unlinked_d2_awards',
+            name='unlinked_assistance_d_awards',
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
