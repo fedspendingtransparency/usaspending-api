@@ -44,14 +44,6 @@ class Command(BaseCommand):
     is only 'revealed' once.
     """
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--warning-threshold",
-            default=10000,
-            type=int,
-            help="Indicates the number maximum number of award records to be updated before a warning is sent to Slack",
-        )
-
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
         periods = retrieve_recent_periods()
@@ -67,9 +59,8 @@ class Command(BaseCommand):
 
         logger.info(f"Found {total_records_updated} award records to update in Elasticsearch")
 
-        # print instead of log, to pipe output to stdout for Jenkins pipeline
-        # if total_records_updated > options["warning_threshold"]:
-        return f"Found {total_records_updated} award records to update in Elasticsearch"
+        # Return will be captured as stdout in Jenkins job
+        return total_records_updated
 
     def reveal_period_updates_if_behind(self, period):
 
