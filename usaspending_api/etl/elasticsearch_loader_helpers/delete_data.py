@@ -31,7 +31,6 @@ def delete_docs_by_unique_key(
     task_id: str,
     index,
     refresh_after: bool = True,
-    use_aliases: bool = False,
 ) -> int:
     """
     Bulk delete a batch of documents whose field identified by ``key`` matches any value provided in the
@@ -55,7 +54,6 @@ def delete_docs_by_unique_key(
             called, or a elasticsearch.exceptions.ConflictError will be raised due to an ES doc version_conflict
             error response. NOTE: This param will be ignored and a refresh will be attempted if this function
             errors-out during execution, in order to not leave un-refreshed deletes in the index.
-        use_aliases (bool): If true, assume an alias for the true index is passed in, and needs wildcards appended
 
     Returns: Number of ES documents deleted
     """
@@ -68,9 +66,6 @@ def delete_docs_by_unique_key(
     logger.info(format_log(f"Deleting up to {len(value_list):,} document(s)", action="Delete", name=task_id))
     if not index:
         raise RuntimeError("index name must be provided")
-
-    if use_aliases:
-        index = f"{index}-*"
 
     if not _is_allowed_key_field_type(client, key, index):
         msg = (
@@ -280,8 +275,7 @@ def delete_awards(client: Elasticsearch, config: dict, task_id: str = "Sync DB D
         key=config["unique_key_field"],
         value_list=values_list,
         task_id=task_id,
-        index=config["query_alias_prefix"],
-        use_aliases=True,
+        index=config["index_name"],
     )
 
 
@@ -310,8 +304,7 @@ def delete_transactions(client: Elasticsearch, config: dict, task_id: str = "Syn
         key=config["unique_key_field"],
         value_list=[*deleted_tx_keys],
         task_id="Sync DB Deletes",
-        index=config["query_alias_prefix"],
-        use_aliases=True,
+        index=config["index_name"],
     )
 
 

@@ -183,7 +183,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         config["starting_date"] != config["initial_datetime"] and not config["deletes_only"]
     )
 
-    if config["is_incremental_load"]:
+    if config["is_incremental_load"] or config["deletes_only"]:
         if config["index_name"]:
             logger.info(format_log(f"Ignoring provided index name, using alias '{config['write_alias']}' for safety"))
         config["index_name"] = config["write_alias"]

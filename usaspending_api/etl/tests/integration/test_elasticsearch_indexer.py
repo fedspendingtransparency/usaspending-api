@@ -1,7 +1,7 @@
 import pytest
 
 from collections import OrderedDict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from elasticsearch import Elasticsearch
 from model_mommy import mommy
 
@@ -13,7 +13,6 @@ from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_di
 from usaspending_api.etl.management.commands.elasticsearch_indexer import (
     Command as ElasticsearchIndexerCommand,
     parse_cli_args,
-    set_config,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     Controller,
@@ -339,6 +338,8 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     """
     elasticsearch_transaction_index.update_index()
     elasticsearch_award_index.update_index()
+    delete_time = datetime.now(timezone.utc)
+    last_load_time = delete_time - timedelta(hours=12)
 
     fpds_keys = [
         "CONT_TX_" + key.upper()
@@ -348,7 +349,7 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
         "ASST_TX_" + key.upper()
         for key in TransactionNormalized.objects.filter(is_fpds=False).values_list("transaction_unique_id", flat=True)
     ]
-    deleted_tx = {key: {"timestamp": datetime.now()} for key in fpds_keys + fabs_keys}
+    deleted_tx = {key: {"timestamp": delete_time} for key in fpds_keys + fabs_keys}
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
@@ -366,7 +367,8 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     client = elasticsearch_award_index.client  # type: Elasticsearch
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
-    es_etl_config = set_config([], elasticsearch_award_index.etl_config)
+    elasticsearch_award_index.etl_config["start_datetime"] = last_load_time
+    es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index)
     # Must use mock sql function to share test DB conn+transaction in ETL code
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
@@ -386,23 +388,26 @@ def test_delete_awards_zero_for_unmatched_transactions(
     """
     elasticsearch_transaction_index.update_index()
     elasticsearch_award_index.update_index()
+    delete_time = datetime.now(timezone.utc)
+    last_load_time = delete_time - timedelta(hours=12)
 
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
         lambda cfg: {
-            "unmatchable_tx_key1": {"timestamp": datetime.now()},
-            "unmatchable_tx_key2": {"timestamp": datetime.now()},
-            "unmatchable_tx_key3": {"timestamp": datetime.now()},
+            "unmatchable_tx_key1": {"timestamp": delete_time},
+            "unmatchable_tx_key2": {"timestamp": delete_time},
+            "unmatchable_tx_key3": {"timestamp": delete_time},
         },
     )
 
     client = elasticsearch_award_index.client  # type: Elasticsearch
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == Award.objects.count()
-    config = set_config([], elasticsearch_award_index.etl_config)
-    delete_count = delete_awards(client, config)
+    elasticsearch_award_index.etl_config["start_datetime"] = last_load_time
+    es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index)
+    delete_count = delete_awards(client, es_etl_config)
     assert delete_count == 0
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == Award.objects.count()
@@ -417,11 +422,13 @@ def test_delete_one_assistance_award(
     """
     elasticsearch_transaction_index.update_index()
     elasticsearch_award_index.update_index()
+    delete_time = datetime.now(timezone.utc)
+    last_load_time = delete_time - timedelta(hours=12)
 
     # Get FABS transaction with the lowest ID. This ONE will be deleted.
     tx = TransactionNormalized.objects.filter(is_fpds=False).order_by("pk").first()  # type: TransactionNormalized
     fabs_key = "ASST_TX_" + tx.transaction_unique_id.upper()
-    deleted_tx = {fabs_key: {"timestamp": datetime.now()}}
+    deleted_tx = {fabs_key: {"timestamp": delete_time}}
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
@@ -438,7 +445,8 @@ def test_delete_one_assistance_award(
     client = elasticsearch_award_index.client  # type: Elasticsearch
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
-    es_etl_config = set_config([], elasticsearch_award_index.etl_config)
+    elasticsearch_award_index.etl_config["start_datetime"] = last_load_time
+    es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index)
     # Must use mock sql function to share test DB conn+transaction in ETL code
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
@@ -452,11 +460,13 @@ def test_delete_one_assistance_award(
 def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_transaction_index, monkeypatch, db):
     """Ensure that transactions not logged for delete don't get deleted but those logged for delete do"""
     elasticsearch_transaction_index.update_index()
+    delete_time = datetime.now(timezone.utc)
+    last_load_time = delete_time - timedelta(hours=12)
 
     # Get FABS transaction with the lowest ID. This ONE will be deleted.
     tx = TransactionNormalized.objects.filter(is_fpds=False).order_by("pk").first()  # type: TransactionNormalized
     fabs_key = "ASST_TX_" + tx.transaction_unique_id.upper()
-    deleted_tx = {fabs_key: {"timestamp": datetime.now()}}
+    deleted_tx = {fabs_key: {"timestamp": delete_time}}
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
@@ -473,7 +483,8 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
     client = elasticsearch_transaction_index.client  # type: Elasticsearch
     es_award_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_award_docs == original_db_tx_count
-    es_etl_config = set_config([], elasticsearch_transaction_index.etl_config)
+    elasticsearch_transaction_index.etl_config["start_datetime"] = last_load_time
+    es_etl_config = _process_es_etl_test_config(client, elasticsearch_transaction_index)
     # Must use mock sql function to share test DB conn+transaction in ETL code
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
