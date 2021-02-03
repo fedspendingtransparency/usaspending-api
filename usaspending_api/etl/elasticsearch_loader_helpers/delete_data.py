@@ -7,7 +7,7 @@ from time import perf_counter
 from typing import Optional, Dict, Union, Any
 
 from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search, Q as ES_Q
+from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
 
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
@@ -88,7 +88,7 @@ def delete_docs_by_unique_key(
         for chunk_of_values in values_generator:
             # Invoking _delete_by_query as per the elasticsearch-dsl docs:
             #   https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#delete-by-query
-            # _refresh is deferred til the end
+            # _refresh is deferred til the end or chunk processing
             # And if a doc delete is attempted more than once, a version_conflict will be raised,
             # but conflicts="proceed" ignores it
             q = Search(using=client, index=index).filter("terms", **{key: chunk_of_values})  # type: Search
@@ -98,7 +98,6 @@ def delete_docs_by_unique_key(
                 format_log(
                     f"Processed delete chunk-size of {len(chunk_of_values)} in {int(response['took'])/1000:.2f}s, "
                     f"deleted {response['deleted']} docs, "
-                    f"at a rate of {response['requests_per_second']} (search+delete) requests/sec, "
                     f"and ignored {response['version_conflicts']} version conflicts",
                     action="Delete",
                     name=task_id,
@@ -203,15 +202,15 @@ def _lookup_deleted_award_keys(
     award_key_list = []
     values_generator = chunks(value_list, lookup_chunk_size)
     for chunk_of_values in values_generator:
-        # Creates an Elasticsearch query criteria
-        q = ES_Q("terms", **{lookup_key: chunk_of_values})
-        response = Search(using=client, index=index).filter(q)[0 : config["max_query_size"]].execute()
+        q = Search(using=client, index=index).filter("terms", **{lookup_key: chunk_of_values})  # type: Search
+        q.update_from_dict({"size": config["max_query_size"]})
+        response = q.execute()
         if response["hits"]["total"]["value"] != 0:
             award_key_list += [x["_source"][ES_AWARDS_UNIQUE_KEY_FIELD] for x in response["hits"]["hits"]]
     return award_key_list
 
 
-def delete_awards(client: Elasticsearch, config: dict) -> int:
+def delete_awards(client: Elasticsearch, config: dict, task_id: str = "Sync DB Deletes") -> int:
     """Delete all awards in the Elasticsearch awards index that were deleted in the source database.
 
     This performs the deletes of award documents in ES in a series of batches, as there could be many. Millions of
@@ -228,6 +227,7 @@ def delete_awards(client: Elasticsearch, config: dict) -> int:
     Args:
         client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
         config (dict): collection of key-value pairs that encapsulates runtime arguments for this ES management task
+        task_id (str): label for this sub-step of the ETL
 
     Returns: Number of ES docs deleted in the index
     """
@@ -240,38 +240,52 @@ def delete_awards(client: Elasticsearch, config: dict) -> int:
         config,
         settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*",
     )
-    if (len(award_keys)) == 0:
+    award_keys = list(set(award_keys))  # get unique list of keys
+    award_keys_len = len(award_keys)
+    if award_keys_len == 0:
         logger.info(
             format_log(
                 f"No related awards found for deletion. Zero transaction docs found from which to derive awards.",
                 action="Delete",
+                name=task_id,
             )
         )
         return 0
+    logger.info(
+        format_log(f"Derived {award_keys_len} award keys from transactions in ES", action="Delete", name=task_id)
+    )
 
     deleted_award_kvs = _check_awards_for_deletes(award_keys)
-    if len(deleted_award_kvs) == 0:
+    deleted_award_kvs_len = len(deleted_award_kvs)
+    if deleted_award_kvs_len == 0:
         # In this case it could be an award's transaction was deleted, but not THE LAST transaction of that award.
         # i.e. the deleted transaction's "siblings" are still in the DB and therefore the parent award should remain
         logger.info(
             format_log(
-                f"No related awards found will be deleted. All derived awards are still in the DB.", action="Delete"
+                f"No related awards found will be deleted. All derived awards are still in the DB.",
+                action="Delete",
+                name=task_id,
             )
         )
         return 0
+    logger.info(
+        format_log(
+            f"{deleted_award_kvs_len} awards no longer in the DB will be removed from ES", action="Delete", name=task_id
+        )
+    )
 
     values_list = [v for d in deleted_award_kvs for v in d.values()]
     return delete_docs_by_unique_key(
         client,
         key=config["unique_key_field"],
         value_list=values_list,
-        task_id="Sync DB Deletes",
+        task_id=task_id,
         index=config["query_alias_prefix"],
         use_aliases=True,
     )
 
 
-def delete_transactions(client: Elasticsearch, config: dict) -> int:
+def delete_transactions(client: Elasticsearch, config: dict, task_id: str = "Sync DB Deletes") -> int:
     """Delete all transactions in the Elasticsearch transactions index that were deleted in the source database.
 
     This performs the deletes of transaction documents in ES in a series of batches, as there could be many. Millions of
@@ -285,6 +299,8 @@ def delete_transactions(client: Elasticsearch, config: dict) -> int:
     Args:
         client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
         config (dict): collection of key-value pairs that encapsulates runtime arguments for this ES management task
+        task_id (str): label for this sub-step of the ETL
+
 
     Returns: Number of ES docs deleted in the index
     """
@@ -357,7 +373,9 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
 
     logger.info(
         format_log(
-            f"Gathering {len(deleted_keys):,} deleted transactions took {perf_counter() - start:.2f}s", action="Delete"
+            f"Gathered {len(deleted_keys):,} deleted transactions from {len(filtered_csv_list)} files in "
+            f"increment in {perf_counter() - start:.2f}s",
+            action="Delete",
         )
     )
     return deleted_keys
