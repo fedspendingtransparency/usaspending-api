@@ -61,6 +61,7 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
                 treasury_account__funding_toptier_agency=toptier_agency,
+                submission__is_final_balances_for_fy=True,
             )
             .annotate(
                 major_object_class_name=Case(
