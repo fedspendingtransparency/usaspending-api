@@ -5,7 +5,7 @@ import pytest
 from django.core.management import call_command
 from os import listdir
 from model_mommy import mommy
-from unicodecsv import reader
+from csv import reader
 
 from usaspending_api.awards.models import TransactionFPDS, TransactionDelta
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
