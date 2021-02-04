@@ -117,13 +117,17 @@ TEMP_TABLE_CONTENTS = {
             quarter_format_flag = true
     """,
     TempTableName.VALID_FILE_D: f"""
-        SELECT DISTINCT
+        SELECT
+            -- Exact same columns are mentioned in GROUP BY instead of using DISTINCT
+            -- for better performance
             fa.toptier_code,
             awards.id AS award_id,
             awards.is_fpds,
             transactions.fiscal_year,
             CASE
+                -- Belongs to quarterly submission so lets get the last period of the quarter
                 WHEN ql.quarter_format_flag = true THEN transactions.fiscal_quarter * 3
+                -- Period = 1 is submitted in Period = 2
                 WHEN transactions.fiscal_period = 1 THEN 2
                 ELSE transactions.fiscal_period
             END AS fiscal_period
@@ -135,7 +139,7 @@ TEMP_TABLE_CONTENTS = {
                     tn.award_id,
                     fiscal_year,
                     date_part('quarter', tn.action_date + INTERVAL '3' MONTH) AS fiscal_quarter,
-                    date_part('month', tn.action_date + interval '3' MONTH) AS fiscal_period
+                    date_part('month', tn.action_date + INTERVAL '3' MONTH) AS fiscal_period
                 FROM
                     transaction_normalized AS tn
                 WHERE
@@ -159,6 +163,18 @@ TEMP_TABLE_CONTENTS = {
                 (awards.type IN ('07', '08') AND awards.total_subsidy_cost > 0)
                 OR awards.type NOT IN ('07', '08')
             ) AND awards.certified_date >= '2016-10-01'
+        GROUP BY
+            fa.toptier_code,
+            awards.id,
+            awards.is_fpds,
+            transactions.fiscal_year,
+            CASE
+                -- Belongs to quarterly submission so lets get the last period of the quarter
+                WHEN ql.quarter_format_flag = true THEN transactions.fiscal_quarter * 3
+                -- Period = 1 is submitted in Period = 2
+                WHEN transactions.fiscal_period = 1 THEN 2
+                ELSE transactions.fiscal_period
+            END
     """,
     TempTableName.REPORTING_OVERVIEW: f"""
         WITH sum_reporting_agency_tas AS (
