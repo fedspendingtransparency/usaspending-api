@@ -75,6 +75,7 @@ def delete_docs_by_unique_key(
         logger.error(format_log(msg=msg, action="Delete", name=task_id))
         raise RuntimeError(msg)
 
+    chunks_processed = 0
     deleted = 0
     is_error = False
     try:
@@ -91,14 +92,15 @@ def delete_docs_by_unique_key(
             response = q.delete()
             logger.info(
                 format_log(
-                    f"Processed delete chunk-size of {len(chunk_of_values)} in {int(response['took'])/1000:.2f}s, "
-                    f"deleted {response['deleted']} docs, "
-                    f"and ignored {response['version_conflicts']} version conflicts",
+                    f"Deleted {response['deleted']:,} docs in ES from chunk of size {len(chunk_of_values):,} "
+                    f"in {int(response['took'])/1000:.2f}s, "
+                    f"and ignored {response['version_conflicts']:,} version conflicts",
                     action="Delete",
                     name=task_id,
                 )
             )
             deleted += response["deleted"]
+            chunks_processed += 1
     except Exception:
         is_error = True
         logger.exception(format_log("", name=task_id, action="Delete"))
@@ -111,11 +113,13 @@ def delete_docs_by_unique_key(
                 refresh_msg = "Attempting index refresh while handling error so deletes take effect"
             logger.info(format_log(refresh_msg, action="Delete", name=task_id))
             client.indices.refresh(index=index)
-        error_text = " before encountering an error" if is_error else ""
-        duration = perf_counter() - start
-        docs = f"document{'s' if deleted != 1 else ''}"
-        msg = f"Delete operation took {duration:.2f}s. Removed {deleted:,} {docs}{error_text}"
-        logger.info(format_log(msg, action="Delete", name=task_id))
+        if chunks_processed > 1 or is_error:
+            # This log becomes redundant unless to log the sum of multiple chunks' deletes (or error)
+            error_text = " before encountering an error" if is_error else ""
+            duration = perf_counter() - start
+            docs = f"document{'s' if deleted != 1 else ''}"
+            msg = f"Delete operation took {duration:.2f}s. Removed {deleted:,} total {docs}{error_text}"
+            logger.info(format_log(msg, action="Delete", name=task_id))
 
     return deleted
 
