@@ -332,10 +332,10 @@ def generate_assistance_data(fiscal_year, i):
         "",
         "",
         "",  # "action_date_fiscal_year", "period_of_performance_start_date", "period_of_performance_current_end_date",
-        "002",
-        "Test_Agency 2",
-        "002",
-        "Test_Agency 2",  # "awarding_agency_code", "awarding_agency_name", "awarding_sub_agency_code", "awarding_sub_agency_name",
+        "001",
+        "Test_Agency",
+        "001",
+        "Test_Agency",  # "awarding_agency_code", "awarding_agency_name", "awarding_sub_agency_code", "awarding_sub_agency_name",
         "",
         "",
         "",
@@ -499,10 +499,10 @@ def monthly_download_data(db, monkeypatch):
             "awards.TransactionFABS",
             transaction_id=i + 100,
             fain=f"fain{i}",
-            awarding_agency_code="002",
-            awarding_sub_tier_agency_c=2,
-            awarding_agency_name="Test_Agency 2",
-            awarding_sub_tier_agency_n="Test_Agency 2",
+            awarding_agency_code="001",
+            awarding_sub_tier_agency_c=1,
+            awarding_agency_name="Test_Agency",
+            awarding_sub_tier_agency_n="Test_Agency",
         )
         mommy.make(
             "awards.TransactionNormalized",
@@ -546,10 +546,12 @@ def test_all_agencies(client, monthly_download_data, monkeypatch):
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY2020_All_Contracts_Full_{formatted_date}.zip" in file_list
     assert f"FY2020_All_Assistance_Full_{formatted_date}.zip" in file_list
+    delete_files()
 
 
 def test_specific_agency(client, monthly_download_data, monkeypatch):
     contract_data = generate_contract_data(2020, 1)
+    assistance_data = generate_assistance_data
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
     file_list = listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
@@ -579,12 +581,15 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
         for row in csv_reader:
             if row_count == 0:
                 assert row == [s[:63] for s in query_paths["transaction"]["d2"].keys()]
+            else:
+                assert row == assistance_data
             row_count += 1
         assert row_count >= 1
+    delete_files()
 
 
 def test_agency_no_data(client, monthly_download_data, monkeypatch):
-    call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2001", "--local", "--clobber")
+    call_command("populate_monthly_files", "--agencies=2", "--fiscal_year=2020", "--local", "--clobber")
     file_list = listdir("csv_downloads")
     assert len(file_list) < 2
 
@@ -596,6 +601,7 @@ def test_fiscal_years(client, monthly_download_data, monkeypatch):
     for fiscal_year in range(2001, 2021):
         assert f"FY{fiscal_year}_All_Contracts_Full_{formatted_date}.zip" in file_list
         assert f"FY{fiscal_year}_All_Assistance_Full_{formatted_date}.zip" in file_list
+    delete_files()
 
 
 def test_award_type(client, monthly_download_data, monkeypatch):
@@ -611,3 +617,4 @@ def test_award_type(client, monthly_download_data, monkeypatch):
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY2020_001_Assistance_Full_{formatted_date}.zip" in file_list
     assert f"FY2020_001_Contracts_Full_{formatted_date}.zip" not in file_list
+    delete_files()

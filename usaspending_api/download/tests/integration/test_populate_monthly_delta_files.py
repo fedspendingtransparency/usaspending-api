@@ -8,6 +8,7 @@ from model_mommy import mommy
 
 from usaspending_api.awards.models import TransactionFPDS, TransactionDelta
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.download.tests.integration.test_populate_monthly_files import delete_files, generate_contract_data, generate_assistance_data
 
 
 @pytest.fixture
@@ -79,6 +80,7 @@ def test_all_agencies(client, monthly_download_delta_data, monkeypatch):
     file_list = listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY(All)_All_Contracts_Delta_{formatted_date}.zip" in file_list
+    delete_files()
 
 
 def test_specific_agency(client, monthly_download_delta_data, monkeypatch):
@@ -86,6 +88,22 @@ def test_specific_agency(client, monthly_download_delta_data, monkeypatch):
     file_list = listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY(All)_001_Contracts_Delta_{formatted_date}.zip" in file_list
+    contract_data = generate_contract_data(2020, 1)
+    contract_data.push("C")
+    with zipfile.ZipFile(f"FY(All)_001_Contracts_Delta_{formatted_date}.zip", "r") as zip_ref:
+        zip_ref.extractall("csv_downloads")
+        assert f"FY2020_001_Contracts_Full_{formatted_date}_1.csv" in listdir("csv_downloads")
+    with open(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}_1.csv", "r") as contract_file:
+        csv_reader = reader(contract_file)
+        row_count = 0
+        for row in csv_reader:
+            if row_count == 0:
+                assert row == [s[:63] for s in query_paths["transaction"]["d1"].keys()]
+            else:
+                assert row == contract_data
+            row_count += 1
+    assert row_count >= 1
+    delete_files()
 
 
 def test_award_types(client, monthly_download_delta_data, monkeypatch):
@@ -140,7 +158,6 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         awarding_agency_id=1,
         funding_agency_id=1,
         unique_award_key=2,
-        business_categories=[],
     )
     mommy.make("awards.TransactionDelta", transaction_id=2, created_at=datetime.datetime.now())
     call_command(
@@ -153,3 +170,4 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
     file_list = listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY(All)_001_Assistance_Delta_{formatted_date}.zip" in file_list
+    delete_files()
