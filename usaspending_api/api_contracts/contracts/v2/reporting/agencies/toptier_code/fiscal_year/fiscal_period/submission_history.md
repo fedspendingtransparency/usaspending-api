@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agencies Reporting Publish Dates History [/api/v2/reporting/agencies/{agency_code}/{fiscal_year}/{fiscal_period}/submission_history/]
+# Agencies Reporting Publish Dates History [/api/v2/reporting/agencies/{toptier_code}/{fiscal_year}/{fiscal_period}/submission_history/]
 
 This endpoint is used to power USAspending.gov's About the Data \| Agencies submission history modal.
 
@@ -10,8 +10,8 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
 This endpoint returns the history of publication and certification dates for a single agency's submission.
 
 + Parameters
-    + `agency_code`: `020` (required, string)
-        The specific agency code.
+    + `toptier_code`: `020` (required, string)
+        The specific agency's toptier code.
     + `fiscal_year`: 2020 (required, number)
         The fiscal year of the submission
     + `fiscal_period`: 10 (required, number)
