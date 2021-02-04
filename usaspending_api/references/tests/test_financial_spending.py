@@ -21,7 +21,12 @@ def financial_spending_data(db):
         object_class="ocCode",
         object_class_name="ocName",
     )
-    submission_1 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017, toptier_code="abc")
+    submission_1 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2017,
+        toptier_code="abc",
+        is_final_balances_for_fy=True,
+    )
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         object_class=object_class_1,
@@ -39,7 +44,12 @@ def financial_spending_data(db):
         object_class="ocCode2",
         object_class_name="ocName2",
     )
-    submission_2 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017, toptier_code="abc")
+    submission_2 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2017,
+        toptier_code="abc",
+        is_final_balances_for_fy=True,
+    )
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         object_class=object_class_2,
@@ -66,7 +76,12 @@ def financial_spending_data(db):
         object_class_name="ocName2",
     )
     tas3 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
-    submission_3 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2018, toptier_code="abc")
+    submission_3 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2018,
+        toptier_code="abc",
+        is_final_balances_for_fy=True,
+    )
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         object_class=object_class_0,

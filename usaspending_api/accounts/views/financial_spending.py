@@ -56,8 +56,7 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
         # Special case: major object class name for class 00 should be reported
         # as Unknown Object Type, overriding actual value in database
         queryset = (
-            FinancialAccountsByProgramActivityObjectClass.final_objects.all()
-            .filter(
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
                 treasury_account__funding_toptier_agency=toptier_agency,
