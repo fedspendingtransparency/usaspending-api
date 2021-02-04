@@ -21,6 +21,9 @@ FROM (
         FROM appropriation_account_balances AS aab
         JOIN submission_attributes AS sa
             ON sa.submission_id = aab.submission_id
+        INNER JOIN dabs_submission_window_schedule AS dsws
+            ON sa.submission_window_id = dsws.id
+            AND dsws.submission_reveal_date <= now()
         GROUP BY sa.reporting_fiscal_period, sa.reporting_fiscal_year, treasury_account_identifier),
     summed_object_class_program_activity AS (
         SELECT
@@ -31,6 +34,9 @@ FROM (
         FROM financial_accounts_by_program_activity_object_class AS fapaoc
         JOIN submission_attributes AS sa
             ON sa.submission_id = fapaoc.submission_id
+        INNER JOIN dabs_submission_window_schedule AS dsws
+            ON sa.submission_window_id = dsws.id
+            AND dsws.submission_reveal_date <= now()
         GROUP BY sa.reporting_fiscal_period, sa.reporting_fiscal_year, treasury_account_id)
     SELECT
         sa.fiscal_period,

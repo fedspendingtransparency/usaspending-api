@@ -15,6 +15,9 @@ WITH missing AS (
     FROM appropriation_account_balances AS aab 
     INNER JOIN submission_attributes AS sa
         ON aab.submission_id = sa.submission_id
+    INNER JOIN dabs_submission_window_schedule AS dsws
+        ON sa.submission_window_id = dsws.id
+        AND dsws.submission_reveal_date <= now()
     RIGHT OUTER JOIN gtas_sf133_balances AS gtas
         ON sa.reporting_fiscal_period = gtas.fiscal_period
         AND sa.reporting_fiscal_year = gtas.fiscal_year
