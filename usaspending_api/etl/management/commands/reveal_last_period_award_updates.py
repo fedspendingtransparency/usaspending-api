@@ -1,8 +1,9 @@
 import logging
-import datetime
 
 from django.db import connection
 from django.core.management.base import BaseCommand
+from django.utils import timezone
+
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.etl.management.helpers.recent_periods import retrieve_recent_periods
 
@@ -45,10 +46,10 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        script_start_time = datetime.datetime.now()
+        script_start_time = timezone.now()
         periods = retrieve_recent_periods()
 
-        self.last_load_date = get_last_load_date("reveal_last_period_award_updates")
+        self.last_load_date = get_last_load_date("reveal_last_period_award_updates", default=script_start_time)
 
         total_records_updated = 0
 
