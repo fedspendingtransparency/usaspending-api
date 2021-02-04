@@ -130,16 +130,16 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
         return self.format_results(result_list)
 
     def format_results(self, result_list):
+        agencies = {
+            a["toptier_agency__toptier_code"]: a["id"]
+            for a in Agency.objects.filter(toptier_flag=True).values("toptier_agency__toptier_code", "id")
+        }
         results = [
             {
                 "agency_name": result["agency_name"],
                 "abbreviation": result["abbreviation"],
                 "agency_code": result["agency_code"],
-                "agency_id": Agency.objects.filter(
-                    toptier_agency__toptier_code=result["agency_code"], toptier_flag=True
-                )
-                .first()
-                .id,
+                "agency_id": agencies.get(result["agency_code"]),
                 "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
                 "recent_publication_date": result["recent_publication_date"],
                 "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
