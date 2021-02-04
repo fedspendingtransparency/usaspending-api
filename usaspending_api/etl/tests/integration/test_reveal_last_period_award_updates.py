@@ -63,7 +63,7 @@ def test_awards_updated(submissions, award_data):
     original_datetime = Award.objects.get(id=award_data)
 
     command_response = io.StringIO()
-    call_command(SCRIPT_NAME, "--warning-threshold", 0, stdout=command_response)
+    call_command(SCRIPT_NAME, stdout=command_response)
     command_response = command_response.getvalue().strip()
 
     after = Award.objects.get(id=award_data)
@@ -72,16 +72,16 @@ def test_awards_updated(submissions, award_data):
     assert original_datetime.update_date != after.update_date, "Award was not properly updated"
 
     assert after.update_date - today < timedelta(minutes=1), "New datetime isn't today"
-    assert command_response == "Found 10 award records to update in Elasticsearch"
+    assert command_response == "10"
 
     # Call a second time to make sure nothing is updated
     command_response = io.StringIO()
-    call_command(SCRIPT_NAME, "--warning-threshold", -1, stdout=command_response)
+    call_command(SCRIPT_NAME, stdout=command_response)
     command_response = command_response.getvalue().strip()
 
     after2 = Award.objects.get(id=award_data)
 
-    assert command_response == "Found 0 award records to update in Elasticsearch"
+    assert command_response == "0"
     assert after.update_date == after2.update_date
 
 
@@ -96,7 +96,7 @@ def test_no_awards_updated(submissions, award_data_old_and_new):
     original_datetime_old = Award.objects.get(id=award_id_too_old)
 
     command_response = io.StringIO()
-    call_command(SCRIPT_NAME, "--warning-threshold", -1, stdout=command_response)
+    call_command(SCRIPT_NAME, stdout=command_response)
     command_response = command_response.getvalue().strip()
 
     after_new = Award.objects.get(id=award_id_too_new)
@@ -108,4 +108,4 @@ def test_no_awards_updated(submissions, award_data_old_and_new):
     assert original_datetime_old.update_date.strftime("%Y-%m-%d") == OLD_DATE, "Sanity check failed"
     assert original_datetime_old.update_date == after_old.update_date, "Award was updated when it shouldn't be"
 
-    assert command_response == "Found 0 award records to update in Elasticsearch"
+    assert command_response == "0"

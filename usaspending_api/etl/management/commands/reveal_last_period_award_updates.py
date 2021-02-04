@@ -60,7 +60,7 @@ class Command(BaseCommand):
         logger.info(f"Found {total_records_updated} award records to update in Elasticsearch")
 
         # Return will be captured as stdout in Jenkins job
-        return total_records_updated
+        return str(total_records_updated)
 
     def reveal_period_updates_if_behind(self, period):
 
