@@ -17,7 +17,7 @@ def delete_files():
     file_list = listdir("csv_downloads")
     for file in file_list:
         if file != "README.md":
-            os.remove(file)
+            os.remove(f"csv_downloads/{file}")
 
 
 def generate_contract_data(fiscal_year, i):

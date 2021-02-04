@@ -1,14 +1,19 @@
-from os import listdir
-
+import zipfile
 import datetime
 import pytest
-from django.core.management import call_command
 
+from django.core.management import call_command
+from os import listdir
 from model_mommy import mommy
+from unicodecsv import reader
 
 from usaspending_api.awards.models import TransactionFPDS, TransactionDelta
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
-from usaspending_api.download.tests.integration.test_populate_monthly_files import delete_files, generate_contract_data, generate_assistance_data
+from usaspending_api.download.tests.integration.test_populate_monthly_files import (
+    delete_files,
+    generate_contract_data,
+)
+from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
 @pytest.fixture
