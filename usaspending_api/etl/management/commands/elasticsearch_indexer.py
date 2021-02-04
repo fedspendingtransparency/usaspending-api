@@ -17,6 +17,12 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     transform_award_data,
     transform_covid19_faba_data,
     transform_transaction_data,
+    check_new_index_name_is_ok,
+)
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
+    ES_AWARDS_UNIQUE_KEY_FIELD,
+    ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
+    ES_COVID19_FABA_UNIQUE_KEY_FIELD,
 )
 
 logger = logging.getLogger("script")
@@ -27,19 +33,14 @@ class Command(BaseCommand):
 
     1. DB extraction should be very fast if the query is straightforward.
         We have seen 1-2 seconds or less per 10k rows on a db.r5.4xl instance with 10K IOPS
-    2. Generally speaking, parallelization performance is largely based on number
-        of vCPUs available to the pool of parallel processes. Ideally have 1 vCPU
-        per process. This is mostly true for CPU-heavy tasks. If the ETL is primarily
-        I/O then the number of processes per vCPU can be significantly increased.
-    3. Elasticsearch indexing appears to become a bottleneck when the prior
-        2 parts are taken care of. Further simplifying SQL, increasing the
-        DB size, and increasing the worker node vCPUs/memory yielded the same
-        overall runtime, due to ES indexing backpressure. Presumably adding more
-        nodes, or increasing node size in the ES cluster may reduce this pressure,
-        but not (yet) tested.
+    2. Generally speaking, parallelization performance is largely based on number of vCPUs available to the
+        pool of parallel processes. Ideally have 1 vCPU per process. This is mostly true for CPU-heavy tasks.
+        If the ETL is primarily I/O then the number of processes per vCPU can be significantly increased.
+    3. Elasticsearch indexing appears to become a bottleneck when the prior 2 parts are taken care of.
+        Further simplifying SQL, increasing the DB size, and increasing the worker node vCPUs/memory
+        yielded the same overall runtime, due to ES indexing backpressure. Presumably adding more
+        nodes, or increasing node size in the ES cluster may reduce this pressure, but not (yet) tested.
     """
-
-    help = """Hopefully the code comments are helpful enough to figure this out...."""
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -47,6 +48,12 @@ class Command(BaseCommand):
             action="store_true",
             help="When this flag is set, the script will include the extra steps"
             "to calculate deleted records and remove from the target index",
+        )
+        parser.add_argument(
+            "--deletes-only",
+            action="store_true",
+            help="When this flag is set, the script will skip any steps not related"
+            "to deleting records from target index",
         )
         parser.add_argument(
             "--index-name",
@@ -62,8 +69,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--start-datetime",
             type=datetime_command_line_argument_type(naive=False),
-            help="Processes transactions updated on or after the UTC date/time provided. yyyy-mm-dd hh:mm:ss is always "
-            "a safe format. Wrap in quotes if date/time contains spaces.",
+            help="Processes transactions updated on or after the UTC date/time provided. yyyy-mm-dd hh:mm:ss "
+            "is always a safe format. Wrap in quotes if date/time contains spaces.",
             metavar="",
         )
         parser.add_argument(
@@ -90,9 +97,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--partition-size",
             type=int,
-            help="Set the target size of a single data partition. A partition "
-            "might be slightly larger or slightly smaller depending on the "
-            " distribution of the data to process",
+            help="Set the target size of a single data partition. A partition might be slightly "
+            "larger or slightly smaller depending on the distribution of the data to process",
             default=250000,
             metavar="(default: 250,000)",
         )
@@ -119,8 +125,12 @@ class Command(BaseCommand):
             toggle_refresh_off(elasticsearch_client, config["index_name"])  # Turned back on at end.
 
         try:
-            loader.prepare_for_etl()
-            loader.dispatch_tasks()
+            if config["process_deletes"]:
+                loader.run_deletes()
+
+            if not config["deletes_only"]:
+                loader.prepare_for_etl()
+                loader.dispatch_tasks()
         except Exception as e:
             logger.error(f"{str(e)}")
             error_addition = "before encountering a problem during execution.... "
@@ -146,6 +156,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         "load_type",
         "partition_size",
         "process_deletes",
+        "deletes_only",
         "processes",
         "skip_counts",
         "skip_delete_index",
@@ -169,7 +180,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         config["starting_date"] = get_last_load_date(config["stored_date_key"], default=config["initial_datetime"])
 
     config["is_incremental_load"] = not bool(config["create_new_index"]) and (
-        config["starting_date"] != config["initial_datetime"]
+        config["starting_date"] != config["initial_datetime"] and not config["deletes_only"]
     )
 
     if config["is_incremental_load"]:
@@ -180,7 +191,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
             logger.error(f"Write alias '{config['write_alias']}' is missing")
             raise SystemExit(1)
     else:
-        if es_client.indices.exists(config["index_name"]):
+        if config["index_name"] and es_client.indices.exists(config["index_name"]):
             logger.error(f"Data load into existing index. Change index name or run an incremental load")
             raise SystemExit(1)
 
@@ -212,7 +223,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_AWARDS_NAME_SUFFIX,
             "sql_view": settings.ES_AWARDS_ETL_VIEW_NAME,
             "stored_date_key": "es_awards",
-            "unique_key_field": "generated_unique_award_id",
+            "unique_key_field": ES_AWARDS_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
         }
     elif arg_parse_options["load_type"] == "transaction":
@@ -233,7 +244,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_TRANSACTIONS_NAME_SUFFIX,
             "sql_view": settings.ES_TRANSACTIONS_ETL_VIEW_NAME,
             "stored_date_key": "es_transactions",
-            "unique_key_field": "generated_unique_transaction_id",
+            "unique_key_field": ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
         }
     elif arg_parse_options["load_type"] == "covid19-faba":
@@ -254,7 +265,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_COVID19_FABA_NAME_SUFFIX,
             "sql_view": settings.ES_COVID19_FABA_ETL_VIEW_NAME,
             "stored_date_key": ...,
-            "unique_key_field": "distinct_award_key",
+            "unique_key_field": ES_COVID19_FABA_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_COVID19_FABA_WRITE_ALIAS,
         }
     else:
@@ -271,8 +282,3 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
     )
 
     return config
-
-
-def check_new_index_name_is_ok(provided_name: str, suffix: str) -> None:
-    if not provided_name.endswith(suffix):
-        raise SystemExit(f"new index name doesn't end with the expected pattern: '{suffix}'")

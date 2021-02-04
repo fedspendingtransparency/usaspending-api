@@ -9,6 +9,10 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_lo
 
 logger = logging.getLogger("script")
 
+ES_AWARDS_UNIQUE_KEY_FIELD = "generated_unique_award_id"
+ES_TRANSACTIONS_UNIQUE_KEY_FIELD = "generated_unique_transaction_id"
+ES_COVID19_FABA_UNIQUE_KEY_FIELD = "distinct_award_key"
+
 
 def create_index(index, client):
     try:
@@ -113,3 +117,8 @@ def toggle_refresh_on(client, index):
     client.indices.put_settings({"refresh_interval": final_refresh_interval}, index)
     message = f'Changed "refresh_interval" from {current_refresh_interval} to {final_refresh_interval}'
     logger.info(format_log(message, action="ES Settings"))
+
+
+def check_new_index_name_is_ok(provided_name: str, suffix: str) -> None:
+    if not provided_name.endswith(suffix):
+        raise SystemExit(f"new index name doesn't end with the expected pattern: '{suffix}'")

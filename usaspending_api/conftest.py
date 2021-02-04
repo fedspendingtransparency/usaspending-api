@@ -6,7 +6,7 @@ import tempfile
 
 from django.conf import settings
 from django.core.management import call_command
-from django.db import connections
+from django.db import connections, connection
 from django.test import override_settings
 from pathlib import Path
 
@@ -41,6 +41,19 @@ def pytest_configure():
 
 def pytest_addoption(parser):
     parser.addoption("--local", action="store", default="true")
+
+
+def delete_tables_for_tests():
+    """
+    Outside of testing, the transaction_search table is created by using a series of chunked matviews that are combined
+    into a Django managed table. When unit testing transaction_search is created as a single matview. To prevent a
+    naming conflict, the unused Django managed table is deleted while testing.
+    """
+    with connection.cursor() as cursor:
+        try:
+            cursor.execute("DROP TABLE IF EXISTS transaction_search;")
+        except Exception:
+            pass
 
 
 @pytest.fixture(scope="session")
@@ -91,6 +104,7 @@ def django_db_setup(
                 "being skipped. "
             )
         else:
+            delete_tables_for_tests()
             generate_matviews(materialized_views_as_traditional_views=True)
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
@@ -147,7 +161,7 @@ def elasticsearch_account_index(db):
 
     See test_account_index_elasticsearch_tests.py for sample usage.
     """
-    elastic_search_index = TestElasticSearchIndex("covid19_faba")
+    elastic_search_index = TestElasticSearchIndex("covid19-faba")
     with override_settings(ES_COVID19_FABA_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
         yield elastic_search_index
         elastic_search_index.delete_index()

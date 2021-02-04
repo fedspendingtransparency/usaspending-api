@@ -11,8 +11,8 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     count_of_records_to_process,
     create_index,
-    deleted_awards,
-    deleted_transactions,
+    delete_awards,
+    delete_transactions,
     extract_records,
     format_log,
     gen_random_name,
@@ -48,8 +48,6 @@ class Controller:
         self.tasks = []
 
     def prepare_for_etl(self) -> None:
-        if self.config["process_deletes"]:
-            self.run_deletes()
         logger.info(format_log("Assessing data to process"))
         self.record_count, self.min_id, self.max_id = count_of_records_to_process(self.config)
 
@@ -154,9 +152,9 @@ class Controller:
         logger.info(format_log("Processing deletions"))
         client = instantiate_elasticsearch_client()
         if self.config["data_type"] == "award":
-            deleted_awards(client, self.config)
+            delete_awards(client, self.config)
         elif self.config["data_type"] == "transaction":
-            deleted_transactions(client, self.config)
+            delete_transactions(client, self.config)
         else:
             raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
 

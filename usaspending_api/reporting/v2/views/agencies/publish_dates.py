@@ -37,7 +37,7 @@ class PublishDates(AgencyBase, PaginationMixin):
 
         agency_filters = []
         if self.filter is not None:
-            agency_filters.append(Q(name__icontains=self.filter))
+            agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
         results = (
             ToptierAgency.objects.account_agencies()
             .filter(*agency_filters)
