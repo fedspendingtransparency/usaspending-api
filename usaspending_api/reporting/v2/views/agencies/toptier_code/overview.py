@@ -12,7 +12,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 class AgencyOverview(AgencyBase, PaginationMixin):
     """Returns an overview of the specified agency's submission data"""
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/agency_code/overview.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/toptier_code/overview.md"
 
     def get(self, request, toptier_code):
         self.sortable_columns = [

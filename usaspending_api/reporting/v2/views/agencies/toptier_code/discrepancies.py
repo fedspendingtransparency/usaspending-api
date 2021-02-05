@@ -9,7 +9,7 @@ from usaspending_api.reporting.models import ReportingAgencyMissingTas
 class AgencyDiscrepancies(AgencyBase, PaginationMixin):
     """Returns TAS discrepancies of the specified agency's submission data for a specific FY/FP"""
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/agency_code/discrepancies.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/toptier_code/discrepancies.md"
 
     def get(self, request, toptier_code):
         model = [

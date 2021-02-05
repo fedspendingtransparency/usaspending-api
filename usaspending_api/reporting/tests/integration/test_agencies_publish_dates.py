@@ -123,7 +123,7 @@ def test_basic_success(client, publish_dates_data):
         {
             "agency_name": "Test Agency",
             "abbreviation": "TA",
-            "agency_code": "001",
+            "toptier_code": "001",
             "current_total_budget_authority_amount": 150.00,
             "periods": [
                 {
@@ -203,7 +203,7 @@ def test_basic_success(client, publish_dates_data):
         {
             "agency_name": "Test Agency 2",
             "abbreviation": "TA2",
-            "agency_code": "002",
+            "toptier_code": "002",
             "current_total_budget_authority_amount": 0.00,
             "periods": [
                 {
@@ -287,7 +287,7 @@ def test_different_agencies(client, publish_dates_data):
         {
             "agency_name": "Test Agency 2",
             "abbreviation": "TA2",
-            "agency_code": "002",
+            "toptier_code": "002",
             "current_total_budget_authority_amount": 300.00,
             "periods": [
                 {
@@ -364,7 +364,7 @@ def test_different_agencies(client, publish_dates_data):
         {
             "agency_name": "Test Agency",
             "abbreviation": "TA",
-            "agency_code": "001",
+            "toptier_code": "001",
             "current_total_budget_authority_amount": 200.00,
             "periods": [
                 {
@@ -447,7 +447,7 @@ def test_filter(client, publish_dates_data):
         {
             "agency_name": "Test Agency 2",
             "abbreviation": "TA2",
-            "agency_code": "002",
+            "toptier_code": "002",
             "current_total_budget_authority_amount": 300.00,
             "periods": [
                 {
@@ -602,7 +602,7 @@ def test_publication_date_sort(client, publish_dates_data):
         {
             "agency_name": "Test Agency",
             "abbreviation": "TA",
-            "agency_code": "001",
+            "toptier_code": "001",
             "current_total_budget_authority_amount": 210.00,
             "periods": [
                 {
@@ -682,7 +682,7 @@ def test_publication_date_sort(client, publish_dates_data):
         {
             "agency_name": "Test Agency 2",
             "abbreviation": "TA2",
-            "agency_code": "002",
+            "toptier_code": "002",
             "current_total_budget_authority_amount": 310.00,
             "periods": [
                 {
