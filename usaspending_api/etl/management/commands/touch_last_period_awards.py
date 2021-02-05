@@ -9,7 +9,7 @@ from usaspending_api.etl.management.helpers.recent_periods import retrieve_recen
 
 logger = logging.getLogger("script")
 
-REVEAL_AWARD_SQL = """
+TOUCH_AWARD_SQL = """
 UPDATE awards
 SET update_date = now()
 WHERE id IN (
@@ -51,23 +51,23 @@ class Command(BaseCommand):
         # Using `script_start_time` as a default, so no awards will be touched the first time this script
         # is run. The assumption is that awards are up to date at the time the script is deployed. After
         # this runs the first time, a date will be populated in the database.
-        self.last_load_date = get_last_load_date("reveal_last_period_award_updates", default=script_start_time)
+        self.last_load_date = get_last_load_date("touch_last_period_awards", default=script_start_time)
 
         logger.info(f"Using {script_start_time} to determine if awards should be touched.")
 
         total_records_updated = 0
 
-        total_records_updated += self.reveal_period_updates_if_behind(periods["this_month"])
-        total_records_updated += self.reveal_period_updates_if_behind(periods["this_quarter"])
+        total_records_updated += self.touch_period_awards_if_behind(periods["this_month"])
+        total_records_updated += self.touch_period_awards_if_behind(periods["this_quarter"])
 
-        update_last_load_date("reveal_last_period_award_updates", script_start_time)
+        update_last_load_date("touch_last_period_awards", script_start_time)
 
         logger.info(f"Found {total_records_updated:,} award records to update in Elasticsearch")
 
         # Return will be captured as stdout in Jenkins job
         return str(total_records_updated)
 
-    def reveal_period_updates_if_behind(self, period):
+    def touch_period_awards_if_behind(self, period):
 
         records_updated = 0
 
@@ -78,16 +78,16 @@ class Command(BaseCommand):
         is_quarter_str = "quarter" if is_quarter else "month"
 
         if self.last_load_date < period["submission_reveal_date"]:
-            formatted_sql = REVEAL_AWARD_SQL.format(year=year, month=month, is_quarter=is_quarter)
+            formatted_sql = TOUCH_AWARD_SQL.format(year=year, month=month, is_quarter=is_quarter)
 
             with connection.cursor() as cursor:
                 cursor.execute(formatted_sql)
                 records_updated = cursor.rowcount
 
             logger.info(
-                f"Revealing {records_updated:,} award updates from {is_quarter_str} - year: {year}, period: {month}"
+                f"Touching {records_updated:,} award updates from {is_quarter_str} - year: {year}, period: {month}"
             )
         else:
-            logger.info(f"Updates have already been revealed from {is_quarter_str} - year: {year}, period: {month}")
+            logger.info(f"Awards have already been touched from {is_quarter_str} - year: {year}, period: {month}")
 
         return records_updated

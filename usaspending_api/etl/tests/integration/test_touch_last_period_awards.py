@@ -10,7 +10,7 @@ from usaspending_api.broker.models import ExternalDataType
 
 
 OLD_DATE = "2020-04-05"
-SCRIPT_NAME = "reveal_last_period_award_updates"
+SCRIPT_NAME = "touch_last_period_awards"
 
 
 @pytest.fixture
