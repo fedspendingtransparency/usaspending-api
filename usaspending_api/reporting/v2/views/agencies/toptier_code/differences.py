@@ -17,7 +17,7 @@ class Differences(AgencyBase):
     Obtain the differences between file A obligations and file B obligations for a specific agency/period
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/agency_code/differences.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/toptier_code/differences.md"
 
     @staticmethod
     def _parse_and_validate_request(request_dict) -> dict:
