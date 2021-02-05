@@ -26,7 +26,7 @@ WHERE id IN (
         AND dabs.submission_fiscal_year = {year}
         AND dabs.submission_fiscal_month = {month}
         AND dabs.is_quarter = {is_quarter}
-        AND faba.award_id IS NOT null;
+        AND faba.award_id IS NOT null
 );
 """
 
