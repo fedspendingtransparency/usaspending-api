@@ -489,8 +489,8 @@ def monthly_download_data(db, monkeypatch):
             type="02",
             type_description="Block Grant",
             fain=f"fain{i}",
-            awarding_agency_id=2,
-            funding_agency_id=2,
+            awarding_agency_id=1,
+            funding_agency_id=1,
             latest_transaction_id=i + 100,
             fiscal_year=fiscal_year,
         )
@@ -595,9 +595,11 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
 
 
 def test_agency_no_data(client, monthly_download_data, monkeypatch):
-    call_command("populate_monthly_files", "--agencies=2", "--fiscal_year=2020", "--local", "--clobber")
+    call_command("populate_monthly_files", "--agencies=2", "--fiscal_year=2022", "--local", "--clobber")
     file_list = listdir("csv_downloads")
-    assert len(file_list) < 2
+    formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
+    assert f"FY2020_002_Contracts_Full_{formatted_date}.zip" not in file_list
+    assert f"FY2020_002_Assistance_Full_{formatted_date}.zip" not in file_list
 
 
 def test_fiscal_years(client, monthly_download_data, monkeypatch):
