@@ -1,5 +1,6 @@
 import pytest
 
+from datetime import datetime
 from decimal import Decimal
 from model_mommy import mommy
 
@@ -10,6 +11,26 @@ from usaspending_api.reporting.models import ReportingAgencyOverview
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
+    future_date = datetime(datetime.now().year + 1, 1, 19)
+    dsws = [
+        {
+            "id": 1,
+            "submission_fiscal_year": 2019,
+            "submission_fiscal_quarter": 1,
+            "submission_fiscal_month": 3,
+            "submission_reveal_date": "2019-1-15",
+        },
+        {
+            "id": 2,
+            "submission_fiscal_year": future_date.year,
+            "submission_fiscal_quarter": 1,
+            "submission_fiscal_month": 3,
+            "submission_reveal_date": datetime.strftime(future_date, "%Y-%m-%d"),
+        },
+    ]
+    for dabs_window in dsws:
+        mommy.make("submissions.DABSSubmissionWindowSchedule", **dabs_window)
+
     subs = [
         mommy.make(
             "submissions.SubmissionAttributes",
@@ -18,10 +39,18 @@ def setup_test_data(db):
             reporting_fiscal_quarter=1,
             reporting_fiscal_period=3,
             quarter_format_flag=True,
-        )
+            submission_window_id=dsws[0]["id"],
+        ),
+        mommy.make(
+            "submissions.SubmissionAttributes",
+            submission_id=2,
+            reporting_fiscal_year=future_date.year,
+            reporting_fiscal_quarter=1,
+            reporting_fiscal_period=3,
+            quarter_format_flag=True,
+            submission_window_id=dsws[1]["id"],
+        ),
     ]
-
-    mommy.make("submissions.DABSSubmissionWindowSchedule", id=subs[0].submission_id, submission_reveal_date="2019-1-15")
 
     toptier_agencies = [
         mommy.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency"),
@@ -240,6 +269,16 @@ def setup_test_data(db):
             "submission": subs[0],
             "treasury_account": treas_accounts[0],
             "transaction_obligated_amount": 4000,
+        },
+        {
+            "award_id": None,
+            "distinct_award_key": "159|||",
+            "piid": "159",
+            "fain": None,
+            "uri": None,
+            "submission": subs[1],
+            "treasury_account": treas_accounts[0],
+            "transaction_obligated_amount": 5000,
         },
     ]
 
