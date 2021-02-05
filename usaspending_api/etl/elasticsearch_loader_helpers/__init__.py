@@ -1,7 +1,7 @@
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     delete_docs_by_unique_key,
-    deleted_awards,
-    deleted_transactions,
+    delete_awards,
+    delete_transactions,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import (
     count_of_records_to_process,
@@ -39,8 +39,8 @@ __all__ = [
     "create_award_type_aliases",
     "create_index",
     "delete_docs_by_unique_key",
-    "deleted_awards",
-    "deleted_transactions",
+    "delete_awards",
+    "delete_transactions",
     "execute_sql_statement",
     "extract_records",
     "format_log",
