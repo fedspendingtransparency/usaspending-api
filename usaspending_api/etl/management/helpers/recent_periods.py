@@ -11,7 +11,7 @@ FROM
     dabs_submission_window_schedule
 WHERE
     is_quarter = {is_quarter}
-    AND submission_reveal_date < NOW()
+    AND submission_reveal_date <= NOW()
 ORDER BY
     submission_fiscal_year DESC,
     submission_fiscal_month DESC
