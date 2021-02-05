@@ -6,7 +6,12 @@ from rest_framework import status
 
 @pytest.fixture
 def financial_obligations_models():
-    fiscal_year = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
+    fiscal_year = mommy.make(
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2016, is_final_balances_for_fy=True
+    )
+    fiscal_year_2 = mommy.make(
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2016, is_final_balances_for_fy=False
+    )
     top_tier_id = mommy.make("references.Agency", id=654, toptier_agency_id=987).toptier_agency_id
     top_tier = mommy.make("references.ToptierAgency", toptier_agency_id=top_tier_id)
     federal_id_awesome = mommy.make(
@@ -88,7 +93,7 @@ def financial_obligations_models():
     # Test to make sure False value is ignored in calculation
     mommy.make(
         "accounts.AppropriationAccountBalances",
-        submission=fiscal_year,
+        submission=fiscal_year_2,
         final_of_fy=False,
         obligations_incurred_total_by_tas_cpe=200,
         treasury_account_identifier=id_awesome,

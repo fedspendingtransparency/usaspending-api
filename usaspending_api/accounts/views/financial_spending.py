@@ -51,16 +51,14 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
         active_fiscal_year = submission.reporting_fiscal_year
         active_fiscal_quarter = submission.fiscal_quarter
 
-        # using final_objects ensures that we're only pulling the latest
-        # set of financial information for each fiscal year
         # Special case: major object class name for class 00 should be reported
         # as Unknown Object Type, overriding actual value in database
         queryset = (
-            FinancialAccountsByProgramActivityObjectClass.final_objects.all()
-            .filter(
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
                 treasury_account__funding_toptier_agency=toptier_agency,
+                submission__is_final_balances_for_fy=True,
             )
             .annotate(
                 major_object_class_name=Case(
@@ -119,9 +117,9 @@ class MinorObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
         active_fiscal_year = submission.reporting_fiscal_year
         active_fiscal_quarter = submission.fiscal_quarter
 
-        # using final_objects below ensures that we're only pulling the latest
-        # set of financial information for each fiscal year
-        queryset = FinancialAccountsByProgramActivityObjectClass.final_objects.all()
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+            submission__is_final_balances_for_fy=True
+        )
         # get the incoming agency's toptier agency, because that's what we'll
         # need to filter on
         # (used filter() instead of get() b/c we likely don't want to raise an
