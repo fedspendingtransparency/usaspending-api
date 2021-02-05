@@ -8,7 +8,6 @@ from os import listdir
 from csv import reader
 from model_mommy import mommy
 
-from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
@@ -557,10 +556,14 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
     assert f"FY2020_001_Contracts_Full_{formatted_date}.zip" in file_list
     assert f"FY2020_001_Assistance_Full_{formatted_date}.zip" in file_list
 
-    with zipfile.ZipFile(os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}.zip"), "r") as zip_ref:
+    with zipfile.ZipFile(
+        os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}.zip"), "r"
+    ) as zip_ref:
         zip_ref.extractall("csv_downloads")
         assert f"FY2020_001_Contracts_Full_{formatted_date}_1.csv" in listdir("csv_downloads")
-    with open(os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}_1.csv"), "r") as contract_file:
+    with open(
+        os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}_1.csv"), "r"
+    ) as contract_file:
         csv_reader = reader(contract_file)
         row_count = 0
         for row in csv_reader:
@@ -571,10 +574,14 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
             row_count += 1
     assert row_count >= 1
 
-    with zipfile.ZipFile(os.path.normpath(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}.zip"), "r") as zip_ref:
+    with zipfile.ZipFile(
+        os.path.normpath(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}.zip"), "r"
+    ) as zip_ref:
         zip_ref.extractall("csv_downloads")
         assert f"FY2020_001_Assistance_Full_{formatted_date}_1.csv" in listdir("csv_downloads")
-    with open(os.path.normpath(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}_1.csv"), "r") as assistance_file:
+    with open(
+        os.path.normpath(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}_1.csv"), "r"
+    ) as assistance_file:
         csv_reader = reader(assistance_file)
         row_count = 0
         for row in csv_reader:
