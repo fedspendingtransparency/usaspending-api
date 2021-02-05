@@ -17,7 +17,7 @@ def delete_files():
     file_list = listdir("csv_downloads")
     for file in file_list:
         if file != "README.md":
-            os.remove(f"csv_downloads/{file}")
+            os.remove(os.path.normpath(f"csv_downloads/{file}"))
 
 
 def generate_contract_data(fiscal_year, i):
@@ -537,7 +537,6 @@ def monthly_download_data(db, monkeypatch):
         )
         i += 1
     monkeypatch.setattr("usaspending_api.settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME", "whatever")
-    monkeypatch.setenv("DOWNLOAD_DATABASE_URL", generate_test_db_connection_string())
 
 
 def test_all_agencies(client, monthly_download_data, monkeypatch):
@@ -558,10 +557,10 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
     assert f"FY2020_001_Contracts_Full_{formatted_date}.zip" in file_list
     assert f"FY2020_001_Assistance_Full_{formatted_date}.zip" in file_list
 
-    with zipfile.ZipFile(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}.zip", "r") as zip_ref:
+    with zipfile.ZipFile(os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}.zip"), "r") as zip_ref:
         zip_ref.extractall("csv_downloads")
         assert f"FY2020_001_Contracts_Full_{formatted_date}_1.csv" in listdir("csv_downloads")
-    with open(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}_1.csv", "r") as contract_file:
+    with open(os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}_1.csv"), "r") as contract_file:
         csv_reader = reader(contract_file)
         row_count = 0
         for row in csv_reader:
@@ -572,10 +571,10 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
             row_count += 1
     assert row_count >= 1
 
-    with zipfile.ZipFile(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}.zip", "r") as zip_ref:
+    with zipfile.ZipFile(os.path.normpath(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}.zip"), "r") as zip_ref:
         zip_ref.extractall("csv_downloads")
         assert f"FY2020_001_Assistance_Full_{formatted_date}_1.csv" in listdir("csv_downloads")
-    with open(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}_1.csv", "r") as assistance_file:
+    with open(os.path.normpath(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}_1.csv"), "r") as assistance_file:
         csv_reader = reader(assistance_file)
         row_count = 0
         for row in csv_reader:

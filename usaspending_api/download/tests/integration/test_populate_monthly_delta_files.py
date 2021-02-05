@@ -98,7 +98,7 @@ def test_specific_agency(client, monthly_download_delta_data, monkeypatch):
     with zipfile.ZipFile(f"FY(All)_001_Contracts_Delta_{formatted_date}.zip", "r") as zip_ref:
         zip_ref.extractall("csv_downloads")
         assert f"FY2020_001_Contracts_Full_{formatted_date}_1.csv" in listdir("csv_downloads")
-    with open(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}_1.csv", "r") as contract_file:
+    with open(os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}_1.csv"), "r") as contract_file:
         csv_reader = reader(contract_file)
         row_count = 0
         for row in csv_reader:
