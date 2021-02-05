@@ -1,9 +1,8 @@
 import logging
-import datetime
+from datetime import datetime, timezone
 
 from django.db import connection
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.etl.management.helpers.recent_periods import retrieve_recent_periods
@@ -27,7 +26,7 @@ WHERE id IN (
         AND dabs.submission_fiscal_year = {year}
         AND dabs.submission_fiscal_month = {month}
         AND dabs.is_quarter = {is_quarter}
-    INNER JOIN awards a on faba.award_id = a.id
+        AND faba.award_id IS NOT null;
 );
 """
 
