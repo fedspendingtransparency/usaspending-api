@@ -128,7 +128,7 @@ This endpoint returns an overview list of government agencies submission data.
 ## AgencyData (object)
 + `agency_name` (required, string)
 + `abbreviation` (required, string)
-+ `agency_code` (required, string)
++ `toptier_code` (required, string)
 + `agency_id` (required, number, nullable)
 + `current_total_budget_authority_amount` (required, number)
 + `recent_publication_date` (required, string, nullable)

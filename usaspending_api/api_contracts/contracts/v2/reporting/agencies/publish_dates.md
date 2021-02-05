@@ -111,6 +111,6 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
 ## Agency (object)
 + `agency_name` (required, string)
 + `abbreviation` (required, string)
-+ `agency_code` (required, string)
++ `toptier_code` (required, string)
 + `current_total_budget_authority_amount` (required, number)
 + `periods` (required, array[Period], fixed-type)
