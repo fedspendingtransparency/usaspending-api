@@ -48,7 +48,12 @@ class Command(BaseCommand):
         script_start_time = datetime.now(timezone.utc)
         periods = retrieve_recent_periods()
 
+        # Using `script_start_time` as a default, so no awards will be touched the first time this script
+        # is run. The assumption is that awards are up to date at the time the script is deployed. After
+        # this runs the first time, a date will be populated in the database.
         self.last_load_date = get_last_load_date("reveal_last_period_award_updates", default=script_start_time)
+
+        logger.info(f"Using {script_start_time} to determine if awards should be touched.")
 
         total_records_updated = 0
 
