@@ -34,7 +34,7 @@ This endpoint returns an overview list of government agencies submission data.
         A data field that will be used to sort the response array.
         + Default: `current_total_budget_authority_amount`
         + Members
-            + `agency_code`
+            + `toptier_code`
             + `current_total_budget_authority_amount`
             + `missing_tas_accounts_total`
             + `missing_tas_accounts_count`
@@ -70,7 +70,7 @@ This endpoint returns an overview list of government agencies submission data.
                     {
                         "agency_name": "Department of Health and Human Services",
                         "abbreviation": "DHHS",
-                        "agency_code": "020",
+                        "toptier_code": "020",
                         "agency_id": 123,
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "recent_publication_date": "2020-01-10T11:59:21Z",
@@ -89,7 +89,7 @@ This endpoint returns an overview list of government agencies submission data.
                     {
                         "agency_name": "Department of Treasury",
                         "abbreviation": "DOT",
-                        "agency_code": "021",
+                        "toptier_code": "021",
                         "agency_id": 789,
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "recent_publication_date": null,
@@ -128,7 +128,7 @@ This endpoint returns an overview list of government agencies submission data.
 ## AgencyData (object)
 + `agency_name` (required, string)
 + `abbreviation` (required, string)
-+ `agency_code` (required, string)
++ `toptier_code` (required, string)
 + `agency_id` (required, number, nullable)
 + `current_total_budget_authority_amount` (required, number)
 + `recent_publication_date` (required, string, nullable)

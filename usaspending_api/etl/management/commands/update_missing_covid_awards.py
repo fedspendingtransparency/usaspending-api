@@ -2,6 +2,7 @@ import logging
 
 from django.db import connection
 from django.core.management.base import BaseCommand
+from usaspending_api.etl.management.helpers.recent_periods import retrieve_recent_periods
 
 logger = logging.getLogger("script")
 
@@ -105,23 +106,6 @@ WHERE
     AND update_date < '{submission_reveal_date}'
 """
 
-RECENT_PERIOD_SQL = """
-SELECT
-    submission_fiscal_month,
-    submission_fiscal_year,
-    is_quarter,
-    submission_reveal_date
-FROM
-    dabs_submission_window_schedule
-WHERE
-    is_quarter = {is_quarter}
-    AND submission_reveal_date < NOW()
-ORDER BY
-    submission_fiscal_year DESC,
-    submission_fiscal_month DESC
-LIMIT 2
-"""
-
 UPDATE_OPERATION_SQL = """
 UPDATE
     awards
@@ -168,7 +152,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        periods = self.retrieve_recent_periods()
+        periods = retrieve_recent_periods()
 
         submission_reveal_date = periods["this_month"]["submission_reveal_date"]
         dry_run = options["dry_run"]
@@ -194,29 +178,6 @@ class Command(BaseCommand):
             )
 
         self.execute_sql(formatted_update_sql, dry_run)
-
-    def retrieve_recent_periods(self):
-        # Open connection to database
-        with connection.cursor() as cursor:
-
-            # Query for most recent closed month periods
-            cursor.execute(RECENT_PERIOD_SQL.format(is_quarter="FALSE"))
-            recent_month_periods = cursor.fetchmany(2)
-
-            # Query for most recent closed quarter periods
-            cursor.execute(RECENT_PERIOD_SQL.format(is_quarter="TRUE"))
-            recent_quarter_periods = cursor.fetchmany(2)
-
-        recent_periods = {
-            "this_month": self.read_period_fields(recent_month_periods[0]),
-            "last_month": self.read_period_fields(recent_month_periods[1]),
-            "last_quarter": self.read_period_fields(recent_quarter_periods[1]),
-        }
-
-        return recent_periods
-
-    def read_period_fields(self, period):
-        return {"month": period[0], "year": period[1], "submission_reveal_date": period[3]}
 
     def execute_sql(self, update_sql, dry_run):
 
