@@ -79,7 +79,9 @@ class Command(BaseCommand):
                 cursor.execute(formatted_sql)
                 records_updated = cursor.rowcount
 
-            logger.info(f"Revealing {records_updated:,} award updates from {is_quarter_str} - year: {year}, period: {month}")
+            logger.info(
+                f"Revealing {records_updated:,} award updates from {is_quarter_str} - year: {year}, period: {month}"
+            )
         else:
             logger.info(f"Updates have already been revealed from {is_quarter_str} - year: {year}, period: {month}")
 
