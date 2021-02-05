@@ -201,6 +201,11 @@ TEMP_TABLE_CONTENTS = {
             INNER JOIN
                 submission_attributes AS sa ON (sa.submission_id = aab.submission_id)
             INNER JOIN
+                dabs_submission_window_schedule AS dsws ON (
+                    sa.submission_window_id = dsws.id
+                    AND dsws.submission_reveal_date <= now()
+                )
+            INNER JOIN
                 treasury_appropriation_account AS taa
                     ON (aab.treasury_account_identifier = taa.treasury_account_identifier)
             INNER JOIN
