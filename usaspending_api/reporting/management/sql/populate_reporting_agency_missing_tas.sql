@@ -13,17 +13,13 @@ WITH missing AS (
     SELECT
         limited_gtas.id
     FROM appropriation_account_balances AS aab
-    INNER JOIN (
-        SELECT
-            sa.submission_id,
-            sa.reporting_fiscal_period,
-            sa.reporting_fiscal_year
-        FROM
-            submission_attributes AS sa
-        INNER JOIN dabs_submission_window_schedule AS dsws
-            ON sa.submission_window_id = dsws.id
-            AND dsws.submission_reveal_date <= now()
-    ) AS limited_sa ON (aab.submission_id = limited_sa.submission_id)
+    /*
+        Don't limit submissions here so that we can make sure to pair
+        GTAS with Submissions. Since we use a RIGHT OUTER JOIN below
+        the limiting factor is on the GTAS selected.
+    */
+    INNER JOIN submission_attributes AS sa
+        ON aab.submission_id = sa.submission_id
     RIGHT OUTER JOIN (
         SELECT
             gtas.id,
@@ -54,8 +50,8 @@ WITH missing AS (
                     )
             )
     ) AS limited_gtas ON (
-        limited_sa.reporting_fiscal_period = limited_gtas.fiscal_period
-        AND limited_sa.reporting_fiscal_year = limited_gtas.fiscal_year
+        sa.reporting_fiscal_period = limited_gtas.fiscal_period
+        AND sa.reporting_fiscal_year = limited_gtas.fiscal_year
         AND aab.treasury_account_identifier = limited_gtas.treasury_account_identifier
     )
     WHERE
