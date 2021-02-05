@@ -117,7 +117,9 @@ class MinorObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
         active_fiscal_year = submission.reporting_fiscal_year
         active_fiscal_quarter = submission.fiscal_quarter
 
-        queryset = FinancialAccountsByProgramActivityObjectClass.filter(submission__is_final_balances_for_fy=True)
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+            submission__is_final_balances_for_fy=True
+        )
         # get the incoming agency's toptier agency, because that's what we'll
         # need to filter on
         # (used filter() instead of get() b/c we likely don't want to raise an

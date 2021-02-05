@@ -13,16 +13,24 @@ from usaspending_api.financial_activities.models import FinancialAccountsByProgr
 def account_models():
     # Add submission data
     subm_2015_1 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_period_start=date(2014, 10, 1), reporting_fiscal_year=2015
+        "submissions.SubmissionAttributes",
+        reporting_period_start=date(2014, 10, 1),
+        reporting_fiscal_year=2015,
     )
     subm_2015_2 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_period_start=date(2015, 8, 1), reporting_fiscal_year=2015
+        "submissions.SubmissionAttributes",
+        reporting_period_start=date(2015, 8, 1),
+        reporting_fiscal_year=2015,
+        is_final_balances_for_fy=True,
     )
     subm_2016_1 = mommy.make(
         "submissions.SubmissionAttributes", reporting_period_start=date(2016, 1, 1), reporting_fiscal_year=2016
     )
     subm_2016_2 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_period_start=date(2016, 6, 1), reporting_fiscal_year=2016
+        "submissions.SubmissionAttributes",
+        reporting_period_start=date(2016, 6, 1),
+        reporting_fiscal_year=2016,
+        is_final_balances_for_fy=True,
     )
 
     # add object classes

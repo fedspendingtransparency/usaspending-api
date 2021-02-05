@@ -20,7 +20,7 @@ class TASBalancesAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, CachedDe
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
-        queryset = AppropriationAccountBalances.filter(submission__is_final_balances_for_fy=True)
+        queryset = AppropriationAccountBalances.objects.filter(submission__is_final_balances_for_fy=True)
         queryset = self.filter_records(self.request, queryset=queryset)
         queryset = self.aggregate(self.request, queryset=queryset)
         queryset = self.order_records(self.request, queryset=queryset)

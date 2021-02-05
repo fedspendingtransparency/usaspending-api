@@ -29,11 +29,19 @@ def create_agency_data():
     # CREATE SUBMISSIONS
     # submission_3 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2015, toptier_code='100')
     submission_1 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, reporting_fiscal_quarter=2, toptier_code="100"
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2017,
+        reporting_fiscal_quarter=2,
+        toptier_code="100",
+        is_final_balances_for_fy=True,
     )
     # submission_2 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016, toptier_code='100')
     submission_2 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, reporting_fiscal_quarter=2, toptier_code="200"
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2017,
+        reporting_fiscal_quarter=2,
+        toptier_code="200",
+        is_final_balances_for_fy=True,
     )
 
     # CREATE AppropriationAccountBalances

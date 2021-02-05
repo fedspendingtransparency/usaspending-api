@@ -7,8 +7,12 @@ from usaspending_api.accounts.models import FederalAccount
 
 @pytest.fixture
 def financial_spending_data(db):
-    latest_subm = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
-    last_year_subm = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
+    latest_subm = mommy.make(
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, is_final_balances_for_fy=True
+    )
+    last_year_subm = mommy.make(
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2016, is_final_balances_for_fy=True
+    )
     federal_account = mommy.make(FederalAccount, id=1)
 
     # create Object classes
