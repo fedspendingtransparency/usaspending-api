@@ -4,7 +4,6 @@ import zipfile
 import os
 
 from django.core.management import call_command
-from os import listdir
 from csv import reader
 from model_mommy import mommy
 
@@ -13,7 +12,7 @@ from usaspending_api.download.v2.download_column_historical_lookups import query
 
 
 def delete_files():
-    file_list = listdir("csv_downloads")
+    file_list = os.listdir("csv_downloads")
     for file in file_list:
         if file != "README.md":
             os.remove(os.path.normpath(f"csv_downloads/{file}"))
@@ -540,7 +539,7 @@ def monthly_download_data(db, monkeypatch):
 
 def test_all_agencies(client, monthly_download_data, monkeypatch):
     call_command("populate_monthly_files", "--fiscal_year=2020", "--local", "--clobber")
-    file_list = listdir("csv_downloads")
+    file_list = os.listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY2020_All_Contracts_Full_{formatted_date}.zip" in file_list
     assert f"FY2020_All_Assistance_Full_{formatted_date}.zip" in file_list
@@ -551,7 +550,7 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
     contract_data = generate_contract_data(2020, 1)
     assistance_data = generate_assistance_data
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
-    file_list = listdir("csv_downloads")
+    file_list = os.listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY2020_001_Contracts_Full_{formatted_date}.zip" in file_list
     assert f"FY2020_001_Assistance_Full_{formatted_date}.zip" in file_list
@@ -560,7 +559,7 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
         os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}.zip"), "r"
     ) as zip_ref:
         zip_ref.extractall("csv_downloads")
-        assert f"FY2020_001_Contracts_Full_{formatted_date}_1.csv" in listdir("csv_downloads")
+        assert f"FY2020_001_Contracts_Full_{formatted_date}_1.csv" in os.listdir("csv_downloads")
     with open(
         os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}_1.csv"), "r"
     ) as contract_file:
@@ -578,7 +577,7 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
         os.path.normpath(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}.zip"), "r"
     ) as zip_ref:
         zip_ref.extractall("csv_downloads")
-        assert f"FY2020_001_Assistance_Full_{formatted_date}_1.csv" in listdir("csv_downloads")
+        assert f"FY2020_001_Assistance_Full_{formatted_date}_1.csv" in os.listdir("csv_downloads")
     with open(
         os.path.normpath(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}_1.csv"), "r"
     ) as assistance_file:
@@ -596,7 +595,7 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
 
 def test_agency_no_data(client, monthly_download_data, monkeypatch):
     call_command("populate_monthly_files", "--agencies=2", "--fiscal_year=2022", "--local", "--clobber")
-    file_list = listdir("csv_downloads")
+    file_list = os.listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY2020_002_Contracts_Full_{formatted_date}.zip" not in file_list
     assert f"FY2020_002_Assistance_Full_{formatted_date}.zip" not in file_list
@@ -604,7 +603,7 @@ def test_agency_no_data(client, monthly_download_data, monkeypatch):
 
 def test_fiscal_years(client, monthly_download_data, monkeypatch):
     call_command("populate_monthly_files", "--local", "--clobber")
-    file_list = listdir("csv_downloads")
+    file_list = os.listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     for fiscal_year in range(2001, 2021):
         assert f"FY{fiscal_year}_All_Contracts_Full_{formatted_date}.zip" in file_list
@@ -621,7 +620,7 @@ def test_award_type(client, monthly_download_data, monkeypatch):
         "--local",
         "--clobber",
     )
-    file_list = listdir("csv_downloads")
+    file_list = os.listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY2020_001_Assistance_Full_{formatted_date}.zip" in file_list
     assert f"FY2020_001_Contracts_Full_{formatted_date}.zip" not in file_list
