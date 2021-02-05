@@ -84,12 +84,23 @@ def delete_docs_by_unique_key(
         for chunk_of_values in values_generator:
             # Invoking _delete_by_query as per the elasticsearch-dsl docs:
             #   https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#delete-by-query
-            # _refresh is deferred til the end or chunk processing
-            # And if a doc delete is attempted more than once, a version_conflict will be raised,
-            # but conflicts="proceed" ignores it
+            # _refresh is deferred til the end of chunk processing
             q = Search(using=client, index=index).filter("terms", **{key: chunk_of_values})  # type: Search
-            q = q.params(conflicts="proceed")
+            # params:
+            # conflicts="proceed": Ignores version conflict errors if a doc delete is attempted more than once
+            # slices="auto": Will create parallel delete batches per shard
+            q = q.params(conflicts="proceed", slices="auto")
             response = q.delete()
+            # Some subtle errors come back on the response
+            if response["timed_out"]:
+                msg = f"Delete request timed out on cluster after {int(response['took'])/1000:.2f}s"
+                logger.error(format_log(msg=msg, action="Delete", name=task_id))
+                raise RuntimeError(msg)
+            if response["failures"]:
+                fail_snippet = "\n\t\t" + "\n\t\t".join(map(str, response["failures"][0:4])) + "\n\t\t" + "..."
+                msg = f"Some docs failed to delete on cluster:{fail_snippet}"
+                logger.error(format_log(msg=msg, action="Delete", name=task_id))
+                raise RuntimeError(msg)
             logger.info(
                 format_log(
                     f"Deleted {response['deleted']:,} docs in ES from chunk of size {len(chunk_of_values):,} "
