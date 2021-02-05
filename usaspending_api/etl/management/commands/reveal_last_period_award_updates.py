@@ -38,12 +38,11 @@ class Command(BaseCommand):
     NOTE: This command is necessary to update award values in Elasticsearch that were modified in the
     recently closed submission period. Elasticsearch calculations for an award's Covid-19 spending
     values do not include data from a submission until its submission window's reveal date has been
-    passed. Because incremental loads in Elasticsearch compare the award's update_date field to a
-    rolling date when determining whether it should be recalculated, the data will not automatically
-    be refreshed after a submission window's reveal date. This command updates the update_date field
-    on awards modified by the latest revealed submission so the Elasticsearch incremental load will
-    include those awards. The command uses the external_data_load_date table to make sure each
-    submission window is only 'revealed' once.
+    passed. Because an incremental load in Elasticsearch uses the award's update_date to determine the
+    delta since it last ran, the award data will not be refreshed after a submission closes until it's
+    update_date is touched. This command updates the update_date field on awards modified by the latest
+    closed submission, so the Elasticsearch incremental load will include those awards. The command
+    uses the external_data_load_date table to make sure each submission window is only 'revealed' once.
     """
 
     def handle(self, *args, **options):
@@ -74,13 +73,15 @@ class Command(BaseCommand):
 
         is_quarter_str = "quarter" if is_quarter else "month"
 
-        if self.last_load_date is None or self.last_load_date < period["submission_reveal_date"]:
+        if self.last_load_date < period["submission_reveal_date"]:
             formatted_sql = REVEAL_AWARD_SQL.format(year=year, month=month, is_quarter=is_quarter)
 
             with connection.cursor() as cursor:
                 cursor.execute(formatted_sql)
                 records_updated = cursor.rowcount
 
-        logger.info(f"Revealing {records_updated:,} awards from {is_quarter_str} - year: {year}, period: {month}")
+            logger.info(f"Revealing {records_updated:,} award updates from {is_quarter_str} - year: {year}, period: {month}")
+        else:
+            logger.info(f"Updates have already been revealed from {is_quarter_str} - year: {year}, period: {month}")
 
         return records_updated
