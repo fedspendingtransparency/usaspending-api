@@ -31,6 +31,7 @@ def delete_docs_by_unique_key(
     task_id: str,
     index,
     refresh_after: bool = True,
+    delete_chunk_size: int = 50000,
 ) -> int:
     """
     Bulk delete a batch of documents whose field identified by ``key`` matches any value provided in the
@@ -54,6 +55,8 @@ def delete_docs_by_unique_key(
             called, or a elasticsearch.exceptions.ConflictError will be raised due to an ES doc version_conflict
             error response. NOTE: This param will be ignored and a refresh will be attempted if this function
             errors-out during execution, in order to not leave un-refreshed deletes in the index.
+        delete_chunk_size (int): the batch-size of terms value-array given to each _delete_by_query call. Needs to be
+            less than 65536 (max values for any terms query), and less than index.max_results_window setting.
 
     Returns: Number of ES documents deleted
     """
@@ -75,12 +78,20 @@ def delete_docs_by_unique_key(
         logger.error(format_log(msg=msg, action="Delete", name=task_id))
         raise RuntimeError(msg)
 
+    if delete_chunk_size > 65536:
+        # 65,536 is max number of terms that can be added to an ES terms filter query
+        msg = (
+            f"{delete_chunk_size} is greater than 65,536, which is the max number of terms that can be added to an ES "
+            f"terms filter query"
+        )
+        logger.error(format_log(msg=msg, action="Delete"))
+        raise RuntimeError(msg)
+
     chunks_processed = 0
     deleted = 0
     is_error = False
     try:
-        # 65,536 is max number of terms that can be added to an ES terms filter query
-        values_generator = chunks(value_list, 50000)
+        values_generator = chunks(value_list, delete_chunk_size)
         for chunk_of_values in values_generator:
             # Invoking _delete_by_query as per the elasticsearch-dsl docs:
             #   https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#delete-by-query
@@ -162,7 +173,7 @@ def _lookup_deleted_award_keys(
     value_list: list,
     config: dict,
     index: Optional[str] = None,
-    lookup_chunk_size=50000,
+    lookup_chunk_size: int = 50000,
 ) -> list:
     """Derive a list of award keys given a target index, Lookup field, and lookup values
 
@@ -175,10 +186,13 @@ def _lookup_deleted_award_keys(
         lookup_key (str): name of field in targeted elasticsearch index by which we are looking up docs. The field or
             sub-field provided MUST be of ``keyword`` type (or ``_id`` meta field)
         value_list (list): if lookup_key field has any of these values, the document will be returned from the lookup
+        config (dict): collection of key-value pairs that encapsulates runtime arguments for this ES management task
         index (str): Optional name, alias, or pattern of index this query will target. Looks up via config if not
-                     provided
+            provided
+        lookup_chunk_size (int): the batch-size of terms value-array to be looked-up. Needs to be less
+            than 65536 (max values for any terms query), and less than config["max_query_size"]
 
-    Returns: list of values for the ES_AWARDS_UNIQUE_KEY_FIELD fields in the looked-up documents
+    Returns: list of values for the ES_AWARDS_UNIQUE_KEY_FIELD fields in the looked-up documents.
     """
     if index is None:
         index = f"{config['query_alias_prefix']}-*"

@@ -2,6 +2,8 @@ import pytest
 
 from collections import OrderedDict
 from datetime import datetime, timezone, timedelta
+
+from django.test import override_settings
 from elasticsearch import Elasticsearch
 from model_mommy import mommy
 
@@ -10,6 +12,7 @@ from usaspending_api.conftest_helpers import TestElasticSearchIndex
 from usaspending_api.etl.elasticsearch_loader_helpers import set_final_index_config
 from usaspending_api.awards.models import Award, TransactionFABS, TransactionFPDS, TransactionNormalized
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import ES_AWARDS_UNIQUE_KEY_FIELD
 from usaspending_api.etl.management.commands.elasticsearch_indexer import (
     Command as ElasticsearchIndexerCommand,
     parse_cli_args,
@@ -22,6 +25,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     _check_awards_for_deletes,
     _lookup_deleted_award_keys,
+    delete_docs_by_unique_key,
 )
 
 
@@ -313,6 +317,42 @@ def test__lookup_deleted_award_keys_by_int(award_data_fixture, elasticsearch_awa
         client, "award_id", [1], elasticsearch_award_index.etl_config, index=elasticsearch_award_index.index_name
     )
     assert ids == ["CONT_AWD_IND12PB00323"]
+
+
+def test_delete_docs_by_unique_key_exceed_max_terms(award_data_fixture, elasticsearch_award_index):
+    """Verify we restrict attempting to delete more than allowed in a terms query"""
+    elasticsearch_award_index.update_index()
+    with pytest.raises(RuntimeError) as exc_info:
+        delete_docs_by_unique_key(
+            elasticsearch_award_index.client,
+            ES_AWARDS_UNIQUE_KEY_FIELD,
+            list(map(str, range(0, 70000))),
+            "test delete",
+            elasticsearch_award_index.index_name,
+            delete_chunk_size=70000,
+        )
+        assert "greater than 65536" in str(exc_info.value)
+
+
+def test_delete_docs_by_unique_key_exceed_max_results_window(award_data_fixture, elasticsearch_award_index):
+    """Verify that trying to delete more records at once than the index max_results_window will error-out"""
+    fake_max_results_window = 1
+    with override_settings(ES_AWARDS_MAX_RESULT_WINDOW=fake_max_results_window):
+        elasticsearch_award_index.update_index()
+        assert elasticsearch_award_index.etl_config["max_query_size"] == fake_max_results_window
+        from elasticsearch.exceptions import RequestError
+
+        with pytest.raises(RequestError) as exc_info:
+            delete_docs_by_unique_key(
+                elasticsearch_award_index.client,
+                "award_id",
+                [1, 2],
+                "test delete",
+                elasticsearch_award_index.index_name,
+                delete_chunk_size=10,
+            )
+            assert "Batch size is too large" in str(exc_info.value)
+            assert "controlled by the [index.max_result_window] index level setting" in str(exc_info.value)
 
 
 def test__check_awards_for_deletes(award_data_fixture, monkeypatch, db):
