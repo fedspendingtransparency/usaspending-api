@@ -97,10 +97,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--partition-size",
             type=int,
-            help="Set the target size of a single data partition. A partition might be slightly "
-            "larger or slightly smaller depending on the distribution of the data to process",
-            default=250000,
-            metavar="(default: 250,000)",
+            help="Set the batch-size of a single partition of data to process.",
+            default=10000,
+            metavar="(default: 10,000)",
         )
         parser.add_argument(
             "--drop-db-view",

@@ -56,7 +56,9 @@ def delete_docs_by_unique_key(
             error response. NOTE: This param will be ignored and a refresh will be attempted if this function
             errors-out during execution, in order to not leave un-refreshed deletes in the index.
         delete_chunk_size (int): the batch-size of terms value-array given to each _delete_by_query call. Needs to be
-            less than 65536 (max values for any terms query), and less than index.max_results_window setting.
+            less than 65536 (max values for any terms query), and less than index.max_results_window setting. Ideally
+            use ``config["partition_size"]`` (derived from --partition-siz) to set this to a calibrated value. If not
+            provided, uses 10,000 as the default which was measured as a good reasonable default.
 
     Returns: Number of ES documents deleted
     """
@@ -305,6 +307,7 @@ def delete_awards(client: Elasticsearch, config: dict, task_id: str = "Sync DB D
         value_list=values_list,
         task_id=task_id,
         index=config["index_name"],
+        delete_chunk_size=config["partition_size"],
     )
 
 
@@ -334,6 +337,7 @@ def delete_transactions(client: Elasticsearch, config: dict, task_id: str = "Syn
         value_list=[*deleted_tx_keys],
         task_id="Sync DB Deletes",
         index=config["index_name"],
+        delete_chunk_size=config["partition_size"],
     )
 
 
