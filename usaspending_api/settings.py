@@ -382,7 +382,7 @@ if DEBUG:
             LOGGING["loggers"][logger]["handlers"] += ["console"]
 
     LOGGING["handlers"]["console"]["level"] = "DEBUG"
-    LOGGING["loggers"]["django.db.backends"] = {"handlers": ["console"], "level": "DEBUG"}
+    LOGGING["loggers"]["django.db.backends"] = {"handlers": ["console"], "level": "DEBUG", "propagate": False}
 
 
 # If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py

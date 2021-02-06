@@ -11,14 +11,49 @@ INSERT INTO public.reporting_agency_missing_tas (
 
 WITH missing AS (
     SELECT
-        gtas.id
-    FROM appropriation_account_balances AS aab 
+        limited_gtas.id
+    FROM appropriation_account_balances AS aab
+    /*
+        Don't limit submissions here so that we can make sure to pair
+        GTAS with Submissions. Since we use a RIGHT OUTER JOIN below
+        the limiting factor is on the GTAS selected.
+    */
     INNER JOIN submission_attributes AS sa
         ON aab.submission_id = sa.submission_id
-    RIGHT OUTER JOIN gtas_sf133_balances AS gtas
-        ON sa.reporting_fiscal_period = gtas.fiscal_period
-        AND sa.reporting_fiscal_year = gtas.fiscal_year
-        AND aab.treasury_account_identifier = gtas.treasury_account_identifier
+    RIGHT OUTER JOIN (
+        SELECT
+            gtas.id,
+            gtas.fiscal_year,
+            gtas.fiscal_period,
+            gtas.treasury_account_identifier
+        FROM
+            gtas_sf133_balances AS gtas
+        WHERE
+            /*
+                ----- For GTAS that are not associated to a submission. -----
+                Check that there is a submission_reveal_date that is prior to the current
+                date for the fiscal_year and fiscal_period on the GTAS record. Since GTAS
+                are submitted each period and we have no way to tie them back to a
+                submission window this is a work around to try and limit them to only
+                closed submissions.
+            */
+            EXISTS (
+                SELECT 1
+                FROM dabs_submission_window_schedule dsws
+                WHERE dsws.submission_reveal_date <= now()
+                    AND (
+                        gtas.fiscal_year < dsws.submission_fiscal_year
+                        OR (
+                            gtas.fiscal_year = dsws.submission_fiscal_year
+                            AND gtas.fiscal_period <= dsws.submission_fiscal_month
+                        )
+                    )
+            )
+    ) AS limited_gtas ON (
+        sa.reporting_fiscal_period = limited_gtas.fiscal_period
+        AND sa.reporting_fiscal_year = limited_gtas.fiscal_year
+        AND aab.treasury_account_identifier = limited_gtas.treasury_account_identifier
+    )
     WHERE
         aab.submission_id IS NULL
 )

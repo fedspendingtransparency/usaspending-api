@@ -29,12 +29,11 @@ class FederalAccountByObligationViewSet(CachedDetailViewSet):
         if not funding_agency_id or not fiscal_year:
             raise InvalidParameterException("Missing required query parameters: fiscal_year & funding_agency_id")
 
-        # Using final_objects below ensures that we're only pulling the latest
-        # set of financial information for each fiscal year
         queryset = (
-            AppropriationAccountBalances.final_objects.filter(
+            AppropriationAccountBalances.objects.filter(
                 treasury_account_identifier__funding_toptier_agency__agency__id=funding_agency_id,
                 submission__reporting_fiscal_year=fiscal_year,
+                submission__is_final_balances_for_fy=True,
             )
             .annotate(
                 account_title=F("treasury_account_identifier__federal_account__account_title"),

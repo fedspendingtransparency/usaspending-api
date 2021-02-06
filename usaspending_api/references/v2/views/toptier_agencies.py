@@ -68,9 +68,7 @@ class ToptierAgenciesViewSet(APIView):
             active_fiscal_year = submission.reporting_fiscal_year
             active_fiscal_quarter = submission.fiscal_quarter
 
-            # using final_objects below ensures that we're only pulling the latest
-            # set of financial information for each fiscal year
-            queryset = AppropriationAccountBalances.final_objects.all()
+            queryset = AppropriationAccountBalances.objects.filter(submission__is_final_balances_for_fy=True)
             # get the incoming agency's toptier agency, because that's what we'll
             # need to filter on
             # (used filter() instead of get() b/c we likely don't want to raise an

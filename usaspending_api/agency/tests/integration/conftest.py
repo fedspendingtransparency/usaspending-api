@@ -10,11 +10,13 @@ def agency_account_data():
     ta2 = mommy.make("references.ToptierAgency", toptier_code="008")
     ta3 = mommy.make("references.ToptierAgency", toptier_code="009")
     ta4 = mommy.make("references.ToptierAgency", toptier_code="010")
-    sub1 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=current_fiscal_year())
-    sub2 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
-    sub3 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2018)
-    sub4 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2019)
-    sub5 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
+    sub1 = mommy.make(
+        "submissions.SubmissionAttributes", reporting_fiscal_year=current_fiscal_year(), is_final_balances_for_fy=True
+    )
+    sub2 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017, is_final_balances_for_fy=True)
+    sub3 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2018, is_final_balances_for_fy=True)
+    sub4 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2019, is_final_balances_for_fy=True)
+    sub5 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016, is_final_balances_for_fy=True)
     fa1 = mommy.make("accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1")
     fa2 = mommy.make("accounts.FederalAccount", federal_account_code="002-0000", account_title="FA 2")
     fa3 = mommy.make("accounts.FederalAccount", federal_account_code="003-0000", account_title="FA 3")

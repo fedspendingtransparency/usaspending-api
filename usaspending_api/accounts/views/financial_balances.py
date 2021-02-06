@@ -47,14 +47,12 @@ class AgenciesFinancialBalancesViewSet(CachedDetailViewSet):
         active_fiscal_year = submission.reporting_fiscal_year
         active_fiscal_quarter = submission.fiscal_quarter
 
-        # using final_objects ensures that we're only pulling the latest
-        # set of financial information for each fiscal year
         queryset = (
-            AppropriationAccountBalances.final_objects.all()
-            .filter(
+            AppropriationAccountBalances.objects.filter(
                 submission__reporting_fiscal_year=active_fiscal_year,
                 submission__reporting_fiscal_quarter=active_fiscal_quarter,
                 treasury_account_identifier__funding_toptier_agency=toptier_agency,
+                submission__is_final_balances_for_fy=True,
             )
             .annotate(fiscal_year=F("submission__reporting_fiscal_year"))
             .values("fiscal_year")

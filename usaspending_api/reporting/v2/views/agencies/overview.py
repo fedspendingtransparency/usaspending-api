@@ -20,7 +20,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
 
     def get(self, request):
         self.sortable_columns = [
-            "agency_code",
+            "toptier_code",
             "current_total_budget_authority_amount",
             "missing_tas_accounts_count",
             "missing_tas_accounts_total",
@@ -47,7 +47,6 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
         result_list = (
             ReportingAgencyOverview.objects.filter(fiscal_year=self.fiscal_year, fiscal_period=self.fiscal_period)
             .annotate(
-                agency_code=F("toptier_code"),
                 current_total_budget_authority_amount=F("total_budgetary_resources"),
                 obligation_difference=F("total_diff_approp_ocpa_obligated_amounts"),
                 agency_name=Subquery(ToptierAgency.objects.filter(*agency_filters).values("name")),
@@ -108,7 +107,6 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             .values(
                 "agency_name",
                 "abbreviation",
-                "agency_code",
                 "toptier_code",
                 "total_dollars_obligated_gtas",
                 "current_total_budget_authority_amount",
@@ -130,16 +128,16 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
         return self.format_results(result_list)
 
     def format_results(self, result_list):
+        agencies = {
+            a["toptier_agency__toptier_code"]: a["id"]
+            for a in Agency.objects.filter(toptier_flag=True).values("toptier_agency__toptier_code", "id")
+        }
         results = [
             {
                 "agency_name": result["agency_name"],
                 "abbreviation": result["abbreviation"],
-                "agency_code": result["agency_code"],
-                "agency_id": Agency.objects.filter(
-                    toptier_agency__toptier_code=result["agency_code"], toptier_flag=True
-                )
-                .first()
-                .id,
+                "toptier_code": result["toptier_code"],
+                "agency_id": agencies.get(result["toptier_code"]),
                 "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
                 "recent_publication_date": result["recent_publication_date"],
                 "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,

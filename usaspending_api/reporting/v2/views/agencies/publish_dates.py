@@ -103,7 +103,7 @@ class PublishDates(AgencyBase, PaginationMixin):
                 {
                     "agency_name": result["name"],
                     "abbreviation": result["abbreviation"],
-                    "agency_code": result["toptier_code"],
+                    "toptier_code": result["toptier_code"],
                     "current_total_budget_authority_amount": result["current_total_budget_authority_amount"] or 0.00,
                     "periods": sorted(periods, key=lambda x: x["period"]),
                 }
@@ -139,7 +139,7 @@ class PublishDates(AgencyBase, PaginationMixin):
         sortable_columns = [
             "agency_name",
             "abbreviation",
-            "agency_code",
+            "toptier_code",
             "current_total_budget_authority_amount",
             "publication_date",
         ]
