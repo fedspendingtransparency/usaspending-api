@@ -31,7 +31,7 @@ def delete_docs_by_unique_key(
     task_id: str,
     index,
     refresh_after: bool = True,
-    delete_chunk_size: int = 50000,
+    delete_chunk_size: int = 4000,  # temp for testing
 ) -> int:
     """
     Bulk delete a batch of documents whose field identified by ``key`` matches any value provided in the
