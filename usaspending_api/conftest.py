@@ -10,6 +10,7 @@ from django.db import connections, connection
 from django.test import override_settings
 from pathlib import Path
 
+from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_view_exists,
     ensure_business_categories_functions_exist,
@@ -46,14 +47,24 @@ def pytest_addoption(parser):
 def delete_tables_for_tests():
     """
     Outside of testing, the transaction_search table is created by using a series of chunked matviews that are combined
-    into a Django managed table. When unit testing transaction_search is created as a single matview. To prevent a
+    into a Django managed table. When unit testing transaction_search is created as a single view. To prevent a
     naming conflict, the unused Django managed table is deleted while testing.
     """
-    with connection.cursor() as cursor:
-        try:
-            cursor.execute("DROP TABLE IF EXISTS transaction_search;")
-        except Exception:
-            pass
+    try:
+        execute_sql_simple("DROP TABLE IF EXISTS transaction_search;")
+    except Exception:
+        pass
+
+
+def add_view_protection():
+    """
+    When unit testing transaction_search is created as a single view. Views can't be deleted from, so a custom rule
+    is added to transaction_search to prevent sql errors when deletes are attempted
+    """
+    try:
+        execute_sql_simple("CREATE RULE ts_del_protect AS ON DELETE TO transaction_search DO INSTEAD NOTHING;")
+    except Exception:
+        pass
 
 
 @pytest.fixture(scope="session")
@@ -108,6 +119,7 @@ def django_db_setup(
             generate_matviews(materialized_views_as_traditional_views=True)
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
+            add_view_protection()
             ensure_business_categories_functions_exist()
             call_command("load_broker_static_data")
 
