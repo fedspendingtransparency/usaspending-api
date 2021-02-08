@@ -6,7 +6,7 @@ import tempfile
 
 from django.conf import settings
 from django.core.management import call_command
-from django.db import connections, connection
+from django.db import connections
 from django.test import override_settings
 from pathlib import Path
 
