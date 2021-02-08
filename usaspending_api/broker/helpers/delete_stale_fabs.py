@@ -30,11 +30,13 @@ def delete_stale_fabs(ids_to_delete):
     queries = []
     # Transaction FABS
     if delete_transaction_ids:
+        ts = 'DELETE FROM "transaction_search" tf WHERE tf."transaction_id" IN ({});'
         fabs = 'DELETE FROM "transaction_fabs" tf WHERE tf."transaction_id" IN ({});'
         tn = 'DELETE FROM "transaction_normalized" tn WHERE tn."id" IN ({});'
         td = "DELETE FROM transaction_delta td WHERE td.transaction_id in ({});"
         queries.extend(
             [
+                ts.format(delete_transaction_str_ids),
                 fabs.format(delete_transaction_str_ids),
                 tn.format(delete_transaction_str_ids),
                 td.format(delete_transaction_str_ids),

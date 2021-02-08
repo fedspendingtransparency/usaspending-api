@@ -12,7 +12,7 @@ class TransactionSearch(models.Model):
     may or may not be nullable, but those constraints are not enforced in this table.
     """
 
-    transaction = models.OneToOneField(TransactionNormalized, on_delete=models.DO_NOTHING, primary_key=True)
+    transaction = models.OneToOneField(TransactionNormalized, on_delete=models.CASCADE, primary_key=True)
     award = models.ForeignKey(Award, on_delete=models.DO_NOTHING, null=True)
     modification_number = models.TextField(null=True)
     detached_award_proc_unique = models.TextField(null=True)
