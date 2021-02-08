@@ -65,7 +65,9 @@ def delete_stale_fpds(detached_award_procurement_ids):
         deleted_awards = cursor.fetchall()
         logger.info(f"{len(deleted_awards):,} awards were unlinked from transactions due to pending deletes")
 
-        cursor.execute(f"delete from transaction_search where transaction_id in ({txn_id_str}) returning transaction_id")
+        cursor.execute(
+            f"delete from transaction_search where transaction_id in ({txn_id_str}) returning transaction_id"
+        )
         deleted_fpds = set(cursor.fetchall())
 
         cursor.execute(f"delete from transaction_fpds where transaction_id in ({txn_id_str}) returning transaction_id")
