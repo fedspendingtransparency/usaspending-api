@@ -179,7 +179,7 @@ def _lookup_deleted_award_keys(
 ) -> list:
     """Derive a list of award keys given a target index, Lookup field, and lookup values
 
-    This returns a list of all unique award keys, which  arecompiled from the ``ES_AWARDS_UNIQUE_KEY_FIELD`` field of
+    This returns a list of all unique award keys, which are compiled from the ``ES_AWARDS_UNIQUE_KEY_FIELD`` field of
     any document in the given ``index`` that matches the query. The matching query is a terms query that will return
     the doc if its ``lookup_key`` field has any value provided in ``value_list``.
 
