@@ -97,7 +97,7 @@ def delete_docs_by_unique_key(
         for chunk_of_values in values_generator:
             # Invoking _delete_by_query as per the elasticsearch-dsl docs:
             #   https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#delete-by-query
-            # _refresh is deferred til the end of chunk processing
+            # _refresh is deferred until the end of chunk processing
             q = Search(using=client, index=index).filter("terms", **{key: chunk_of_values})  # type: Search
             # params:
             # conflicts="proceed": Ignores version conflict errors if a doc delete is attempted more than once
