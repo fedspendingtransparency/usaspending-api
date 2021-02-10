@@ -144,9 +144,7 @@ class Controller:
     def get_id_range_for_partition(self, partition_number: int) -> Tuple[int, int]:
         partition_size = self.config["partition_size"]
         lower_bound = self.min_id + (partition_number * partition_size)
-        upper_bound = lower_bound + partition_size - 1
-        if upper_bound > self.max_id:
-            upper_bound = self.max_id
+        upper_bound = min(lower_bound + partition_size - 1, self.max_id)
         return lower_bound, upper_bound
 
     def run_deletes(self) -> None:
