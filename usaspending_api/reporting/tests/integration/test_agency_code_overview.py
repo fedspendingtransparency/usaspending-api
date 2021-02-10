@@ -97,6 +97,10 @@ def setup_test_data(db):
         total_dollars_obligated_gtas=1788370.03,
         total_budgetary_resources=22478810.97,
         total_diff_approp_ocpa_obligated_amounts=84931.95,
+        unlinked_procurement_c_awards=1,
+        unlinked_assistance_c_awards=2,
+        unlinked_procurement_d_awards=3,
+        unlinked_assistance_d_awards=4,
     )
     mommy.make(
         "reporting.ReportingAgencyOverview",
@@ -107,6 +111,10 @@ def setup_test_data(db):
         total_dollars_obligated_gtas=18.6,
         total_budgetary_resources=100,
         total_diff_approp_ocpa_obligated_amounts=0,
+        unlinked_procurement_c_awards=1,
+        unlinked_assistance_c_awards=2,
+        unlinked_procurement_d_awards=3,
+        unlinked_assistance_d_awards=4,
     )
     mommy.make(
         "reporting.ReportingAgencyOverview",
@@ -117,6 +125,10 @@ def setup_test_data(db):
         total_dollars_obligated_gtas=1788370.04,
         total_budgetary_resources=22478810.98,
         total_diff_approp_ocpa_obligated_amounts=84931.96,
+        unlinked_procurement_c_awards=1,
+        unlinked_assistance_c_awards=2,
+        unlinked_procurement_d_awards=3,
+        unlinked_assistance_d_awards=4,
     )
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
