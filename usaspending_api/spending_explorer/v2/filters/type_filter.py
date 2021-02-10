@@ -18,21 +18,21 @@ VALID_UNREPORTED_FILTERS = ["fy", "quarter", "period"]
 def get_unreported_data_obj(
     queryset, filters, limit, spending_type, actual_total, fiscal_year, fiscal_period
 ) -> (list, float):
-    """ Returns the modified list of result objects including the object corresponding to the unreported amount, only
-        if applicable. If the unreported amount does not fit within the limit of results provided, it will not be added.
+    """Returns the modified list of result objects including the object corresponding to the unreported amount, only
+    if applicable. If the unreported amount does not fit within the limit of results provided, it will not be added.
 
-        Args:
-            queryset: Django queryset with all necessary filters, etc already applied
-            filters: filters provided in POST request to endpoint
-            limit: number of results to limit to
-            spending_type: spending explorer category
-            actual_total: total calculated based on results in `queryset`
-            fiscal_year: fiscal year from request
-            fiscal_period: final fiscal period for fiscal quarter requested
+    Args:
+        queryset: Django queryset with all necessary filters, etc already applied
+        filters: filters provided in POST request to endpoint
+        limit: number of results to limit to
+        spending_type: spending explorer category
+        actual_total: total calculated based on results in `queryset`
+        fiscal_year: fiscal year from request
+        fiscal_period: final fiscal period for fiscal quarter requested
 
-        Returns:
-            result_set: modified (if applicable) result set as a list
-            expected_total: total calculated from GTAS
+    Returns:
+        result_set: modified (if applicable) result set as a list
+        expected_total: total calculated from GTAS
     """
 
     queryset = queryset[:limit] if spending_type == "award" else queryset
@@ -144,12 +144,12 @@ def type_filter(_type, filters, limit=None):
 
     # transaction_obligated_amount is summed across all periods in the year up to and including the requested quarter.
     alt_set = FinancialAccountsByAwards.objects.filter(
-        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period__lte=fiscal_period,
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period__lte=fiscal_period
     ).annotate(amount=Sum("transaction_obligated_amount"))
 
     # obligations_incurred_by_program_object_class_cpe is picked from the final period of the quarter.
     queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
-        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period=fiscal_period,
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period=fiscal_period
     ).annotate(amount=Sum("obligations_incurred_by_program_object_class_cpe"))
 
     # Apply filters to queryset results

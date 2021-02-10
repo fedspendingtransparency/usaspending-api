@@ -44,7 +44,7 @@ def filter_limit_to_closed_periods(submission_query_path: str = "") -> Q:
     return q
 
 
-def universal_transaction_matview_annotations():
+def transaction_search_annotations():
     annotation_fields = {
         "action_date_fiscal_year": FiscalYear("action_date"),
         "treasury_accounts_funding_this_award": Subquery(
