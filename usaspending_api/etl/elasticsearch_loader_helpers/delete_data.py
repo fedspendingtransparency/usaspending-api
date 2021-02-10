@@ -51,9 +51,7 @@ def delete_docs_by_unique_key(
         refresh_after (bool): Whether to call ``_refresh`` on the index when all of the provided values in
             ``value_list`` have been processed for delete; defaults to ``True``. If many small deletes happen at a
             rapid rate, it may be best to set this ``False`` and await a deferred refresh afterward in the calling
-            code. However it is important to not retry deletes that have already been deleted until _refresh is
-            called, or a elasticsearch.exceptions.ConflictError will be raised due to an ES doc version_conflict
-            error response. NOTE: This param will be ignored and a refresh will be attempted if this function
+            code. NOTE: This param will be ignored and a refresh will be attempted if this function
             errors-out during execution, in order to not leave un-refreshed deletes in the index.
         delete_chunk_size (int): the batch-size of terms value-array given to each _delete_by_query call. Needs to be
             less than 65536 (max values for any terms query), and less than index.max_results_window setting. Ideally

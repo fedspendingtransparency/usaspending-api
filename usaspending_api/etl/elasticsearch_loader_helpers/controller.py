@@ -105,7 +105,7 @@ class Controller:
             update_last_load_date(f"{self.config['stored_date_key']}", self.config["processing_start_datetime"])
 
     def determine_partitions(self) -> int:
-        """Simple strategy of partitions that cover the id-range in in an even distribution"""
+        """Simple strategy of partitions that cover the id-range in an even distribution"""
         id_range_item_count = self.max_id - self.min_id + 1  # total number or records if all IDs exist in DB
         if self.config["partition_size"] > id_range_item_count:
             return 1
