@@ -10,7 +10,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 class SubmissionHistory(PaginationMixin, AgencyBase):
     """Returns submission history of the specified agency for the specified fiscal year and period"""
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/agency_code/fiscal_year/fiscal_period/submission_history.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/toptier_code/fiscal_year/fiscal_period/submission_history.md"
 
     def get(self, request, toptier_code, fiscal_year, fiscal_period):
         self.fiscal_year = int(fiscal_year)
