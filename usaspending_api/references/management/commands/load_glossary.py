@@ -10,7 +10,7 @@ from usaspending_api.references.models import Definition
 class Command(BaseCommand):
     help = "Loads an Excel spreadsheet of USAspending terminology definitions into the Glossary model"
 
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     default_path = str(settings.APP_DIR / "data" / "USAspendingGlossary.xlsx")
 
@@ -25,7 +25,7 @@ class Command(BaseCommand):
 
 def load_glossary(path, append):
 
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     wb = load_workbook(filename=path)
     ws = wb.active

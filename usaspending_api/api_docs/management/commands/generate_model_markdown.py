@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = "Generates a markdown file of a model's fields and help text \
             for use in documentation \
             Usage: `python manage.py generate_model_markdown <MODEL>`"
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     friendly_names = {
         "ForeignKey": "Relation",
