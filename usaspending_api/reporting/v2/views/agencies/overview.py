@@ -119,6 +119,10 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "fiscal_year",
                 "fiscal_period",
                 "submission_is_quarter",
+                "unlinked_procurement_c_awards",
+                "unlinked_assistance_c_awards",
+                "unlinked_procurement_d_awards",
+                "unlinked_assistance_d_awards",
             )
             .order_by(
                 f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key if self.pagination.sort_key not in ['unlinked_contract_award_count','unlinked_assistance_award_count'] else self.default_sort_column}"
@@ -148,8 +152,10 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                     "missing_tas_accounts_count": result["missing_tas_accounts_count"],
                 },
                 "obligation_difference": result["obligation_difference"],
-                "unlinked_contract_award_count": 0,
-                "unlinked_assistance_award_count": 0,
+                "unlinked_contract_award_count": result["unlinked_procurement_c_awards"]
+                + result["unlinked_procurement_d_awards"],
+                "unlinked_assistance_award_count": result["unlinked_assistance_c_awards"]
+                + result["unlinked_assistance_d_awards"],
                 "assurance_statement_url": self.create_assurance_statement_url(result),
             }
             for result in result_list
