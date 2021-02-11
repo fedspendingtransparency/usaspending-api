@@ -11,7 +11,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
     + `fiscal_year`: 2020 (required, number)
         The fiscal year.
     + `filter` (optional, string)
-        The agency name to filter on.
+        The agency name or abbreviation to filter on (partial match, case insesitive).
     + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
@@ -30,7 +30,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
         + Members
             + `agency_name`
             + `abbreviation`
-            + `agency_code`
+            + `toptier_code`
             + `current_total_budget_authority_amount`
             + `publication_date`
                 When using publication_date, provide the desired fiscal period (2-12) after a comma
@@ -57,7 +57,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
                     {
                         "agency_name": "Department of Health and Human Services",
                         "abbreviation": "DHHS",
-                        "agency_code": "020",
+                        "toptier_code": "020",
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "periods": [{
                             "period": 2,
@@ -72,7 +72,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
                     {
                         "agency_name": "Department of Treasury",
                         "abbreviation": "DOT",
-                        "agency_code": "021",
+                        "toptier_code": "021",
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "periods": [{
                             "period": 2,
@@ -111,6 +111,6 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies subm
 ## Agency (object)
 + `agency_name` (required, string)
 + `abbreviation` (required, string)
-+ `agency_code` (required, string)
++ `toptier_code` (required, string)
 + `current_total_budget_authority_amount` (required, number)
 + `periods` (required, array[Period], fixed-type)

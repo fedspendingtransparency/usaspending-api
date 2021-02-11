@@ -1,4 +1,4 @@
-import boto3
+import boto3  # noqa
 import csv
 import logging
 import re

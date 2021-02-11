@@ -1,5 +1,6 @@
 import pytest
 
+from datetime import datetime
 from decimal import Decimal
 
 from django.conf import settings
@@ -13,9 +14,44 @@ from usaspending_api.common.helpers.sql_helpers import get_connection
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
-    sub = mommy.make(
-        "submissions.SubmissionAttributes", submission_id=1, reporting_fiscal_year=2019, reporting_fiscal_period=3
-    )
+    future_date = datetime(datetime.now().year + 1, 1, 19)
+    dsws = [
+        {
+            "id": 1,
+            "submission_fiscal_year": 2019,
+            "submission_fiscal_quarter": 1,
+            "submission_fiscal_month": 3,
+            "submission_reveal_date": "2019-1-15",
+        },
+        {
+            "id": 2,
+            "submission_fiscal_year": future_date.year,
+            "submission_fiscal_quarter": 1,
+            "submission_fiscal_month": 3,
+            "submission_reveal_date": datetime.strftime(future_date, "%Y-%m-%d"),
+        },
+    ]
+    for dabs_window in dsws:
+        mommy.make("submissions.DABSSubmissionWindowSchedule", **dabs_window)
+
+    sub = [
+        mommy.make(
+            "submissions.SubmissionAttributes",
+            submission_id=1,
+            reporting_fiscal_year=2019,
+            reporting_fiscal_period=3,
+            submission_window_id=dsws[0]["id"],
+        ),
+        mommy.make(
+            "submissions.SubmissionAttributes",
+            submission_id=2,
+            reporting_fiscal_year=future_date.year,
+            reporting_fiscal_quarter=1,
+            reporting_fiscal_period=3,
+            submission_window_id=dsws[1]["id"],
+        ),
+    ]
+
     agencies = [
         mommy.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency"),
         mommy.make("references.ToptierAgency", toptier_code="987", abbreviation="XYZ", name="Test Agency 2"),
@@ -42,10 +78,11 @@ def setup_test_data(db):
         ),
     ]
     approps = [
-        {"sub_id": sub.submission_id, "treasury_account": treas_accounts[0], "ob_incur": 50},
-        {"sub_id": sub.submission_id, "treasury_account": treas_accounts[1], "ob_incur": 12},
-        {"sub_id": sub.submission_id, "treasury_account": treas_accounts[1], "ob_incur": 29},
-        {"sub_id": sub.submission_id, "treasury_account": treas_accounts[2], "ob_incur": 15.5},
+        {"sub_id": sub[0].submission_id, "treasury_account": treas_accounts[0], "ob_incur": 50},
+        {"sub_id": sub[0].submission_id, "treasury_account": treas_accounts[1], "ob_incur": 12},
+        {"sub_id": sub[0].submission_id, "treasury_account": treas_accounts[1], "ob_incur": 29},
+        {"sub_id": sub[0].submission_id, "treasury_account": treas_accounts[2], "ob_incur": 15.5},
+        {"sub_id": sub[1].submission_id, "treasury_account": treas_accounts[2], "ob_incur": 1000},
     ]
     for approp in approps:
         mommy.make(
@@ -57,24 +94,29 @@ def setup_test_data(db):
 
     ocpas = [
         {
-            "sub_id": sub.submission_id,
+            "sub_id": sub[0].submission_id,
             "treasury_account": treas_accounts[0].treasury_account_identifier,
             "ob_incur": 20.5,
         },
         {
-            "sub_id": sub.submission_id,
+            "sub_id": sub[0].submission_id,
             "treasury_account": treas_accounts[1].treasury_account_identifier,
             "ob_incur": 29,
         },
         {
-            "sub_id": sub.submission_id,
+            "sub_id": sub[0].submission_id,
             "treasury_account": treas_accounts[1].treasury_account_identifier,
             "ob_incur": 13.3,
         },
         {
-            "sub_id": sub.submission_id,
+            "sub_id": sub[0].submission_id,
             "treasury_account": treas_accounts[2].treasury_account_identifier,
             "ob_incur": -5,
+        },
+        {
+            "sub_id": sub[1].submission_id,
+            "treasury_account": treas_accounts[2].treasury_account_identifier,
+            "ob_incur": -500,
         },
     ]
     for ocpa in ocpas:
@@ -95,6 +137,9 @@ def test_run_script(setup_test_data):
     # Executing the SQL and testing the entry with only one record for the period/fiscal year/tas per table
     with connection.cursor() as cursor:
         cursor.execute(test_sql)
+
+    results = ReportingAgencyTas.objects.all()
+    assert len(results) == 3
 
     results = ReportingAgencyTas.objects.filter(fiscal_year=2019, fiscal_period=3, tas_rendering_label="tas-1").all()
 
