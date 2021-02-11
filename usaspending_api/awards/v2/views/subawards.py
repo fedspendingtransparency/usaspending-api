@@ -77,7 +77,15 @@ class SubawardsViewSet(APIView):
     @cache_response()
     def post(self, request):
         request_data = self._parse_and_validate_request(request.query_params)
+
+        import logging
+        logging.error("sent: ")
+        logging.error( request.query_params)
+        logging.error(request_data)
+
         results = self._business_logic(request_data)
         page_metadata = get_simple_pagination_metadata(len(results), request_data["limit"], request_data["page"])
+
         response = {"page_metadata": page_metadata, "results": results[: request_data["limit"]]}
+
         return Response(response)

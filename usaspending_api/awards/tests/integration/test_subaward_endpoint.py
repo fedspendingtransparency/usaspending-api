@@ -15,10 +15,11 @@ from usaspending_api.awards.tests.unit.test_subawards import (
 @pytest.mark.django_db
 def test_subaward_success(client):
 
-    resp = client.post(
-        "/api/v2/subawards/", content_type="application/json", data=json.dumps({"order": "desc", "limit": 100})
-    )
+    resp = client.post("/api/v2/subawards/?order=desc&limit=2")
     assert resp.status_code == status.HTTP_200_OK
+    print("hi")
+
+    print(resp.content)
 
 
 @pytest.mark.django_db
@@ -27,7 +28,7 @@ def test_subaward_failure(client):
     resp = client.post(
         "/api/v2/subawards/",
         content_type="application/json",
-        data=json.dumps({"order": "desc", "limit": 100, "award_id": {"not": "a string or integer"}}),
+        data=json.dumps({"order": "desc", "award_id": {"not": "a string or integer"}}),
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
