@@ -347,6 +347,25 @@ def test_pagination(setup_test_data, client):
     assert len(response["results"]) == 3
     expected_results = [
         {
+            "agency_name": "Test Agency",
+            "abbreviation": "ABC",
+            "toptier_code": "123",
+            "agency_id": 1,
+            "current_total_budget_authority_amount": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": 0,
+            "unlinked_assistance_award_count": 0,
+            "assurance_statement_url": assurance_statement_1_2,
+        },
+        {
             "agency_name": "Test Agency 3",
             "abbreviation": "AAA",
             "toptier_code": "001",
@@ -383,25 +402,6 @@ def test_pagination(setup_test_data, client):
             "unlinked_contract_award_count": 0,
             "unlinked_assistance_award_count": 0,
             "assurance_statement_url": assurance_statement_2,
-        },
-        {
-            "agency_name": "Test Agency",
-            "abbreviation": "ABC",
-            "toptier_code": "123",
-            "agency_id": 1,
-            "current_total_budget_authority_amount": None,
-            "recent_publication_date": None,
-            "recent_publication_date_certified": False,
-            "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": None,
-                "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 0.0,
-                "missing_tas_accounts_count": 0,
-            },
-            "obligation_difference": None,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
-            "assurance_statement_url": assurance_statement_1,
         },
     ]
     assert response["results"] == expected_results
