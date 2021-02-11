@@ -17,7 +17,7 @@ Creates a new download job for the requested account and award. Returns a link t
 
             {
                 "filters": {
-                    "def_codes": ["L", "M", "N", "O", "P"]
+                    "def_codes": ["L", "M", "N", "O", "P", "U"]
                 }
             }
 
@@ -82,4 +82,5 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `R`
 + `S`
 + `T`
++ `U`
 + `9`

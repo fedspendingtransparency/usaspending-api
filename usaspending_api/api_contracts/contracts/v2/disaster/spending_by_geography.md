@@ -40,7 +40,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
             {
                 "filter": {
-                    "def_codes": ["L", "M", "N", "O", "P"]
+                    "def_codes": ["L", "M", "N", "O", "P", "U"]
                 },
                 "geo_layer": "state",
                 "geo_layer_filters": ["NE", "WY", "CO", "IA", "IL", "MI", "IN", "TX"],
@@ -141,6 +141,7 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `R`
 + `S`
 + `T`
++ `U`
 + `9`
 
 ## AwardTypeCodes (enum[string])
