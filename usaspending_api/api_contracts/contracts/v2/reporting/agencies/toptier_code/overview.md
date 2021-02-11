@@ -32,7 +32,7 @@ This endpoint returns an overview of government agency submission data.
             + `fiscal_period`
             + `fiscal_year`
             + `missing_tas_accounts_count`
-            + `missing_tas_accounts_total`
+            + `tas_accounts_total`
             + `obligation_difference`
             + `percent_of_total_budgetary_resources`
             + `recent_publication_date`

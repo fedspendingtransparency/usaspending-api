@@ -143,6 +143,14 @@ def setup_test_data(db):
         obligated_amount=12.0,
     )
     mommy.make(
+        "reporting.ReportingAgencyMissingTas",
+        toptier_code=123,
+        fiscal_year=2020,
+        fiscal_period=12,
+        tas_rendering_label="TAS 3",
+        obligated_amount=0,
+    )
+    mommy.make(
         "references.GTASSF133Balances",
         id=1,
         fiscal_year=2019,
