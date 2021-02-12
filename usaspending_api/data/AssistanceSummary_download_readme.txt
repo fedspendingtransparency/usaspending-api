@@ -1,8 +1,8 @@
 ========ABOUT THESE FILES========
 
-This ZIP file was generated from a specific Assistance Award Summary Page on USAspending.gov, located at https://www.usaspending.gov/#/award/[AWARD_ID]
+This ZIP file was generated from a specific Assistance Award Summary Page on USAspending.gov, located at https://www.usaspending.gov/award/[AWARD_ID]
 
-Data Element Definitions: A searchable Data Dictionary that defines every data element in the included files can be found here: https://www.usaspending.gov/#/download_center/data_dictionary. We have also included a copy in this download for convenience. Note that the dictionary is updated periodically.
+Data Element Definitions: A searchable Data Dictionary that defines every data element in the included files can be found here: https://www.usaspending.gov/download_center/data_dictionary. We have also included a copy in this download for convenience. Note that the dictionary is updated periodically.
 
 Empty Files: When no data is available for a given file, its contents will only contain column headers (no records will be included).
 
@@ -28,4 +28,4 @@ This file contains transaction-level data for all of the modifications made to t
 
 File: Data_Dictionary_Crosswalk.xlsx
 
-This file contains the data dictionary covering all elements available for download from USAspending.gov. You can find an online and up-to-date version of the data dictionary here: https://www.usaspending.gov/#/download_center/data_dictionary
+This file contains the data dictionary covering all elements available for download from USAspending.gov. You can find an online and up-to-date version of the data dictionary here: https://www.usaspending.gov/download_center/data_dictionary
