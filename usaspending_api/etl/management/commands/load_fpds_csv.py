@@ -10,7 +10,7 @@ from django.db import transaction
 from usaspending_api.awards.models import TransactionFPDS
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):

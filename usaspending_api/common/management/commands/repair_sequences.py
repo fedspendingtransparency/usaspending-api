@@ -10,7 +10,7 @@ class Command(BaseCommand):
     """
 
     help = "Generate SQL to repair primary key sequences"
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     def handle(self, *args, **options):
         fixable_apps = ["accounts", "awards", "common", "financial_activities", "references", "submissions"]

@@ -9,7 +9,7 @@ from usaspending_api.recipient.models import StateData
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 LOCAL_STATE_DATA_FILENAME = "CensusStateData.csv"
 LOCAL_STATE_DATA = str(settings.APP_DIR / "data" / LOCAL_STATE_DATA_FILENAME)
