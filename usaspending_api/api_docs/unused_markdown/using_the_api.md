@@ -365,11 +365,11 @@ The endpoints described in this section generate files that reflect the site's u
 
 #### Award Data Archive
 
-On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. You can find these on the [Award Data Archive](https://www.usaspending.gov/#/download_center/award_data_archive) page. You can also access this information via the API's [List Downloads Endpoint](https://api.usaspending.gov/api/v2/bulk_download/list_monthly_files/).
+On a monthly basis, the website pre-generates a series of commonly used files based on the agency, fiscal year, and award type. You can find these on the [Award Data Archive](https://www.usaspending.gov/download_center/award_data_archive) page. You can also access this information via the API's [List Downloads Endpoint](https://api.usaspending.gov/api/v2/bulk_download/list_monthly_files/).
 
 #### Generating Download Files
 
-**Reminder**: Before using these endpoints, check the  [Award Data Archive](https://usaspending.gov/#/download_center/award_data_archive) for pre-generated files
+**Reminder**: Before using these endpoints, check the  [Award Data Archive](https://usaspending.gov/download_center/award_data_archive) for pre-generated files
 
 There are several downloadable endpoints, all with different features/constraints.
 
