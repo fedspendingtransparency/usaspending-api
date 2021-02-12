@@ -49,6 +49,8 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             .annotate(
                 current_total_budget_authority_amount=F("total_budgetary_resources"),
                 obligation_difference=F("total_diff_approp_ocpa_obligated_amounts"),
+                unlinked_contract_award_count=F("unlinked_procurement_c_awards") + F("unlinked_procurement_d_awards"),
+                unlinked_assistance_award_count=F("unlinked_assistance_c_awards") + F("unlinked_assistance_d_awards"),
                 agency_name=Subquery(ToptierAgency.objects.filter(*agency_filters).values("name")),
                 abbreviation=Subquery(ToptierAgency.objects.filter(*agency_filters).values("abbreviation")),
                 recent_publication_date=Subquery(
@@ -119,11 +121,10 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "fiscal_year",
                 "fiscal_period",
                 "submission_is_quarter",
+                "unlinked_contract_award_count",
+                "unlinked_assistance_award_count",
             )
-            .order_by(
-                f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key if self.pagination.sort_key not in ['unlinked_contract_award_count','unlinked_assistance_award_count'] else self.default_sort_column}"
-            )
-            # currently we are just returning 0 for the unlinked awards, once this is removed, we should be able to remove this conditional
+            .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
         )
         return self.format_results(result_list)
 
@@ -148,8 +149,8 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                     "missing_tas_accounts_count": result["missing_tas_accounts_count"],
                 },
                 "obligation_difference": result["obligation_difference"],
-                "unlinked_contract_award_count": 0,
-                "unlinked_assistance_award_count": 0,
+                "unlinked_contract_award_count": result["unlinked_contract_award_count"],
+                "unlinked_assistance_award_count": result["unlinked_assistance_award_count"],
                 "assurance_statement_url": self.create_assurance_statement_url(result),
             }
             for result in result_list
