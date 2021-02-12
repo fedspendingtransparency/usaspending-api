@@ -48,7 +48,7 @@ Returns the number of transactions that would be included in a download request 
         + `calculated_transaction_count` (required, number)
             The calculated count of all transactions which would be included in the download files.
         + `maximum_transaction_limit` (required, number)
-            The current allowed maximum number of transactions in a row-limited download. Visit https://www.usaspending.gov/#/download_center/custom_award_data to download larger volumes of data.
+            The current allowed maximum number of transactions in a row-limited download. Visit https://www.usaspending.gov/download_center/custom_award_data to download larger volumes of data.
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body

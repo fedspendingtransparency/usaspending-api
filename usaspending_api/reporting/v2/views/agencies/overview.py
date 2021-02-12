@@ -1,4 +1,4 @@
-from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value
+from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value, Sum
 from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from django.utils.functional import cached_property
@@ -67,6 +67,22 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 total_dollars_obligated_gtas=Subquery(
                     ReportingAgencyOverview.objects.filter(*reporting_filters).values("total_dollars_obligated_gtas")
                 ),
+                unlinked_contract_award_count=Subquery(
+                    ReportingAgencyOverview.objects.filter(*reporting_filters)
+                    .annotate(
+                        unlinked_contract_award_count=F("unlinked_procurement_c_awards")
+                        + F("unlinked_procurement_d_awards")
+                    )
+                    .values("unlinked_contract_award_count"),output_field=IntegerField()
+                ),
+                unlinked_assistance_award_count=Subquery(
+                    ReportingAgencyOverview.objects.filter(*reporting_filters)
+                    .annotate(
+                        unlinked_assistance_award_count=F("unlinked_assistance_c_awards")
+                        + F("unlinked_assistance_d_awards")
+                    )
+                    .values("unlinked_assistance_award_count"),output_field=IntegerField()
+                ),
                 recent_publication_date=Subquery(
                     SubmissionAttributes.objects.filter(
                         reporting_fiscal_year=self.fiscal_year,
@@ -134,11 +150,10 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "fiscal_year",
                 "fiscal_period",
                 "submission_is_quarter",
+                "unlinked_contract_award_count",
+                "unlinked_assistance_award_count",
             )
-            .order_by(
-                f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key if self.pagination.sort_key not in ['unlinked_contract_award_count','unlinked_assistance_award_count'] else self.default_sort_column}"
-            )
-            # currently we are just returning 0 for the unlinked awards, once this is removed, we should be able to remove this conditional
+            .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
         )
         return self.format_results(result_list)
 
@@ -163,8 +178,8 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                     "missing_tas_accounts_count": result["missing_tas_accounts_count"],
                 },
                 "obligation_difference": result["obligation_difference"],
-                "unlinked_contract_award_count": 0,
-                "unlinked_assistance_award_count": 0,
+                "unlinked_contract_award_count": result["unlinked_contract_award_count"],
+                "unlinked_assistance_award_count": result["unlinked_assistance_award_count"],
                 "assurance_statement_url": self.create_assurance_statement_url(result),
             }
             for result in result_list

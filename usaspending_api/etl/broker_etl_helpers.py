@@ -7,7 +7,7 @@ from django.db import connection, connections
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 def dictfetchall(cursor):
