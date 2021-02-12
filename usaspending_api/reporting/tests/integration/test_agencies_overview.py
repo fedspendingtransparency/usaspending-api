@@ -376,15 +376,7 @@ def test_pagination(setup_test_data, client):
             "unlinked_contract_award_count": None,
             "unlinked_assistance_award_count": None,
             "assurance_statement_url": assurance_statement_1_2,
-        }
-    ]
-    assert response["results"] == expected_results
-
-    resp = client.get(url + "?sort=obligation_difference&order=desc")
-    assert resp.status_code == status.HTTP_200_OK
-    response = resp.json()
-    assert len(response["results"]) == 2
-    expected_results = [
+        },
         {
             "agency_name": "Test Agency 3",
             "abbreviation": "AAA",
@@ -429,7 +421,7 @@ def test_pagination(setup_test_data, client):
     resp = client.get(url + "?sort=unlinked_assistance_award_count&order=asc")
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
-    assert len(response["results"]) == 2
+    assert len(response["results"]) == 3
     expected_results = [
         {
             "agency_name": "Test Agency 2",
@@ -468,6 +460,25 @@ def test_pagination(setup_test_data, client):
             "unlinked_contract_award_count": 400,
             "unlinked_assistance_award_count": 600,
             "assurance_statement_url": assurance_statement_3,
+        },
+        {
+            "agency_name": "Test Agency",
+            "abbreviation": "ABC",
+            "toptier_code": "123",
+            "agency_id": 1,
+            "current_total_budget_authority_amount": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": assurance_statement_1_2,
         },
     ]
     assert response["results"] == expected_results
