@@ -1,4 +1,4 @@
-from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value, Sum
+from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value
 from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from django.utils.functional import cached_property
@@ -73,7 +73,8 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                         unlinked_contract_award_count=F("unlinked_procurement_c_awards")
                         + F("unlinked_procurement_d_awards")
                     )
-                    .values("unlinked_contract_award_count"),output_field=IntegerField()
+                    .values("unlinked_contract_award_count"),
+                    output_field=IntegerField(),
                 ),
                 unlinked_assistance_award_count=Subquery(
                     ReportingAgencyOverview.objects.filter(*reporting_filters)
@@ -81,7 +82,8 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                         unlinked_assistance_award_count=F("unlinked_assistance_c_awards")
                         + F("unlinked_assistance_d_awards")
                     )
-                    .values("unlinked_assistance_award_count"),output_field=IntegerField()
+                    .values("unlinked_assistance_award_count"),
+                    output_field=IntegerField(),
                 ),
                 recent_publication_date=Subquery(
                     SubmissionAttributes.objects.filter(

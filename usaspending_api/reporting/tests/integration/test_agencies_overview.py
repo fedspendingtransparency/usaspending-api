@@ -216,8 +216,8 @@ def test_basic_success(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": None,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
             "assurance_statement_url": assurance_statement_1_2,
         },
         {
@@ -319,8 +319,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": None,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
             "assurance_statement_url": assurance_statement_1_2,
         }
     ]
@@ -373,8 +373,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": None,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
             "assurance_statement_url": assurance_statement_1_2,
         }
     ]
@@ -495,8 +495,8 @@ def test_fiscal_year_period_selection(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": None,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
             "assurance_statement_url": assurance_statement_2_2,
         },
         {
@@ -514,8 +514,8 @@ def test_fiscal_year_period_selection(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": None,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
             "assurance_statement_url": assurance_statement_3_2,
         },
         {
