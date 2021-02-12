@@ -5,6 +5,7 @@ from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from ddtrace.ext.priority import USER_REJECT
 from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
+from ddtrace.internal.writer import AgentWriter
 
 from django.core.management.base import BaseCommand
 
@@ -27,10 +28,13 @@ JOB_TYPE = "USAspendingDownloader"
 class Command(BaseCommand):
     def handle(self, *args, **options):
         # Drop uninteresting polls of the queue from the Tracer
-        if tracer.writer._filters:
-            tracer.writer._filters.append(DatadogEagerlyDropTraceFilter())
+        if not hasattr(tracer, "_filters"):
+            logger.warning("Datadog tracer client no longer has attribute '_filters' on which to append a span filter")
         else:
-            tracer.writer._filters = [DatadogEagerlyDropTraceFilter()]
+            if tracer._filters:
+                tracer._filters.append(DatadogEagerlyDropTraceFilter())
+            else:
+                tracer._filters = [DatadogEagerlyDropTraceFilter()]
 
         queue = get_sqs_queue()
         log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
@@ -86,21 +90,33 @@ class Command(BaseCommand):
 
 def download_service_app(download_job_id):
     with tracer.trace(name=f"job.{JOB_TYPE}.download", service="bulk-download", span_type=SpanTypes.WORKER) as span:
-        # Set True to add trace to App Analytics:
-        # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
-        span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1.0)
+        try:
+            # Set True to add trace to App Analytics:
+            # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
+            span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1.0)
 
-        download_job = _retrieve_download_job_from_db(download_job_id)
-        download_job_details = download_job_to_log_dict(download_job)
-        log_job_message(
-            logger=logger,
-            message="Starting processing of download request",
-            job_type=JOB_TYPE,
-            job_id=download_job_id,
-            other_params=download_job_details,
-        )
-        span.set_tags(download_job_details)
-        generate_download(download_job=download_job)
+            download_job = _retrieve_download_job_from_db(download_job_id)
+            download_job_details = download_job_to_log_dict(download_job)
+            log_job_message(
+                logger=logger,
+                message="Starting processing of download request",
+                job_type=JOB_TYPE,
+                job_id=download_job_id,
+                other_params=download_job_details,
+            )
+            span.set_tags(download_job_details)
+            generate_download(download_job=download_job)
+        finally:
+            writer_type = type(tracer.writer)
+            if writer_type is AgentWriter:
+                # Ensure that traces get sent to server regardless of how fast this subprocess runs.
+                # - Workaround for: https://github.com/DataDog/dd-trace-py/issues/1184
+                tracer.writer.flush_queue()
+            else:
+                logger.warning(
+                    f"Unexpected Datadog tracer.writer type of {writer_type} found. "
+                    f"Not flushing trace spans."
+                )
 
 
 def _retrieve_download_job_from_db(download_job_id):

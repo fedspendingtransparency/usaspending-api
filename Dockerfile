@@ -40,4 +40,5 @@ RUN python3 -m pip install -r requirements/requirements.txt
 ##### Copy the rest of the project files into the container
 COPY . /dockermount
 
-ENV PYTHONUNBUFFERED=0
+##### Ensure Python STDOUT gets sent to container logs
+ENV PYTHONUNBUFFERED=1
