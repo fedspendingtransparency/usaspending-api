@@ -10,7 +10,7 @@ class Command(BaseCommand):
             creating a new database. This command should be run in the same \
             directory where manage.py is located"
 
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     def handle(self, *args, **options):
         self.logger.info("Beginning reference data loading. This may take a few minutes.")
