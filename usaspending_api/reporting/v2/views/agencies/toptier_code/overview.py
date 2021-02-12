@@ -113,6 +113,10 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                 "tas_obligations",
                 "tas_obligation_not_in_gtas_total",
                 "missing_tas_accounts",
+                "unlinked_procurement_c_awards",
+                "unlinked_assistance_c_awards",
+                "unlinked_procurement_d_awards",
+                "unlinked_assistance_d_awards",
             )
         )
         return self.format_results(result_list)
@@ -136,8 +140,10 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                     "missing_tas_accounts_count": result["missing_tas_accounts"],
                 },
                 "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
-                "unlinked_contract_award_count": 0,
-                "unlinked_assistance_award_count": 0,
+                "unlinked_contract_award_count": result["unlinked_procurement_c_awards"]
+                + result["unlinked_procurement_d_awards"],
+                "unlinked_assistance_award_count": result["unlinked_assistance_c_awards"]
+                + result["unlinked_assistance_d_awards"],
                 "assurance_statement_url": self.create_assurance_statement_url(result),
             }
             for result in result_list

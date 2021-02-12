@@ -97,6 +97,10 @@ def setup_test_data(db):
         total_dollars_obligated_gtas=1788370.03,
         total_budgetary_resources=22478810.97,
         total_diff_approp_ocpa_obligated_amounts=84931.95,
+        unlinked_procurement_c_awards=1,
+        unlinked_assistance_c_awards=2,
+        unlinked_procurement_d_awards=3,
+        unlinked_assistance_d_awards=4,
     )
     mommy.make(
         "reporting.ReportingAgencyOverview",
@@ -107,6 +111,10 @@ def setup_test_data(db):
         total_dollars_obligated_gtas=18.6,
         total_budgetary_resources=100,
         total_diff_approp_ocpa_obligated_amounts=0,
+        unlinked_procurement_c_awards=10,
+        unlinked_assistance_c_awards=20,
+        unlinked_procurement_d_awards=30,
+        unlinked_assistance_d_awards=40,
     )
     mommy.make(
         "reporting.ReportingAgencyOverview",
@@ -117,6 +125,10 @@ def setup_test_data(db):
         total_dollars_obligated_gtas=1788370.04,
         total_budgetary_resources=22478810.98,
         total_diff_approp_ocpa_obligated_amounts=84931.96,
+        unlinked_procurement_c_awards=100,
+        unlinked_assistance_c_awards=200,
+        unlinked_procurement_d_awards=300,
+        unlinked_assistance_d_awards=400,
     )
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
@@ -201,8 +213,8 @@ def test_basic_success(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 400,
+            "unlinked_assistance_award_count": 600,
             "assurance_statement_url": assurance_statement_2019_9,
         },
         {
@@ -220,8 +232,8 @@ def test_basic_success(setup_test_data, client):
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 4,
+            "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_6,
         },
         {
@@ -239,8 +251,8 @@ def test_basic_success(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
             "assurance_statement_url": assurance_statement_2020_12,
         },
     ]
@@ -268,8 +280,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
             "assurance_statement_url": assurance_statement_2020_12,
         },
         {
@@ -287,8 +299,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 4,
+            "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_6,
         },
         {
@@ -306,8 +318,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 400,
+            "unlinked_assistance_award_count": 600,
             "assurance_statement_url": assurance_statement_2019_9,
         },
     ]
@@ -332,8 +344,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 400,
+            "unlinked_assistance_award_count": 600,
             "assurance_statement_url": assurance_statement_2019_9,
         }
     ]
@@ -358,8 +370,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 4,
+            "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_6,
         }
     ]
@@ -387,8 +399,8 @@ def test_secondary_sort(setup_test_data, client):
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 4,
+            "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_6,
         },
         {
@@ -406,8 +418,8 @@ def test_secondary_sort(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 400,
+            "unlinked_assistance_award_count": 600,
             "assurance_statement_url": assurance_statement_2019_9,
         },
         {
@@ -425,8 +437,8 @@ def test_secondary_sort(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
             "assurance_statement_url": assurance_statement_2020_12,
         },
     ]
@@ -452,8 +464,8 @@ def test_secondary_sort(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 400,
+            "unlinked_assistance_award_count": 600,
             "assurance_statement_url": assurance_statement_2019_9,
         },
         {
@@ -471,8 +483,8 @@ def test_secondary_sort(setup_test_data, client):
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 4,
+            "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_6,
         },
         {
@@ -490,8 +502,8 @@ def test_secondary_sort(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
             "assurance_statement_url": assurance_statement_2020_12,
         },
     ]
