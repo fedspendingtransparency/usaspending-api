@@ -535,6 +535,10 @@ def test_secondary_period_sort(setup_test_data, client):
         total_dollars_obligated_gtas=0.0,
         total_budgetary_resources=0.0,
         total_diff_approp_ocpa_obligated_amounts=0.0,
+        unlinked_procurement_c_awards=1,
+        unlinked_assistance_c_awards=2,
+        unlinked_procurement_d_awards=3,
+        unlinked_assistance_d_awards=4,
     )
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
@@ -602,8 +606,8 @@ def test_secondary_period_sort(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 4,
+            "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_10,
         },
         {
@@ -667,8 +671,8 @@ def test_secondary_period_sort(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 4,
+            "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_10,
         },
         {
