@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 class Command(BaseCommand):
     help = "Loads program information obtained from Excel file on https://www.acquisition.gov/PSC_Manual"
 
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
     default_directory = os.path.normpath("usaspending_api/references/management/commands/")
     default_filepath = os.path.join(default_directory, "PSC_Data_June_2019_Edition_FINAL_6-20-19+DRW.xlsx")
 
@@ -29,7 +29,7 @@ def load_psc(fullpath, update):
     Create/Update Product or Service Code records from a Excel doc of historical data.
     """
     try:
-        logger = logging.getLogger("console")
+        logger = logging.getLogger("script")
         wb = load_workbook(filename=fullpath, data_only=True)
         ws = wb.active
         for current_row, row in enumerate(ws.rows):
