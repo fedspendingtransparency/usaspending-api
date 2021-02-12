@@ -31,13 +31,13 @@
         "type": "integer"
       },
       "detached_award_proc_unique": {
-        "type": "text"
+        "type": "keyword"
       },
       "afa_generated_unique": {
-        "type": "text"
+        "type": "keyword"
       },
       "generated_unique_transaction_id": {
-        "type": "text"
+        "type": "keyword"
       },
       "display_award_id": {
         "type": "keyword"
