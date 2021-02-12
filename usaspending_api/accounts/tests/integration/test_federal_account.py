@@ -13,13 +13,14 @@ from rest_framework import status
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import RefProgramActivity
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 @pytest.mark.django_db
 def test_federal_account_spending_by_category_unique_program_activity_names(client):
     """
-        Test the spending by category endpoint for the federal account profile page to ensure a unique set of
-        program activity names are returned
+    Test the spending by category endpoint for the federal account profile page to ensure a unique set of
+    program activity names are returned
     """
 
     models_to_mock = [
@@ -45,6 +46,7 @@ def test_federal_account_spending_by_category_unique_program_activity_names(clie
             "main_account_code": "8888",
             "budget_year": "2222",
         },
+        {"model": SubmissionAttributes, "submission_id": 1, "is_final_balances_for_fy": True},
         {
             "model": FinancialAccountsByProgramActivityObjectClass,
             "financial_accounts_by_program_activity_object_class_id": -5,
@@ -52,6 +54,7 @@ def test_federal_account_spending_by_category_unique_program_activity_names(clie
             "final_of_fy": True,
             "treasury_account_id": -2,
             "program_activity_id": -3,
+            "submission_id": 1,
         },
         {
             "model": FinancialAccountsByProgramActivityObjectClass,
@@ -60,6 +63,7 @@ def test_federal_account_spending_by_category_unique_program_activity_names(clie
             "final_of_fy": True,
             "treasury_account_id": -2,
             "program_activity_id": -4,
+            "submission_id": 1,
         },
     ]
 

@@ -23,7 +23,7 @@ from usaspending_api.references.account_helpers import (
     update_federal_accounts,
 )
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 TAS_SQL_PATH = "usaspending_api/references/management/sql/restock_tas.sql"
 

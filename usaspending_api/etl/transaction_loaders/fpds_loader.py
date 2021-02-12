@@ -24,7 +24,7 @@ from usaspending_api.etl.transaction_loaders.generic_loaders import (
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 failed_ids = []
 
@@ -68,6 +68,11 @@ def delete_stale_fpds(detached_award_procurement_ids):
         cursor.execute(f"delete from transaction_fpds where transaction_id in ({txn_id_str}) returning transaction_id")
         deleted_fpds = set(cursor.fetchall())
 
+        cursor.execute(
+            f"delete from transaction_search where transaction_id in ({txn_id_str}) returning transaction_id"
+        )
+        deleted_ts = set(cursor.fetchall())
+
         cursor.execute(f"delete from transaction_normalized where id in ({txn_id_str}) returning id")
         deleted_transactions = set(cursor.fetchall())
 
@@ -75,7 +80,11 @@ def delete_stale_fpds(detached_award_procurement_ids):
             msg = "Delete Mismatch! Counts of transaction_normalized ({}) and transaction_fpds ({}) deletes"
             raise RuntimeError(msg.format(len(deleted_transactions), len(deleted_fpds)))
 
-        logger.info(f"{len(deleted_fpds):,} transactions deleted")
+        if deleted_transactions != deleted_ts:
+            msg = "Delete Mismatch! Counts of transaction_normalized ({}) and transaction_search ({}) deletes"
+            raise RuntimeError(msg.format(len(deleted_transactions), len(deleted_ts)))
+
+        logger.info(f"{len(deleted_transactions):,} transactions deleted")
 
         return awards_touched
 

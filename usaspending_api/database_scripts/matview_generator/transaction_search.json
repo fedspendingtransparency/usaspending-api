@@ -1,5 +1,5 @@
 {
-  "final_name": "universal_transaction_matview",
+  "final_name": "transaction_search",
   "refresh": true,
   "matview_sql": [
     "SELECT",
@@ -73,9 +73,13 @@
     "  rl_country_lookup.country_name AS recipient_location_country_name,",
     "  RL_STATE_LOOKUP.name as recipient_location_state_name,",
     "  COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) AS recipient_location_state_code,",
+    "  RL_STATE_LOOKUP.fips as recipient_location_state_fips,",
+    "  RL_STATE_POPULATION.latest_population as recipient_location_state_population,",
     "  LPAD(CAST(CAST((REGEXP_MATCH(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS smallint) AS text), 3, '0') AS recipient_location_county_code,",
     "  COALESCE(rl_county_lookup.county_name, transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,",
+    "  RL_COUNTY_POPULATION.latest_population as recipient_location_county_population,",
     "  LPAD(CAST(CAST((REGEXP_MATCH(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS smallint) AS text), 2, '0') AS recipient_location_congressional_code,",
+    "  RL_DISTRICT_POPULATION.latest_population as recipient_location_congressional_population,",
     "  COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5) AS recipient_location_zip5,",
     "  TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name)) AS recipient_location_city_name,",
     "",
@@ -108,11 +112,7 @@
     "  TREASURY_ACCT.tas_paths,",
     "  TREASURY_ACCT.tas_components,",
     "  FEDERAL_ACCT.federal_accounts,",
-    "  FEDERAL_ACCT.defc AS disaster_emergency_fund_codes,",
-    "  RL_STATE_LOOKUP.fips as recipient_location_state_fips,",
-    "  RL_DISTRICT_POPULATION.latest_population as recipient_location_congressional_population,",
-    "  RL_COUNTY_POPULATION.latest_population as recipient_location_county_population,",
-    "  RL_STATE_POPULATION.latest_population as recipient_location_state_population",
+    "  FEDERAL_ACCT.defc AS disaster_emergency_fund_codes",
     "FROM",
     "  transaction_normalized",
     "LEFT OUTER JOIN",
@@ -268,61 +268,5 @@
     "WHERE",
     "  transaction_normalized.action_date >= '2000-10-01'"
   ],
-  "indexes": [
-    {
-      "name": "transaction_id",
-      "unique": true,
-      "columns": [{"name": "transaction_id", "order": "ASC NULLS LAST"}]
-    }, {
-      "name": "action_date",
-      "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "last_modified_date",
-      "columns": [{"name": "last_modified_date", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "fiscal_year",
-      "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "fiscal_year", "order": "DESC NULLS LAST"}]
-    }, {
-      "name": "type",
-      "where": "type IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "type"}]
-    }, {
-      "name": "award_id",
-      "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "award_id"}]
-    }, {
-      "name": "pop_zip5",
-      "where": "pop_zip5 IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "pop_zip5"}]
-    }, {
-      "name": "recipient_unique_id",
-      "where": "recipient_unique_id IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "recipient_unique_id"}]
-    }, {
-      "name": "parent_recipient_unique_id",
-      "where": "parent_recipient_unique_id IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "parent_recipient_unique_id"}]
-    }, {
-      "name": "simple_pop_geolocation",
-      "where": "pop_country_code = 'USA' AND pop_state_code IS NOT NULL AND action_date >= '2007-10-01'",
-      "columns": [{"name": "pop_state_code"}, {"name": "action_date"}]
-    }, {
-      "name": "recipient_hash",
-      "where": "action_date >= '2007-10-01'",
-      "columns": [{"name": "recipient_hash"}]
-    }, {
-      "name": "action_date_pre2008",
-      "where": "action_date < '2007-10-01'",
-      "columns": [{"name": "action_date"}]
-    }, {
-      "name": "etl_update_date",
-      "columns": [{"name": "etl_update_date"}]
-    }
-  ]
+  "indexes": []
 }
-
-
-
-

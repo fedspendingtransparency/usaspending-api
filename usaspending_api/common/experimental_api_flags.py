@@ -29,8 +29,8 @@ def is_experimental_elasticsearch_api(request: Request) -> bool:
 
 
 def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
-    """ Duplicate request and send-again against this server, with the ES header attached to mirror
-        non-elasticsearch load against elasticsearch for load testing
+    """Duplicate request and send-again against this server, with the ES header attached to mirror
+    non-elasticsearch load against elasticsearch for load testing
     """
     url = request.build_absolute_uri()
     data = json.dumps(request.data)

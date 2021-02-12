@@ -16,7 +16,7 @@ class Command(BaseCommand):
     """
 
     help = "Removes a single submission from the configured data broker database"
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     def add_arguments(self, parser):
         parser.add_argument("submission_id", help="the broker submission id to delete", type=int)

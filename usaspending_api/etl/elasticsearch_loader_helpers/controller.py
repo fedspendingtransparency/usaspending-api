@@ -11,8 +11,8 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     count_of_records_to_process,
     create_index,
-    deleted_awards,
-    deleted_transactions,
+    delete_awards,
+    delete_transactions,
     extract_records,
     format_log,
     gen_random_name,
@@ -33,8 +33,8 @@ total_doc_fail = Value("i", 0, lock=True)
 
 def init_shared_abort(a: Event) -> None:
     """
-        Odd mechanism to set a global abort event in each subprocess
-        Inspired by https://stackoverflow.com/a/59984671
+    Odd mechanism to set a global abort event in each subprocess
+    Inspired by https://stackoverflow.com/a/59984671
     """
     global abort
     abort = a
@@ -48,8 +48,6 @@ class Controller:
         self.tasks = []
 
     def prepare_for_etl(self) -> None:
-        if self.config["process_deletes"]:
-            self.run_deletes()
         logger.info(format_log("Assessing data to process"))
         self.record_count, self.min_id, self.max_id = count_of_records_to_process(self.config)
 
@@ -107,11 +105,11 @@ class Controller:
             update_last_load_date(f"{self.config['stored_date_key']}", self.config["processing_start_datetime"])
 
     def determine_partitions(self) -> int:
-        """Create partition size less than or equal to max_size for more even distribution"""
-        if self.config["partition_size"] > (self.max_id - self.min_id):
+        """Simple strategy of partitions that cover the id-range in an even distribution"""
+        id_range_item_count = self.max_id - self.min_id + 1  # total number or records if all IDs exist in DB
+        if self.config["partition_size"] > id_range_item_count:
             return 1
-        # return ceil(self.record_count / self.config["partition_size"])
-        return ceil(max((self.max_id - self.min_id), self.record_count) / (self.config["partition_size"]))
+        return ceil(id_range_item_count / self.config["partition_size"])
 
     def construct_tasks(self) -> List[TaskSpec]:
         """Create the Task objects w/ the appropriate configuration"""
@@ -144,19 +142,18 @@ class Controller:
         )
 
     def get_id_range_for_partition(self, partition_number: int) -> Tuple[int, int]:
-        range_size = ceil((self.max_id - self.min_id) / self.config["partitions"])
-        lower_bound = self.min_id + (range_size * partition_number)
-        upper_bound = min(self.min_id + ((range_size * (partition_number + 1) - 1)), self.max_id)
-
+        partition_size = self.config["partition_size"]
+        lower_bound = self.min_id + (partition_number * partition_size)
+        upper_bound = min(lower_bound + partition_size - 1, self.max_id)
         return lower_bound, upper_bound
 
     def run_deletes(self) -> None:
         logger.info(format_log("Processing deletions"))
         client = instantiate_elasticsearch_client()
         if self.config["data_type"] == "award":
-            deleted_awards(client, self.config)
+            delete_awards(client, self.config)
         elif self.config["data_type"] == "transaction":
-            deleted_transactions(client, self.config)
+            delete_transactions(client, self.config)
         else:
             raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
 
@@ -191,7 +188,7 @@ def extract_transform_load(task: TaskSpec) -> None:
             msg = f"Partition #{task.partition_number} failed after an error was previously encountered"
             logger.warning(format_log(msg, name=task.name))
         else:
-            logger.error(format_log(f"{task.name} failed!", name=task.name))
+            logger.exception(format_log(f"{task.name} failed!", name=task.name))
             abort.set()
     else:
         msg = f"Partition #{task.partition_number} was successfully processed in {perf_counter() - start:.2f}s"

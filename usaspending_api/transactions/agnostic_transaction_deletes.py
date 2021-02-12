@@ -27,7 +27,7 @@ class AgnosticDeletes:
         )
 
         parser.add_argument(
-            "--dry-run", action="store_true", help="Obtain the list of removed transactions, but skip the delete step.",
+            "--dry-run", action="store_true", help="Obtain the list of removed transactions, but skip the delete step."
         )
         parser.add_argument(
             "--skip-upload",

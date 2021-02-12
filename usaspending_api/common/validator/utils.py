@@ -11,9 +11,9 @@ def get_model_by_name(models, name):
 
 def update_model_in_list(model_list: list, model_name: str, new_dict: dict, replace: bool = False) -> list:
     """
-        This is a generic helper utility function which can update or fully
-          replace a TinyShield model in a list of models. Provide the list of
-          models, the model name, and the dict of items to update
+    This is a generic helper utility function which can update or fully
+      replace a TinyShield model in a list of models. Provide the list of
+      models, the model name, and the dict of items to update
     """
     original_model, index = next((model, i) for i, model in enumerate(model_list) if model["name"] == model_name)
 

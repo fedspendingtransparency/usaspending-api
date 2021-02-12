@@ -10,4 +10,3 @@ VACUUM (ANALYZE, VERBOSE) mv_pre2008_award_search;
 VACUUM (ANALYZE, VERBOSE) subaward_view;
 VACUUM (ANALYZE, VERBOSE) summary_state_view;
 VACUUM (ANALYZE, VERBOSE) tas_autocomplete_matview;
-VACUUM (ANALYZE, VERBOSE) universal_transaction_matview;

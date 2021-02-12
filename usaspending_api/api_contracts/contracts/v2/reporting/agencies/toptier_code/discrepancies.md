@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Discrepancies [/api/v2/reporting/agencies/{agency_code}/discrepancies/{?fiscal_year,fiscal_period,page,limit,order,sort}]
+# Agency Reporting Discrepancies [/api/v2/reporting/agencies/{toptier_code}/discrepancies/{?fiscal_year,fiscal_period,page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's About the Data \| Agencies TAS discrepencies over a submission period
 
@@ -10,8 +10,8 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies TAS 
 This endpoint returns an overview of government agency TAS discrepancies data.
 
 + Parameters
-    + `agency_code`: `020` (required, string)
-        The specific agency code.
+    + `toptier_code`: `020` (required, string)
+        The specific agency's toptier code.
     + `fiscal_year`: 2020 (required, number)
         The fiscal year (2017 or later).
     + `fiscal_period`: 10 (required, number)

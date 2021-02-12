@@ -31,7 +31,7 @@ class AgnosticTransactionLoader:
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
 
         mutually_exclusive_group.add_argument(
-            "--ids", nargs="+", help=f"Load/Reload transactions using this {self.shared_pk} list (space-separated)",
+            "--ids", nargs="+", help=f"Load/Reload transactions using this {self.shared_pk} list (space-separated)"
         )
         mutually_exclusive_group.add_argument(
             "--date",
@@ -200,4 +200,8 @@ class AgnosticTransactionLoader:
             else:
                 transactions_remaining_count = 0
             self.upsert_records += record_count
-            logger.info(f"{self.upsert_records:,} successful upserts, {transactions_remaining_count:,} remaining.")
+            logger.info(
+                f"{self.upsert_records:,} successful upserts, "
+                f"{transactions_remaining_count:,} remaining. "
+                f"[{self.upsert_records * 100 / self.total_ids_to_process:.2f}%]"
+            )

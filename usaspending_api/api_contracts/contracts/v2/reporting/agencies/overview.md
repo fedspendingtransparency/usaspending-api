@@ -17,7 +17,7 @@ This endpoint returns an overview list of government agencies submission data.
         The fiscal period. Valid values: 2-12 (2 = November ... 12 = September)
         For retriving quarterly data, provide the period which equals 'quarter * 3' (e.g. Q2 = P6)
     + `filter` (optional, string)
-        The agency name to filter on.
+        The agency name or abbreviation to filter on (partial match, case insesitive).
     + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1
@@ -34,9 +34,10 @@ This endpoint returns an overview list of government agencies submission data.
         A data field that will be used to sort the response array.
         + Default: `current_total_budget_authority_amount`
         + Members
-            + `agency_code`
+            + `toptier_code`
             + `current_total_budget_authority_amount`
             + `missing_tas_accounts_total`
+            + `missing_tas_accounts_count`
             + `agency_name`
             + `obligation_difference`
             + `recent_publication_date`
@@ -69,7 +70,7 @@ This endpoint returns an overview list of government agencies submission data.
                     {
                         "agency_name": "Department of Health and Human Services",
                         "abbreviation": "DHHS",
-                        "agency_code": "020",
+                        "toptier_code": "020",
                         "agency_id": 123,
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "recent_publication_date": "2020-01-10T11:59:21Z",
@@ -81,14 +82,14 @@ This endpoint returns an overview list of government agencies submission data.
                             "missing_tas_accounts_count": 20
                         },
                         "obligation_difference": 436376232652.87,
-                        "unlinked_contract_award_count": 0,
-                        "unlinked_assistance_award_count": 0,
+                        "unlinked_contract_award_count": 3,
+                        "unlinked_assistance_award_count": 2,
                         "assurance_statement_url": "https://files-nonprod.usaspending.gov/agency_submissions/Raw%20DATA%20Act%20Files/2020/P09/075%20-%20Department%20of%20Health%20and%20Human%20Services%20(HHS)/2020-P09-075_Department%20of%20Health%20and%20Human%20Services%20(HHS)-Assurance_Statement.txt"
                     },
                     {
                         "agency_name": "Department of Treasury",
                         "abbreviation": "DOT",
-                        "agency_code": "021",
+                        "toptier_code": "021",
                         "agency_id": 789,
                         "current_total_budget_authority_amount": 8361447130497.72,
                         "recent_publication_date": null,
@@ -127,7 +128,7 @@ This endpoint returns an overview list of government agencies submission data.
 ## AgencyData (object)
 + `agency_name` (required, string)
 + `abbreviation` (required, string)
-+ `agency_code` (required, string)
++ `toptier_code` (required, string)
 + `agency_id` (required, number, nullable)
 + `current_total_budget_authority_amount` (required, number)
 + `recent_publication_date` (required, string, nullable)

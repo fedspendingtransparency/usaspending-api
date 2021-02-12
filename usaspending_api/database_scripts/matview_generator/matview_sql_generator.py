@@ -100,16 +100,16 @@ def make_rename_sql(matview_name, old_indexes, old_stats, new_indexes, new_stats
 
 
 def create_all_sql_strings(sql_json):
-    """ Desired ordering of steps for final SQL:
-        1. Drop existing "_temp" and "_old" matviews
-        2. Create new matview
-        3. Create indexes for new matview
-        4. (optional) Cluster matview on index
-        5. analyze verbose <matview>
-        6. Rename existing matview, append with _old
-        7. Rename all existing matview indexes to avoid name collisions
-        8. Rename new matview
-        9. Rename new matview indexes
+    """Desired ordering of steps for final SQL:
+    1. Drop existing "_temp" and "_old" matviews
+    2. Create new matview
+    3. Create indexes for new matview
+    4. (optional) Cluster matview on index
+    5. analyze verbose <matview>
+    6. Rename existing matview, append with _old
+    7. Rename all existing matview indexes to avoid name collisions
+    8. Rename new matview
+    9. Rename new matview indexes
     """
     final_sql_strings = []
 

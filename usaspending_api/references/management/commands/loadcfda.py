@@ -13,7 +13,7 @@ from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.references.models import Cfda
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="loadcfda.py")
 
 
