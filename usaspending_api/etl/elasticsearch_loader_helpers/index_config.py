@@ -1,11 +1,11 @@
 import json
 import logging
+import time
 
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
-from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_log
-
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_log, is_snapshot_running
 
 logger = logging.getLogger("script")
 
@@ -83,7 +83,7 @@ def swap_aliases(client, config):
             client.indices.delete_alias(old_index, "_all")
             logger.info(format_log(f"Removing aliases from '{old_index}'", action="ES Alias"))
     except Exception:
-        logger.exception(f"No aliases found for {alias_patterns}", action="ES Alias")
+        logger.exception(format_log(f"No aliases found for {alias_patterns}", action="ES Alias"))
 
     if config["create_award_type_aliases"]:
         create_award_type_aliases(client, config)
@@ -94,10 +94,32 @@ def swap_aliases(client, config):
 
     try:
         if old_indexes:
-            client.indices.delete(index=old_indexes, ignore_unavailable=False)
-            logger.info(format_log(f"Deleted index(es) '{old_indexes}'", action="ES Alias"))
+            max_wait_time = 15  # in minutes
+            start_wait_time = time.time()
+            is_snapshot_conflict = is_snapshot_running(client, old_indexes)
+            if is_snapshot_conflict:
+                logger.info(
+                    format_log(
+                        f"Snapshot in-progress prevents delete; waiting up to {max_wait_time} minutes",
+                        action="ES Alias",
+                    )
+                )
+            while (time.time() - start_wait_time) < (max_wait_time * 60) and is_snapshot_conflict:
+                logger.info(format_log("Waiting while snapshot is in-progress", action="ES Alias"))
+                time.sleep(90)
+                is_snapshot_conflict = is_snapshot_running(client, old_indexes)
+            if is_snapshot_conflict:
+                config["pipeline_exit_code"] = 1
+                logger.error(
+                    format_log(
+                        f"Unable to delete index(es) '{old_indexes}' due to in-progress snapshot", action="ES Alias"
+                    )
+                )
+            else:
+                client.indices.delete(index=old_indexes, ignore_unavailable=False)
+                logger.info(format_log(f"Deleted index(es) '{old_indexes}'", action="ES Alias"))
     except Exception:
-        logger.exception(f"Unable to delete indexes: {old_indexes}", action="ES Alias")
+        logger.exception(format_log(f"Unable to delete indexes: {old_indexes}", action="ES Alias"))
 
 
 def toggle_refresh_off(client, index):
