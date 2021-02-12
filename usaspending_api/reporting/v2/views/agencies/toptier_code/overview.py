@@ -148,6 +148,8 @@ class AgencyOverview(AgencyBase, PaginationMixin):
             }
             for result in result_list
         ]
+        if self.pagination.sort_key == "fiscal_year":
+            self.pagination.secondary_sort_key = "fiscal_period"
         results = sorted(
             results,
             key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key]
