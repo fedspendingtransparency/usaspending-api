@@ -11,8 +11,6 @@ from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
 
-from usaspending_api.download.management.commands.download_sqs_worker import DatadogEagerlyDropTraceFilter
-
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
