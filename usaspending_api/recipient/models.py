@@ -106,6 +106,7 @@ class RecipientProfile(models.Model):
 
 
 class RecipientLookup(models.Model):
+    id = models.BigAutoField(primary_key=True)
     recipient_hash = models.UUIDField(unique=True, null=True)
     legal_business_name = models.TextField(null=True, db_index=True)
     duns = models.TextField(unique=True, null=True)
