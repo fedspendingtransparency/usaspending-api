@@ -101,7 +101,7 @@ if not FILES_SERVER_BASE_URL:
     # This logic should be re-worked following DNS change for lower environments
     FILES_SERVER_BASE_URL = os.environ.get(
         "FILES_SERVER_BASE_URL",
-        f"https://files{'-nonprod' if DOWNLOAD_ENV not in ('production', 'staging') else ''}.dti.usaspending.gov",
+        f"https://files{'-nonprod' if DOWNLOAD_ENV not in ('production', 'staging') else ''}.usaspending.gov",
     )
     SERVER_BASE_URL = FILES_SERVER_BASE_URL[FILES_SERVER_BASE_URL.find(".") + 1 :]
 

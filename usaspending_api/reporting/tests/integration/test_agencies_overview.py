@@ -12,6 +12,26 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 
 url = "/api/v2/reporting/agencies/overview/"
 
+CURRENT_FISCAL_YEAR = current_fiscal_year()
+CURRENT_LAST_PERIOD = (
+    f"{get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3:02}"
+)
+
+assurance_statement_1 = (
+    f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
+    "2019/P06/123%20-%20Test%20Agency%20(ABC)/2019-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
+)
+assurance_statement_2 = (
+    f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
+    f"{CURRENT_FISCAL_YEAR}/P{CURRENT_LAST_PERIOD}/987%20-%20Test%20Agency%202%20(XYZ)/"
+    f"{CURRENT_FISCAL_YEAR}-P{CURRENT_LAST_PERIOD}-987_Test%20Agency%202%20(XYZ)-Assurance_Statement.txt"
+)
+assurance_statement_3 = (
+    f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
+    f"{CURRENT_FISCAL_YEAR}/P{CURRENT_LAST_PERIOD}/001%20-%20Test%20Agency%203%20(AAA)/"
+    f"{CURRENT_FISCAL_YEAR}-P{CURRENT_LAST_PERIOD}-001_Test%20Agency%203%20(AAA)-Assurance_Statement.txt"
+)
+
 
 @pytest.fixture
 def setup_test_data(db):
@@ -173,11 +193,6 @@ def setup_test_data(db):
         tas_rendering_label="TAS 2",
         obligated_amount=12.0,
     )
-
-
-assurance_statement_1 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/P06/123%20-%20Test%20Agency%20(ABC)/2019-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
-assurance_statement_2 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2021/P03/987%20-%20Test%20Agency%202%20(XYZ)/2021-P03-987_Test%20Agency%202%20(XYZ)-Assurance_Statement.txt"
-assurance_statement_3 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2021/P03/001%20-%20Test%20Agency%203%20(AAA)/2021-P03-001_Test%20Agency%203%20(AAA)-Assurance_Statement.txt"
 
 
 def test_basic_success(setup_test_data, client):
