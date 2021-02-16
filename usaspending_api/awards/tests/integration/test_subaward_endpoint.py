@@ -24,7 +24,6 @@ def test_subaward_no_params(client):
 
 @pytest.mark.django_db
 def test_subaward_failure(client):
-
     resp = client.post(
         "/api/v2/subawards/",
         content_type="application/json",
