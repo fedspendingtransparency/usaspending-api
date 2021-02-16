@@ -77,6 +77,7 @@ class HistoricParentDUNS(models.Model):
 class RecipientProfile(models.Model):
     """Table used for speed improvements for the recipient profile listings"""
 
+    id = models.BigAutoField(primary_key=True)
     recipient_level = models.CharField(max_length=1)
     recipient_hash = models.UUIDField(null=True, db_index=True)
     recipient_unique_id = models.TextField(null=True, db_index=True)
