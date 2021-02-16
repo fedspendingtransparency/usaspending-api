@@ -66,10 +66,15 @@ class SubawardsViewSet(APIView):
 
         queryset = queryset.values(*list(self.subaward_lookup.values()))
 
+        # always secondary-sort by PK in case a repeating value (e.g. subaward_number) crosses pages, so suborder isn't abitrary
         if request_data["order"] == "desc":
-            queryset = queryset.order_by(F(self.subaward_lookup[request_data["sort"]]).desc(nulls_last=True))
+            queryset = queryset.order_by(
+                F(self.subaward_lookup[request_data["sort"]]).desc(nulls_last=True), "subaward_id"
+            )
         else:
-            queryset = queryset.order_by(F(self.subaward_lookup[request_data["sort"]]).asc(nulls_first=True))
+            queryset = queryset.order_by(
+                F(self.subaward_lookup[request_data["sort"]]).asc(nulls_first=True), "subaward_id"
+            )
 
         rows = list(queryset[lower_limit : upper_limit + 1])
         return [{k: row[v] for k, v in self.subaward_lookup.items()} for row in rows]
