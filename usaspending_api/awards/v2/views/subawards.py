@@ -81,7 +81,8 @@ class SubawardsViewSet(APIView):
 
 
         import logging
-        logging.error(request.query_params)
+        from urllib.parse import parse_qsl
+        logging.error(parse_qsl(request.query_params))
         logging.error(request_data)
         logging.error(results)
 
