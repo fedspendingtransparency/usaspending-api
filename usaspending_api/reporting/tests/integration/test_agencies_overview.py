@@ -13,9 +13,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 url = "/api/v2/reporting/agencies/overview/"
 
 CURRENT_FISCAL_YEAR = current_fiscal_year()
-CURRENT_LAST_PERIOD = (
-    f"{get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3:02}"
-)
+CURRENT_LAST_PERIOD = get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(CURRENT_FISCAL_YEAR)) or 3
 
 assurance_statement_1 = (
     f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
@@ -23,13 +21,13 @@ assurance_statement_1 = (
 )
 assurance_statement_2 = (
     f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
-    f"{CURRENT_FISCAL_YEAR}/P{CURRENT_LAST_PERIOD}/987%20-%20Test%20Agency%202%20(XYZ)/"
-    f"{CURRENT_FISCAL_YEAR}-P{CURRENT_LAST_PERIOD}-987_Test%20Agency%202%20(XYZ)-Assurance_Statement.txt"
+    f"{CURRENT_FISCAL_YEAR}/P{CURRENT_LAST_PERIOD:02}/987%20-%20Test%20Agency%202%20(XYZ)/"
+    f"{CURRENT_FISCAL_YEAR}-P{CURRENT_LAST_PERIOD:02}-987_Test%20Agency%202%20(XYZ)-Assurance_Statement.txt"
 )
 assurance_statement_3 = (
     f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
-    f"{CURRENT_FISCAL_YEAR}/P{CURRENT_LAST_PERIOD}/001%20-%20Test%20Agency%203%20(AAA)/"
-    f"{CURRENT_FISCAL_YEAR}-P{CURRENT_LAST_PERIOD}-001_Test%20Agency%203%20(AAA)-Assurance_Statement.txt"
+    f"{CURRENT_FISCAL_YEAR}/P{CURRENT_LAST_PERIOD:02}/001%20-%20Test%20Agency%203%20(AAA)/"
+    f"{CURRENT_FISCAL_YEAR}-P{CURRENT_LAST_PERIOD:02}-001_Test%20Agency%203%20(AAA)-Assurance_Statement.txt"
 )
 
 
@@ -42,11 +40,8 @@ def setup_test_data(db):
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
-        reporting_fiscal_year=current_fiscal_year(),
-        reporting_fiscal_period=get_final_period_of_quarter(
-            calculate_last_completed_fiscal_quarter(current_fiscal_year())
-        )
-        or 3,
+        reporting_fiscal_year=CURRENT_FISCAL_YEAR,
+        reporting_fiscal_period=CURRENT_LAST_PERIOD,
     )
     mommy.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True)
     mommy.make("references.Agency", id=2, toptier_agency_id=2, toptier_flag=True)
@@ -153,8 +148,8 @@ def setup_test_data(db):
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=2,
         toptier_code=987,
-        fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        fiscal_period=CURRENT_LAST_PERIOD,
         total_dollars_obligated_gtas=18.6,
         total_budgetary_resources=100,
         total_diff_approp_ocpa_obligated_amounts=0,
@@ -163,8 +158,8 @@ def setup_test_data(db):
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=3,
         toptier_code="001",
-        fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        fiscal_period=CURRENT_LAST_PERIOD,
         total_dollars_obligated_gtas=20.0,
         total_budgetary_resources=10.0,
         total_diff_approp_ocpa_obligated_amounts=10.0,
@@ -188,8 +183,8 @@ def setup_test_data(db):
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=987,
-        fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        fiscal_period=CURRENT_LAST_PERIOD,
         tas_rendering_label="TAS 2",
         obligated_amount=12.0,
     )
