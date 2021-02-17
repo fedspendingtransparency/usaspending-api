@@ -64,6 +64,17 @@ def test_no_result_found(setup_test_data, client):
     assert expected_results == response
 
 
+def test_invalid_type(client):
+    # trailing S on procurement
+    resp = client.get(url.format(toptier_code="043", fiscal_year=2020, fiscal_period=8, type="procurementS"))
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    response = resp.json()
+    detail = response["detail"]
+
+    assert detail == "Type must be either 'assistance' or 'procurement'"
+
+
 def test_too_high_year(client):
     resp = client.get(url.format(toptier_code="043", fiscal_year=2100, fiscal_period=8, type="procurement"))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
