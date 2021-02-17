@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agencies' Unlinked Awards [/api/v2/reporting/agencies/{toptier_code}/{fiscal_year}/{fiscal_period}/unlinked_awards/{?type}]
+# Agencies' Unlinked Awards [/api/v2/reporting/agencies/{toptier_code}/{fiscal_year}/{fiscal_period}/unlinked_awards/{type}/]
 
 This endpoint is used to power USAspending.gov's About the Data \| Agencies unlinked data modals.
 
@@ -17,7 +17,7 @@ This endpoint returns the number of unlinked awards for the agency in the provid
     + `fiscal_period`: 10 (required, number)
         The fiscal period of the submission. valid values: 2-12 (2 = November ... 12 = September)
         For retrieving quarterly submissions, provide the period which equals 'quarter * 3' (e.g. Q2 = P6)
-    + `type`: `assistance` (required, enum[string], fixed-type)
+    + `type`: `assistance` (required, enum[string])
         + Members
             + `assistance`
             + `procurement`
