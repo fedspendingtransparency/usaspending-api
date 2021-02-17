@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from django.conf import settings
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 def store_deleted_fabs(ids_to_delete):

@@ -38,12 +38,7 @@
           "type": "integer"
         },
         "generated_unique_award_id": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "keyword"
         },
         "display_award_id": {
           "type": "keyword"
