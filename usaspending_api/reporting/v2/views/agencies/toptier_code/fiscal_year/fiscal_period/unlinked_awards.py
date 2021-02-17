@@ -40,9 +40,6 @@ class UnlinkedAwards(AgencyBase):
 
         result = self.get_unlinked_awards()
 
-        if result is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
         return Response(result)
 
     def get_unlinked_awards(self):
