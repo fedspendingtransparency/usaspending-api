@@ -3,7 +3,7 @@ from model_mommy import mommy
 from rest_framework import status
 
 
-url = "/api/v2/reporting/agencies/{toptier_code}/{fiscal_year}/{fiscal_period}/unlinked_awards/{type}"
+url = "/api/v2/reporting/agencies/{toptier_code}/{fiscal_year}/{fiscal_period}/unlinked_awards/{type}/"
 
 
 @pytest.fixture

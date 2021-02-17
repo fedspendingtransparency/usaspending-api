@@ -1,5 +1,4 @@
 from django.db.models import F
-from rest_framework import status
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase

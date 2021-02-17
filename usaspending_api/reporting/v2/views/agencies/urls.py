@@ -20,7 +20,7 @@ urlpatterns = [
         SubmissionHistory.as_view(),
     ),
     url(
-        r"^(?P<toptier_code>[0-9]{3,4})/(?P<fiscal_year>[0-9]{4})/(?P<fiscal_period>[0-9]{1,2})/unlinked_awards/(?P<type>[\w]+)$",
+        r"^(?P<toptier_code>[0-9]{3,4})/(?P<fiscal_year>[0-9]{4})/(?P<fiscal_period>[0-9]{1,2})/unlinked_awards/(?P<type>[\w]+)/$",
         UnlinkedAwards.as_view(),
     ),
     url(r"^publish_dates/$", PublishDates.as_view()),
