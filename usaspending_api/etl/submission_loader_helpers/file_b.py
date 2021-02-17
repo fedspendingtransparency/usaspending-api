@@ -65,6 +65,7 @@ def get_file_b(submission_attributes, db_cursor):
             select
                 submission_id,
                 job_id,
+                row_number,
                 agency_identifier,
                 allocation_transfer_agency,
                 availability_type_code,
@@ -122,6 +123,7 @@ def get_file_b(submission_attributes, db_cursor):
             group by
                 submission_id,
                 job_id,
+                row_number,
                 agency_identifier,
                 allocation_transfer_agency,
                 availability_type_code,
@@ -199,8 +201,9 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     for key in skipped_tas:
         logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
 
-    total_tas_skipped = 0
-    for key in skipped_tas:
-        total_tas_skipped += skipped_tas[key]["count"]
+    total_tas_skipped = sum([skipped_tas[key]["count"] for key in skipped_tas])
 
-    logger.info(f"Skipped a total of {total_tas_skipped:,} TAS rows for File B")
+    if total_tas_skipped > 0:
+        logger.info(f"SKIPPED {total_tas_skipped:,} ROWS of File B (missing TAS)")
+    else:
+        logger.info("All File B records in Broker loaded into USAspending")

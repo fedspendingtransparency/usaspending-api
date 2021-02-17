@@ -150,11 +150,12 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
     for key in skipped_tas:
         logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
 
-    total_tas_skipped = 0
-    for key in skipped_tas:
-        total_tas_skipped += skipped_tas[key]["count"]
+    total_tas_skipped = sum([skipped_tas[key]["count"] for key in skipped_tas])
 
-    logger.info(f"Skipped a total of {total_tas_skipped:,} TAS rows for File C")
+    if total_tas_skipped > 0:
+        logger.info(f"SKIPPED {total_tas_skipped:,} ROWS of File C (missing TAS)")
+    else:
+        logger.info("All File C records in Broker loaded into USAspending")
 
 
 def _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse):
