@@ -179,12 +179,30 @@ INSTALLED_APPS = [
 
 INTERNAL_IPS = ()
 
+# TODO: Remove. Temporary for debugging
+class _DatadogLoggingTraceFilter:
+    import logging
+    _logger = logging.getLogger(__name__)
+
+    def process_trace(self, trace):
+        logged = False
+        for span in trace:
+            if not span.get_tag("EAGERLY_DROP_TRACE"):
+                logged = True
+                self._logger.info("----[SPAN]" + "-"*40)
+                self._logger.info(f"\n{span.pprint()}")
+        if logged:
+            self._logger.info("====[END TRACE]" + "="*35)
+        return trace
+
+
 # Datadog APM tracing configuration for Django integration
 # ddtrace_settings = {
 #     "FILTERS": [DatadogEagerlyDropTraceFilter()]  # TODO: consider excluding if not Bulk Download
 # }
 # Replace below param with enabled=True during env-deploys to turn on
 ddtrace.tracer.configure(enabled=False)
+ddtrace.tracer._filters.append(_DatadogLoggingTraceFilter())
 ddtrace.config.django["service_name"] = "api"
 ddtrace.config.django["analytics_enabled"] = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 ddtrace.config.django["analytics_sample_rate"] = 1.0  # Including 100% of traces in sample
@@ -360,19 +378,19 @@ LOGGING = {
     },
     "handlers": {
         "server": {
-            "level": "INFO",
+            "level": "DEBUG",
             "class": "logging.handlers.WatchedFileHandler",
             "filename": str(APP_DIR / "logs" / "server.log"),
             "formatter": "user_readable",
         },
         "console_file": {
-            "level": "INFO",
+            "level": "DEBUG",
             "class": "logging.handlers.WatchedFileHandler",
             "filename": str(APP_DIR / "logs" / "console.log"),
             "formatter": "specifics",
         },
-        "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
-        "script": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "detailed"},
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simpletime"},
+        "script": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "detailed"},
     },
     "loggers": {
         # The root logger; i.e. "all modules"
@@ -388,7 +406,7 @@ LOGGING = {
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
         # TODO: temporary
-        "ddtrace": {"handlers": ["console", "console_file", "server", "script"], "level": "DEBUG", "propagate": False},
+        "ddtrace": {"handlers": ["console", "console_file", "server", "script"], "level": "INFO", "propagate": False},
     },
 }
 
