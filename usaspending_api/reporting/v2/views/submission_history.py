@@ -17,14 +17,26 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
         self.sortable_columns = ["publication_date", "certification_date"]
         self.default_sort_column = "publication_date"
         self.validate_fiscal_period({"fiscal_period": int(fiscal_period)})
-        results = (
+        record = list(
             SubmissionAttributes.objects.filter(
                 toptier_code=toptier_code, reporting_fiscal_year=fiscal_year, reporting_fiscal_period=fiscal_period
             )
-            .annotate(publication_date=F("published_date"), certification_date=F("certified_date"))
-            .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
-            .values("publication_date", "certification_date")
+            .values_list("history", flat=True)
         )
+
+        print(record)
+        # if len(record) == 0:
+        #     return Response()
+
+        results = sorted(
+            [
+                {"publication_date": row["published_date"], "certification_date": row["certified_date"]}
+                for row in record[0]
+            ],
+            key=lambda x: x[self.pagination.sort_key],
+            reverse=self.pagination.sort_order == "desc",
+        )
+
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         return Response(
