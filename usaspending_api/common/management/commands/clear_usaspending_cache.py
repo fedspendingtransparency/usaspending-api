@@ -10,7 +10,7 @@ class Command(BaseCommand):
     """
 
     help = "Clears the usaspending-cache"
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     def handle(self, *args, **options):
         self.logger.info("Clearing usaspending-cache...")

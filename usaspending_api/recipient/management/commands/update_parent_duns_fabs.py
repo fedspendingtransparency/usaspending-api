@@ -4,7 +4,7 @@ import time
 from django.db import connection
 from django.core.management.base import BaseCommand
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 FABS_PARENT_DUNS_SQL_MATCH = """
     WITH joined_historical_fabs AS (

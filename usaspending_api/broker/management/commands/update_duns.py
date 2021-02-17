@@ -9,7 +9,7 @@ from usaspending_api.etl.management.load_base import load_data_into_model
 
 import logging
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):

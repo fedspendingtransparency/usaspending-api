@@ -19,7 +19,11 @@ logger = logging.getLogger("script")
 # Aiming for a batch that yields each ES cluster data-node handling max 0.3-1MB per vCPU per batch request
 # Ex: 3-data-node cluster of i3.large.elasticsearch = 2 vCPU * 3 nodes = 6 vCPU: .75MB*6 ~= 4.5MB batches
 # Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: .75MB*20 ~= 15MB batches
-ES_MAX_BATCH_BYTES = 10 * 1024 * 1024
+# A good test is use the number of desired docs below and pipe a curl result to a text file
+# > curl localhost:9200/*awards/_search?size=4000 > out.json -> 15MB
+# > curl localhost:9200/*transactions/_search?size=4000 > out.json -> 19.4MB
+# Given these, leaning towards the high end of 1MB per vCPU
+ES_MAX_BATCH_BYTES = 20 * 1024 * 1024
 # Aiming for a batch that yields each ES cluster data-node handling max 100-400 doc entries per vCPU per request
 # Ex: 3-data-node cluster of i3.large.elasticsearch = 2 vCPU * 3 nodes = 6 vCPU: 300*6 = 1800 doc batches
 # Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: 300*20 = 6000 doc batches
@@ -72,7 +76,15 @@ def streaming_post_to_es(
     try:
         if delete_before_index:
             value_list = [doc[delete_key] for doc in chunk]
-            delete_docs_by_unique_key(client, delete_key, value_list, job_name, index_name)
+            delete_docs_by_unique_key(
+                client,
+                delete_key,
+                value_list,
+                job_name,
+                index_name,
+                refresh_after=False,
+                delete_chunk_size=len(chunk),  # same size as this partition to process
+            )
         for ok, item in helpers.streaming_bulk(
             client,
             actions=chunk,
