@@ -82,7 +82,7 @@ def test_too_high_year(client):
     response = resp.json()
     detail = response["detail"]
 
-    assert "fiscal_year may not exceed current fiscal year of" in detail
+    assert "Field 'fiscal_year' value '2100' is above max" in detail
 
 
 def test_too_high_period(client):

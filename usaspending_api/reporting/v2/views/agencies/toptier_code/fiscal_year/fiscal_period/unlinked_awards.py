@@ -1,8 +1,11 @@
+from django.conf import settings
 from django.db.models import F
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.helpers.date_helper import fy
+from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.reporting.models import ReportingAgencyOverview
 
@@ -36,6 +39,16 @@ class UnlinkedAwards(AgencyBase):
             "allow_nulls": False,
         },
         {
+            "key": "fiscal_year",
+            "name": "fiscal_year",
+            "type": "integer",
+            "min": fy(settings.API_SEARCH_MIN_DATE),
+            "max": current_fiscal_year(),
+            "optional": False,
+            "default": None,
+            "allow_nulls": False,
+        },
+        {
             "key": "fiscal_period",
             "name": "fiscal_period",
             "type": "integer",
@@ -44,20 +57,17 @@ class UnlinkedAwards(AgencyBase):
             "optional": False,
             "default": None,
             "allow_nulls": False,
-        },
+        }
     ]
 
     @cache_response()
     def get(self, request, toptier_code, fiscal_year, fiscal_period, type):
-        # This private attribute is used by AgencyBase to validate year
-        self._fiscal_year = fiscal_year
-
-        my_request = {"type": type, "fiscal_period": fiscal_period}
-
+        my_request = {"type": type, "fiscal_year": fiscal_year, "fiscal_period": fiscal_period}
         validated = TinyShield(self.tinyshield_model).block(my_request)
 
         self.annotations = self.annotation_options[validated["type"]]
-        self.fiscal_period = int(validated["fiscal_period"])
+        self.fiscal_year = validated["fiscal_year"]
+        self.fiscal_period = validated["fiscal_period"]
 
         return Response(self.get_unlinked_awards())
 

@@ -38,13 +38,7 @@ class AgencyBase(APIView):
 
     @cached_property
     def fiscal_year(self):
-        fiscal_year = self.request.query_params.get("fiscal_year")
-        if fiscal_year is None:
-            try:
-                fiscal_year = self._fiscal_year
-            except AttributeError:
-                fiscal_year = str(current_fiscal_year())
-
+        fiscal_year = str(self.request.query_params.get("fiscal_year", current_fiscal_year()))
         if not fullmatch("[0-9]{4}", fiscal_year):
             raise UnprocessableEntityException("Unrecognized fiscal_year format. Should be YYYY.")
         min_fiscal_year = fy(settings.API_SEARCH_MIN_DATE)
