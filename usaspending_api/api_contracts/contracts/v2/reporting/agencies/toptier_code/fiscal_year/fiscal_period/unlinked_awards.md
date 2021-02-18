@@ -7,7 +7,7 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies unli
 
 ## GET
 
-This endpoint returns the number of unlinked awards for the agency in the provided fiscal year and period in addition to the total number of agency awards in the fiscal period.
+This endpoint returns the number of unlinked and linked awards for the agency in the provided fiscal year and period.
 
 + Parameters
     + `toptier_code`: `020` (required, string)

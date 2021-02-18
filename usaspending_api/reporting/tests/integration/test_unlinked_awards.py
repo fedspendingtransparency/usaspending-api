@@ -67,12 +67,12 @@ def test_no_result_found(setup_test_data, client):
 def test_invalid_type(client):
     # trailing S on procurement
     resp = client.get(url.format(toptier_code="043", fiscal_year=2020, fiscal_period=8, type="procurementS"))
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
     response = resp.json()
     detail = response["detail"]
 
-    assert detail == "Type must be either 'assistance' or 'procurement'"
+    assert detail == "Field 'type' is outside valid values ['assistance', 'procurement']"
 
 
 def test_too_high_year(client):
@@ -92,4 +92,4 @@ def test_too_high_period(client):
     response = resp.json()
     detail = response["detail"]
 
-    assert detail == "fiscal_period must be in the range 2-12"
+    assert detail == "Field 'fiscal_period' value '13' is above max '12'"
