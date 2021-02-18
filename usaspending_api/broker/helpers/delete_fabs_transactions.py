@@ -5,7 +5,7 @@ from usaspending_api.broker.helpers.delete_stale_fabs import delete_stale_fabs
 from usaspending_api.common.helpers.timing_helpers import timer
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 def delete_fabs_transactions(ids_to_delete):

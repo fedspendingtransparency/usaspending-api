@@ -24,7 +24,7 @@ from usaspending_api.etl.transaction_loaders.generic_loaders import (
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 failed_ids = []
 

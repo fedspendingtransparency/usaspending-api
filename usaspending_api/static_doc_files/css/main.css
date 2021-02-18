@@ -8210,6 +8210,9 @@ table thead { color: #ffffff; background: #5b616b; }
 table thead tr th { border-bottom: none; vertical-align: middle; }
 table tbody tr:last-child { border-bottom: 1px solid #ddd; }
 table tbody tr td { vertical-align: middle; }
+tr td:first-child {
+  word-break: break-all;
+}
 
 .list-group-item { padding: 15px; }
 .list-group-item:first-child { border-top-right-radius: 0; border-top-left-radius: 0; }

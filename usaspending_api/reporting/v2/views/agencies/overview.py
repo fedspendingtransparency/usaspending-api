@@ -1,4 +1,4 @@
-from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField
+from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value
 from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from django.utils.functional import cached_property
@@ -41,41 +41,75 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
         )
 
     def get_agency_overview(self):
-        agency_filters = [Q(toptier_code=OuterRef("toptier_code"))]
+        agency_filters = []
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
+        reporting_filters = [
+            Q(toptier_code=OuterRef("toptier_code")),
+            Q(fiscal_year=self.fiscal_year),
+            Q(fiscal_period=self.fiscal_period),
+        ]
         result_list = (
-            ReportingAgencyOverview.objects.filter(fiscal_year=self.fiscal_year, fiscal_period=self.fiscal_period)
+            ToptierAgency.objects.account_agencies()
+            .filter(*agency_filters)
             .annotate(
-                current_total_budget_authority_amount=F("total_budgetary_resources"),
-                obligation_difference=F("total_diff_approp_ocpa_obligated_amounts"),
-                agency_name=Subquery(ToptierAgency.objects.filter(*agency_filters).values("name")),
-                abbreviation=Subquery(ToptierAgency.objects.filter(*agency_filters).values("abbreviation")),
+                agency_name=F("name"),
+                fiscal_year=Value(self.fiscal_year, output_field=IntegerField()),
+                fiscal_period=Value(self.fiscal_period, output_field=IntegerField()),
+                current_total_budget_authority_amount=Subquery(
+                    ReportingAgencyOverview.objects.filter(*reporting_filters).values("total_budgetary_resources")
+                ),
+                obligation_difference=Subquery(
+                    ReportingAgencyOverview.objects.filter(*reporting_filters).values(
+                        "total_diff_approp_ocpa_obligated_amounts"
+                    )
+                ),
+                total_dollars_obligated_gtas=Subquery(
+                    ReportingAgencyOverview.objects.filter(*reporting_filters).values("total_dollars_obligated_gtas")
+                ),
+                unlinked_contract_award_count=Subquery(
+                    ReportingAgencyOverview.objects.filter(*reporting_filters)
+                    .annotate(
+                        unlinked_contract_award_count=F("unlinked_procurement_c_awards")
+                        + F("unlinked_procurement_d_awards")
+                    )
+                    .values("unlinked_contract_award_count"),
+                    output_field=IntegerField(),
+                ),
+                unlinked_assistance_award_count=Subquery(
+                    ReportingAgencyOverview.objects.filter(*reporting_filters)
+                    .annotate(
+                        unlinked_assistance_award_count=F("unlinked_assistance_c_awards")
+                        + F("unlinked_assistance_d_awards")
+                    )
+                    .values("unlinked_assistance_award_count"),
+                    output_field=IntegerField(),
+                ),
                 recent_publication_date=Subquery(
                     SubmissionAttributes.objects.filter(
-                        reporting_fiscal_year=OuterRef("fiscal_year"),
-                        reporting_fiscal_period=OuterRef("fiscal_period"),
+                        reporting_fiscal_year=self.fiscal_year,
+                        reporting_fiscal_period=self.fiscal_period,
                         toptier_code=OuterRef("toptier_code"),
                     ).values("published_date")
                 ),
                 recent_publication_date_certified=Subquery(
                     SubmissionAttributes.objects.filter(
-                        reporting_fiscal_year=OuterRef("fiscal_year"),
-                        reporting_fiscal_period=OuterRef("fiscal_period"),
+                        reporting_fiscal_year=self.fiscal_year,
+                        reporting_fiscal_period=self.fiscal_period,
                         toptier_code=OuterRef("toptier_code"),
                     ).values("certified_date")
                 ),
                 submission_is_quarter=Subquery(
                     SubmissionAttributes.objects.filter(
-                        reporting_fiscal_year=OuterRef("fiscal_year"),
-                        reporting_fiscal_period=OuterRef("fiscal_period"),
+                        reporting_fiscal_year=self.fiscal_year,
+                        reporting_fiscal_period=self.fiscal_period,
                         toptier_code=OuterRef("toptier_code"),
                     ).values("quarter_format_flag")
                 ),
                 tas_accounts_total=Subquery(
                     ReportingAgencyTas.objects.filter(
-                        fiscal_year=OuterRef("fiscal_year"),
-                        fiscal_period=OuterRef("fiscal_period"),
+                        fiscal_year=self.fiscal_year,
+                        fiscal_period=self.fiscal_period,
                         toptier_code=OuterRef("toptier_code"),
                     )
                     .annotate(the_sum=Func(F("appropriation_obligated_amount"), function="SUM"))
@@ -84,8 +118,8 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 ),
                 tas_obligation_not_in_gtas_total=Subquery(
                     ReportingAgencyMissingTas.objects.filter(
-                        fiscal_year=OuterRef("fiscal_year"),
-                        fiscal_period=OuterRef("fiscal_period"),
+                        fiscal_year=self.fiscal_year,
+                        fiscal_period=self.fiscal_period,
                         toptier_code=OuterRef("toptier_code"),
                     )
                     .annotate(the_sum=Func(F("obligated_amount"), function="SUM"))
@@ -94,8 +128,8 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 ),
                 missing_tas_accounts_count=Subquery(
                     ReportingAgencyMissingTas.objects.filter(
-                        fiscal_year=OuterRef("fiscal_year"),
-                        fiscal_period=OuterRef("fiscal_period"),
+                        fiscal_year=self.fiscal_year,
+                        fiscal_period=self.fiscal_period,
                         toptier_code=OuterRef("toptier_code"),
                     )
                     .exclude(obligated_amount=0)
@@ -104,7 +138,6 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                     output_field=IntegerField(),
                 ),
             )
-            .exclude(agency_name__isnull=True)
             .values(
                 "agency_name",
                 "abbreviation",
@@ -120,11 +153,10 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "fiscal_year",
                 "fiscal_period",
                 "submission_is_quarter",
+                "unlinked_contract_award_count",
+                "unlinked_assistance_award_count",
             )
-            .order_by(
-                f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key if self.pagination.sort_key not in ['unlinked_contract_award_count','unlinked_assistance_award_count'] else self.default_sort_column}"
-            )
-            # currently we are just returning 0 for the unlinked awards, once this is removed, we should be able to remove this conditional
+            .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
         )
         return self.format_results(result_list)
 
@@ -149,8 +181,8 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                     "missing_tas_accounts_count": result["missing_tas_accounts_count"],
                 },
                 "obligation_difference": result["obligation_difference"],
-                "unlinked_contract_award_count": 0,
-                "unlinked_assistance_award_count": 0,
+                "unlinked_contract_award_count": result["unlinked_contract_award_count"],
+                "unlinked_assistance_award_count": result["unlinked_assistance_award_count"],
                 "assurance_statement_url": self.create_assurance_statement_url(result),
             }
             for result in result_list
