@@ -31,7 +31,7 @@ Returns spending details of Federal Account and TAS receiving supplemental fundi
             {
                 "filter": {
                     "def_codes": [
-                        "L", "M", "N", "O", "P"
+                        "L", "M", "N", "O", "P", "U"
                     ]
                 },
                 "spending_type": "total",
@@ -188,6 +188,7 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `R`
 + `S`
 + `T`
++ `U`
 + `9`
 
 ## AwardTypeCodes (enum[string])
