@@ -1,4 +1,6 @@
+import json
 import pytest
+
 from model_mommy import mommy
 from rest_framework import status
 
@@ -17,6 +19,9 @@ def setup_test_data(db):
         published_date="2019-07-16 16:09:52.125837-04",
         certified_date="2019-07-16 16:09:52.125837-04",
         toptier_code="020",
+        history=json.loads(
+            '[{"certified_date": "2019-07-16T16:09:52.125837Z", "published_date": "2019-07-16T16:09:52.125837Z"}]'
+        ),
     )
     mommy.make(
         "submissions.SubmissionAttributes",
@@ -26,15 +31,9 @@ def setup_test_data(db):
         published_date="2020-08-17 18:37:21.605023-04",
         certified_date="2020-08-17 18:37:21.605023-04",
         toptier_code="020",
-    )
-    mommy.make(
-        "submissions.SubmissionAttributes",
-        submission_id=3,
-        reporting_fiscal_year=2019,
-        reporting_fiscal_period=7,
-        published_date="2017-08-14 14:17:00.729315-04",
-        certified_date="2017-08-14 14:17:00.729315-04",
-        toptier_code="020",
+        history=json.loads(
+            '[{"certified_date": "2020-08-17T18:37:21.605023Z", "published_date": "2020-08-17T18:37:21.605023Z"}, {"certified_date": "2017-08-14T14:17:00.729315Z", "published_date": "2017-08-14T14:17:00.729315Z"}]'
+        ),
     )
     mommy.make(
         "submissions.SubmissionAttributes",
@@ -44,6 +43,9 @@ def setup_test_data(db):
         published_date="2017-08-14 14:17:00.729315-04",
         certified_date="2017-08-14 14:17:00.729315-04",
         toptier_code="075",
+        history=json.loads(
+            '[{"certified_date": "2017-08-14T14:17:00.729315Z", "published_date": "2017-08-14T14:17:00.729315Z"}]'
+        ),
     )
 
 
@@ -53,7 +55,7 @@ def test_basic_success(client, setup_test_data):
     response = resp.json()
     assert len(response["results"]) == 1
     assert response["results"] == [
-        {"publication_date": "2019-07-16T20:09:52.125837Z", "certification_date": "2019-07-16T20:09:52.125837Z"}
+        {"publication_date": "2019-07-16T16:09:52.125837Z", "certification_date": "2019-07-16T16:09:52.125837Z"}
     ]
 
 
@@ -63,13 +65,13 @@ def test_multiple_submissions(client, setup_test_data):
     response = resp.json()
     assert len(response["results"]) == 2
     assert response["results"] == [
-        {"publication_date": "2020-08-17T22:37:21.605023Z", "certification_date": "2020-08-17T22:37:21.605023Z"},
-        {"publication_date": "2017-08-14T18:17:00.729315Z", "certification_date": "2017-08-14T18:17:00.729315Z"},
+        {"publication_date": "2020-08-17T18:37:21.605023Z", "certification_date": "2020-08-17T18:37:21.605023Z"},
+        {"publication_date": "2017-08-14T14:17:00.729315Z", "certification_date": "2017-08-14T14:17:00.729315Z"},
     ]
     resp = client.get(url.format(agency_data="075/2019/7"))
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
     assert len(response["results"]) == 1
     assert response["results"] == [
-        {"publication_date": "2017-08-14T18:17:00.729315Z", "certification_date": "2017-08-14T18:17:00.729315Z"}
+        {"publication_date": "2017-08-14T14:17:00.729315Z", "certification_date": "2017-08-14T14:17:00.729315Z"}
     ]

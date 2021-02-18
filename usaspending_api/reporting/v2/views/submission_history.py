@@ -1,8 +1,8 @@
-from django.db.models import F
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
-
+from usaspending_api.common.exceptions import NoDataFoundException
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -19,21 +19,27 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
         self.validate_fiscal_period({"fiscal_period": int(fiscal_period)})
         record = list(
             SubmissionAttributes.objects.filter(
-                toptier_code=toptier_code, reporting_fiscal_year=fiscal_year, reporting_fiscal_period=fiscal_period
-            )
-            .values_list("history", flat=True)
+                toptier_code=toptier_code,
+                reporting_fiscal_year=fiscal_year,
+                reporting_fiscal_period=fiscal_period,
+                submission_window_id__submission_reveal_date__lte=now(),
+            ).values_list("history", flat=True)
         )
 
-        print(record)
-        # if len(record) == 0:
-        #     return Response()
+        if len(record) == 0:
+            raise NoDataFoundException("No Agency Account Submission History records match the provided parameters")
 
+        # Convoluted list comprehension and sort to
+        #  A) construct the dict list
+        #  B) add secondary sort key and handle nulls in `certification_date` for sorting
         results = sorted(
             [
                 {"publication_date": row["published_date"], "certification_date": row["certified_date"]}
                 for row in record[0]
             ],
-            key=lambda x: x[self.pagination.sort_key],
+            key=lambda x: x["publication_date"]
+            if self.pagination.sort_key == "publication_date"
+            else (x["certification_date"] or "", x["publication_date"]),
             reverse=self.pagination.sort_order == "desc",
         )
 
