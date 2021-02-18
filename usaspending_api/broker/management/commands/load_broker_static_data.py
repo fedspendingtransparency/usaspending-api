@@ -6,7 +6,7 @@ from django.db import transaction
 from usaspending_api.broker import lookups
 from usaspending_api.broker.models import ExternalDataType
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 @transaction.atomic

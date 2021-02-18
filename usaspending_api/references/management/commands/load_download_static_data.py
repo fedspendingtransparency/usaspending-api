@@ -13,7 +13,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
 
-        logger = logging.getLogger("console")
+        logger = logging.getLogger("script")
         JobStatus.objects.all().delete()
 
         for status in lookups.JOB_STATUS:

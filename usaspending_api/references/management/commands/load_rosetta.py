@@ -12,7 +12,7 @@ from time import perf_counter
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.references.models import Rosetta
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 EXCEL_COLUMNS = [

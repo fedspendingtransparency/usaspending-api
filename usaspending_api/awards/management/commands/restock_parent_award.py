@@ -8,7 +8,7 @@ from django.db import connection
 class Command(BaseCommand):
 
     help = "Empty and repopulate parent_award table with IDV aggregates and counts"
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     def add_arguments(self, parser):
 
