@@ -13,7 +13,7 @@ from usaspending_api.reporting.models import ReportingAgencyOverview
 class UnlinkedAwards(AgencyBase):
     """Returns submission history of the specified agency for the specified fiscal year and period"""
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/toptier_code/fiscal_year/fiscal_period/unlinked_awards.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/toptier_code/fiscal_year/fiscal_period/unlinked_awards/type.md"
 
     annotation_options = {
         "assistance": {
