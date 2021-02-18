@@ -12,15 +12,12 @@ logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-    """
-    This command will remove a submission and all associated data with it from the
-    database
-    """
+    """Remove a DABS record and all associated data with it from the database"""
 
-    help = "Removes a single submission from the configured data broker database"
+    help = "Removes a single submission from the database"
 
     def add_arguments(self, parser):
-        parser.add_argument("submission_id", help="the broker submission id to delete", type=int)
+        parser.add_argument("submission_id", help="the Broker submission ID to delete", type=int)
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -38,7 +35,7 @@ class Command(BaseCommand):
         try:
             submission = SubmissionAttributes.objects.get(submission_id=submission_id)
         except ObjectDoesNotExist:
-            raise RuntimeError(f"Broker submission id {submission_id} does not exist")
+            raise RuntimeError(f"Broker submission ID {submission_id} does not exist")
 
         # Mark associated Accounts as updated, so they will be reloaded in ES nightly load
         Award.objects.filter(
@@ -46,8 +43,6 @@ class Command(BaseCommand):
         ).update(update_date=datetime.now(timezone.utc))
 
         deleted_stats = submission.delete()
-
-        logger.info("Finished deletions.")
 
         models = {
             "accounts.AppropriationAccountBalances": {"name": "File A", "count": 0},
@@ -67,3 +62,4 @@ class Command(BaseCommand):
 
         statistics = "\n\t".join([f"{m} ({x['name']}): {x['count']:,}" for m, x in models.items()])
         logger.info(f"Deleted Broker submission ID {submission_id}:\n\t{statistics}")
+        logger.info("Finished deletions by rm_submissions")
