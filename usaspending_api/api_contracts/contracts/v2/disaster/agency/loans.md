@@ -25,7 +25,7 @@ Returns loan spending details of Agencies receiving supplemental funding budgeta
 
             {
                 "filter": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "def_codes": ["L", "M", "N", "O", "P", "U"],
                     "award_type_codes": ["07", "08"]
                 },
                 "pagination": {
@@ -181,4 +181,5 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `R`
 + `S`
 + `T`
++ `U`
 + `9`

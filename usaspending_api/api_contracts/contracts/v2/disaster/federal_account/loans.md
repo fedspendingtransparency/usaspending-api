@@ -25,7 +25,7 @@ Returns loan spending details of Federal Accounts receiving supplemental funding
 
             {
                 "filter": {
-                    "def_codes": ["L", "M", "N", "O", "P"]
+                    "def_codes": ["L", "M", "N", "O", "P", "U"]
                 },
                 "pagination": {
                     "limit": 10,
@@ -165,4 +165,5 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `R`
 + `S`
 + `T`
++ `U`
 + `9`
