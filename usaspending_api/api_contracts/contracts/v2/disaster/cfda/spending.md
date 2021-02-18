@@ -30,7 +30,7 @@ Returns spending details of CFDA receiving supplemental funding budgetary resour
 
             {
                 "filter": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "def_codes": ["L", "M", "N", "O", "P", "U"],
                     "award_type_codes": ["02", "03", "04", "05", "07", "08", "10", "06", "09", "11"]
                 },
                 "pagination": {
@@ -185,6 +185,7 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `R`
 + `S`
 + `T`
++ `U`
 + `9`
 
 ## AwardTypeCodes (enum[string])

@@ -23,7 +23,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             "toptier_code",
             "current_total_budget_authority_amount",
             "missing_tas_accounts_count",
-            "missing_tas_accounts_total",
+            "tas_accounts_total",
             "agency_name",
             "obligation_difference",
             "recent_publication_date",
@@ -106,7 +106,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                         toptier_code=OuterRef("toptier_code"),
                     ).values("quarter_format_flag")
                 ),
-                missing_tas_accounts_total=Subquery(
+                tas_accounts_total=Subquery(
                     ReportingAgencyTas.objects.filter(
                         fiscal_year=self.fiscal_year,
                         fiscal_period=self.fiscal_period,
@@ -132,6 +132,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                         fiscal_period=self.fiscal_period,
                         toptier_code=OuterRef("toptier_code"),
                     )
+                    .exclude(obligated_amount=0)
                     .annotate(count=Func(F("tas_rendering_label"), function="COUNT"))
                     .values("count"),
                     output_field=IntegerField(),
@@ -146,7 +147,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "obligation_difference",
                 "recent_publication_date",
                 "recent_publication_date_certified",
-                "missing_tas_accounts_total",
+                "tas_accounts_total",
                 "tas_obligation_not_in_gtas_total",
                 "missing_tas_accounts_count",
                 "fiscal_year",
@@ -175,7 +176,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
                 "tas_account_discrepancies_totals": {
                     "gtas_obligation_total": result["total_dollars_obligated_gtas"],
-                    "tas_accounts_total": result["missing_tas_accounts_total"],
+                    "tas_accounts_total": result["tas_accounts_total"],
                     "tas_obligation_not_in_gtas_total": result["tas_obligation_not_in_gtas_total"] or 0.0,
                     "missing_tas_accounts_count": result["missing_tas_accounts_count"],
                 },

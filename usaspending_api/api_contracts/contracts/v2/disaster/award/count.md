@@ -69,6 +69,7 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `R`
 + `S`
 + `T`
++ `U`
 + `9`
 
 ## AwardTypeCodes (enum[string])

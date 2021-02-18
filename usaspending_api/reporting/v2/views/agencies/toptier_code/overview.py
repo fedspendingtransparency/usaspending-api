@@ -19,7 +19,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
             "current_total_budget_authority_amount",
             "fiscal_year",
             "missing_tas_accounts_count",
-            "missing_tas_accounts_total",
+            "tas_accounts_total",
             "obligation_difference",
             "percent_of_total_budgetary_resources",
             "recent_publication_date",
@@ -84,6 +84,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                         fiscal_period=OuterRef("fiscal_period"),
                         toptier_code=OuterRef("toptier_code"),
                     )
+                    .exclude(obligated_amount=0)
                     .annotate(count=Func(F("tas_rendering_label"), function="COUNT"))
                     .values("count"),
                     output_field=IntegerField(),
@@ -155,7 +156,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
             key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key]
             if (
                 self.pagination.sort_key == "missing_tas_accounts_count"
-                or self.pagination.sort_key == "missing_tas_accounts_total"
+                or self.pagination.sort_key == "tas_accounts_total"
                 or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
             )
             else (x[self.pagination.sort_key], x[self.pagination.secondary_sort_key])

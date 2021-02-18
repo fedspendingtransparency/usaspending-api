@@ -25,7 +25,7 @@ Returns loan spending details of CFDA Programs receiving supplemental funding bu
 
             {
                 "filter": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "def_codes": ["L", "M", "N", "O", "P", "U"],
                     "award_type_codes": ["07", "08"]
                 },
                 "pagination": {
@@ -190,4 +190,5 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `R`
 + `S`
 + `T`
++ `U`
 + `9`
