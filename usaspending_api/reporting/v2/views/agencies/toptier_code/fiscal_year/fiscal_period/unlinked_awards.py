@@ -3,7 +3,6 @@ from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.reporting.models import ReportingAgencyOverview
 
@@ -23,7 +22,7 @@ class UnlinkedAwards(AgencyBase):
             "unlinked_file_c_award_count": F("unlinked_procurement_c_awards"),
             "unlinked_file_d_award_count": F("unlinked_procurement_d_awards"),
             "total_linked_award_count": F("linked_procurement_awards"),
-        }
+        },
     }
 
     tinyshield_model = [
@@ -53,10 +52,7 @@ class UnlinkedAwards(AgencyBase):
         # This private attribute is used by AgencyBase to validate year
         self._fiscal_year = fiscal_year
 
-        my_request = {
-            "type": type,
-            "fiscal_period": fiscal_period
-        }
+        my_request = {"type": type, "fiscal_period": fiscal_period}
 
         validated = TinyShield(self.tinyshield_model).block(my_request)
 
