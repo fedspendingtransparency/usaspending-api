@@ -63,5 +63,5 @@ def bulk_treasury_appropriation_account_tas_lookup(rows, db_cursor):
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id):
     tas = TAS_ID_TO_ACCOUNT.get(tas_lookup_id)
     if not tas or not tas[1]:
-        return None, f"Account number {tas_lookup_id} not found in Broker"
+        return None, f"TAS Account Number `{tas_lookup_id}` not found in Broker"
     return tas
