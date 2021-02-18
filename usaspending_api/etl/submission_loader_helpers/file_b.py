@@ -65,7 +65,7 @@ def get_file_b(submission_attributes, db_cursor):
             select
                 submission_id,
                 job_id,
-                row_number,
+                string_agg(row_number::text, ',') as row_number,
                 agency_identifier,
                 allocation_transfer_agency,
                 availability_type_code,
@@ -123,7 +123,6 @@ def get_file_b(submission_attributes, db_cursor):
             group by
                 submission_id,
                 job_id,
-                row_number,
                 agency_identifier,
                 allocation_transfer_agency,
                 availability_type_code,
