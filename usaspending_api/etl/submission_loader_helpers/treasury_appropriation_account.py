@@ -28,10 +28,7 @@ def bulk_treasury_appropriation_account_tas_lookup(rows, db_cursor):
                     sub_account_code
             from    tas_lookup
             where   account_num in %s
-                    and (
-                        financial_indicator2 != 'F'
-                        or financial_indicator2 is null
-                    )
+                    and financial_indicator2 IS DISTINCT FROM 'F'
         """,
         [tas_lookup_ids],
     )
@@ -63,5 +60,5 @@ def bulk_treasury_appropriation_account_tas_lookup(rows, db_cursor):
 def get_treasury_appropriation_account_tas_lookup(tas_lookup_id):
     tas = TAS_ID_TO_ACCOUNT.get(tas_lookup_id)
     if not tas or not tas[1]:
-        return None, f"TAS Account Number `{tas_lookup_id}` not found in Broker"
+        return None, f"TAS Account Number (tas_lookup.account_num) '{tas_lookup_id}' not found in Broker"
     return tas
