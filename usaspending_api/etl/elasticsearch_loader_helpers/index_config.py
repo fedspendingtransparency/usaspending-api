@@ -109,7 +109,7 @@ def swap_aliases(client, config):
                 time.sleep(90)
                 is_snapshot_conflict = is_snapshot_running(client, old_indexes)
             if is_snapshot_conflict:
-                config["pipeline_exit_code"] = 1
+                config["pipeline_exit_code"] = 3
                 logger.error(
                     format_log(
                         f"Unable to delete index(es) '{old_indexes}' due to in-progress snapshot", action="ES Alias"
