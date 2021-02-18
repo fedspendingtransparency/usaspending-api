@@ -15,7 +15,7 @@ Creates a new download job for the requested filters. Returns a link to a zipped
 
             {
                 "filters": {
-                    "def_codes": ["L", "M", "N", "O", "P"],
+                    "def_codes": ["L", "M", "N", "O", "P", "U"],
                     "award_type_codes": ["A", "B", "C", "D"]
                 }
             }
@@ -98,6 +98,7 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `R`
 + `S`
 + `T`
++ `U`
 + `9`
 
 ## AwardTypeCodes (enum[string])
