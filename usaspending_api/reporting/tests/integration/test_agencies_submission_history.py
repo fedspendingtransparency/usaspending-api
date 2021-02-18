@@ -7,8 +7,6 @@ from rest_framework import status
 
 url = "/api/v2/reporting/agencies/{agency}/{fy}/{period}/submission_history/"
 
-DATETIME_STR_1 = ""
-
 
 @pytest.fixture
 def setup_test_data(db):
