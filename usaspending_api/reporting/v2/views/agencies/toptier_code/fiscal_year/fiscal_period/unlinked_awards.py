@@ -57,7 +57,7 @@ class UnlinkedAwards(AgencyBase):
             "optional": False,
             "default": None,
             "allow_nulls": False,
-        }
+        },
     ]
 
     @cache_response()
