@@ -207,6 +207,14 @@ def setup_test_data(db):
         tas_rendering_label="TAS 2",
         obligated_amount=12.0,
     )
+    mommy.make(
+        "reporting.ReportingAgencyMissingTas",
+        toptier_code=987,
+        fiscal_year=current_fiscal_year(),
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
+        tas_rendering_label="TAS 3",
+        obligated_amount=0,
+    )
 
 
 def test_basic_success(setup_test_data, client):
