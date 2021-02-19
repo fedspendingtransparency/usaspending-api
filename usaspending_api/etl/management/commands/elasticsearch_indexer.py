@@ -147,7 +147,8 @@ class Command(BaseCommand):
             logger.info(format_log(headers))
 
         # Used to help pipeline determine when job passed but needs attention
-        return str(config["pipeline_exit_code"])
+        if config["raise_status_code_3"]:
+            raise SystemExit(3)
 
 
 def parse_cli_args(options: dict, es_client) -> dict:
@@ -280,7 +281,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "s3_bucket": settings.DELETED_TRANSACTION_JOURNAL_FILES,
             "processing_start_datetime": datetime.now(timezone.utc),
             "verbose": arg_parse_options["verbosity"] > 1,  # convert command's levels of verbosity to a bool
-            "pipeline_exit_code": 0,
+            "raise_status_code_3": False,
         }
     )
 
