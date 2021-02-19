@@ -96,17 +96,18 @@ class SubprocessTrace:
 
 
 class DatadogLoggingTraceFilter:
-    """Debugging utility filter that can log traces spans"""
+    """Debugging utility filter that can log trace spans"""
 
     _logger = logging.getLogger(__name__)
 
     def process_trace(self, trace):
         logged = False
+        trace_id = "???"
         for span in trace:
-            if not span.get_tag("EAGERLY_DROP_TRACE"):
+            trace_id = span.trace_id or "???"
+            if not span.get_tag(DatadogEagerlyDropTraceFilter.EAGERLY_DROP_TRACE_KEY):
                 logged = True
-                self._logger.info("----[SPAN]" + "-" * 40)
-                self._logger.info(f"\n{span.pprint()}")
+                self._logger.info(f"----[SPAN#{trace_id}]" + "-" * 40 + f"\n{span.pprint()}")
         if logged:
-            self._logger.info("====[END TRACE]" + "=" * 35)
+            self._logger.info(f"====[END TRACE#{trace_id}]" + "=" * 35)
         return trace

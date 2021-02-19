@@ -553,18 +553,22 @@ def _top_level_split(sql, splitter):
 def execute_psql(temp_sql_file_path, source_path, download_job):
     """Executes a single PSQL command within its own Subprocess"""
     # TODO: The datadog trace says the SQL is not parseable. Could be the prepended COPY. Get raw sql select
-    sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
+    download_sql = Path(temp_sql_file_path).read_text()
+    if download_sql.startswith("\\COPY"):
+        #download_sql = "\\" + download_sql
+        # Trace library parses the SQL, but cannot understand the psql-specific \COPY command. Use standard COPY here.
+        download_sql = download_sql[1:]
     # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.psql",
         service="bulk-download",
-        resource=sql,
+        resource=download_sql,
         span_type=SpanTypes.SQL,
         source_path=source_path,
     ), tracer.trace(
-        name="postgres.query", service="db_downloaddb", resource=sql, span_type=SpanTypes.SQL
+        name="postgres.query", service="db_downloaddb", resource=download_sql, span_type=SpanTypes.SQL
     ), tracer.trace(
-        name="postgres.query", service="postgres", resource=sql, span_type=SpanTypes.SQL
+        name="postgres.query", service="postgres", resource=download_sql, span_type=SpanTypes.SQL
     ):
         try:
             log_time = time.perf_counter()
@@ -590,6 +594,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
                 # Not logging the command as it can contain the database connection string
                 e.cmd = "[redacted psql command]"
             logger.error(e)
+            sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
             logger.error(f"Faulty SQL: {sql}")
             raise e
 

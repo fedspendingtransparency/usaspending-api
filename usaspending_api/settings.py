@@ -382,7 +382,8 @@ LOGGING = {
         # The root logger; i.e. "all modules"
         "": {"handlers": ["console", "console_file"], "level": "WARNING", "propagate": False},
         # The "root" logger for all usaspending_api modules
-        "usaspending_api": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        # TODO: set back to INFO
+        "usaspending_api": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
         # Logger for Django API requests via middleware. See logging.py
         "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
         # Catch-all logger (over)used for non-Django-API commands that output to the console
