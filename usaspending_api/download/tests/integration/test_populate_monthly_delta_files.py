@@ -11,7 +11,6 @@ from csv import reader
 from usaspending_api.settings import HOST
 from usaspending_api.awards.models import TransactionDelta
 from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
-from usaspending_api.download.tests.integration.test_populate_monthly_files import delete_files
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
@@ -98,7 +97,7 @@ def test_all_agencies(monthly_download_delta_data, monkeypatch):
     file_list = listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY(All)_All_Contracts_Delta_{formatted_date}.zip" in file_list
-    delete_files()
+    os.remove(os.path.normpath(f"csv_downloads/FY(All)_All_Contracts_Delta_{formatted_date}.zip"))
 
 
 @pytest.mark.django_db(transaction=True)
@@ -410,7 +409,8 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
                 assert row == contract_data
             row_count += 1
     assert row_count >= 1
-    delete_files()
+    os.remove(os.path.normpath(f"csv_downloads/FY(All)_All_Contracts_Delta_{formatted_date}.zip"))
+    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{formatted_date}_1.csv"))
 
 
 @pytest.mark.django_db(transaction=True)
@@ -477,4 +477,4 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
     file_list = listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY(All)_001_Assistance_Delta_{formatted_date}.zip" in file_list
-    delete_files()
+    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Assistance_Delta_{formatted_date}.zip"))
