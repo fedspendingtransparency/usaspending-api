@@ -11,6 +11,9 @@ from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
 
+# TODO: Remove logging filter
+from usaspending_api.common.tracing import DatadogLoggingTraceFilter
+
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
@@ -179,30 +182,10 @@ INSTALLED_APPS = [
 
 INTERNAL_IPS = ()
 
-# TODO: Remove. Temporary for debugging
-class _DatadogLoggingTraceFilter:
-    import logging
-    _logger = logging.getLogger(__name__)
-
-    def process_trace(self, trace):
-        logged = False
-        for span in trace:
-            if not span.get_tag("EAGERLY_DROP_TRACE"):
-                logged = True
-                self._logger.info("----[SPAN]" + "-"*40)
-                self._logger.info(f"\n{span.pprint()}")
-        if logged:
-            self._logger.info("====[END TRACE]" + "="*35)
-        return trace
-
-
-# Datadog APM tracing configuration for Django integration
-# ddtrace_settings = {
-#     "FILTERS": [DatadogEagerlyDropTraceFilter()]  # TODO: consider excluding if not Bulk Download
-# }
 # Replace below param with enabled=True during env-deploys to turn on
 ddtrace.tracer.configure(enabled=False)
-ddtrace.tracer._filters.append(_DatadogLoggingTraceFilter())
+# TODO: Remove logging filter
+ddtrace.tracer._filters.append(DatadogLoggingTraceFilter())
 ddtrace.config.django["service_name"] = "api"
 ddtrace.config.django["analytics_enabled"] = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 ddtrace.config.django["analytics_sample_rate"] = 1.0  # Including 100% of traces in sample
@@ -210,21 +193,23 @@ ddtrace.config.django["trace_query_string"] = True
 # Distributed tracing only needed if picking up disjoint traces by HTTP Header value
 ddtrace.config.django["distributed_tracing_enabled"] = False
 # Trace HTTP Request or Response Headers listed in this whitelist
-ddtrace.config.trace_headers([
-    "content-length",  # req and resp
-    "content-type",  # req and resp
-    "host",
-    "origin",
-    "referrer",
-    "user-agent",
-    "x-forwarded-for",
-    "x-requested-with",
-    # Response Headers
-    "allow",
-    "cache-trace",
-    "key",  # cache key
-    "strict-transport-security",
-])
+ddtrace.config.trace_headers(
+    [
+        "content-length",  # req and resp
+        "content-type",  # req and resp
+        "host",
+        "origin",
+        "referrer",
+        "user-agent",
+        "x-forwarded-for",
+        "x-requested-with",
+        # Response Headers
+        "allow",
+        "cache-trace",
+        "key",  # cache key
+        "strict-transport-security",
+    ]
+)
 # patch_all() captures traces from integrated components' libraries by patching them. See:
 # - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
 # - Integrated Libs: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
@@ -376,6 +361,7 @@ LOGGING = {
         },
         "detailed": {"format": "[%(asctime)s] [%(levelname)s] - %(message)s", "datefmt": "%Y/%m/%d %H:%M:%S (%Z)"},
     },
+    # TODO: Set handler logging levels back to INFO
     "handlers": {
         "server": {
             "level": "DEBUG",
@@ -418,7 +404,7 @@ if DEBUG:
 
     LOGGING["handlers"]["console"]["level"] = "DEBUG"
     # TODO: uncomment
-    #LOGGING["loggers"]["django.db.backends"] = {"handlers": ["console"], "level": "DEBUG", "propagate": False}
+    # LOGGING["loggers"]["django.db.backends"] = {"handlers": ["console"], "level": "DEBUG", "propagate": False}
 
 
 # If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
