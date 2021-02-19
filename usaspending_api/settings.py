@@ -194,15 +194,15 @@ ddtrace.config.trace_headers(
         "content-type",  # req and resp
         "host",
         "origin",
-        "referrer",
-        "us-is-bot",
+        "referer",
+        "ua-is-bot",
         "user-agent",
         "x-forwarded-for",
         "x-requested-with",
         # Response Headers
         "allow",
         "cache-trace",
-        "dynamic-rendered",
+        "is-dynamically-rendered",
         "key",  # cache key
         "strict-transport-security",
     ]
