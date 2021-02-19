@@ -46,8 +46,10 @@ class DatadogEagerlyDropTraceFilter:
 
 
 class SubprocessTrace:
-    """A wrapper of entry and exit things that need to be done to get spans published that are part of a Datadog trace
-    which continues into a subprocess.
+    """A context manager class to handle of entry and exit things that need to be done to get spans published that are
+    part of a Datadog trace which continues into a subprocess.
+
+    This wraps some of the context management activity done in ``Span`` class, which is also a context manager.
     """
 
     def __init__(
@@ -91,7 +93,7 @@ class SubprocessTrace:
                 tracer.writer.flush_queue()
             else:
                 _logger.warning(
-                    f"Unexpected Datadog tracer.writer type of {writer_type} found. " f"Not flushing trace spans."
+                    f"Unexpected Datadog tracer.writer type of {writer_type} found. Not flushing trace spans."
                 )
 
 
