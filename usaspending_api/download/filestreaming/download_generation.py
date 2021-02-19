@@ -120,13 +120,21 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
             service="bulk-download",
             resource=f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
             span_type=SpanTypes.WORKER,
-        ) as span:
-            # NOTE: Traces still not picking up aws.s3 service upload activity
+        ) as span, tracer.trace(
+            name="s3.command",
+            service="aws.s3",
+            resource=".".join(
+                [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
+            ),
+            span_type=SpanTypes.WEB,
+        ) as s3_span:
+            # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
             # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach
             span.set_tag("file_name", file_name)
             try:
                 bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
                 region = settings.USASPENDING_AWS_REGION
+                s3_span.set_tags({"bucket": bucket, "region": region, "file": zip_file_path})
                 start_uploading = time.perf_counter()
                 multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
                 write_to_log(
@@ -326,6 +334,7 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
         resource=zip_file_path,
         span_type=SpanTypes.WORKER,
         source_path=source_path,
+        zip_file_path=zip_file_path,
     ) as span:
         try:
             # Split data files into separate files
@@ -552,10 +561,8 @@ def _top_level_split(sql, splitter):
 
 def execute_psql(temp_sql_file_path, source_path, download_job):
     """Executes a single PSQL command within its own Subprocess"""
-    # TODO: The datadog trace says the SQL is not parseable. Could be the prepended COPY. Get raw sql select
     download_sql = Path(temp_sql_file_path).read_text()
     if download_sql.startswith("\\COPY"):
-        #download_sql = "\\" + download_sql
         # Trace library parses the SQL, but cannot understand the psql-specific \COPY command. Use standard COPY here.
         download_sql = download_sql[1:]
     # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query

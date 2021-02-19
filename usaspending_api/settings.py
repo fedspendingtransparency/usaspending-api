@@ -11,9 +11,6 @@ from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
 
-# TODO: Remove logging filter
-from usaspending_api.common.tracing import DatadogLoggingTraceFilter
-
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
@@ -184,8 +181,6 @@ INTERNAL_IPS = ()
 
 # Replace below param with enabled=True during env-deploys to turn on
 ddtrace.tracer.configure(enabled=False)
-# TODO: Remove logging filter
-ddtrace.tracer._filters.append(DatadogLoggingTraceFilter())
 ddtrace.config.django["service_name"] = "api"
 ddtrace.config.django["analytics_enabled"] = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
 ddtrace.config.django["analytics_sample_rate"] = 1.0  # Including 100% of traces in sample
@@ -200,12 +195,14 @@ ddtrace.config.trace_headers(
         "host",
         "origin",
         "referrer",
+        "us-is-bot",
         "user-agent",
         "x-forwarded-for",
         "x-requested-with",
         # Response Headers
         "allow",
         "cache-trace",
+        "dynamic-rendered",
         "key",  # cache key
         "strict-transport-security",
     ]
@@ -361,29 +358,27 @@ LOGGING = {
         },
         "detailed": {"format": "[%(asctime)s] [%(levelname)s] - %(message)s", "datefmt": "%Y/%m/%d %H:%M:%S (%Z)"},
     },
-    # TODO: Set handler logging levels back to INFO
     "handlers": {
         "server": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "logging.handlers.WatchedFileHandler",
             "filename": str(APP_DIR / "logs" / "server.log"),
             "formatter": "user_readable",
         },
         "console_file": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "logging.handlers.WatchedFileHandler",
             "filename": str(APP_DIR / "logs" / "console.log"),
             "formatter": "specifics",
         },
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simpletime"},
-        "script": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "detailed"},
+        "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
+        "script": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "detailed"},
     },
     "loggers": {
         # The root logger; i.e. "all modules"
         "": {"handlers": ["console", "console_file"], "level": "WARNING", "propagate": False},
         # The "root" logger for all usaspending_api modules
-        # TODO: set back to INFO
-        "usaspending_api": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        "usaspending_api": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
         # Logger for Django API requests via middleware. See logging.py
         "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
         # Catch-all logger (over)used for non-Django-API commands that output to the console
@@ -392,8 +387,6 @@ LOGGING = {
         "script": {"handlers": ["script"], "level": "INFO", "propagate": False},
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
-        # TODO: temporary
-        "ddtrace": {"handlers": ["console", "console_file", "server", "script"], "level": "INFO", "propagate": False},
     },
 }
 
@@ -404,8 +397,7 @@ if DEBUG:
             LOGGING["loggers"][logger]["handlers"] += ["console"]
 
     LOGGING["handlers"]["console"]["level"] = "DEBUG"
-    # TODO: uncomment
-    # LOGGING["loggers"]["django.db.backends"] = {"handlers": ["console"], "level": "DEBUG", "propagate": False}
+    LOGGING["loggers"]["django.db.backends"] = {"handlers": ["console"], "level": "DEBUG", "propagate": False}
 
 
 # If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
