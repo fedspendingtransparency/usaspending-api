@@ -1,17 +1,17 @@
 WITH file_a AS (
     SELECT submission_id, COUNT(aab.*) AS count
-    FROM submission_attributes sa
+    FROM submission_attributes AS sa
     LEFT OUTER JOIN appropriation_account_balances AS aab USING (submission_id)
     GROUP BY submission_id
 ), file_b AS (
     SELECT submission_id, COUNT(fapaoc.*) AS count
-    FROM submission_attributes sa
+    FROM submission_attributes AS sa
     LEFT OUTER JOIN financial_accounts_by_program_activity_object_class AS fapaoc USING (submission_id)
     GROUP BY submission_id
 ), file_c AS (
     SELECT sa.submission_id, COUNT(faba.*) AS count
-    FROM submission_attributes sa
-    LEFT OUTER JOIN financial_accounts_by_awards faba USING (submission_id)
+    FROM submission_attributes AS sa
+    LEFT OUTER JOIN financial_accounts_by_awards AS faba USING (submission_id)
     GROUP BY submission_id
 )
 
@@ -114,7 +114,7 @@ INNER JOIN dblink(
                 )
             )
         ) AS count_file_c
-    FROM submission s
+    FROM submission AS s
     WHERE
             s.d2_submission = FALSE
         AND s.publish_status_id IN (2, 3)'
