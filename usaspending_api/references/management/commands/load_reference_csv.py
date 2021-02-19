@@ -5,7 +5,7 @@ from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
 from usaspending_api.references.models import RefCountryCode, ObjectClass, RefProgramActivity
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):

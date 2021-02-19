@@ -14,7 +14,7 @@ from usaspending_api.etl.management.load_base import format_date, load_data_into
 from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, update_assistance_awards
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 exception_logger = logging.getLogger("exceptions")
 
 # Lists to store for update_awards and update_procurement_awards

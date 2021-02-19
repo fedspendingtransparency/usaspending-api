@@ -1,9 +1,11 @@
 import json
 import logging
 import psycopg2
+import re
 
 from dataclasses import dataclass
 from django.conf import settings
+from elasticsearch import Elasticsearch
 from pathlib import Path
 from random import choice
 from typing import Any, Generator, List, Optional
@@ -124,3 +126,13 @@ def gen_random_name() -> Generator[str, None, None]:
         if len(previous_names) >= (upper_limit + (upper_limit * full_cycles)):
             full_cycles += 1
             loop = f" {to_roman_numerals(full_cycles)}"
+
+
+def is_snapshot_running(client: Elasticsearch, index_names: List[str]) -> bool:
+    snapshot_list = client.snapshot.status().get("snapshots", [])
+    index_names_pattern = f".*({'|'.join(index_names)}).*"
+    for snapshot in snapshot_list:
+        indexes = str(snapshot.get("indices", {}).keys())
+        if re.match(index_names_pattern, indexes):
+            return True
+    return False

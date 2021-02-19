@@ -97,10 +97,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--partition-size",
             type=int,
-            help="Set the target size of a single data partition. A partition might be slightly "
-            "larger or slightly smaller depending on the distribution of the data to process",
-            default=250000,
-            metavar="(default: 250,000)",
+            help="Set the batch-size of a single partition of data to process.",
+            default=10000,
+            metavar="(default: 10,000)",
         )
         parser.add_argument(
             "--drop-db-view",
@@ -147,9 +146,12 @@ class Command(BaseCommand):
             logger.info(format_log(msg))
             logger.info(format_log(headers))
 
+        # Used to help pipeline determine when job passed but needs attention
+        return str(config["pipeline_exit_code"])
+
 
 def parse_cli_args(options: dict, es_client) -> dict:
-    passthrough_values = (
+    passthrough_values = [
         "create_new_index",
         "drop_db_view",
         "index_name",
@@ -160,7 +162,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         "processes",
         "skip_counts",
         "skip_delete_index",
-    )
+    ]
     config = set_config(passthrough_values, options)
 
     if config["create_new_index"] and not config["index_name"]:
@@ -183,7 +185,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         config["starting_date"] != config["initial_datetime"] and not config["deletes_only"]
     )
 
-    if config["is_incremental_load"]:
+    if config["is_incremental_load"] or config["deletes_only"]:
         if config["index_name"]:
             logger.info(format_log(f"Ignoring provided index name, using alias '{config['write_alias']}' for safety"))
         config["index_name"] = config["write_alias"]
@@ -278,6 +280,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "s3_bucket": settings.DELETED_TRANSACTION_JOURNAL_FILES,
             "processing_start_datetime": datetime.now(timezone.utc),
             "verbose": arg_parse_options["verbosity"] > 1,  # convert command's levels of verbosity to a bool
+            "pipeline_exit_code": 0,
         }
     )
 

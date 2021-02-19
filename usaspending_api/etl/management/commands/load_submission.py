@@ -167,19 +167,20 @@ class Command(load_base.Command):
                             )
                         ) AS history
                     from
-                        (select distinct
-                            submission_id,
-                            publish_history_id,
-                            certify_history_id
-                        from published_files_history
-                        where submission_id = %s) as distinct_pairings
-                    left join
-                        publish_history as ph
-                            on distinct_pairings.publish_history_id = ph.publish_history_id
-                    left join
-                        certify_history as ch
-                            on distinct_pairings.certify_history_id = ch.certify_history_id
-                    group by distinct_pairings.submission_id)
+                        (
+                            select distinct
+                                submission_id,
+                                publish_history_id,
+                                certify_history_id
+                            from published_files_history
+                            where submission_id = %s
+                        ) as distinct_pairings
+                    left outer join
+                        publish_history as ph using (publish_history_id)
+                    left outer join
+                        certify_history as ch using (certify_history_id)
+                    group by distinct_pairings.submission_id
+                )
                 select
                     s.submission_id,
                     (
@@ -203,9 +204,8 @@ class Command(load_base.Command):
                     pch.history
                 from
                     submission as s
-                join
-                    publish_certify_history as pch
-                        on pch.submission_id = s.submission_id
+                inner join
+                    publish_certify_history as pch using (submission_id)
             """,
             [self.submission_id],
         )
