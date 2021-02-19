@@ -13,7 +13,7 @@
       "updated_at": "1700-12-31"
     }
   ],
-  "SELECT * FROM tas_lookup WHERE (financial_indicator2 <> 'F' OR financial_indicator2 IS NULL) AND account_num = -99999": [
+  "SELECT * FROM tas_lookup WHERE (financial_indicator2 IS DISTINCT FROM 'F') AND account_num = -99999": [
     {
       "allocation_transfer_agency": "999",
       "agency_identifier": "999",
