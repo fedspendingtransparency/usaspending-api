@@ -1,4 +1,5 @@
 import boto3
+import io
 import requests
 import tempfile
 import urllib
@@ -14,6 +15,41 @@ SCHEMA_HELP_TEXT = (
     + "List of supported schemes: "
     + ", ".join(["{}://".format(s) for s in VALID_SCHEMES if s])
 )
+
+
+class SpooledTempFileIOBase(tempfile.SpooledTemporaryFile, io.IOBase):
+    """Improving the current implementation of standard library's
+    SpooledTemporaryFile class so that it mimics IOBase abstract. This is a
+    documented issue (https://bugs.python.org/issue26175) and has an open PR
+    (https://github.com/python/cpython/pull/3249) to fix the issue.
+
+    Inheriting the two classes and adding a few functions gets this class
+    _close_ to what is needs to be. If future issues appear it might be better
+    to bite the bullet and only use tempfile.NamedTemporaryFile()
+    """
+
+    def readable(self):
+        return self._file.readable()
+
+    def readinto(self, b):
+        return self._file.readinto(b)
+
+    def writable(self):
+        return self._file.writable()
+
+    def seekable(self):
+        return self._file.seekable()
+
+    def seek(self, *args):
+        return self._file.seek(*args)
+
+    def truncate(self, size=None):
+        if size is None:
+            return self._file.truncate()
+
+        if size > self._max_size:
+            self.rollover()
+        return self._file.truncate(size)
 
 
 class RetrieveFileFromUri:
@@ -43,7 +79,7 @@ class RetrieveFileFromUri:
     def copy(self, dest_file_path):
         """
         create a copy of the file and place at "dest_file_path" which
-        currently must be a filesystem path (not s3 or http).
+        currently must be a file system path (not s3 or http).
         """
         if self.parsed_url_obj.scheme == "s3":
             file_path = self.parsed_url_obj.path[1:]  # remove leading '/' character
@@ -69,12 +105,12 @@ class RetrieveFileFromUri:
         boto3_s3 = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION)
         s3_bucket = boto3_s3.Bucket(self.parsed_url_obj.netloc)
 
-        f = tempfile.SpooledTemporaryFile()  # Must be in binary mode (default)
+        f = SpooledTempFileIOBase()  # Must be in binary mode (default)
         s3_bucket.download_fileobj(file_path, f)
 
         if text:
             byte_str = f._file.getvalue()
-            f = tempfile.SpooledTemporaryFile(mode="r")
+            f = SpooledTempFileIOBase(mode="r")
             f.write(byte_str.decode())
 
         f.seek(0)  # go to beginning of file for reading
@@ -82,7 +118,7 @@ class RetrieveFileFromUri:
 
     def _handle_http(self, text):
         r = requests.get(self.ruri, allow_redirects=True)
-        f = tempfile.SpooledTemporaryFile(mode="w" if text else "w+b")
+        f = SpooledTempFileIOBase(mode="w" if text else "w+b")
         f.write(r.text if text else r.content)
         f.seek(0)  # go to beginning of file for reading
         return f

@@ -155,6 +155,14 @@ def setup_test_data(db):
         obligated_amount=12.0,
     )
     mommy.make(
+        "reporting.ReportingAgencyMissingTas",
+        toptier_code=123,
+        fiscal_year=2020,
+        fiscal_period=12,
+        tas_rendering_label="TAS 3",
+        obligated_amount=0,
+    )
+    mommy.make(
         "references.GTASSF133Balances",
         id=1,
         fiscal_year=2019,
@@ -546,7 +554,7 @@ def test_secondary_period_sort(setup_test_data, client):
         fiscal_year=2019,
         fiscal_period=10,
         tas_rendering_label="TAS 2",
-        obligated_amount=0.0,
+        obligated_amount=1000,
     )
     resp = client.get(url + "?sort=fiscal_year&order=asc")
     assert resp.status_code == status.HTTP_200_OK
@@ -557,7 +565,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "fiscal_year": 2019,
             "fiscal_period": 6,
             "current_total_budget_authority_amount": 22478810.97,
-            "total_budgetary_resources": 200000000,
+            "total_budgetary_resources": 200000000.0,
             "percent_of_total_budgetary_resources": 11.24,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
@@ -576,7 +584,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "fiscal_year": 2019,
             "fiscal_period": 9,
             "current_total_budget_authority_amount": 22478810.98,
-            "total_budgetary_resources": 150000000,
+            "total_budgetary_resources": 150000000.0,
             "percent_of_total_budgetary_resources": 14.99,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
@@ -596,13 +604,13 @@ def test_secondary_period_sort(setup_test_data, client):
             "fiscal_period": 10,
             "current_total_budget_authority_amount": 0.0,
             "total_budgetary_resources": 10.0,
-            "percent_of_total_budgetary_resources": 0,
+            "percent_of_total_budgetary_resources": 0.0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 0.0,
                 "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 0.0,
+                "tas_obligation_not_in_gtas_total": 1000,
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
@@ -614,8 +622,8 @@ def test_secondary_period_sort(setup_test_data, client):
             "fiscal_year": 2020,
             "fiscal_period": 12,
             "current_total_budget_authority_amount": 100.0,
-            "total_budgetary_resources": 100000000,
-            "percent_of_total_budgetary_resources": 0,
+            "total_budgetary_resources": 100000000.0,
+            "percent_of_total_budgetary_resources": 0.0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -641,8 +649,8 @@ def test_secondary_period_sort(setup_test_data, client):
             "fiscal_year": 2020,
             "fiscal_period": 12,
             "current_total_budget_authority_amount": 100.0,
-            "total_budgetary_resources": 100000000,
-            "percent_of_total_budgetary_resources": 0,
+            "total_budgetary_resources": 100000000.0,
+            "percent_of_total_budgetary_resources": 0.0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
@@ -667,7 +675,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 0.0,
                 "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 0.0,
+                "tas_obligation_not_in_gtas_total": 1000,
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
@@ -679,7 +687,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "fiscal_year": 2019,
             "fiscal_period": 9,
             "current_total_budget_authority_amount": 22478810.98,
-            "total_budgetary_resources": 150000000,
+            "total_budgetary_resources": 150000000.0,
             "percent_of_total_budgetary_resources": 14.99,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
@@ -698,7 +706,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "fiscal_year": 2019,
             "fiscal_period": 6,
             "current_total_budget_authority_amount": 22478810.97,
-            "total_budgetary_resources": 200000000,
+            "total_budgetary_resources": 200000000.0,
             "percent_of_total_budgetary_resources": 11.24,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,

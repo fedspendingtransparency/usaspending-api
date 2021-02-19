@@ -9,7 +9,7 @@ This endpoint provides funding and spending details from emergency/disaster supp
 
 + Request (application/json)
     + Parameters
-        + `def_codes` (optional, array[DEFC]) 
+        + `def_codes` (optional, array[DEFC])
            Comma-delimited list of DEF codes to limit results to.
 
 + Response 200 (application/json)
@@ -85,4 +85,5 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 + `R`
 + `S`
 + `T`
++ `U`
 + `9`
