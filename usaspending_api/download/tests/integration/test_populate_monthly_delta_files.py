@@ -408,8 +408,8 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
             else:
                 assert row == contract_data
             row_count += 1
-    assert row_count >= 1
-    os.remove(os.path.normpath(f"csv_downloads/FY(All)_All_Contracts_Delta_{formatted_date}.zip"))
+    assert row_count == 2
+    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{formatted_date}.zip"))
     os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{formatted_date}_1.csv"))
 
 
