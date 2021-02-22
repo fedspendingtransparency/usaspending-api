@@ -612,6 +612,7 @@ def test_fiscal_years(client, monthly_download_data, monkeypatch):
     assert f"FY2020_001_Assistance_Full_{formatted_date}.zip" in file_list
     delete_files()
 
+
 def test_award_type(client, monthly_download_data, monkeypatch):
     call_command(
         "populate_monthly_files",
