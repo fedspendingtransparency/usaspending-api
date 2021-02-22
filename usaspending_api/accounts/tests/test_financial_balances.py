@@ -6,7 +6,12 @@ from rest_framework import status
 
 @pytest.fixture
 def financial_balances_models():
-    sub = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016, toptier_code="abc")
+    sub = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2016,
+        toptier_code="abc",
+        is_final_balances_for_fy=True,
+    )
     agency1_toptier = mommy.make("references.TopTierAgency", toptier_agency_id=123, toptier_code="abc")
     mommy.make("references.Agency", id=456, toptier_agency_id=123)
     tas1 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=agency1_toptier)

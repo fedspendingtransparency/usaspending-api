@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Reporting Overview [/api/v2/reporting/agencies/{agency_code}/overview/{?page,limit,order,sort}]
+# Agency Reporting Overview [/api/v2/reporting/agencies/{toptier_code}/overview/{?page,limit,order,sort}]
 
 This endpoint is used to power USAspending.gov's About the Data \| Agencies agency details table.
 
@@ -10,8 +10,8 @@ This endpoint is used to power USAspending.gov's About the Data \| Agencies agen
 This endpoint returns an overview of government agency submission data.
 
 + Parameters
-    + `agency_code`: `020` (required, string)
-        The specific agency.
+    + `toptier_code`: `020` (required, string)
+        The specific agency's toptier code.
     + `page` (optional, number)
         The page of results to return based on the limit.
         + Default: 1

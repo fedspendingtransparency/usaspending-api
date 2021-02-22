@@ -199,7 +199,7 @@ def test_basic_success(setup_test_data, client):
         {
             "agency_name": "Test Agency 2",
             "abbreviation": "XYZ",
-            "agency_code": "987",
+            "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
             "recent_publication_date": None,
@@ -218,7 +218,7 @@ def test_basic_success(setup_test_data, client):
         {
             "agency_name": "Test Agency 3",
             "abbreviation": "AAA",
-            "agency_code": "001",
+            "toptier_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
             "recent_publication_date": None,
@@ -239,15 +239,11 @@ def test_basic_success(setup_test_data, client):
 
 
 def test_filter(setup_test_data, client):
-    resp = client.get(url + "?filter=Test Agency 2")
-    assert resp.status_code == status.HTTP_200_OK
-    response = resp.json()
-    assert len(response["results"]) == 1
     expected_results = [
         {
             "agency_name": "Test Agency 2",
             "abbreviation": "XYZ",
-            "agency_code": "987",
+            "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
             "recent_publication_date": None,
@@ -264,6 +260,17 @@ def test_filter(setup_test_data, client):
             "assurance_statement_url": assurance_statement_2,
         }
     ]
+
+    resp = client.get(url + "?filter=Test Agency 2")
+    assert resp.status_code == status.HTTP_200_OK
+    response = resp.json()
+    assert len(response["results"]) == 1
+    assert response["results"] == expected_results
+
+    resp = client.get(url + "?filter=xYz")
+    assert resp.status_code == status.HTTP_200_OK
+    response = resp.json()
+    assert len(response["results"]) == 1
     assert response["results"] == expected_results
 
 
@@ -276,7 +283,7 @@ def test_pagination(setup_test_data, client):
         {
             "agency_name": "Test Agency 2",
             "abbreviation": "XYZ",
-            "agency_code": "987",
+            "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
             "recent_publication_date": None,
@@ -303,7 +310,7 @@ def test_pagination(setup_test_data, client):
         {
             "agency_name": "Test Agency 3",
             "abbreviation": "AAA",
-            "agency_code": "001",
+            "toptier_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
             "recent_publication_date": None,
@@ -330,7 +337,7 @@ def test_pagination(setup_test_data, client):
         {
             "agency_name": "Test Agency 3",
             "abbreviation": "AAA",
-            "agency_code": "001",
+            "toptier_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
             "recent_publication_date": None,
@@ -349,7 +356,7 @@ def test_pagination(setup_test_data, client):
         {
             "agency_name": "Test Agency 2",
             "abbreviation": "XYZ",
-            "agency_code": "987",
+            "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
             "recent_publication_date": None,
@@ -379,7 +386,7 @@ def test_fiscal_year_period_selection(setup_test_data, client):
         {
             "agency_name": "Test Agency",
             "abbreviation": "ABC",
-            "agency_code": "123",
+            "toptier_code": "123",
             "agency_id": 1,
             "current_total_budget_authority_amount": 22478810.97,
             "recent_publication_date": None,

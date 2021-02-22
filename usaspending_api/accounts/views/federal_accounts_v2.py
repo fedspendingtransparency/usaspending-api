@@ -87,8 +87,8 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     @cache_response()
     def get(self, request, pk, fy=0, format=None):
         fy = int(fy) or SubmissionAttributes.latest_available_fy()
-        queryset = AppropriationAccountBalances.final_objects.filter(
-            treasury_account_identifier__federal_account_id=int(pk)
+        queryset = AppropriationAccountBalances.objects.filter(
+            submission__is_final_balances_for_fy=True, treasury_account_identifier__federal_account_id=int(pk)
         ).filter(submission__reporting_fiscal_year=fy)
         queryset = queryset.aggregate(
             outlay=Sum("gross_outlay_amount_by_tas_cpe"),
@@ -130,8 +130,8 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         nested_order = ""
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
-        financial_account_queryset = AppropriationAccountBalances.final_objects.filter(
-            treasury_account_identifier__federal_account_id=int(pk)
+        financial_account_queryset = AppropriationAccountBalances.objects.filter(
+            submission__is_final_balances_for_fy=True, treasury_account_identifier__federal_account_id=int(pk)
         )
         if group == "fy" or group == "fiscal_year":
 
