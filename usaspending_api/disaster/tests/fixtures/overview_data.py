@@ -1,14 +1,14 @@
 import pytest
 
 from datetime import date
-from decimal import Decimal, setcontext, getcontext
+from decimal import Decimal
 from model_mommy import mommy
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.disaster.v2.views.disaster_base import COVID_19_GROUP_NAME
 
 
 def to_decimal(input):
-    return Decimal(f"{round(input, 3)}")
+    return Decimal(f"{round(input, 2)}")
 
 
 def calculate_values(input_dict):
@@ -94,9 +94,16 @@ UNOBLIGATED_BALANCE_GTAS = {
 }
 UNOBLIGATED_BALANCE_GTAS_CALCULATIONS = calculate_values(UNOBLIGATED_BALANCE_GTAS)
 
-QUARTERLY_GTAS_BUDGETARY_RESOURCES = 0.26
-
-UNOBLIGATED_GTAS_BUDGETARY_RESOURCES = 1.5
+OTHER_BUDGET_AUTHORITY_GTAS = {
+    "total_budgetary_resources_cpe": 0.85,
+    "budget_authority_unobligated_balance_brought_forward_cpe": 0.0,
+    "gross_outlay_amount_by_tas_cpe": 0.2,
+    "obligations_incurred_total_cpe": 4.0,
+    "deobligations_or_recoveries_or_refunds_from_prior_year_cpe": 4.0,
+    "prior_year_paid_obligation_recoveries": 0.0,
+    "anticipated_prior_year_obligation_recoveries": 0.0,
+}
+OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS = calculate_values(OTHER_BUDGET_AUTHORITY_GTAS)
 
 
 @pytest.fixture
@@ -137,7 +144,6 @@ def quarterly_gtas(defc_codes):
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
-        unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
         **QUARTERLY_GTAS,
     )
@@ -149,25 +155,8 @@ def early_gtas(defc_codes):
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=EARLY_MONTH,
-        unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
         **EARLY_GTAS,
-    )
-
-
-@pytest.fixture
-def non_covid_gtas(defc_codes):
-    mommy.make(
-        "references.GTASSF133Balances",
-        fiscal_year=EARLY_YEAR,
-        fiscal_period=LATE_MONTH,
-        unobligated_balance_cpe=0,
-        disaster_emergency_fund_code="A",
-        total_budgetary_resources_cpe=0.32,
-        budget_authority_appropriation_amount_cpe=0.31,
-        other_budgetary_resources_amount_cpe=0.0,
-        budget_authority_unobligated_balance_brought_forward_cpe=0.0,
-        gross_outlay_amount_by_tas_cpe=0.13,
     )
 
 
@@ -177,7 +166,6 @@ def unobligated_balance_gtas(defc_codes):
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
-        unobligated_balance_cpe=UNOBLIGATED_GTAS_BUDGETARY_RESOURCES,
         disaster_emergency_fund_code="A",
         **UNOBLIGATED_BALANCE_GTAS
     )
@@ -189,13 +177,8 @@ def other_budget_authority_gtas(defc_codes):
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=EARLY_MONTH,
-        unobligated_balance_cpe=0,
         disaster_emergency_fund_code="M",
-        total_budgetary_resources_cpe=0.85,
-        budget_authority_appropriation_amount_cpe=0.69,
-        other_budgetary_resources_amount_cpe=0.14,
-        budget_authority_unobligated_balance_brought_forward_cpe=0.0,
-        gross_outlay_amount_by_tas_cpe=0.02,
+        **OTHER_BUDGET_AUTHORITY_GTAS
     )
 
 
