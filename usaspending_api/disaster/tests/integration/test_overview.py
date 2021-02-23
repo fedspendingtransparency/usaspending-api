@@ -10,7 +10,7 @@ from usaspending_api.disaster.tests.fixtures.overview_data import (
     QUARTERLY_GTAS_CALCULATIONS,
     EARLY_GTAS_CALCULATIONS,
     YEAR_2_GTAS_CALCULATIONS,
-    OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS
+    OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS,
 )
 
 OVERVIEW_URL = "/api/v2/disaster/overview/"
@@ -141,7 +141,9 @@ def test_ignore_gtas_not_yet_revealed(
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH - 1, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["funding"] == [{"amount": LATE_GTAS_CALCULATIONS["total_budgetary_resources_cpe"], "def_code": "M"}]
+    assert resp.data["funding"] == [
+        {"amount": LATE_GTAS_CALCULATIONS["total_budgetary_resources_cpe"], "def_code": "M"}
+    ]
     assert resp.data["total_budget_authority"] == LATE_GTAS_CALCULATIONS["total_budgetary_resources"]
     assert resp.data["spending"]["total_obligations"] == LATE_GTAS_CALCULATIONS["total_obligations"]
     assert resp.data["spending"]["total_outlays"] == LATE_GTAS_CALCULATIONS["total_outlays"]
@@ -154,7 +156,9 @@ def test_ignore_funding_for_unselected_defc(
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL + "?def_codes=M,A")
-    assert resp.data["funding"] == [{"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources_cpe"], "def_code": "M"}]
+    assert resp.data["funding"] == [
+        {"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources_cpe"], "def_code": "M"}
+    ]
     assert resp.data["total_budget_authority"] == YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"]
     assert resp.data["spending"]["total_obligations"] == YEAR_2_GTAS_CALCULATIONS["total_obligations"]
     assert resp.data["spending"]["total_outlays"] == YEAR_2_GTAS_CALCULATIONS["total_outlays"]
@@ -174,7 +178,9 @@ def test_adds_budget_values(client, monkeypatch, helpers, defc_codes, basic_ref_
     helpers.patch_datetime_now(monkeypatch, EARLY_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["funding"] == [{"amount": OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_budgetary_resources_cpe"], "def_code": "M"}]
+    assert resp.data["funding"] == [
+        {"amount": OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_budgetary_resources_cpe"], "def_code": "M"}
+    ]
     assert resp.data["total_budget_authority"] == OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_budgetary_resources"]
     assert resp.data["spending"]["total_obligations"] == OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_obligations"]
     assert resp.data["spending"]["total_outlays"] == OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_outlays"]

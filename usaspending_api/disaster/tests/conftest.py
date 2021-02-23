@@ -120,7 +120,6 @@ __all__ = [
     "multi_period_faba",
     "multi_period_faba_with_future",
     "multi_year_faba",
-    "non_covid_gtas",
     "other_budget_authority_gtas",
     "partially_completed_year",
     "quarterly_gtas",

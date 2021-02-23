@@ -167,7 +167,7 @@ def unobligated_balance_gtas(defc_codes):
         fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
         disaster_emergency_fund_code="A",
-        **UNOBLIGATED_BALANCE_GTAS
+        **UNOBLIGATED_BALANCE_GTAS,
     )
 
 
@@ -178,7 +178,7 @@ def other_budget_authority_gtas(defc_codes):
         fiscal_year=EARLY_YEAR,
         fiscal_period=EARLY_MONTH,
         disaster_emergency_fund_code="M",
-        **OTHER_BUDGET_AUTHORITY_GTAS
+        **OTHER_BUDGET_AUTHORITY_GTAS,
     )
 
 
