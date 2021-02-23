@@ -92,7 +92,7 @@ UNOBLIGATED_BALANCE_GTAS = {
     "prior_year_paid_obligation_recoveries": 0.0,
     "anticipated_prior_year_obligation_recoveries": 0.0,
 }
-UNOBLIGATED_BALANCE_GTAS_CALCULATIONS = calculate_values(YEAR_2_GTAS)
+UNOBLIGATED_BALANCE_GTAS_CALCULATIONS = calculate_values(UNOBLIGATED_BALANCE_GTAS)
 
 QUARTERLY_GTAS_BUDGETARY_RESOURCES = 0.26
 
