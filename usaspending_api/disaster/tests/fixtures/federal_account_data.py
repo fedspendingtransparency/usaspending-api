@@ -95,8 +95,11 @@ def generic_account_data():
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=100,
-        gross_outlay_amount_by_program_object_class_cpe=111,
+        obligations_incurred_by_program_object_class_cpe=1000,
+        gross_outlay_amount_by_program_object_class_cpe=100,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=900,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=10,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=1,
         disaster_emergency_fund=defc_m,
         treasury_account=tre_acct1,
     )
@@ -104,8 +107,11 @@ def generic_account_data():
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=200,
-        gross_outlay_amount_by_program_object_class_cpe=222,
+        obligations_incurred_by_program_object_class_cpe=500,
+        gross_outlay_amount_by_program_object_class_cpe=20,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=300,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=2,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=200,
         disaster_emergency_fund=defc_l,
         treasury_account=tre_acct2,
     )
@@ -113,8 +119,11 @@ def generic_account_data():
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=2,
-        gross_outlay_amount_by_program_object_class_cpe=2,
+        obligations_incurred_by_program_object_class_cpe=6,
+        gross_outlay_amount_by_program_object_class_cpe=7,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=4,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-2,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-3,
         disaster_emergency_fund=defc_9,
         treasury_account=tre_acct2,
     )
@@ -122,8 +131,11 @@ def generic_account_data():
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=1,
-        gross_outlay_amount_by_program_object_class_cpe=1,
+        obligations_incurred_by_program_object_class_cpe=10,
+        gross_outlay_amount_by_program_object_class_cpe=4,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=9,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-1,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-2,
         disaster_emergency_fund=defc_o,
         treasury_account=tre_acct2,
     )
@@ -131,8 +143,11 @@ def generic_account_data():
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
         final_of_fy=True,
-        obligations_incurred_by_program_object_class_cpe=3,
-        gross_outlay_amount_by_program_object_class_cpe=333,
+        obligations_incurred_by_program_object_class_cpe=13,
+        gross_outlay_amount_by_program_object_class_cpe=296,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=10,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=30,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=7,
         disaster_emergency_fund=defc_n,
         treasury_account=tre_acct3,
     )
@@ -205,7 +220,9 @@ def generic_account_data():
         fiscal_period=12,
         disaster_emergency_fund_code="M",
         treasury_account_identifier=tre_acct1,
-        total_budgetary_resources_cpe=43580.0,
+        total_budgetary_resources_cpe=1125181,
+        deobligations_or_recoveries_or_refunds_from_prior_year_cpe=983274,
+        prior_year_paid_obligation_recoveries=98327,
     )
     mommy.make(
         "references.GTASSF133Balances",
@@ -215,7 +232,9 @@ def generic_account_data():
         fiscal_period=12,
         disaster_emergency_fund_code="M",
         treasury_account_identifier=tre_acct2,
-        total_budgetary_resources_cpe=1092370.0,
+        total_budgetary_resources_cpe=36475837.1,
+        deobligations_or_recoveries_or_refunds_from_prior_year_cpe=32984723.9,
+        prior_year_paid_obligation_recoveries=2398743.2,
     )
     mommy.make(
         "references.GTASSF133Balances",
@@ -225,7 +244,9 @@ def generic_account_data():
         fiscal_period=7,
         disaster_emergency_fund_code="M",
         treasury_account_identifier=tre_acct3,
-        total_budgetary_resources_cpe=392480.0,
+        total_budgetary_resources_cpe=394368.87,
+        deobligations_or_recoveries_or_refunds_from_prior_year_cpe=999.99,
+        prior_year_paid_obligation_recoveries=888.88,
     )
 
 
