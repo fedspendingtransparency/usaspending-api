@@ -35,7 +35,7 @@ def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_c
         object_class=basic_object_class[0],
         obligations_incurred_by_program_object_class_cpe=19,
         gross_outlay_amount_by_program_object_class_cpe=0,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=10,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-10,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-10,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=10,
     )
@@ -54,7 +54,7 @@ def basic_fa_by_object_class_with_multpile_object_class(
         object_class=major_object_class_1[0],
         obligations_incurred_by_program_object_class_cpe=100,
         gross_outlay_amount_by_program_object_class_cpe=4,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=90,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-90,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-9,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=7,
     )
@@ -66,7 +66,7 @@ def basic_fa_by_object_class_with_multpile_object_class(
         object_class=major_object_class_1[1],
         obligations_incurred_by_program_object_class_cpe=10,
         gross_outlay_amount_by_program_object_class_cpe=200,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=10,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-10,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-50,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-130,
     )
@@ -78,7 +78,7 @@ def basic_fa_by_object_class_with_multpile_object_class(
         object_class=major_object_class_1[2],
         obligations_incurred_by_program_object_class_cpe=3,
         gross_outlay_amount_by_program_object_class_cpe=0,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=2,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-2,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=9,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-9,
     )
@@ -113,7 +113,7 @@ def basic_fa_by_object_class_with_multpile_object_class_of_same_code(
         object_class=class1,
         obligations_incurred_by_program_object_class_cpe=30,
         gross_outlay_amount_by_program_object_class_cpe=992,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=20,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-20,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-90,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-900,
     )
@@ -125,7 +125,7 @@ def basic_fa_by_object_class_with_multpile_object_class_of_same_code(
         object_class=class2,
         obligations_incurred_by_program_object_class_cpe=100,
         gross_outlay_amount_by_program_object_class_cpe=5,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=100,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-100,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=15,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
@@ -144,7 +144,7 @@ def basic_fa_by_object_class_with_object_class_but_no_obligations(
         object_class=basic_object_class[0],
         obligations_incurred_by_program_object_class_cpe=333,
         gross_outlay_amount_by_program_object_class_cpe=0,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=333,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-333,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=9,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-9,
     )

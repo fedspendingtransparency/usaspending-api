@@ -191,13 +191,14 @@ class DisasterBase(APIView):
 
     @property
     def is_non_zero_total_spending(self):
-        return Q(
-            ~Q(
+        return ~Q(
+            Q(
                 obligations_incurred_by_program_object_class_cpe=F(
                     "deobligations_recoveries_refund_pri_program_object_class_cpe"
                 )
+                * -1
             )
-            | ~Q(
+            & Q(
                 gross_outlay_amount_by_program_object_class_cpe=F(
                     "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"
                 )
