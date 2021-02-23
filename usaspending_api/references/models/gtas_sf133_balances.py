@@ -28,6 +28,8 @@ class GTASSF133Balances(models.Model):
     tas_rendering_label = models.TextField(null=True, db_index=True)
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
+    anticipated_prior_year_obligation_recoveries = models.DecimalField(max_digits=23, decimal_places=2)
+    prior_year_paid_obligation_recoveries = models.DecimalField(max_digits=23, decimal_places=2)
 
     class Meta:
         managed = True

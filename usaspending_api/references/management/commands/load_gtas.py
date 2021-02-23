@@ -10,17 +10,19 @@ from usaspending_api.references.models import GTASSF133Balances
 logger = logging.getLogger("script")
 
 DERIVED_COLUMNS = {
-    "budget_authority_unobligated_balance_brought_forward_cpe": [1000],
-    "obligations_incurred_total_cpe": [2190],
-    "budget_authority_appropriation_amount_cpe": [1160, 1180, 1260, 1280],
+    "anticipated_prior_year_obligation_recoveries": [1033],
     "borrowing_authority_amount": [1340, 1440],
+    "budget_authority_appropriation_amount_cpe": [1160, 1180, 1260, 1280],
+    "budget_authority_unobligated_balance_brought_forward_cpe": [1000],
     "contract_authority_amount": [1540, 1640],
-    "spending_authority_from_offsetting_collections_amount": [1750, 1850],
-    "other_budgetary_resources_amount_cpe": [1340, 1440, 1540, 1640, 1750, 1850],
-    "obligations_incurred": [2190],
     "deobligations_or_recoveries_or_refunds_from_prior_year_cpe": [1021, 1033],
-    "unobligated_balance_cpe": [2490],
+    "obligations_incurred": [2190],
+    "obligations_incurred_total_cpe": [2190],
+    "other_budgetary_resources_amount_cpe": [1340, 1440, 1540, 1640, 1750, 1850],
+    "prior_year_paid_obligation_recoveries": [1061],
+    "spending_authority_from_offsetting_collections_amount": [1750, 1850],
     "total_budgetary_resources_cpe": [1910],
+    "unobligated_balance_cpe": [2490],
 }
 
 INVERTED_DERIVED_COLUMNS = {

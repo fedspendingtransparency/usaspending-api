@@ -1,5 +1,4 @@
-{
-"SELECT fiscal_year, period as fiscal_period, COALESCE(SUM(CASE WHEN line IN (1000) THEN sf.amount ELSE 0 END), 0.0) AS budget_authority_unobligated_balance_brought_forward_cpe, COALESCE(SUM(CASE WHEN line IN (2190) THEN sf.amount ELSE 0 END), 0.0) AS obligations_incurred_total_cpe, COALESCE(SUM(CASE WHEN line IN (1160,1180,1260,1280) THEN sf.amount ELSE 0 END), 0.0) AS budget_authority_appropriation_amount_cpe, COALESCE(SUM(CASE WHEN line IN (1340,1440) THEN sf.amount ELSE 0 END), 0.0) AS borrowing_authority_amount, COALESCE(SUM(CASE WHEN line IN (1540,1640) THEN sf.amount ELSE 0 END), 0.0) AS contract_authority_amount, COALESCE(SUM(CASE WHEN line IN (1750,1850) THEN sf.amount ELSE 0 END), 0.0) AS spending_authority_from_offsetting_collections_amount, COALESCE(SUM(CASE WHEN line IN (1340,1440,1540,1640,1750,1850) THEN sf.amount ELSE 0 END), 0.0) AS other_budgetary_resources_amount_cpe, COALESCE(SUM(CASE WHEN line IN (2190) THEN sf.amount ELSE 0 END), 0.0) AS obligations_incurred, COALESCE(SUM(CASE WHEN line IN (1021,1033) THEN sf.amount ELSE 0 END), 0.0) AS deobligations_or_recoveries_or_refunds_from_prior_year_cpe, COALESCE(SUM(CASE WHEN line IN (2490) THEN sf.amount ELSE 0 END), 0.0) AS unobligated_balance_cpe, COALESCE(SUM(CASE WHEN line IN (1910) THEN sf.amount ELSE 0 END), 0.0) AS total_budgetary_resources_cpe,COALESCE(SUM(CASE WHEN line IN (3020) THEN sf.amount * -1 ELSE 0 END), 0.0) AS gross_outlay_amount_by_tas_cpe,COALESCE(SUM(CASE WHEN line IN (1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1034,1035,1036,1037,1038,1039,1040,1041,1042) AND fiscal_year < 2021 THEN sf.amount * -1 WHEN line IN (1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1034,1035,1036,1037,1038,1039,1040,1041,1042,1043,1044,1045,1046,1047,1048,1049,1050,1051,1052,1053,1054,1055,1056,1057,1058,1059,1060,1061,1062,1063,1064,1065) AND fiscal_year >= 2021 THEN sf.amount * -1 ELSE 0 END), 0.0) AS adjustments_to_unobligated_balance_brought_forward_cpe, disaster_emergency_fund_code, CONCAT( CASE WHEN sf.allocation_transfer_agency is not null THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END, sf.agency_identifier, '-', CASE WHEN sf.beginning_period_of_availa is not null THEN CONCAT(sf.beginning_period_of_availa, '/', sf.ending_period_of_availabil) ELSE sf.availability_type_code END, '-', sf.main_account_code, '-', sf.sub_account_code) as tas_rendering_label FROM sf_133 sf GROUP BY fiscal_year, fiscal_period, disaster_emergency_fund_code, tas_rendering_label ORDER BY fiscal_year, fiscal_period;": [
+{"SELECT fiscal_year, period as fiscal_period, COALESCE(SUM(CASE WHEN line IN (1033) THEN sf.amount ELSE 0 END), 0.0) AS anticipated_prior_year_obligation_recoveries, COALESCE(SUM(CASE WHEN line IN (1340,1440) THEN sf.amount ELSE 0 END), 0.0) AS borrowing_authority_amount, COALESCE(SUM(CASE WHEN line IN (1160,1180,1260,1280) THEN sf.amount ELSE 0 END), 0.0) AS budget_authority_appropriation_amount_cpe, COALESCE(SUM(CASE WHEN line IN (1000) THEN sf.amount ELSE 0 END), 0.0) AS budget_authority_unobligated_balance_brought_forward_cpe, COALESCE(SUM(CASE WHEN line IN (1540,1640) THEN sf.amount ELSE 0 END), 0.0) AS contract_authority_amount, COALESCE(SUM(CASE WHEN line IN (1021,1033) THEN sf.amount ELSE 0 END), 0.0) AS deobligations_or_recoveries_or_refunds_from_prior_year_cpe, COALESCE(SUM(CASE WHEN line IN (2190) THEN sf.amount ELSE 0 END), 0.0) AS obligations_incurred, COALESCE(SUM(CASE WHEN line IN (2190) THEN sf.amount ELSE 0 END), 0.0) AS obligations_incurred_total_cpe, COALESCE(SUM(CASE WHEN line IN (1340,1440,1540,1640,1750,1850) THEN sf.amount ELSE 0 END), 0.0) AS other_budgetary_resources_amount_cpe, COALESCE(SUM(CASE WHEN line IN (1061) THEN sf.amount ELSE 0 END), 0.0) AS prior_year_paid_obligation_recoveries, COALESCE(SUM(CASE WHEN line IN (1750,1850) THEN sf.amount ELSE 0 END), 0.0) AS spending_authority_from_offsetting_collections_amount, COALESCE(SUM(CASE WHEN line IN (1910) THEN sf.amount ELSE 0 END), 0.0) AS total_budgetary_resources_cpe, COALESCE(SUM(CASE WHEN line IN (2490) THEN sf.amount ELSE 0 END), 0.0) AS unobligated_balance_cpe, COALESCE(SUM(CASE WHEN line IN (3020) THEN sf.amount * -1 ELSE 0 END), 0.0) AS gross_outlay_amount_by_tas_cpe, COALESCE(SUM(CASE WHEN line IN (1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1034,1035,1036,1037,1038,1039,1040,1041,1042) AND fiscal_year < 2021 THEN sf.amount * -1 WHEN line IN (1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1034,1035,1036,1037,1038,1039,1040,1041,1042,1043,1044,1045,1046,1047,1048,1049,1050,1051,1052,1053,1054,1055,1056,1057,1058,1059,1060,1061,1062,1063,1064,1065) AND fiscal_year >= 2021 THEN sf.amount * -1 ELSE 0 END), 0.0) AS adjustments_to_unobligated_balance_brought_forward_cpe, disaster_emergency_fund_code, CONCAT( CASE WHEN sf.allocation_transfer_agency is not null THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END, sf.agency_identifier, '-', CASE WHEN sf.beginning_period_of_availa is not null THEN CONCAT(sf.beginning_period_of_availa, '/', sf.ending_period_of_availabil) ELSE sf.availability_type_code END, '-', sf.main_account_code, '-', sf.sub_account_code) as tas_rendering_label FROM sf_133 sf GROUP BY fiscal_year, fiscal_period, disaster_emergency_fund_code, tas_rendering_label ORDER BY fiscal_year, fiscal_period;": [
     {
       "fiscal_year": 1600,
       "fiscal_period": "-1",
@@ -16,7 +15,9 @@
       "gross_outlay_amount_by_tas_cpe": "-11",
       "unobligated_balance_cpe": "-11",
       "total_budgetary_resources_cpe": "11",
-      "disaster_emergency_fund_code": "A"
+      "disaster_emergency_fund_code": "A",
+      "anticipated_prior_year_obligation_recoveries": "-111",
+      "prior_year_paid_obligation_recoveries": "-110"
     },
     {
       "fiscal_year": 1600,
@@ -34,7 +35,9 @@
       "gross_outlay_amount_by_tas_cpe": "-12",
       "unobligated_balance_cpe": "-12",
       "total_budgetary_resources_cpe": "12",
-      "disaster_emergency_fund_code": "A"
+      "disaster_emergency_fund_code": "A",
+      "anticipated_prior_year_obligation_recoveries": "-121",
+      "prior_year_paid_obligation_recoveries": "-120"
     },
     {
       "fiscal_year": 1601,
@@ -52,7 +55,9 @@
       "gross_outlay_amount_by_tas_cpe": "-13",
       "unobligated_balance_cpe": "-13",
       "total_budgetary_resources_cpe": "13",
-      "disaster_emergency_fund_code": "A"
+      "disaster_emergency_fund_code": "A",
+      "anticipated_prior_year_obligation_recoveries": "-131",
+      "prior_year_paid_obligation_recoveries": "-130"
     }
   ]
 }
