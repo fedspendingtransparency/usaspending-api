@@ -294,7 +294,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_l,
         obligations_incurred_by_program_object_class_cpe=10,
         gross_outlay_amount_by_program_object_class_cpe=9850000,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=9,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-9,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=50000,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=100000,
     )
@@ -308,7 +308,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_m,
         obligations_incurred_by_program_object_class_cpe=100,
         gross_outlay_amount_by_program_object_class_cpe=985000,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=90,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-90,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=5000,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=10000,
     )
@@ -322,7 +322,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_p,
         obligations_incurred_by_program_object_class_cpe=1000,
         gross_outlay_amount_by_program_object_class_cpe=98500,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=900,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-900,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=500,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=1000,
     )
@@ -336,7 +336,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_o,
         obligations_incurred_by_program_object_class_cpe=10000,
         gross_outlay_amount_by_program_object_class_cpe=9850,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=9000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-9000,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=50,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=100,
     )
@@ -350,7 +350,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_n,
         obligations_incurred_by_program_object_class_cpe=100000,
         gross_outlay_amount_by_program_object_class_cpe=985,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=90000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-90000,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=5,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=10,
     )
@@ -364,7 +364,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_n,
         obligations_incurred_by_program_object_class_cpe=1000000,
         gross_outlay_amount_by_program_object_class_cpe=98.5,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=900000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-900000,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0.5,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=1,
     )
@@ -378,7 +378,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_o,
         obligations_incurred_by_program_object_class_cpe=10000000,
         gross_outlay_amount_by_program_object_class_cpe=8.5,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=9000000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-9000000,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0.5,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=1,
     )
@@ -392,7 +392,7 @@ def disaster_account_data():
         disaster_emergency_fund=defc_o,
         obligations_incurred_by_program_object_class_cpe=100000000,
         gross_outlay_amount_by_program_object_class_cpe=0.85,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=90000000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-90000000,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0.05,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0.1,
     )
@@ -418,7 +418,7 @@ def disaster_account_data():
         disaster_emergency_fund=None,
         obligations_incurred_by_program_object_class_cpe=5,
         gross_outlay_amount_by_program_object_class_cpe=60000,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=5,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-5,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=930000,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=1000,
     )
@@ -430,7 +430,7 @@ def disaster_account_data():
         disaster_emergency_fund=None,
         obligations_incurred_by_program_object_class_cpe=125,
         gross_outlay_amount_by_program_object_class_cpe=50000,
-        deobligations_recoveries_refund_pri_program_object_class_cpe=25,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-25,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=25000,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=25000,
     )
