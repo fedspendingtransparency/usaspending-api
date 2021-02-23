@@ -56,25 +56,33 @@ class OverviewViewSet(DisasterBase):
                 def_code=F("disaster_emergency_fund_code"),
                 amount=Sum("total_budgetary_resources_cpe"),
                 unobligated_balance=Sum("budget_authority_unobligated_balance_brought_forward_cpe"),
+                deobligations=Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
+                anticipated_recoveries=Sum("anticipated_prior_year_obligation_recoveries"),
             )
-            .values("def_code", "amount", "unobligated_balance")
+            .values("def_code", "amount", "unobligated_balance", "deobligations", "anticipated_recoveries")
         )
 
-        total_budget_authority = self.sum_values(funding, "amount") - self.sum_values(funding, "unobligated_balance")
+        total_amount = self.sum_values(funding, "amount")
+        total_unobligated_balance = self.sum_values(funding, "unobligated_balance")
+        total_deobligations = self.sum_values(funding, "deobligations")
+        total_anticipated_recoveries = self.sum_values(funding, "anticipated_recoveries")
+
+        total_budget_authority = total_amount - (
+            total_unobligated_balance + total_deobligations + total_anticipated_recoveries
+        )
 
         for entry in funding:
             del entry["unobligated_balance"]
+            del entry["deobligations"]
+            del entry["anticipated_recoveries"]
 
         return funding, total_budget_authority
 
     def spending(self):
-        remaining_balances = self.remaining_balances()
-        award_obligations = self.award_obligations()
-
         return {
-            "award_obligations": award_obligations,
+            "award_obligations": self.award_obligations(),
             "award_outlays": self.award_outlays(),
-            "total_obligations": self.total_budget_authority - Decimal(remaining_balances),
+            "total_obligations": self.total_obligations(),
             "total_outlays": self.total_outlays(),
         }
 
@@ -95,26 +103,28 @@ class OverviewViewSet(DisasterBase):
             .aggregate(total=Sum("gross_outlay_amount_by_award_cpe"))["total"]
         ) or 0.0
 
-    def remaining_balances(self):
-        remaining_balances = list(
+    def total_obligations(self):
+        return (
             latest_gtas_of_each_year_queryset()
             .filter(disaster_emergency_fund_code__in=self.defc)
-            .values("fiscal_year")
-            .annotate(total=Sum("unobligated_balance_cpe"))
-            .values("fiscal_year", "total")
-            .order_by("-fiscal_year")
-        )
-
-        return remaining_balances[0]["total"] if remaining_balances else Decimal("0.0")
+            .values("obligations_incurred_total_cpe", "deobligations_or_recoveries_or_refunds_from_prior_year_cpe")
+            .aggregate(
+                total=(
+                    Sum("obligations_incurred_total_cpe")
+                    - Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe")
+                )
+            )["total"]
+        ) or 0.0
 
     def total_outlays(self):
         return (
             latest_gtas_of_each_year_queryset()
             .filter(disaster_emergency_fund_code__in=self.defc)
-            .values("gross_outlay_amount_by_tas_cpe")
-            .aggregate(total=Sum("gross_outlay_amount_by_tas_cpe"))["total"]
-            or 0.0
-        )
+            .values("gross_outlay_amount_by_tas_cpe", "prior_year_paid_obligation_recoveries")
+            .aggregate(total=(Sum("gross_outlay_amount_by_tas_cpe") - Sum("prior_year_paid_obligation_recoveries")))[
+                "total"
+            ]
+        ) or 0.0
 
     @staticmethod
     def sum_values(list_of_objects: list, key_to_extract: str) -> Decimal:
