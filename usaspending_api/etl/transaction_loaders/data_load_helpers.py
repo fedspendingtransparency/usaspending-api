@@ -7,7 +7,7 @@ import logging
 
 from django.conf import settings
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 def capitalize_if_string(val):

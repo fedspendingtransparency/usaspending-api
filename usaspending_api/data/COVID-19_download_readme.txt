@@ -1,8 +1,8 @@
 ========ABOUT THESE FILES========
 
-This ZIP file was generated from the COVID-19 Profile page on USAspending.gov, located at https://www.usaspending.gov/#/disaster/covid-19.
+This ZIP file was generated from the COVID-19 Profile page on USAspending.gov, located at https://www.usaspending.gov/disaster/covid-19.
 
-Data Element Definitions: A searchable Data Dictionary that defines every data element in the included files can be found here: https://www.usaspending.gov/#/download_center/data_dictionary. We have also included a copy in this download for convenience. The dictionary is updated periodically as the data model is improved or download headers change.
+Data Element Definitions: A searchable Data Dictionary that defines every data element in the included files can be found here: https://www.usaspending.gov/download_center/data_dictionary. We have also included a copy in this download for convenience. The dictionary is updated periodically as the data model is improved or download headers change.
 
 Split Files: The # in all filenames defaults to 1; if the number of rows in a given file is large enough to warrant breaking it into multiple files, then additional files will be present and appended with 2, 3, etc. instead.
 
@@ -14,7 +14,7 @@ This file captures the total resources made available under COVID-19 supplementa
 
 Each row of this file contains a Treasury Account Symbol (TAS) followed by COVID-19 Disaster Emergency Fund Code (DEFC)(one of 5 codes used to track COVID-19 supplemental appropriations from the 4 bills that authorized it), followed by the dollar balances associated with that TAS + DEFC combination. Non-COVID supplemental appropriations are NOT captured in this file, but this data is available from our Custom Account Download page.
 
-The data in this file is reported to the Governmentwide Treasury Account Symbol Adjusted Trial Balance System (GTAS) on a monthly basis (other than fiscal year period 01) from audited agency financial systems. The data is provided at the TAS + DEFC level for increased granularity, but may rolled up by TAS, Federal Account, or DEFC as desired, using the appropriate columns.
+The data in this file is reported to the Government wide Treasury Account Symbol Adjusted Trial Balance System (GTAS) on a monthly basis (other than fiscal year period 01) from audited agency financial systems. The data is provided at the TAS + DEFC level for increased granularity, but may rolled up by TAS, Federal Account, or DEFC as desired, using the appropriate columns.
 
 Only the latest relevant data is included in this file. For the status of these dollar amounts at earlier points in time, please visit Custom Account download and select the particular period of interest.
 
@@ -63,4 +63,4 @@ The data in this file is primarily sourced from that reported by prime grant rec
 
 File: Data_Dictionary_Crosswalk.xlsx
 
-This file contains the data dictionary covering all elements available for download from USAspending.gov. You can find an online and up-to-date version of the data dictionary here: https://www.usaspending.gov/#/download_center/data_dictionary
+This file contains the data dictionary covering all elements available for download from USAspending.gov. You can find an online and up-to-date version of the data dictionary here: https://www.usaspending.gov/download_center/data_dictionary

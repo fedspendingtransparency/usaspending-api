@@ -96,7 +96,7 @@ SELECT
     "broker_subaward"."sub_high_comp_officer4_amount" AS "subawardee_highly_compensated_officer_4_amount",
     "broker_subaward"."sub_high_comp_officer5_full_na" AS "subawardee_highly_compensated_officer_5_name",
     "broker_subaward"."sub_high_comp_officer5_amount" AS "subawardee_highly_compensated_officer_5_amount",
-    CONCAT('https://www.usaspending.gov/#/award/', urlencode("awards"."generated_unique_award_id"), '/') AS "usaspending_permalink",
+    CONCAT('https://www.usaspending.gov/award/', urlencode("awards"."generated_unique_award_id"), '/') AS "usaspending_permalink",
     "broker_subaward"."date_submitted" AS "subaward_fsrs_report_last_modified_date"
 FROM "subaward"
 INNER JOIN "awards" ON ("subaward"."award_id" = "awards"."id")

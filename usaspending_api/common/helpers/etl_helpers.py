@@ -7,7 +7,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.sql_helpers import read_sql_file
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 _ETL_SQL_FILE_PATH = settings.APP_DIR / "etl" / "management" / "sql" / "c_file_linkage"
@@ -47,23 +47,21 @@ def update_c_to_d_linkages(type, count=True, submission_id=None):
     else:
         raise InvalidParameterException("Invalid type provided to process C to D linkages.")
 
-    file_paths = [str(_ETL_SQL_FILE_PATH / file_name) for file_name in file_names]
-
     if count:
         starting_unlinked_count = get_unlinked_count(file_name=unlinked_count_file_name)
         logger.info("Current count of unlinked %s records: %s" % (type, str(starting_unlinked_count)))
 
     total_start = datetime.now()
-    for file_name in file_paths:
+    for file_name in file_names:
         start = datetime.now()
-        logger.info("Running %s" % file_name)
-        sql_commands = read_sql_file(file_path=file_name)
+        logger.info(f"Running {file_name}")
+        sql_commands = read_sql_file(file_path=str(_ETL_SQL_FILE_PATH / file_name))
         for command in sql_commands:
             submission_id_clause = f"and faba_sub.submission_id = {submission_id}" if submission_id else ""
             command = command.format(submission_id_clause=submission_id_clause)
             with connection.cursor() as cursor:
                 cursor.execute(command)
-        logger.info("Finished %s in %s seconds" % (file_name, str(datetime.now() - start)))
+        logger.info(f"Finished {file_name} in {str(datetime.now() - start)} seconds")
 
     if count:
         ending_unlinked_count = get_unlinked_count(file_name=unlinked_count_file_name)

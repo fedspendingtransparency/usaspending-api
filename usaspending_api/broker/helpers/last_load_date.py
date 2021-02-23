@@ -1,8 +1,12 @@
+import logging
+
 from datetime import timedelta
 
 from usaspending_api.broker import lookups
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
+
+logger = logging.getLogger("script")
 
 
 def get_last_load_date(key, lookback_minutes=None, default=None):
@@ -25,7 +29,10 @@ def get_last_load_date(key, lookback_minutes=None, default=None):
         .first()
     )
     if last_load_date is None:
+        logger.warning(f"No record of a previous run for `{key}` was found!")
         return default
+    else:
+        logger.info(f"Value for previous `{key}` ETL: {last_load_date}")
     if lookback_minutes is not None:
         last_load_date -= timedelta(minutes=lookback_minutes)
     return last_load_date

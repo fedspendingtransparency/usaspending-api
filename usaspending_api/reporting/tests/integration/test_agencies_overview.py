@@ -29,6 +29,13 @@ assurance_statement_3 = (
     f"{CURRENT_FISCAL_YEAR}/P{CURRENT_LAST_PERIOD:02}/001%20-%20Test%20Agency%203%20(AAA)/"
     f"{CURRENT_FISCAL_YEAR}-P{CURRENT_LAST_PERIOD:02}-001_Test%20Agency%203%20(AAA)-Assurance_Statement.txt"
 )
+assurance_statement_1_2 = (
+    f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
+    f"{CURRENT_FISCAL_YEAR}/P{CURRENT_LAST_PERIOD:02}/123%20-%20Test%20Agency%20(ABC)/"
+    f"{CURRENT_FISCAL_YEAR}-P{CURRENT_LAST_PERIOD:02}-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
+)
+assurance_statement_2_2 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/P06/987%20-%20Test%20Agency%202%20(XYZ)/2019-P06-987_Test%20Agency%202%20(XYZ)-Assurance_Statement.txt"
+assurance_statement_3_2 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/P06/001%20-%20Test%20Agency%203%20(AAA)/2019-P06-001_Test%20Agency%203%20(AAA)-Assurance_Statement.txt"
 
 
 @pytest.fixture
@@ -143,6 +150,10 @@ def setup_test_data(db):
         total_dollars_obligated_gtas=1788370.03,
         total_budgetary_resources=22478810.97,
         total_diff_approp_ocpa_obligated_amounts=84931.95,
+        unlinked_procurement_c_awards=1,
+        unlinked_assistance_c_awards=2,
+        unlinked_procurement_d_awards=3,
+        unlinked_assistance_d_awards=4,
     )
     mommy.make(
         "reporting.ReportingAgencyOverview",
@@ -153,6 +164,10 @@ def setup_test_data(db):
         total_dollars_obligated_gtas=18.6,
         total_budgetary_resources=100,
         total_diff_approp_ocpa_obligated_amounts=0,
+        unlinked_procurement_c_awards=10,
+        unlinked_assistance_c_awards=20,
+        unlinked_procurement_d_awards=30,
+        unlinked_assistance_d_awards=40,
     )
     mommy.make(
         "reporting.ReportingAgencyOverview",
@@ -163,6 +178,10 @@ def setup_test_data(db):
         total_dollars_obligated_gtas=20.0,
         total_budgetary_resources=10.0,
         total_diff_approp_ocpa_obligated_amounts=10.0,
+        unlinked_procurement_c_awards=100,
+        unlinked_assistance_c_awards=200,
+        unlinked_procurement_d_awards=300,
+        unlinked_assistance_d_awards=400,
     )
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
@@ -188,14 +207,41 @@ def setup_test_data(db):
         tas_rendering_label="TAS 2",
         obligated_amount=12.0,
     )
+    mommy.make(
+        "reporting.ReportingAgencyMissingTas",
+        toptier_code=987,
+        fiscal_year=current_fiscal_year(),
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
+        tas_rendering_label="TAS 3",
+        obligated_amount=0,
+    )
 
 
 def test_basic_success(setup_test_data, client):
     resp = client.get(url)
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
-    assert len(response["results"]) == 2
+    assert len(response["results"]) == 3
     expected_results = [
+        {
+            "agency_name": "Test Agency",
+            "abbreviation": "ABC",
+            "toptier_code": "123",
+            "agency_id": 1,
+            "current_total_budget_authority_amount": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": assurance_statement_1_2,
+        },
         {
             "agency_name": "Test Agency 2",
             "abbreviation": "XYZ",
@@ -211,8 +257,8 @@ def test_basic_success(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
             "assurance_statement_url": assurance_statement_2,
         },
         {
@@ -230,8 +276,8 @@ def test_basic_success(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": 10.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 400,
+            "unlinked_assistance_award_count": 600,
             "assurance_statement_url": assurance_statement_3,
         },
     ]
@@ -255,8 +301,8 @@ def test_filter(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
             "assurance_statement_url": assurance_statement_2,
         }
     ]
@@ -281,23 +327,23 @@ def test_pagination(setup_test_data, client):
     assert len(response["results"]) == 1
     expected_results = [
         {
-            "agency_name": "Test Agency 2",
-            "abbreviation": "XYZ",
-            "toptier_code": "987",
-            "agency_id": 2,
-            "current_total_budget_authority_amount": 100.0,
+            "agency_name": "Test Agency",
+            "abbreviation": "ABC",
+            "toptier_code": "123",
+            "agency_id": 1,
+            "current_total_budget_authority_amount": None,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 18.6,
-                "tas_accounts_total": 100.00,
-                "tas_obligation_not_in_gtas_total": 12.0,
-                "missing_tas_accounts_count": 1,
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
             },
-            "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
-            "assurance_statement_url": assurance_statement_2,
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": assurance_statement_1_2,
         }
     ]
     assert response["results"] == expected_results
@@ -308,23 +354,23 @@ def test_pagination(setup_test_data, client):
     assert len(response["results"]) == 1
     expected_results = [
         {
-            "agency_name": "Test Agency 3",
-            "abbreviation": "AAA",
-            "toptier_code": "001",
-            "agency_id": 3,
-            "current_total_budget_authority_amount": 10.0,
+            "agency_name": "Test Agency 2",
+            "abbreviation": "XYZ",
+            "toptier_code": "987",
+            "agency_id": 2,
+            "current_total_budget_authority_amount": 100.0,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 20.0,
+                "gtas_obligation_total": 18.6,
                 "tas_accounts_total": 100.00,
-                "tas_obligation_not_in_gtas_total": 0.0,
-                "missing_tas_accounts_count": 0,
+                "tas_obligation_not_in_gtas_total": 12.0,
+                "missing_tas_accounts_count": 1,
             },
-            "obligation_difference": 10.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
-            "assurance_statement_url": assurance_statement_3,
+            "obligation_difference": 0.0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
+            "assurance_statement_url": assurance_statement_2,
         }
     ]
     assert response["results"] == expected_results
@@ -332,8 +378,27 @@ def test_pagination(setup_test_data, client):
     resp = client.get(url + "?sort=obligation_difference&order=desc")
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
-    assert len(response["results"]) == 2
+    assert len(response["results"]) == 3
     expected_results = [
+        {
+            "agency_name": "Test Agency",
+            "abbreviation": "ABC",
+            "toptier_code": "123",
+            "agency_id": 1,
+            "current_total_budget_authority_amount": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": assurance_statement_1_2,
+        },
         {
             "agency_name": "Test Agency 3",
             "abbreviation": "AAA",
@@ -349,8 +414,8 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 0,
             },
             "obligation_difference": 10.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 400,
+            "unlinked_assistance_award_count": 600,
             "assurance_statement_url": assurance_statement_3,
         },
         {
@@ -368,9 +433,74 @@ def test_pagination(setup_test_data, client):
                 "missing_tas_accounts_count": 1,
             },
             "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
             "assurance_statement_url": assurance_statement_2,
+        },
+    ]
+    assert response["results"] == expected_results
+
+    resp = client.get(url + "?sort=unlinked_assistance_award_count&order=asc")
+    assert resp.status_code == status.HTTP_200_OK
+    response = resp.json()
+    assert len(response["results"]) == 3
+    expected_results = [
+        {
+            "agency_name": "Test Agency 2",
+            "abbreviation": "XYZ",
+            "toptier_code": "987",
+            "agency_id": 2,
+            "current_total_budget_authority_amount": 100.0,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 18.6,
+                "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 12.0,
+                "missing_tas_accounts_count": 1,
+            },
+            "obligation_difference": 0.0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
+            "assurance_statement_url": assurance_statement_2,
+        },
+        {
+            "agency_name": "Test Agency 3",
+            "abbreviation": "AAA",
+            "toptier_code": "001",
+            "agency_id": 3,
+            "current_total_budget_authority_amount": 10.0,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 20.0,
+                "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": 10.0,
+            "unlinked_contract_award_count": 400,
+            "unlinked_assistance_award_count": 600,
+            "assurance_statement_url": assurance_statement_3,
+        },
+        {
+            "agency_name": "Test Agency",
+            "abbreviation": "ABC",
+            "toptier_code": "123",
+            "agency_id": 1,
+            "current_total_budget_authority_amount": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": assurance_statement_1_2,
         },
     ]
     assert response["results"] == expected_results
@@ -380,9 +510,47 @@ def test_fiscal_year_period_selection(setup_test_data, client):
     resp = client.get(url + "?fiscal_year=2019&fiscal_period=6")
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
-    assert len(response["results"]) == 1
+    assert len(response["results"]) == 3
 
     expected_results = [
+        {
+            "agency_name": "Test Agency 2",
+            "abbreviation": "XYZ",
+            "toptier_code": "987",
+            "agency_id": 2,
+            "current_total_budget_authority_amount": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": assurance_statement_2_2,
+        },
+        {
+            "agency_name": "Test Agency 3",
+            "abbreviation": "AAA",
+            "toptier_code": "001",
+            "agency_id": 3,
+            "current_total_budget_authority_amount": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": assurance_statement_3_2,
+        },
         {
             "agency_name": "Test Agency",
             "abbreviation": "ABC",
@@ -398,9 +566,9 @@ def test_fiscal_year_period_selection(setup_test_data, client):
                 "missing_tas_accounts_count": 2,
             },
             "obligation_difference": 84931.95,
-            "unlinked_contract_award_count": 0,
-            "unlinked_assistance_award_count": 0,
+            "unlinked_contract_award_count": 4,
+            "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_1,
-        }
+        },
     ]
     assert response["results"] == expected_results

@@ -47,15 +47,37 @@ This endpoint returns a filtered set of subawards.
         + `results` (required, array[SubawardResponse], fixed-type)
         + `page_metadata` (required, PageMetadataObject)
 
+    + Body
+
+            {
+                "page_metadata": {
+                    "page": 1,
+                    "next": 2,
+                    "previous": null,
+                    "hasNext": true,
+                    "hasPrevious": false
+                },
+                "results": [
+                    {
+                        "id": 119270129,
+                        "subaward_number": "Z981002",
+                        "description": "DEVELOPMENT OF A SELF-SUSTAINED WIRELESS INTEGRATED STRUCTURAL HEALTH MONITORING SYSTEM FOR HIGHWAY BRIDGES",
+                        "action_date": "2011-10-27",
+                        "amount": 110000.0,
+                        "recipient_name": "URS GROUP, INC."
+                    }
+                ]
+            }
+
 # Data Structures
 
 ## SubawardResponse (object)
-+ `subaward_number` (required, string)
-+ `amount` (required, number)
 + `id` (required, number)
-+ `action_date` (required, string)
-+ `recipient_name` (required, string)
++ `subaward_number` (required, string)
 + `description` (required, string)
++ `action_date` (required, string)
++ `amount` (required, number)
++ `recipient_name` (required, string)
 
 ## PageMetadataObject (object)
 + `page` (required, number)

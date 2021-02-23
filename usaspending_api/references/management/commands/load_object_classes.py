@@ -30,7 +30,7 @@ CREATE_TEMP_TABLE = """
     );
 """
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 RawObjectClass = namedtuple("RawObjectClass", ["row_number", "object_class", "object_class_name"])
 

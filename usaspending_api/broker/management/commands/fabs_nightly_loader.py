@@ -11,8 +11,7 @@ from usaspending_api.broker.helpers.delete_fabs_transactions import (
     delete_fabs_transactions,
     get_delete_pks_for_afa_keys,
 )
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date
-from usaspending_api.broker.helpers.last_load_date import update_last_load_date
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.helpers.date_helper import cast_datetime_to_naive, datetime_command_line_argument_type
@@ -48,7 +47,7 @@ def get_incremental_load_start_datetime():
         to prevent FABS transactions submitted between when the source records are copied from
         Broker and when FABS transactions are processed from being skipped.
 
-    An unfortunate side effect of the lookback is that some submissions may be processed more than
+    An unfortunate side effect of the look back is that some submissions may be processed more than
     once.  This SHOULDN'T cause any problems since the FABS loader is designed to be able to reload
     transactions, but it could add to the run time.  To minimize reprocessing, keep the
     LAST_LOAD_LOOKBACK_MINUTES value as small as possible while still preventing skips.  To be
@@ -65,10 +64,12 @@ def get_incremental_load_start_datetime():
     max_updated_at = TransactionFABS.objects.aggregate(Max("updated_at"))["updated_at__max"]
     if max_updated_at is None:
         return last_load_date
+    else:
+        logger.info(f"Most recent update_date in `transaction_fabs` {max_updated_at}")
 
     # We add a little tiny bit of time to the max_updated_at to prevent us from always reprocessing
     # records since the SQL that grabs new records is using updated_at >=.  I realize this is a hack
-    # but the pipeline is already running for too long so anything we can do to prevent enlongating
+    # but the pipeline is already running for too long so anything we can do to prevent elongating
     # it should be welcome.
     max_updated_at += timedelta(milliseconds=UPDATED_AT_MODIFIER_MS)
 
@@ -203,7 +204,7 @@ class Command(BaseCommand):
 
         if is_incremental_load:
             start_datetime = get_incremental_load_start_datetime()
-            logger.info("Processing data for FABS starting from %s" % start_datetime)
+            logger.info(f"Processing data for FABS starting from {start_datetime} (includes offset)")
 
             # We only perform deletes with incremental loads.
             with timer("obtaining delete records", logger.info):
@@ -212,13 +213,14 @@ class Command(BaseCommand):
                 ids_to_delete = get_delete_pks_for_afa_keys(ids_to_delete)
             logger.info(f"{len(ids_to_delete):,} delete ids found in total")
 
-        with timer("retrieving/diff-ing FABS Data", logger.info):
+        with timer("retrieving IDs of FABS to process", logger.info):
             ids_to_upsert = get_fabs_transaction_ids(ids, afa_ids, start_datetime, end_datetime)
 
         update_award_ids = delete_fabs_transactions(ids_to_delete) if is_incremental_load else []
         upsert_fabs_transactions(ids_to_upsert, update_award_ids)
 
         if is_incremental_load:
+            logger.info(f"Storing {processing_start_datetime} for the next incremental run")
             update_last_load_date("fabs", processing_start_datetime)
 
         logger.info("FABS UPDATE FINISHED!")
