@@ -134,7 +134,8 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
                     Case(
                         When(
                             self.final_period_submission_query_filters,
-                            then=F("obligations_incurred_by_program_object_class_cpe"),
+                            then=F("obligations_incurred_by_program_object_class_cpe")
+                            - F("deobligations_recoveries_refund_pri_program_object_class_cpe"),
                         ),
                         default=Value(0),
                     )
@@ -146,7 +147,9 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
                     Case(
                         When(
                             self.final_period_submission_query_filters,
-                            then=F("gross_outlay_amount_by_program_object_class_cpe"),
+                            then=F("gross_outlay_amount_by_program_object_class_cpe")
+                            + F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe")
+                            + F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"),
                         ),
                         default=Value(0),
                     )
@@ -187,8 +190,15 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
                         unobligated_balance=Func(
                             "budget_authority_unobligated_balance_brought_forward_cpe", function="Sum"
                         ),
+                        deobligation=Func("deobligations_or_recoveries_or_refunds_from_prior_year_cpe", function="Sum"),
+                        prior_year=Func("prior_year_paid_obligation_recoveries", function="Sum"),
                     )
-                    .annotate(total_budget_authority=F("amount") - F("unobligated_balance"))
+                    .annotate(
+                        total_budget_authority=F("amount")
+                        - F("unobligated_balance")
+                        - F("deobligation")
+                        - F("prior_year")
+                    )
                     .values("total_budget_authority"),
                     output_field=DecimalField(),
                 ),
