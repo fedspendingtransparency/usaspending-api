@@ -192,10 +192,18 @@ class DisasterBase(APIView):
     @property
     def is_non_zero_total_spending(self):
         return Q(
-            Q(obligations_incurred_by_program_object_class_cpe__gt=0)
-            | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
-            | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
-            | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
+            ~Q(
+                obligations_incurred_by_program_object_class_cpe=F(
+                    "deobligations_recoveries_refund_pri_program_object_class_cpe"
+                )
+            )
+            | ~Q(
+                gross_outlay_amount_by_program_object_class_cpe=F(
+                    "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"
+                )
+                * -1
+                - F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe")
+            )
         )
 
     def has_award_of_provided_type(self, should_join_awards: bool = True) -> Q:
