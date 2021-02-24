@@ -54,22 +54,19 @@ class OverviewViewSet(DisasterBase):
             .values("disaster_emergency_fund_code")
             .annotate(
                 def_code=F("disaster_emergency_fund_code"),
-                amount=Sum("total_budgetary_resources_cpe"),
-                total_budget_authority=(
-                    Sum("total_budgetary_resources_cpe") - (
-                        Sum("budget_authority_unobligated_balance_brought_forward_cpe") +
-                        Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe") +
-                        Sum("prior_year_paid_obligation_recoveries")
+                amount=(
+                    Sum("total_budgetary_resources_cpe")
+                    - (
+                        Sum("budget_authority_unobligated_balance_brought_forward_cpe")
+                        + Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe")
+                        + Sum("prior_year_paid_obligation_recoveries")
                     )
-                )
+                ),
             )
-            .values("def_code", "amount", "total_budget_authority")
+            .values("def_code", "amount")
         )
 
-        total_budget_authority = self.sum_values(funding, "total_budget_authority")
-
-        for entry in funding:
-            del entry["total_budget_authority"]
+        total_budget_authority = self.sum_values(funding, "amount")
 
         return funding, total_budget_authority
 

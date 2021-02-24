@@ -25,7 +25,6 @@ def calculate_values(input_dict):
     )
 
     return {
-        "total_budgetary_resources_cpe": to_decimal(input_dict["total_budgetary_resources_cpe"]),
         "total_budgetary_resources": to_decimal(TOTAL_BUDGETARY_RESOURCES),
         "total_obligations": to_decimal(TOTAL_OBLIGATIONS),
         "total_outlays": to_decimal(TOTAL_OUTLAYS),

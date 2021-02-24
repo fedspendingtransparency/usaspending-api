@@ -15,8 +15,6 @@ from usaspending_api.disaster.tests.fixtures.overview_data import (
 
 OVERVIEW_URL = "/api/v2/disaster/overview/"
 
-BASIC_FUNDING = [{"amount": Decimal("0.20"), "def_code": "M"}]
-
 
 @pytest.mark.django_db
 def test_basic_data_set(client, monkeypatch, helpers, defc_codes, basic_ref_data, early_gtas, basic_faba):
@@ -24,7 +22,7 @@ def test_basic_data_set(client, monkeypatch, helpers, defc_codes, basic_ref_data
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data == {
-        "funding": BASIC_FUNDING,
+        "funding": [{"amount": EARLY_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"}],
         "total_budget_authority": EARLY_GTAS_CALCULATIONS["total_budgetary_resources"],
         "spending": {
             "award_obligations": Decimal("0.0"),
@@ -64,7 +62,7 @@ def test_exclude_gtas_for_incompleted_period(
     helpers.patch_datetime_now(monkeypatch, EARLY_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["funding"] == [{"amount": Decimal("0.2"), "def_code": "M"}]
+    assert resp.data["funding"] == [{"amount": EARLY_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"}]
     assert resp.data["total_budget_authority"] == EARLY_GTAS_CALCULATIONS["total_budgetary_resources"]
     assert resp.data["spending"]["total_obligations"] == EARLY_GTAS_CALCULATIONS["total_obligations"]
     assert resp.data["spending"]["total_outlays"] == EARLY_GTAS_CALCULATIONS["total_outlays"]
@@ -94,8 +92,8 @@ def test_summing_multiple_years(
     resp = client.get(OVERVIEW_URL)
     assert resp.data["funding"] == [
         {
-            "amount": +YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources_cpe"]
-            + LATE_GTAS_CALCULATIONS["total_budgetary_resources_cpe"],
+            "amount": +YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"]
+            + LATE_GTAS_CALCULATIONS["total_budgetary_resources"],
             "def_code": "M",
         }
     ]
@@ -122,8 +120,8 @@ def test_summing_period_and_quarterly_in_same_year(
     resp = client.get(OVERVIEW_URL)
     assert resp.data["funding"] == [
         {
-            "amount": LATE_GTAS_CALCULATIONS["total_budgetary_resources_cpe"]
-            + QUARTERLY_GTAS_CALCULATIONS["total_budgetary_resources_cpe"],
+            "amount": LATE_GTAS_CALCULATIONS["total_budgetary_resources"]
+            + QUARTERLY_GTAS_CALCULATIONS["total_budgetary_resources"],
             "def_code": "M",
         }
     ]
@@ -141,9 +139,7 @@ def test_ignore_gtas_not_yet_revealed(
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH - 1, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["funding"] == [
-        {"amount": LATE_GTAS_CALCULATIONS["total_budgetary_resources_cpe"], "def_code": "M"}
-    ]
+    assert resp.data["funding"] == [{"amount": LATE_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"}]
     assert resp.data["total_budget_authority"] == LATE_GTAS_CALCULATIONS["total_budgetary_resources"]
     assert resp.data["spending"]["total_obligations"] == LATE_GTAS_CALCULATIONS["total_obligations"]
     assert resp.data["spending"]["total_outlays"] == LATE_GTAS_CALCULATIONS["total_outlays"]
@@ -156,17 +152,15 @@ def test_ignore_funding_for_unselected_defc(
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL + "?def_codes=M,A")
-    assert resp.data["funding"] == [
-        {"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources_cpe"], "def_code": "M"}
-    ]
+    assert resp.data["funding"] == [{"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"}]
     assert resp.data["total_budget_authority"] == YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"]
     assert resp.data["spending"]["total_obligations"] == YEAR_2_GTAS_CALCULATIONS["total_obligations"]
     assert resp.data["spending"]["total_outlays"] == YEAR_2_GTAS_CALCULATIONS["total_outlays"]
 
     resp = client.get(OVERVIEW_URL + "?def_codes=M,N")
     assert resp.data["funding"] == [
-        {"amount": Decimal("0.32"), "def_code": "M"},
-        {"amount": Decimal("0.32"), "def_code": "N"},
+        {"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"},
+        {"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "N"},
     ]
     assert resp.data["total_budget_authority"] == YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"] * 2
     assert resp.data["spending"]["total_obligations"] == YEAR_2_GTAS_CALCULATIONS["total_obligations"] * 2
@@ -179,7 +173,7 @@ def test_adds_budget_values(client, monkeypatch, helpers, defc_codes, basic_ref_
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data["funding"] == [
-        {"amount": OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_budgetary_resources_cpe"], "def_code": "M"}
+        {"amount": OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"}
     ]
     assert resp.data["total_budget_authority"] == OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_budgetary_resources"]
     assert resp.data["spending"]["total_obligations"] == OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_obligations"]
