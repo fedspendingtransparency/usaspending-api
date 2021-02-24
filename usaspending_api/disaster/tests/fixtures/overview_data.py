@@ -20,7 +20,9 @@ def calculate_values(input_dict):
     TOTAL_OBLIGATIONS = input_dict["obligations_incurred_total_cpe"] - (
         input_dict["deobligations_or_recoveries_or_refunds_from_prior_year_cpe"]
     )
-    TOTAL_OUTLAYS = input_dict["gross_outlay_amount_by_tas_cpe"] + input_dict["prior_year_paid_obligation_recoveries"]
+    TOTAL_OUTLAYS = (
+        input_dict["gross_outlay_amount_by_tas_cpe"] - input_dict["anticipated_prior_year_obligation_recoveries"]
+    )
 
     return {
         "total_budgetary_resources_cpe": to_decimal(input_dict["total_budgetary_resources_cpe"]),

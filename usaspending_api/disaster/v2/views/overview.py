@@ -120,10 +120,10 @@ class OverviewViewSet(DisasterBase):
         return (
             latest_gtas_of_each_year_queryset()
             .filter(disaster_emergency_fund_code__in=self.defc)
-            .values("gross_outlay_amount_by_tas_cpe", "prior_year_paid_obligation_recoveries")
-            .aggregate(total=(Sum("gross_outlay_amount_by_tas_cpe") + Sum("prior_year_paid_obligation_recoveries")))[
-                "total"
-            ]
+            .values("gross_outlay_amount_by_tas_cpe", "anticipated_prior_year_obligation_recoveries")
+            .aggregate(
+                total=(Sum("gross_outlay_amount_by_tas_cpe") - Sum("anticipated_prior_year_obligation_recoveries"))
+            )["total"]
         ) or 0.0
 
     @staticmethod
