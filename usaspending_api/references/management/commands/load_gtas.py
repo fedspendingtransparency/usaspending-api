@@ -41,29 +41,35 @@ DERIVED_COLUMNS_DYNAMIC = {
 
 
 class Command(mixins.ETLMixin, BaseCommand):
-    help = "Update GTAS aggregations used as domain data"
+    help = "Drop and recreate all GTAS reference data"
+
+    def handle(self, *args, **options):
+        logger.info("Starting ETL script")
+        self.process_data()
+        logger.info("GTAS ETL finished successfully!")
 
     @transaction.atomic()
-    def handle(self, *args, **options):
-        logger.info("Creating broker cursor")
+    def process_data(self):
         broker_cursor = connections["data_broker"].cursor()
 
-        logger.info("Running TOTAL_OBLIGATION_SQL")
+        logger.info("Extracting data from Broker")
         broker_cursor.execute(self.broker_fetch_sql())
-
-        logger.info("Getting total obligation values from cursor")
         total_obligation_values = dictfetchall(broker_cursor)
 
         logger.info("Deleting all existing GTAS total obligation records in website")
-        GTASSF133Balances.objects.all().delete()
+        deletes = GTASSF133Balances.objects.all().delete()
+        logger.info(f"Deleted {deletes[0]:,} records")
 
-        logger.info("Inserting GTAS total obligations records into website")
+        logger.info("Transforming new GTAS records")
         total_obligation_objs = [GTASSF133Balances(**values) for values in total_obligation_values]
-        GTASSF133Balances.objects.bulk_create(total_obligation_objs)
 
-        self._execute_dml_sql(self.tas_fk_sql(), "Populating TAS foreign keys")
+        logger.info("Loading new GTAS records into database")
+        new_rec_count = len(GTASSF133Balances.objects.bulk_create(total_obligation_objs))
+        logger.info(f"Loaded: {new_rec_count:,} records")
 
-        logger.info("GTAS loader finished successfully!")
+        load_rec = self._execute_dml_sql(self.tas_fk_sql(), "Populating TAS foreign keys")
+        logger.info(f"Set {load_rec:,} TAS FKs in GTAS table, {new_rec_count - load_rec:,} NULLs")
+        logger.info("Committing transaction to database")
 
     def broker_fetch_sql(self):
         return f"""
@@ -110,7 +116,10 @@ class Command(mixins.ETLMixin, BaseCommand):
         return "\n".join(simple_fields + inverted_fields + year_specific_fields)
 
     def tas_fk_sql(self):
-        return """UPDATE gtas_sf133_balances
-                    SET treasury_account_identifier = tas.treasury_account_identifier
-                    FROM treasury_appropriation_account tas
-                    WHERE tas.tas_rendering_label = gtas_sf133_balances.tas_rendering_label;"""
+        return """
+            UPDATE gtas_sf133_balances
+            SET treasury_account_identifier = tas.treasury_account_identifier
+            FROM treasury_appropriation_account tas
+            WHERE
+                tas.tas_rendering_label = gtas_sf133_balances.tas_rendering_label
+                AND gtas_sf133_balances.treasury_account_identifier IS DISTINCT FROM tas.treasury_account_identifier"""
