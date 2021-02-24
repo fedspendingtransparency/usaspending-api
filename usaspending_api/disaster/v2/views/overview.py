@@ -55,26 +55,21 @@ class OverviewViewSet(DisasterBase):
             .annotate(
                 def_code=F("disaster_emergency_fund_code"),
                 amount=Sum("total_budgetary_resources_cpe"),
-                unobligated_balance=Sum("budget_authority_unobligated_balance_brought_forward_cpe"),
-                deobligations=Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
-                obligation_recoveries=Sum("prior_year_paid_obligation_recoveries"),
+                total_budget_authority=(
+                    Sum("total_budgetary_resources_cpe") - (
+                        Sum("budget_authority_unobligated_balance_brought_forward_cpe") +
+                        Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe") +
+                        Sum("prior_year_paid_obligation_recoveries")
+                    )
+                )
             )
-            .values("def_code", "amount", "unobligated_balance", "deobligations", "anticipated_recoveries")
+            .values("def_code", "amount", "total_budget_authority")
         )
 
-        total_amount = self.sum_values(funding, "amount")
-        total_unobligated_balance = self.sum_values(funding, "unobligated_balance")
-        total_deobligations = self.sum_values(funding, "deobligations")
-        total_obligation_recoveries = self.sum_values(funding, "obligation_recoveries")
-
-        total_budget_authority = total_amount - (
-            total_unobligated_balance + total_deobligations + total_obligation_recoveries
-        )
+        total_budget_authority = self.sum_values(funding, "total_budget_authority")
 
         for entry in funding:
-            del entry["unobligated_balance"]
-            del entry["deobligations"]
-            del entry["anticipated_recoveries"]
+            del entry["total_budget_authority"]
 
         return funding, total_budget_authority
 

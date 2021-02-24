@@ -15,7 +15,7 @@ def calculate_values(input_dict):
     TOTAL_BUDGETARY_RESOURCES = input_dict["total_budgetary_resources_cpe"] - (
         input_dict["budget_authority_unobligated_balance_brought_forward_cpe"]
         + input_dict["deobligations_or_recoveries_or_refunds_from_prior_year_cpe"]
-        + input_dict["anticipated_prior_year_obligation_recoveries"]
+        + input_dict["prior_year_paid_obligation_recoveries"]
     )
     TOTAL_OBLIGATIONS = input_dict["obligations_incurred_total_cpe"] - (
         input_dict["deobligations_or_recoveries_or_refunds_from_prior_year_cpe"]
