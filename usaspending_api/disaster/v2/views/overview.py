@@ -57,7 +57,7 @@ class OverviewViewSet(DisasterBase):
                 amount=Sum("total_budgetary_resources_cpe"),
                 unobligated_balance=Sum("budget_authority_unobligated_balance_brought_forward_cpe"),
                 deobligations=Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
-                anticipated_recoveries=Sum("anticipated_prior_year_obligation_recoveries"),
+                obligation_recoveries=Sum("prior_year_paid_obligation_recoveries"),
             )
             .values("def_code", "amount", "unobligated_balance", "deobligations", "anticipated_recoveries")
         )
@@ -65,10 +65,10 @@ class OverviewViewSet(DisasterBase):
         total_amount = self.sum_values(funding, "amount")
         total_unobligated_balance = self.sum_values(funding, "unobligated_balance")
         total_deobligations = self.sum_values(funding, "deobligations")
-        total_anticipated_recoveries = self.sum_values(funding, "anticipated_recoveries")
+        total_obligation_recoveries = self.sum_values(funding, "obligation_recoveries")
 
         total_budget_authority = total_amount - (
-            total_unobligated_balance + total_deobligations + total_anticipated_recoveries
+            total_unobligated_balance + total_deobligations + total_obligation_recoveries
         )
 
         for entry in funding:
