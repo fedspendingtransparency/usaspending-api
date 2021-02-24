@@ -19,7 +19,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
             "current_total_budget_authority_amount",
             "fiscal_year",
             "missing_tas_accounts_count",
-            "missing_tas_accounts_total",
+            "tas_accounts_total",
             "obligation_difference",
             "percent_of_total_budgetary_resources",
             "recent_publication_date",
@@ -84,6 +84,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                         fiscal_period=OuterRef("fiscal_period"),
                         toptier_code=OuterRef("toptier_code"),
                     )
+                    .exclude(obligated_amount=0)
                     .annotate(count=Func(F("tas_rendering_label"), function="COUNT"))
                     .values("count"),
                     output_field=IntegerField(),
@@ -113,6 +114,10 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                 "tas_obligations",
                 "tas_obligation_not_in_gtas_total",
                 "missing_tas_accounts",
+                "unlinked_procurement_c_awards",
+                "unlinked_assistance_c_awards",
+                "unlinked_procurement_d_awards",
+                "unlinked_assistance_d_awards",
             )
         )
         return self.format_results(result_list)
@@ -136,18 +141,22 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                     "missing_tas_accounts_count": result["missing_tas_accounts"],
                 },
                 "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
-                "unlinked_contract_award_count": 0,
-                "unlinked_assistance_award_count": 0,
+                "unlinked_contract_award_count": result["unlinked_procurement_c_awards"]
+                + result["unlinked_procurement_d_awards"],
+                "unlinked_assistance_award_count": result["unlinked_assistance_c_awards"]
+                + result["unlinked_assistance_d_awards"],
                 "assurance_statement_url": self.create_assurance_statement_url(result),
             }
             for result in result_list
         ]
+        if self.pagination.sort_key == "fiscal_year":
+            self.pagination.secondary_sort_key = "fiscal_period"
         results = sorted(
             results,
             key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key]
             if (
                 self.pagination.sort_key == "missing_tas_accounts_count"
-                or self.pagination.sort_key == "missing_tas_accounts_total"
+                or self.pagination.sort_key == "tas_accounts_total"
                 or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
             )
             else (x[self.pagination.sort_key], x[self.pagination.secondary_sort_key])

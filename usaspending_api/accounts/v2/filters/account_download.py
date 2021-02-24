@@ -47,7 +47,7 @@ from usaspending_api.submissions.helpers import (
     get_submission_ids_for_periods,
 )
 
-AWARD_URL = f"{HOST}/#/award/" if "localhost" in HOST else f"https://{HOST}/#/award/"
+AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
 
 def account_download_filter(account_type, download_table, filters, account_level="treasury_account"):

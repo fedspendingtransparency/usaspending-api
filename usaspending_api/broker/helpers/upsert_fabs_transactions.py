@@ -18,7 +18,7 @@ from usaspending_api.etl.management.load_base import load_data_into_model, forma
 from usaspending_api.references.models import Agency
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 BATCH_FETCH_SIZE = 25000
 

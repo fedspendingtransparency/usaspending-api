@@ -9,7 +9,7 @@ from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.etl.operations.subaward.update_city_county import update_subaward_city_county
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 class Command(mixins.ETLMixin, BaseCommand):

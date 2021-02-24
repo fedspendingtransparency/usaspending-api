@@ -16,7 +16,7 @@ FILE_NAME = "program_activity.csv"
 
 class Command(BaseCommand):
     help = "Loads program activity codes."
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     def add_arguments(self, parser):
         parser.add_argument("file", nargs="?", help="the file to load")

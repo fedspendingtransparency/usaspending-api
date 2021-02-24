@@ -144,7 +144,10 @@ def elasticsearch_transaction_index(db):
     See test_demo_elasticsearch_tests.py for sample usage.
     """
     elastic_search_index = TestElasticSearchIndex("transaction")
-    with override_settings(ES_TRANSACTIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
+    with override_settings(
+        ES_TRANSACTIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
+        ES_TRANSACTIONS_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
+    ):
         yield elastic_search_index
         elastic_search_index.delete_index()
 
@@ -159,7 +162,10 @@ def elasticsearch_award_index(db):
     See test_award_index_elasticsearch_tests.py for sample usage.
     """
     elastic_search_index = TestElasticSearchIndex("award")
-    with override_settings(ES_AWARDS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
+    with override_settings(
+        ES_AWARDS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
+        ES_AWARDS_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
+    ):
         yield elastic_search_index
         elastic_search_index.delete_index()
 
@@ -174,7 +180,10 @@ def elasticsearch_account_index(db):
     See test_account_index_elasticsearch_tests.py for sample usage.
     """
     elastic_search_index = TestElasticSearchIndex("covid19-faba")
-    with override_settings(ES_COVID19_FABA_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix):
+    with override_settings(
+        ES_COVID19_FABA_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
+        ES_COVID19_FABA_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
+    ):
         yield elastic_search_index
         elastic_search_index.delete_index()
 
