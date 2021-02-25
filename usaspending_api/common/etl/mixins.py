@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Union
 from usaspending_api.common.etl import ETLObjectBase
 from usaspending_api.common.etl.operations import delete_obsolete_rows, insert_missing_rows, update_changed_rows
 from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
-from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
+from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 
 
 class ETLMixin:
