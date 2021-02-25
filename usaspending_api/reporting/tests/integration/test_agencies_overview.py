@@ -371,7 +371,7 @@ def test_pagination(setup_test_data, client):
             "toptier_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
-            "recent_publication_date": None,
+            "recent_publication_date": "2021-07-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 20.0,
@@ -531,7 +531,7 @@ def test_fiscal_year_period_selection(setup_test_data, client):
             "toptier_code": "123",
             "agency_id": 1,
             "current_total_budget_authority_amount": 22478810.97,
-            "recent_publication_date": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
