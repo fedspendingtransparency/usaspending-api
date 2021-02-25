@@ -188,7 +188,7 @@ def test_award_obligation_adds_values(
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data["spending"]["award_obligations"] == Decimal("2.3")
-    assert resp.data["spending"]["award_outlays"] == Decimal("1.15")
+    assert resp.data["spending"]["award_outlays"] == Decimal("1.75")
 
 
 @pytest.mark.django_db
@@ -199,7 +199,7 @@ def test_faba_excludes_non_selected_defc(
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL + "?def_codes=M,N")
     assert resp.data["spending"]["award_obligations"] == Decimal("1.6")
-    assert resp.data["spending"]["award_outlays"] == Decimal("0.8")
+    assert resp.data["spending"]["award_outlays"] == Decimal("1.1")
 
 
 @pytest.mark.django_db
@@ -209,7 +209,7 @@ def test_award_outlays_sum_multiple_years(
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["spending"]["award_outlays"] == Decimal("1.15")
+    assert resp.data["spending"]["award_outlays"] == Decimal("1.65")
 
 
 @pytest.mark.django_db
@@ -219,7 +219,7 @@ def test_award_outlays_doesnt_sum_multiple_periods(
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["spending"]["award_outlays"] == Decimal("0.8")
+    assert resp.data["spending"]["award_outlays"] == Decimal("1.0")
 
 
 @pytest.mark.django_db
@@ -229,4 +229,4 @@ def test_award_outlays_ignores_future_faba(
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["spending"]["award_outlays"] == Decimal("0.35")
+    assert resp.data["spending"]["award_outlays"] == Decimal("0.55")
