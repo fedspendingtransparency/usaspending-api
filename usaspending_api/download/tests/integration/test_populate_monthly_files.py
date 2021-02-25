@@ -602,12 +602,14 @@ def test_agency_no_data(client, monthly_download_data, monkeypatch):
 
 
 def test_fiscal_years(client, monthly_download_data, monkeypatch):
-    call_command("populate_monthly_files", "--local", "--clobber")
+    call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
+    call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2004", "--local", "--clobber")
     file_list = os.listdir("csv_downloads")
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
-    for fiscal_year in range(2001, 2021):
-        assert f"FY{fiscal_year}_All_Contracts_Full_{formatted_date}.zip" in file_list
-        assert f"FY{fiscal_year}_All_Assistance_Full_{formatted_date}.zip" in file_list
+    assert f"FY2004_001_Contracts_Full_{formatted_date}.zip" in file_list
+    assert f"FY2004_001_Assistance_Full_{formatted_date}.zip" in file_list
+    assert f"FY2020_001_Contracts_Full_{formatted_date}.zip" in file_list
+    assert f"FY2020_001_Assistance_Full_{formatted_date}.zip" in file_list
     delete_files()
 
 
