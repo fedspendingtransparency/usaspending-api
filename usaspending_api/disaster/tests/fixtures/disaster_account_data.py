@@ -292,8 +292,11 @@ def disaster_account_data():
         program_activity=pa1,
         object_class=oc1,
         disaster_emergency_fund=defc_l,
-        obligations_incurred_by_program_object_class_cpe=1,
-        gross_outlay_amount_by_program_object_class_cpe=10000000,
+        obligations_incurred_by_program_object_class_cpe=10,
+        gross_outlay_amount_by_program_object_class_cpe=9850000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-9,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=50000,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=100000,
     )
     mommy.make(
         fabpaoc,
@@ -303,8 +306,11 @@ def disaster_account_data():
         program_activity=pa2,
         object_class=oc2,
         disaster_emergency_fund=defc_m,
-        obligations_incurred_by_program_object_class_cpe=10,
-        gross_outlay_amount_by_program_object_class_cpe=1000000,
+        obligations_incurred_by_program_object_class_cpe=100,
+        gross_outlay_amount_by_program_object_class_cpe=985000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-90,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=5000,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=10000,
     )
     mommy.make(
         fabpaoc,
@@ -314,8 +320,11 @@ def disaster_account_data():
         program_activity=pa3,
         object_class=oc3,
         disaster_emergency_fund=defc_p,
-        obligations_incurred_by_program_object_class_cpe=100,
-        gross_outlay_amount_by_program_object_class_cpe=100000,
+        obligations_incurred_by_program_object_class_cpe=1000,
+        gross_outlay_amount_by_program_object_class_cpe=98500,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-900,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=500,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=1000,
     )
     mommy.make(
         fabpaoc,
@@ -325,8 +334,11 @@ def disaster_account_data():
         program_activity=pa4,
         object_class=oc4,
         disaster_emergency_fund=defc_o,
-        obligations_incurred_by_program_object_class_cpe=1000,
-        gross_outlay_amount_by_program_object_class_cpe=10000,
+        obligations_incurred_by_program_object_class_cpe=10000,
+        gross_outlay_amount_by_program_object_class_cpe=9850,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-9000,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=50,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=100,
     )
     mommy.make(
         fabpaoc,
@@ -336,8 +348,11 @@ def disaster_account_data():
         program_activity=pa4,
         object_class=oc3,
         disaster_emergency_fund=defc_n,
-        obligations_incurred_by_program_object_class_cpe=10000,
-        gross_outlay_amount_by_program_object_class_cpe=1000,
+        obligations_incurred_by_program_object_class_cpe=100000,
+        gross_outlay_amount_by_program_object_class_cpe=985,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-90000,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=5,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=10,
     )
     mommy.make(
         fabpaoc,
@@ -347,19 +362,11 @@ def disaster_account_data():
         program_activity=pa4,
         object_class=oc6,
         disaster_emergency_fund=defc_n,
-        obligations_incurred_by_program_object_class_cpe=100000,
-        gross_outlay_amount_by_program_object_class_cpe=100,
-    )
-    mommy.make(
-        fabpaoc,
-        final_of_fy=True,
-        treasury_account=tas3,
-        submission=sub4,
-        program_activity=pa4,
-        object_class=oc4,
-        disaster_emergency_fund=defc_o,
         obligations_incurred_by_program_object_class_cpe=1000000,
-        gross_outlay_amount_by_program_object_class_cpe=10,
+        gross_outlay_amount_by_program_object_class_cpe=98.5,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-900000,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0.5,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=1,
     )
     mommy.make(
         fabpaoc,
@@ -370,7 +377,24 @@ def disaster_account_data():
         object_class=oc4,
         disaster_emergency_fund=defc_o,
         obligations_incurred_by_program_object_class_cpe=10000000,
-        gross_outlay_amount_by_program_object_class_cpe=1,
+        gross_outlay_amount_by_program_object_class_cpe=8.5,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-9000000,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0.5,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=1,
+    )
+    mommy.make(
+        fabpaoc,
+        final_of_fy=True,
+        treasury_account=tas3,
+        submission=sub4,
+        program_activity=pa4,
+        object_class=oc4,
+        disaster_emergency_fund=defc_o,
+        obligations_incurred_by_program_object_class_cpe=100000000,
+        gross_outlay_amount_by_program_object_class_cpe=0.85,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-90000000,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0.05,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0.1,
     )
     mommy.make(
         fabpaoc,
@@ -380,8 +404,11 @@ def disaster_account_data():
         program_activity=pa5,
         object_class=oc5,
         disaster_emergency_fund=defc_p,
-        obligations_incurred_by_program_object_class_cpe=0,
-        gross_outlay_amount_by_program_object_class_cpe=0,
+        obligations_incurred_by_program_object_class_cpe=100,
+        gross_outlay_amount_by_program_object_class_cpe=100,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-100,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-50,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-50,
     )
     mommy.make(
         fabpaoc,
@@ -389,8 +416,11 @@ def disaster_account_data():
         treasury_account=tas5,
         submission=sub1,
         disaster_emergency_fund=None,
-        obligations_incurred_by_program_object_class_cpe=10,
-        gross_outlay_amount_by_program_object_class_cpe=1000000,
+        obligations_incurred_by_program_object_class_cpe=5,
+        gross_outlay_amount_by_program_object_class_cpe=60000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-5,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=930000,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=1000,
     )
     mommy.make(
         fabpaoc,
@@ -398,8 +428,11 @@ def disaster_account_data():
         treasury_account=tas6,
         submission=sub1,
         disaster_emergency_fund=None,
-        obligations_incurred_by_program_object_class_cpe=100,
-        gross_outlay_amount_by_program_object_class_cpe=100000,
+        obligations_incurred_by_program_object_class_cpe=125,
+        gross_outlay_amount_by_program_object_class_cpe=50000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-25,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=25000,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=25000,
     )
 
     a1 = mommy.make(
@@ -580,8 +613,10 @@ def disaster_account_data():
         tas_rendering_label="003-X-0000-000",
         treasury_account_identifier=tas3,
         budget_authority_appropriation_amount_cpe=2398472389.78,
-        total_budgetary_resources_cpe=23984723890.78,
+        total_budgetary_resources_cpe=23986200349.56,
         budget_authority_unobligated_balance_brought_forward_cpe=1000,
+        deobligations_or_recoveries_or_refunds_from_prior_year_cpe=1238972.78,
+        prior_year_paid_obligation_recoveries=237486,
         fiscal_period=12,
         fiscal_year=2021,
     )
@@ -591,8 +626,10 @@ def disaster_account_data():
         tas_rendering_label="002-X-0000-000",
         treasury_account_identifier=tas2,
         budget_authority_appropriation_amount_cpe=892743123.12,
-        total_budgetary_resources_cpe=8927431230.12,
+        total_budgetary_resources_cpe=8927768300.12,
         budget_authority_unobligated_balance_brought_forward_cpe=2000,
+        deobligations_or_recoveries_or_refunds_from_prior_year_cpe=238746,
+        prior_year_paid_obligation_recoveries=98324,
         fiscal_period=8,
         fiscal_year=2022,
     )

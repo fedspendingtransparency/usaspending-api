@@ -95,7 +95,8 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                     Case(
                         When(
                             self.final_period_submission_query_filters,
-                            then=F("obligations_incurred_by_program_object_class_cpe"),
+                            then=F("obligations_incurred_by_program_object_class_cpe")
+                            + F("deobligations_recoveries_refund_pri_program_object_class_cpe"),
                         ),
                         default=Value(0),
                     )
@@ -107,7 +108,9 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                     Case(
                         When(
                             self.final_period_submission_query_filters,
-                            then=F("gross_outlay_amount_by_program_object_class_cpe"),
+                            then=F("gross_outlay_amount_by_program_object_class_cpe")
+                            + F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe")
+                            + F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"),
                         ),
                         default=Value(0),
                     )
