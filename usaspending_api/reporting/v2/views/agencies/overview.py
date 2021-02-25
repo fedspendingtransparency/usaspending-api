@@ -183,7 +183,9 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "obligation_difference": result["obligation_difference"],
                 "unlinked_contract_award_count": result["unlinked_contract_award_count"],
                 "unlinked_assistance_award_count": result["unlinked_assistance_award_count"],
-                "assurance_statement_url": self.create_assurance_statement_url(result),
+                "assurance_statement_url": self.create_assurance_statement_url(result)
+                if result["recent_publication_date"]
+                else None,
             }
             for result in result_list
         ]
