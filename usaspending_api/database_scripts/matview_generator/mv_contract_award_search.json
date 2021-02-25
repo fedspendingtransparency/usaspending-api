@@ -205,7 +205,7 @@
     "  SELECT",
     "    faba.award_id,",
     "    ARRAY_AGG(DISTINCT disaster_emergency_fund_code ORDER BY disaster_emergency_fund_code) AS disaster_emergency_fund_codes,",
-    "    COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe + ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe + ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe END), 0) AS gross_outlay_amount_by_award_cpe,",
+    "    COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe + faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe + faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe END), 0) AS gross_outlay_amount_by_award_cpe,",
     "    COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount",
     "  FROM",
     "    financial_accounts_by_awards faba",
