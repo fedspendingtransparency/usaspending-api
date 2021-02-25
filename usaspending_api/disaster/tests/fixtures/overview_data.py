@@ -254,11 +254,6 @@ def multi_period_faba_with_future(defc_codes):
     _year_3_faba_with_value(2.2)
 
 
-@pytest.fixture
-def faba_with_values(defc_codes):
-    _year_1_faba(1.6, "M")
-    _year_1_faba(0.7, "M")
-
 def _year_1_faba(value, code):
     submission = mommy.make(
         "submissions.SubmissionAttributes",
