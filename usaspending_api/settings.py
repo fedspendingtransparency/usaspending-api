@@ -181,36 +181,37 @@ INTERNAL_IPS = ()
 
 # Replace below param with enabled=True during env-deploys to turn on
 ddtrace.tracer.configure(enabled=False)
-ddtrace.config.django["service_name"] = "api"
-ddtrace.config.django["analytics_enabled"] = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
-ddtrace.config.django["analytics_sample_rate"] = 1.0  # Including 100% of traces in sample
-ddtrace.config.django["trace_query_string"] = True
-# Distributed tracing only needed if picking up disjoint traces by HTTP Header value
-ddtrace.config.django["distributed_tracing_enabled"] = False
-# Trace HTTP Request or Response Headers listed in this whitelist
-ddtrace.config.trace_headers(
-    [
-        "content-length",  # req and resp
-        "content-type",  # req and resp
-        "host",
-        "origin",
-        "referer",
-        "ua-is-bot",
-        "user-agent",
-        "x-forwarded-for",
-        "x-requested-with",
-        # Response Headers
-        "allow",
-        "cache-trace",
-        "is-dynamically-rendered",
-        "key",  # cache key
-        "strict-transport-security",
-    ]
-)
-# patch_all() captures traces from integrated components' libraries by patching them. See:
-# - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
-# - Integrated Libs: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
-ddtrace.patch_all()
+if ddtrace.tracer.enabled:
+    ddtrace.config.django["service_name"] = "api"
+    ddtrace.config.django["analytics_enabled"] = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
+    ddtrace.config.django["analytics_sample_rate"] = 1.0  # Including 100% of traces in sample
+    ddtrace.config.django["trace_query_string"] = True
+    # Distributed tracing only needed if picking up disjoint traces by HTTP Header value
+    ddtrace.config.django["distributed_tracing_enabled"] = False
+    # Trace HTTP Request or Response Headers listed in this whitelist
+    ddtrace.config.trace_headers(
+        [
+            "content-length",  # req and resp
+            "content-type",  # req and resp
+            "host",
+            "origin",
+            "referer",
+            "ua-is-bot",
+            "user-agent",
+            "x-forwarded-for",
+            "x-requested-with",
+            # Response Headers
+            "allow",
+            "cache-trace",
+            "is-dynamically-rendered",
+            "key",  # cache key
+            "strict-transport-security",
+        ]
+    )
+    # patch_all() captures traces from integrated components' libraries by patching them. See:
+    # - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
+    # - Integrated Libs: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
+    ddtrace.patch_all()
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
