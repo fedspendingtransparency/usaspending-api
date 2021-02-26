@@ -110,9 +110,10 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         )
         sum_covid_outlay = A(
             "sum",
-            script="doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? ( ( doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].value : 0) + (doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0) + (doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0",
-            # field="gross_outlay_amount_by_award_cpe",
-            # script={"source": "doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? _value : 0"},
+            script="""doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? (
+             ( doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].value : 0)
+              + (doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0)
+              + (doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0""",
         )
         sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         count_awards_by_dim = A("reverse_nested", **{})
@@ -168,8 +169,9 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         )
         sub_sum_covid_outlay = A(
             "sum",
-            # field="financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
-            script="doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? ( ( doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].value : 0) + (doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0) + (doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0",
+            script="""doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? ( ( doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].value : 0)
+             + (doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0)
+             + (doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0""",
         )
         sub_sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         sub_count_awards_by_dim = A("reverse_nested", **{})
