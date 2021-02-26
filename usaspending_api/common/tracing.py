@@ -11,9 +11,19 @@ from ddtrace.ext import SpanTypes
 from ddtrace.ext.priority import USER_REJECT
 from ddtrace.internal.writer import AgentWriter
 from ddtrace.span import Span
-from typing import Optional
+from typing import Optional, Callable
 
 _logger = logging.getLogger(__name__)
+
+
+def _activate_trace_filter(filter_class: Callable) -> None:
+    if not hasattr(tracer, "_filters"):
+        _logger.warning("Datadog tracer client no longer has attribute '_filters' on which to append a span filter")
+    else:
+        if tracer._filters:
+            tracer._filters.append(filter_class())
+        else:
+            tracer._filters = [filter_class()]
 
 
 class DatadogEagerlyDropTraceFilter:
@@ -25,15 +35,9 @@ class DatadogEagerlyDropTraceFilter:
 
     EAGERLY_DROP_TRACE_KEY = "EAGERLY_DROP_TRACE"
 
-    @staticmethod
-    def activate():
-        if not hasattr(tracer, "_filters"):
-            _logger.warning("Datadog tracer client no longer has attribute '_filters' on which to append a span filter")
-        else:
-            if tracer._filters:
-                tracer._filters.append(DatadogEagerlyDropTraceFilter())
-            else:
-                tracer._filters = [DatadogEagerlyDropTraceFilter()]
+    @classmethod
+    def activate(cls):
+        _activate_trace_filter(cls)
 
     @classmethod
     def drop(cls, span: Span):
@@ -100,7 +104,11 @@ class SubprocessTrace:
 class DatadogLoggingTraceFilter:
     """Debugging utility filter that can log trace spans"""
 
-    _logger = logging.getLogger(__name__)
+    _log = logging.getLogger(f"{__name__}.DatadogLoggingTraceFilter")
+
+    @classmethod
+    def activate(cls):
+        _activate_trace_filter(cls)
 
     def process_trace(self, trace):
         logged = False
@@ -109,7 +117,7 @@ class DatadogLoggingTraceFilter:
             trace_id = span.trace_id or "???"
             if not span.get_tag(DatadogEagerlyDropTraceFilter.EAGERLY_DROP_TRACE_KEY):
                 logged = True
-                self._logger.info(f"----[SPAN#{trace_id}]" + "-" * 40 + f"\n{span.pprint()}")
+                self._log.info(f"----[SPAN#{trace_id}]" + "-" * 40 + f"\n{span.pprint()}")
         if logged:
-            self._logger.info(f"====[END TRACE#{trace_id}]" + "=" * 35)
+            self._log.info(f"====[END TRACE#{trace_id}]" + "=" * 35)
         return trace
