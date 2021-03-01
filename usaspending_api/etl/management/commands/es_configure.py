@@ -110,12 +110,3 @@ class Command(BaseCommand):
             json_to_dict = json.load(f)
 
         return json_to_dict
-
-
-def retrieve_index_template(template):
-    """This function is used for test configuration"""
-    with open(str(FILES[template])) as f:
-        mapping_dict = json.load(f)
-        template = json.dumps(mapping_dict)
-
-    return template
