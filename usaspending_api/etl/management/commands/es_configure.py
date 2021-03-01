@@ -13,7 +13,6 @@ CURL_STATEMENT = 'curl -XPUT "{url}" -H "Content-Type: application/json" -d \'{d
 CURL_COMMANDS = {
     "template": "{host}/_template/{name}?pretty",
     "cluster": "{host}/_cluster/settings?pretty",
-    "settings": "{host}/_settings?pretty",
 }
 
 FILES = {
@@ -65,12 +64,11 @@ class Command(BaseCommand):
         else:
             raise RuntimeError(f"No config for {options['load_type']}")
 
-        cluster, index_settings = self.get_elasticsearch_settings()
+        cluster = self.get_elasticsearch_settings()
         template = self.get_index_template()
 
-        if not options["template_only"]:
+        if not options["template_only"] and cluster:
             self.run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=settings.ES_HOSTNAME)
-            self.run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=settings.ES_HOSTNAME)
 
         template_name = "{type}_template".format(type=self.load_type[:-1])
 
@@ -92,8 +90,7 @@ class Command(BaseCommand):
 
     def get_elasticsearch_settings(self):
         es_config = self.return_json_from_file(FILES["settings"])
-        es_config["settings"]["index.max_result_window"] = self.max_result_window
-        return es_config["cluster"], es_config["settings"]
+        return es_config["cluster"]
 
     def get_index_template(self):
         template = self.return_json_from_file(FILES[self.template])
