@@ -52,15 +52,15 @@ class Command(BaseCommand):
         if options["load_type"] in ("award", "awards"):
             self.index_pattern = f"*{settings.ES_AWARDS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_AWARDS_MAX_RESULT_WINDOW
-            self.template = "award_template"
+            self.template_name = "award_template"
         elif options["load_type"] in ("transaction", "transactions"):
             self.index_pattern = f"*{settings.ES_TRANSACTIONS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
-            self.template = "transaction_template"
+            self.template_name = "transaction_template"
         elif options["load_type"] == "covid19-faba":
             self.index_pattern = f"*{settings.ES_COVID19_FABA_NAME_SUFFIX}"
             self.max_result_window = settings.ES_COVID19_FABA_MAX_RESULT_WINDOW
-            self.template = "covid19_faba_template"
+            self.template_name = "covid19_faba_template"
         else:
             raise RuntimeError(f"No config for {options['load_type']}")
 
@@ -70,10 +70,8 @@ class Command(BaseCommand):
         if not options["template_only"] and cluster:
             self.run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=settings.ES_HOSTNAME)
 
-        template_name = "{type}_template".format(type=self.load_type[:-1])
-
         self.run_curl_cmd(
-            payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name=template_name
+            payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name=self.template_name
         )
 
         logger.info(f"ES Configure took {perf_counter() - start:.2f}s")
@@ -93,7 +91,7 @@ class Command(BaseCommand):
         return es_config["cluster"]
 
     def get_index_template(self):
-        template = self.return_json_from_file(FILES[self.template])
+        template = self.return_json_from_file(FILES[self.template_name])
         template["index_patterns"] = [self.index_pattern]
         template["settings"]["index.max_result_window"] = self.max_result_window
         return template
