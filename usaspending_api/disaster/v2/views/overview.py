@@ -92,7 +92,13 @@ class OverviewViewSet(DisasterBase):
         return (
             latest_faba_of_each_year_queryset()
             .filter(disaster_emergency_fund__in=self.defc)
-            .aggregate(total=Sum("gross_outlay_amount_by_award_cpe"))["total"]
+            .aggregate(
+                total=(
+                    Sum("gross_outlay_amount_by_award_cpe")
+                    + Sum("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe")
+                    + Sum("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe")
+                )
+            )["total"]
         ) or 0.0
 
     def total_obligations(self):

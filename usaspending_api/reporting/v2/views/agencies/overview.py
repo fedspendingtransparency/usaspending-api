@@ -156,8 +156,13 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "unlinked_contract_award_count",
                 "unlinked_assistance_award_count",
             )
-            .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
         )
+
+        if self.pagination.sort_order == "desc":
+            result_list = result_list.order_by(F(self.pagination.sort_key).desc(nulls_last=True))
+        else:
+            result_list = result_list.order_by(F(self.pagination.sort_key).asc(nulls_last=True))
+
         return self.format_results(result_list)
 
     def format_results(self, result_list):
@@ -183,7 +188,9 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
                 "obligation_difference": result["obligation_difference"],
                 "unlinked_contract_award_count": result["unlinked_contract_award_count"],
                 "unlinked_assistance_award_count": result["unlinked_assistance_award_count"],
-                "assurance_statement_url": self.create_assurance_statement_url(result),
+                "assurance_statement_url": self.create_assurance_statement_url(result)
+                if result["recent_publication_date"]
+                else None,
             }
             for result in result_list
         ]

@@ -13,7 +13,6 @@ CURL_STATEMENT = 'curl -XPUT "{url}" -H "Content-Type: application/json" -d \'{d
 CURL_COMMANDS = {
     "template": "{host}/_template/{name}?pretty",
     "cluster": "{host}/_cluster/settings?pretty",
-    "settings": "{host}/_settings?pretty",
 }
 
 FILES = {
@@ -53,29 +52,26 @@ class Command(BaseCommand):
         if options["load_type"] in ("award", "awards"):
             self.index_pattern = f"*{settings.ES_AWARDS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_AWARDS_MAX_RESULT_WINDOW
-            self.template = "award_template"
+            self.template_name = "award_template"
         elif options["load_type"] in ("transaction", "transactions"):
             self.index_pattern = f"*{settings.ES_TRANSACTIONS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
-            self.template = "transaction_template"
+            self.template_name = "transaction_template"
         elif options["load_type"] == "covid19-faba":
             self.index_pattern = f"*{settings.ES_COVID19_FABA_NAME_SUFFIX}"
             self.max_result_window = settings.ES_COVID19_FABA_MAX_RESULT_WINDOW
-            self.template = "covid19_faba_template"
+            self.template_name = "covid19_faba_template"
         else:
             raise RuntimeError(f"No config for {options['load_type']}")
 
-        cluster, index_settings = self.get_elasticsearch_settings()
+        cluster = self.get_elasticsearch_settings()
         template = self.get_index_template()
 
-        if not options["template_only"]:
+        if not options["template_only"] and cluster:
             self.run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=settings.ES_HOSTNAME)
-            self.run_curl_cmd(payload=index_settings, url=CURL_COMMANDS["settings"], host=settings.ES_HOSTNAME)
-
-        template_name = "{type}_template".format(type=self.load_type[:-1])
 
         self.run_curl_cmd(
-            payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name=template_name
+            payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name=self.template_name
         )
 
         logger.info(f"ES Configure took {perf_counter() - start:.2f}s")
@@ -92,11 +88,10 @@ class Command(BaseCommand):
 
     def get_elasticsearch_settings(self):
         es_config = self.return_json_from_file(FILES["settings"])
-        es_config["settings"]["index.max_result_window"] = self.max_result_window
-        return es_config["cluster"], es_config["settings"]
+        return es_config["cluster"]
 
     def get_index_template(self):
-        template = self.return_json_from_file(FILES[self.template])
+        template = self.return_json_from_file(FILES[self.template_name])
         template["index_patterns"] = [self.index_pattern]
         template["settings"]["index.max_result_window"] = self.max_result_window
         return template
@@ -115,12 +110,3 @@ class Command(BaseCommand):
             json_to_dict = json.load(f)
 
         return json_to_dict
-
-
-def retrieve_index_template(template):
-    """This function is used for test configuration"""
-    with open(str(FILES[template])) as f:
-        mapping_dict = json.load(f)
-        template = json.dumps(mapping_dict)
-
-    return template
