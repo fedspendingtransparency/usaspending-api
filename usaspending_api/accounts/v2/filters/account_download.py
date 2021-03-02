@@ -186,8 +186,6 @@ def generate_treasury_account_query(queryset, account_type, tas_id, filters):
         "submission_period": get_fyp_or_q_notation("submission"),
         "gross_outlay_amount": generate_gross_outlay_amount_derived_field(filters, account_type),
         "gross_outlay_amount_fyb_to_period_end": generate_gross_outlay_amount_derived_field(filters, account_type),
-        "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe": generate_ussgl487200_derived_field(filters),
-        "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe": generate_ussgl497200_derived_field(filters),
     }
 
     lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
