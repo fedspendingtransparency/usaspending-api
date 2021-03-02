@@ -262,13 +262,14 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     (8, 3, 2, '1101', 88888, 888880, -88, -888, 'L'),
                     (9, 3, 2, '1101', 99999, 999990, -99, -999, 'L'),
                     (10, 4, 2, '1101', 10101, 101010, -10, -101, null),
-                    (11, 5, 2, '1101', 11111, 111110, -11, -111, 'B'),
+                    (11, 5, 2, '1101', 11111, 111110, 0, 0, 'B'),
                     (12, 5, 2, '1101', null, null, 0, 0, 'M'), -- this should not load because of 0/null values
                     (13, 5, 2, '1101', 0, 0, null, 0, 'M'), -- this should not load because of 0/null values
                     (14, 5, 2, '1101', null, 0, null, 0, 'M'), -- this should not load because of 0/null values
                     (15, 5, 2, '1101', 0, null, 0, null, 'M'), -- this should not load because of 0/null values
                     (16, 6, 2, '1101', 12121, 121210, -12, -121, 'L'),
-                    (17, 7, 2, '1101', 13131, 131310, -13, -131, 'N')
+                    (17, 7, 2, '1101', 13131, 131310, -13, -131, 'N'),
+                    (18, 5, 2, '1101', 0, 0, 0, -1010, 'N')
                 )
                 """
             )
@@ -348,7 +349,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         assert SubmissionAttributes.objects.count() == 5
         assert AppropriationAccountBalances.objects.count() == 5
         assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 7
-        assert FinancialAccountsByAwards.objects.count() == 11
+        assert FinancialAccountsByAwards.objects.count() == 12
 
         # Now that we have everything loaded, let's make sure our data make sense.
         with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
@@ -406,9 +407,9 @@ class TestWithMultipleDatabases(TransactionTestCase):
             assert cursor.fetchone() == (
                 Decimal("-521207.00"),
                 Decimal("-5212070.00"),
-                Decimal("516.00"),
-                Decimal("5207.00"),
-                "B,B,L,L,L,L",
+                Decimal("505.00"),
+                Decimal("6106.00"),
+                "B,B,L,L,L,L,N",
             )
 
         # Nuke a submission.
@@ -416,14 +417,14 @@ class TestWithMultipleDatabases(TransactionTestCase):
         assert SubmissionAttributes.objects.count() == 4
         assert AppropriationAccountBalances.objects.count() == 4
         assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 4
-        assert FinancialAccountsByAwards.objects.count() == 8
+        assert FinancialAccountsByAwards.objects.count() == 9
 
         # Make sure it reloads.
         call_command("load_multiple_submissions", "--incremental")
         assert SubmissionAttributes.objects.count() == 5
         assert AppropriationAccountBalances.objects.count() == 5
         assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 7
-        assert FinancialAccountsByAwards.objects.count() == 11
+        assert FinancialAccountsByAwards.objects.count() == 12
 
         # Make a change to a submission.
         SubmissionAttributes.objects.filter(submission_id=1).update(reporting_fiscal_year=1999)
@@ -445,7 +446,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         assert SubmissionAttributes.objects.count() == 4
         assert AppropriationAccountBalances.objects.count() == 4
         assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 4
-        assert FinancialAccountsByAwards.objects.count() == 8
+        assert FinancialAccountsByAwards.objects.count() == 9
 
         # Ok, after all the stuff we just did, let's make sure submissions 2 and 3 never got touched.
         assert SubmissionAttributes.objects.get(submission_id=2).update_date == update_date_sub_2
