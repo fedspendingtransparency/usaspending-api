@@ -20,8 +20,8 @@ def publish_dates_data(db):
     dabs4 = mommy.make(
         "submissions.DABSSubmissionWindowSchedule", pk=4, submission_reveal_date="2019-01-02 00:00:00.000000+00"
     )
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency_id="001")
-    tas2 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency_id="002")
+    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", awarding_toptier_agency_id="001")
+    tas2 = mommy.make("accounts.TreasuryAppropriationAccount", awarding_toptier_agency_id="002")
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2)
     mommy.make(
