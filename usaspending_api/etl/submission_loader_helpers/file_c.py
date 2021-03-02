@@ -99,13 +99,10 @@ class CertifiedAwardFinancial:
                     inner join submission s on s.submission_id = c.submission_id
             where   s.submission_id = {submission_id} and
                     (
-                        (
-                            c.transaction_obligated_amou is not null and
-                            c.transaction_obligated_amou != 0
-                        ) or (
-                            c.gross_outlay_amount_by_awa_cpe is not null and
-                            c.gross_outlay_amount_by_awa_cpe != 0
-                        )
+                        COALESCE(c.transaction_obligated_amou, 0) != 0
+                        or COALESCE(c.gross_outlay_amount_by_awa_cpe, 0) != 0
+                        or COALESCE(c.ussgl487200_downward_adjus_cpe, 0) != 0
+                        or COALESCE(c.ussgl497200_downward_adjus_cpe, 0) != 0
                     )
         """
 
