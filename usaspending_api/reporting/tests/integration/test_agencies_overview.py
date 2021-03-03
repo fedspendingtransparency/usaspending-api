@@ -221,6 +221,7 @@ def test_basic_success(setup_test_data, client):
     resp = client.get(url)
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
+    # print(response)
     assert len(response["results"]) == 3
     expected_results = [
         {
