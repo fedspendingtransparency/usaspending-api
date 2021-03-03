@@ -217,7 +217,9 @@ def basic_faba(defc_codes):
     mommy.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.all().first(),
-        transaction_obligated_amount=0.0,
+        transaction_obligated_amount=0.0 - 0.3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0.1,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0.2,
         submission=submission,
     )
 
@@ -266,7 +268,9 @@ def _year_1_faba(value, code):
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code=code).first(),
         transaction_obligated_amount=value,
-        gross_outlay_amount_by_award_cpe=value / 2.0,
+        gross_outlay_amount_by_award_cpe=value / 2.0 - 0.3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0.1,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0.2,
         submission=submission,
     )
 
@@ -285,7 +289,9 @@ def _year_2_faba_with_value(value):
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
         transaction_obligated_amount=value,
-        gross_outlay_amount_by_award_cpe=value / 2.0,
+        gross_outlay_amount_by_award_cpe=value / 2.0 - 0.7,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0.4,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0.3,
         submission=submission,
     )
 
@@ -304,7 +310,9 @@ def _year_2_late_faba_with_value(value):
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
         transaction_obligated_amount=value,
-        gross_outlay_amount_by_award_cpe=value / 2.0,
+        gross_outlay_amount_by_award_cpe=value / 2.0 - 0.2,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0.1,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0.1,
         submission=submission,
     )
 
@@ -323,7 +331,9 @@ def _year_3_faba_with_value(value):
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
         transaction_obligated_amount=value,
-        gross_outlay_amount_by_award_cpe=value / 2.0,
+        gross_outlay_amount_by_award_cpe=value / 2.0 - 15.3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=7.1,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=8.2,
         submission=submission,
     )
 

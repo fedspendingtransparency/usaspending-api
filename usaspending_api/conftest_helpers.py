@@ -25,7 +25,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     transform_covid19_faba_data,
     transform_transaction_data,
 )
-from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
 
 class TestElasticSearchIndex:
@@ -39,8 +38,6 @@ class TestElasticSearchIndex:
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_index_template(f"{self.index_type.replace('-', '_')}_template")
-        self.mappings = json.loads(self.template)["mappings"]
         self.etl_config = {
             "load_type": self.index_type,
             "index_name": self.index_name,
@@ -75,15 +72,23 @@ class TestElasticSearchIndex:
         for the index, and add contents.
         """
         self.delete_index()
-        self.client.indices.create(index=self.index_name, body=self.template)
+        call_command("es_configure", "--template-only", f"--load-type={self.index_type}")
+        self.client.indices.create(index=self.index_name)
         create_award_type_aliases(self.client, self.etl_config)
         create_load_alias(self.client, self.etl_config)
-        call_command("es_configure", "--load-type", self.index_type)
-        # max_result_window is not set on the index until its settings are updated with es_configure command
-        idx_settings = self.client.indices.get_settings(index=self.index_name)
-        self.etl_config["max_query_size"] = int(idx_settings[self.index_name]["settings"]["index"]["max_result_window"])
+        self.etl_config["max_query_size"] = self._get_max_query_size()
         if load_index:
             self._add_contents(**options)
+
+    def _get_max_query_size(self):
+        upper_name = ""
+        if self.index_type == "award":
+            upper_name = "AWARDS"
+        elif self.index_type == "covid19-faba":
+            upper_name = "COVID19_FABA"
+        elif self.index_type == "transaction":
+            upper_name = "TRANSACTIONS"
+        return getattr(settings, f"ES_{upper_name}_MAX_RESULT_WINDOW")
 
     def _add_contents(self, **options):
         """
