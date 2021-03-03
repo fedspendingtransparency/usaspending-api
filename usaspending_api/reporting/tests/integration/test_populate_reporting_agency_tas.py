@@ -61,19 +61,19 @@ def setup_test_data(db):
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=1,
-            funding_toptier_agency_id=agencies[0].toptier_agency_id,
+            awarding_toptier_agency_id=agencies[0].toptier_agency_id,
             tas_rendering_label="tas-1",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=2,
-            funding_toptier_agency_id=agencies[0].toptier_agency_id,
+            awarding_toptier_agency_id=agencies[0].toptier_agency_id,
             tas_rendering_label="tas-2",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=3,
-            funding_toptier_agency_id=agencies[1].toptier_agency_id,
+            awarding_toptier_agency_id=agencies[1].toptier_agency_id,
             tas_rendering_label="tas-3",
         ),
     ]

@@ -66,19 +66,19 @@ def setup_test_data(db):
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=1,
-            funding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
+            awarding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
             tas_rendering_label="tas-1-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=2,
-            funding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
+            awarding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
             tas_rendering_label="tas-2-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=3,
-            funding_toptier_agency_id=toptier_agencies[1].toptier_agency_id,
+            awarding_toptier_agency_id=toptier_agencies[1].toptier_agency_id,
             tas_rendering_label="tas-3-overview",
         ),
     ]
@@ -168,7 +168,7 @@ def setup_test_data(db):
         {
             "id": 1,
             "is_fpds": True,
-            "funding_agency": agencies[0],
+            "awarding_agency": agencies[0],
             "type": "A",
             "piid": "123",
             "certified_date": "2019-12-15",
@@ -176,7 +176,7 @@ def setup_test_data(db):
         {
             "id": 2,
             "is_fpds": False,
-            "funding_agency": agencies[0],
+            "awarding_agency": agencies[0],
             "type": "08",
             "fain": "abc",
             "uri": "def",
@@ -186,7 +186,7 @@ def setup_test_data(db):
         {
             "id": 3,
             "is_fpds": False,
-            "funding_agency": agencies[0],
+            "awarding_agency": agencies[0],
             "type": "07",
             "fain": "abcdef",
             "certified_date": "2019-12-15",
@@ -202,28 +202,28 @@ def setup_test_data(db):
             "award_id": award_list[0]["id"],
             "fiscal_year": 2019,
             "action_date": "2018-11-15",
-            "funding_agency": agencies[0],
+            "awarding_agency": agencies[0],
         },
         {
             "id": 2,
             "award_id": award_list[0]["id"],
             "fiscal_year": 2019,
             "action_date": "2018-12-15",
-            "funding_agency": agencies[0],
+            "awarding_agency": agencies[0],
         },
         {
             "id": 3,
             "award_id": award_list[1]["id"],
             "fiscal_year": 2019,
             "action_date": "2018-10-15",
-            "funding_agency": agencies[0],
+            "awarding_agency": agencies[0],
         },
         {
             "id": 4,
             "award_id": award_list[2]["id"],
             "fiscal_year": 2019,
             "action_date": "2018-10-28",
-            "funding_agency": agencies[0],
+            "awarding_agency": agencies[0],
         },
     ]
     for transaction in transaction_list:
