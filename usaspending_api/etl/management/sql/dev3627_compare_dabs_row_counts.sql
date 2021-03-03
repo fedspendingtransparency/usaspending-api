@@ -104,13 +104,10 @@ INNER JOIN dblink(
             WHERE (
                 submission_id = s.submission_id
                 AND (
-                    (
-                        caf.transaction_obligated_amou IS NOT NULL
-                        AND caf.transaction_obligated_amou != 0
-                    ) OR (
-                            caf.gross_outlay_amount_by_awa_cpe IS NOT NULL AND
-                            caf.gross_outlay_amount_by_awa_cpe != 0
-                    )
+                    COALESCE(caf.transaction_obligated_amou, 0) != 0
+                    OR COALESCE(caf.gross_outlay_amount_by_awa_cpe, 0) != 0
+                    OR COALESCE(caf.ussgl487200_downward_adjus_cpe, 0) != 0
+                    OR COALESCE(caf.ussgl497200_downward_adjus_cpe, 0) != 0
                 )
             )
         ) AS count_file_c
