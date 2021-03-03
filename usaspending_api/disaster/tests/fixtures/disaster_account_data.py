@@ -475,6 +475,8 @@ def disaster_account_data():
         transaction_obligated_amount=2,
         gross_outlay_amount_by_award_cpe=20000000,
         distinct_award_key=0,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -485,6 +487,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=2000000,
         award=a3,
         distinct_award_key=3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -495,6 +499,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=200000,
         award=a3,
         distinct_award_key=3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -505,6 +511,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=10000,
         award=a1,
         distinct_award_key=1,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -515,6 +523,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=10000,
         award=a1,
         distinct_award_key=1,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -525,6 +535,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=2000,
         award=a3,
         distinct_award_key=3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -535,6 +547,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=200,
         award=a3,
         distinct_award_key=3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -545,6 +559,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=20,
         award=a2,
         distinct_award_key=2,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -555,6 +571,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=2,
         award=a3,
         distinct_award_key=3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -565,6 +583,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=0,
         award=a3,
         distinct_award_key=3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -575,6 +595,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=2000000,
         award=a3,
         distinct_award_key=3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -585,6 +607,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=200000,
         award=a3,
         distinct_award_key=3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -595,6 +619,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=200000000,
         award=a4,
         distinct_award_key=4,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         faba,
@@ -605,6 +631,8 @@ def disaster_account_data():
         gross_outlay_amount_by_award_cpe=20,
         award=a1,
         distinct_award_key=1,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
 
     mommy.make(

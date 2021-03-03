@@ -31,6 +31,8 @@ SELECT
     "object_class"."direct_reimbursable" AS "direct_or_reimbursable_funding_source",
     "financial_accounts_by_program_activity_object_class"."obligations_incurred_by_program_object_class_cpe" AS "obligations_incurred",
     "financial_accounts_by_program_activity_object_class"."deobligations_recoveries_refund_pri_program_object_class_cpe" AS "deobligations_or_recoveries_or_refunds_from_prior_year",
+    "financial_accounts_by_program_activity_object_class"."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" AS "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
+    "financial_accounts_by_program_activity_object_class"."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
     "financial_accounts_by_program_activity_object_class"."gross_outlay_amount_by_program_object_class_cpe" AS "gross_outlay_amount",
     (MAX("submission_attributes"."published_date")) ::date AS "last_modified_date"
 FROM "financial_accounts_by_program_activity_object_class"
