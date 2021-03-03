@@ -1,7 +1,6 @@
-from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value, Exists
+from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value
 from rest_framework.response import Response
 
-from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from django.utils.functional import cached_property
 
@@ -52,14 +51,8 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             Q(fiscal_period=self.fiscal_period),
         ]
         result_list = (
-            ToptierAgency.objects.annotate(
-                has_submission=Exists(
-                    AppropriationAccountBalances.objects.filter(
-                        treasury_account_identifier__awarding_toptier_agency_id=OuterRef("toptier_agency_id")
-                    ).values("pk")
-                )
-            )
-            .filter(has_submission=True, *agency_filters)
+            ToptierAgency.objects.account_agencies("awarding")
+            .filter(*agency_filters)
             .annotate(
                 agency_name=F("name"),
                 fiscal_year=Value(self.fiscal_year, output_field=IntegerField()),

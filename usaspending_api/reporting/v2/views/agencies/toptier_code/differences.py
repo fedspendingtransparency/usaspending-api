@@ -2,9 +2,8 @@ from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q
 
-from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 
 from usaspending_api.common.cache_decorator import cache_response
@@ -58,14 +57,8 @@ class Differences(AgencyBase):
         request_data = self._parse_and_validate_request(request.query_params)
 
         toptier_agency = (
-            ToptierAgency.objects.annotate(
-                has_submission=Exists(
-                    AppropriationAccountBalances.objects.filter(
-                        treasury_account_identifier__awarding_toptier_agency_id=OuterRef("toptier_agency_id")
-                    ).values("pk")
-                )
-            )
-            .filter(has_submission=True, toptier_code=self.toptier_code)
+            ToptierAgency.objects.account_agencies(agency_type="awarding")
+            .filter(toptier_code=self.toptier_code)
             .first()
         )
         if not toptier_agency:

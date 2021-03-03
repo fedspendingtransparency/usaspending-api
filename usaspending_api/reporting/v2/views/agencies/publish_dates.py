@@ -2,13 +2,12 @@ import re
 from copy import deepcopy
 
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import OuterRef, Subquery, TextField, F, Value, Func, DecimalField, Q, Exists
+from django.db.models import OuterRef, Subquery, TextField, F, Value, Func, DecimalField, Q
 from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 import json
 from rest_framework.response import Response
 
-from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.data_classes import Pagination
@@ -40,14 +39,8 @@ class PublishDates(AgencyBase, PaginationMixin):
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
         results = (
-            ToptierAgency.objects.annotate(
-                has_submission=Exists(
-                    AppropriationAccountBalances.objects.filter(
-                        treasury_account_identifier__awarding_toptier_agency_id=OuterRef("toptier_agency_id")
-                    ).values("pk")
-                )
-            )
-            .filter(has_submission=True, *agency_filters)
+            ToptierAgency.objects.account_agencies("awarding")
+            .filter(*agency_filters)
             .annotate(
                 current_total_budget_authority_amount=Subquery(
                     ReportingAgencyOverview.objects.filter(
