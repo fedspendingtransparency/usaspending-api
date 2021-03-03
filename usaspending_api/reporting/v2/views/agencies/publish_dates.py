@@ -43,7 +43,7 @@ class PublishDates(AgencyBase, PaginationMixin):
             ToptierAgency.objects.annotate(
                 has_submission=Exists(
                     AppropriationAccountBalances.objects.filter(
-                        treasury_account_identifier__funding_toptier_agency_id=OuterRef("toptier_agency_id")
+                        treasury_account_identifier__awarding_toptier_agency_id=OuterRef("toptier_agency_id")
                     ).values("pk")
                 )
             )
