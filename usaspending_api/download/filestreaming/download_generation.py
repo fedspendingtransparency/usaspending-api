@@ -56,6 +56,11 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     award_id = json_request.get("award_id")
     assistance_id = json_request.get("assistance_id")
     file_format = json_request.get("file_format")
+    request_type = json_request.get("request_type")
+
+    span = tracer.current_span()
+    if span and request_type:
+        span.resource = request_type
 
     file_name = start_download(download_job)
     working_dir = None
@@ -331,7 +336,6 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.zip",
         service="bulk-download",
-        resource=zip_file_path,
         span_type=SpanTypes.WORKER,
         source_path=source_path,
         zip_file_path=zip_file_path,
