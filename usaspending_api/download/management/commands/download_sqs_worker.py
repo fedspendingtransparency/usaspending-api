@@ -84,7 +84,6 @@ def download_service_app(download_job_id):
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download",
         service="bulk-download",
-        resource=f"download_job_id={download_job_id}",
         span_type=SpanTypes.WORKER,
     ) as span:
         download_job = _retrieve_download_job_from_db(download_job_id)
