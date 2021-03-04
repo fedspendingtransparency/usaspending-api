@@ -13,10 +13,22 @@ url = "/api/v2/reporting/agencies/123/overview/"
 def setup_test_data(db):
     """ Insert data into DB for testing """
     sub = mommy.make(
-        "submissions.SubmissionAttributes", submission_id=1, reporting_fiscal_year=2019, reporting_fiscal_period=6
+        "submissions.SubmissionAttributes",
+        submission_id=1,
+        toptier_code="123",
+        quarter_format_flag=False,
+        reporting_fiscal_year=2019,
+        reporting_fiscal_period=6,
+        published_date="2019-07-03",
     )
     sub2 = mommy.make(
-        "submissions.SubmissionAttributes", submission_id=2, reporting_fiscal_year=2020, reporting_fiscal_period=12
+        "submissions.SubmissionAttributes",
+        submission_id=2,
+        toptier_code="123",
+        quarter_format_flag=False,
+        reporting_fiscal_year=2020,
+        reporting_fiscal_period=12,
+        published_date="2021-02-11",
     )
     agency = mommy.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency")
 
@@ -24,19 +36,19 @@ def setup_test_data(db):
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=1,
-            funding_toptier_agency_id=agency.toptier_agency_id,
+            awarding_toptier_agency_id=agency.toptier_agency_id,
             tas_rendering_label="tas-1-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=2,
-            funding_toptier_agency_id=agency.toptier_agency_id,
+            awarding_toptier_agency_id=agency.toptier_agency_id,
             tas_rendering_label="tas-2-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=3,
-            funding_toptier_agency_id=agency.toptier_agency_id,
+            awarding_toptier_agency_id=agency.toptier_agency_id,
             tas_rendering_label="tas-3-overview",
         ),
     ]
@@ -192,11 +204,8 @@ def setup_test_data(db):
     )
 
 
-assurance_statement_2019_10 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/P10/123%20-%20Test%20Agency%20(ABC)/2019-P10-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
-assurance_statement_2019_9 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/P09/123%20-%20Test%20Agency%20(ABC)/2019-P09-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
 assurance_statement_2019_6 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/P06/123%20-%20Test%20Agency%20(ABC)/2019-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
 assurance_statement_2020_12 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2020/P12/123%20-%20Test%20Agency%20(ABC)/2020-P12-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
-
 assurance_statement_quarter = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/Q3/123%20-%20Quarterly%20Agency%20(QA)/2019-Q3-123_Quarterly%20Agency%20(QA)-Assurance_Statement.txt"
 
 
@@ -223,7 +232,7 @@ def test_basic_success(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 400,
             "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": assurance_statement_2019_9,
+            "assurance_statement_url": None,
         },
         {
             "fiscal_year": 2019,
@@ -231,7 +240,7 @@ def test_basic_success(setup_test_data, client):
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
             "percent_of_total_budgetary_resources": 11.24,
-            "recent_publication_date": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
@@ -250,7 +259,7 @@ def test_basic_success(setup_test_data, client):
             "current_total_budget_authority_amount": 100.0,
             "total_budgetary_resources": 100000000,
             "percent_of_total_budgetary_resources": 0,
-            "recent_publication_date": None,
+            "recent_publication_date": "2021-02-11T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -279,7 +288,7 @@ def test_pagination(setup_test_data, client):
             "current_total_budget_authority_amount": 100.0,
             "total_budgetary_resources": 100000000,
             "percent_of_total_budgetary_resources": 0,
-            "recent_publication_date": None,
+            "recent_publication_date": "2021-02-11T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -298,7 +307,7 @@ def test_pagination(setup_test_data, client):
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
             "percent_of_total_budgetary_resources": 11.24,
-            "recent_publication_date": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
@@ -328,7 +337,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 400,
             "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": assurance_statement_2019_9,
+            "assurance_statement_url": None,
         },
     ]
     assert response["results"] == expected_results
@@ -354,7 +363,7 @@ def test_pagination(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 400,
             "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": assurance_statement_2019_9,
+            "assurance_statement_url": None,
         }
     ]
     assert response["results"] == expected_results
@@ -369,7 +378,7 @@ def test_pagination(setup_test_data, client):
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
             "percent_of_total_budgetary_resources": 11.24,
-            "recent_publication_date": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
@@ -398,7 +407,7 @@ def test_secondary_sort(setup_test_data, client):
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
             "percent_of_total_budgetary_resources": 11.24,
-            "recent_publication_date": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
@@ -428,7 +437,7 @@ def test_secondary_sort(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 400,
             "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": assurance_statement_2019_9,
+            "assurance_statement_url": None,
         },
         {
             "fiscal_year": 2020,
@@ -436,7 +445,7 @@ def test_secondary_sort(setup_test_data, client):
             "current_total_budget_authority_amount": 100.0,
             "total_budgetary_resources": 100000000,
             "percent_of_total_budgetary_resources": 0,
-            "recent_publication_date": None,
+            "recent_publication_date": "2021-02-11T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -474,7 +483,7 @@ def test_secondary_sort(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 400,
             "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": assurance_statement_2019_9,
+            "assurance_statement_url": None,
         },
         {
             "fiscal_year": 2019,
@@ -482,7 +491,7 @@ def test_secondary_sort(setup_test_data, client):
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
             "percent_of_total_budgetary_resources": 11.24,
-            "recent_publication_date": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
@@ -501,7 +510,7 @@ def test_secondary_sort(setup_test_data, client):
             "current_total_budget_authority_amount": 100.0,
             "total_budgetary_resources": 100000000,
             "percent_of_total_budgetary_resources": 0,
-            "recent_publication_date": None,
+            "recent_publication_date": "2021-02-11T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -567,7 +576,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000.0,
             "percent_of_total_budgetary_resources": 11.24,
-            "recent_publication_date": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
@@ -597,7 +606,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 400,
             "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": assurance_statement_2019_9,
+            "assurance_statement_url": None,
         },
         {
             "fiscal_year": 2019,
@@ -616,7 +625,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "obligation_difference": 0.0,
             "unlinked_contract_award_count": 4,
             "unlinked_assistance_award_count": 6,
-            "assurance_statement_url": assurance_statement_2019_10,
+            "assurance_statement_url": None,
         },
         {
             "fiscal_year": 2020,
@@ -624,7 +633,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "current_total_budget_authority_amount": 100.0,
             "total_budgetary_resources": 100000000.0,
             "percent_of_total_budgetary_resources": 0.0,
-            "recent_publication_date": None,
+            "recent_publication_date": "2021-02-11T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -651,7 +660,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "current_total_budget_authority_amount": 100.0,
             "total_budgetary_resources": 100000000.0,
             "percent_of_total_budgetary_resources": 0.0,
-            "recent_publication_date": None,
+            "recent_publication_date": "2021-02-11T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -681,7 +690,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "obligation_difference": 0.0,
             "unlinked_contract_award_count": 4,
             "unlinked_assistance_award_count": 6,
-            "assurance_statement_url": assurance_statement_2019_10,
+            "assurance_statement_url": None,
         },
         {
             "fiscal_year": 2019,
@@ -700,7 +709,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "obligation_difference": 84931.96,
             "unlinked_contract_award_count": 400,
             "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": assurance_statement_2019_9,
+            "assurance_statement_url": None,
         },
         {
             "fiscal_year": 2019,
@@ -708,7 +717,7 @@ def test_secondary_period_sort(setup_test_data, client):
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000.0,
             "percent_of_total_budgetary_resources": 11.24,
-            "recent_publication_date": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
