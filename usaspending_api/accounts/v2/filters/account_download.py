@@ -129,7 +129,15 @@ def get_submission_filter(account_type, filters):
         )
 
         submission_filter = Q(
-            outlay_filter & (Q(gross_outlay_amount_by_award_cpe__gt=0) | Q(gross_outlay_amount_by_award_cpe__lt=0))
+            outlay_filter
+            & Q(
+                Q(gross_outlay_amount_by_award_cpe__gt=0)
+                | Q(gross_outlay_amount_by_award_cpe__lt=0)
+                | Q(ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe__gt=0)
+                | Q(ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe__lt=0)
+                | Q(ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe__gt=0)
+                | Q(ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe__lt=0)
+            )
         ) | Q(obligation_filter & Q(Q(transaction_obligated_amount__gt=0) | Q(transaction_obligated_amount__lt=0)))
 
     return submission_filter
