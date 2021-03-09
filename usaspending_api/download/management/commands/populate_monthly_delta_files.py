@@ -257,6 +257,7 @@ class Command(BaseCommand):
                     .apply(self.split_transaction_id)
                     .replace("-none-", "")
                     .replace("-NONE-", "")
+                    .reset_index()
                     .rename(columns=AWARD_MAPPINGS[award_type]["column_headers"])
                 )
 
