@@ -147,7 +147,7 @@ class Command(BaseCommand):
                 self._duplicated_doc_ids.update(**duped_doc_ids)
                 c = self._tally()
         if c % 10 == 0:
-            _log.info(f"Completed {c} of {self._num_partitions} queries")
+            _log.debug(f"Completed {c} of {self._num_partitions} queries")
 
     def _tally(self):
         self._completed_count += 1
