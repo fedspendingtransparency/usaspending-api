@@ -340,18 +340,6 @@ class FabaOutlayMixin:
     def obligated_field_annotation(self):
         return Coalesce(Sum("transaction_obligated_amount"), 0)
 
-    def when_non_zero_award_spending(self, query):
-        return query.annotate(
-            total_outlay=self.outlay_field_annotation, total_obligation=self.obligated_field_annotation
-        ).exclude(total_outlay=0, total_obligation=0)
-
-    def unique_file_c_award_count(self):
-        return Count("distinct_award_key", distinct=True)
-
-    @staticmethod
-    def unique_file_d_award_count():
-        return Count("award_id", distinct=True)
-
 
 class SpendingMixin:
     required_filters = ["def_codes", "query"]
@@ -382,10 +370,6 @@ class LoansMixin:
     @property
     def query(self):
         return self.filters.get("query")
-
-    @property
-    def is_loan_award(self):
-        return Q(award__type__in=loan_type_mapping)
 
 
 class _BasePaginationMixin:
