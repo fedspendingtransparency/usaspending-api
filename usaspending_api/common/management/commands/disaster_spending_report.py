@@ -22,7 +22,7 @@ TAS_XLSX_FILE = "usaspending_api/data/DEFC ABC Pd 6 FY18.xlsx"
 ASSISTANCE_SQL = read_text_file("usaspending_api/common/management/sql/disaster_spending_assistance.sql")
 CONTRACT_SQL = read_text_file("usaspending_api/common/management/sql/disaster_spending_contracts.sql")
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 def dump_to_csv(filepath, data_lines):

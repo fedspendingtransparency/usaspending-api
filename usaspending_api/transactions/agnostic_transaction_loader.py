@@ -200,4 +200,9 @@ class AgnosticTransactionLoader:
             else:
                 transactions_remaining_count = 0
             self.upsert_records += record_count
-            logger.info(f"{self.upsert_records:,} successful upserts, {transactions_remaining_count:,} remaining.")
+            percentage = self.upsert_records * 100 / self.total_ids_to_process if self.total_ids_to_process != 0 else 0
+            logger.info(
+                f"{self.upsert_records:,} successful upserts, "
+                f"{transactions_remaining_count:,} remaining. "
+                f"[{percentage:.2f}%]"
+            )

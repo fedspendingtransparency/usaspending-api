@@ -1,13 +1,5 @@
 {
-	"cluster": {
-		"transient" : {},
-		"persistent": {
-			"action.destructive_requires_name": true
-		}
-	},
-	"settings": {
-		"index.max_result_window" : null
-	},
+	"cluster": {},
 	"final_index_settings": {
 		"number_of_replicas": 1,
 		"refresh_interval": "1s"

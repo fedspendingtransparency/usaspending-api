@@ -3,15 +3,15 @@ import numpy as np
 import pandas as pd
 import re
 
-from collections import deque
+from collections import deque, defaultdict
 from datetime import datetime
 from django.db import connections
 from django.utils.functional import cached_property
+
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.etl.submission_loader_helpers.skipped_tas import update_skipped_tas
 from usaspending_api.etl.management.load_base import load_data_into_model
 from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import BulkCreateManager
 from usaspending_api.etl.submission_loader_helpers.disaster_emergency_fund_codes import get_disaster_emergency_fund
@@ -99,13 +99,10 @@ class CertifiedAwardFinancial:
                     inner join submission s on s.submission_id = c.submission_id
             where   s.submission_id = {submission_id} and
                     (
-                        (
-                            c.transaction_obligated_amou is not null and
-                            c.transaction_obligated_amou != 0
-                        ) or (
-                            c.gross_outlay_amount_by_awa_cpe is not null and
-                            c.gross_outlay_amount_by_awa_cpe != 0
-                        )
+                        COALESCE(c.transaction_obligated_amou, 0) != 0
+                        or COALESCE(c.gross_outlay_amount_by_awa_cpe, 0) != 0
+                        or COALESCE(c.ussgl487200_downward_adjus_cpe, 0) != 0
+                        or COALESCE(c.ussgl497200_downward_adjus_cpe, 0) != 0
                     )
         """
 
@@ -123,20 +120,15 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
     Note: this should run AFTER the D1 and D2 files are loaded because we try to join to those records to retrieve some
     additional information about the awarding sub-tier agency.
     """
-    # this matches the file b reverse directive, but am repeating it here to ensure that we don't overwrite it as we
-    # change up the order of file loading
 
     if certified_award_financial.count == 0:
         logger.warning("No File C (award financial) data found, skipping...")
         return
 
+    # this matches the file b reverse directive, but am repeating it here to ensure that we don't overwrite it as we
+    # change up the order of file loading
     reverse = re.compile(r"(_(cpe|fyb)$)|^transaction_obligated_amount$")
-
-    # dictionary to capture TAS that were skipped and some metadata
-    # tas = top-level key
-    # count = number of rows skipped
-    # rows = row numbers skipped, corresponding to the original row numbers in the file that was submitted
-    skipped_tas = {}
+    skipped_tas = defaultdict(int)  # tracks count of rows skipped due to "missing" TAS
     total_rows = certified_award_financial.count
     start_time = datetime.now()
 
@@ -147,14 +139,15 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
     update_c_to_d_linkages("contract", False, submission_attributes.submission_id)
     update_c_to_d_linkages("assistance", False, submission_attributes.submission_id)
 
-    for key in skipped_tas:
-        logger.info(f"Skipped {skipped_tas[key]['count']:,} rows due to missing TAS: {key}")
+    for tas, count in skipped_tas.items():
+        logger.info(f"Skipped {count:,} rows due to {tas}")
 
-    total_tas_skipped = 0
-    for key in skipped_tas:
-        total_tas_skipped += skipped_tas[key]["count"]
+    total_tas_skipped = sum([count for count in skipped_tas.values()])
 
-    logger.info(f"Skipped a total of {total_tas_skipped:,} TAS rows for File C")
+    if total_tas_skipped > 0:
+        logger.info(f"SKIPPED {total_tas_skipped:,} ROWS of File C (missing TAS)")
+    else:
+        logger.info("All File C records in Broker loaded into USAspending")
 
 
 def _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse):
@@ -168,7 +161,7 @@ def _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped
         # Check and see if there is an entry for this TAS
         treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(row.get("tas_id"))
         if treasury_account is None:
-            update_skipped_tas(row, tas_rendering_label, skipped_tas)
+            skipped_tas[tas_rendering_label] += 1
             continue
 
         award_financial_data = FinancialAccountsByAwards()

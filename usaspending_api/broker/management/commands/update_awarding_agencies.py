@@ -8,7 +8,7 @@ from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 agency_no_sub_map = {

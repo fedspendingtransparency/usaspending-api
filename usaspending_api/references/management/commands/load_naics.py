@@ -13,7 +13,7 @@ from usaspending_api.references.models import NAICS
 class Command(BaseCommand):
     help = "Updates DB from Excel spreadsheets of USAspending terminology definitions into the naics model"
 
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     default_path = str(settings.APP_DIR / "data" / "naics_archive")
 
@@ -72,7 +72,7 @@ def load_single_naics(naics_code, naics_year, naics_desc):
 
 @transaction.atomic
 def load_naics(path, append):
-    logger = logging.getLogger("console")
+    logger = logging.getLogger("script")
 
     if append:
         logger.info("Appending definitions to existing guide")

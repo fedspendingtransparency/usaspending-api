@@ -8,6 +8,7 @@ from elasticsearch import Elasticsearch
 from pathlib import Path
 from string import Template
 
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import create_load_alias
 from usaspending_api.common.sqs.sqs_handler import (
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
@@ -24,7 +25,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     transform_covid19_faba_data,
     transform_transaction_data,
 )
-from usaspending_api.etl.management.commands.es_configure import retrieve_index_template
 
 
 class TestElasticSearchIndex:
@@ -38,15 +38,13 @@ class TestElasticSearchIndex:
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
         self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
-        self.template = retrieve_index_template(f"{self.index_type.replace('-', '_')}_template")
-        self.mappings = json.loads(self.template)["mappings"]
         self.etl_config = {
             "load_type": self.index_type,
             "index_name": self.index_name,
             "query_alias_prefix": self.alias_prefix,
             "verbose": False,
             "verbosity": 0,
-            "write_alias": self.index_name + "-alias",
+            "write_alias": self.index_name + "-load-alias",
             "process_deletes": True,
         }
         self.worker = TaskSpec(
@@ -67,17 +65,30 @@ class TestElasticSearchIndex:
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
 
-    def update_index(self, **options):
+    def update_index(self, load_index: bool = True, **options):
         """
         To ensure a fresh Elasticsearch index, delete the old one, update the
         materialized views, re-create the Elasticsearch index, create aliases
         for the index, and add contents.
         """
         self.delete_index()
-        self.client.indices.create(index=self.index_name, body=self.template)
+        call_command("es_configure", "--template-only", f"--load-type={self.index_type}")
+        self.client.indices.create(index=self.index_name)
         create_award_type_aliases(self.client, self.etl_config)
-        self._add_contents(**options)
-        call_command("es_configure", "--load-type", self.index_type)
+        create_load_alias(self.client, self.etl_config)
+        self.etl_config["max_query_size"] = self._get_max_query_size()
+        if load_index:
+            self._add_contents(**options)
+
+    def _get_max_query_size(self):
+        upper_name = ""
+        if self.index_type == "award":
+            upper_name = "AWARDS"
+        elif self.index_type == "covid19-faba":
+            upper_name = "COVID19_FABA"
+        elif self.index_type == "transaction":
+            upper_name = "TRANSACTIONS"
+        return getattr(settings, f"ES_{upper_name}_MAX_RESULT_WINDOW")
 
     def _add_contents(self, **options):
         """
@@ -145,9 +156,19 @@ class TestElasticSearchIndex:
         # Force newly added documents to become searchable.
         self.client.indices.refresh(self.index_name)
 
-    @classmethod
-    def _generate_index_name(cls):
-        return f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}-{generate_random_string()}"
+    def _generate_index_name(self):
+        required_suffix = ""
+        if self.index_type == "award":
+            required_suffix = "-" + settings.ES_AWARDS_NAME_SUFFIX
+        elif self.index_type == "transaction":
+            required_suffix = "-" + settings.ES_TRANSACTIONS_NAME_SUFFIX
+        elif self.index_type == "covid19-faba":
+            required_suffix = "-" + settings.ES_COVID19_FABA_NAME_SUFFIX
+        return (
+            f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}"
+            f"-{generate_random_string()}"
+            f"{required_suffix}"
+        )
 
 
 def ensure_broker_server_dblink_exists():

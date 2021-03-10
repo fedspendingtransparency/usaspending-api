@@ -7,7 +7,7 @@ from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.broker.helpers.find_related_awards import find_related_awards
 
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 @transaction.atomic

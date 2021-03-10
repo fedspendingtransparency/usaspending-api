@@ -270,7 +270,7 @@ SELECT
     "awards"."officer_4_amount" AS "highly_compensated_officer_4_amount",
     "awards"."officer_5_name" AS "highly_compensated_officer_5_name",
     "awards"."officer_5_amount" AS "highly_compensated_officer_5_amount",
-    CONCAT('https://www.usaspending.gov/#/award/', urlencode("awards"."generated_unique_award_id"), '/') AS "usaspending_permalink",
+    CONCAT('https://www.usaspending.gov/award/', urlencode("awards"."generated_unique_award_id"), '/') AS "usaspending_permalink",
     "transaction_fpds"."last_modified" AS "last_modified_date"
 FROM "awards"
 INNER JOIN "transaction_fpds" ON ("awards"."latest_transaction_id" = "transaction_fpds"."transaction_id")

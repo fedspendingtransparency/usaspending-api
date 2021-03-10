@@ -22,7 +22,7 @@ from usaspending_api.common.matview_manager import (
 )
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
-logger = logging.getLogger("console")
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
