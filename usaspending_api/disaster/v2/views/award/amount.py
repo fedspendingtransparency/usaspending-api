@@ -25,6 +25,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
                 "type": "enum",
                 "enum_values": ("assistance", "procurement"),
                 "allow_nulls": False,
+                "allow_nulls": False,
                 "optional": True,
             }
         ]
