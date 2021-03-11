@@ -69,6 +69,8 @@ SELECT
     gtas."budget_authority_appropriation_amount_cpe" AS "budget_authority_appropriated_amount",
     gtas."other_budgetary_resources_amount_cpe" AS "total_other_budgetary_resources_amount",
     gtas."total_budgetary_resources_cpe" AS "total_budgetary_resources",
+    gtas."prior_year_paid_obligation_recoveries" AS "prior_year_paid_obligation_recoveries",
+    gtas."anticipated_prior_year_obligation_recoveries" AS "anticipated_prior_year_obligation_recoveries",
     gtas."obligations_incurred_total_cpe" AS "obligations_incurred",
     gtas."unobligated_balance_cpe" AS "unobligated_balance",
     gtas."gross_outlay_amount_by_tas_cpe" AS "gross_outlay_amount"

@@ -129,21 +129,22 @@ def get_submission_filter(account_type, filters):
         )
 
         submission_filter = Q(
-            outlay_filter & (Q(gross_outlay_amount_by_award_cpe__gt=0) | Q(gross_outlay_amount_by_award_cpe__lt=0))
+            outlay_filter
+            & Q(
+                Q(gross_outlay_amount_by_award_cpe__gt=0)
+                | Q(gross_outlay_amount_by_award_cpe__lt=0)
+                | Q(ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe__gt=0)
+                | Q(ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe__lt=0)
+                | Q(ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe__gt=0)
+                | Q(ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe__lt=0)
+            )
         ) | Q(obligation_filter & Q(Q(transaction_obligated_amount__gt=0) | Q(transaction_obligated_amount__lt=0)))
 
     return submission_filter
 
 
-def generate_gross_outlay_amount_derived_field(filters, account_type):
-    column_name = {
-        "account_balances": "gross_outlay_amount_by_tas_cpe",
-        "object_class_program_activity": "gross_outlay_amount_by_program_object_class_cpe",
-        "award_financial": "gross_outlay_amount_by_award_cpe",
-    }[account_type]
-
+def _generate_closed_period_for_derived_field(filters, column_name):
     filter_year = filters.get("fy")
-
     closed_periods = get_last_closed_periods_per_year()
 
     q = Q()
@@ -163,6 +164,26 @@ def generate_gross_outlay_amount_derived_field(filters, account_type):
     return Cast(Value(None), DecimalField(max_digits=23, decimal_places=2))
 
 
+def generate_ussgl487200_derived_field(filters):
+    column_name = "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"
+    return _generate_closed_period_for_derived_field(filters, column_name)
+
+
+def generate_ussgl497200_derived_field(filters):
+    column_name = "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"
+    return _generate_closed_period_for_derived_field(filters, column_name)
+
+
+def generate_gross_outlay_amount_derived_field(filters, account_type):
+    column_name = {
+        "account_balances": "gross_outlay_amount_by_tas_cpe",
+        "object_class_program_activity": "gross_outlay_amount_by_program_object_class_cpe",
+        "award_financial": "gross_outlay_amount_by_award_cpe",
+    }[account_type]
+
+    return _generate_closed_period_for_derived_field(filters, column_name)
+
+
 def generate_treasury_account_query(queryset, account_type, tas_id, filters):
     """ Derive necessary fields for a treasury account-grouped query """
     derived_fields = {
@@ -176,6 +197,19 @@ def generate_treasury_account_query(queryset, account_type, tas_id, filters):
     }
 
     lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
+
+    if account_type != "account_balances":
+        derived_fields.update(
+            {
+                "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe": Sum(
+                    generate_ussgl487200_derived_field(filters)
+                ),
+                "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe": Sum(
+                    generate_ussgl497200_derived_field(filters)
+                ),
+            }
+        )
+
     if account_type == "award_financial":
         # Separating out last_modified_date like this prevents unnecessary grouping in the full File
         # C TAS download.  Keeping it as MAX caused grouping on every single column in the SQL statement.
@@ -201,6 +235,17 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "gross_outlay_amount_fyb_to_period_end": Sum(generate_gross_outlay_amount_derived_field(filters, account_type)),
     }
 
+    if account_type != "account_balances":
+        derived_fields.update(
+            {
+                "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe": Sum(
+                    generate_ussgl487200_derived_field(filters)
+                ),
+                "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe": Sum(
+                    generate_ussgl497200_derived_field(filters)
+                ),
+            }
+        )
     if account_type == "award_financial":
         derived_fields = award_financial_derivations(derived_fields)
 

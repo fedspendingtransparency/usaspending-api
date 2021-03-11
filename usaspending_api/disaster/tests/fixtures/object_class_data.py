@@ -21,6 +21,8 @@ def basic_faba_with_object_class(award_count_sub_schedule, award_count_submissio
         submission=SubmissionAttributes.objects.all().first(),
         object_class=basic_object_class[0],
         transaction_obligated_amount=1,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
 
 
@@ -165,6 +167,8 @@ def faba_with_object_class_and_two_awards(award_count_sub_schedule, award_count_
         submission=SubmissionAttributes.objects.all().first(),
         object_class=basic_object_class[0],
         transaction_obligated_amount=1,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
 
     mommy.make(
