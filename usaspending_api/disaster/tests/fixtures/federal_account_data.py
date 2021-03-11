@@ -162,6 +162,8 @@ def generic_account_data():
         disaster_emergency_fund=defc_m,
         treasury_account=tre_acct1,
         distinct_award_key="0wefjwe|3443r||",
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -175,6 +177,8 @@ def generic_account_data():
         disaster_emergency_fund=defc_l,
         treasury_account=tre_acct2,
         distinct_award_key="0wefjwe|3443r||",
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -187,6 +191,8 @@ def generic_account_data():
         disaster_emergency_fund=defc_9,
         treasury_account=tre_acct2,
         distinct_award_key="|||3298rhed",
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -199,6 +205,8 @@ def generic_account_data():
         disaster_emergency_fund=defc_o,
         treasury_account=tre_acct2,
         distinct_award_key="||43tgfvdvfv|",
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -211,6 +219,8 @@ def generic_account_data():
         disaster_emergency_fund=defc_n,
         treasury_account=tre_acct3,
         distinct_award_key="||woefhowe|",
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
     mommy.make(
         "references.GTASSF133Balances",

@@ -39,7 +39,7 @@ class PublishDates(AgencyBase, PaginationMixin):
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
         results = (
-            ToptierAgency.objects.account_agencies()
+            ToptierAgency.objects.account_agencies("awarding")
             .filter(*agency_filters)
             .annotate(
                 current_total_budget_authority_amount=Subquery(

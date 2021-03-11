@@ -1218,6 +1218,44 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
 
 
+def test_outlay_calculations(client, awards_and_transactions):
+    defc = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2019,
+        submission_fiscal_month=12,
+        is_quarter=True,
+        submission_reveal_date="2020-04-01",
+        period_start_date="2020-04-01",
+    )
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        pk=4,
+        reporting_fiscal_period=12,
+        reporting_fiscal_year=2019,
+        reporting_period_end="2020-06-30",
+        quarter_format_flag=True,
+        is_final_balances_for_fy=True,
+        reporting_period_start="2020-04-01",
+    )
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=1,
+        transaction_obligated_amount=10,
+        gross_outlay_amount_by_award_cpe=10,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-1,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-2,
+        disaster_emergency_fund=defc,
+        submission_id=4,
+    )
+    resp = client.get("/api/v2/awards/1/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 10.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 7.0}]
+    assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 10.0
+    assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 7.0
+
+
 expected_response_asst = {
     "id": 1,
     "record_type": 111,

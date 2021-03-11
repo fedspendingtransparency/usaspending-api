@@ -3,6 +3,7 @@ import io
 import logging
 import math
 
+from boto3.s3.transfer import TransferConfig, S3Transfer
 from django.conf import settings
 from pathlib import Path
 from typing import List
@@ -52,6 +53,6 @@ def multipart_upload(bucketname, regionname, source_path, keyname):
     source_size = Path(source_path).stat().st_size
     # Sets the chunksize at minimum ~5MB to sqrt(5MB) * sqrt(source size)
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
-    config = boto3.s3.transfer.TransferConfig(multipart_chunksize=bytes_per_chunk)
-    transfer = boto3.s3.transfer.S3Transfer(s3client, config)
+    config = TransferConfig(multipart_chunksize=bytes_per_chunk)
+    transfer = S3Transfer(s3client, config)
     transfer.upload_file(source_path, bucketname, Path(keyname).name, extra_args={"ACL": "bucket-owner-full-control"})

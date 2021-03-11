@@ -5,11 +5,11 @@ For the full list of settings and their values: https://docs.djangoproject.com/e
 
 import dj_database_url
 import os
+import ddtrace
 
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
-from ddtrace import patch_all
 
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -175,26 +175,43 @@ INSTALLED_APPS = [
     "usaspending_api.transactions",
     "django_spaghetti",
     "simple_history",
-    "ddtrace.contrib.django",  # Datadog APM tracing
 ]
 
 INTERNAL_IPS = ()
 
-# Datadog APM tracing configuration
-# patch_all(): Capture traces from integrated components' libraries by patching them. See:
-# - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
-# - If Automatically Instrumented = Yes, here: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
-patch_all()
-DATADOG_TRACE = {
-    "ENABLED": False,  # Replace during env-deploys to turn on
-    "DEFAULT_SERVICE": "api",
-    "ANALYTICS_ENABLED": True,  # capture APM "Traces" & "Analyzed Spans" in App Analytics
-    "ANALYTICS_SAMPLE_RATE": 1.0,  # Including 100% of traces in sample
-    "DISTRIBUTED_TRACING": False,  # only needed if picking up disjoint traces by HTTP Header value
-}
-# NOTE: Track these to see if the above settings are even honored or buggy
-# - https://github.com/DataDog/dd-trace-py/issues/986
-# - https://github.com/DataDog/dd-trace-py/issues/798
+# Replace below param with enabled=True during env-deploys to turn on
+ddtrace.tracer.configure(enabled=False)
+if ddtrace.tracer.enabled:
+    ddtrace.config.django["service_name"] = "api"
+    ddtrace.config.django["analytics_enabled"] = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
+    ddtrace.config.django["analytics_sample_rate"] = 1.0  # Including 100% of traces in sample
+    ddtrace.config.django["trace_query_string"] = True
+    # Distributed tracing only needed if picking up disjoint traces by HTTP Header value
+    ddtrace.config.django["distributed_tracing_enabled"] = False
+    # Trace HTTP Request or Response Headers listed in this whitelist
+    ddtrace.config.trace_headers(
+        [
+            "content-length",  # req and resp
+            "content-type",  # req and resp
+            "host",
+            "origin",
+            "referer",
+            "ua-is-bot",
+            "user-agent",
+            "x-forwarded-for",
+            "x-requested-with",
+            # Response Headers
+            "allow",
+            "cache-trace",
+            "is-dynamically-rendered",
+            "key",  # cache key
+            "strict-transport-security",
+        ]
+    )
+    # patch_all() captures traces from integrated components' libraries by patching them. See:
+    # - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
+    # - Integrated Libs: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
+    ddtrace.patch_all()
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
@@ -210,7 +227,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "usaspending_api.common.logging.LoggingMiddleware",
-    "usaspending_api.common.datadog.add_headers",
 ]
 
 ROOT_URLCONF = "usaspending_api.urls"
