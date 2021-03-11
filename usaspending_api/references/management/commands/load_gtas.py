@@ -38,6 +38,7 @@ DERIVED_COLUMNS_DYNAMIC = {
         "change_year": 2021,
     }
 }
+GTAS_TABLE = GTASSF133Balances.objects.model._meta.db_table
 
 
 class Command(mixins.ETLMixin, BaseCommand):
@@ -67,8 +68,9 @@ class Command(mixins.ETLMixin, BaseCommand):
         new_rec_count = len(GTASSF133Balances.objects.bulk_create(total_obligation_objs))
         logger.info(f"Loaded: {new_rec_count:,} records")
 
-        load_rec = self._execute_dml_sql(self.tas_fk_sql(), "Populating TAS foreign keys")
+        load_rec = self._execute_dml_sql(self.tas_fk_sql, "Populating TAS foreign keys")
         logger.info(f"Set {load_rec:,} TAS FKs in GTAS table, {new_rec_count - load_rec:,} NULLs")
+        load_rec = self._execute_dml_sql(self.financing_account_sql, "Drop Financing Account TAS")
         logger.info("Committing transaction to database")
 
     def broker_fetch_sql(self):
@@ -115,11 +117,16 @@ class Command(mixins.ETLMixin, BaseCommand):
         ]
         return "\n".join(simple_fields + inverted_fields + year_specific_fields)
 
+    @property
     def tas_fk_sql(self):
-        return """
-            UPDATE gtas_sf133_balances
+        return f"""
+            UPDATE {GTAS_TABLE}
             SET treasury_account_identifier = tas.treasury_account_identifier
             FROM treasury_appropriation_account tas
             WHERE
-                tas.tas_rendering_label = gtas_sf133_balances.tas_rendering_label
-                AND gtas_sf133_balances.treasury_account_identifier IS DISTINCT FROM tas.treasury_account_identifier"""
+                tas.tas_rendering_label = {GTAS_TABLE}.tas_rendering_label
+                AND {GTAS_TABLE}.treasury_account_identifier IS DISTINCT FROM tas.treasury_account_identifier"""
+
+    @property
+    def financing_account_sql(self):
+        return f"""DELETE FROM {GTAS_TABLE} WHERE treasury_account_identifier IS NULL"""

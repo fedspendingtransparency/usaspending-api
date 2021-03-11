@@ -5,7 +5,7 @@ from enum import Enum
 from django.core.management import BaseCommand
 from django.db import transaction, connection
 
-from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
+from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 
 logger = logging.getLogger("script")
 
@@ -368,7 +368,26 @@ CREATE_OVERVIEW_SQL = f"""
         linked_procurement_awards,
         linked_assistance_awards
     )
-    SELECT *
+    SELECT
+        EXTRACT('MONTH' FROM a + INTERVAL '3 months'),
+        EXTRACT('YEAR' FROM a + INTERVAL '3 months'),
+        toptier_code,
+        0,0,0,0,0,0,0,0,0
+    FROM generate_series('2017-03-01'::timestamp, (SELECT MAX(submission_reveal_date) FROM dabs_submission_window_schedule WHERE submission_reveal_date < now() and is_quarter = FALSE), '1 month') AS a(n)
+    CROSS JOIN vw_published_dabs_toptier_agency
+    WHERE EXTRACT('MONTH' FROM a + INTERVAL '3 months') != 1;
+
+    UPDATE public.{OVERVIEW_TABLE_NAME} n
+    SET
+        total_dollars_obligated_gtas = {OVERVIEW_TABLE_NAME}_content.total_dollars_obligated_gtas,
+        total_budgetary_resources = {OVERVIEW_TABLE_NAME}_content.total_budgetary_resources,
+        total_diff_approp_ocpa_obligated_amounts = {OVERVIEW_TABLE_NAME}_content.total_diff_approp_ocpa_obligated_amounts,
+        unlinked_procurement_c_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_procurement_c_awards,
+        unlinked_assistance_c_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_assistance_c_awards,
+        unlinked_procurement_d_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_procurement_d_awards,
+        unlinked_assistance_d_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_assistance_d_awards,
+        linked_procurement_awards = {OVERVIEW_TABLE_NAME}_content.linked_procurement_awards,
+        linked_assistance_awards = {OVERVIEW_TABLE_NAME}_content.linked_assistance_awards
     FROM (
         SELECT
             fiscal_period,
@@ -387,7 +406,12 @@ CREATE_OVERVIEW_SQL = f"""
             {TempTableName.REPORTING_OVERVIEW.value} AS rao
         LEFT OUTER JOIN
             {TempTableName.AWARD_COUNTS.value} AS ac USING (toptier_code, fiscal_year, fiscal_period)
-    ) AS {OVERVIEW_TABLE_NAME}_content;
+    ) AS {OVERVIEW_TABLE_NAME}_content
+    WHERE
+        n.fiscal_period = {OVERVIEW_TABLE_NAME}_content.fiscal_period
+        AND n.fiscal_year = {OVERVIEW_TABLE_NAME}_content.fiscal_year
+        AND n.toptier_code = {OVERVIEW_TABLE_NAME}_content.toptier_code
+;
 """
 
 
@@ -400,7 +424,7 @@ class Command(BaseCommand):
         with Timer("Refresh Reporting Agency Overview"):
             try:
                 with transaction.atomic():
-                    self._perform_load()
+                    self.perform_load()
                     t = Timer("Commit transaction")
                     t.log_starting_message()
                 t.log_success_message()
@@ -408,21 +432,21 @@ class Command(BaseCommand):
                 logger.error("ALL CHANGES ROLLED BACK DUE TO EXCEPTION")
                 raise
 
-    def _perform_load(self):
+    def perform_load(self):
         with connection.cursor() as cursor:
-            self.cursor = cursor
             with Timer("Create temporary tables"):
-                self.cursor.execute(CREATE_AND_PREP_TEMP_TABLES)
+                cursor.execute(CREATE_AND_PREP_TEMP_TABLES)
 
             for temp_table in TEMP_TABLE_CONTENTS:
-                self._populate_temp_table(temp_table)
+                self.populate_temp_table(cursor, temp_table)
 
-            with Timer("Populate Reporting Agency Overview"):
-                self.cursor.execute(CREATE_OVERVIEW_SQL)
+            with Timer(f"Reload '{OVERVIEW_TABLE_NAME}'"):
+                print(CREATE_OVERVIEW_SQL)
+                cursor.execute(CREATE_OVERVIEW_SQL)
 
-    def _populate_temp_table(self, temp_table: TempTableName) -> None:
-        sql_template = "INSERT INTO {} SELECT * FROM ({}) AS {};"
+    def populate_temp_table(self, cursor: connection.cursor, temp_table: TempTableName) -> None:
+        sql_template = "INSERT INTO {0} SELECT * FROM ({1}) AS {0}_contents;"
         with Timer(f"Populate '{temp_table.value}'"):
-            self.cursor.execute(
-                sql_template.format(temp_table.value, TEMP_TABLE_CONTENTS[temp_table], f"{temp_table.value}_contents")
-            )
+            sql = sql_template.format(temp_table.value, TEMP_TABLE_CONTENTS[temp_table])
+            print(sql)
+            cursor.execute(sql)
