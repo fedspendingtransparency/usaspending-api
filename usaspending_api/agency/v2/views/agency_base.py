@@ -64,7 +64,7 @@ class AgencyBase(APIView):
 
     @cached_property
     def toptier_agency(self):
-        toptier_agency = ToptierAgency.objects.account_agencies().filter(toptier_code=self.toptier_code).first()
+        toptier_agency = ToptierAgency.objects.filter(toptieragencypublisheddabsview__toptier_code=self.toptier_code).first()
         if not toptier_agency:
             raise NotFound(f"Agency with a toptier code of '{self.toptier_code}' does not exist")
         return toptier_agency
