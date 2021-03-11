@@ -1678,15 +1678,15 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                     "deobligations_recoveries_refund_pri_program_object_class_cpe",
                 ),
-                (
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
-                ),  # Column is annotated in account_download.py
-                (
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
-                ),  # Column is annotated in account_download.py
                 ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
+                (
+                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
+                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
+                ),  # Column is annotated in account_download.py
+                (
+                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
+                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
+                ),  # Column is annotated in account_download.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1715,15 +1715,15 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                 ),
-                (
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
-                ),  # Column is annotated in account_download.py
-                (
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
-                ),  # Column is annotated in account_download.py
                 ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
+                (
+                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
+                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
+                ),  # Column is annotated in account_download.py
+                (
+                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
+                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
+                ),  # Column is annotated in account_download.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
