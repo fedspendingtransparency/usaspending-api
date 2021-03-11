@@ -6,7 +6,7 @@ from usaspending_api.references.models.agency import Agency
 
 
 class ToptierAgencyManager(CTEManager):
-    def account_agencies(self):
+    def account_agencies(self, agency_type="funding"):
         """
         Returns only those toptier agencies that have ever had a submission.  This is used primarily to
         filter agencies for agency detail pages or account related agency drop down lists.  Think Files
@@ -14,15 +14,10 @@ class ToptierAgencyManager(CTEManager):
         FinancialAccountsByAwards, and their ilk).  DO NOT USE THIS FOR AWARD RELATED AGENCY DROPDOWN
         LISTS (see award_agencies method for those).
         """
+        aab_filter = {f"treasury_account_identifier__{agency_type}_toptier_agency_id": OuterRef("toptier_agency_id")}
         return (
             self.get_queryset()
-            .annotate(
-                has_submission=Exists(
-                    AppropriationAccountBalances.objects.filter(
-                        treasury_account_identifier__funding_toptier_agency_id=OuterRef("toptier_agency_id")
-                    ).values("pk")
-                )
-            )
+            .annotate(has_submission=Exists(AppropriationAccountBalances.objects.filter(**aab_filter).values("pk")))
             .filter(has_submission=True)
         )
 
