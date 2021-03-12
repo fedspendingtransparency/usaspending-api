@@ -121,8 +121,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         return "\n".join(simple_fields + inverted_fields + year_specific_fields)
 
     @property
-    @staticmethod
-    def tas_fk_sql():
+    def tas_fk_sql(self):
         return f"""
             UPDATE {GTAS_TABLE}
             SET treasury_account_identifier = tas.treasury_account_identifier
@@ -132,6 +131,5 @@ class Command(mixins.ETLMixin, BaseCommand):
                 AND {GTAS_TABLE}.treasury_account_identifier IS DISTINCT FROM tas.treasury_account_identifier"""
 
     @property
-    @staticmethod
-    def financing_account_sql():
+    def financing_account_sql(self):
         return f"""DELETE FROM {GTAS_TABLE} WHERE treasury_account_identifier IS NULL"""
