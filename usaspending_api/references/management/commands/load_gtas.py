@@ -54,7 +54,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         broker_cursor = connections["data_broker"].cursor()
 
         logger.info("Extracting data from Broker")
-        broker_cursor.execute(self.broker_fetch_sql())
+        broker_cursor.execute(self.broker_fetch_sql)
         total_obligation_values = dictfetchall(broker_cursor)
 
         logger.info("Deleting all existing GTAS total obligation records in website")
@@ -74,12 +74,13 @@ class Command(mixins.ETLMixin, BaseCommand):
         logger.info(f"Deleted {delete_rec:,} records in GTAS table due to invalid TAS")
         logger.info("Committing transaction to database")
 
+    @property
     def broker_fetch_sql(self):
         return f"""
             SELECT
                 fiscal_year,
                 period as fiscal_period,
-                {self.column_statements()}
+                {self.column_statements}
                 disaster_emergency_fund_code,
                 CONCAT(
                     CASE WHEN sf.allocation_transfer_agency is not null THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END,
@@ -99,6 +100,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 fiscal_period;
         """
 
+    @property
     def column_statements(self):
         simple_fields = [
             f"COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount ELSE 0 END), 0.0) AS {key},"
