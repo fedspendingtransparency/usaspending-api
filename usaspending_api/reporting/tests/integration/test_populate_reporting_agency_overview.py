@@ -58,8 +58,8 @@ def setup_test_data(db):
     ]
 
     agencies = [
-        mommy.make("references.Agency", id=1, toptier_agency=toptier_agencies[0]),
-        mommy.make("references.Agency", id=2, toptier_agency=toptier_agencies[1]),
+        mommy.make("references.Agency", id=1, toptier_agency=toptier_agencies[0], toptier_flag=True),
+        mommy.make("references.Agency", id=2, toptier_agency=toptier_agencies[1], toptier_flag=True),
     ]
 
     treas_accounts = [

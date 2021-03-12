@@ -130,7 +130,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                 "current_total_budget_authority_amount": result["total_budgetary_resources"],
                 "total_budgetary_resources": result["gtas_total_budgetary_resources"],
                 "percent_of_total_budgetary_resources": round(
-                    result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2
+                    result["total_budgetary_resources"] * 100 / (result["gtas_total_budgetary_resources"] or 100), 2
                 ),
                 "recent_publication_date": result["recent_publication_date"],
                 "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,

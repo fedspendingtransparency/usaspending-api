@@ -9,24 +9,23 @@ url = "/api/v2/reporting/agencies/publish_dates/"
 @pytest.fixture
 def publish_dates_data(db):
     dabs1 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", pk=1, submission_reveal_date="2020-01-01 00:00:00.000000+00"
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01 00:00:00.000000+00"
     )
     dabs2 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", pk=2, submission_reveal_date="2020-01-02 00:00:00.000000+00"
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-02 00:00:00.000000+00"
     )
     dabs3 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", pk=3, submission_reveal_date="2019-01-01 00:00:00.000000+00"
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2019-01-01 00:00:00.000000+00"
     )
     dabs4 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", pk=4, submission_reveal_date="2019-01-02 00:00:00.000000+00"
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2019-01-02 00:00:00.000000+00"
     )
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", awarding_toptier_agency_id="001")
-    tas2 = mommy.make("accounts.TreasuryAppropriationAccount", awarding_toptier_agency_id="002")
+    tas1 = mommy.make("accounts.TreasuryAppropriationAccount")
+    tas2 = mommy.make("accounts.TreasuryAppropriationAccount")
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2)
     mommy.make(
         "submissions.SubmissionAttributes",
-        submission_id=1,
         toptier_code="001",
         reporting_fiscal_year=2020,
         reporting_fiscal_period=3,
@@ -38,7 +37,6 @@ def publish_dates_data(db):
     )
     mommy.make(
         "submissions.SubmissionAttributes",
-        submission_id=2,
         toptier_code="001",
         reporting_fiscal_year=2020,
         reporting_fiscal_period=7,
@@ -51,7 +49,6 @@ def publish_dates_data(db):
 
     mommy.make(
         "submissions.SubmissionAttributes",
-        submission_id=3,
         toptier_code="001",
         reporting_fiscal_year=2019,
         reporting_fiscal_period=12,
@@ -63,7 +60,6 @@ def publish_dates_data(db):
     )
     mommy.make(
         "submissions.SubmissionAttributes",
-        submission_id=4,
         toptier_code="002",
         reporting_fiscal_year=2019,
         reporting_fiscal_period=11,
@@ -103,15 +99,11 @@ def publish_dates_data(db):
         total_budgetary_resources=300.00,
     )
 
-    mommy.make(
-        "references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test Agency", abbreviation="TA"
-    )
-    mommy.make(
-        "references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test Agency 2", abbreviation="TA2"
-    )
+    ta1 = mommy.make("references.ToptierAgency", toptier_code="001", name="Test Agency", abbreviation="TA")
+    ta2 = mommy.make("references.ToptierAgency", toptier_code="002", name="Test Agency 2", abbreviation="TA2")
 
-    mommy.make("references.Agency", id=1, toptier_agency_id=1)
-    mommy.make("references.Agency", id=2, toptier_agency_id=2)
+    mommy.make("references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True)
+    mommy.make("references.Agency", id=2, toptier_agency_id=ta2.toptier_agency_id, toptier_flag=True)
 
 
 def test_basic_success(client, publish_dates_data):

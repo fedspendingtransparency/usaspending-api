@@ -159,9 +159,9 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
         )
 
         if self.pagination.sort_order == "desc":
-            result_list = result_list.order_by(F(self.pagination.sort_key).desc(nulls_last=True))
+            result_list = result_list.order_by(F(self.pagination.sort_key).desc(nulls_last=True), "-toptier_code")
         else:
-            result_list = result_list.order_by(F(self.pagination.sort_key).asc(nulls_last=True))
+            result_list = result_list.order_by(F(self.pagination.sort_key).asc(nulls_last=True), "toptier_code")
 
         return self.format_results(result_list)
 

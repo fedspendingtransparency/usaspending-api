@@ -11,8 +11,18 @@ URL = "/api/v2/reporting/agencies/{code}/differences/{filter}"
 
 @pytest.fixture
 def differences_data():
+    dabs1 = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01 00:00:00.000000+00"
+    )
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        toptier_code="001",
+        quarter_format_flag=False,
+        submission_window=dabs1,
+    )
     ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", awarding_toptier_agency=ta1)
+    mommy.make("references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True)
+    tas1 = mommy.make("accounts.TreasuryAppropriationAccount")
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
     mommy.make(
         "reporting.ReportingAgencyTas",
