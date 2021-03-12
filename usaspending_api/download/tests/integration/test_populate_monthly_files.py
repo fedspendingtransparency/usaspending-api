@@ -10,12 +10,8 @@ from model_mommy import mommy
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
-
-def delete_files():
-    file_list = os.listdir("csv_downloads")
-    for file in file_list:
-        if file != "README.md":
-            os.remove(os.path.normpath(f"csv_downloads/{file}"))
+CSV_DIR = "csv_downloads"
+TODAY = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
 
 
 def generate_contract_data(fiscal_year, i):
@@ -539,30 +535,34 @@ def monthly_download_data(db, monkeypatch):
 
 def test_all_agencies(client, monthly_download_data, monkeypatch):
     call_command("populate_monthly_files", "--fiscal_year=2020", "--local", "--clobber")
-    file_list = os.listdir("csv_downloads")
-    formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
-    assert f"FY2020_All_Contracts_Full_{formatted_date}.zip" in file_list
-    assert f"FY2020_All_Assistance_Full_{formatted_date}.zip" in file_list
-    delete_files()
+    file_list = os.listdir(CSV_DIR)
+
+    assert f"FY2020_All_Contracts_Full_{TODAY}.zip" in file_list
+    assert f"FY2020_All_Assistance_Full_{TODAY}.zip" in file_list
+    os.remove(os.path.normpath(f"{CSV_DIR}/FY2020_All_Contracts_Full_{TODAY}.zip"))
+    os.remove(os.path.normpath(f"{CSV_DIR}/FY2020_All_Assistance_Full_{TODAY}.zip"))
 
 
 def test_specific_agency(client, monthly_download_data, monkeypatch):
     contract_data = generate_contract_data(2020, 1)
     assistance_data = generate_assistance_data
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
-    file_list = os.listdir("csv_downloads")
-    formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
-    assert f"FY2020_001_Contracts_Full_{formatted_date}.zip" in file_list
-    assert f"FY2020_001_Assistance_Full_{formatted_date}.zip" in file_list
+    file_list = os.listdir(CSV_DIR)
 
-    with zipfile.ZipFile(
-        os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}.zip"), "r"
-    ) as zip_ref:
-        zip_ref.extractall("csv_downloads")
-        assert f"FY2020_001_Contracts_Full_{formatted_date}_1.csv" in os.listdir("csv_downloads")
-    with open(
-        os.path.normpath(f"csv_downloads/FY2020_001_Contracts_Full_{formatted_date}_1.csv"), "r"
-    ) as contract_file:
+    assistance_csv_1 = f"FY2020_001_Assistance_Full_{TODAY}_1.csv"
+    assistance_zip_1 = f"FY2020_001_Assistance_Full_{TODAY}.zip"
+    assistance_zip_2 = f"FY2020_002_Assistance_Full_{TODAY}.zip"
+    contracts_csv_1 = f"FY2020_001_Contracts_Full_{TODAY}_1.csv"
+    contracts_zip_1 = f"FY2020_001_Contracts_Full_{TODAY}.zip"
+    contracts_zip_2 = f"FY2020_002_Contracts_Full_{TODAY}.zip"
+
+    assert contracts_zip_1 in file_list
+    assert assistance_zip_1 in file_list
+
+    with zipfile.ZipFile(os.path.normpath(f"{CSV_DIR}/{contracts_zip_1}"), "r") as zip_ref:
+        zip_ref.extractall(CSV_DIR)
+        assert contracts_csv_1 in os.listdir(CSV_DIR)
+    with open(os.path.normpath(f"{CSV_DIR}/{contracts_csv_1}"), "r") as contract_file:
         csv_reader = reader(contract_file)
         row_count = 0
         for row in csv_reader:
@@ -573,14 +573,10 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
             row_count += 1
     assert row_count >= 1
 
-    with zipfile.ZipFile(
-        os.path.normpath(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}.zip"), "r"
-    ) as zip_ref:
-        zip_ref.extractall("csv_downloads")
-        assert f"FY2020_001_Assistance_Full_{formatted_date}_1.csv" in os.listdir("csv_downloads")
-    with open(
-        os.path.normpath(f"csv_downloads/FY2020_001_Assistance_Full_{formatted_date}_1.csv"), "r"
-    ) as assistance_file:
+    with zipfile.ZipFile(os.path.normpath(f"{CSV_DIR}/{assistance_zip_1}"), "r") as zip_ref:
+        zip_ref.extractall(CSV_DIR)
+        assert assistance_csv_1 in os.listdir(CSV_DIR)
+    with open(os.path.normpath(f"{CSV_DIR}/{assistance_csv_1}"), "r") as assistance_file:
         csv_reader = reader(assistance_file)
         row_count = 0
         for row in csv_reader:
@@ -590,27 +586,49 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
                 assert row == assistance_data
             row_count += 1
         assert row_count >= 1
-    delete_files()
+
+    for f in (contracts_zip_1, assistance_zip_1, contracts_csv_1, assistance_csv_1, assistance_zip_2, contracts_zip_2):
+        os.remove(os.path.normpath(f"{CSV_DIR}/{f}"))
 
 
 def test_agency_no_data(client, monthly_download_data, monkeypatch):
     call_command("populate_monthly_files", "--agencies=2", "--fiscal_year=2022", "--local", "--clobber")
-    file_list = os.listdir("csv_downloads")
-    formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
-    assert f"FY2020_002_Contracts_Full_{formatted_date}.zip" not in file_list
-    assert f"FY2020_002_Assistance_Full_{formatted_date}.zip" not in file_list
+    contracts_zip = f"FY2022_002_Contracts_Full_{TODAY}.zip"
+    contracts_csv_1 = f"FY2022_002_Contracts_Full_{TODAY}_1.csv"
+    assistance_zip = f"FY2022_002_Assistance_Full_{TODAY}.zip"
+    assistance_csv_1 = f"FY2022_002_Assistance_Full_{TODAY}_1.csv"
+
+    for zip_file, csv_file in [(contracts_zip, contracts_csv_1), (assistance_zip, assistance_csv_1)]:
+
+        with zipfile.ZipFile(os.path.normpath(f"{CSV_DIR}/{zip_file}"), "r") as zip_ref:
+            zip_ref.extractall(CSV_DIR)
+            assert csv_file in os.listdir(CSV_DIR), f"{csv_file} was not generated or extracted"
+
+        with open(os.path.normpath(f"{CSV_DIR}/{csv_file}"), "r") as csv_file:
+            csv_reader = reader(csv_file)
+            row_count = 0
+            for row in csv_reader:
+                row_count += 1
+            assert row_count == 1, f"{csv_file} was not empty"
+
+    for f in (contracts_zip, assistance_zip, contracts_csv_1, assistance_csv_1):
+        os.remove(os.path.normpath(f"{CSV_DIR}/{f}"))
 
 
 def test_fiscal_years(client, monthly_download_data, monkeypatch):
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2004", "--local", "--clobber")
-    file_list = os.listdir("csv_downloads")
-    formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
-    assert f"FY2004_001_Contracts_Full_{formatted_date}.zip" in file_list
-    assert f"FY2004_001_Assistance_Full_{formatted_date}.zip" in file_list
-    assert f"FY2020_001_Contracts_Full_{formatted_date}.zip" in file_list
-    assert f"FY2020_001_Assistance_Full_{formatted_date}.zip" in file_list
-    delete_files()
+    file_list = os.listdir(CSV_DIR)
+    expected_files = (
+        f"FY2004_001_Contracts_Full_{TODAY}.zip",
+        f"FY2004_001_Assistance_Full_{TODAY}.zip",
+        f"FY2020_001_Contracts_Full_{TODAY}.zip",
+        f"FY2020_001_Assistance_Full_{TODAY}.zip",
+    )
+
+    for expected_file in expected_files:
+        assert expected_file in file_list
+        os.remove(os.path.normpath(f"{CSV_DIR}/{expected_file}"))
 
 
 def test_award_type(client, monthly_download_data, monkeypatch):
@@ -622,8 +640,8 @@ def test_award_type(client, monthly_download_data, monkeypatch):
         "--local",
         "--clobber",
     )
-    file_list = os.listdir("csv_downloads")
-    formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
-    assert f"FY2020_001_Assistance_Full_{formatted_date}.zip" in file_list
-    assert f"FY2020_001_Contracts_Full_{formatted_date}.zip" not in file_list
-    delete_files()
+    file_list = os.listdir(CSV_DIR)
+
+    assert f"FY2020_001_Assistance_Full_{TODAY}.zip" in file_list
+    assert f"FY2020_001_Contracts_Full_{TODAY}.zip" not in file_list
+    os.remove(os.path.normpath(f"{CSV_DIR}/FY2020_001_Assistance_Full_{TODAY}.zip"))
