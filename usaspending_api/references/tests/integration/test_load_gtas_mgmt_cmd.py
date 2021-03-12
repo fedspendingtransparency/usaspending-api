@@ -2,7 +2,9 @@ import pytest
 
 from django.core.management import call_command
 from django.db import DEFAULT_DB_ALIAS
+from model_mommy import mommy
 from unittest.mock import MagicMock
+
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 from usaspending_api.references.models import GTASSF133Balances
 
@@ -19,6 +21,8 @@ def test_program_activity_fresh_load(monkeypatch):
         DEFAULT_DB_ALIAS: MagicMock(),
         "data_broker": data_broker_mock,
     }
+
+    mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="999-X-111")
 
     monkeypatch.setattr("usaspending_api.references.management.commands.load_gtas.connections", mock_connections)
 
