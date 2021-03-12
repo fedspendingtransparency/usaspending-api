@@ -1,6 +1,5 @@
 import pytest
 
-from datetime import datetime
 from decimal import Decimal
 from model_mommy import mommy
 
@@ -11,7 +10,7 @@ from usaspending_api.reporting.models import ReportingAgencyOverview
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
-    future_date = datetime(datetime.now().year + 1, 1, 19)
+
     dsws = [
         {
             "id": 1,
@@ -22,10 +21,10 @@ def setup_test_data(db):
         },
         {
             "id": 2,
-            "submission_fiscal_year": future_date.year,
+            "submission_fiscal_year": 2020,
             "submission_fiscal_quarter": 1,
             "submission_fiscal_month": 3,
-            "submission_reveal_date": datetime.strftime(future_date, "%Y-%m-%d"),
+            "submission_reveal_date": "2020-01-09",
         },
     ]
     for dabs_window in dsws:
@@ -35,6 +34,7 @@ def setup_test_data(db):
         mommy.make(
             "submissions.SubmissionAttributes",
             submission_id=1,
+            toptier_code="987",
             reporting_fiscal_year=2019,
             reporting_fiscal_quarter=1,
             reporting_fiscal_period=3,
@@ -44,7 +44,8 @@ def setup_test_data(db):
         mommy.make(
             "submissions.SubmissionAttributes",
             submission_id=2,
-            reporting_fiscal_year=future_date.year,
+            toptier_code="123",
+            reporting_fiscal_year=2020,
             reporting_fiscal_quarter=1,
             reporting_fiscal_period=3,
             quarter_format_flag=True,
@@ -290,7 +291,7 @@ def test_run_script(setup_test_data):
     """ Test that the populate_reporting_agency_tas script acts as expected """
     call_command("populate_reporting_agency_overview")
 
-    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="987").all()
+    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="987")
 
     assert len(results) == 1
     assert results[0].total_dollars_obligated_gtas == Decimal("-3.2")
