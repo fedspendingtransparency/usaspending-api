@@ -34,6 +34,7 @@ This endpoint returns a list of recipients, their level, DUNS, and amount.
         + `limit` (optional, number)
             The number of results to include per page.
             + Default: 50
+            + Max: 1000
         + `page` (optional, number)
             The page of results to return based on the limit.
             + Default: 1
