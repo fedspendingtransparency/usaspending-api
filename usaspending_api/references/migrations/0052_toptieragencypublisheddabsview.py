@@ -14,22 +14,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.CreateModel(
             name="ToptierAgencyPublishedDABSView",
-            fields=[
-                ("toptier_code", models.TextField()),
-                ("name", models.TextField()),
-                ("abbreviation", models.TextField()),
-                (
-                    "toptier_agency",
-                    models.OneToOneField(
-                        on_delete=django.db.models.deletion.DO_NOTHING,
-                        primary_key=True,
-                        related_name="toptieragencypublisheddabsview",
-                        serialize=False,
-                        to="references.ToptierAgency",
-                    ),
-                ),
-                ("user_selectable", models.BooleanField()),
-            ],
+            fields=[],
             options={
                 "db_table": "vw_published_dabs_toptier_agency",
                 "managed": False,
