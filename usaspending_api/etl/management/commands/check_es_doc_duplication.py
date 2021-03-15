@@ -1,7 +1,9 @@
 import logging
+import numpy as np
 
 from django.core.management.base import BaseCommand
 from elasticsearch import Elasticsearch
+from elasticsearch.helpers import scan
 from math import ceil, floor
 from multiprocessing.pool import ThreadPool
 from threading import Lock, get_ident
@@ -19,6 +21,15 @@ class Command(BaseCommand):
           value to end up on different shards (by default, shard-routing is done using the ``_id`` field)
     """
 
+    help = """
+        Check whether an index has duplicate documents on different shards with the same ``_id`` value.
+        There are two approaches, and one needs to be chosen using either --query-type scroll, or --query-type 
+        partition. See arg info for --query-type for more info. There is no fast way to perform this check, 
+        but these two strategies provide a client-side-intense way to do it or a server-side intense way to do it, 
+        respectively. Each takes a very long time to process (e.g. 8hrs for 100M docs). Trial out performance and 
+        impact to client or server by testing with a small --stop-after value.
+    """
+
     _es_client_config: dict = None
     _index: str = None
     _partition_size: int = None
@@ -30,7 +41,7 @@ class Command(BaseCommand):
     _duplicated_query_template = {
         "size": 0,
         "aggs": {
-            "count_duplication": {
+            "count_duplication_by_partitions": {
                 "terms": {
                     "field": "_id",
                     "min_doc_count": 2,
@@ -42,6 +53,16 @@ class Command(BaseCommand):
     }
 
     def add_arguments(self, parser):
+        parser.add_argument(
+            "--query-type",
+            type=str,
+            choices=("scroll", "partition"),
+            help="The query strategy to use. scroll: will walk across ALL docs, querying --partition-size results at a "
+            "time. The results are then aggregated in Python on the client-side, so it could be memory intensive"
+            "on the client host on which it is run. partition: will run terms aggregations on disjoint "
+            "partitions of the docs, returning --partition-size agg buckets with each call. The aggs being done "
+            "concurrently on the server can cause server straing on CPU, memory, and induce request timeouts",
+        )
         parser.add_argument(
             "--es-hostname",
             type=str,
@@ -65,7 +86,8 @@ class Command(BaseCommand):
             "--parallelism",
             type=int,
             help="(default: 4, max: 256) "
-            "Number of parallel threads to spin up, each performing a count of docs with an ID.",
+            "When using a partition query, number of parallel threads to spin up, each performing an agg query with a "
+            "distinct partition.",
             default=4,
             choices=range(1, 257),
             metavar="{1..256}",
@@ -74,7 +96,8 @@ class Command(BaseCommand):
             "--partition-size",
             type=int,
             help="(default: 5000, max: 10000) "
-            "The size of the aggregation, which yields the number of buckets (each for a unique _id) generated "
+            "For scroll query, the size of the query result set. For partition query, the size of the aggregation, "
+            "which yields the number of buckets (each for a unique _id) generated "
             "by each count query. Lower value yields a greater number of queries needing to be run in total; "
             "higher value yields fewer total queries run. Max is 10,000 (AWS ES Limit).",
             default=5000,
@@ -89,6 +112,70 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        if options["query_type"] == "scroll":
+            _log.info("Starting to gather doc _ids using 'scroll' query strategy")
+            self.handle_with_scrolling(**options)
+        elif options["query_type"] == "partition":
+            _log.info("Starting to gather doc _ids using 'partition' query strategy")
+            self.handle_with_partitioning(**options)
+        else:
+            raise RuntimeError("Invalid argument provided for required option --query-type.")
+
+    def handle_with_scrolling(self, **options):
+        self._es_client_config = {"hosts": options["es_hostname"], "timeout": options["es_timeout"]}
+        self._partition_size = options["partition_size"]
+        es = Elasticsearch(**self._es_client_config)
+        self._index = options["index"]
+        doc_count = es.count(index=options["index"])["count"]
+        _log.info(f"Found {doc_count:,} docs in index {self._index}")
+        self._num_partitions = ceil(doc_count / self._partition_size)
+
+        # Instantiate a numpy array with the dumber of docs' _id fields we expect to touch
+        all_ids = np.empty(doc_count, dtype=int)
+        _log.info(f"Collecting _ids from all {doc_count:,} in scrolling batch queries of size {self._partition_size}")
+
+        # Create a baseline query used in scrolling, which gets all docs, but doesn't return the doc _source.
+        # Use this query in the scan helper, which performs the scrolling
+        # preserve_order=True seems to provide better performance on our indices rather than sort=_doc (see docs)
+        q = {"query": {"match_all": {}}, "_source": False}
+        for idx, hit in enumerate(scan(es, index=self._index, query=q, size=self._partition_size, preserve_order=True)):
+            all_ids[idx] = hit["_id"]
+            doc_num = idx + 1
+            if doc_num % self._partition_size == 0:
+                _log.debug(f"Finished batch {int(doc_num / self._partition_size)} of {self._num_partitions}")
+            percent_complete = floor((doc_num / doc_count) * 100)
+            if percent_complete in self._percents:
+                self._percents.remove(percent_complete)
+                _log.info("=" * ceil(percent_complete * 0.6) + f" {percent_complete}% of scroll complete")
+            if options.get("stop_after") and doc_num >= options["stop_after"]:
+                _log.warning(f"Halting early after reaching --stop-after={options['stop_after']} docs")
+                break
+
+        # Gather stats from _id value array using numpy
+        _log.info("Done scrolling all docs. Gathering statistics on _id values found.")
+        unique, counts = np.unique(all_ids, return_counts=True)
+        duped_ids = unique[counts > 1]  # type: np.ndarray
+        duped_id_counts = counts[counts > 1]  # type: np.ndarray
+        duplicated_doc_ids = dict(zip(duped_ids, duped_id_counts))
+        if 0 in duplicated_doc_ids:
+            duplicated_doc_ids.pop(0)
+
+        if duplicated_doc_ids:
+            duped_id_count = len(duplicated_doc_ids)
+            max_dupe = np.amax(duped_id_counts)
+            p75 = np.percentile(duped_id_counts, 75)
+            p95 = np.percentile(duped_id_counts, 95)
+            _log.warning(
+                f"Found {duped_id_count:,} _ids with more than one doc in the index. "
+                f"Max duplication (p100) = {max_dupe}; p95 = {p95}; p75 = {p75}"
+            )
+            header = "_id         | duplicated\n" + "-" * 12 + "|" + "-" * 12 + "\n"
+            rows = "\n".join([str(k).ljust(12) + "|" + str(v).ljust(12) for k, v in duplicated_doc_ids.items()])
+            _log.warning(header + rows)
+        else:
+            _log.info("No duplicate documents with the same _id field found.")
+
+    def handle_with_partitioning(self, **options):
         self._es_client_config = {"hosts": options["es_hostname"], "timeout": options["es_timeout"]}
         self._partition_size = options["partition_size"]
         es = Elasticsearch(**self._es_client_config)
@@ -107,7 +194,7 @@ class Command(BaseCommand):
             num_partitions = self._num_partitions
             if options.get("stop_after"):
                 num_partitions = options["stop_after"]
-            pool.map(self.count_duplication, range(0, num_partitions))
+            pool.map(self.count_duplication_by_partitions, range(0, num_partitions))
         if self._duplicated_doc_ids:
             duped_id_count = len(self._duplicated_doc_ids)
             max_dupe = max(self._duplicated_doc_ids.values())
@@ -120,7 +207,7 @@ class Command(BaseCommand):
         else:
             _log.info("No duplicate documents with the same _id field found.")
 
-    def count_duplication(self, partition):
+    def count_duplication_by_partitions(self, partition):
         es = Elasticsearch(**self._es_client_config)
         q = self._duplicated_query_template.copy()
         agg_name = next(iter(q["aggs"]))
