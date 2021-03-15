@@ -26,25 +26,21 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
                     "contracts": [
                         {
                             "type": "contracts",
-                            "obligated_amount": 9999999.99,
-                            "percent_of_total": 0.1
+                            "obligated_amount": 9999999.99
                         },
                         {
                             "type": "idvs",
-                            "obligated_amount": 9999999.99,
-                            "percent_of_total": 0.1
+                            "obligated_amount": 9999999.99
                         }
                     ],
                     "assistance": [
                         {
                             "type": "direct_payments",
-                            "obligated_amount": 9999999.99,
-                            "percent_of_total": 0.1
+                            "obligated_amount": 9999999.99
                         },
                         {
                             "type": "grants",
-                            "obligated_amount": 9999999.99,
-                            "percent_of_total": 0.1
+                            "obligated_amount": 9999999.99
                         }
                     ]
                 ]
@@ -65,4 +61,3 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
         + `direct_payments`
         + `other`
 + `obligated_amount` (required, number)
-+ `percent_of_total` (required, number)
