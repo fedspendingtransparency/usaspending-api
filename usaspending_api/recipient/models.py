@@ -103,7 +103,17 @@ class RecipientProfile(models.Model):
         #     create index idx_recipient_profile_name on
         #         public.recipient_profile using gin (recipient_name public.gin_trgm_ops)
         #
-        indexes = [GinIndex(fields=["award_types"]), models.Index(fields=["recipient_unique_id"])]
+        indexes = [
+            GinIndex(fields=["award_types"]),
+            models.Index(fields=["recipient_unique_id"]),
+            models.Index(fields=["last_12_months"]),
+            models.Index(fields=["last_12_contracts"]),
+            models.Index(fields=["last_12_grants"]),
+            models.Index(fields=["last_12_direct_payments"]),
+            models.Index(fields=["last_12_loans"]),
+            models.Index(fields=["last_12_other"]),
+            # Two additional indexes created with raw SQL to support NULLS LAST
+        ]
 
 
 class RecipientLookup(models.Model):
