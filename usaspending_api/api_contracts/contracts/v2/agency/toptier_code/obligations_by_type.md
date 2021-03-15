@@ -21,7 +21,7 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
     + Body
 
             {
-                "total_obligations": 99999999.99,
+                "award_obligations": 99999999.99,
                 "results": [
                     "contracts": [
                         {
@@ -30,14 +30,14 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
                             "percent_of_total": 0.1
                         },
                         {
-                            "type": "IDVs",
+                            "type": "idvs",
                             "obligated_amount": 9999999.99,
                             "percent_of_total": 0.1
                         }
                     ],
                     "assistance": [
                         {
-                            "type": "direct payments",
+                            "type": "direct_payments",
                             "obligated_amount": 9999999.99,
                             "percent_of_total": 0.1
                         },
@@ -56,6 +56,13 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
 + `contracts` (required, array[Obligation], fixed-type)
 + `assistance` (required, array[Obligation], fixed-type)
 ## Obligation (object)
-+ `type` (required, string)
++ `type` (required, enum[string])
+    + Members
+        + `contracts`
+        + `idvs`
+        + `grants`
+        + `loans`
+        + `direct_payments`
+        + `other`
 + `obligated_amount` (required, number)
 + `percent_of_total` (required, number)
