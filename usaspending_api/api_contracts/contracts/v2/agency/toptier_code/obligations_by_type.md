@@ -16,7 +16,7 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
 + Response 200 (application/json)
     + Attributes (object)
         + `total_obligations` (required, number)
-        + `results` (required, array[Obligation], fixed-type)
+        + `results` (required, array[ObligationTotals], fixed-type)
 
     + Body
 
@@ -52,6 +52,9 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
 
 # Data Structures
 
+## ObligationTotals (object)
++ `contracts` (required, array[Obligation], fixed-type)
++ `assistance` (required, array[Obligation], fixed-type)
 ## Obligation (object)
 + `type` (required, string)
 + `obligated_amount` (required, number)
