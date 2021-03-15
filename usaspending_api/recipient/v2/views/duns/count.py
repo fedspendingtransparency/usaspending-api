@@ -9,7 +9,11 @@ from usaspending_api.recipient.v2.lookups import AWARD_TYPES, SPECIAL_CASES
 
 
 class DunsCount(APIView):
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/count/duns.md"
+    """
+    This route takes a single keyword filter and agency_type, and returns a count of matching recipients
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns/count.md"
 
     def get_count(self, filters={}):
 
