@@ -37,10 +37,10 @@ class Migration(migrations.Migration):
         # Performed with RAW SQL because Django migraitons don't support 'NULLS LAST'
         migrations.RunSQL(
             "CREATE INDEX recipient_profile_recipient_name_d ON public.recipient_profile USING btree (recipient_name DESC NULLS LAST);",
-            reverse_sql="DROP INDEX INDEX recipient_profile_recipient_name_d;"
+            reverse_sql="DROP INDEX recipient_profile_recipient_name_d;"
         ),
         migrations.RunSQL(
             "CREATE INDEX recipient_profile_recipient_unique_id_d ON public.recipient_profile USING btree (recipient_unique_id DESC NULLS LAST);",
-            reverse_sql="DROP INDEX INDEX recipient_profile_recipient_unique_id_d;"
+            reverse_sql="DROP INDEX recipient_profile_recipient_unique_id_d;"
         )
     ]
