@@ -226,15 +226,12 @@ class Command(BaseCommand):
         return pd.Series(tid.split("_") + [tid])
 
     def add_deletion_records(self, source_path, working_dir, award_type, agency_code, source, generate_since):
-        """ Retrieve deletion files from S3 and append necessary records to the end of the file """
+        """Retrieve deletion files from S3 and append necessary records to the end of the file"""
         logger.info("Retrieving deletion records from S3 files and appending to the CSV")
 
         # Retrieve all SubtierAgency IDs within this TopTierAgency
-        subtier_agencies = list(
-            SubtierAgency.objects.filter(agency__toptier_agency__toptier_code=agency_code).values_list(
-                "subtier_code", flat=True
-            )
-        )
+        filter = {"agency__toptier_agency__toptier_code": agency_code}
+        subtier_agencies = list(SubtierAgency.objects.filter(**filter).values_list("subtier_code", flat=True))
 
         # Create a list of keys in the bucket that match the date range we want
         bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(
@@ -246,7 +243,7 @@ class Command(BaseCommand):
             match_date = self.check_regex_match(award_type, key.key, generate_since)
             if match_date:
                 # Create a local copy of the deletion file
-                delete_filepath = "{}{}".format(working_dir, key.key)
+                delete_filepath = f"{working_dir}{key.key}"
                 bucket.download_file(key.key, delete_filepath)
                 df = pd.read_csv(delete_filepath)
                 os.remove(delete_filepath)
@@ -257,6 +254,7 @@ class Command(BaseCommand):
                     .apply(self.split_transaction_id)
                     .replace("-none-", "")
                     .replace("-NONE-", "")
+                    .reset_index()  # adding to handle API bug which caused a Series to be returned
                     .rename(columns=AWARD_MAPPINGS[award_type]["column_headers"])
                 )
 
@@ -270,13 +268,13 @@ class Command(BaseCommand):
 
                 # Reorder columns to make it CSV-ready, and append
                 df = self.organize_deletion_columns(source, df, award_type, match_date)
-                logger.info("Found {} deletion records to include".format(len(df.index)))
+                logger.info(f"Found {len(df.index):,} deletion records to include")
                 all_deletions = all_deletions.append(df, ignore_index=True)
 
-        # Only append to file if there are any records
         if len(all_deletions.index) == 0:
             logger.info("No deletion records to append to file")
         else:
+            logger.info(f"Appending {len(all_deletions.index):,} records to file")
             self.add_deletions_to_file(all_deletions, award_type, source_path)
 
     def organize_deletion_columns(self, source, dataframe, award_type, match_date):
