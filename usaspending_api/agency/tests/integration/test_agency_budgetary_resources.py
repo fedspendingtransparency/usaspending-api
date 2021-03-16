@@ -13,15 +13,48 @@ PRIOR_FY = FY - 1
 
 @pytest.fixture
 def data_fixture():
+    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
     ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
     ta2 = mommy.make("references.ToptierAgency", toptier_code="002")
+    mommy.make("references.Agency", toptier_flag=True, toptier_agency=ta1)
+    mommy.make("references.Agency", toptier_flag=True, toptier_agency=ta2)
     tas1 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta1)
     tas2 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta2)
-    sa1_3 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=FY, reporting_fiscal_period=3)
-    sa1_6 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=FY, reporting_fiscal_period=6)
-    sa1_9 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=FY, reporting_fiscal_period=9)
-    sa1_12 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=FY, reporting_fiscal_period=12)
-    sa2_12 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=PRIOR_FY, reporting_fiscal_period=12)
+    sa1_3 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=FY,
+        reporting_fiscal_period=3,
+        submission_window_id=dabs.id,
+        toptier_code=ta1.toptier_code,
+    )
+    sa1_6 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=FY,
+        reporting_fiscal_period=6,
+        submission_window_id=dabs.id,
+        toptier_code=ta1.toptier_code,
+    )
+    sa1_9 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=FY,
+        reporting_fiscal_period=9,
+        submission_window_id=dabs.id,
+        toptier_code=ta1.toptier_code,
+    )
+    sa1_12 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=FY,
+        reporting_fiscal_period=12,
+        submission_window_id=dabs.id,
+        toptier_code=ta1.toptier_code,
+    )
+    sa2_12 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=PRIOR_FY,
+        reporting_fiscal_period=12,
+        submission_window_id=dabs.id,
+        toptier_code=ta2.toptier_code,
+    )
 
     mommy.make(
         "accounts.AppropriationAccountBalances",
