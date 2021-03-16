@@ -98,6 +98,7 @@ class ListRecipients(APIView):
         try:
             count = self.request_count(validated_payload)
         except Exception as e:
+            count = None
             logger.error("Unable to retreive count using endpoint. Falling back on using queryset.")
             logger.error(str(e))
 
