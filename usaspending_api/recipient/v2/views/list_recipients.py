@@ -46,7 +46,7 @@ def get_recipients(filters={}, count=None):
     else:
         queryset = queryset.order_by(F(api_to_db_mapper[filters["sort"]]).asc(nulls_last=nulls_last))
 
-    if not count:
+    if count is None:
         count = queryset.count()
 
     page_metadata = get_pagination_metadata(count, filters["limit"], filters["page"])
