@@ -19,10 +19,12 @@ def duns_count_key_function(view_instance, view_method, request, args, kwargs):
     if "keyword" in validated_payload:
         keyword = validated_payload["keyword"]
 
-    key = '.'.join([
-        award_type,
-        keyword,
-    ])
+    key = ".".join(
+        [
+            award_type,
+            keyword,
+        ]
+    )
 
     return key
 
