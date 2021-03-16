@@ -11,45 +11,40 @@ from usaspending_api.reporting.models import ReportingAgencyOverview
 def setup_test_data(db):
     """ Insert data into DB for testing """
 
-    dsws = [
+    dsws_dicts = [
         {
-            "id": 1,
             "submission_fiscal_year": 2019,
             "submission_fiscal_quarter": 1,
             "submission_fiscal_month": 3,
             "submission_reveal_date": "2019-1-15",
         },
         {
-            "id": 2,
             "submission_fiscal_year": 2020,
             "submission_fiscal_quarter": 1,
             "submission_fiscal_month": 3,
             "submission_reveal_date": "2020-01-09",
         },
     ]
-    for dabs_window in dsws:
-        mommy.make("submissions.DABSSubmissionWindowSchedule", **dabs_window)
+    dsws = [mommy.make("submissions.DABSSubmissionWindowSchedule", **dabs_window) for dabs_window in dsws_dicts]
 
     subs = [
         mommy.make(
             "submissions.SubmissionAttributes",
-            submission_id=1,
             toptier_code="987",
             reporting_fiscal_year=2019,
             reporting_fiscal_quarter=1,
             reporting_fiscal_period=3,
             quarter_format_flag=True,
-            submission_window_id=dsws[0]["id"],
+            submission_window=dsws[0],
         ),
         mommy.make(
             "submissions.SubmissionAttributes",
-            submission_id=2,
             toptier_code="123",
             reporting_fiscal_year=2020,
             reporting_fiscal_quarter=1,
             reporting_fiscal_period=3,
             quarter_format_flag=True,
-            submission_window_id=dsws[1]["id"],
+            submission_window=dsws[1],
         ),
     ]
 
@@ -59,26 +54,23 @@ def setup_test_data(db):
     ]
 
     agencies = [
-        mommy.make("references.Agency", id=1, toptier_agency=toptier_agencies[0], toptier_flag=True),
-        mommy.make("references.Agency", id=2, toptier_agency=toptier_agencies[1], toptier_flag=True),
+        mommy.make("references.Agency", toptier_agency=toptier_agencies[0], toptier_flag=True),
+        mommy.make("references.Agency", toptier_agency=toptier_agencies[1], toptier_flag=True),
     ]
 
     treas_accounts = [
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            treasury_account_identifier=1,
             awarding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
             tas_rendering_label="tas-1-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            treasury_account_identifier=2,
             awarding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
             tas_rendering_label="tas-2-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            treasury_account_identifier=3,
             awarding_toptier_agency_id=toptier_agencies[1].toptier_agency_id,
             tas_rendering_label="tas-3-overview",
         ),
