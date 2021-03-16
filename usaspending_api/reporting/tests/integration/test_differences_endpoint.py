@@ -12,7 +12,7 @@ URL = "/api/v2/reporting/agencies/{code}/differences/{filter}"
 @pytest.fixture
 def differences_data():
     ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta1)
+    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", awarding_toptier_agency=ta1)
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
     mommy.make(
         "reporting.ReportingAgencyTas",

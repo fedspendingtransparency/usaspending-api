@@ -1,5 +1,6 @@
 from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value
 from rest_framework.response import Response
+
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from django.utils.functional import cached_property
 
@@ -50,7 +51,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             Q(fiscal_period=self.fiscal_period),
         ]
         result_list = (
-            ToptierAgency.objects.account_agencies()
+            ToptierAgency.objects.account_agencies("awarding")
             .filter(*agency_filters)
             .annotate(
                 agency_name=F("name"),
