@@ -10,7 +10,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.reporting.models import ReportingAgencyTas
 
 
@@ -56,11 +56,7 @@ class Differences(AgencyBase):
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         request_data = self._parse_and_validate_request(request.query_params)
 
-        toptier_agency = (
-            ToptierAgency.objects.account_agencies(agency_type="awarding")
-            .filter(toptier_code=self.toptier_code)
-            .first()
-        )
+        toptier_agency = ToptierAgencyPublishedDABSView.objects.filter(toptier_code=self.toptier_code).first()
         if not toptier_agency:
             raise NotFound(f"Agency with a toptier code of '{self.toptier_code}' does not exist")
         request_data["toptier_agency"] = toptier_agency

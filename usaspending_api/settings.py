@@ -141,7 +141,7 @@ ES_ROUTING_FIELD = "recipient_agg_key"
 # Grants API
 GRANTS_API_KEY = os.environ.get("GRANTS_API_KEY")
 
-# Application definition
+# Applications https://docs.djangoproject.com/en/2.2/ref/settings/#installed-apps
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
