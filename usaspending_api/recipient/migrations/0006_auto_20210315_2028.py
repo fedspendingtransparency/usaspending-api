@@ -34,13 +34,18 @@ class Migration(migrations.Migration):
             model_name='recipientprofile',
             index=models.Index(fields=['last_12_other'], name='recipient_p_last_12_7a7440_idx'),
         ),
-        # Performed with RAW SQL because Django migraitons don't support 'NULLS LAST'
+        # Performed with RAW SQL because Django migrations don't support 'NULLS LAST'
         migrations.RunSQL(
-            "CREATE INDEX recipient_profile_recipient_name_d ON public.recipient_profile USING btree (recipient_name DESC NULLS LAST);",
-            reverse_sql="DROP INDEX recipient_profile_recipient_name_d;"
+            "CREATE INDEX recipient_profile_recipient_name_d ON public.recipient_profile USING btree (recipient_name DESC NULLS LAST)",
+            reverse_sql="DROP INDEX recipient_profile_recipient_name_d"
         ),
         migrations.RunSQL(
-            "CREATE INDEX recipient_profile_recipient_unique_id_d ON public.recipient_profile USING btree (recipient_unique_id DESC NULLS LAST);",
-            reverse_sql="DROP INDEX recipient_profile_recipient_unique_id_d;"
+            "CREATE INDEX recipient_profile_recipient_unique_id_d ON public.recipient_profile USING btree (recipient_unique_id DESC NULLS LAST)",
+            reverse_sql="DROP INDEX recipient_profile_recipient_unique_id_d"
+        ),
+        # Performed with RAW SQL because Django migrations don't support GinIndexes with a specific Postgres operator class:
+        migrations.RunSQL(
+            "CREATE INDEX idx_recipient_unique_id_gin ON public.recipient_profile USING gin (recipient_unique_id gin_trgm_ops)",
+            reverse_sql="DROP INDEX idx_recipient_unique_id_gin"
         )
     ]
