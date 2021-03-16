@@ -283,7 +283,9 @@ def test_run_script(setup_test_data):
     """ Test that the populate_reporting_agency_tas script acts as expected """
     call_command("populate_reporting_agency_overview")
 
-    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="987")
+    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="987").order_by(
+        "total_dollars_obligated_gtas"
+    )
 
     assert len(results) == 1
     assert results[0].total_dollars_obligated_gtas == Decimal("-3.2")
