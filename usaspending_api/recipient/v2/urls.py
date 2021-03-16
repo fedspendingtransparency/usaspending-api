@@ -7,7 +7,6 @@ from usaspending_api.recipient.v2.views.list_recipients import ListRecipients
 
 urlpatterns = [
     url(r"^duns/$", ListRecipients.as_view()),
-    # This url is called interally by the ListRecipients view with a hardcoded path
     url(r"^duns/count/$", DunsCount.as_view()),
     url(r"^duns/(?P<recipient_id>.*)/$", RecipientOverView.as_view()),
     url(r"^children/(?P<duns>[0-9]{9})/$", ChildRecipients.as_view()),
