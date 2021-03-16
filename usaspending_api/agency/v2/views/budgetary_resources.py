@@ -52,7 +52,7 @@ class BudgetaryResources(AgencyBase):
                     "fiscal_year": x["submission__reporting_fiscal_year"],
                     "agency_budgetary_resources": x["agency_budgetary_resources"],
                     "agency_total_obligated": x["agency_total_obligated"],
-                    "total_budgetary_resources": self.get_total_federal_budgetary_resources(
+                    "federal_budgetary_resources": self.get_total_federal_budgetary_resources(
                         x["submission__reporting_fiscal_year"]
                     ),
                 }

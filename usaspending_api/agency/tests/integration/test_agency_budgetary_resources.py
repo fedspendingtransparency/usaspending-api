@@ -90,45 +90,22 @@ def data_fixture():
 
 @pytest.mark.django_db
 def test_budgetary_resources(client, data_fixture):
-
     resp = client.get(URL.format(code="001", filter=""))
-    assert resp.status_code == status.HTTP_200_OK
     assert resp.data == {
-        "fiscal_year": FY + 2,
         "toptier_code": "001",
-        "agency_budgetary_resources": None,
-        "prior_year_agency_budgetary_resources": None,
-        "total_federal_budgetary_resources": None,
-        "agency_total_obligated": None,
-        "agency_obligation_by_period": [],
-        "messages": [],
-    }
-
-    resp = client.get(URL.format(code="001", filter=f"?fiscal_year={FY}"))
-    assert resp.data == {
-        "fiscal_year": FY,
-        "toptier_code": "001",
-        "agency_budgetary_resources": Decimal("4.00"),
-        "prior_year_agency_budgetary_resources": Decimal("15.00"),
-        "total_federal_budgetary_resources": Decimal("35.00"),
-        "agency_total_obligated": Decimal("3.00"),
-        "agency_obligation_by_period": [
-            {"period": 3, "obligated": Decimal("8883.00")},
-            {"period": 6, "obligated": Decimal("8886.00")},
-            {"period": 9, "obligated": Decimal("8889.00")},
-            {"period": 12, "obligated": Decimal("3.00")},
+        "agency_data_by_year": [
+            {
+                "fiscal_year": FY,
+                "agency_budgetary_resources": Decimal("29992.00"),
+                "federal_budgetary_resources": Decimal("30023.00"),
+                "agency_total_obligated": Decimal("26661.00")
+            },
+            {
+                "fiscal_year": PRIOR_FY,
+                "agency_budgetary_resources": Decimal("15.00"),
+                "federal_budgetary_resources": Decimal("78.00"),
+                "agency_total_obligated": Decimal("5.00")
+            }
         ],
-        "messages": [],
-    }
-
-    resp = client.get(URL.format(code="001", filter=f"?fiscal_year={PRIOR_FY}"))
-    assert resp.data == {
-        "fiscal_year": PRIOR_FY,
-        "toptier_code": "001",
-        "agency_budgetary_resources": Decimal("15.00"),
-        "prior_year_agency_budgetary_resources": None,
-        "total_federal_budgetary_resources": Decimal("78.00"),
-        "agency_total_obligated": Decimal("5.00"),
-        "agency_obligation_by_period": [{"period": 12, "obligated": Decimal("5.00")}],
         "messages": [],
     }

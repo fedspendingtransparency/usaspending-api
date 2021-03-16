@@ -25,7 +25,7 @@ Returns budgetary resources and obligations for the agency and fiscal year reque
             + (object)
                 + `fiscal_year` (required, number)
                 + `agency_budgetary_resources` (required, number, nullable)
-                + `total_federal_budgetary_resources` (required, number, nullable)
+                + `federal_budgetary_resources` (required, number, nullable)
                 + `agency_total_obligated` (required, number, nullable)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
