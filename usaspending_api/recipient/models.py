@@ -112,7 +112,7 @@ class RecipientProfile(models.Model):
             models.Index(fields=["last_12_direct_payments"]),
             models.Index(fields=["last_12_loans"]),
             models.Index(fields=["last_12_other"]),
-            # Two additional indexes created with raw SQL to support NULLS LAST
+            # Two additional indexes created with raw SQL to support NULLS LAST - 0006_auto_20210315_2028
         ]
 
 
