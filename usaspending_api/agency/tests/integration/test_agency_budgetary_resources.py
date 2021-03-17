@@ -90,21 +90,33 @@ def data_fixture():
 @pytest.mark.django_db
 def test_budgetary_resources(client, data_fixture):
     resp = client.get(URL.format(code="001", filter=""))
+    expected_results = [
+        {
+            "fiscal_year": FY,
+            "agency_budgetary_resources": Decimal("29992.00"),
+            "federal_budgetary_resources": Decimal("30023.00"),
+            "agency_total_obligated": Decimal("26661.00"),
+        },
+        {
+            "fiscal_year": PRIOR_FY,
+            "agency_budgetary_resources": Decimal("15.00"),
+            "federal_budgetary_resources": Decimal("78.00"),
+            "agency_total_obligated": Decimal("5.00"),
+        },
+    ]
+    for year in range(2017, current_fiscal_year() + 1):
+        if year != FY and year != PRIOR_FY:
+            expected_results.append(
+                {
+                    "fiscal_year": year,
+                    "agency_budgetary_resources": None,
+                    "federal_budgetary_resources": None,
+                    "agency_total_obligated": None,
+                }
+            )
+    expected_results = sorted(expected_results, key=lambda x: x["fiscal_year"], reverse=True)
     assert resp.data == {
         "toptier_code": "001",
-        "agency_data_by_year": [
-            {
-                "fiscal_year": FY,
-                "agency_budgetary_resources": Decimal("29992.00"),
-                "federal_budgetary_resources": Decimal("30023.00"),
-                "agency_total_obligated": Decimal("26661.00"),
-            },
-            {
-                "fiscal_year": PRIOR_FY,
-                "agency_budgetary_resources": Decimal("15.00"),
-                "federal_budgetary_resources": Decimal("78.00"),
-                "agency_total_obligated": Decimal("5.00"),
-            },
-        ],
+        "agency_data_by_year": expected_results,
         "messages": [],
     }

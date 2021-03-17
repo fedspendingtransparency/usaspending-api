@@ -4,6 +4,7 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.date_helper import now
+from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 
 
 class BudgetaryResources(AgencyBase):
@@ -46,18 +47,27 @@ class BudgetaryResources(AgencyBase):
                 agency_total_obligated=Sum("obligations_incurred_total_by_tas_cpe"),
             )
         )
-        return sorted(
-            [
-                {
-                    "fiscal_year": x["submission__reporting_fiscal_year"],
-                    "agency_budgetary_resources": x["agency_budgetary_resources"],
-                    "agency_total_obligated": x["agency_total_obligated"],
-                    "federal_budgetary_resources": self.get_total_federal_budgetary_resources(
-                        x["submission__reporting_fiscal_year"]
-                    ),
-                }
-                for x in aab
-            ],
-            key=lambda x: x["fiscal_year"],
-            reverse=True,
-        )
+
+        results = [
+            {
+                "fiscal_year": x["submission__reporting_fiscal_year"],
+                "agency_budgetary_resources": x["agency_budgetary_resources"],
+                "agency_total_obligated": x["agency_total_obligated"],
+                "federal_budgetary_resources": self.get_total_federal_budgetary_resources(
+                    x["submission__reporting_fiscal_year"]
+                ),
+            }
+            for x in aab
+        ]
+        years = [x["fiscal_year"] for x in results]
+        for year in range(2017, current_fiscal_year() + 1):
+            if year not in years:
+                results.append(
+                    {
+                        "fiscal_year": year,
+                        "agency_budgetary_resources": None,
+                        "agency_total_obligated": None,
+                        "federal_budgetary_resources": None,
+                    }
+                )
+        return sorted(results, key=lambda x: x["fiscal_year"], reverse=True)

@@ -7,16 +7,9 @@ Returns budgetary resources and obligations for the agency and fiscal year reque
 
 ## GET
 
-+ Request (application/json)
-    + Schema
-
-            {
-                "$schema": "http://json-schema.org/draft-04/schema#",
-                "type": "number"
-            }
-    + Parameters
-        + `toptier_code`: 075 (required, number)
-            The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
++ Parameters
+    + `toptier_code`: 075 (required, number)
+        The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
 
 + Response 200 (application/json)
     + Attributes
