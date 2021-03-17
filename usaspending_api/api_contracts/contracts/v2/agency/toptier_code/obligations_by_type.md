@@ -16,7 +16,7 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
 + Response 200 (application/json)
     + Attributes (object)
         + `award_obligations` (required, number)
-        + `results` (required, array[Obligation], fixed-type)
+        + `results` (required, array[ObligationSubtotals], fixed-type)
 
     + Body
 
@@ -24,19 +24,19 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
                 "award_obligations": 39999999.96,
                 "results": [
                     {
-                        "code": "B",
+                        "type": "contracts",
                         "obligated_amount": 9999999.99
                     },
                     {
-                        "code": "07",
-                        "obligated_amount": 9999999.99
-                    }
-                        {
-                        "code": "IDV_B_A",
+                        "type": "idvs",
                         "obligated_amount": 9999999.99
                     },
                     {
-                        "code": "05",
+                        "type": "direct_payments",
+                        "obligated_amount": 9999999.99
+                    },
+                    {
+                        "type": "grants",
                         "obligated_amount": 9999999.99
                     }
                 ]
@@ -44,30 +44,13 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
 
 # Data Structures
 
-## Obligation (object)
-+ `code` (required, enum[string])
+## ObligationSubtotals (object)
++ `type` (required, enum[string])
     + Members
-        + `02`
-        + `03`
-        + `04`
-        + `05`
-        + `06`
-        + `07`
-        + `08`
-        + `09`
-        + `10`
-        + `11`
-        + `A`
-        + `B`
-        + `C`
-        + `D`
-        + `IDV_A`
-        + `IDV_B`
-        + `IDV_B_A`
-        + `IDV_B_B`
-        + `IDV_B_C`
-        + `IDV_C`
-        + `IDV_D`
-        + `IDV_E`
-
+        + `contracts`
+        + `idvs`
+        + `grants`
+        + `loans`
+        + `direct_payments`
+        + `other`
 + `obligated_amount` (required, number)
