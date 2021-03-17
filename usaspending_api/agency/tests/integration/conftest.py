@@ -6,17 +6,53 @@ from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_ye
 
 @pytest.fixture
 def agency_account_data():
+    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
+
     ta1 = mommy.make("references.ToptierAgency", toptier_code="007")
     ta2 = mommy.make("references.ToptierAgency", toptier_code="008")
     ta3 = mommy.make("references.ToptierAgency", toptier_code="009")
     ta4 = mommy.make("references.ToptierAgency", toptier_code="010")
+
+    mommy.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1)
+    mommy.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2)
+    mommy.make("references.Agency", id=3, toptier_flag=True, toptier_agency=ta3)
+    mommy.make("references.Agency", id=4, toptier_flag=True, toptier_agency=ta4)
+
     sub1 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=current_fiscal_year(), is_final_balances_for_fy=True
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=current_fiscal_year(),
+        toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs.id,
     )
-    sub2 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017, is_final_balances_for_fy=True)
-    sub3 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2018, is_final_balances_for_fy=True)
-    sub4 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2019, is_final_balances_for_fy=True)
-    sub5 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016, is_final_balances_for_fy=True)
+    sub2 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2017,
+        toptier_code=ta2.toptier_code,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs.id,
+    )
+    sub3 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2018,
+        toptier_code=ta3.toptier_code,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs.id,
+    )
+    sub4 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2019,
+        toptier_code=ta4.toptier_code,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs.id,
+    )
+    sub5 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2016,
+        toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs.id,
+    )
     fa1 = mommy.make("accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1")
     fa2 = mommy.make("accounts.FederalAccount", federal_account_code="002-0000", account_title="FA 2")
     fa3 = mommy.make("accounts.FederalAccount", federal_account_code="003-0000", account_title="FA 3")

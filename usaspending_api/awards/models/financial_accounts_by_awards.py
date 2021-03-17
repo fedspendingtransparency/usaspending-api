@@ -157,6 +157,8 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
                     "piid",
                     "transaction_obligated_amount",
                     "gross_outlay_amount_by_award_cpe",
+                    "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
+                    "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
                 ],
                 name="faba_subid_awardkey_sums_idx",
                 condition=Q(disaster_emergency_fund__in=["L", "M", "N", "O", "P", "U"]),

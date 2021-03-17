@@ -131,7 +131,9 @@ class AgencyOverview(AgencyBase, PaginationMixin):
                 "total_budgetary_resources": result["gtas_total_budgetary_resources"],
                 "percent_of_total_budgetary_resources": round(
                     result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2
-                ),
+                )
+                if result["gtas_total_budgetary_resources"]
+                else 0,
                 "recent_publication_date": result["recent_publication_date"],
                 "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
                 "tas_account_discrepancies_totals": {
