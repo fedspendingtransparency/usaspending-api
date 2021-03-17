@@ -2,8 +2,7 @@ from django.conf.urls import url
 from usaspending_api.recipient.v2.views.states import StateMetaDataViewSet, StateAwardBreakdownViewSet, ListStates
 from usaspending_api.recipient.v2.views.recipients import RecipientOverView
 from usaspending_api.recipient.v2.views.recipients import ChildRecipients
-from usaspending_api.recipient.v2.views.duns.count import DunsCount
-from usaspending_api.recipient.v2.views.list_recipients import ListRecipients
+from usaspending_api.recipient.v2.views.list_recipients import DunsCount, ListRecipients
 
 urlpatterns = [
     url(r"^duns/$", ListRecipients.as_view()),
