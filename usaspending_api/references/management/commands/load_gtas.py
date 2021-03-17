@@ -38,6 +38,7 @@ DERIVED_COLUMNS_DYNAMIC = {
         "change_year": 2021,
     }
 }
+GTAS_TABLE = GTASSF133Balances.objects.model._meta.db_table
 
 
 class Command(mixins.ETLMixin, BaseCommand):
@@ -53,7 +54,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         broker_cursor = connections["data_broker"].cursor()
 
         logger.info("Extracting data from Broker")
-        broker_cursor.execute(self.broker_fetch_sql())
+        broker_cursor.execute(self.broker_fetch_sql)
         total_obligation_values = dictfetchall(broker_cursor)
 
         logger.info("Deleting all existing GTAS total obligation records in website")
@@ -67,16 +68,19 @@ class Command(mixins.ETLMixin, BaseCommand):
         new_rec_count = len(GTASSF133Balances.objects.bulk_create(total_obligation_objs))
         logger.info(f"Loaded: {new_rec_count:,} records")
 
-        load_rec = self._execute_dml_sql(self.tas_fk_sql(), "Populating TAS foreign keys")
+        load_rec = self._execute_dml_sql(self.tas_fk_sql, "Populating TAS foreign keys")
         logger.info(f"Set {load_rec:,} TAS FKs in GTAS table, {new_rec_count - load_rec:,} NULLs")
+        delete_rec = self._execute_dml_sql(self.financing_account_sql, "Drop Financing Account TAS")
+        logger.info(f"Deleted {delete_rec:,} records in GTAS table due to invalid TAS")
         logger.info("Committing transaction to database")
 
+    @property
     def broker_fetch_sql(self):
         return f"""
             SELECT
                 fiscal_year,
                 period as fiscal_period,
-                {self.column_statements()}
+                {self.column_statements}
                 disaster_emergency_fund_code,
                 CONCAT(
                     CASE WHEN sf.allocation_transfer_agency is not null THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END,
@@ -96,6 +100,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 fiscal_period;
         """
 
+    @property
     def column_statements(self):
         simple_fields = [
             f"COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount ELSE 0 END), 0.0) AS {key},"
@@ -115,11 +120,16 @@ class Command(mixins.ETLMixin, BaseCommand):
         ]
         return "\n".join(simple_fields + inverted_fields + year_specific_fields)
 
+    @property
     def tas_fk_sql(self):
-        return """
-            UPDATE gtas_sf133_balances
+        return f"""
+            UPDATE {GTAS_TABLE}
             SET treasury_account_identifier = tas.treasury_account_identifier
             FROM treasury_appropriation_account tas
             WHERE
-                tas.tas_rendering_label = gtas_sf133_balances.tas_rendering_label
-                AND gtas_sf133_balances.treasury_account_identifier IS DISTINCT FROM tas.treasury_account_identifier"""
+                tas.tas_rendering_label = {GTAS_TABLE}.tas_rendering_label
+                AND {GTAS_TABLE}.treasury_account_identifier IS DISTINCT FROM tas.treasury_account_identifier"""
+
+    @property
+    def financing_account_sql(self):
+        return f"""DELETE FROM {GTAS_TABLE} WHERE treasury_account_identifier IS NULL"""
