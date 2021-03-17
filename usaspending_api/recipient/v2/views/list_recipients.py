@@ -22,6 +22,9 @@ def build_duns_base_query(filters):
         qs_filter |= Q(recipient_name__contains=filters["keyword"].upper())
         qs_filter |= Q(recipient_unique_id__contains=filters["keyword"])
 
+    if filters["award_type"] != "all":
+        qs_filter &= Q(award_types__overlap=[AWARD_TYPES[filters["award_type"]]["filter"]])
+
     return qs_filter
 
 
@@ -29,12 +32,11 @@ def get_recipients(filters={}, count=None):
     lower_limit = (filters["page"] - 1) * filters["limit"]
     upper_limit = filters["page"] * filters["limit"]
 
-    qs_filter = build_duns_base_query(filters)
-
     amount_column = "last_12_months"
     if filters["award_type"] != "all":
         amount_column = AWARD_TYPES[filters["award_type"]]["amount"]
-        qs_filter &= Q(award_types__overlap=[AWARD_TYPES[filters["award_type"]]["filter"]])
+
+    qs_filter = build_duns_base_query(filters)
 
     queryset = (
         RecipientProfile.objects.filter(qs_filter)
@@ -103,13 +105,7 @@ class DunsCount(APIView):
 
     def get_count(self, filters={}):
         qs_filter = build_duns_base_query(filters)
-
-        if filters["award_type"] != "all":
-            qs_filter &= Q(award_types__overlap=[AWARD_TYPES[filters["award_type"]]["filter"]])
-
-        queryset = RecipientProfile.objects.filter(qs_filter).exclude(recipient_name__in=SPECIAL_CASES)
-
-        return queryset.count()
+        return RecipientProfile.objects.filter(qs_filter).exclude(recipient_name__in=SPECIAL_CASES).count()
 
     @cache_response(key_func=duns_count_key_function)
     def post(self, request):
