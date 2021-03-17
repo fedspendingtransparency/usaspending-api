@@ -1,7 +1,10 @@
+import pytest
+from model_mommy import mommy
+
 import usaspending_api.common.helpers.fiscal_year_helpers as fyh
 
 from fiscalyear import FiscalDate
-from datetime import date, MINYEAR, MAXYEAR
+from datetime import date, MINYEAR, MAXYEAR, datetime, timezone, timedelta
 
 
 def test_all_fiscal_years():
@@ -69,7 +72,47 @@ def test_dates_are_fiscal_year_bookends():
     assert fyh.dates_are_fiscal_year_bookends(date_6, date_1) is True
 
 
+@pytest.mark.django_db
 def test_calculate_last_completed_fiscal_quarter():
+    now = datetime.now(timezone.utc)
+    yesterday = now + timedelta(days=-1)
+    tomorrow = now + timedelta(days=1)
+    next_year = now + timedelta(years=1)
+
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2000,
+        submission_reveal_date=now,
+        submission_fiscal_quarter=1
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=fyh.generate_fiscal_year(now),
+        submission_reveal_date=yesterday,
+        submission_fiscal_quarter=2
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=fyh.generate_fiscal_year(now),
+        submission_reveal_date=now,
+        submission_fiscal_quarter=3
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=fyh.generate_fiscal_year(now),
+        submission_reveal_date=tomorrow,
+        submission_fiscal_quarter=4
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=fyh.generate_fiscal_year(next_year),
+        submission_reveal_date=tomorrow,
+        submission_fiscal_quarter=5
+    )
+
+
+    assert fyh.calculate_last_completed_fiscal_quarter(2018) is 4
+
     """
     FY2000 Q1 == 1999-10-01 - 1999-12-31 available after 2000-02-14
     FY2000 Q2 == 2000-01-01 - 2000-03-31 available after 2000-05-15

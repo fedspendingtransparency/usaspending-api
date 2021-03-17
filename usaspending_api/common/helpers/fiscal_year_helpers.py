@@ -4,13 +4,12 @@ from datetime import datetime, MAXYEAR, MINYEAR, timedelta
 from dateutil.relativedelta import relativedelta
 from fiscalyear import FiscalDate, FiscalDateTime
 from typing import Optional, Tuple
+from django.db.models import Q, Max
 from usaspending_api.common.helpers.generic_helper import validate_date, min_and_max_from_date_ranges
-
+from usaspending_api.common.helpers.date_helper import now
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 logger = logging.getLogger(__name__)
-
-
-SUBMISSION_WINDOW_DAYS = 45
 
 
 def current_fiscal_date() -> FiscalDateTime:
@@ -185,7 +184,7 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
     return results
 
 
-def calculate_last_completed_fiscal_quarter(fiscal_year, as_of_date=current_fiscal_date()):
+def calculate_last_completed_fiscal_quarter(fiscal_year, as_of_date=now()):
     """
     ENABLE_CARES_ACT_FEATURES TECH DEBT:  Make this work with new standardized, yet-to-be-named
     function.  There are currently several flavors flying around.  Waiting for one to land rather
@@ -197,26 +196,38 @@ def calculate_last_completed_fiscal_quarter(fiscal_year, as_of_date=current_fisc
     you'll find another use for it being the unquestionable genius that you are.
     """
 
-    # Get the current fiscal year so that it can be compared against the FY in the request.
-    day_difference = as_of_date - timedelta(days=SUBMISSION_WINDOW_DAYS)
-    current_fiscal_date_adjusted = FiscalDateTime(day_difference.year, day_difference.month, day_difference.day)
+    rows = DABSSubmissionWindowSchedule.objects.all()
+    print(rows.count())
+    rows = DABSSubmissionWindowSchedule.objects.filter(
+        Q(submission_reveal_date__lte=as_of_date) & Q(submission_fiscal_year=fiscal_year)
+    )
+    print(rows.count())
+    for row in rows:
+        print(row)
+    row = rows.aggregate(Max("submission_fiscal_quarter"))
+    print(row)
+    return row["submission_fiscal_quarter__max"]
 
-    if fiscal_year == current_fiscal_date_adjusted.fiscal_year:
-        current_fiscal_quarter = current_fiscal_date_adjusted.quarter
-        # If it's currently the first quarter (or within SUBMISSION_WINDOW_DAYS days of the
-        # first quarter), return None because it's too soon for there to be a completed quarter
-        # for fiscal_year.
-        if current_fiscal_quarter == 1:
-            fiscal_quarter = None
-        else:
-            fiscal_quarter = current_fiscal_quarter - 1
-    elif fiscal_year < current_fiscal_date_adjusted.fiscal_year:
-        fiscal_quarter = 4
-    else:
-        # The future cannot have completed quarters unless you're into shady accounting.
-        fiscal_quarter = None
+    # # Get the current fiscal year so that it can be compared against the FY in the request.
+    # day_difference = as_of_date - timedelta(days=SUBMISSION_WINDOW_DAYS)
+    # current_fiscal_date_adjusted = FiscalDateTime(day_difference.year, day_difference.month, day_difference.day)
 
-    return fiscal_quarter
+    # if fiscal_year == current_fiscal_date_adjusted.fiscal_year:
+    #     current_fiscal_quarter = current_fiscal_date_adjusted.quarter
+    #     # If it's currently the first quarter (or within SUBMISSION_WINDOW_DAYS days of the
+    #     # first quarter), return None because it's too soon for there to be a completed quarter
+    #     # for fiscal_year.
+    #     if current_fiscal_quarter == 1:
+    #         fiscal_quarter = None
+    #     else:
+    #         fiscal_quarter = current_fiscal_quarter - 1
+    # elif fiscal_year < current_fiscal_date_adjusted.fiscal_year:
+    #     fiscal_quarter = 4
+    # else:
+    #     # The future cannot have completed quarters unless you're into shady accounting.
+    #     fiscal_quarter = None
+
+    # return fiscal_quarter
 
 
 def is_valid_period(period: int) -> bool:
