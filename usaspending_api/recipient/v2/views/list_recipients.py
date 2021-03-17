@@ -107,10 +107,7 @@ class DunsCount(APIView):
         if filters["award_type"] != "all":
             qs_filter &= Q(award_types__overlap=[AWARD_TYPES[filters["award_type"]]["filter"]])
 
-        queryset = (
-            RecipientProfile.objects.filter(qs_filter)
-            .exclude(recipient_name__in=SPECIAL_CASES)
-        )
+        queryset = RecipientProfile.objects.filter(qs_filter).exclude(recipient_name__in=SPECIAL_CASES)
 
         return queryset.count()
 
