@@ -132,6 +132,19 @@ class AwardDownloadValidator(DownloadValidatorBase):
         """
         custom_award_tinyshield_models = [
             {
+                "name": "agencies",
+                "key": "agencies",
+                "type": "array",
+                "array_type": "object",
+                "object_keys": {
+                    "type": {"type": "enum", "enum_values": ["funding", "awarding"], "optional": False},
+                    "tier": {"type": "enum", "enum_values": ["toptier", "subtier"], "optional": False},
+                    "toptier_name": {"type": "text", "text_type": "search", "optional": True},
+                    "name": {"type": "text", "text_type": "search", "optional": False},
+                },
+            },
+            {"name": "agency", "key": "agency", "type": "integer"},
+            {
                 "name": "date_range",
                 "key": "date_range",
                 "type": "object",
@@ -149,6 +162,26 @@ class AwardDownloadValidator(DownloadValidatorBase):
                 "default": "action_date",
             },
             {
+                "name": "place_of_performance_locations",
+                "key": "place_of_performance_locations",
+                "type": "array",
+                "array_type": "object",
+                "object_keys": {
+                    "country": {"type": "text", "text_type": "search", "optional": False},
+                    "state": {"type": "text", "text_type": "search", "optional": True},
+                    "zip": {"type": "text", "text_type": "search", "optional": True},
+                    "district": {"type": "text", "text_type": "search", "optional": True},
+                    "county": {"type": "text", "text_type": "search", "optional": True},
+                    "city": {"type": "text", "text_type": "search", "optional": True},
+                },
+            },
+            {
+                "name": "place_of_performance_scope",
+                "key": "place_of_performance_scope",
+                "type": "enum",
+                "enum_values": ["domestic", "foreign"],
+            },
+            {
                 "name": "prime_award_types",
                 "key": "prime_award_types",
                 "type": "array",
@@ -157,6 +190,27 @@ class AwardDownloadValidator(DownloadValidatorBase):
                 "enum_values": list(award_type_mapping.keys()),
             },
             {
+                "name": "recipient_locations",
+                "key": "recipient_locations",
+                "type": "array",
+                "array_type": "object",
+                "object_keys": {
+                    "country": {"type": "text", "text_type": "search", "optional": False},
+                    "state": {"type": "text", "text_type": "search", "optional": True},
+                    "zip": {"type": "text", "text_type": "search", "optional": True},
+                    "district": {"type": "text", "text_type": "search", "optional": True},
+                    "county": {"type": "text", "text_type": "search", "optional": True},
+                    "city": {"type": "text", "text_type": "search", "optional": True},
+                },
+            },
+            {
+                "name": "recipient_scope",
+                "key": "recipient_scope",
+                "type": "enum",
+                "enum_values": ("domestic", "foreign"),
+            },
+            {"name": "sub_agency", "key": "sub_agency", "type": "text", "text_type": "search"},
+            {
                 "name": "sub_award_types",
                 "key": "sub_award_types",
                 "type": "array",
@@ -164,20 +218,6 @@ class AwardDownloadValidator(DownloadValidatorBase):
                 "min": 0,
                 "enum_values": all_subaward_types,
             },
-            {
-                "name": "agencies",
-                "key": "agencies",
-                "type": "array",
-                "array_type": "object",
-                "object_keys": {
-                    "type": {"type": "enum", "enum_values": ["funding", "awarding"], "optional": False},
-                    "tier": {"type": "enum", "enum_values": ["toptier", "subtier"], "optional": False},
-                    "toptier_name": {"type": "text", "text_type": "search", "optional": True},
-                    "name": {"type": "text", "text_type": "search", "optional": False},
-                },
-            },
-            {"name": "agency", "key": "agency", "type": "integer"},
-            {"name": "sub_agency", "key": "sub_agency", "type": "text", "text_type": "search"},
         ]
 
         filter_all_agencies = False
