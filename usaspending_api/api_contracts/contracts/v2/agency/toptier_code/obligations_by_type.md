@@ -10,6 +10,8 @@ This endpoint is used to power USAspending.gov's agency profile pages.
 This endpoint returns a breakdown of obligations by award type (contracts, IDVs, grants, loans, direct payments, other) within a fiscal year.
 
 + Parameters
+    + `toptier_code`: 086 (required, number)
+        The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
     + `fiscal_year`: 2017 (required, number)
         The fiscal year that you are querying data for.
         
