@@ -1,3 +1,5 @@
+import sys
+
 from datetime import datetime, timezone
 from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField
 from rest_framework.response import Response
@@ -36,7 +38,7 @@ class AgencyOverview(AgencyBase, PaginationMixin):
         elif self.pagination.sort_key in ("recent_publication_date_certified"):
             self.sort_value_when_null = False
         else:
-            self.sort_value_when_null = 0
+            self.sort_value_when_null = -sys.maxsize - 1  # greatest negative int value in Python
         results = self.get_agency_overview()
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
