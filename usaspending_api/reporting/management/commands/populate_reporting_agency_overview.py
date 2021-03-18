@@ -5,7 +5,7 @@ from enum import Enum
 from django.core.management import BaseCommand
 from django.db import transaction, connection
 
-from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
+from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 
 logger = logging.getLogger("script")
 
@@ -400,7 +400,7 @@ class Command(BaseCommand):
         with Timer("Refresh Reporting Agency Overview"):
             try:
                 with transaction.atomic():
-                    self._perform_load()
+                    self.perform_load()
                     t = Timer("Commit transaction")
                     t.log_starting_message()
                 t.log_success_message()
@@ -408,21 +408,18 @@ class Command(BaseCommand):
                 logger.error("ALL CHANGES ROLLED BACK DUE TO EXCEPTION")
                 raise
 
-    def _perform_load(self):
+    def perform_load(self):
         with connection.cursor() as cursor:
-            self.cursor = cursor
             with Timer("Create temporary tables"):
-                self.cursor.execute(CREATE_AND_PREP_TEMP_TABLES)
+                cursor.execute(CREATE_AND_PREP_TEMP_TABLES)
 
             for temp_table in TEMP_TABLE_CONTENTS:
-                self._populate_temp_table(temp_table)
+                self.populate_temp_table(cursor, temp_table)
 
-            with Timer("Populate Reporting Agency Overview"):
-                self.cursor.execute(CREATE_OVERVIEW_SQL)
+            with Timer(f"Reload '{OVERVIEW_TABLE_NAME}'"):
+                cursor.execute(CREATE_OVERVIEW_SQL)
 
-    def _populate_temp_table(self, temp_table: TempTableName) -> None:
-        sql_template = "INSERT INTO {} SELECT * FROM ({}) AS {};"
+    def populate_temp_table(self, cursor: connection.cursor, temp_table: TempTableName) -> None:
+        sql_template = "INSERT INTO {0} SELECT * FROM ({1}) AS {0}_contents;"
         with Timer(f"Populate '{temp_table.value}'"):
-            self.cursor.execute(
-                sql_template.format(temp_table.value, TEMP_TABLE_CONTENTS[temp_table], f"{temp_table.value}_contents")
-            )
+            cursor.execute(sql_template.format(temp_table.value, TEMP_TABLE_CONTENTS[temp_table]))
