@@ -7,9 +7,9 @@ from datetime import datetime, timezone
 
 url = "/api/v2/reporting/agencies/overview/"
 
-CURRENT_FISCAL_YEAR = 2020
-CURRENT_LAST_QUARTER = 1
-CURRENT_LAST_PERIOD = 3
+CURRENT_FISCAL_YEAR = 2021
+CURRENT_LAST_QUARTER = 2
+CURRENT_LAST_PERIOD = 6
 
 assurance_statement_1 = (
     f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
@@ -30,7 +30,18 @@ assurance_statement_3 = (
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
-    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=CURRENT_FISCAL_YEAR,
+        submission_reveal_date=datetime.now(timezone.utc),
+        submission_fiscal_quarter=CURRENT_LAST_QUARTER,
+    )
+    dabs = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2019,
+        submission_reveal_date="2020-10-09",
+        submission_fiscal_quarter=2,
+    )
     sub = mommy.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
@@ -225,12 +236,6 @@ def setup_test_data(db):
         fiscal_period=CURRENT_LAST_PERIOD,
         tas_rendering_label="TAS 3",
         obligated_amount=0,
-    )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=CURRENT_FISCAL_YEAR,
-        submission_reveal_date=datetime.now(timezone.utc),
-        submission_fiscal_quarter=CURRENT_LAST_QUARTER,
     )
 
 
