@@ -48,12 +48,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             if self.location_type == LocationType.STATE_TERRITORY:
                 name = name.title()
             else:
-                if name is not None:
-                    name = name.upper()
-                else:
-                    name = ""
-                    # continue
-
+                name = name.upper()
             results.append(
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
