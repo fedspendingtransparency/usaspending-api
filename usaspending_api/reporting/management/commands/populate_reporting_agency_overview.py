@@ -368,7 +368,26 @@ CREATE_OVERVIEW_SQL = f"""
         linked_procurement_awards,
         linked_assistance_awards
     )
-    SELECT *
+    SELECT
+        EXTRACT('MONTH' FROM a + INTERVAL '3 months'),
+        EXTRACT('YEAR' FROM a + INTERVAL '3 months'),
+        toptier_code,
+        0,0,0,0,0,0,0,0,0
+    FROM generate_series('2017-03-01'::timestamp, (SELECT MAX(submission_reveal_date) FROM dabs_submission_window_schedule WHERE submission_reveal_date < now() and is_quarter = FALSE), '1 month') AS a(n)
+    CROSS JOIN vw_published_dabs_toptier_agency
+    WHERE EXTRACT('MONTH' FROM a + INTERVAL '3 months') != 1;
+
+    UPDATE public.{OVERVIEW_TABLE_NAME} n
+    SET
+        total_dollars_obligated_gtas = {OVERVIEW_TABLE_NAME}_content.total_dollars_obligated_gtas,
+        total_budgetary_resources = {OVERVIEW_TABLE_NAME}_content.total_budgetary_resources,
+        total_diff_approp_ocpa_obligated_amounts = {OVERVIEW_TABLE_NAME}_content.total_diff_approp_ocpa_obligated_amounts,
+        unlinked_procurement_c_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_procurement_c_awards,
+        unlinked_assistance_c_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_assistance_c_awards,
+        unlinked_procurement_d_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_procurement_d_awards,
+        unlinked_assistance_d_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_assistance_d_awards,
+        linked_procurement_awards = {OVERVIEW_TABLE_NAME}_content.linked_procurement_awards,
+        linked_assistance_awards = {OVERVIEW_TABLE_NAME}_content.linked_assistance_awards
     FROM (
         SELECT
             fiscal_period,
@@ -387,7 +406,12 @@ CREATE_OVERVIEW_SQL = f"""
             {TempTableName.REPORTING_OVERVIEW.value} AS rao
         LEFT OUTER JOIN
             {TempTableName.AWARD_COUNTS.value} AS ac USING (toptier_code, fiscal_year, fiscal_period)
-    ) AS {OVERVIEW_TABLE_NAME}_content;
+    ) AS {OVERVIEW_TABLE_NAME}_content
+    WHERE
+        n.fiscal_period = {OVERVIEW_TABLE_NAME}_content.fiscal_period
+        AND n.fiscal_year = {OVERVIEW_TABLE_NAME}_content.fiscal_year
+        AND n.toptier_code = {OVERVIEW_TABLE_NAME}_content.toptier_code
+;
 """
 
 
