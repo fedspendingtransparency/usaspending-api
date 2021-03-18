@@ -61,7 +61,7 @@ def get_recipients(filters={}, count=None):
         queryset = queryset.order_by(F(api_to_db_mapper[filters["sort"]]).asc(nulls_last=nulls_last))
 
     if count is None:
-        count = queryset.count()
+        count = get_recipient_count(filters=filters)
 
     page_metadata = get_pagination_metadata(count, filters["limit"], filters["page"])
 
@@ -79,6 +79,11 @@ def get_recipients(filters={}, count=None):
     return results, page_metadata
 
 
+def get_recipient_count(filters={}):
+    qs_filter = build_duns_base_query(filters)
+    return RecipientProfile.objects.filter(qs_filter).exclude(recipient_name__in=SPECIAL_CASES).count()
+
+
 class RecipientCount(APIView):
     """
     This route takes a single keyword filter and award_type, and returns a count of matching recipients
@@ -88,14 +93,10 @@ class RecipientCount(APIView):
 
     cache_key_whitelist = ["keyword", "award_type"]
 
-    def get_count(self, filters={}):
-        qs_filter = build_duns_base_query(filters)
-        return RecipientProfile.objects.filter(qs_filter).exclude(recipient_name__in=SPECIAL_CASES).count()
-
     @cache_response()
     def post(self, request):
         validated_payload = TinyShield(RECIPIENT_MODELS).block(request.data)
-        return Response({"count": self.get_count(validated_payload)})
+        return Response({"count": get_recipient_count(validated_payload)})
 
 
 class ListRecipients(APIView):
