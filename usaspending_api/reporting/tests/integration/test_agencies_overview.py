@@ -12,9 +12,9 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 
 url = "/api/v2/reporting/agencies/overview/"
 
-CURRENT_FISCAL_YEAR = current_fiscal_year()
-CURRENT_LAST_QUARTER = calculate_last_completed_fiscal_quarter(CURRENT_FISCAL_YEAR) or 1
-CURRENT_LAST_PERIOD = get_final_period_of_quarter(CURRENT_LAST_QUARTER) or 3
+CURRENT_FISCAL_YEAR = 2020
+CURRENT_LAST_QUARTER = 1
+CURRENT_LAST_PERIOD = 3
 
 assurance_statement_1 = (
     f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
