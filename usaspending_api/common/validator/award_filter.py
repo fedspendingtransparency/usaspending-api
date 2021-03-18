@@ -179,3 +179,7 @@ for a in AWARD_FILTER:
     a["key"] = "filters{sep}{name}".format(sep=TINY_SHIELD_SEPARATOR, name=a["name"])
 
 AWARD_FILTER_NO_RECIPIENT_ID = [elem for elem in copy.deepcopy(AWARD_FILTER) if elem["name"] != "recipient_id"]
+
+AWARD_FILTER_NO_RECIPIENT_ID_OR_TIME_PERIOD = [
+    elem for elem in copy.deepcopy(AWARD_FILTER) if elem["name"] not in ["recipient_id", "time_period"]
+]

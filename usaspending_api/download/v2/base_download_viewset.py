@@ -2,7 +2,7 @@ import json
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional
+from typing import Optional, Type
 
 from django.conf import settings
 from rest_framework.exceptions import NotFound
@@ -22,17 +22,16 @@ from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.request_validations import (
     validate_account_request,
     validate_assistance_request,
-    validate_award_request,
     validate_contract_request,
     validate_disaster_recipient_request,
     validate_idv_request,
+    DownloadValidatorBase,
 )
 
 
 class DownloadRequestType(Enum):
     ACCOUNT = {"name": "account", "validate_func": validate_account_request}
     ASSISTANCE = {"name": "assistance", "validate_func": validate_assistance_request}
-    AWARD = {"name": "award", "validate_func": validate_award_request}
     CONTRACT = {"name": "contract", "validate_func": validate_contract_request}
     DISASTER = {"name": "disaster"}
     DISASTER_RECIPIENT = {"name": "disaster_recipient", "validate_func": validate_disaster_recipient_request}
@@ -44,8 +43,9 @@ class BaseDownloadViewSet(APIView):
     def post(
         self,
         request: Request,
-        request_type: DownloadRequestType = DownloadRequestType.AWARD,
+        request_type: Optional[DownloadRequestType] = None,
         origination: Optional[str] = None,
+        validator_type: Optional[Type[DownloadValidatorBase]] = None,
     ):
         if request_type == DownloadRequestType.DISASTER:
             filename = (
@@ -58,9 +58,15 @@ class BaseDownloadViewSet(APIView):
             )
             return self.get_download_response(file_name=filename)
 
-        json_request = request_type.value["validate_func"](request.data)
-        json_request["request_type"] = request_type.value["name"]
-        ordered_json_request = json.dumps(order_nested_object(json_request))
+        if validator_type is not None:
+            validator = validator_type(request.data)
+            json_request = validator.get_validated_request()
+        else:
+            json_request = request_type.value["validate_func"](request.data)
+            json_request["request_type"] = request_type.value["name"]
+            json_request = order_nested_object(json_request)
+
+        ordered_json_request = json.dumps(json_request)
 
         # Check if the same request has been called today
         # TODO!!! Use external_data_load_date to determine data freshness
