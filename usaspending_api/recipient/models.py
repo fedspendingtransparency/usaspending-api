@@ -96,7 +96,7 @@ class RecipientProfile(models.Model):
         managed = True
         db_table = "recipient_profile"
         unique_together = ("recipient_hash", "recipient_level")
-        # Note:  Two custom indexess were added in migrations because there's
+        # Note:  Two custom indexes were added in migrations because there's
         # currently not a Django native means by which to add a GinIndex with
         # a specific Postgres operator class:
         #

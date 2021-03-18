@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Duns [/api/v2/recipient/duns/count]
+# Recipient Duns [/api/v2/recipient/duns/count/]
 
-These endpoints are used to power USAspending.gov's recipient profile pages. This endpoint is called by the [/api/v2/recipient/duns/count] endpoint, so a cache can be used to prevent recalculating the count for each request. 
+These endpoints are used to power USAspending.gov's recipient profile pages.
 
 ## POST 
 

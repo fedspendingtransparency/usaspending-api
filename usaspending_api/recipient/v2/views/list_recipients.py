@@ -15,6 +15,12 @@ from usaspending_api.recipient.v2.lookups import AWARD_TYPES, SPECIAL_CASES
 
 logger = logging.getLogger(__name__)
 
+award_types = list(AWARD_TYPES.keys()) + ["all"]
+RECIPIENT_MODELS = [
+    {"name": "keyword", "key": "keyword", "type": "text", "text_type": "search"},
+    {"name": "award_type", "key": "award_type", "type": "enum", "enum_values": award_types, "default": "all"},
+]
+
 
 def build_duns_base_query(filters):
     qs_filter = Q()
@@ -45,6 +51,8 @@ def get_recipients(filters={}, count=None):
     )
     api_to_db_mapper = {"amount": amount_column, "duns": "recipient_unique_id", "name": "recipient_name"}
 
+    # Nulls Last isn't enabled for the amount sort because it prevents queries sorted by amount columns DESC
+    # from using an index on those columns, even though they do cannot contain nulls
     nulls_last = filters["sort"] in ["name", "duns"]
 
     if filters["order"] == "desc":
@@ -72,7 +80,14 @@ def get_recipients(filters={}, count=None):
 
 
 def duns_count_key_function(view_instance, view_method, request, args, kwargs):
-    validated_payload = TinyShield(view_instance.models).block(request.data)
+    """
+    A custom cache key is created for this endpoint to ensure that only 'award_type'
+    and 'keyword' fields are used from the request body. Other fields that may come in
+    when this view is called from the RecipientList endpoint, such as 'page', should
+    be ignored.
+    """
+
+    validated_payload = TinyShield(RECIPIENT_MODELS).block(request.data)
 
     award_type = "-"
     if "award_type" in validated_payload:
@@ -84,24 +99,19 @@ def duns_count_key_function(view_instance, view_method, request, args, kwargs):
 
     return ".".join(
         [
+            "recipient-recipient-count",
             award_type,
             keyword,
         ]
     )
 
 
-class DunsCount(APIView):
+class RecipientCount(APIView):
     """
-    This route takes a single keyword filter and agency_type, and returns a count of matching recipients
+    This route takes a single keyword filter and award_type, and returns a count of matching recipients
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns/count.md"
-
-    award_types = list(AWARD_TYPES.keys()) + ["all"]
-    models = [
-        {"name": "keyword", "key": "keyword", "type": "text", "text_type": "search"},
-        {"name": "award_type", "key": "award_type", "type": "enum", "enum_values": award_types, "default": "all"},
-    ]
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/count.md"
 
     def get_count(self, filters={}):
         qs_filter = build_duns_base_query(filters)
@@ -109,7 +119,7 @@ class DunsCount(APIView):
 
     @cache_response(key_func=duns_count_key_function)
     def post(self, request):
-        validated_payload = TinyShield(self.models).block(request.data)
+        validated_payload = TinyShield(RECIPIENT_MODELS).block(request.data)
         return Response({"count": self.get_count(validated_payload)})
 
 
@@ -121,16 +131,12 @@ class ListRecipients(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
 
     def request_count(self, filters={}):
-        response = DunsCount.as_view()(request=self.request._request).data
+        response = RecipientCount.as_view()(request=self.request._request).data
         return response["count"]
 
     @cache_response()
     def post(self, request):
-        award_types = list(AWARD_TYPES.keys()) + ["all"]
-        models = [
-            {"name": "keyword", "key": "keyword", "type": "text", "text_type": "search"},
-            {"name": "award_type", "key": "award_type", "type": "enum", "enum_values": award_types, "default": "all"},
-        ]
+        models = copy.deepcopy(RECIPIENT_MODELS)
         models.extend(copy.deepcopy(PAGINATION))  # page, limit, sort, order
 
         # Override pagination default limit of 100
@@ -143,12 +149,7 @@ class ListRecipients(APIView):
         models = update_model_in_list(models, "limit", {"default": 50})
         validated_payload = TinyShield(models).block(request.data)
 
-        try:
-            count = self.request_count(validated_payload)
-        except Exception as e:
-            count = None
-            logger.error("Unable to retreive count using endpoint. Falling back on using queryset.")
-            logger.error(str(e))
+        count = self.request_count(validated_payload)
 
         results, page_metadata = get_recipients(filters=validated_payload, count=count)
         return Response({"page_metadata": page_metadata, "results": results})
