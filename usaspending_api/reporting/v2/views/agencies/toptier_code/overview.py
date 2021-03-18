@@ -1,11 +1,12 @@
+from datetime import datetime, timezone
 from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField
 from rest_framework.response import Response
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 
+from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
+from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
-from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -28,7 +29,14 @@ class AgencyOverview(AgencyBase, PaginationMixin):
             "unlinked_contract_award_count",
             "unlinked_assistance_award_count",
         ]
+
         self.default_sort_column = "current_total_budget_authority_amount"
+        if self.pagination.sort_key in ("recent_publication_date"):
+            self.sort_value_when_null = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        elif self.pagination.sort_key in ("recent_publication_date_certified"):
+            self.sort_value_when_null = False
+        else:
+            self.sort_value_when_null = 0
         results = self.get_agency_overview()
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
@@ -157,15 +165,15 @@ class AgencyOverview(AgencyBase, PaginationMixin):
             self.pagination.secondary_sort_key = "fiscal_period"
         results = sorted(
             results,
-            key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key]
+            key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key] or self.sort_value_when_null
             if (
                 self.pagination.sort_key == "missing_tas_accounts_count"
                 or self.pagination.sort_key == "tas_accounts_total"
                 or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
             )
-            else (x[self.pagination.sort_key], x[self.pagination.secondary_sort_key])
+            else (x[self.pagination.sort_key] or self.sort_value_when_null, x[self.pagination.secondary_sort_key])
             if self.pagination.secondary_sort_key is not None
-            else x[self.pagination.sort_key],
+            else x[self.pagination.sort_key] or self.sort_value_when_null,
             reverse=self.pagination.sort_order == "desc",
         )
         return results
