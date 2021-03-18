@@ -30,6 +30,7 @@ assurance_statement_3 = (
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
+    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
     sub = mommy.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
@@ -38,6 +39,7 @@ def setup_test_data(db):
         reporting_fiscal_year=2019,
         reporting_fiscal_period=6,
         published_date="2019-07-03",
+        submission_window_id=dabs.id,
     )
     sub2 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -47,6 +49,7 @@ def setup_test_data(db):
         reporting_fiscal_year=CURRENT_FISCAL_YEAR,
         reporting_fiscal_period=CURRENT_LAST_PERIOD,
         published_date=f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07",
+        submission_window_id=dabs.id,
     )
     sub3 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -56,6 +59,7 @@ def setup_test_data(db):
         reporting_fiscal_year=CURRENT_FISCAL_YEAR,
         reporting_fiscal_period=CURRENT_LAST_PERIOD,
         published_date=f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07",
+        submission_window_id=dabs.id,
     )
     mommy.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True)
     mommy.make("references.Agency", id=2, toptier_agency_id=2, toptier_flag=True)

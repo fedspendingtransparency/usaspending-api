@@ -20,7 +20,6 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
     filter_query: ES_Q
     has_children: bool = False
     nested_nonzero_fields: Dict[str, str] = []
-    nonzero_fields: Dict[str, str] = []
     query_fields: List[str]
     sub_agg_group_name: str = "sub_group_by_sub_agg_key"  # name used for the tier-2 aggregation group
     sub_agg_key: str = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
@@ -42,9 +41,12 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         if query:
             filters["nested_query"] = {"text": query, "fields": self.query_fields}
 
-        # Ensure that only non-zero values are taken into consideration
-        filters["nested_nonzero_fields"] = list(self.nested_nonzero_fields.values())
+        # Ensure that Awards with File C records that cancel out are not taken into consideration;
+        # The records that fall into this criteria share the same DEF Code and that is how the outlay and
+        # obligation sum for the Award is able to be used even though the Award can have multiple DEFC
+        filters["nonzero_fields"] = ["obligated_sum", "outlay_sum"]
         self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(filters)
+
         # using a set value here as doing an extra ES query is detrimental to performance
         # And the dimensions on which group-by aggregations are performed so far
         # (agency, TAS, object_class) all have cardinality less than this number
