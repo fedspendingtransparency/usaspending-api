@@ -34,6 +34,9 @@ def agency_data():
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2)
     mommy.make("awards.TransactionNormalized", awarding_agency=a1, fiscal_year=current_fiscal_year())
+    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
+    mommy.make("submissions.SubmissionAttributes", toptier_code=ta1.toptier_code, submission_window_id=dabs.id)
+    mommy.make("submissions.SubmissionAttributes", toptier_code=ta2.toptier_code, submission_window_id=dabs.id)
 
 
 @pytest.mark.django_db

@@ -469,23 +469,6 @@ class _NonzeroFields(_Filter):
         return ES_Q("bool", should=non_zero_queries, minimum_should_match=1)
 
 
-class _NonzeroNestedSumFields(_Filter):
-    """Query for when the sum of nested fields should not be zero"""
-
-    underscore_name = "nonzero_sum_fields"
-
-    @classmethod
-    def generate_elasticsearch_query(
-        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
-    ) -> ES_Q:
-        non_zero_queries = []
-        for field in filter_values:
-            field_name = f"{nested_path}{'.' if nested_path else ''}{field}"
-            non_zero_queries.append(ES_Q("range", **{field_name: {"gt": 0}}))
-            non_zero_queries.append(ES_Q("range", **{field_name: {"lt": 0}}))
-        return ES_Q("bool", should=non_zero_queries, minimum_should_match=1)
-
-
 class QueryWithFilters:
 
     filter_lookup = {
