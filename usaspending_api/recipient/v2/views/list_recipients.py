@@ -52,7 +52,7 @@ def get_recipients(filters={}, count=None):
     api_to_db_mapper = {"amount": amount_column, "duns": "recipient_unique_id", "name": "recipient_name"}
 
     # Nulls Last isn't enabled for the amount sort because it prevents queries sorted by amount columns DESC
-    # from using an index on those columns, even though they do cannot contain nulls
+    # from using an index on those columns, even though they cannot contain nulls
     nulls_last = filters["sort"] in ["name", "duns"]
 
     if filters["order"] == "desc":
@@ -79,33 +79,6 @@ def get_recipients(filters={}, count=None):
     return results, page_metadata
 
 
-def duns_count_key_function(view_instance, view_method, request, args, kwargs):
-    """
-    A custom cache key is created for this endpoint to ensure that only 'award_type'
-    and 'keyword' fields are used from the request body. Other fields that may come in
-    when this view is called from the RecipientList endpoint, such as 'page', should
-    be ignored.
-    """
-
-    validated_payload = TinyShield(RECIPIENT_MODELS).block(request.data)
-
-    award_type = "-"
-    if "award_type" in validated_payload:
-        award_type = validated_payload["award_type"]
-
-    keyword = "-"
-    if "keyword" in validated_payload:
-        keyword = validated_payload["keyword"]
-
-    return ".".join(
-        [
-            "recipient-recipient-count",
-            award_type,
-            keyword,
-        ]
-    )
-
-
 class RecipientCount(APIView):
     """
     This route takes a single keyword filter and award_type, and returns a count of matching recipients
@@ -113,11 +86,13 @@ class RecipientCount(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/count.md"
 
+    cache_key_whitelist = ["keyword", "award_type"]
+
     def get_count(self, filters={}):
         qs_filter = build_duns_base_query(filters)
         return RecipientProfile.objects.filter(qs_filter).exclude(recipient_name__in=SPECIAL_CASES).count()
 
-    @cache_response(key_func=duns_count_key_function)
+    @cache_response() 
     def post(self, request):
         validated_payload = TinyShield(RECIPIENT_MODELS).block(request.data)
         return Response({"count": self.get_count(validated_payload)})

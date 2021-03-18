@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Duns [/api/v2/recipient/duns/count/]
+# Recipient Duns [/api/v2/recipient/count/]
 
 These endpoints are used to power USAspending.gov's recipient profile pages.
 
