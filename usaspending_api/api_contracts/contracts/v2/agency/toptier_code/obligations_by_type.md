@@ -12,8 +12,8 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
 + Parameters
     + `toptier_code`: 086 (required, string)
         The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
-    + `fiscal_year`: 2017 (required, number)
-        The fiscal year that you are querying data for.
+    + `fiscal_year`: 2017 (optional, number)
+        The fiscal year for which you are querying data. Defaults to the current fiscal year if not provided.
         
 + Response 200 (application/json)
     + Attributes (object)
@@ -27,19 +27,19 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
                 "results": [
                     {
                         "category": "contracts",
-                        "aggregated_amount": 9999999.99
+                        "award_obligations": 9999999.99
                     },
                     {
                         "category": "idvs",
-                        "aggregated_amount": 9999999.99
+                        "award_obligations": 9999999.99
                     },
                     {
                         "category": "direct_payments",
-                        "aggregated_amount": 9999999.99
+                        "award_obligations": 9999999.99
                     },
                     {
                         "category": "grants",
-                        "aggregated_amount": 9999999.99
+                        "award_obligations": 9999999.99
                     }
                 ]
             }
@@ -55,4 +55,4 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
         + `loans`
         + `direct_payments`
         + `other`
-+ `aggregated_amount` (required, number, non-zero)
++ `award_obligations` (required, number, non-zero)
