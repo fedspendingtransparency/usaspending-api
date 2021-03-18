@@ -77,6 +77,7 @@ def test_calculate_last_completed_fiscal_quarter():
     now = datetime.now(timezone.utc)
     yesterday = now + timedelta(days=-1)
     tomorrow = now + timedelta(days=1)
+    current_fy = fyh.generate_fiscal_year(now)
 
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -92,19 +93,19 @@ def test_calculate_last_completed_fiscal_quarter():
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=fyh.generate_fiscal_year(now),
+        submission_fiscal_year=current_fy,
         submission_reveal_date=yesterday,
         submission_fiscal_quarter=3,
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=fyh.generate_fiscal_year(now),
+        submission_fiscal_year=current_fy,
         submission_reveal_date=now,
         submission_fiscal_quarter=4,
     )
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=fyh.generate_fiscal_year(now),
+        submission_fiscal_year=current_fy,
         submission_reveal_date=tomorrow,
         submission_fiscal_quarter=5,
     )
@@ -112,7 +113,7 @@ def test_calculate_last_completed_fiscal_quarter():
     assert fyh.calculate_last_completed_fiscal_quarter(2000) == 1
     assert fyh.calculate_last_completed_fiscal_quarter(2001) is None
     assert fyh.calculate_last_completed_fiscal_quarter(2010) is None
-    assert fyh.calculate_last_completed_fiscal_quarter(fyh.generate_fiscal_year(now)) == 4
+    assert fyh.calculate_last_completed_fiscal_quarter(current_fy) == 4
 
 
 def test_is_valid_period():
