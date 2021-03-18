@@ -5,6 +5,7 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
+from usaspending_api.references.models import GTASSF133Balances
 
 
 class BudgetaryResources(AgencyBase):
@@ -24,16 +25,12 @@ class BudgetaryResources(AgencyBase):
             }
         )
 
-    def get_total_federal_budgetary_resources(self, fiscal_year):
-        """
-        IMPORTANT NOTE!  This is placeholder functionality.  DEV-4014 addresses the underlying problem of
-        not having actual historical budgetary resources.  This code is here to provide semi-reasonable
-        values for development and testing until such time as legitimate values are available.  A note
-        has been added to DEV-4014 to rectify this once that ticket has been resolved.
-        """
-        return AppropriationAccountBalances.objects.filter(submission__reporting_fiscal_year=fiscal_year).aggregate(
-            total_federal_budgetary_resources=Sum("total_budgetary_resources_amount_cpe")
-        )["total_federal_budgetary_resources"]
+    def get_total_federal_budgetary_resources(self):
+        return (
+            GTASSF133Balances.objects.values("fiscal_year")
+            .annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe"))
+            .values("fiscal_year", "total_budgetary_resources")
+        )
 
     def get_agency_budgetary_resources(self):
         aab = (
@@ -47,15 +44,16 @@ class BudgetaryResources(AgencyBase):
                 agency_total_obligated=Sum("obligations_incurred_total_by_tas_cpe"),
             )
         )
-
+        fbr = self.get_total_federal_budgetary_resources()
+        resources = {}
+        for x in fbr:
+            resources.update({x["fiscal_year"]: x["total_budgetary_resources"]})
         results = [
             {
                 "fiscal_year": x["submission__reporting_fiscal_year"],
                 "agency_budgetary_resources": x["agency_budgetary_resources"],
                 "agency_total_obligated": x["agency_total_obligated"],
-                "federal_budgetary_resources": self.get_total_federal_budgetary_resources(
-                    x["submission__reporting_fiscal_year"]
-                ),
+                "federal_budgetary_resources": resources[x["submission__reporting_fiscal_year"]],
             }
             for x in aab
         ]
@@ -65,9 +63,9 @@ class BudgetaryResources(AgencyBase):
                 results.append(
                     {
                         "fiscal_year": year,
-                        "agency_budgetary_resources": None,
-                        "agency_total_obligated": None,
-                        "federal_budgetary_resources": None,
+                        "agency_budgetary_resources": "TBR",
+                        "agency_total_obligated": "TBR",
+                        "federal_budgetary_resources": resources[x["submission__reporting_fiscal_year"]],
                     }
                 )
         return sorted(results, key=lambda x: x["fiscal_year"], reverse=True)
