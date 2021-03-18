@@ -157,9 +157,8 @@ def setup_test_data(db):
             obligations_incurred_total_cpe=sf133["ob_incur"],
         )
 
-    award_list = [
+    award_dicts = [
         {
-            "id": 1,
             "is_fpds": True,
             "awarding_agency": agencies[0],
             "type": "A",
@@ -167,7 +166,6 @@ def setup_test_data(db):
             "certified_date": "2019-12-15",
         },
         {
-            "id": 2,
             "is_fpds": False,
             "awarding_agency": agencies[0],
             "type": "08",
@@ -177,7 +175,6 @@ def setup_test_data(db):
             "total_subsidy_cost": 1000,
         },
         {
-            "id": 3,
             "is_fpds": False,
             "awarding_agency": agencies[0],
             "type": "07",
@@ -186,34 +183,28 @@ def setup_test_data(db):
             "total_subsidy_cost": 2000,
         },
     ]
-    for award in award_list:
-        mommy.make("awards.Award", **award)
-
+    award_list = [mommy.make("awards.Award", **award) for award in award_dicts]
     transaction_list = [
         {
-            "id": 1,
-            "award_id": award_list[0]["id"],
+            "award": award_list[0],
             "fiscal_year": 2019,
             "action_date": "2018-11-15",
             "awarding_agency": agencies[0],
         },
         {
-            "id": 2,
-            "award_id": award_list[0]["id"],
+            "award": award_list[0],
             "fiscal_year": 2019,
             "action_date": "2018-12-15",
             "awarding_agency": agencies[0],
         },
         {
-            "id": 3,
-            "award_id": award_list[1]["id"],
+            "award": award_list[1],
             "fiscal_year": 2019,
             "action_date": "2018-10-15",
             "awarding_agency": agencies[0],
         },
         {
-            "id": 4,
-            "award_id": award_list[2]["id"],
+            "award": award_list[2],
             "fiscal_year": 2019,
             "action_date": "2018-10-28",
             "awarding_agency": agencies[0],
@@ -224,9 +215,9 @@ def setup_test_data(db):
 
     faba_list = [
         {
-            "award_id": award_list[0]["id"],
+            "award": award_list[0],
             "distinct_award_key": "123|||",
-            "piid": award_list[0]["piid"],
+            "piid": award_list[0].piid,
             "fain": None,
             "uri": None,
             "submission": subs[0],
@@ -234,9 +225,9 @@ def setup_test_data(db):
             "transaction_obligated_amount": 1000,
         },
         {
-            "award_id": award_list[0]["id"],
+            "award": award_list[0],
             "distinct_award_key": "123|||",
-            "piid": award_list[0]["piid"],
+            "piid": award_list[0].piid,
             "fain": None,
             "uri": None,
             "submission": subs[0],
@@ -244,7 +235,6 @@ def setup_test_data(db):
             "transaction_obligated_amount": 2000,
         },
         {
-            "award_id": None,
             "distinct_award_key": "|456|789|",
             "piid": None,
             "fain": "456",
@@ -254,7 +244,6 @@ def setup_test_data(db):
             "transaction_obligated_amount": 3000,
         },
         {
-            "award_id": None,
             "distinct_award_key": "|456|789|",
             "piid": None,
             "fain": "456",
@@ -264,7 +253,6 @@ def setup_test_data(db):
             "transaction_obligated_amount": 4000,
         },
         {
-            "award_id": None,
             "distinct_award_key": "159|||",
             "piid": "159",
             "fain": None,
@@ -283,9 +271,7 @@ def test_run_script(setup_test_data):
     """ Test that the populate_reporting_agency_tas script acts as expected """
     call_command("populate_reporting_agency_overview")
 
-    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="987").order_by(
-        "total_dollars_obligated_gtas"
-    )
+    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="987").all()
 
     assert len(results) == 1
     assert results[0].total_dollars_obligated_gtas == Decimal("-3.2")
