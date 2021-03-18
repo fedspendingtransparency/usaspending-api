@@ -16,7 +16,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import get_quarter_from_
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.reporting.models import ReportingAgencyOverview
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -39,8 +39,7 @@ class PublishDates(AgencyBase, PaginationMixin):
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
         results = (
-            ToptierAgency.objects.account_agencies()
-            .filter(*agency_filters)
+            ToptierAgencyPublishedDABSView.objects.filter(*agency_filters)
             .annotate(
                 current_total_budget_authority_amount=Subquery(
                     ReportingAgencyOverview.objects.filter(

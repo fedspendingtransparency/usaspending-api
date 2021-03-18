@@ -1,5 +1,6 @@
 from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value
 from rest_framework.response import Response
+
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from django.utils.functional import cached_property
 
@@ -8,7 +9,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
     calculate_last_completed_fiscal_quarter,
 )
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.references.models import ToptierAgency, Agency
+from usaspending_api.references.models import ToptierAgencyPublishedDABSView, Agency
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -50,8 +51,7 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             Q(fiscal_period=self.fiscal_period),
         ]
         result_list = (
-            ToptierAgency.objects.account_agencies()
-            .filter(*agency_filters)
+            ToptierAgencyPublishedDABSView.objects.filter(*agency_filters)
             .annotate(
                 agency_name=F("name"),
                 fiscal_year=Value(self.fiscal_year, output_field=IntegerField()),
@@ -159,9 +159,9 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
         )
 
         if self.pagination.sort_order == "desc":
-            result_list = result_list.order_by(F(self.pagination.sort_key).desc(nulls_last=True))
+            result_list = result_list.order_by(F(self.pagination.sort_key).desc(nulls_last=True), "-toptier_code")
         else:
-            result_list = result_list.order_by(F(self.pagination.sort_key).asc(nulls_last=True))
+            result_list = result_list.order_by(F(self.pagination.sort_key).asc(nulls_last=True), "toptier_code")
 
         return self.format_results(result_list)
 
