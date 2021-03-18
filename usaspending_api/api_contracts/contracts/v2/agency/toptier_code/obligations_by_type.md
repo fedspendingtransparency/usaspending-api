@@ -56,4 +56,4 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
         + `loans`
         + `direct_payments`
         + `other`
-+ `award_obligations` (required, number, non-zero)
++ `award_obligations` (required, number)
