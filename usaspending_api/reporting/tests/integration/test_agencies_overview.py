@@ -3,12 +3,7 @@ import pytest
 from django.conf import settings
 from model_mommy import mommy
 from rest_framework import status
-
-from usaspending_api.common.helpers.fiscal_year_helpers import (
-    current_fiscal_year,
-    calculate_last_completed_fiscal_quarter,
-    get_final_period_of_quarter,
-)
+from datetime import datetime, timezone
 
 url = "/api/v2/reporting/agencies/overview/"
 
@@ -222,10 +217,16 @@ def setup_test_data(db):
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code="987",
-        fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        fiscal_period=CURRENT_LAST_PERIOD,
         tas_rendering_label="TAS 3",
         obligated_amount=0,
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=CURRENT_FISCAL_YEAR,
+        submission_reveal_date=datetime.now(timezone.utc),
+        submission_fiscal_quarter=CURRENT_LAST_QUARTER,
     )
 
 
