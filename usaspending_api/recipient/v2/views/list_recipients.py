@@ -92,7 +92,7 @@ class RecipientCount(APIView):
         qs_filter = build_duns_base_query(filters)
         return RecipientProfile.objects.filter(qs_filter).exclude(recipient_name__in=SPECIAL_CASES).count()
 
-    @cache_response() 
+    @cache_response()
     def post(self, request):
         validated_payload = TinyShield(RECIPIENT_MODELS).block(request.data)
         return Response({"count": self.get_count(validated_payload)})
