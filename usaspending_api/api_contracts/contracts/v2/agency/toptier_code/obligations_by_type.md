@@ -55,4 +55,4 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
         + `loans`
         + `direct_payments`
         + `other`
-+ `obligated_amount` (required, number, non-zero)
++ `obligated_amount` (required, number)
