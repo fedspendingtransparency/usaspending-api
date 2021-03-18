@@ -7,10 +7,10 @@ This endpoint is used to power USAspending.gov's agency profile pages.
 
 ## GET
 
-This endpoint returns a breakdown of obligations by award type (contracts, IDVs, grants, loans, direct payments, other) within a fiscal year.
+This endpoint returns a breakdown of obligations by award category (contracts, IDVs, grants, loans, direct payments, other) within the requested fiscal year.
 
 + Parameters
-    + `toptier_code`: 086 (required, number)
+    + `toptier_code`: 086 (required, string)
         The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
     + `fiscal_year`: 2017 (required, number)
         The fiscal year that you are querying data for.
@@ -26,20 +26,20 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
                 "award_obligations": 39999999.96,
                 "results": [
                     {
-                        "type": "contracts",
-                        "obligated_amount": 9999999.99
+                        "category": "contracts",
+                        "aggregated_amount": 9999999.99
                     },
                     {
-                        "type": "idvs",
-                        "obligated_amount": 9999999.99
+                        "category": "idvs",
+                        "aggregated_amount": 9999999.99
                     },
                     {
-                        "type": "direct_payments",
-                        "obligated_amount": 9999999.99
+                        "category": "direct_payments",
+                        "aggregated_amount": 9999999.99
                     },
                     {
-                        "type": "grants",
-                        "obligated_amount": 9999999.99
+                        "category": "grants",
+                        "aggregated_amount": 9999999.99
                     }
                 ]
             }
@@ -47,7 +47,7 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
 # Data Structures
 
 ## ObligationSubtotals (object)
-+ `type` (required, enum[string])
++ `category` (required, enum[string])
     + Members
         + `contracts`
         + `idvs`
@@ -55,4 +55,4 @@ This endpoint returns a breakdown of obligations by award type (contracts, IDVs,
         + `loans`
         + `direct_payments`
         + `other`
-+ `obligated_amount` (required, number, non-zero)
++ `aggregated_amount` (required, number, non-zero)
