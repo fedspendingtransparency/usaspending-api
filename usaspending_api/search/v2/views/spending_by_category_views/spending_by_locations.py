@@ -48,7 +48,11 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             if self.location_type == LocationType.STATE_TERRITORY:
                 name = name.title()
             else:
-                name = name.upper()
+                if name is not None:
+                    name = name.upper()
+                else:
+                    name = ""
+                    # continue
 
             results.append(
                 {
