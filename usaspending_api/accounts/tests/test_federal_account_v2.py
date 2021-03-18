@@ -9,11 +9,37 @@ from usaspending_api.accounts.models import FederalAccount
 
 @pytest.fixture
 def fixture_data(db):
-    ta0 = mommy.make("references.ToptierAgency", toptier_code="001", abbreviation="ABCD", name="Dept. of Depts")
-    ta1 = mommy.make("references.ToptierAgency", toptier_code="002", abbreviation="EFGH", name="The Bureau")
-    ta2 = mommy.make("references.ToptierAgency", toptier_code="1601", abbreviation="DOL", name="Department of Labor")
-    ta3 = mommy.make("references.ToptierAgency", toptier_code="097", abbreviation="DOD", name="Department of Defense")
-    ta4 = mommy.make("references.ToptierAgency", toptier_code="021", abbreviation="DOD", name="Department of Navy")
+    ta0 = mommy.make(
+        "references.ToptierAgency",
+        toptier_agency_id="10",
+        toptier_code="001",
+        abbreviation="ABCD",
+        name="Dept. of Depts",
+    )
+    ta1 = mommy.make(
+        "references.ToptierAgency", toptier_agency_id="11", toptier_code="002", abbreviation="EFGH", name="The Bureau"
+    )
+    ta2 = mommy.make(
+        "references.ToptierAgency",
+        toptier_agency_id="12",
+        toptier_code="1601",
+        abbreviation="DOL",
+        name="Department of Labor",
+    )
+    ta3 = mommy.make(
+        "references.ToptierAgency",
+        toptier_agency_id="13",
+        toptier_code="097",
+        abbreviation="DOD",
+        name="Department of Defense",
+    )
+    ta4 = mommy.make(
+        "references.ToptierAgency",
+        toptier_agency_id="14",
+        toptier_code="021",
+        abbreviation="DOD",
+        name="Department of Navy",
+    )
     fa0 = mommy.make(
         FederalAccount,
         agency_identifier="001",
@@ -328,6 +354,7 @@ def test_federal_account_content(client, fixture_data):
     assert response_data["main_account_code"] == "0005"
     assert response_data["account_title"] == "Something"
     assert response_data["federal_account_code"] == "001-0005"
+    assert response_data["parent_toptier_agency_id"] == 10
 
 
 @pytest.mark.django_db
