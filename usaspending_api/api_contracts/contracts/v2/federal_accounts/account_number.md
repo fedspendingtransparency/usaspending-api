@@ -20,4 +20,5 @@ This endpoint returns the agency identifier, account code, title, and database i
         + `federal_account_code`: `011-1022` (required, string)
         + `account_title`: `International Security Assistance` (required, string)
         + `id`: 1234 (required, number)
-        + `parent_toptier_agency_id`: `126` (required, number)
+        + `parent_agency_toptier_code`: `126` (string, number)
+        + `parent_agency_name`: `Department of Defense` (string, number)
