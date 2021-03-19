@@ -23,8 +23,19 @@ class GetPostQueryParamsKeyBit(bits.QueryParamsKeyBit):
     """
 
     def get_source_dict(self, params, view_instance, view_method, request, args, kwargs):
-        params = dict(request.query_params)
-        params.update(dict(request.data))
+
+        if hasattr(view_instance, "cache_key_whitelist"):
+            whitelist = view_instance.cache_key_whitelist
+            params = {}
+            for param in whitelist:
+                if param in request.query_params:
+                    params[param] = request.query_params[param]
+                if param in request.data:
+                    params[param] = request.data[param]
+        else:
+            params = dict(request.query_params)
+            params.update(dict(request.data))
+
         if "auditTrail" in params:
             del params["auditTrail"]
         return {"request": json.dumps(order_nested_object(params))}
