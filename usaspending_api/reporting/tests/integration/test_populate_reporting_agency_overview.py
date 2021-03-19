@@ -1,6 +1,5 @@
 import pytest
 
-from datetime import datetime
 from decimal import Decimal
 from model_mommy import mommy
 
@@ -11,44 +10,41 @@ from usaspending_api.reporting.models import ReportingAgencyOverview
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
-    future_date = datetime(datetime.now().year + 1, 1, 19)
-    dsws = [
+
+    dsws_dicts = [
         {
-            "id": 1,
             "submission_fiscal_year": 2019,
             "submission_fiscal_quarter": 1,
             "submission_fiscal_month": 3,
             "submission_reveal_date": "2019-1-15",
         },
         {
-            "id": 2,
-            "submission_fiscal_year": future_date.year,
+            "submission_fiscal_year": 2020,
             "submission_fiscal_quarter": 1,
             "submission_fiscal_month": 3,
-            "submission_reveal_date": datetime.strftime(future_date, "%Y-%m-%d"),
+            "submission_reveal_date": "2020-01-09",
         },
     ]
-    for dabs_window in dsws:
-        mommy.make("submissions.DABSSubmissionWindowSchedule", **dabs_window)
+    dsws = [mommy.make("submissions.DABSSubmissionWindowSchedule", **dabs_window) for dabs_window in dsws_dicts]
 
     subs = [
         mommy.make(
             "submissions.SubmissionAttributes",
-            submission_id=1,
+            toptier_code="987",
             reporting_fiscal_year=2019,
             reporting_fiscal_quarter=1,
             reporting_fiscal_period=3,
             quarter_format_flag=True,
-            submission_window_id=dsws[0]["id"],
+            submission_window=dsws[0],
         ),
         mommy.make(
             "submissions.SubmissionAttributes",
-            submission_id=2,
-            reporting_fiscal_year=future_date.year,
+            toptier_code="123",
+            reporting_fiscal_year=2020,
             reporting_fiscal_quarter=1,
             reporting_fiscal_period=3,
             quarter_format_flag=True,
-            submission_window_id=dsws[1]["id"],
+            submission_window=dsws[1],
         ),
     ]
 
@@ -58,26 +54,23 @@ def setup_test_data(db):
     ]
 
     agencies = [
-        mommy.make("references.Agency", id=1, toptier_agency=toptier_agencies[0]),
-        mommy.make("references.Agency", id=2, toptier_agency=toptier_agencies[1]),
+        mommy.make("references.Agency", toptier_agency=toptier_agencies[0], toptier_flag=True),
+        mommy.make("references.Agency", toptier_agency=toptier_agencies[1], toptier_flag=True),
     ]
 
     treas_accounts = [
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            treasury_account_identifier=1,
             awarding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
             tas_rendering_label="tas-1-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            treasury_account_identifier=2,
             awarding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
             tas_rendering_label="tas-2-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            treasury_account_identifier=3,
             awarding_toptier_agency_id=toptier_agencies[1].toptier_agency_id,
             tas_rendering_label="tas-3-overview",
         ),
@@ -164,9 +157,8 @@ def setup_test_data(db):
             obligations_incurred_total_cpe=sf133["ob_incur"],
         )
 
-    award_list = [
+    award_dicts = [
         {
-            "id": 1,
             "is_fpds": True,
             "awarding_agency": agencies[0],
             "type": "A",
@@ -174,7 +166,6 @@ def setup_test_data(db):
             "certified_date": "2019-12-15",
         },
         {
-            "id": 2,
             "is_fpds": False,
             "awarding_agency": agencies[0],
             "type": "08",
@@ -184,7 +175,6 @@ def setup_test_data(db):
             "total_subsidy_cost": 1000,
         },
         {
-            "id": 3,
             "is_fpds": False,
             "awarding_agency": agencies[0],
             "type": "07",
@@ -193,34 +183,28 @@ def setup_test_data(db):
             "total_subsidy_cost": 2000,
         },
     ]
-    for award in award_list:
-        mommy.make("awards.Award", **award)
-
+    award_list = [mommy.make("awards.Award", **award) for award in award_dicts]
     transaction_list = [
         {
-            "id": 1,
-            "award_id": award_list[0]["id"],
+            "award": award_list[0],
             "fiscal_year": 2019,
             "action_date": "2018-11-15",
             "awarding_agency": agencies[0],
         },
         {
-            "id": 2,
-            "award_id": award_list[0]["id"],
+            "award": award_list[0],
             "fiscal_year": 2019,
             "action_date": "2018-12-15",
             "awarding_agency": agencies[0],
         },
         {
-            "id": 3,
-            "award_id": award_list[1]["id"],
+            "award": award_list[1],
             "fiscal_year": 2019,
             "action_date": "2018-10-15",
             "awarding_agency": agencies[0],
         },
         {
-            "id": 4,
-            "award_id": award_list[2]["id"],
+            "award": award_list[2],
             "fiscal_year": 2019,
             "action_date": "2018-10-28",
             "awarding_agency": agencies[0],
@@ -231,9 +215,9 @@ def setup_test_data(db):
 
     faba_list = [
         {
-            "award_id": award_list[0]["id"],
+            "award": award_list[0],
             "distinct_award_key": "123|||",
-            "piid": award_list[0]["piid"],
+            "piid": award_list[0].piid,
             "fain": None,
             "uri": None,
             "submission": subs[0],
@@ -241,9 +225,9 @@ def setup_test_data(db):
             "transaction_obligated_amount": 1000,
         },
         {
-            "award_id": award_list[0]["id"],
+            "award": award_list[0],
             "distinct_award_key": "123|||",
-            "piid": award_list[0]["piid"],
+            "piid": award_list[0].piid,
             "fain": None,
             "uri": None,
             "submission": subs[0],
@@ -251,7 +235,6 @@ def setup_test_data(db):
             "transaction_obligated_amount": 2000,
         },
         {
-            "award_id": None,
             "distinct_award_key": "|456|789|",
             "piid": None,
             "fain": "456",
@@ -261,7 +244,6 @@ def setup_test_data(db):
             "transaction_obligated_amount": 3000,
         },
         {
-            "award_id": None,
             "distinct_award_key": "|456|789|",
             "piid": None,
             "fain": "456",
@@ -271,7 +253,6 @@ def setup_test_data(db):
             "transaction_obligated_amount": 4000,
         },
         {
-            "award_id": None,
             "distinct_award_key": "159|||",
             "piid": "159",
             "fain": None,

@@ -329,7 +329,14 @@ class FabaOutlayMixin:
         return Coalesce(
             Sum(
                 Case(
-                    When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
+                    When(
+                        self.final_period_submission_query_filters,
+                        then=(
+                            Coalesce(F("gross_outlay_amount_by_award_cpe"), 0)
+                            + Coalesce(F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"), 0)
+                            + Coalesce(F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"), 0)
+                        ),
+                    ),
                     default=Value(0),
                 )
             ),

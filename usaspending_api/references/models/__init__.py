@@ -11,14 +11,15 @@ from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balan
 from usaspending_api.references.models.naics import NAICS
 from usaspending_api.references.models.object_class import ObjectClass
 from usaspending_api.references.models.overall_totals import OverallTotals
-from usaspending_api.references.models.pop_county import PopCounty
 from usaspending_api.references.models.pop_cong_district import PopCongressionalDistrict
+from usaspending_api.references.models.pop_county import PopCounty
 from usaspending_api.references.models.psc import PSC
 from usaspending_api.references.models.ref_country_code import RefCountryCode
 from usaspending_api.references.models.ref_program_activity import RefProgramActivity
 from usaspending_api.references.models.rosetta import Rosetta
 from usaspending_api.references.models.subtier_agency import SubtierAgency
 from usaspending_api.references.models.toptier_agency import ToptierAgency
+from usaspending_api.references.models.toptier_agency_published_dabs_view import ToptierAgencyPublishedDABSView
 
 __all__ = [
     "Agency",
@@ -42,4 +43,5 @@ __all__ = [
     "Rosetta",
     "SubtierAgency",
     "ToptierAgency",
+    "ToptierAgencyPublishedDABSView",
 ]
