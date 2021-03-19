@@ -61,30 +61,30 @@ def setup_test_data(db):
     treas_accounts = [
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            awarding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
+            awarding_toptier_agency=toptier_agencies[0],
             tas_rendering_label="tas-1-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            awarding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
+            awarding_toptier_agency=toptier_agencies[0],
             tas_rendering_label="tas-2-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            awarding_toptier_agency_id=toptier_agencies[1].toptier_agency_id,
+            awarding_toptier_agency=toptier_agencies[1],
             tas_rendering_label="tas-3-overview",
         ),
     ]
     approps = [
-        {"sub_id": subs[0].submission_id, "treasury_account": treas_accounts[0], "total_resources": 50},
-        {"sub_id": subs[0].submission_id, "treasury_account": treas_accounts[1], "total_resources": 12},
-        {"sub_id": subs[0].submission_id, "treasury_account": treas_accounts[1], "total_resources": 29},
-        {"sub_id": subs[0].submission_id, "treasury_account": treas_accounts[2], "total_resources": 15.5},
+        {"sub": subs[0], "treasury_account": treas_accounts[0], "total_resources": 50},
+        {"sub": subs[0], "treasury_account": treas_accounts[1], "total_resources": 12},
+        {"sub": subs[0], "treasury_account": treas_accounts[1], "total_resources": 29},
+        {"sub": subs[0], "treasury_account": treas_accounts[2], "total_resources": 15.5},
     ]
     for approp in approps:
         mommy.make(
             "accounts.AppropriationAccountBalances",
-            submission_id=approp["sub_id"],
+            submission=approp["sub"],
             treasury_account_identifier=approp["treasury_account"],
             total_budgetary_resources_amount_cpe=approp["total_resources"],
         )
