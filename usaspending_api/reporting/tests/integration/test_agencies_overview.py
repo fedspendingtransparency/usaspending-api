@@ -3,18 +3,13 @@ import pytest
 from django.conf import settings
 from model_mommy import mommy
 from rest_framework import status
-
-from usaspending_api.common.helpers.fiscal_year_helpers import (
-    current_fiscal_year,
-    calculate_last_completed_fiscal_quarter,
-    get_final_period_of_quarter,
-)
+from datetime import datetime, timezone
 
 url = "/api/v2/reporting/agencies/overview/"
 
-CURRENT_FISCAL_YEAR = current_fiscal_year()
-CURRENT_LAST_QUARTER = calculate_last_completed_fiscal_quarter(CURRENT_FISCAL_YEAR) or 1
-CURRENT_LAST_PERIOD = get_final_period_of_quarter(CURRENT_LAST_QUARTER) or 3
+CURRENT_FISCAL_YEAR = 2021
+CURRENT_LAST_QUARTER = 2
+CURRENT_LAST_PERIOD = 6
 
 assurance_statement_1 = (
     f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
@@ -35,7 +30,20 @@ assurance_statement_3 = (
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
-    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=CURRENT_FISCAL_YEAR,
+        submission_reveal_date=datetime.now(timezone.utc),
+        submission_fiscal_quarter=CURRENT_LAST_QUARTER,
+        is_quarter=True,
+    )
+    dabs = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2019,
+        submission_reveal_date="2020-10-09",
+        submission_fiscal_quarter=2,
+        is_quarter=True,
+    )
     sub = mommy.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
@@ -226,8 +234,8 @@ def setup_test_data(db):
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code="987",
-        fiscal_year=current_fiscal_year(),
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(current_fiscal_year())) or 3,
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        fiscal_period=CURRENT_LAST_PERIOD,
         tas_rendering_label="TAS 3",
         obligated_amount=0,
     )
