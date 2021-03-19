@@ -108,7 +108,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 "total_budgetary_resources_cpe",
                 "anticipated_prior_year_obligation_recoveries",
                 "prior_year_paid_obligation_recoveries",
-            )
+            ).order_by("-budget_authority_unobligated_balance_brought_forward_cpe")
         ),
     }
 
