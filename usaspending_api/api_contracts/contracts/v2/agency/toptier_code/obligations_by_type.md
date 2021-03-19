@@ -20,6 +20,8 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
         + `total_aggregated_amount` (required, number)
         + `results` (required, array[ObligationSubtotals], fixed-type)
             Sorted by aggregated_amount, descending. Categories with $0 of obligations within the FY are not included.
+        + `messages` (required, array[string], fixed-type)
+            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
 
@@ -42,7 +44,8 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
                         "category": "grants",
                         "aggregated_amount": 9999999.99
                     }
-                ]
+                ],
+                "messages": []
             }
 
 # Data Structures
