@@ -192,7 +192,7 @@ def calculate_last_completed_fiscal_quarter(fiscal_year):
     """
 
     row = DABSSubmissionWindowSchedule.objects.filter(
-        Q(submission_reveal_date__lte=now()) & Q(submission_fiscal_year=fiscal_year)
+        Q(submission_reveal_date__lte=now()) & Q(submission_fiscal_year=fiscal_year) & Q(is_quarter=True)
     ).aggregate(Max("submission_fiscal_quarter"))
     return row["submission_fiscal_quarter__max"]
 

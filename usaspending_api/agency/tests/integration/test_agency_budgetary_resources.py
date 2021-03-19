@@ -126,6 +126,7 @@ def data_fixture():
         submission_fiscal_year=FY,
         submission_reveal_date=datetime.now(timezone.utc),
         submission_fiscal_quarter=4,
+        is_quarter=True,
     )
 
     mommy.make(
@@ -133,6 +134,7 @@ def data_fixture():
         submission_fiscal_year=PRIOR_FY,
         submission_reveal_date=datetime.now(timezone.utc),
         submission_fiscal_quarter=4,
+        is_quarter=True,
     )
 
 

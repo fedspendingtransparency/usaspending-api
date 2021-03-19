@@ -35,12 +35,14 @@ def setup_test_data(db):
         submission_fiscal_year=CURRENT_FISCAL_YEAR,
         submission_reveal_date=datetime.now(timezone.utc),
         submission_fiscal_quarter=CURRENT_LAST_QUARTER,
+        is_quarter=True,
     )
     dabs = mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2019,
         submission_reveal_date="2020-10-09",
         submission_fiscal_quarter=2,
+        is_quarter=True,
     )
     sub = mommy.make(
         "submissions.SubmissionAttributes",
