@@ -20,33 +20,5 @@ This endpoint returns the agency identifier, account code, title, and database i
         + `federal_account_code`: `011-1022` (required, string)
         + `account_title`: `International Security Assistance` (required, string)
         + `id`: 1234 (required, number)
-
-# Data Structures
-
-## FederalAccountListing (object)
-+ `account_name`: `Public Debt Principal (Indefinite), Treasury` (required, string, nullable)
-    Name of the federal account. `null` when the name is not provided.
-+ `account_number`: `023-2342` (required, string, nullable)
-    The number for the federal account. `null` when no DUNS is provided.
-+ `account_id`: 5354 (required, number)
-    A unique identifier for the federal account
-+ `managing_agency_acronym`: `BEM` (required, string)
-+ `agency_identifier`: `032` (required, string)
-+ `budgetary_resources`: 3423.23 (required, number)
-+ `managing_agency`: `Central Intelligence Agency` (required, string)
-
-## TimeFilterObject (object)
-+ `fy`: `2018` (required, string)
-
-## SortObject (object)
-+ `field`: `budgetary_resources` (optional, string)
-    The field that you want to sort on.
-    + Default: `budgetary_resources`
-        + Members
-            + `budgetary_resources`
-            + `account_name`
-            + `account_number`
-            + `managing_agency`
-+ `direction`: `desc` (optional, string)
-    The direction results are sorted by. `asc` for ascending, `desc` for descending.
-    + Default: `desc`
+        + `parent_agency_toptier_code`: `024` (required, string)
+        + `parent_agency_name`: `Office of Personnel Management` (required, string)
