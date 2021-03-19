@@ -24,9 +24,20 @@ RUN echo "$(python3 --version)"
 WORKDIR /dockermount
 COPY requirements/ /dockermount/requirements/
 RUN python3 -m pip install -r requirements/requirements.txt
+
+##### Additional server requirements
+RUN yum install -y \
+    git \
+    gcc-c++ \
+    postgresql-devel \
+    pcre \
+    pcre-devel \
+    mlocate \
+    wget \
+    unzip \
+    bzip2-devel
 RUN python3 -m pip install -r requirements/requirements-server.txt
 RUN python3 -m pip install ansible==2.8.3 awscli redis
-
 
 ##### Copy the rest of the project files into the container
 COPY . /dockermount
