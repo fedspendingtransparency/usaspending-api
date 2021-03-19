@@ -114,18 +114,11 @@ def test_calculate_last_completed_fiscal_quarter():
         submission_fiscal_quarter=4,
         is_quarter=True,
     )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=current_fy,
-        submission_reveal_date=tomorrow,
-        submission_fiscal_quarter=5,
-        is_quarter=True,
-    )
 
     assert fyh.calculate_last_completed_fiscal_quarter(2000) == 1 # not 2, since is_quarter=False
     assert fyh.calculate_last_completed_fiscal_quarter(2001) is None # no row in table for 2001
     assert fyh.calculate_last_completed_fiscal_quarter(2010) is None # not revealed yet
-    assert fyh.calculate_last_completed_fiscal_quarter(current_fy) == 4 # not 3, since both are revealed & quarters; 5 not revealed yet
+    assert fyh.calculate_last_completed_fiscal_quarter(current_fy) == 4 # not 3, since both are revealed & quarters
 
 
 def test_is_valid_period():
