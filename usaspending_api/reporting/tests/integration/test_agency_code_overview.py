@@ -276,6 +276,25 @@ def test_basic_success(setup_test_data, client):
     assert response["results"] == expected_results
 
 
+def test_all_sorts_are_http200(setup_test_data, client):
+    sort_fields = [
+        "current_total_budget_authority_amount",
+        "fiscal_year",
+        "missing_tas_accounts_count",
+        "tas_accounts_total",
+        "obligation_difference",
+        "percent_of_total_budgetary_resources",
+        "recent_publication_date",
+        "recent_publication_date_certified",
+        "tas_obligation_not_in_gtas_total",
+        "unlinked_contract_award_count",
+        "unlinked_assistance_award_count",
+    ]
+    for sort_field in sort_fields:
+        resp = client.get(f"{url}?sort={sort_field}&order=asc")
+        assert resp.status_code == status.HTTP_200_OK
+
+
 def test_pagination(setup_test_data, client):
     resp = client.get(url + "?sort=current_total_budget_authority_amount&order=asc")
     assert resp.status_code == status.HTTP_200_OK
