@@ -1,7 +1,10 @@
+import pytest
+from model_mommy import mommy
+
 import usaspending_api.common.helpers.fiscal_year_helpers as fyh
 
 from fiscalyear import FiscalDate
-from datetime import date, MINYEAR, MAXYEAR
+from datetime import date, MINYEAR, MAXYEAR, datetime, timezone, timedelta
 
 
 def test_all_fiscal_years():
@@ -69,41 +72,53 @@ def test_dates_are_fiscal_year_bookends():
     assert fyh.dates_are_fiscal_year_bookends(date_6, date_1) is True
 
 
+@pytest.mark.django_db
 def test_calculate_last_completed_fiscal_quarter():
-    """
-    FY2000 Q1 == 1999-10-01 - 1999-12-31 available after 2000-02-14
-    FY2000 Q2 == 2000-01-01 - 2000-03-31 available after 2000-05-15
-    FY2000 Q3 == 2000-04-01 - 2000-06-30 available after 2000-08-14
-    FY2000 Q4 == 2000-07-01 - 2000-09-30 available after 2000-11-14
-    """
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(1999, 10, 1)) is None
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(1999, 11, 1)) is None
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(1999, 12, 1)) is None
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 1, 1)) is None
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 2, 1)) is None
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 2, 14)) is None
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 2, 15)) == 1
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 3, 1)) == 1
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 4, 1)) == 1
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 5, 1)) == 1
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 5, 15)) == 1
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 5, 16)) == 2
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 6, 1)) == 2
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 7, 1)) == 2
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 8, 1)) == 2
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 9, 1)) == 3
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 10, 1)) == 3
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 11, 1)) == 3
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2000, 12, 1)) == 4
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2001, 1, 1)) == 4
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2001, 2, 1)) == 4
-    assert fyh.calculate_last_completed_fiscal_quarter(2000, date(2001, 3, 1)) == 4
+    now = datetime.now(timezone.utc)
+    yesterday = now + timedelta(days=-1)
+    tomorrow = now + timedelta(days=1)
+    current_fy = fyh.generate_fiscal_year(now)
 
-    # Test a fiscal year WAY in the future.  We should definitely have flying cars by then.
-    assert fyh.calculate_last_completed_fiscal_quarter(2010, date(2001, 3, 1)) is None
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2000,
+        submission_reveal_date=now,
+        submission_fiscal_quarter=1,
+        is_quarter=True,
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2000,
+        submission_reveal_date=now,
+        submission_fiscal_quarter=2,
+        is_quarter=False,
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2010,
+        submission_reveal_date=tomorrow,
+        submission_fiscal_quarter=2,
+        is_quarter=True,
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=current_fy,
+        submission_reveal_date=yesterday,
+        submission_fiscal_quarter=3,
+        is_quarter=True,
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=current_fy,
+        submission_reveal_date=now,
+        submission_fiscal_quarter=4,
+        is_quarter=True,
+    )
 
-    # And one test using the default as_of_date just to make sure nothing catches on fire.
-    assert fyh.calculate_last_completed_fiscal_quarter(2000) == 4
+    assert fyh.calculate_last_completed_fiscal_quarter(2000) == 1  # not 2, since is_quarter=False
+    assert fyh.calculate_last_completed_fiscal_quarter(2001) is None  # no row in table for 2001
+    assert fyh.calculate_last_completed_fiscal_quarter(2010) is None  # not revealed yet
+    assert fyh.calculate_last_completed_fiscal_quarter(current_fy) == 4  # not 3, since both are revealed & quarters
 
 
 def test_is_valid_period():
