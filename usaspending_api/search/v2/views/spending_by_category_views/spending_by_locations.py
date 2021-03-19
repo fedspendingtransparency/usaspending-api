@@ -43,13 +43,12 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
                     congressional_code = location_info.get("congressional_code") or ""
                 name = f"{location_info.get('state_code') or ''}-{congressional_code}"
             else:
-                name = location_info.get(f"{self.location_type.value}_name")
+                name = location_info.get(f"{self.location_type.value}_name") or ""
 
             if self.location_type == LocationType.STATE_TERRITORY:
                 name = name.title()
             else:
                 name = name.upper()
-
             results.append(
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
