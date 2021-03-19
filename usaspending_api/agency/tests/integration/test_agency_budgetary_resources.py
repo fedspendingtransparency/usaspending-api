@@ -2,8 +2,6 @@ import pytest
 
 from decimal import Decimal
 from model_mommy import mommy
-from rest_framework import status
-from datetime import datetime, timezone
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 
 
@@ -14,7 +12,12 @@ PRIOR_FY = FY - 1
 
 @pytest.fixture
 def data_fixture():
-    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
+    dabs = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=1995,
+        submission_fiscal_month=2,
+        submission_reveal_date="2020-10-09",
+    )
     ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
     ta2 = mommy.make("references.ToptierAgency", toptier_code="002")
     mommy.make("references.Agency", toptier_flag=True, toptier_agency=ta1)
@@ -120,65 +123,47 @@ def data_fixture():
         treasury_account_identifier=tas2,
         submission=sa2_12,
     )
-
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=FY,
-        submission_reveal_date=datetime.now(timezone.utc),
-        submission_fiscal_quarter=4,
-        is_quarter=True,
-    )
-
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=PRIOR_FY,
-        submission_reveal_date=datetime.now(timezone.utc),
-        submission_fiscal_quarter=4,
-        is_quarter=True,
-    )
+    for fy in range(2017, current_fiscal_year() + 1):
+        mommy.make("references.GTASSF133Balances", fiscal_year=fy, fiscal_period=12, total_budgetary_resources_cpe=fy)
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            submission_fiscal_year=fy,
+            submission_fiscal_month=12,
+            submission_reveal_date="2020-10-09",
+            is_quarter=True,
+        )
 
 
 @pytest.mark.django_db
 def test_budgetary_resources(client, data_fixture):
-
     resp = client.get(URL.format(code="001", filter=""))
-    assert resp.status_code == status.HTTP_200_OK
+    expected_results = [
+        {
+            "fiscal_year": FY,
+            "agency_budgetary_resources": Decimal("29992.00"),
+            "total_budgetary_resources": Decimal(f"{FY}.00"),
+            "agency_total_obligated": Decimal("26661.00"),
+        },
+        {
+            "fiscal_year": PRIOR_FY,
+            "agency_budgetary_resources": Decimal("15.00"),
+            "total_budgetary_resources": Decimal(f"{PRIOR_FY}.00"),
+            "agency_total_obligated": Decimal("5.00"),
+        },
+    ]
+    for year in range(2017, current_fiscal_year() + 1):
+        if year != FY and year != PRIOR_FY:
+            expected_results.append(
+                {
+                    "fiscal_year": year,
+                    "agency_budgetary_resources": None,
+                    "total_budgetary_resources": Decimal(f"{year}.00"),
+                    "agency_total_obligated": None,
+                }
+            )
+    expected_results = sorted(expected_results, key=lambda x: x["fiscal_year"], reverse=True)
     assert resp.data == {
-        "fiscal_year": FY + 2,
         "toptier_code": "001",
-        "agency_budgetary_resources": None,
-        "prior_year_agency_budgetary_resources": None,
-        "total_federal_budgetary_resources": None,
-        "agency_total_obligated": None,
-        "agency_obligation_by_period": [],
-        "messages": [],
-    }
-
-    resp = client.get(URL.format(code="001", filter=f"?fiscal_year={FY}"))
-    assert resp.data == {
-        "fiscal_year": FY,
-        "toptier_code": "001",
-        "agency_budgetary_resources": Decimal("4.00"),
-        "prior_year_agency_budgetary_resources": Decimal("15.00"),
-        "total_federal_budgetary_resources": Decimal("35.00"),
-        "agency_total_obligated": Decimal("3.00"),
-        "agency_obligation_by_period": [
-            {"period": 3, "obligated": Decimal("8883.00")},
-            {"period": 6, "obligated": Decimal("8886.00")},
-            {"period": 9, "obligated": Decimal("8889.00")},
-            {"period": 12, "obligated": Decimal("3.00")},
-        ],
-        "messages": [],
-    }
-
-    resp = client.get(URL.format(code="001", filter=f"?fiscal_year={PRIOR_FY}"))
-    assert resp.data == {
-        "fiscal_year": PRIOR_FY,
-        "toptier_code": "001",
-        "agency_budgetary_resources": Decimal("15.00"),
-        "prior_year_agency_budgetary_resources": None,
-        "total_federal_budgetary_resources": Decimal("78.00"),
-        "agency_total_obligated": Decimal("5.00"),
-        "agency_obligation_by_period": [{"period": 12, "obligated": Decimal("5.00")}],
+        "agency_data_by_year": expected_results,
         "messages": [],
     }
