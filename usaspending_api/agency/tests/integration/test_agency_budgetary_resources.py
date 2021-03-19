@@ -12,7 +12,12 @@ PRIOR_FY = FY - 1
 
 @pytest.fixture
 def data_fixture():
-    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
+    dabs = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2020,
+        submission_fiscal_month=12,
+        submission_reveal_date="2020-10-09",
+    )
     ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
     ta2 = mommy.make("references.ToptierAgency", toptier_code="002")
     mommy.make("references.Agency", toptier_flag=True, toptier_agency=ta1)
@@ -120,6 +125,12 @@ def data_fixture():
     )
     for fy in range(2017, current_fiscal_year() + 1):
         mommy.make("references.GTASSF133Balances", fiscal_year=fy, total_budgetary_resources_cpe=1)
+        mommy.make(
+            "submissions.DABSSubmissionWindowSchedule",
+            submission_fiscal_year=fy,
+            submission_fiscal_month=12,
+            submission_reveal_date="2020-10-09",
+        )
 
 
 @pytest.mark.django_db
@@ -145,7 +156,7 @@ def test_budgetary_resources(client, data_fixture):
                 {
                     "fiscal_year": year,
                     "agency_budgetary_resources": None,
-                    "federal_budgetary_resources": Decimal("1.00"),
+                    "total_budgetary_resources": Decimal("1.00"),
                     "agency_total_obligated": None,
                 }
             )
