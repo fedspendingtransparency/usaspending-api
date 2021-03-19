@@ -35,7 +35,10 @@ RUN yum install -y \
     mlocate \
     wget \
     unzip \
-    bzip2-devel
+    bzip2-devel \
+    memcached \
+    libmemcached \
+    http://mirror.centos.org/centos/7/os/x86_64/Packages/libmemcached-devel-1.0.16-5.el7.x86_64.rpm
 RUN python3 -m pip install -r requirements/requirements-server.txt
 RUN python3 -m pip install ansible==2.8.3 awscli redis
 
