@@ -418,20 +418,15 @@ CREATE_OVERVIEW_SQL = f"""
 class Command(BaseCommand):
     """Used to calculate values and populate reporting_agency_overview"""
 
-    cursor = None
-
     def handle(self, *args, **options):
         with Timer("Refresh Reporting Agency Overview"):
             try:
-                with transaction.atomic():
-                    self.perform_load()
-                    t = Timer("Commit transaction")
-                    t.log_starting_message()
-                t.log_success_message()
+                self.perform_load()
             except Exception:
                 logger.error("ALL CHANGES ROLLED BACK DUE TO EXCEPTION")
                 raise
 
+    @transaction.atomic
     def perform_load(self):
         with connection.cursor() as cursor:
             with Timer("Create temporary tables"):
@@ -442,6 +437,8 @@ class Command(BaseCommand):
 
             with Timer(f"Reload '{OVERVIEW_TABLE_NAME}'"):
                 cursor.execute(CREATE_OVERVIEW_SQL)
+
+            logger.info("Committing SQL transaction of all data changes")
 
     def populate_temp_table(self, cursor: connection.cursor, temp_table: TempTableName) -> None:
         sql_template = "INSERT INTO {0} SELECT * FROM ({1}) AS {0}_contents;"

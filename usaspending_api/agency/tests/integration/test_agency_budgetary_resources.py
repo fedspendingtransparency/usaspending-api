@@ -3,6 +3,7 @@ import pytest
 from decimal import Decimal
 from model_mommy import mommy
 from rest_framework import status
+from datetime import datetime, timezone
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 
 
@@ -118,6 +119,22 @@ def data_fixture():
         obligations_incurred_total_by_tas_cpe=7,
         treasury_account_identifier=tas2,
         submission=sa2_12,
+    )
+
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=FY,
+        submission_reveal_date=datetime.now(timezone.utc),
+        submission_fiscal_quarter=4,
+        is_quarter=True,
+    )
+
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=PRIOR_FY,
+        submission_reveal_date=datetime.now(timezone.utc),
+        submission_fiscal_quarter=4,
+        is_quarter=True,
     )
 
 
