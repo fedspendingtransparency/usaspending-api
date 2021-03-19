@@ -106,12 +106,12 @@ def _county_agg_key(location_type, record: dict) -> Optional[str]:
         return None
     return json.dumps(
         {
-            "country_code": record[f"{location_type}_country_code"] or "",
-            "state_code": record[f"{location_type}_state_code"] or "",
-            "state_fips": record[f"{location_type}_state_fips"] or "",
-            "county_code": record[f"{location_type}_county_code"] or "",
-            "county_name": record[f"{location_type}_county_name"] or "",
-            "population": record[f"{location_type}_county_population"] or "",
+            "country_code": record[f"{location_type}_country_code"],
+            "state_code": record[f"{location_type}_state_code"],
+            "state_fips": record[f"{location_type}_state_fips"],
+            "county_code": record[f"{location_type}_county_code"],
+            "county_name": record[f"{location_type}_county_name"],
+            "population": record[f"{location_type}_county_population"],
         }
     )
 
