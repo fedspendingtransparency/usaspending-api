@@ -328,6 +328,8 @@ def test_federal_account_content(client, fixture_data):
     assert response_data["main_account_code"] == "0005"
     assert response_data["account_title"] == "Something"
     assert response_data["federal_account_code"] == "001-0005"
+    assert response_data["parent_agency_toptier_code"] == "001"
+    assert response_data["parent_agency_name"] == "Dept. of Depts"
 
 
 @pytest.mark.django_db
