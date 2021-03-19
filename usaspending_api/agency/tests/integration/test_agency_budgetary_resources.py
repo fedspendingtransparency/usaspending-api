@@ -2,7 +2,6 @@ import pytest
 
 from decimal import Decimal
 from model_mommy import mommy
-from datetime import datetime, timezone
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 
 
@@ -13,7 +12,12 @@ PRIOR_FY = FY - 1
 
 @pytest.fixture
 def data_fixture():
-    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
+    dabs = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=1995,
+        submission_fiscal_month=2,
+        submission_reveal_date="2020-10-09",
+    )
     ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
     ta2 = mommy.make("references.ToptierAgency", toptier_code="002")
     mommy.make("references.Agency", toptier_flag=True, toptier_agency=ta1)
@@ -120,7 +124,7 @@ def data_fixture():
         submission=sa2_12,
     )
     for fy in range(2017, current_fiscal_year() + 1):
-        mommy.make("references.GTASSF133Balances", fiscal_year=fy, total_budgetary_resources_cpe=1)
+        mommy.make("references.GTASSF133Balances", fiscal_year=fy, fiscal_period=12, total_budgetary_resources_cpe=fy)
         mommy.make(
             "submissions.DABSSubmissionWindowSchedule",
             submission_fiscal_year=fy,
@@ -128,22 +132,6 @@ def data_fixture():
             submission_reveal_date="2020-10-09",
             is_quarter=True,
         )
-
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=FY,
-        submission_reveal_date=datetime.now(timezone.utc),
-        submission_fiscal_quarter=4,
-        is_quarter=True,
-    )
-
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=PRIOR_FY,
-        submission_reveal_date=datetime.now(timezone.utc),
-        submission_fiscal_quarter=4,
-        is_quarter=True,
-    )
 
 
 @pytest.mark.django_db
@@ -153,13 +141,13 @@ def test_budgetary_resources(client, data_fixture):
         {
             "fiscal_year": FY,
             "agency_budgetary_resources": Decimal("29992.00"),
-            "total_budgetary_resources": Decimal("1.00"),
+            "total_budgetary_resources": Decimal(f"{FY}.00"),
             "agency_total_obligated": Decimal("26661.00"),
         },
         {
             "fiscal_year": PRIOR_FY,
             "agency_budgetary_resources": Decimal("15.00"),
-            "total_budgetary_resources": Decimal("1.00"),
+            "total_budgetary_resources": Decimal(f"{PRIOR_FY}.00"),
             "agency_total_obligated": Decimal("5.00"),
         },
     ]
@@ -169,7 +157,7 @@ def test_budgetary_resources(client, data_fixture):
                 {
                     "fiscal_year": year,
                     "agency_budgetary_resources": None,
-                    "total_budgetary_resources": Decimal("1.00"),
+                    "total_budgetary_resources": Decimal(f"{year}.00"),
                     "agency_total_obligated": None,
                 }
             )
