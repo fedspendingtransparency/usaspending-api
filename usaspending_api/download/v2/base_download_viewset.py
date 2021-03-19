@@ -60,12 +60,11 @@ class BaseDownloadViewSet(APIView):
 
         if validator_type is not None:
             validator = validator_type(request.data)
-            json_request = validator.get_validated_request()
+            json_request = validator.json_request
         else:
             json_request = request_type.value["validate_func"](request.data)
             json_request["request_type"] = request_type.value["name"]
-            json_request = order_nested_object(json_request)
-
+        json_request = order_nested_object(json_request)
         ordered_json_request = json.dumps(json_request)
 
         # Check if the same request has been called today

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime, MINYEAR, MAXYEAR
 from django.conf import settings
 from typing import Optional
@@ -16,11 +17,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
 )
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import fiscal_year_helpers as fy_helpers
-from usaspending_api.common.helpers.dict_helpers import order_nested_object
-from usaspending_api.common.validator.award_filter import (
-    AWARD_FILTER_NO_RECIPIENT_ID,
-    AWARD_FILTER_NO_RECIPIENT_ID_OR_TIME_PERIOD,
-)
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.download.helpers import check_types_and_assign_defaults, get_date_range_length, parse_limit
 from usaspending_api.download.lookups import (
@@ -33,9 +30,7 @@ from usaspending_api.submissions import helpers as sub_helpers
 
 
 class DownloadValidatorBase:
-
     name: str
-    tinyshield_models: list
 
     def __init__(self, request_data: dict):
         self.common_tinyshield_models = [
@@ -56,44 +51,39 @@ class DownloadValidatorBase:
                 "default": "csv",
             },
         ]
-        self.json_request = {
+        self._json_request = {
             "columns": request_data.get("columns", []),
             "file_format": request_data.get("file_format", "csv").lower(),
-            "filters": _validate_filters_exist(request_data),
         }
-
-    def run_tinyshield_validation(self) -> dict:
-        return TinyShield(self.tinyshield_models).block(self.json_request)
+        self.tinyshield_models = []
 
     def get_validated_request(self):
-        validated_request = self.run_tinyshield_validation()
+        models = self.tinyshield_models + self.common_tinyshield_models
+        validated_request = TinyShield(models).block(self._json_request)
         validated_request["request_type"] = self.name
-        return order_nested_object(validated_request)
+        return validated_request
 
     def set_filter_defaults(self, defaults: dict):
         for key, val in defaults.items():
-            self.json_request["filters"].setdefault(key, val)
+            self._json_request["filters"].setdefault(key, val)
+
+    @property
+    def json_request(self):
+        return deepcopy(self._json_request)
 
 
 class AwardDownloadValidator(DownloadValidatorBase):
+    name = "award"
+
     def __init__(self, request_data: dict):
         super().__init__(request_data)
-        self.name = "award"
         self.request_data = request_data
-        self.tinyshield_models = [
-            {
-                "name": "download_types",
-                "key": "download_types",
-                "type": "array",
-                "array_type": "enum",
-                "enum_values": ["elasticsearch_awards", "sub_awards", "elasticsearch_transactions", "prime_awards"],
-            }
-        ]
-        self.json_request["download_types"] = self.request_data.get("award_levels")
+        self._json_request["download_types"] = self.request_data.get("award_levels")
+        self._json_request["filters"] = _validate_filters_exist(request_data)
         self.set_filter_defaults({"award_type_codes": list(award_type_mapping.keys())})
 
         constraint_type = self.request_data.get("constraint_type")
-        if constraint_type == "year" and set(self.json_request["filters"].keys()) & {"keyword", "keywords"}:
+        if constraint_type == "year" and set(self._json_request["filters"].keys()) & {"keyword", "keywords"}:
             self._handle_keyword_search_download()
         elif constraint_type == "year":
             self._handle_custom_award_download()
@@ -102,17 +92,13 @@ class AwardDownloadValidator(DownloadValidatorBase):
         else:
             raise InvalidParameterException('Invalid parameter: constraint_type must be "row_count" or "year"')
 
-        self.tinyshield_models.extend(self.common_tinyshield_models)
-
     def _handle_keyword_search_download(self):
-        self.json_request["limit"] = settings.MAX_DOWNLOAD_LIMIT
-
         # Overriding all other filters if the keyword filter is provided in year-constraint download
-        self.json_request["filters"] = {
-            "elasticsearch_keyword": self.json_request["filters"]["keyword"]
-            or self.json_request["filters"]["keywords"],
-            "award_type_codes": list(award_type_mapping.keys()),
+        self._json_request["filters"] = {
+            "elasticsearch_keyword": self._json_request["filters"]["keyword"]
+            or self._json_request["filters"]["keywords"]
         }
+
         self.tinyshield_models.extend(
             [
                 {
@@ -120,121 +106,143 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     "key": "filters|elasticsearch_keyword",
                     "type": "text",
                     "text_type": "search",
-                }
+                },
+                {
+                    "name": "download_types",
+                    "key": "download_types",
+                    "type": "array",
+                    "array_type": "enum",
+                    "enum_values": ["prime_awards"],
+                },
             ]
         )
+        self._json_request = self.get_validated_request()
+        self._json_request["limit"] = settings.MAX_DOWNLOAD_LIMIT
+        self._json_request["filters"]["award_type_codes"] = list(award_type_mapping)
 
-    def _normalize_custom_award_filters(self):
+    def _handle_custom_award_download(self):
         """
         Custom Award Download allows different filters than other Award Download Endpoints
         and thus it needs to be normalized before moving forward
         # TODO: Refactor to use similar filters as Advanced Search download
         """
-        custom_award_tinyshield_models = [
-            {
-                "name": "agencies",
-                "key": "agencies",
-                "type": "array",
-                "array_type": "object",
-                "object_keys": {
-                    "type": {"type": "enum", "enum_values": ["funding", "awarding"], "optional": False},
-                    "tier": {"type": "enum", "enum_values": ["toptier", "subtier"], "optional": False},
-                    "toptier_name": {"type": "text", "text_type": "search", "optional": True},
-                    "name": {"type": "text", "text_type": "search", "optional": False},
+        self.tinyshield_models.extend(
+            [
+                {
+                    "name": "agencies",
+                    "key": "filters|agencies",
+                    "type": "array",
+                    "array_type": "object",
+                    "object_keys": {
+                        "type": {"type": "enum", "enum_values": ["funding", "awarding"], "optional": False},
+                        "tier": {"type": "enum", "enum_values": ["toptier", "subtier"], "optional": False},
+                        "toptier_name": {"type": "text", "text_type": "search", "optional": True},
+                        "name": {"type": "text", "text_type": "search", "optional": False},
+                    },
                 },
-            },
-            {"name": "agency", "key": "agency", "type": "integer"},
-            {
-                "name": "date_range",
-                "key": "date_range",
-                "type": "object",
-                "optional": False,
-                "object_keys": {
-                    "start_date": {"type": "date", "default": "1000-01-01"},
-                    "end_date": {"type": "date", "default": datetime.strftime(datetime.utcnow(), "%Y-%m-%d")},
+                {"name": "agency", "key": "filters|agency", "type": "integer"},
+                {
+                    "name": "date_range",
+                    "key": "filters|date_range",
+                    "type": "object",
+                    "optional": False,
+                    "object_keys": {
+                        "start_date": {"type": "date", "default": "1000-01-01"},
+                        "end_date": {"type": "date", "default": datetime.strftime(datetime.utcnow(), "%Y-%m-%d")},
+                    },
                 },
-            },
-            {
-                "name": "date_type",
-                "key": "date_type",
-                "type": "enum",
-                "enum_values": ["action_date", "last_modified_date"],
-                "default": "action_date",
-            },
-            {
-                "name": "place_of_performance_locations",
-                "key": "place_of_performance_locations",
-                "type": "array",
-                "array_type": "object",
-                "object_keys": {
-                    "country": {"type": "text", "text_type": "search", "optional": False},
-                    "state": {"type": "text", "text_type": "search", "optional": True},
-                    "zip": {"type": "text", "text_type": "search", "optional": True},
-                    "district": {"type": "text", "text_type": "search", "optional": True},
-                    "county": {"type": "text", "text_type": "search", "optional": True},
-                    "city": {"type": "text", "text_type": "search", "optional": True},
+                {
+                    "name": "date_type",
+                    "key": "filters|date_type",
+                    "type": "enum",
+                    "enum_values": ["action_date", "last_modified_date"],
+                    "default": "action_date",
                 },
-            },
-            {
-                "name": "place_of_performance_scope",
-                "key": "place_of_performance_scope",
-                "type": "enum",
-                "enum_values": ["domestic", "foreign"],
-            },
-            {
-                "name": "prime_award_types",
-                "key": "prime_award_types",
-                "type": "array",
-                "array_type": "enum",
-                "min": 0,
-                "enum_values": list(award_type_mapping.keys()),
-            },
-            {
-                "name": "recipient_locations",
-                "key": "recipient_locations",
-                "type": "array",
-                "array_type": "object",
-                "object_keys": {
-                    "country": {"type": "text", "text_type": "search", "optional": False},
-                    "state": {"type": "text", "text_type": "search", "optional": True},
-                    "zip": {"type": "text", "text_type": "search", "optional": True},
-                    "district": {"type": "text", "text_type": "search", "optional": True},
-                    "county": {"type": "text", "text_type": "search", "optional": True},
-                    "city": {"type": "text", "text_type": "search", "optional": True},
+                {
+                    "name": "place_of_performance_locations",
+                    "key": "filters|place_of_performance_locations",
+                    "type": "array",
+                    "array_type": "object",
+                    "object_keys": {
+                        "country": {"type": "text", "text_type": "search", "optional": False},
+                        "state": {"type": "text", "text_type": "search", "optional": True},
+                        "zip": {"type": "text", "text_type": "search", "optional": True},
+                        "district": {"type": "text", "text_type": "search", "optional": True},
+                        "county": {"type": "text", "text_type": "search", "optional": True},
+                        "city": {"type": "text", "text_type": "search", "optional": True},
+                    },
                 },
-            },
-            {
-                "name": "recipient_scope",
-                "key": "recipient_scope",
-                "type": "enum",
-                "enum_values": ("domestic", "foreign"),
-            },
-            {"name": "sub_agency", "key": "sub_agency", "type": "text", "text_type": "search"},
-            {
-                "name": "sub_award_types",
-                "key": "sub_award_types",
-                "type": "array",
-                "array_type": "enum",
-                "min": 0,
-                "enum_values": all_subaward_types,
-            },
-        ]
+                {
+                    "name": "place_of_performance_scope",
+                    "key": "filters|place_of_performance_scope",
+                    "type": "enum",
+                    "enum_values": ["domestic", "foreign"],
+                },
+                {
+                    "name": "prime_award_types",
+                    "key": "filters|prime_award_types",
+                    "type": "array",
+                    "array_type": "enum",
+                    "min": 0,
+                    "enum_values": list(award_type_mapping.keys()),
+                },
+                {
+                    "name": "recipient_locations",
+                    "key": "filters|recipient_locations",
+                    "type": "array",
+                    "array_type": "object",
+                    "object_keys": {
+                        "country": {"type": "text", "text_type": "search", "optional": False},
+                        "state": {"type": "text", "text_type": "search", "optional": True},
+                        "zip": {"type": "text", "text_type": "search", "optional": True},
+                        "district": {"type": "text", "text_type": "search", "optional": True},
+                        "county": {"type": "text", "text_type": "search", "optional": True},
+                        "city": {"type": "text", "text_type": "search", "optional": True},
+                    },
+                },
+                {
+                    "name": "recipient_scope",
+                    "key": "filters|recipient_scope",
+                    "type": "enum",
+                    "enum_values": ("domestic", "foreign"),
+                },
+                {"name": "sub_agency", "key": "filters|sub_agency", "type": "text", "text_type": "search"},
+                {
+                    "name": "sub_award_types",
+                    "key": "filters|sub_award_types",
+                    "type": "array",
+                    "array_type": "enum",
+                    "min": 0,
+                    "enum_values": all_subaward_types,
+                },
+            ]
+        )
 
         filter_all_agencies = False
-        if str(self.json_request["filters"].get("agency", "")).lower() == "all":
+        if str(self._json_request["filters"].get("agency", "")).lower() == "all":
             filter_all_agencies = True
-            self.json_request["filters"].pop("agency")
+            self._json_request["filters"].pop("agency")
 
-        custom_award_filters = TinyShield(custom_award_tinyshield_models).block(self.json_request["filters"])
+        self._json_request = self.get_validated_request()
+        custom_award_filters = self._json_request["filters"]
+        final_award_filters = {}
+
+        # These filters do not need any normalization
+        for key, value in custom_award_filters.items():
+            if key in [
+                "recipient_locations",
+                "recipient_scope",
+                "place_of_performance_location",
+                "place_of_performance_scope",
+            ]:
+                final_award_filters[key] = value
 
         if get_date_range_length(custom_award_filters["date_range"]) > 366:
             raise InvalidParameterException("Invalid Parameter: date_range total days must be within a year")
 
-        custom_award_filters["time_period"] = [
+        final_award_filters["time_period"] = [
             {**custom_award_filters["date_range"], "date_type": custom_award_filters["date_type"]}
         ]
-        del custom_award_filters["date_range"]
-        del custom_award_filters["date_type"]
 
         if (
             custom_award_filters.get("prime_award_types") is None
@@ -244,24 +252,20 @@ class AwardDownloadValidator(DownloadValidatorBase):
                 "Missing one or more required body parameters: prime_award_types or sub_award_types"
             )
 
-        self.json_request["download_types"] = []
-        custom_award_filters["prime_and_sub_award_types"] = {}
+        self._json_request["download_types"] = []
+        final_award_filters["prime_and_sub_award_types"] = {}
 
         if custom_award_filters.get("prime_award_types"):
-            self.json_request["download_types"].append("prime_awards")
-            custom_award_filters["prime_and_sub_award_types"]["prime_awards"] = custom_award_filters[
-                "prime_award_types"
-            ]
-            del custom_award_filters["prime_award_types"]
+            self._json_request["download_types"].append("prime_awards")
+            final_award_filters["prime_and_sub_award_types"]["prime_awards"] = custom_award_filters["prime_award_types"]
 
         if custom_award_filters.get("sub_award_types"):
-            self.json_request["download_types"].append("sub_awards")
-            custom_award_filters["prime_and_sub_award_types"]["sub_awards"] = custom_award_filters["sub_award_types"]
-            del custom_award_filters["sub_award_types"]
+            self._json_request["download_types"].append("sub_awards")
+            final_award_filters["prime_and_sub_award_types"]["sub_awards"] = custom_award_filters["sub_award_types"]
 
         if "agency" in custom_award_filters:
             if "agencies" not in custom_award_filters:
-                custom_award_filters["agencies"] = []
+                final_award_filters["agencies"] = []
 
             if filter_all_agencies:
                 toptier_name = "all"
@@ -276,7 +280,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
                 toptier_name = toptier_name["name"]
 
             if "sub_agency" in custom_award_filters:
-                custom_award_filters["agencies"].append(
+                final_award_filters["agencies"].append(
                     {
                         "type": "awarding",
                         "tier": "subtier",
@@ -284,58 +288,17 @@ class AwardDownloadValidator(DownloadValidatorBase):
                         "toptier_name": toptier_name,
                     }
                 )
-                del custom_award_filters["sub_agency"]
             else:
-                custom_award_filters["agencies"].append({"type": "awarding", "tier": "toptier", "name": toptier_name})
-            del custom_award_filters["agency"]
+                final_award_filters["agencies"].append({"type": "awarding", "tier": "toptier", "name": toptier_name})
 
         if "agencies" in custom_award_filters:
-            custom_award_filters["agencies"] = [
+            final_award_filters["agencies"] = [
                 val for val in custom_award_filters["agencies"] if val.get("name", "").lower() != "all"
             ]
 
-        return custom_award_filters
-
-    def _handle_custom_award_download(self):
-        self.json_request["filters"] = self._normalize_custom_award_filters()
-        self.tinyshield_models.extend(
-            [
-                *AWARD_FILTER_NO_RECIPIENT_ID_OR_TIME_PERIOD,
-                {
-                    "name": "time_period",
-                    "key": "filters|time_period",
-                    "type": "array",
-                    "array_type": "object",
-                    "object_keys": {
-                        "start_date": {"type": "date"},
-                        "end_date": {"type": "date"},
-                        "date_type": {
-                            "type": "enum",
-                            "enum_values": ["action_date", "last_modified_date"],
-                            "optional": True,
-                            "default": "action_date",
-                        },
-                    },
-                },
-                {
-                    "name": "prime_and_sub_award_types",
-                    "key": "filters|prime_and_sub_award_types",
-                    "type": "object",
-                    "object_keys": {
-                        "prime_awards": {
-                            "type": "array",
-                            "array_type": "enum",
-                            "enum_values": list(award_type_mapping.keys()),
-                        },
-                        "sub_awards": {"type": "array", "array_type": "enum", "enum_values": all_subaward_types},
-                    },
-                    "optional": False,
-                },
-            ]
-        )
+        self._json_request["filters"] = final_award_filters
 
     def _handle_advanced_search_download(self):
-        self.json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
         self.tinyshield_models.extend(
             [
                 *AWARD_FILTER_NO_RECIPIENT_ID,
@@ -347,8 +310,17 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     "max": settings.MAX_DOWNLOAD_LIMIT,
                     "default": settings.MAX_DOWNLOAD_LIMIT,
                 },
+                {
+                    "name": "download_types",
+                    "key": "download_types",
+                    "type": "array",
+                    "array_type": "enum",
+                    "enum_values": ["elasticsearch_awards", "sub_awards", "elasticsearch_transactions", "prime_awards"],
+                },
             ]
         )
+        self._json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
+        self._json_request = self.get_validated_request()
 
 
 def validate_idv_request(request_data):

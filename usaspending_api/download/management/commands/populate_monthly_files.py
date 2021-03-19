@@ -7,6 +7,7 @@ import re
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from usaspending_api.awards.v2.lookups.lookups import procurement_type_mapping, assistance_type_mapping
+from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.common.helpers.s3_helpers import multipart_upload
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
@@ -58,11 +59,11 @@ class Command(BaseCommand):
             "file_format": file_format,
         }
         award_download = AwardDownloadValidator(json_request)
-        validated_request = award_download.get_validated_request()
+        validated_request = award_download.json_request
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT["ready"],
             file_name=file_name,
-            json_request=json.dumps(validated_request),
+            json_request=json.dumps(order_nested_object(validated_request)),
             monthly_download=True,
         )
 
