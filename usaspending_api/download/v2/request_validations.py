@@ -40,7 +40,6 @@ class DownloadValidatorBase:
                 "type": "array",
                 "array_type": "text",
                 "text_type": "search",
-                "default": [],
                 "min": 0,
             },
             {
@@ -52,9 +51,11 @@ class DownloadValidatorBase:
             },
         ]
         self._json_request = {
-            "columns": request_data.get("columns", []),
             "file_format": request_data.get("file_format", "csv").lower(),
         }
+        if request_data.get("columns"):
+            self._json_request["columns"] = request_data.get("columns")
+
         self.tinyshield_models = []
 
     def get_validated_request(self):
