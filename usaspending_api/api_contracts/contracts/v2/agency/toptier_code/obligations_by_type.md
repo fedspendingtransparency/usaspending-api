@@ -17,30 +17,30 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
         
 + Response 200 (application/json)
     + Attributes (object)
-        + `award_obligations` (required, number)
+        + `aggregated_amount` (required, number)
         + `results` (required, array[ObligationSubtotals], fixed-type)
-            Sorted by award_obligations, descending. Categories with $0 of obligations within the FY are not included.
+            Sorted by aggregated_amount, descending. Categories with $0 of obligations within the FY are not included.
 
     + Body
 
             {
-                "award_obligations": 39999999.96,
+                "aggregated_amount": 39999999.96,
                 "results": [
                     {
                         "category": "contracts",
-                        "award_obligations": 9999999.99
+                        "aggregated_amount": 9999999.99
                     },
                     {
                         "category": "idvs",
-                        "award_obligations": 9999999.99
+                        "aggregated_amount": 9999999.99
                     },
                     {
                         "category": "direct_payments",
-                        "award_obligations": 9999999.99
+                        "aggregated_amount": 9999999.99
                     },
                     {
                         "category": "grants",
-                        "award_obligations": 9999999.99
+                        "aggregated_amount": 9999999.99
                     }
                 ]
             }
@@ -56,4 +56,4 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
         + `loans`
         + `direct_payments`
         + `other`
-+ `award_obligations` (required, number)
++ `aggregated_amount` (required, number)
