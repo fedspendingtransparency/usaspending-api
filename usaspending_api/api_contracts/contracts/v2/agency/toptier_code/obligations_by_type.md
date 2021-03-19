@@ -17,14 +17,14 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
         
 + Response 200 (application/json)
     + Attributes (object)
-        + `aggregated_amount` (required, number)
+        + `total_aggregated_amount` (required, number)
         + `results` (required, array[ObligationSubtotals], fixed-type)
             Sorted by aggregated_amount, descending. Categories with $0 of obligations within the FY are not included.
 
     + Body
 
             {
-                "aggregated_amount": 39999999.96,
+                "total_aggregated_amount": 39999999.96,
                 "results": [
                     {
                         "category": "contracts",
