@@ -28,18 +28,20 @@ class ObligationsByType(AgencyBase):
         )
 
     def get_category_amounts(self):
-
-
-
-        queryset = TransactionNormalized.objects.filter(
-            federal_action_obligation__isnull=False, fiscal_year=fiscal_year, awarding_agency_id=awarding_agency_id
-        ).annotate(
-            award_category=F("award__category"),
-            recipient_name=Coalesce(
-                F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
-                F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
-            ),
+        queryset = (
+            TransactionNormalized.objects.filter(federal_action_obligation__isnull=False, fiscal_year=self.fiscal_year)
+            .annotate(
+                award_category=F("award__category"),
+                total_aggregated_amount=Sum("federal_action_obligation"),
+                recipient_name=Coalesce(
+                    F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
+                    F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
+                ),
+            )
+            .order_by("-total_aggregated_amount")
         )
+
+
 
 
 
