@@ -85,6 +85,8 @@ def data_fixture():
         treasury_account_identifier=tas2,
         submission=sa2_12,
     )
+    for fy in range(2017, current_fiscal_year() + 1):
+        mommy.make("references.GTASSF133Balances", fiscal_year=fy, total_budgetary_resources_cpe=1)
 
 
 @pytest.mark.django_db
@@ -94,13 +96,13 @@ def test_budgetary_resources(client, data_fixture):
         {
             "fiscal_year": FY,
             "agency_budgetary_resources": Decimal("29992.00"),
-            "federal_budgetary_resources": Decimal("30023.00"),
+            "federal_budgetary_resources": Decimal("1.00"),
             "agency_total_obligated": Decimal("26661.00"),
         },
         {
             "fiscal_year": PRIOR_FY,
             "agency_budgetary_resources": Decimal("15.00"),
-            "federal_budgetary_resources": Decimal("78.00"),
+            "federal_budgetary_resources": Decimal("1.00"),
             "agency_total_obligated": Decimal("5.00"),
         },
     ]
@@ -110,7 +112,7 @@ def test_budgetary_resources(client, data_fixture):
                 {
                     "fiscal_year": year,
                     "agency_budgetary_resources": None,
-                    "federal_budgetary_resources": None,
+                    "federal_budgetary_resources": Decimal("1.00"),
                     "agency_total_obligated": None,
                 }
             )

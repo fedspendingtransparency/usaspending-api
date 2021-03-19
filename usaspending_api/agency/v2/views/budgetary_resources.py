@@ -46,14 +46,14 @@ class BudgetaryResources(AgencyBase):
         )
         fbr = self.get_total_federal_budgetary_resources()
         resources = {}
-        for x in fbr:
-            resources.update({x["fiscal_year"]: x["total_budgetary_resources"]})
+        for z in fbr:
+            resources.update({z["fiscal_year"]: z["total_budgetary_resources"]})
         results = [
             {
                 "fiscal_year": x["submission__reporting_fiscal_year"],
                 "agency_budgetary_resources": x["agency_budgetary_resources"],
                 "agency_total_obligated": x["agency_total_obligated"],
-                "federal_budgetary_resources": resources[x["submission__reporting_fiscal_year"]],
+                "federal_budgetary_resources": resources.get(x["submission__reporting_fiscal_year"]),
             }
             for x in aab
         ]
@@ -63,9 +63,9 @@ class BudgetaryResources(AgencyBase):
                 results.append(
                     {
                         "fiscal_year": year,
-                        "agency_budgetary_resources": "TBR",
-                        "agency_total_obligated": "TBR",
-                        "federal_budgetary_resources": resources[x["submission__reporting_fiscal_year"]],
+                        "agency_budgetary_resources": None,
+                        "agency_total_obligated": None,
+                        "federal_budgetary_resources": resources.get(year),
                     }
                 )
         return sorted(results, key=lambda x: x["fiscal_year"], reverse=True)
