@@ -13,12 +13,7 @@ PRIOR_FY = FY - 1
 
 @pytest.fixture
 def data_fixture():
-    dabs = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=2020,
-        submission_fiscal_month=12,
-        submission_reveal_date="2020-10-09",
-    )
+    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
     ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
     ta2 = mommy.make("references.ToptierAgency", toptier_code="002")
     mommy.make("references.Agency", toptier_flag=True, toptier_agency=ta1)
@@ -131,6 +126,7 @@ def data_fixture():
             submission_fiscal_year=fy,
             submission_fiscal_month=12,
             submission_reveal_date="2020-10-09",
+            is_quarter=True,
         )
 
     mommy.make(
