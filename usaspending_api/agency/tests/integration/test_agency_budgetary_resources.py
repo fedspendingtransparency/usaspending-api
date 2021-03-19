@@ -129,13 +129,13 @@ def test_budgetary_resources(client, data_fixture):
         {
             "fiscal_year": FY,
             "agency_budgetary_resources": Decimal("29992.00"),
-            "federal_budgetary_resources": Decimal("1.00"),
+            "total_budgetary_resources": Decimal("1.00"),
             "agency_total_obligated": Decimal("26661.00"),
         },
         {
             "fiscal_year": PRIOR_FY,
             "agency_budgetary_resources": Decimal("15.00"),
-            "federal_budgetary_resources": Decimal("1.00"),
+            "total_budgetary_resources": Decimal("1.00"),
             "agency_total_obligated": Decimal("5.00"),
         },
     ]
