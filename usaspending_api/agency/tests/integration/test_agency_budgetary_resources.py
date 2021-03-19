@@ -2,6 +2,7 @@ import pytest
 
 from decimal import Decimal
 from model_mommy import mommy
+from datetime import datetime, timezone
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 
 
@@ -131,6 +132,22 @@ def data_fixture():
             submission_fiscal_month=12,
             submission_reveal_date="2020-10-09",
         )
+
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=FY,
+        submission_reveal_date=datetime.now(timezone.utc),
+        submission_fiscal_quarter=4,
+        is_quarter=True,
+    )
+
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=PRIOR_FY,
+        submission_reveal_date=datetime.now(timezone.utc),
+        submission_fiscal_quarter=4,
+        is_quarter=True,
+    )
 
 
 @pytest.mark.django_db
