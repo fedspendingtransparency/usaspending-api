@@ -3,7 +3,7 @@ SELECT
     "broker_subaward"."award_id" AS "prime_award_fain",
     "broker_subaward"."award_amount" AS "prime_award_amount",
     DEFC."disaster_emergency_funds" AS "prime_award_disaster_emergency_fund_codes",
-    DEFC."gross_outlay_amount_by_award_cpe" AS "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
+    DEFC."gross_outlay_amount_by_award_cpe" + DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
     DEFC."transaction_obligated_amount" AS "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
     "broker_subaward"."action_date" AS "prime_award_base_action_date",
     EXTRACT (YEAR FROM ("awards"."date_signed") + INTERVAL '3 months') AS "prime_award_base_action_date_fiscal_year",
@@ -107,6 +107,8 @@ INNER JOIN (
         faba.award_id,
         STRING_AGG(DISTINCT CONCAT(disaster_emergency_fund_code, ': ', public_law), '; ' ORDER BY CONCAT(disaster_emergency_fund_code, ': ', public_law)) AS disaster_emergency_funds,
         COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe END), 0) AS ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe END), 0) AS ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
         COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
     FROM
         financial_accounts_by_awards faba
@@ -126,7 +128,18 @@ INNER JOIN (
     GROUP BY
         faba.award_id
     HAVING
-        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) != 0
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN sa.is_final_balances_for_fy = TRUE
+                    THEN
+                        COALESCE(faba.gross_outlay_amount_by_award_cpe, 0)
+                        + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+                        + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
+                END
+            ),
+            0
+        ) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
 ) DEFC ON (DEFC.award_id = awards.id)
 WHERE (
