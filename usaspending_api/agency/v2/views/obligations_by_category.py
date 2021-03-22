@@ -10,7 +10,7 @@ from usaspending_api.common.cache_decorator import cache_response
 # from usaspending_api.references.models import ObjectClass
 
 
-class ObligationsByType(AgencyBase):
+class ObligationsByCategory(AgencyBase):
     """
     Returns a breakdown of obligations by award category (contracts, IDVs, grants, loans, direct payments, other) within the requested fiscal year (or current FY).
     """
@@ -31,8 +31,13 @@ class ObligationsByType(AgencyBase):
         queryset = (
             TransactionNormalized.objects.filter(federal_action_obligation__isnull=False, fiscal_year=self.fiscal_year)
             .annotate(
-                award_category=F("award__category"),
                 total_aggregated_amount=Sum("federal_action_obligation"),
+            .annotate(
+                award_category=F("award__category"),
+                aggregated_amount=Sum("federal_action_obligation"),
+
+
+
                 recipient_name=Coalesce(
                     F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
                     F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),

@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Federal Obligations [/api/v2/agency/{toptier_code}/obligations_by_type/{?fiscal_year}]
+# Federal Obligations [/api/v2/agency/{toptier_code}/obligations_by_category/{?fiscal_year}]
 
 This endpoint is used to power USAspending.gov's agency profile pages.
 
