@@ -298,6 +298,8 @@ class TinyShield:
                 except KeyError:
                     if "optional" in v and v["optional"] is False:
                         raise UnprocessableEntityException("Required object fields: {}".format(k))
+                    elif "default" in v:
+                        value = v["default"]
                     else:
                         continue
                 # Start with the sub-rule definition and supplement with parent's key-values as needed

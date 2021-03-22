@@ -50,42 +50,7 @@ def parse_limit(json_request):
     return limit  # None is a workable slice argument
 
 
-def validate_time_periods(filters, new_request):
-    """Validates passed time_period filters, or assigns the default values.
-    Returns the number of days selected by the user"""
-    default_date_values = {
-        "start_date": "1000-01-01",
-        "end_date": datetime.strftime(datetime.utcnow(), "%Y-%m-%d"),
-        "date_type": "action_date",
-    }
-
-    # Enforcing that time_period always has content
-    if len(filters.get("time_period", [])) == 0:
-        filters["time_period"] = [default_date_values]
-    new_request["filters"]["time_period"] = filters["time_period"]
-
-    total_range_count = 0
-    for date_range in new_request["filters"]["time_period"]:
-        # Empty strings, Nones, or missing keys should be replaced with the default values
-        for key in default_date_values:
-            date_range[key] = date_range.get(key, default_date_values[key])
-            if date_range[key] == "":
-                date_range[key] = default_date_values[key]
-
-        # Validate date values
-        try:
-            d1 = datetime.strptime(date_range["start_date"], "%Y-%m-%d")
-            d2 = datetime.strptime(date_range["end_date"], "%Y-%m-%d")
-        except ValueError:
-            raise InvalidParameterException("Date Ranges must be in the format YYYY-MM-DD.")
-
-        # Add to total_range_count for year-constraint validations
-        total_range_count += (d2 - d1).days
-
-        # Validate and derive date type
-        if date_range["date_type"] not in ["action_date", "last_modified_date"]:
-            raise InvalidParameterException(
-                "Invalid parameter within time_period's date_type: {}".format(date_range["date_type"])
-            )
-
-    return total_range_count
+def get_date_range_length(date_range):
+    d1 = datetime.strptime(date_range["start_date"], "%Y-%m-%d")
+    d2 = datetime.strptime(date_range["end_date"], "%Y-%m-%d")
+    return (d2 - d1).days

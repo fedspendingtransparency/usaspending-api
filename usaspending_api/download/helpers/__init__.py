@@ -3,14 +3,14 @@ from usaspending_api.download.helpers.monthly_helpers import pull_modified_agenc
 from usaspending_api.download.helpers.request_validations_helpers import (
     check_types_and_assign_defaults,
     parse_limit,
-    validate_time_periods,
+    get_date_range_length,
 )
 
 __all__ = [
     "check_types_and_assign_defaults",
     "parse_limit",
     "pull_modified_agencies_cgacs",
-    "validate_time_periods",
+    "get_date_range_length",
     "verify_requested_columns_available",
     "write_to_download_log",
 ]
