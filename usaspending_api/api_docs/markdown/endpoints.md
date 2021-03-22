@@ -36,7 +36,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/federal_account/count/](/api/v2/agency/012/federal_account/count/)|GET| Returns the count of Federal Accounts and Treasury Accounts for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/object_class/](/api/v2/agency/012/object_class/)|GET| Returns a list of Object Classes for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/object_class/count/](/api/v2/agency/012/object_class/count/)|GET| Returns the count of Object Classes for the agency in a single fiscal year |
-|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/program_activity/](/api/v2/agency/012/obligations_by_category/)|GET| Returns a breakdown of obligations by award category within the a fiscal year |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/obligations_by_award_category/](/api/v2/agency/012/obligations_by_award_category/)|GET| Returns a breakdown of obligations by award category within the a fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/program_activity/](/api/v2/agency/012/program_activity/)|GET| Returns a list of Program Activity categories for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/program_activity/count/](/api/v2/agency/012/program_activity/count/)|GET| Returns the count of Program Activity categories for the agency in a single fiscal year |
 |[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Treasury Account Symbol Availability Type Code (A) filtered by other components provided in the request filter |
