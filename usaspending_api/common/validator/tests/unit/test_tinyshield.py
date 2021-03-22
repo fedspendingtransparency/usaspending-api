@@ -78,7 +78,7 @@ FILTER_OBJ = {
     "filters": {
         "keywords": ["grumpy", "bungle"],
         "award_type_codes": ["A", "B", "C", "D"],
-        "time_period": [{"start_date": "2008-01-01", "end_date": "2011-01-31"}],
+        "time_period": [{"date_type": "action_date", "start_date": "2008-01-01", "end_date": "2011-01-31"}],
         "place_of_performance_scope": "domestic",
         "place_of_performance_locations": [{"country": "USA", "state": "VA", "county": "059"}],
         "agencies": [

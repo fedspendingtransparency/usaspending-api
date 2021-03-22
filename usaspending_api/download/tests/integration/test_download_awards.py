@@ -107,7 +107,7 @@ def test_download_awards_without_columns(client, monkeypatch, download_test_data
     resp = client.post(
         "/api/v2/download/awards/",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": []}, "columns": []}),
+        data=json.dumps({"filters": {"award_type_codes": ["A"]}, "columns": []}),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -120,7 +120,7 @@ def test_tsv_download_awards_without_columns(client, monkeypatch, download_test_
     resp = client.post(
         "/api/v2/download/awards/",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": []}, "columns": [], "file_format": "tsv"}),
+        data=json.dumps({"filters": {"award_type_codes": ["A"]}, "columns": [], "file_format": "tsv"}),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -133,7 +133,7 @@ def test_pstxt_download_awards_without_columns(client, monkeypatch, download_tes
     resp = client.post(
         "/api/v2/download/awards/",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": []}, "columns": [], "file_format": "pstxt"}),
+        data=json.dumps({"filters": {"award_type_codes": ["A"]}, "columns": [], "file_format": "pstxt"}),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -148,7 +148,7 @@ def test_download_awards_with_columns(client, monkeypatch, download_test_data, e
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"award_type_codes": []},
+                "filters": {"award_type_codes": ["A"]},
                 "columns": [
                     "total_obligated_amount",
                     "product_or_service_code",
