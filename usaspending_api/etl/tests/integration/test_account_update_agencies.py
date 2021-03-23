@@ -95,7 +95,7 @@ def test_federal_account_update_agency(data_fixture):
 
     assert TreasuryAppropriationAccount.objects.get(pk=1).awarding_toptier_agency_id == 1
     assert TreasuryAppropriationAccount.objects.get(pk=1).funding_toptier_agency_id == 1
-    assert TreasuryAppropriationAccount.objects.get(pk=2).awarding_toptier_agency_id is None
+    assert TreasuryAppropriationAccount.objects.get(pk=2).awarding_toptier_agency_id == 2
     assert TreasuryAppropriationAccount.objects.get(pk=2).funding_toptier_agency_id == 2
     assert TreasuryAppropriationAccount.objects.get(pk=3).funding_toptier_agency_id == 3
     assert TreasuryAppropriationAccount.objects.get(pk=4).funding_toptier_agency_id == 2
