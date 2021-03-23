@@ -110,7 +110,7 @@ def test_download_transactions_without_columns(
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": []}, "columns": []}),
+        data=json.dumps({"filters": {"award_type_codes": ["A"]}, "columns": []}),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -125,7 +125,7 @@ def test_download_transactions_with_columns(client, monkeypatch, download_test_d
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"award_type_codes": []},
+                "filters": {"award_type_codes": list(award_type_mapping.keys())},
                 "columns": [
                     "assistance_transaction_unique_key",
                     "award_id_fain",
@@ -148,7 +148,7 @@ def test_download_transactions_bad_limit(client, monkeypatch, elasticsearch_tran
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
-        data=json.dumps({"limit": "wombats", "filters": {"award_type_codes": []}, "columns": []}),
+        data=json.dumps({"limit": "wombats", "filters": {"award_type_codes": ["A"]}, "columns": []}),
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -161,9 +161,11 @@ def test_download_transactions_excessive_limit(
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
-        data=json.dumps({"limit": settings.MAX_DOWNLOAD_LIMIT + 1, "filters": {"award_type_codes": []}, "columns": []}),
+        data=json.dumps(
+            {"limit": settings.MAX_DOWNLOAD_LIMIT + 1, "filters": {"award_type_codes": ["A"]}, "columns": []}
+        ),
     )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_download_transactions_bad_column_list_raises(
@@ -171,7 +173,7 @@ def test_download_transactions_bad_column_list_raises(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    payload = {"filters": {"award_type_codes": []}, "columns": ["modification_number", "bogus_column"]}
+    payload = {"filters": {"award_type_codes": ["A"]}, "columns": ["modification_number", "bogus_column"]}
     resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert "Unknown columns" in resp.json()["detail"]

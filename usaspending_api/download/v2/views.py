@@ -1,6 +1,7 @@
 import logging
 
 from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet, DownloadRequestType
+from usaspending_api.download.v2.request_validations import AwardDownloadValidator
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data["award_levels"] = ["elasticsearch_awards", "sub_awards"]
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.AWARD)
+        return BaseDownloadViewSet.post(self, request, validator_type=AwardDownloadValidator)
 
 
 class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
@@ -64,7 +65,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data["award_levels"] = ["elasticsearch_transactions", "sub_awards"]
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.AWARD)
+        return BaseDownloadViewSet.post(self, request, validator_type=AwardDownloadValidator)
 
 
 class AccountDownloadViewSet(BaseDownloadViewSet):

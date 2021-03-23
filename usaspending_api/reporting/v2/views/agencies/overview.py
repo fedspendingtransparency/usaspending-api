@@ -1,9 +1,8 @@
 from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value
+from django.utils.functional import cached_property
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
-from django.utils.functional import cached_property
-
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     get_final_period_of_quarter,
     calculate_last_completed_fiscal_quarter,
