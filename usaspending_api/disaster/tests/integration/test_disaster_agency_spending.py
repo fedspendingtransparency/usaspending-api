@@ -1,10 +1,14 @@
 import datetime
 
 import pytest
+from model_mommy import mommy
 
 from rest_framework import status
+
+from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
-from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 url = "/api/v2/disaster/agency/spending/"
 
@@ -315,6 +319,45 @@ def test_query_search(client, disaster_account_data, elasticsearch_account_index
             "award_count": 1,
             "obligation": 2000.0,
             "outlay": 20000.0,
+            "total_budgetary_resources": None,
+        }
+    ]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+
+@pytest.mark.django_db
+def test_outlay_calculation(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    defc_l = DisasterEmergencyFundCode.objects.get(code="L")
+    tas = TreasuryAppropriationAccount.objects.get(account_title="TA 2")
+    sub = SubmissionAttributes.objects.get(toptier_code="008", reporting_fiscal_year=2022, reporting_fiscal_period=8)
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        treasury_account=tas,
+        submission=sub,
+        disaster_emergency_fund=defc_l,
+        transaction_obligated_amount=1,
+        gross_outlay_amount_by_award_cpe=100,
+        award_id=1,
+        distinct_award_key=1,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-3,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-6,
+    )
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
+    resp = helpers.post_for_spending_endpoint(
+        client, url, query="Agency 008", def_codes=["L"], spending_type="award", sort="outlay"
+    )
+    expected_results = [
+        {
+            "id": 2,
+            "code": "008",
+            "description": "Agency 008",
+            "children": [],
+            "award_count": 1,
+            "obligation": 1.0,
+            "outlay": 91.0,
             "total_budgetary_resources": None,
         }
     ]

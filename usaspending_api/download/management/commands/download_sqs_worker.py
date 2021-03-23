@@ -3,7 +3,6 @@ import time
 import traceback
 from ddtrace import tracer
 from ddtrace.ext import SpanTypes
-from ddtrace.ext.priority import USER_REJECT
 from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
 
 from django.core.management.base import BaseCommand
@@ -14,6 +13,7 @@ from usaspending_api.common.sqs.sqs_work_dispatcher import (
     QueueWorkerProcessError,
     QueueWorkDispatcherError,
 )
+from usaspending_api.common.tracing import DatadogEagerlyDropTraceFilter, SubprocessTrace
 from usaspending_api.download.filestreaming.download_generation import generate_download
 from usaspending_api.common.sqs.sqs_job_logging import log_job_message
 from usaspending_api.download.helpers.monthly_helpers import download_job_to_log_dict
@@ -26,11 +26,8 @@ JOB_TYPE = "USAspendingDownloader"
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        # Drop uninteresting polls of the queue from the Tracer
-        if tracer.writer._filters:
-            tracer.writer._filters.append(DatadogEagerlyDropTraceFilter())
-        else:
-            tracer.writer._filters = [DatadogEagerlyDropTraceFilter()]
+        # Configure Tracer to drop traces of polls of the queue that have been flagged as uninteresting
+        DatadogEagerlyDropTraceFilter.activate()
 
         queue = get_sqs_queue()
         log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
@@ -73,9 +70,8 @@ class Command(BaseCommand):
                     _handle_queue_error(exc)
 
                 if not message_found:
-                    # Drop the Datadog trace, since no trace-worthy activity happened on this poll
-                    tracer.context_provider.active().sampling_priority = USER_REJECT
-                    span.set_tag(DatadogEagerlyDropTraceFilter.EAGERLY_DROP_TRACE_KEY, True)
+                    # Flag the the Datadog trace for dropping, since no trace-worthy activity happened on this poll
+                    DatadogEagerlyDropTraceFilter.drop(span)
 
                     # When you receive an empty response from the queue, wait before trying again
                     time.sleep(1)
@@ -85,11 +81,11 @@ class Command(BaseCommand):
 
 
 def download_service_app(download_job_id):
-    with tracer.trace(name=f"job.{JOB_TYPE}.download", service="bulk-download", span_type=SpanTypes.WORKER) as span:
-        # Set True to add trace to App Analytics:
-        # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
-        span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1.0)
-
+    with SubprocessTrace(
+        name=f"job.{JOB_TYPE}.download",
+        service="bulk-download",
+        span_type=SpanTypes.WORKER,
+    ) as span:
         download_job = _retrieve_download_job_from_db(download_job_id)
         download_job_details = download_job_to_log_dict(download_job)
         log_job_message(
@@ -183,17 +179,3 @@ class DownloadJobNoneError(ValueError):
         else:
             super().__init__(default_message)
         self.download_job_id = download_job_id
-
-
-class DatadogEagerlyDropTraceFilter:
-    """
-    A trace filter that eagerly drops a trace, by filtering it out before sending it on to the Datadog Server API.
-    It uses the `self.EAGERLY_DROP_TRACE_KEY` as a sentinel value. If present within any span's tags, the whole
-    trace that the span is part of will be filtered out before being sent to the server.
-    """
-
-    EAGERLY_DROP_TRACE_KEY = "EAGERLY_DROP_TRACE"
-
-    def process_trace(self, trace):
-        """Drop trace if any span tag has tag with key 'EAGERLY_DROP_TRACE'"""
-        return None if any(span.get_tag(self.EAGERLY_DROP_TRACE_KEY) for span in trace) else trace

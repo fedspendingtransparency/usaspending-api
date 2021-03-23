@@ -20,7 +20,6 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
     filter_query: ES_Q
     has_children: bool = False
     nested_nonzero_fields: Dict[str, str] = []
-    nonzero_fields: Dict[str, str] = []
     query_fields: List[str]
     sub_agg_group_name: str = "sub_group_by_sub_agg_key"  # name used for the tier-2 aggregation group
     sub_agg_key: str = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
@@ -42,9 +41,12 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         if query:
             filters["nested_query"] = {"text": query, "fields": self.query_fields}
 
-        # Ensure that only non-zero values are taken into consideration
-        filters["nested_nonzero_fields"] = list(self.nested_nonzero_fields.values())
+        # Ensure that Awards with File C records that cancel out are not taken into consideration;
+        # The records that fall into this criteria share the same DEF Code and that is how the outlay and
+        # obligation sum for the Award is able to be used even though the Award can have multiple DEFC
+        filters["nonzero_fields"] = ["obligated_sum", "outlay_sum"]
         self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(filters)
+
         # using a set value here as doing an extra ES query is detrimental to performance
         # And the dimensions on which group-by aggregations are performed so far
         # (agency, TAS, object_class) all have cardinality less than this number
@@ -110,8 +112,10 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         )
         sum_covid_outlay = A(
             "sum",
-            field="financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
-            script={"source": "doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? _value : 0"},
+            script="""doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? (
+             ( doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].value : 0)
+              + (doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0)
+              + (doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0""",
         )
         sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         count_awards_by_dim = A("reverse_nested", **{})
@@ -167,8 +171,9 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         )
         sub_sum_covid_outlay = A(
             "sum",
-            field="financial_accounts_by_award.gross_outlay_amount_by_award_cpe",
-            script={"source": "doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? _value : 0"},
+            script="""doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? ( ( doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].value : 0)
+             + (doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0)
+             + (doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0""",
         )
         sub_sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
         sub_count_awards_by_dim = A("reverse_nested", **{})

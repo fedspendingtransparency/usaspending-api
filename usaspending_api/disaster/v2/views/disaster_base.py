@@ -329,7 +329,14 @@ class FabaOutlayMixin:
         return Coalesce(
             Sum(
                 Case(
-                    When(self.final_period_submission_query_filters, then=F("gross_outlay_amount_by_award_cpe")),
+                    When(
+                        self.final_period_submission_query_filters,
+                        then=(
+                            Coalesce(F("gross_outlay_amount_by_award_cpe"), 0)
+                            + Coalesce(F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"), 0)
+                            + Coalesce(F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"), 0)
+                        ),
+                    ),
                     default=Value(0),
                 )
             ),
@@ -339,18 +346,6 @@ class FabaOutlayMixin:
     @property
     def obligated_field_annotation(self):
         return Coalesce(Sum("transaction_obligated_amount"), 0)
-
-    def when_non_zero_award_spending(self, query):
-        return query.annotate(
-            total_outlay=self.outlay_field_annotation, total_obligation=self.obligated_field_annotation
-        ).exclude(total_outlay=0, total_obligation=0)
-
-    def unique_file_c_award_count(self):
-        return Count("distinct_award_key", distinct=True)
-
-    @staticmethod
-    def unique_file_d_award_count():
-        return Count("award_id", distinct=True)
 
 
 class SpendingMixin:
@@ -382,10 +377,6 @@ class LoansMixin:
     @property
     def query(self):
         return self.filters.get("query")
-
-    @property
-    def is_loan_award(self):
-        return Q(award__type__in=loan_type_mapping)
 
 
 class _BasePaginationMixin:
