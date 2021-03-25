@@ -223,6 +223,10 @@ TEMP_TABLE_CONTENTS = {
                 SUM(obligations_incurred_total_cpe) AS total_dollars_obligated_gtas
             FROM
                 gtas_sf133_balances AS gtas
+             INNER JOIN dabs_submission_window_schedule dabs ON
+                dabs.submission_fiscal_year = gtas.fiscal_year
+                AND dabs.submission_fiscal_month = gtas.fiscal_period
+                AND dabs.submission_reveal_date <= now()
             INNER JOIN
                 treasury_appropriation_account AS taa
                     ON (gtas.treasury_account_identifier = taa.treasury_account_identifier)
@@ -373,7 +377,14 @@ CREATE_OVERVIEW_SQL = f"""
         EXTRACT('YEAR' FROM a + INTERVAL '3 months'),
         toptier_code,
         0,0,0,0,0,0,0,0,0
-    FROM generate_series('2017-03-01'::timestamp, (SELECT MAX(submission_reveal_date) FROM dabs_submission_window_schedule WHERE submission_reveal_date < now() and is_quarter = FALSE), '1 month') AS a(n)
+    FROM generate_series(
+        '2017-03-01'::timestamp,
+        (
+            SELECT MAX(submission_reveal_date)
+            FROM dabs_submission_window_schedule
+            WHERE submission_reveal_date < now() AND is_quarter = FALSE
+        ), '1 month'
+    ) AS a(n)
     CROSS JOIN vw_published_dabs_toptier_agency
     WHERE EXTRACT('MONTH' FROM a + INTERVAL '3 months') != 1;
 
