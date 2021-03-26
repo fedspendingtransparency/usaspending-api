@@ -2,7 +2,7 @@ import re
 from copy import deepcopy
 
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import OuterRef, Subquery, TextField, F, Value, Func, DecimalField, Q
+from django.db.models import OuterRef, Subquery, TextField, F, Value, Func, DecimalField, Q, Max
 from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 import json
@@ -18,7 +18,7 @@ from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.reporting.models import ReportingAgencyOverview
-from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 
 class PublishDates(AgencyBase, PaginationMixin):
@@ -38,16 +38,22 @@ class PublishDates(AgencyBase, PaginationMixin):
         agency_filters = []
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
+        submission_window = (
+            DABSSubmissionWindowSchedule.objects.filter(
+                submission_reveal_date__lte=now(), submission_fiscal_year=self.fiscal_year
+            )
+            .aggregate(Max("submission_fiscal_month"))
+        )
         results = (
             ToptierAgencyPublishedDABSView.objects.filter(*agency_filters)
             .annotate(
                 current_total_budget_authority_amount=Subquery(
                     ReportingAgencyOverview.objects.filter(
-                        toptier_code=OuterRef("toptier_code"), fiscal_year=self.fiscal_year
+                        toptier_code=OuterRef("toptier_code"),
+                        fiscal_year=self.fiscal_year,
+                        fiscal_period=submission_window["submission_fiscal_month__max"],
                     )
-                    .annotate(the_sum=Func(F("total_budgetary_resources"), function="SUM"))
-                    .values("the_sum"),
-                    output_field=DecimalField(max_digits=23, decimal_places=2),
+                    .values("total_budgetary_resources")
                 ),
                 periods=Subquery(
                     SubmissionAttributes.objects.filter(
