@@ -2,7 +2,7 @@ import re
 from copy import deepcopy
 
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import OuterRef, Subquery, TextField, F, Value, Func, DecimalField, Q, Max
+from django.db.models import OuterRef, Subquery, TextField, Value, Q, Max
 from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 import json
@@ -38,12 +38,9 @@ class PublishDates(AgencyBase, PaginationMixin):
         agency_filters = []
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
-        submission_window = (
-            DABSSubmissionWindowSchedule.objects.filter(
-                submission_reveal_date__lte=now(), submission_fiscal_year=self.fiscal_year
-            )
-            .aggregate(Max("submission_fiscal_month"))
-        )
+        submission_window = DABSSubmissionWindowSchedule.objects.filter(
+            submission_reveal_date__lte=now(), submission_fiscal_year=self.fiscal_year
+        ).aggregate(Max("submission_fiscal_month"))
         results = (
             ToptierAgencyPublishedDABSView.objects.filter(*agency_filters)
             .annotate(
@@ -52,8 +49,7 @@ class PublishDates(AgencyBase, PaginationMixin):
                         toptier_code=OuterRef("toptier_code"),
                         fiscal_year=self.fiscal_year,
                         fiscal_period=submission_window["submission_fiscal_month__max"],
-                    )
-                    .values("total_budgetary_resources")
+                    ).values("total_budgetary_resources")
                 ),
                 periods=Subquery(
                     SubmissionAttributes.objects.filter(
