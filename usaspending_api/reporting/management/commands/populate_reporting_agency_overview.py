@@ -100,7 +100,7 @@ TEMP_TABLE_CONTENTS = {
         INNER JOIN
             treasury_appropriation_account AS taa ON (taa.treasury_account_identifier = faba.treasury_account_id)
         INNER JOIN
-            toptier_agency AS ta ON (taa.awarding_toptier_agency_id = ta.toptier_agency_id)
+            toptier_agency AS ta ON (taa.funding_toptier_agency_id = ta.toptier_agency_id)
         WHERE
             faba.transaction_obligated_amount IS NOT NULL
             AND sa.reporting_fiscal_year >= 2017
@@ -209,7 +209,7 @@ TEMP_TABLE_CONTENTS = {
                 treasury_appropriation_account AS taa
                     ON (aab.treasury_account_identifier = taa.treasury_account_identifier)
             INNER JOIN
-                toptier_agency AS ta ON (taa.awarding_toptier_agency_id = ta.toptier_agency_id)
+                toptier_agency AS ta ON (taa.funding_toptier_agency_id = ta.toptier_agency_id)
             GROUP BY
                 reporting_fiscal_year,
                 reporting_fiscal_period,
@@ -231,7 +231,7 @@ TEMP_TABLE_CONTENTS = {
                 treasury_appropriation_account AS taa
                     ON (gtas.treasury_account_identifier = taa.treasury_account_identifier)
             INNER JOIN
-                toptier_agency AS ta ON (taa.awarding_toptier_agency_id = ta.toptier_agency_id)
+                toptier_agency AS ta ON (taa.funding_toptier_agency_id = ta.toptier_agency_id)
             GROUP BY
                 fiscal_year,
                 fiscal_period,
