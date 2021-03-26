@@ -223,7 +223,7 @@ TEMP_TABLE_CONTENTS = {
                 SUM(obligations_incurred_total_cpe) AS total_dollars_obligated_gtas
             FROM
                 gtas_sf133_balances AS gtas
-             INNER JOIN dabs_submission_window_schedule dabs ON
+            INNER JOIN dabs_submission_window_schedule dabs ON
                 dabs.submission_fiscal_year = gtas.fiscal_year
                 AND dabs.submission_fiscal_month = gtas.fiscal_period
                 AND dabs.submission_reveal_date <= now()
@@ -380,7 +380,7 @@ CREATE_OVERVIEW_SQL = f"""
     FROM generate_series(
         '2017-03-01'::timestamp,
         (
-            SELECT MAX(submission_reveal_date)
+            SELECT MAX(period_end_date)
             FROM dabs_submission_window_schedule
             WHERE submission_reveal_date < now() AND is_quarter = FALSE
         ), '1 month'
