@@ -16,13 +16,17 @@ def setup_test_data(db):
             "submission_fiscal_year": 2019,
             "submission_fiscal_quarter": 1,
             "submission_fiscal_month": 3,
-            "submission_reveal_date": "2019-1-15",
+            "submission_reveal_date": "2019-3-15",
+            "is_quarter": False,
+            "period_end_date": "2019-1-15",
         },
         {
             "submission_fiscal_year": 2020,
             "submission_fiscal_quarter": 1,
             "submission_fiscal_month": 3,
-            "submission_reveal_date": "2020-01-09",
+            "submission_reveal_date": "2019-3-09",
+            "is_quarter": False,
+            "period_end_date": "2020-01-09",
         },
     ]
     dsws = [mommy.make("submissions.DABSSubmissionWindowSchedule", **dabs_window) for dabs_window in dsws_dicts]
