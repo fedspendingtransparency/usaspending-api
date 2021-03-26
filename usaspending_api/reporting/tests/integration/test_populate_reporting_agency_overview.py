@@ -61,17 +61,17 @@ def setup_test_data(db):
     treas_accounts = [
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            awarding_toptier_agency=toptier_agencies[0],
+            funding_toptier_agency=toptier_agencies[0],
             tas_rendering_label="tas-1-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            awarding_toptier_agency=toptier_agencies[0],
+            funding_toptier_agency=toptier_agencies[0],
             tas_rendering_label="tas-2-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            awarding_toptier_agency=toptier_agencies[1],
+            funding_toptier_agency=toptier_agencies[1],
             tas_rendering_label="tas-3-overview",
         ),
     ]
@@ -271,7 +271,7 @@ def test_run_script(setup_test_data):
     """ Test that the populate_reporting_agency_tas script acts as expected """
     call_command("populate_reporting_agency_overview")
 
-    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="987").all()
+    results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="987")
 
     assert len(results) == 1
     assert results[0].total_dollars_obligated_gtas == Decimal("-3.2")
