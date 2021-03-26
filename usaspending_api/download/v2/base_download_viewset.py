@@ -1,7 +1,6 @@
 import json
 
 from datetime import datetime, timezone
-from enum import Enum
 from typing import Optional, Type
 
 from django.conf import settings
@@ -19,15 +18,7 @@ from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.download.v2.request_validations import (
-    validate_account_request,
-    DownloadValidatorBase,
-)
-
-
-class DownloadRequestType(Enum):
-    ACCOUNT = {"name": "account", "validate_func": validate_account_request}
-    DISASTER = {"name": "disaster"}
+from usaspending_api.download.v2.request_validations import DownloadValidatorBase
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -35,11 +26,11 @@ class BaseDownloadViewSet(APIView):
     def post(
         self,
         request: Request,
-        request_type: Optional[DownloadRequestType] = None,
         origination: Optional[str] = None,
+        special_request_type: Optional[str] = None,
         validator_type: Optional[Type[DownloadValidatorBase]] = None,
     ):
-        if request_type == DownloadRequestType.DISASTER:
+        if special_request_type == "disaster":
             filename = (
                 DownloadJob.objects.filter(
                     file_name__startswith=settings.COVID19_DOWNLOAD_FILENAME_PREFIX, error_message__isnull=True
@@ -50,13 +41,8 @@ class BaseDownloadViewSet(APIView):
             )
             return self.get_download_response(file_name=filename)
 
-        if validator_type is not None:
-            validator = validator_type(request.data)
-            json_request = validator.json_request
-        else:
-            json_request = request_type.value["validate_func"](request.data)
-            json_request["request_type"] = request_type.value["name"]
-        json_request = order_nested_object(json_request)
+        validator = validator_type(request.data)
+        json_request = order_nested_object(validator.json_request)
         ordered_json_request = json.dumps(json_request)
 
         # Check if the same request has been called today
