@@ -436,8 +436,21 @@ class FederalAccountViewSet(APIView):
 
     @cache_response()
     def get(self, request, fed_acct_code, format=None):
-        federal_account = FederalAccount.objects.filter(federal_account_code=fed_acct_code).values(
-            "id", "agency_identifier", "main_account_code", "account_title", "federal_account_code"
+        federal_account = (
+            FederalAccount.objects.filter(federal_account_code=fed_acct_code)
+            .annotate(
+                parent_agency_toptier_code=F("parent_toptier_agency__toptier_code"),
+                parent_agency_name=F("parent_toptier_agency__name"),
+            )
+            .values(
+                "id",
+                "agency_identifier",
+                "main_account_code",
+                "account_title",
+                "federal_account_code",
+                "parent_agency_toptier_code",
+                "parent_agency_name",
+            )
         )
 
         if not federal_account:

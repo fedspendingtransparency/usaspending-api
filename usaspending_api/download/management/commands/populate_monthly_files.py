@@ -15,8 +15,7 @@ from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
-from usaspending_api.download.v2.request_validations import validate_award_request
-from usaspending_api.download.v2.year_limited_downloads import YearLimitedDownloadViewSet
+from usaspending_api.download.v2.request_validations import AwardDownloadValidator
 from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger(__name__)
@@ -59,9 +58,8 @@ class Command(BaseCommand):
             "columns": columns,
             "file_format": file_format,
         }
-        download_viewset = YearLimitedDownloadViewSet()
-        download_viewset.process_filters(json_request)
-        validated_request = validate_award_request(json_request)
+        award_download = AwardDownloadValidator(json_request)
+        validated_request = award_download.json_request
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT["ready"],
             file_name=file_name,
