@@ -69,7 +69,7 @@ INNER JOIN missing
 INNER JOIN treasury_appropriation_account AS taa
     ON gtas.treasury_account_identifier = taa.treasury_account_identifier
 INNER JOIN toptier_agency AS ta
-    ON taa.awarding_toptier_agency_id = ta.toptier_agency_id
+    ON taa.funding_toptier_agency_id = ta.toptier_agency_id
 GROUP BY ta.toptier_code,
     gtas.fiscal_year,
     gtas.fiscal_period,
