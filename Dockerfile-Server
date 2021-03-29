@@ -1,5 +1,5 @@
-ARG usaspending_api_tag=latest
-FROM usaspending-api:${usaspending_api_tag}
+ARG api_image=usaspending-api:latest
+FROM $api_image
 RUN yum install -y \
     git \
     gcc-c++ \
