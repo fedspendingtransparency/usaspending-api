@@ -48,6 +48,7 @@ class BudgetaryResources(AgencyBase):
             AppropriationAccountBalances.objects.filter(
                 treasury_account_identifier__funding_toptier_agency=self.toptier_agency,
                 submission__submission_window__submission_reveal_date__lte=now(),
+                submission__is_final_balances_for_fy=True
             )
             .values("submission__reporting_fiscal_year")
             .annotate(
