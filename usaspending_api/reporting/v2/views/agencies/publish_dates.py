@@ -39,7 +39,7 @@ class PublishDates(AgencyBase, PaginationMixin):
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
         submission_window = DABSSubmissionWindowSchedule.objects.filter(
-            submission_reveal_date__lte=now(), submission_fiscal_year=self.fiscal_year
+            submission_reveal_date__lte=now(), submission_fiscal_year=self.fiscal_year, is_quarter=True
         ).aggregate(Max("submission_fiscal_month"))
         results = (
             ToptierAgencyPublishedDABSView.objects.filter(*agency_filters)

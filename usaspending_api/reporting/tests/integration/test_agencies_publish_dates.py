@@ -13,12 +13,14 @@ def publish_dates_data(db):
         submission_reveal_date="2020-01-01 00:00:00.000000+00",
         submission_fiscal_year=2020,
         submission_fiscal_month=7,
+        is_quarter=True,
     )
     dabs2 = mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date="2020-01-02 00:00:00.000000+00",
         submission_fiscal_year=2019,
         submission_fiscal_month=12,
+        is_quarter=True,
     )
     dabs3 = mommy.make(
         "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2019-01-01 00:00:00.000000+00"
@@ -579,7 +581,7 @@ def test_publication_date_sort(client, publish_dates_data):
     )
     mommy.make(
         "reporting.ReportingAgencyOverview",
-        toptier_code="001" "",
+        toptier_code="001",
         fiscal_year=2019,
         fiscal_period=3,
         total_budgetary_resources=10.00,
