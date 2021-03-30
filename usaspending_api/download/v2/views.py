@@ -1,7 +1,13 @@
 import logging
 
 from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet, DownloadRequestType
-from usaspending_api.download.v2.request_validations import AwardDownloadValidator
+from usaspending_api.download.v2.request_validations import (
+    AssistanceDownloadValidator,
+    AwardDownloadValidator,
+    ContractDownloadValidator,
+    DisasterRecipientDownloadValidator,
+    IdvDownloadValidator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +34,7 @@ class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.IDV)
+        return BaseDownloadViewSet.post(self, request, validator_type=IdvDownloadValidator)
 
 
 class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
@@ -40,7 +46,7 @@ class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.CONTRACT)
+        return BaseDownloadViewSet.post(self, request, validator_type=ContractDownloadValidator)
 
 
 class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
@@ -52,7 +58,7 @@ class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.ASSISTANCE)
+        return BaseDownloadViewSet.post(self, request, validator_type=AssistanceDownloadValidator)
 
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
@@ -104,4 +110,4 @@ class DisasterRecipientDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/disaster/recipients.md"
 
     def post(self, request):
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.DISASTER_RECIPIENT)
+        return BaseDownloadViewSet.post(self, request, validator_type=DisasterRecipientDownloadValidator)
