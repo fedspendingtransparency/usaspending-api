@@ -18,7 +18,7 @@ from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.reporting.models import ReportingAgencyOverview
-from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class PublishDates(AgencyBase, PaginationMixin):
@@ -38,17 +38,27 @@ class PublishDates(AgencyBase, PaginationMixin):
         agency_filters = []
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
-        submission_window = DABSSubmissionWindowSchedule.objects.filter(
-            submission_reveal_date__lte=now(), submission_fiscal_year=self.fiscal_year, is_quarter=True
-        ).aggregate(Max("submission_fiscal_month"))
+
         results = (
-            ToptierAgencyPublishedDABSView.objects.filter(*agency_filters)
+            ToptierAgencyPublishedDABSView.objects.annotate(
+                fiscal_period=Subquery(
+                    SubmissionAttributes.objects.filter(
+                        submission_window__submission_fiscal_year=self.fiscal_year,
+                        submission_window__submission_reveal_date__lte=now(),
+                        toptier_code=OuterRef("toptier_code"),
+                    )
+                    .values("toptier_code", "submission_window__submission_fiscal_year")
+                    .annotate(fiscal_period=Max("submission_window__submission_fiscal_month"))
+                    .values("fiscal_period")
+                )
+            )
+            .filter(*agency_filters)
             .annotate(
                 current_total_budget_authority_amount=Subquery(
                     ReportingAgencyOverview.objects.filter(
                         toptier_code=OuterRef("toptier_code"),
                         fiscal_year=self.fiscal_year,
-                        fiscal_period=submission_window["submission_fiscal_month__max"],
+                        fiscal_period=OuterRef("fiscal_period"),
                     ).values("total_budgetary_resources")
                 ),
                 periods=Subquery(
