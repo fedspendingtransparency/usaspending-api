@@ -20,32 +20,37 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
         + `total_aggregated_amount` (required, number)
         + `results` (required, array[ObligationSubtotals], fixed-type)
             Sorted by aggregated_amount, descending. Categories with $0 of obligations within the FY are not included.
-        + `messages` (required, array[string], fixed-type)
-            An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
 
             {
-                "total_aggregated_amount": 39999999.96,
+                "total_aggregated_amount": 1219.55,
                 "results": [
                     {
-                        "category": "contracts",
-                        "aggregated_amount": 9999999.99
+                        "category": "contract",
+                        "aggregated_amount": 1000.0
                     },
                     {
-                        "category": "idvs",
-                        "aggregated_amount": 9999999.99
+                        "category": "direct_payment",
+                        "aggregated_amount": 60.55
                     },
                     {
-                        "category": "direct_payments",
-                        "aggregated_amount": 9999999.99
+                        "category": "idv",
+                        "aggregated_amount": 55.0
                     },
                     {
-                        "category": "grants",
-                        "aggregated_amount": 9999999.99
+                        "category": "grant",
+                        "aggregated_amount": 100.0
+                    },
+                    {
+                        "category": "loan",
+                        "aggregated_amount": 0.0
+                    },
+                    {
+                        "category": "other",
+                        "aggregated_amount": 4.0
                     }
-                ],
-                "messages": []
+                ]
             }
 
 # Data Structures
@@ -53,10 +58,10 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
 ## ObligationSubtotals (object)
 + `category` (required, enum[string])
     + Members
-        + `contracts`
-        + `idvs`
-        + `grants`
-        + `loans`
-        + `direct_payments`
+        + `contract`
+        + `direct_payment`
+        + `idv`
+        + `grant`
+        + `loan`
         + `other`
 + `aggregated_amount` (required, number)

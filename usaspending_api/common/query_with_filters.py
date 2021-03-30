@@ -154,13 +154,23 @@ class _Agencies(_Filter):
         funding_agency_query = []
 
         for v in filter_values:
-            agency_name = v["name"]
+            agency_name = v.get("name")
             agency_tier = v["tier"]
             agency_type = v["type"]
+            toptier_id = v["toptier_id"]
             toptier_name = v.get("toptier_name")
-            agency_query = ES_Q("match", **{f"{agency_type}_{agency_tier}_agency_name__keyword": agency_name})
+
+            agency_query = ES_Q()
+
+            if agency_name:
+                agency_query &= ES_Q("match", **{f"{agency_type}_{agency_tier}_agency_name__keyword": agency_name})
+
+            if toptier_id:
+                agency_query &= ES_Q("match", **{"awarding_toptier_agency_id": toptier_id})
+
             if agency_tier == "subtier" and toptier_name is not None:
                 agency_query &= ES_Q("match", **{f"{agency_type}_toptier_agency_name__keyword": toptier_name})
+
             if agency_type == "awarding":
                 awarding_agency_query.append(agency_query)
             elif agency_type == "funding":
