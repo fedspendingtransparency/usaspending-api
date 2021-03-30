@@ -2,7 +2,7 @@ import re
 from copy import deepcopy
 
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import OuterRef, Subquery, TextField, F, Value, Func, DecimalField, Q
+from django.db.models import OuterRef, Subquery, TextField, Value, Q, Max
 from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 import json
@@ -38,16 +38,28 @@ class PublishDates(AgencyBase, PaginationMixin):
         agency_filters = []
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
+
         results = (
-            ToptierAgencyPublishedDABSView.objects.filter(*agency_filters)
+            ToptierAgencyPublishedDABSView.objects.annotate(
+                fiscal_period=Subquery(
+                    SubmissionAttributes.objects.filter(
+                        submission_window__submission_fiscal_year=self.fiscal_year,
+                        submission_window__submission_reveal_date__lte=now(),
+                        toptier_code=OuterRef("toptier_code"),
+                    )
+                    .values("toptier_code", "submission_window__submission_fiscal_year")
+                    .annotate(fiscal_period=Max("submission_window__submission_fiscal_month"))
+                    .values("fiscal_period")
+                )
+            )
+            .filter(*agency_filters)
             .annotate(
                 current_total_budget_authority_amount=Subquery(
                     ReportingAgencyOverview.objects.filter(
-                        toptier_code=OuterRef("toptier_code"), fiscal_year=self.fiscal_year
-                    )
-                    .annotate(the_sum=Func(F("total_budgetary_resources"), function="SUM"))
-                    .values("the_sum"),
-                    output_field=DecimalField(max_digits=23, decimal_places=2),
+                        toptier_code=OuterRef("toptier_code"),
+                        fiscal_year=self.fiscal_year,
+                        fiscal_period=OuterRef("fiscal_period"),
+                    ).values("total_budgetary_resources")
                 ),
                 periods=Subquery(
                     SubmissionAttributes.objects.filter(
