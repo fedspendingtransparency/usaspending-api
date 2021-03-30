@@ -21,21 +21,13 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.request_validations import (
     validate_account_request,
-    validate_assistance_request,
-    validate_contract_request,
-    validate_disaster_recipient_request,
-    validate_idv_request,
     DownloadValidatorBase,
 )
 
 
 class DownloadRequestType(Enum):
     ACCOUNT = {"name": "account", "validate_func": validate_account_request}
-    ASSISTANCE = {"name": "assistance", "validate_func": validate_assistance_request}
-    CONTRACT = {"name": "contract", "validate_func": validate_contract_request}
     DISASTER = {"name": "disaster"}
-    DISASTER_RECIPIENT = {"name": "disaster_recipient", "validate_func": validate_disaster_recipient_request}
-    IDV = {"name": "idv", "validate_func": validate_idv_request}
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
