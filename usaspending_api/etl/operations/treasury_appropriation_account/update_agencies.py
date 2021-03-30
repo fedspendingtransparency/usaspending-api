@@ -30,8 +30,7 @@ def update_treasury_appropriation_account_agencies():
                 left outer join toptier_agency as ata on
                     ata.toptier_code = case
                         when taa.allocation_transfer_agency_id in {DOD_SUBSUMED_AIDS} then '{DOD_AID}'
-                        when taa.allocation_transfer_agency_id is not null THEN taa.allocation_transfer_agency_id
-                        else taa.agency_id
+                        else taa.allocation_transfer_agency_id
                     end
         ),
         aid_mapping as (

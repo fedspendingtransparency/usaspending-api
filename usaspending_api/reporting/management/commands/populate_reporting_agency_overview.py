@@ -100,7 +100,7 @@ TEMP_TABLE_CONTENTS = {
         INNER JOIN
             treasury_appropriation_account AS taa ON (taa.treasury_account_identifier = faba.treasury_account_id)
         INNER JOIN
-            toptier_agency AS ta ON (taa.awarding_toptier_agency_id = ta.toptier_agency_id)
+            toptier_agency AS ta ON (taa.funding_toptier_agency_id = ta.toptier_agency_id)
         WHERE
             faba.transaction_obligated_amount IS NOT NULL
             AND sa.reporting_fiscal_year >= 2017
@@ -209,7 +209,7 @@ TEMP_TABLE_CONTENTS = {
                 treasury_appropriation_account AS taa
                     ON (aab.treasury_account_identifier = taa.treasury_account_identifier)
             INNER JOIN
-                toptier_agency AS ta ON (taa.awarding_toptier_agency_id = ta.toptier_agency_id)
+                toptier_agency AS ta ON (taa.funding_toptier_agency_id = ta.toptier_agency_id)
             GROUP BY
                 reporting_fiscal_year,
                 reporting_fiscal_period,
@@ -223,7 +223,7 @@ TEMP_TABLE_CONTENTS = {
                 SUM(obligations_incurred_total_cpe) AS total_dollars_obligated_gtas
             FROM
                 gtas_sf133_balances AS gtas
-             INNER JOIN dabs_submission_window_schedule dabs ON
+            INNER JOIN dabs_submission_window_schedule dabs ON
                 dabs.submission_fiscal_year = gtas.fiscal_year
                 AND dabs.submission_fiscal_month = gtas.fiscal_period
                 AND dabs.submission_reveal_date <= now()
@@ -231,7 +231,7 @@ TEMP_TABLE_CONTENTS = {
                 treasury_appropriation_account AS taa
                     ON (gtas.treasury_account_identifier = taa.treasury_account_identifier)
             INNER JOIN
-                toptier_agency AS ta ON (taa.awarding_toptier_agency_id = ta.toptier_agency_id)
+                toptier_agency AS ta ON (taa.funding_toptier_agency_id = ta.toptier_agency_id)
             GROUP BY
                 fiscal_year,
                 fiscal_period,
@@ -380,7 +380,7 @@ CREATE_OVERVIEW_SQL = f"""
     FROM generate_series(
         '2017-03-01'::timestamp,
         (
-            SELECT MAX(submission_reveal_date)
+            SELECT MAX(period_end_date)
             FROM dabs_submission_window_schedule
             WHERE submission_reveal_date < now() AND is_quarter = FALSE
         ), '1 month'
