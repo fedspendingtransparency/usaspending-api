@@ -28,29 +28,33 @@ def data_fixture():
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=FY,
         reporting_fiscal_period=3,
-        submission_window_id=dabs.id,
+        submission_window=dabs,
         toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=True,
     )
     sa1_6 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=FY,
         reporting_fiscal_period=6,
-        submission_window_id=dabs.id,
+        submission_window=dabs,
         toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=True,
     )
     sa1_9 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=FY,
         reporting_fiscal_period=9,
-        submission_window_id=dabs.id,
+        submission_window=dabs,
         toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=True,
     )
     sa1_12 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=FY,
         reporting_fiscal_period=12,
-        submission_window_id=dabs.id,
+        submission_window=dabs,
         toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=True,
     )
     sa2_12 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -58,6 +62,7 @@ def data_fixture():
         reporting_fiscal_period=12,
         submission_window_id=dabs.id,
         toptier_code=ta2.toptier_code,
+        is_final_balances_for_fy=True,
     )
 
     mommy.make(
