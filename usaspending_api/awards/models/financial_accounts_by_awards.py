@@ -161,6 +161,6 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
                     "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
                 ],
                 name="faba_subid_awardkey_sums_idx",
-                condition=Q(disaster_emergency_fund__in=["L", "M", "N", "O", "P", "U"]),
+                condition=Q(disaster_emergency_fund__in=["L", "M", "N", "O", "P", "U", "V"]),
             )
         ]
