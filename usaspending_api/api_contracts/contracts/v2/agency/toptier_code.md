@@ -33,6 +33,7 @@ Returns some basic information regarding the agency for the fiscal year specifie
         + `congressional_justification_url` (required, string, nullable)
         + `about_agency_data` (required, string, nullable)
         + `subtier_agency_count` (required, number)
+        + `disaster_emergency_fund_codes` (required, array[string], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
@@ -50,5 +51,6 @@ Returns some basic information regarding the agency for the fiscal year specifie
                 "congressional_justification_url": "https://www.treasury.gov/cj",
                 "about_agency_data": null,
                 "subtier_agency_count": 10,
+                "disaster_emergency_fund_codes": ["L"]
                 "messages": []
             }
