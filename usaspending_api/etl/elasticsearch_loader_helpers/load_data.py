@@ -83,7 +83,6 @@ def streaming_post_to_es(
                 job_name,
                 index_name,
                 refresh_after=False,
-                delete_chunk_size=len(chunk),  # same size as this partition to process
             )
         for ok, item in helpers.streaming_bulk(
             client,

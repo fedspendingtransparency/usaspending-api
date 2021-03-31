@@ -81,7 +81,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
         self.set_filter_defaults({"award_type_codes": list(award_type_mapping.keys())})
 
         constraint_type = self.request_data.get("constraint_type")
-        if constraint_type == "year" and set(self._json_request["filters"].keys()) & {"keyword", "keywords"}:
+        if constraint_type == "year" and sorted(self._json_request["filters"]) == ["award_type_codes", "keywords"]:
             self._handle_keyword_search_download()
         elif constraint_type == "year":
             self._handle_custom_award_download()
@@ -92,17 +92,15 @@ class AwardDownloadValidator(DownloadValidatorBase):
 
     def _handle_keyword_search_download(self):
         # Overriding all other filters if the keyword filter is provided in year-constraint download
-        self._json_request["filters"] = {
-            "elasticsearch_keyword": self._json_request["filters"]["keyword"]
-            or self._json_request["filters"]["keywords"]
-        }
+        self._json_request["filters"] = {"elasticsearch_keyword": self._json_request["filters"]["keywords"]}
 
         self.tinyshield_models.extend(
             [
                 {
                     "name": "elasticsearch_keyword",
                     "key": "filters|elasticsearch_keyword",
-                    "type": "text",
+                    "type": "array",
+                    "array_type": "text",
                     "text_type": "search",
                 },
                 {

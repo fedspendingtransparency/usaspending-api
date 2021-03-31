@@ -1,12 +1,12 @@
-from django.db.models import Sum
+from django.db.models import Sum, Max, F, Q
 from rest_framework.response import Response
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.helpers.fiscal_year_helpers import (
-    calculate_last_completed_fiscal_quarter,
-    get_final_period_of_quarter,
-)
+from usaspending_api.common.helpers.date_helper import now
+from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
+from usaspending_api.references.models import GTASSF133Balances
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
 class BudgetaryResources(AgencyBase):
@@ -18,82 +18,66 @@ class BudgetaryResources(AgencyBase):
 
     @cache_response()
     def get(self, request, *args, **kwargs):
-        agency_budgetary_resources, agency_total_obligated = self.get_agency_budgetary_resources()
         return Response(
             {
-                "fiscal_year": self.fiscal_year,
                 "toptier_code": self.toptier_agency.toptier_code,
-                "agency_budgetary_resources": agency_budgetary_resources,
-                "prior_year_agency_budgetary_resources": self.get_prior_year_agency_budgetary_resources(),
-                "total_federal_budgetary_resources": self.get_total_federal_budgetary_resources(),
-                "agency_total_obligated": agency_total_obligated,
-                "agency_obligation_by_period": self.get_agency_obligations_by_period(),
+                "agency_data_by_year": self.get_agency_budgetary_resources(),
                 "messages": self.standard_response_messages,
             }
         )
 
     def get_total_federal_budgetary_resources(self):
-        """
-        IMPORTANT NOTE!  This is placeholder functionality.  DEV-4014 addresses the underlying problem of
-        not having actual historical budgetary resources.  This code is here to provide semi-reasonable
-        values for development and testing until such time as legitimate values are available.  A note
-        has been added to DEV-4014 to rectify this once that ticket has been resolved.
-        """
-        return AppropriationAccountBalances.objects.filter(
-            submission__reporting_fiscal_year=self.fiscal_year, submission__reporting_fiscal_period=self.fiscal_period
-        ).aggregate(total_federal_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"))[
-            "total_federal_budgetary_resources"
-        ]
+        submission_windows = (
+            DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=now())
+            .values("submission_fiscal_year")
+            .annotate(fiscal_year=F("submission_fiscal_year"), fiscal_period=Max("submission_fiscal_month"))
+        )
+        q = Q()
+        for sub in submission_windows:
+            q |= Q(fiscal_year=sub["fiscal_year"]) & Q(fiscal_period=sub["fiscal_period"])
+        results = (
+            GTASSF133Balances.objects.filter(q)
+            .values("fiscal_year")
+            .annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe"))
+            .values("fiscal_year", "total_budgetary_resources")
+        )
+        return results
 
     def get_agency_budgetary_resources(self):
-        aab = AppropriationAccountBalances.objects.filter(
-            submission__reporting_fiscal_year=self.fiscal_year,
-            submission__reporting_fiscal_period=self.fiscal_period,
-            treasury_account_identifier__funding_toptier_agency=self.toptier_agency,
-        ).aggregate(
-            agency_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"),
-            agency_total_obligated=Sum("obligations_incurred_total_by_tas_cpe"),
-        )
-        return aab["agency_budgetary_resources"], aab["agency_total_obligated"]
-
-    def get_prior_year_agency_budgetary_resources(self):
-        """
-        Even though we're looking at fiscal_year - 1, it's possible that fiscal year hasn't been closed out
-        yet.  For example, if today is 5 Oct 1999 then the submission window for FY 1999 is not closed yet
-        even though we're in FY2000 Q1.
-        """
-        prior_fiscal_year = self.fiscal_year - 1
-        prior_fiscal_year_last_completed_fiscal_period = get_final_period_of_quarter(
-            calculate_last_completed_fiscal_quarter(prior_fiscal_year)
-        )
-        return AppropriationAccountBalances.objects.filter(
-            submission__reporting_fiscal_year=prior_fiscal_year,
-            submission__reporting_fiscal_period=prior_fiscal_year_last_completed_fiscal_period,
-            treasury_account_identifier__funding_toptier_agency=self.toptier_agency,
-        ).aggregate(agency_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"))[
-            "agency_budgetary_resources"
-        ]
-
-    def get_agency_obligations_by_period(self):
-        """
-        We limit periods to 3, 6, 9, and 12 (quarters) but with the CARES Act coming down the road
-        we will need to figure out how to include monthly submissions.  I am kicking that bucket down
-        the road until the CARE Act details have been more fully fleshed out.
-        """
-        fiscal_periods = [n for n in (3, 6, 9, 12) if n <= self.fiscal_period]
-        return [
-            {
-                "period": abb["submission__reporting_fiscal_period"],
-                "obligated": abb["obligations_incurred_total_by_tas_cpe__sum"],
-            }
-            for abb in (
-                AppropriationAccountBalances.objects.filter(
-                    submission__reporting_fiscal_year=self.fiscal_year,
-                    submission__reporting_fiscal_period__in=fiscal_periods,
-                    treasury_account_identifier__funding_toptier_agency=self.toptier_agency,
-                )
-                .values("submission__reporting_fiscal_period")
-                .annotate(Sum("obligations_incurred_total_by_tas_cpe"))
-                .order_by("submission__reporting_fiscal_period")
+        aab = (
+            AppropriationAccountBalances.objects.filter(
+                treasury_account_identifier__funding_toptier_agency=self.toptier_agency,
+                submission__submission_window__submission_reveal_date__lte=now(),
+                submission__is_final_balances_for_fy=True,
             )
+            .values("submission__reporting_fiscal_year")
+            .annotate(
+                agency_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"),
+                agency_total_obligated=Sum("obligations_incurred_total_by_tas_cpe"),
+            )
+        )
+        fbr = self.get_total_federal_budgetary_resources()
+        resources = {}
+        for z in fbr:
+            resources.update({z["fiscal_year"]: z["total_budgetary_resources"]})
+        results = [
+            {
+                "fiscal_year": x["submission__reporting_fiscal_year"],
+                "agency_budgetary_resources": x["agency_budgetary_resources"],
+                "agency_total_obligated": x["agency_total_obligated"],
+                "total_budgetary_resources": resources.get(x["submission__reporting_fiscal_year"]),
+            }
+            for x in aab
         ]
+        years = [x["fiscal_year"] for x in results]
+        for year in range(2017, current_fiscal_year() + 1):
+            if year not in years:
+                results.append(
+                    {
+                        "fiscal_year": year,
+                        "agency_budgetary_resources": None,
+                        "agency_total_obligated": None,
+                        "total_budgetary_resources": resources.get(year),
+                    }
+                )
+        return sorted(results, key=lambda x: x["fiscal_year"], reverse=True)
