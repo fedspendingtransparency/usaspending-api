@@ -32,7 +32,7 @@ class AgencyOverview(AgencyBase):
                 "congressional_justification_url": self.toptier_agency.justification,
                 "about_agency_data": self.toptier_agency.about_agency_data,
                 "subtier_agency_count": self.get_subtier_agency_count(),
-                "disaster_emergency_fund_codes": self.get_defc(),
+                "disaster_emergency_fund_codes": list(self.get_defc()),
                 "messages": [],  # Currently no applicable messages
             }
         )
