@@ -157,7 +157,7 @@ class _Agencies(_Filter):
             agency_name = v.get("name")
             agency_tier = v["tier"]
             agency_type = v["type"]
-            toptier_id = v["toptier_id"]
+            toptier_id = v.get("toptier_id")
             toptier_name = v.get("toptier_name")
 
             agency_query = ES_Q()
