@@ -35,8 +35,20 @@ def agency_data():
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2)
     mommy.make("awards.TransactionNormalized", awarding_agency=a1, fiscal_year=current_fiscal_year())
     dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
-    mommy.make("submissions.SubmissionAttributes", toptier_code=ta1.toptier_code, submission_window_id=dabs.id)
+    sub1 = mommy.make(
+        "submissions.SubmissionAttributes",
+        toptier_code=ta1.toptier_code,
+        submission_window_id=dabs.id,
+        reporting_fiscal_year=current_fiscal_year(),
+    )
     mommy.make("submissions.SubmissionAttributes", toptier_code=ta2.toptier_code, submission_window_id=dabs.id)
+    defc = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        submission=sub1,
+        treasury_account=tas1,
+        disaster_emergency_fund=defc,
+    )
 
 
 @pytest.mark.django_db
@@ -54,6 +66,7 @@ def test_happy_path(client, agency_data):
     assert resp.data["congressional_justification_url"] == "BECAUSE"
     assert resp.data["icon_filename"] == "HAI.jpg"
     assert resp.data["subtier_agency_count"] == 1
+    assert resp.data["disaster_emergency_fund_codes"] == ["L"]
     assert resp.data["messages"] == []
 
     resp = client.get(URL.format(code="001", filter=f"?fiscal_year={current_fiscal_year()}"))
