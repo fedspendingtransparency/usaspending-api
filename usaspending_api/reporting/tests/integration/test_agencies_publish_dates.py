@@ -9,16 +9,28 @@ url = "/api/v2/reporting/agencies/publish_dates/"
 @pytest.fixture
 def publish_dates_data(db):
     dabs1 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01 00:00:00.000000+00"
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date="2020-01-01 00:00:00.000000+00",
+        submission_fiscal_year=2020,
+        submission_fiscal_month=7,
     )
     dabs2 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-02 00:00:00.000000+00"
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date="2020-01-02 00:00:00.000000+00",
+        submission_fiscal_year=2019,
+        submission_fiscal_month=12,
     )
     dabs3 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2019-01-01 00:00:00.000000+00"
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date="2019-01-01 00:00:00.000000+00",
+        submission_fiscal_year=2019,
+        submission_fiscal_month=12,
     )
     dabs4 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2019-01-02 00:00:00.000000+00"
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date="2019-01-02 00:00:00.000000+00",
+        submission_fiscal_year=2019,
+        submission_fiscal_month=12,
     )
     tas1 = mommy.make("accounts.TreasuryAppropriationAccount")
     tas2 = mommy.make("accounts.TreasuryAppropriationAccount")
@@ -95,7 +107,7 @@ def publish_dates_data(db):
         "reporting.ReportingAgencyOverview",
         toptier_code="002",
         fiscal_year=2019,
-        fiscal_period=11,
+        fiscal_period=12,
         total_budgetary_resources=300.00,
     )
 
@@ -116,7 +128,7 @@ def test_basic_success(client, publish_dates_data):
             "agency_name": "Test Agency",
             "abbreviation": "TA",
             "toptier_code": "001",
-            "current_total_budget_authority_amount": 150.00,
+            "current_total_budget_authority_amount": 50.00,
             "periods": [
                 {
                     "period": 2,
@@ -595,7 +607,7 @@ def test_publication_date_sort(client, publish_dates_data):
             "agency_name": "Test Agency",
             "abbreviation": "TA",
             "toptier_code": "001",
-            "current_total_budget_authority_amount": 210.00,
+            "current_total_budget_authority_amount": 200.00,
             "periods": [
                 {
                     "period": 2,
@@ -675,7 +687,7 @@ def test_publication_date_sort(client, publish_dates_data):
             "agency_name": "Test Agency 2",
             "abbreviation": "TA2",
             "toptier_code": "002",
-            "current_total_budget_authority_amount": 310.00,
+            "current_total_budget_authority_amount": 300.00,
             "periods": [
                 {
                     "period": 2,
