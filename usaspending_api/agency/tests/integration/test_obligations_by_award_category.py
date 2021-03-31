@@ -168,6 +168,7 @@ def test_alternate_agency(client, monkeypatch, transaction_search_1, elasticsear
 
     assert resp.json() == expected_results
 
+
 @pytest.mark.django_db
 def test_invalid_agency(client, monkeypatch, transaction_search_1, elasticsearch_account_index):
     resp = client.get(url.format(toptier_code="XXX", filter="?fiscal_year=2021"))
