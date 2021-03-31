@@ -19,7 +19,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers import fiscal_year_helpers as fy_helpers
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.download.helpers import check_types_and_assign_defaults, get_date_range_length, parse_limit
+from usaspending_api.download.helpers import check_types_and_assign_defaults, get_date_range_length
 from usaspending_api.download.lookups import (
     ACCOUNT_FILTER_DEFAULTS,
     FILE_FORMATS,
@@ -84,7 +84,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
         self.set_filter_defaults({"award_type_codes": list(award_type_mapping.keys())})
 
         constraint_type = self.request_data.get("constraint_type")
-        if constraint_type == "year" and set(self._json_request["filters"].keys()) & {"keyword", "keywords"}:
+        if constraint_type == "year" and sorted(self._json_request["filters"]) == ["award_type_codes", "keywords"]:
             self._handle_keyword_search_download()
         elif constraint_type == "year":
             self._handle_custom_award_download()
@@ -95,17 +95,15 @@ class AwardDownloadValidator(DownloadValidatorBase):
 
     def _handle_keyword_search_download(self):
         # Overriding all other filters if the keyword filter is provided in year-constraint download
-        self._json_request["filters"] = {
-            "elasticsearch_keyword": self._json_request["filters"]["keyword"]
-            or self._json_request["filters"]["keywords"]
-        }
+        self._json_request["filters"] = {"elasticsearch_keyword": self._json_request["filters"]["keywords"]}
 
         self.tinyshield_models.extend(
             [
                 {
                     "name": "elasticsearch_keyword",
                     "key": "filters|elasticsearch_keyword",
-                    "type": "text",
+                    "type": "array",
+                    "array_type": "text",
                     "text_type": "search",
                 },
                 {
@@ -324,85 +322,226 @@ class AwardDownloadValidator(DownloadValidatorBase):
         self._json_request = self.get_validated_request()
 
 
-def validate_idv_request(request_data):
-    _validate_required_parameters(request_data, ["award_id"])
-    award_id, piid, _, _, _ = _validate_award_id(request_data)
+class IdvDownloadValidator(DownloadValidatorBase):
+    name = "idv"
 
-    request_data["file_format"] = str(request_data.get("file_format", "csv")).lower()
-    _validate_file_format(request_data)
-
-    return {
-        "account_level": "treasury_account",
-        "download_types": ["idv_orders", "idv_transaction_history", "idv_federal_account_funding"],
-        "file_format": request_data["file_format"],
-        "include_file_description": {"source": settings.IDV_DOWNLOAD_README_FILE_PATH, "destination": "readme.txt"},
-        "piid": piid,
-        "is_for_idv": True,
-        "filters": {
+    def __init__(self, request_data: dict):
+        super().__init__(request_data)
+        self.tinyshield_models.extend(
+            [
+                {
+                    "key": "award_id",
+                    "name": "award_id",
+                    "type": "any",
+                    "models": [{"type": "integer"}, {"type": "text", "text_type": "raw"}],
+                    "optional": False,
+                    "allow_nulls": False,
+                },
+                {
+                    "name": "limit",
+                    "key": "limit",
+                    "type": "integer",
+                    "min": 0,
+                    "max": settings.MAX_DOWNLOAD_LIMIT,
+                    "default": settings.MAX_DOWNLOAD_LIMIT,
+                },
+            ]
+        )
+        self._json_request = request_data
+        self._json_request = self.get_validated_request()
+        award_id, piid, _, _, _ = _validate_award_id(self._json_request.pop("award_id"))
+        filters = {
             "idv_award_id": award_id,
             "award_type_codes": tuple(set(contract_type_mapping) | set(idv_type_mapping)),
-        },
-        "limit": parse_limit(request_data),
-        "include_data_dictionary": True,
-        "columns": request_data.get("columns", []),
-    }
+        }
+        self._json_request.update(
+            {
+                "account_level": "treasury_account",
+                "download_types": ["idv_orders", "idv_transaction_history", "idv_federal_account_funding"],
+                "include_file_description": {
+                    "source": settings.IDV_DOWNLOAD_README_FILE_PATH,
+                    "destination": "readme.txt",
+                },
+                "piid": piid,
+                "is_for_idv": True,
+                "filters": filters,
+                "include_data_dictionary": True,
+            }
+        )
 
 
-def validate_contract_request(request_data):
-    _validate_required_parameters(request_data, ["award_id"])
-    award_id, piid, _, _, _ = _validate_award_id(request_data)
+class ContractDownloadValidator(DownloadValidatorBase):
+    name = "contract"
 
-    request_data["file_format"] = str(request_data.get("file_format", "csv")).lower()
-    _validate_file_format(request_data)
+    def __init__(self, request_data: dict):
+        super().__init__(request_data)
+        self.tinyshield_models.extend(
+            [
+                {
+                    "key": "award_id",
+                    "name": "award_id",
+                    "type": "any",
+                    "models": [{"type": "integer"}, {"type": "text", "text_type": "raw"}],
+                    "optional": False,
+                    "allow_nulls": False,
+                },
+                {
+                    "name": "limit",
+                    "key": "limit",
+                    "type": "integer",
+                    "min": 0,
+                    "max": settings.MAX_DOWNLOAD_LIMIT,
+                    "default": settings.MAX_DOWNLOAD_LIMIT,
+                },
+            ]
+        )
+        self._json_request = request_data
+        self._json_request = self.get_validated_request()
+        award_id, piid, _, _, _ = _validate_award_id(self._json_request.pop("award_id"))
+        filters = {
+            "award_id": award_id,
+            "award_type_codes": tuple(set(contract_type_mapping)),
+        }
+        self._json_request.update(
+            {
+                "account_level": "treasury_account",
+                "download_types": ["sub_contracts", "contract_transactions", "contract_federal_account_funding"],
+                "include_file_description": {
+                    "source": settings.CONTRACT_DOWNLOAD_README_FILE_PATH,
+                    "destination": "ContractAwardSummary_download_readme.txt",
+                },
+                "award_id": award_id,
+                "piid": piid,
+                "is_for_idv": False,
+                "is_for_contract": True,
+                "is_for_assistance": False,
+                "filters": filters,
+                "include_data_dictionary": True,
+            }
+        )
 
-    return {
-        "account_level": "treasury_account",
-        "download_types": ["sub_contracts", "contract_transactions", "contract_federal_account_funding"],
-        "file_format": request_data["file_format"],
-        "include_file_description": {
-            "source": settings.CONTRACT_DOWNLOAD_README_FILE_PATH,
-            "destination": "ContractAwardSummary_download_readme.txt",
-        },
-        "award_id": award_id,
-        "piid": piid,
-        "is_for_idv": False,
-        "is_for_contract": True,
-        "is_for_assistance": False,
-        "filters": {"award_id": award_id, "award_type_codes": tuple(set(contract_type_mapping))},
-        "limit": parse_limit(request_data),
-        "include_data_dictionary": True,
-        "columns": request_data.get("columns", []),
-    }
+
+class AssistanceDownloadValidator(DownloadValidatorBase):
+    name = "assistance"
+
+    def __init__(self, request_data: dict):
+        super().__init__(request_data)
+        self.tinyshield_models.extend(
+            [
+                {
+                    "key": "award_id",
+                    "name": "award_id",
+                    "type": "any",
+                    "models": [{"type": "integer"}, {"type": "text", "text_type": "raw"}],
+                    "optional": False,
+                    "allow_nulls": False,
+                },
+                {
+                    "name": "limit",
+                    "key": "limit",
+                    "type": "integer",
+                    "min": 0,
+                    "max": settings.MAX_DOWNLOAD_LIMIT,
+                    "default": settings.MAX_DOWNLOAD_LIMIT,
+                },
+            ]
+        )
+        self._json_request = request_data
+        self._json_request = self.get_validated_request()
+        award_id, _, fain, uri, generated_unique_award_id = _validate_award_id(self._json_request.pop("award_id"))
+        filters = {
+            "award_id": award_id,
+            "award_type_codes": tuple(set(assistance_type_mapping)),
+        }
+        award = fain
+        if "AGG" in generated_unique_award_id:
+            award = uri
+
+        self._json_request.update(
+            {
+                "account_level": "treasury_account",
+                "download_types": ["assistance_transactions", "sub_grants", "assistance_federal_account_funding"],
+                "include_file_description": {
+                    "source": settings.ASSISTANCE_DOWNLOAD_README_FILE_PATH,
+                    "destination": "AssistanceAwardSummary_download_readme.txt",
+                },
+                "award_id": award_id,
+                "assistance_id": award,
+                "is_for_idv": False,
+                "is_for_contract": False,
+                "is_for_assistance": True,
+                "filters": filters,
+                "include_data_dictionary": True,
+            }
+        )
 
 
-def validate_assistance_request(request_data):
-    _validate_required_parameters(request_data, ["award_id"])
-    award_id, _, fain, uri, generated_unique_award_id = _validate_award_id(request_data)
+class DisasterRecipientDownloadValidator(DownloadValidatorBase):
+    name = "disaster_recipient"
 
-    request_data["file_format"] = str(request_data.get("file_format", "csv")).lower()
-    _validate_file_format(request_data)
+    def __init__(self, request_data: dict):
+        super().__init__(request_data)
+        self.tinyshield_models.extend(
+            [
+                {
+                    "key": "filters|def_codes",
+                    "name": "def_codes",
+                    "type": "array",
+                    "array_type": "enum",
+                    "enum_values": sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True)),
+                    "allow_nulls": False,
+                    "optional": False,
+                },
+                {
+                    "key": "filters|query",
+                    "name": "query",
+                    "type": "text",
+                    "text_type": "search",
+                    "allow_nulls": False,
+                    "optional": True,
+                },
+                {
+                    "key": "filters|award_type_codes",
+                    "name": "award_type_codes",
+                    "type": "array",
+                    "array_type": "enum",
+                    "enum_values": sorted(award_type_mapping.keys()),
+                    "allow_nulls": False,
+                    "optional": True,
+                },
+            ]
+        )
+        self._json_request["filters"] = request_data.get("filters")
+        self._json_request = self.get_validated_request()
+        self._json_request["download_types"] = [self.name]
 
-    award = fain
-    if "AGG" in generated_unique_award_id:
-        award = uri
-    return {
-        "account_level": "treasury_account",
-        "download_types": ["assistance_transactions", "sub_grants", "assistance_federal_account_funding"],
-        "file_format": request_data["file_format"],
-        "include_file_description": {
-            "source": settings.ASSISTANCE_DOWNLOAD_README_FILE_PATH,
-            "destination": "AssistanceAwardSummary_download_readme.txt",
-        },
-        "award_id": award_id,
-        "assistance_id": award,
-        "is_for_idv": False,
-        "is_for_contract": False,
-        "is_for_assistance": True,
-        "filters": {"award_id": award_id, "award_type_codes": tuple(set(assistance_type_mapping))},
-        "limit": parse_limit(request_data),
-        "include_data_dictionary": True,
-        "columns": request_data.get("columns", []),
-    }
+        # Determine what to use in the filename based on "award_type_codes" filter;
+        # Also add "face_value_of_loans" column if only loan types
+        award_category = "All-Awards"
+        award_type_codes = set(self._json_request["filters"].get("award_type_codes", award_type_mapping.keys()))
+        columns = ["recipient", "award_obligations", "award_outlays", "number_of_awards"]
+
+        if award_type_codes <= set(contract_type_mapping.keys()):
+            award_category = "Contracts"
+        elif award_type_codes <= set(idv_type_mapping.keys()):
+            award_category = "Contract-IDVs"
+        elif award_type_codes <= set(grant_type_mapping.keys()):
+            award_category = "Grants"
+        elif award_type_codes <= set(loan_type_mapping.keys()):
+            award_category = "Loans"
+            columns.insert(3, "face_value_of_loans")
+        elif award_type_codes <= set(direct_payment_type_mapping.keys()):
+            award_category = "Direct-Payments"
+        elif award_type_codes <= set(other_type_mapping.keys()):
+            award_category = "Other-Financial-Assistance"
+
+        self._json_request["award_category"] = award_category
+        self._json_request["columns"] = self._json_request["columns"] or tuple(columns)
+
+        # Need to specify the field to use "query" filter on if present
+        query_text = self._json_request["filters"].pop("query", None)
+        if query_text:
+            self._json_request["filters"]["query"] = {"text": query_text, "fields": ["recipient_name"]}
 
 
 def validate_account_request(request_data):
@@ -440,89 +579,8 @@ def validate_account_request(request_data):
     return json_request
 
 
-def validate_disaster_recipient_request(request_data):
-    _validate_required_parameters(request_data, ["filters"])
-    model = [
-        {
-            "key": "filters|def_codes",
-            "name": "def_codes",
-            "type": "array",
-            "array_type": "enum",
-            "enum_values": sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True)),
-            "allow_nulls": False,
-            "optional": False,
-        },
-        {
-            "key": "filters|query",
-            "name": "query",
-            "type": "text",
-            "text_type": "search",
-            "allow_nulls": False,
-            "optional": True,
-        },
-        {
-            "key": "filters|award_type_codes",
-            "name": "award_type_codes",
-            "type": "array",
-            "array_type": "enum",
-            "enum_values": sorted(award_type_mapping.keys()),
-            "allow_nulls": False,
-            "optional": True,
-        },
-    ]
-    filters = TinyShield(model).block(request_data)["filters"]
-
-    # Determine what to use in the filename based on "award_type_codes" filter;
-    # Also add "face_value_of_loans" column if only loan types
-    award_category = "All-Awards"
-    award_type_codes = set(filters.get("award_type_codes", award_type_mapping.keys()))
-    columns = ["recipient", "award_obligations", "award_outlays", "number_of_awards"]
-
-    if award_type_codes <= set(contract_type_mapping.keys()):
-        award_category = "Contracts"
-    elif award_type_codes <= set(idv_type_mapping.keys()):
-        award_category = "Contract-IDVs"
-    elif award_type_codes <= set(grant_type_mapping.keys()):
-        award_category = "Grants"
-    elif award_type_codes <= set(loan_type_mapping.keys()):
-        award_category = "Loans"
-        columns.insert(3, "face_value_of_loans")
-    elif award_type_codes <= set(direct_payment_type_mapping.keys()):
-        award_category = "Direct-Payments"
-    elif award_type_codes <= set(other_type_mapping.keys()):
-        award_category = "Other-Financial-Assistance"
-
-    # Need to specify the field to use "query" filter on if present
-    query_text = filters.pop("query", None)
-    if query_text:
-        filters["query"] = {"text": query_text, "fields": ["recipient_name"]}
-
-    json_request = {
-        "award_category": award_category,
-        "columns": tuple(columns),
-        "download_types": ["disaster_recipient"],
-        "file_format": str(request_data.get("file_format", "csv")).lower(),
-        "filters": filters,
-    }
-    _validate_file_format(json_request)
-
-    return json_request
-
-
-def _validate_award_id(request_data):
-    """
-    Validate that we were provided a valid award_id and, in the process, convert
-    generated_unique_award_id to an internal, surrogate, integer award id.
-
-    Returns the surrogate award id and piid.
-    """
-    award_id = request_data.get("award_id")
-    if award_id is None:
-        raise InvalidParameterException("Award id must be provided and may not be null")
-    award_id_type = type(award_id)
-    if award_id_type not in (str, int):
-        raise InvalidParameterException("Award id must be either a string or an integer")
-    if award_id_type is int or award_id.isdigit():
+def _validate_award_id(award_id):
+    if type(award_id) is int or award_id.isdigit():
         filters = {"id": int(award_id)}
     else:
         filters = {"generated_unique_award_id": award_id}

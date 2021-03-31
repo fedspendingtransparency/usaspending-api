@@ -1,8 +1,6 @@
 import logging
 
 from datetime import datetime
-from django.conf import settings
-from rest_framework.exceptions import ParseError
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
@@ -31,23 +29,6 @@ def check_types_and_assign_defaults(old_dict, new_dict, defaults_dict):
         # Remove empty filters
         if new_dict[field] == defaults_dict[field]:
             del new_dict[field]
-
-
-def parse_limit(json_request):
-    """Validates the limit from a json_request
-    Returns the limit as an int"""
-    limit = json_request.get("limit")
-    if limit:
-        try:
-            limit = int(json_request["limit"])
-        except (ValueError, TypeError):
-            raise ParseError('Parameter "limit" must be int; {} given'.format(limit))
-        if limit > settings.MAX_DOWNLOAD_LIMIT:
-            msg = "Requested limit {} beyond max supported ({})"
-            raise ParseError(msg.format(limit, settings.MAX_DOWNLOAD_LIMIT))
-    else:
-        limit = settings.MAX_DOWNLOAD_LIMIT
-    return limit  # None is a workable slice argument
 
 
 def get_date_range_length(date_range):
