@@ -52,7 +52,7 @@ class ObligationsByAwardCategory(AgencyBase):
             "grant": "grants",
             "idv": "idvs",
             "loans": "loans",
-            "other": "other"
+            "other": "other",
         }
 
         # Reformat List of Objects as Map, so they can be alphabetized later
