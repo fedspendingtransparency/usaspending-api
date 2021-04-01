@@ -536,7 +536,7 @@ class DisasterRecipientDownloadValidator(DownloadValidatorBase):
             award_category = "Other-Financial-Assistance"
 
         self._json_request["award_category"] = award_category
-        self._json_request["columns"] = self._json_request["columns"] or tuple(columns)
+        self._json_request["columns"] = self._json_request.get("columns") or tuple(columns)
 
         # Need to specify the field to use "query" filter on if present
         query_text = self._json_request["filters"].pop("query", None)
