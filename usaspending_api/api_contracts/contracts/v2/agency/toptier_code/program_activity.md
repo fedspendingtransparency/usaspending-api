@@ -29,11 +29,12 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                 + `asc`
         + `sort` (optional, enum[string])
             Optional parameter indicating what value results should be sorted by.
-            + Default: `obligated_amount`
+            + Default: `total_obligations`
             + Members
                 + `name`
-                + `obligated_amount`
-                + `gross_outlay_amount`
+                + `total_budgetary_resources`
+                + `total_obligations`
+                + `total_outlays`
         + `page` (optional, number)
             The page number that is currently returned.
             + Default: 1
@@ -68,13 +69,15 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                 "results": [
                     {
                         "name": "TI INFORMATION TECHNOLOGY",
-                        "obligated_amount": 18482.4,
-                        "gross_outlay_amount": -236601.1
+                        "total_budgetary_resources": 28482.4,
+                        "total_obligations": 18482.4,
+                        "total_outlays": -236601.1
                     },
                     {
                         "name": "CONTRACT RENEWALS",
-                        "obligated_amount": 225.26,
-                        "gross_outlay_amount": -161252.0
+                        "total_budgetary_resources": 325.26,
+                        "total_obligations": 225.26,
+                        "total_outlays": -161252.0
                     }
                 ],
                 "messages": []
@@ -84,8 +87,9 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 
 ## ProgramActivity (object)
 + `name` (required, string)
-+ `obligated_amount` (required, number)
-+ `gross_outlay_amount` (required, number)
++ `total_budgetary_resources` (required, number)
++ `total_obligations` (required, number)
++ `total_outlays` (required, number)
 
 ## PageMetadata (object)
 + `limit` (required, number)

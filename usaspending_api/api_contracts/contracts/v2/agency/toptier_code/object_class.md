@@ -29,11 +29,12 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
                 + `asc`
         + `sort` (optional, enum[string])
             Optional parameter indicating what value results should be sorted by.
-            + Default: `obligated_amount`
+            + Default: `total_obligations`
             + Members
                 + `name`
-                + `obligated_amount`
-                + `gross_outlay_amount`
+                + `total_budgetary_resources`
+                + `total_obligations`
+                + `total_outlays`
         + `page` (optional, number)
             The page number that is currently returned.
             + Default: 1
@@ -67,14 +68,24 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
                 },
                 "results": [
                     {
-                        "name": "Grants, subsidies, and contributions",
-                        "obligated_amount": 12329194065.31,
-                        "gross_outlay_amount": 13196218848.88
-                    },
-                    {
-                        "name": "Full-time permanent",
-                        "obligated_amount": 221101112.31,
-                        "gross_outlay_amount": 230953611.8
+                        "name": "Personnel and compensation benefits",
+                        "total_budgetary_resources": 32329194065.31,
+                        "total_obligations": 12329194065.31,
+                        "total_outlays": 13196218848.88
+                        "children": [
+                            {
+                                "name": "Full-time permanent",
+                                "total_budgetary_resources": 329194065.76,
+                                "total_obligations": 309194065.19,
+                                "total_outlays": 196218848.0
+                            },
+                            {
+                                "name": "Other than full-time permanent",
+                                "total_budgetary_resources": 29194065.52,
+                                "total_obligations": 20194065.33,
+                                "total_outlays": 6218848.63
+                            }
+                        ]
                     }
                 ],
                 "messages": []
@@ -82,10 +93,18 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
 
 # Data Structures
 
+## MajorObjectClass (object)
++ `name` (required, string)
++ `total_budgetary_resources` (required, number)
++ `total_obligations` (required, number)
++ `total_outlays` (required, number)
++ `children` (required, array[ObjectClass], fixed-type)
+
 ## ObjectClass (object)
 + `name` (required, string)
-+ `obligated_amount` (required, number)
-+ `gross_outlay_amount` (required, number)
++ `total_budgetary_resources` (required, number)
++ `total_obligations` (required, number)
++ `total_outlays` (required, number)
 
 ## PageMetadata (object)
 + `limit` (required, number)
