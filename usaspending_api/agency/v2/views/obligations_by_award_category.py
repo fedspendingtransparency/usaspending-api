@@ -46,7 +46,14 @@ class ObligationsByAwardCategory(AgencyBase):
         total = 0.0
         other_total = 0.0
 
-        category_list = ["contract", "direct payment", "grant", "idv", "loans", "other"]
+        category_map = {
+            "contract": "contracts",
+            "direct payment": "direct_payments",
+            "grant": "grants",
+            "idv": "idvs",
+            "loans": "loans",
+            "other": "other"
+        }
 
         # Reformat List of Objects as Map, so they can be alphabetized later
         for obj in results["aggregations"]["group_by_award_category"]["buckets"]:
@@ -54,7 +61,7 @@ class ObligationsByAwardCategory(AgencyBase):
             obligation_value = obj["obligations"]["value"]
             total += obligation_value
 
-            if key in category_list:
+            if key in category_map.keys():
                 results_map[key] = round(obligation_value, 2)
             else:
                 other_total += obligation_value
@@ -62,11 +69,11 @@ class ObligationsByAwardCategory(AgencyBase):
         results_map["other"] = round(other_total)
 
         # Convert Map back to list with extra categories
-        for category in category_list:
+        for category, category_mapping in category_map.items():
             if category in results_map:
-                formatted_categories.append(self.format_category(category, results_map[category]))
+                formatted_categories.append(self.format_category(category_mapping, results_map[category]))
             else:
-                formatted_categories.append(self.format_category(category, 0.0))
+                formatted_categories.append(self.format_category(category_mapping, 0.0))
 
         formatted_results = {"total_aggregated_amount": round(total, 2), "results": formatted_categories}
 

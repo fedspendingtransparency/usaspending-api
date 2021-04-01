@@ -27,19 +27,19 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
                 "total_aggregated_amount": 1219.55,
                 "results": [
                     {
-                        "category": "contract",
+                        "category": "contracts",
                         "aggregated_amount": 1000.0
                     },
                     {
-                        "category": "direct payment",
+                        "category": "direct_payments",
                         "aggregated_amount": 60.55
                     },
                     {
-                        "category": "idv",
+                        "category": "idvs",
                         "aggregated_amount": 55.0
                     },
                     {
-                        "category": "grant",
+                        "category": "grants",
                         "aggregated_amount": 100.0
                     },
                     {
@@ -58,10 +58,10 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
 ## ObligationSubtotals (object)
 + `category` (required, enum[string])
     + Members
-        + `contract`
-        + `direct payment`
-        + `idv`
-        + `grant`
+        + `contracts`
+        + `direct_payments`
+        + `idvs`
+        + `grants`
         + `loans`
         + `other`
 + `aggregated_amount` (required, number)
