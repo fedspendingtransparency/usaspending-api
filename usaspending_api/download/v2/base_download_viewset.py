@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
@@ -40,6 +41,12 @@ class BaseDownloadViewSet(APIView):
                 .first()
             )
             return self.get_download_response(file_name=filename)
+
+        if validator_type is None:
+            # This should only ever occur for developers, but helps to track down possible issues
+            raise InvalidParameterException(
+                "Invalid parameters: require valid 'special_request_type' or 'validator_type'"
+            )
 
         validator = validator_type(request.data)
         json_request = order_nested_object(validator.json_request)
