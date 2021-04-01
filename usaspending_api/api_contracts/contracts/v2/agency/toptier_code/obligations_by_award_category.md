@@ -31,7 +31,7 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
                         "aggregated_amount": 1000.0
                     },
                     {
-                        "category": "direct_payment",
+                        "category": "direct payment",
                         "aggregated_amount": 60.55
                     },
                     {
@@ -43,7 +43,7 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
                         "aggregated_amount": 100.0
                     },
                     {
-                        "category": "loan",
+                        "category": "loans",
                         "aggregated_amount": 0.0
                     },
                     {
@@ -59,9 +59,9 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
 + `category` (required, enum[string])
     + Members
         + `contract`
-        + `direct_payment`
+        + `direct payment`
         + `idv`
         + `grant`
-        + `loan`
+        + `loans`
         + `other`
 + `aggregated_amount` (required, number)

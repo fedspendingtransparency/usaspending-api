@@ -36,8 +36,8 @@ def transaction_search_1():
     award_contract = mommy.make("awards.Award", category="contract")
     award_idv = mommy.make("awards.Award", category="idv")
     award_grant = mommy.make("awards.Award", category="grant")
-    award_loan = mommy.make("awards.Award", category="loan")
-    award_dp = mommy.make("awards.Award", category="direct_payment")
+    award_loan = mommy.make("awards.Award", category="loans")
+    award_dp = mommy.make("awards.Award", category="direct payment")
     award_bc = mommy.make("awards.Award", category="bad_cat")
 
     mommy.make(
@@ -116,10 +116,10 @@ def test_all_categories(client, monkeypatch, transaction_search_1, elasticsearch
         "total_aggregated_amount": 621.0,
         "results": [
             {"category": "contract", "aggregated_amount": 101.0},
-            {"category": "direct_payment", "aggregated_amount": 105.0},
+            {"category": "direct payment", "aggregated_amount": 105.0},
             {"category": "grant", "aggregated_amount": 103.0},
             {"category": "idv", "aggregated_amount": 102.0},
-            {"category": "loan", "aggregated_amount": 104.0},
+            {"category": "loans", "aggregated_amount": 104.0},
             {"category": "other", "aggregated_amount": 106.0},
         ],
     }
@@ -137,10 +137,10 @@ def test_alternate_year(client, monkeypatch, transaction_search_1, elasticsearch
         "total_aggregated_amount": 300.0,
         "results": [
             {"category": "contract", "aggregated_amount": 0.0},
-            {"category": "direct_payment", "aggregated_amount": 0.0},
+            {"category": "direct payment", "aggregated_amount": 0.0},
             {"category": "grant", "aggregated_amount": 0.0},
             {"category": "idv", "aggregated_amount": 300.0},
-            {"category": "loan", "aggregated_amount": 0.0},
+            {"category": "loans", "aggregated_amount": 0.0},
             {"category": "other", "aggregated_amount": 0.0},
         ],
     }
@@ -158,10 +158,10 @@ def test_alternate_agency(client, monkeypatch, transaction_search_1, elasticsear
         "total_aggregated_amount": 400.0,
         "results": [
             {"category": "contract", "aggregated_amount": 0.0},
-            {"category": "direct_payment", "aggregated_amount": 0.0},
+            {"category": "direct payment", "aggregated_amount": 0.0},
             {"category": "grant", "aggregated_amount": 0.0},
             {"category": "idv", "aggregated_amount": 400.0},
-            {"category": "loan", "aggregated_amount": 0.0},
+            {"category": "loans", "aggregated_amount": 0.0},
             {"category": "other", "aggregated_amount": 0.0},
         ],
     }

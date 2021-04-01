@@ -46,7 +46,7 @@ class ObligationsByAwardCategory(AgencyBase):
         total = 0.0
         other_total = 0.0
 
-        category_list = ["contract", "direct_payment", "grant", "idv", "loan", "other"]
+        category_list = ["contract", "direct payment", "grant", "idv", "loans", "other"]
 
         # Reformat List of Objects as Map, so they can be alphabetized later
         for obj in results["aggregations"]["group_by_award_category"]["buckets"]:
