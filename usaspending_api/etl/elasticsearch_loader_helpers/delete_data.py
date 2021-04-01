@@ -31,7 +31,7 @@ def delete_docs_by_unique_key(
     task_id: str,
     index,
     refresh_after: bool = True,
-    delete_chunk_size: int = 10000,
+    delete_chunk_size: int = 1000,
 ) -> int:
     """
     Bulk delete a batch of documents whose field identified by ``key`` matches any value provided in the
@@ -55,8 +55,8 @@ def delete_docs_by_unique_key(
             errors-out during execution, in order to not leave un-refreshed deletes in the index.
         delete_chunk_size (int): the batch-size of terms value-array given to each _delete_by_query call. Needs to be
             less than 65536 (max values for any terms query), and less than index.max_results_window setting. Ideally
-            use ``config["partition_size"]`` (derived from --partition-siz) to set this to a calibrated value. If not
-            provided, uses 10,000 as the default which was measured as a good reasonable default.
+            use ``config["partition_size"]`` (derived from --partition-size) to set this to a calibrated value. If not
+            provided, uses 1000 as a safe default (10,000 resulted in some timeouts on a busy cluster).
 
     Returns: Number of ES documents deleted
     """
