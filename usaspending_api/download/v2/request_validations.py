@@ -16,12 +16,10 @@ from usaspending_api.awards.v2.lookups.lookups import (
     other_type_mapping,
 )
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers import fiscal_year_helpers as fy_helpers
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.download.helpers import check_types_and_assign_defaults, get_date_range_length
+from usaspending_api.download.helpers import get_date_range_length
 from usaspending_api.download.lookups import (
-    ACCOUNT_FILTER_DEFAULTS,
     FILE_FORMATS,
     VALID_ACCOUNT_SUBMISSION_TYPES,
 )
@@ -46,7 +44,7 @@ class DownloadValidatorBase:
                 "name": "file_format",
                 "key": "file_format",
                 "type": "enum",
-                "enum_values": ["csv", "tsv", "pstxt"],
+                "enum_values": FILE_FORMATS.keys(),
                 "default": "csv",
             },
         ]
@@ -544,39 +542,90 @@ class DisasterRecipientDownloadValidator(DownloadValidatorBase):
             self._json_request["filters"]["query"] = {"text": query_text, "fields": ["recipient_name"]}
 
 
-def validate_account_request(request_data):
-    json_request = {"columns": request_data.get("columns", []), "filters": {}}
+class AccountDownloadValidator(DownloadValidatorBase):
+    name = "account"
 
-    _validate_required_parameters(request_data, ["account_level", "filters"])
-    json_request["account_level"] = _validate_account_level(request_data, ["federal_account", "treasury_account"])
+    def __init__(self, request_data: dict):
+        super().__init__(request_data)
+        self.tinyshield_models.extend(
+            [
+                {
+                    "name": "account_level",
+                    "key": "account_level",
+                    "type": "enum",
+                    "enum_values": ["federal_account", "treasury_account"],
+                    "optional": False,
+                },
+                {
+                    "name": "fy",
+                    "key": "filters|fy",
+                    "type": "integer",
+                    "min": MINYEAR,
+                    "max": MAXYEAR,
+                    "optional": False,
+                },
+                {"name": "quarter", "key": "filters|quarter", "type": "integer", "min": 1, "max": 4},
+                {"name": "period", "key": "filters|period", "type": "integer", "min": 2, "max": 12},
+                {
+                    "name": "submission_type",
+                    "key": "filters|submission_type",
+                    "type": "enum",
+                    "enum_values": VALID_ACCOUNT_SUBMISSION_TYPES,
+                },
+                {
+                    "name": "submission_types",
+                    "key": "filters|submission_types",
+                    "type": "array",
+                    "array_type": "enum",
+                    "enum_values": VALID_ACCOUNT_SUBMISSION_TYPES,
+                },
+                {"name": "agency", "key": "filters|agency", "type": "text", "text_type": "search", "default": "all"},
+                {
+                    "name": "def_codes",
+                    "key": "filters|def_codes",
+                    "type": "array",
+                    "array_type": "enum",
+                    "enum_values": sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True)),
+                },
+                {
+                    "name": "federal_account",
+                    "key": "filters|federal_account",
+                    "type": "text",
+                    "text_type": "search",
+                    "default": "all",
+                },
+                {
+                    "name": "budget_function",
+                    "key": "filters|budget_function",
+                    "type": "text",
+                    "text_type": "search",
+                    "default": "all",
+                },
+                {
+                    "name": "budget_subfunction",
+                    "key": "filters|budget_subfunction",
+                    "type": "text",
+                    "text_type": "search",
+                    "default": "all",
+                },
+            ]
+        )
+        self._json_request["account_level"] = request_data.get("account_level")
+        self._json_request["filters"] = request_data.get("filters", {})
+        self._json_request = self.get_validated_request()
 
-    filters = _validate_filters_exist(request_data)
+        fy = self._json_request["filters"].get("fy")
+        quarter = self._json_request["filters"].get("quarter")
+        period = self._json_request["filters"].get("period")
 
-    json_request["file_format"] = str(request_data.get("file_format", "csv")).lower()
+        fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
 
-    _validate_file_format(json_request)
+        _validate_submission_type(self._json_request["filters"])
 
-    fy = _validate_fiscal_year(filters)
-    quarter = _validate_fiscal_quarter(filters)
-    period = _validate_fiscal_period(filters)
-
-    fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
-
-    json_request["filters"]["fy"] = fy
-    json_request["filters"]["quarter"] = quarter
-    json_request["filters"]["period"] = period
-
-    _validate_submission_type(filters)
-
-    json_request["download_types"] = request_data["filters"]["submission_types"]
-    json_request["agency"] = request_data["filters"]["agency"] if request_data["filters"].get("agency") else "all"
-
-    json_request["filters"]["def_codes"] = _validate_def_codes(filters)
-
-    # Validate the rest of the filters
-    check_types_and_assign_defaults(filters, json_request["filters"], ACCOUNT_FILTER_DEFAULTS)
-
-    return json_request
+        self._json_request["filters"]["fy"] = fy
+        self._json_request["filters"]["quarter"] = quarter
+        self._json_request["filters"]["period"] = period
+        self._json_request["download_types"] = self._json_request["filters"]["submission_types"]
 
 
 def _validate_award_id(award_id):
@@ -593,13 +642,6 @@ def _validate_award_id(award_id):
     return award
 
 
-def _validate_account_level(request_data, valid_account_levels):
-    account_level = request_data.get("account_level")
-    if account_level not in valid_account_levels:
-        raise InvalidParameterException("Invalid Parameter: account_level must be {}".format(valid_account_levels))
-    return account_level
-
-
 def _validate_filters_exist(request_data):
     filters = request_data.get("filters")
     if not isinstance(filters, dict):
@@ -607,85 +649,6 @@ def _validate_filters_exist(request_data):
     elif len(filters) == 0:
         raise InvalidParameterException("At least one filter is required.")
     return filters
-
-
-def _validate_required_parameters(request_data, required_parameters):
-    for required_param in required_parameters:
-        if required_param not in request_data:
-            raise InvalidParameterException("Missing one or more required body parameters: {}".format(required_param))
-
-
-def _validate_file_format(json_request: dict) -> None:
-    val = json_request["file_format"]
-    if val not in FILE_FORMATS:
-        msg = f"'{val}' is not an acceptable value for 'file_format'. Valid options: {tuple(FILE_FORMATS.keys())}"
-        raise InvalidParameterException(msg)
-
-
-def _validate_fiscal_year(filters: dict) -> int:
-    if "fy" not in filters:
-        raise InvalidParameterException("Missing required filter 'fy'.")
-
-    try:
-        fy = int(filters["fy"])
-    except (TypeError, ValueError):
-        raise InvalidParameterException("'fy' filter not provided as an integer.")
-
-    if not fy_helpers.is_valid_year(fy):
-        raise InvalidParameterException(f"'fy' must be a valid year from {MINYEAR} to {MAXYEAR}.")
-
-    return fy
-
-
-def _validate_fiscal_quarter(filters: dict) -> Optional[int]:
-
-    if "quarter" not in filters:
-        return None
-
-    try:
-        quarter = int(filters["quarter"])
-    except (TypeError, ValueError):
-        raise InvalidParameterException(f"'quarter' filter not provided as an integer.")
-
-    if not fy_helpers.is_valid_quarter(quarter):
-        raise InvalidParameterException("'quarter' filter must be a valid fiscal quarter from 1 to 4.")
-
-    return quarter
-
-
-def _validate_fiscal_period(filters: dict) -> Optional[int]:
-
-    if "period" not in filters:
-        return None
-
-    try:
-        period = int(filters["period"])
-    except (TypeError, ValueError):
-        raise InvalidParameterException(f"'period' filter not provided as an integer.")
-
-    if not fy_helpers.is_valid_period(period):
-        raise InvalidParameterException(
-            "'period' filter must be a valid fiscal period from 2 to 12.  Agencies may not submit for period 1."
-        )
-
-    return period
-
-
-def _validate_def_codes(filters: dict) -> Optional[list]:
-
-    # case when the whole def_codes object is missing from filters
-    if "def_codes" not in filters or filters["def_codes"] is None:
-        return None
-
-    all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
-    provided_codes = set([str(code).upper() for code in filters["def_codes"]])  # accept lowercase def_code
-
-    if not provided_codes.issubset(all_def_codes):
-        raise InvalidParameterException(
-            f"provide codes {filters['def_codes']} contain non-valid DEF Codes. List of valid DEFC {','.join(all_def_codes)}"
-        )
-
-    return list(provided_codes)
 
 
 def _validate_and_bolster_requested_submission_window(
