@@ -241,7 +241,7 @@ class TinyShield:
             # Loop through the request to find the expected key
             value = request
             for subkey in item["key"].split(TINY_SHIELD_SEPARATOR):
-                value = value.get(subkey, {})
+                value = value.get(subkey, {}) if isinstance(value, dict) else {}
             if value != {}:
                 # Key found in provided request dictionary, use the value
                 item["value"] = value

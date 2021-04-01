@@ -34,7 +34,6 @@ from usaspending_api.awards.v2.filters.search import (
     transaction_search_filter,
 )
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.download.helpers.download_annotation_functions import (
@@ -244,41 +243,6 @@ VALUE_MAPPINGS = {
 
 # Bulk Download still uses "prime awards" instead of "transactions"
 VALUE_MAPPINGS["prime_awards"] = VALUE_MAPPINGS["transactions"]
-
-SHARED_AWARD_FILTER_DEFAULTS = {
-    "award_type_codes": list(award_type_mapping.keys()),
-    "agencies": [],
-    "time_period": [],
-    "place_of_performance_locations": [],
-    "recipient_locations": [],
-}
-YEAR_CONSTRAINT_FILTER_DEFAULTS = {"elasticsearch_keyword": ""}
-ROW_CONSTRAINT_FILTER_DEFAULTS = {
-    "keywords": [],
-    "legal_entities": [],
-    "recipient_search_text": [],
-    "recipient_scope": "",
-    "recipient_type_names": [],
-    "place_of_performance_scope": "",
-    "award_amounts": [],
-    "award_ids": [],
-    "program_numbers": [],
-    "naics_codes": [],
-    "psc_codes": [],
-    "contract_pricing_type_codes": [],
-    "set_aside_type_codes": [],
-    "extent_competed_type_codes": [],
-    "federal_account_ids": [],
-    "object_class_ids": [],
-    "program_activity_ids": [],
-    "def_codes": [],
-}
-ACCOUNT_FILTER_DEFAULTS = {
-    "agency": "all",
-    "federal_account": "all",
-    "budget_function": "all",
-    "budget_subfunction": "all",
-}
 
 # List of CFO CGACS for list agencies viewset in the correct order, names included for reference
 # TODO: Find a solution that marks the CFO agencies in the database AND have the correct order
