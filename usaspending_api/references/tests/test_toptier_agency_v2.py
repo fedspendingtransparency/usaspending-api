@@ -32,6 +32,7 @@ def create_agency_data():
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         reporting_fiscal_quarter=2,
+        reporting_fiscal_period=6,
         toptier_code="100",
         is_final_balances_for_fy=True,
     )
@@ -40,6 +41,7 @@ def create_agency_data():
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         reporting_fiscal_quarter=2,
+        reporting_fiscal_period=6,
         toptier_code="200",
         is_final_balances_for_fy=True,
     )
@@ -66,8 +68,13 @@ def create_agency_data():
         treasury_account_identifier=tas2,
     )
 
-    # # CREATE OverallTotals
-    # ot = mommy.make('references.OverallTotals', fiscal_year=2017, total_budget_authority=3860000000.00)
+    mommy.make(
+        "references.GTASSF133Balances",
+        total_budgetary_resources_cpe=100.00,
+        obligations_incurred_total_cpe=100.00,
+        fiscal_year=2017,
+        fiscal_period=6,
+    )
 
 
 @pytest.mark.django_db
@@ -86,10 +93,10 @@ def test_award_type_endpoint(client, create_agency_data):
                 "agency_name": "tta_name",
                 "congressional_justification_url": "test.com/cj",
                 "budget_authority_amount": 2.0,
-                "current_total_budget_authority_amount": 8361447130497.72,
+                "current_total_budget_authority_amount": 100.00,
                 "obligated_amount": 2.0,
                 "outlay_amount": 2.0,
-                "percentage_of_total_budget_authority": 2.391930450298678e-13,
+                "percentage_of_total_budget_authority": 0.02,
                 "toptier_code": "100",
             },
             {
@@ -100,10 +107,10 @@ def test_award_type_endpoint(client, create_agency_data):
                 "agency_name": "tta_name_2",
                 "congressional_justification_url": None,
                 "budget_authority_amount": 14.0,
-                "current_total_budget_authority_amount": 8361447130497.72,
+                "current_total_budget_authority_amount": 100.00,
                 "obligated_amount": 14.0,
                 "outlay_amount": 14.00,
-                "percentage_of_total_budget_authority": 1.6743513152090746e-12,
+                "percentage_of_total_budget_authority": 0.14,
                 "toptier_code": "200",
             },
         ]
@@ -121,10 +128,10 @@ def test_award_type_endpoint(client, create_agency_data):
                 "agency_name": "tta_name_2",
                 "congressional_justification_url": None,
                 "budget_authority_amount": 14.0,
-                "current_total_budget_authority_amount": 8361447130497.72,
+                "current_total_budget_authority_amount": 100.00,
                 "obligated_amount": 14.0,
                 "outlay_amount": 14.0,
-                "percentage_of_total_budget_authority": 1.6743513152090746e-12,
+                "percentage_of_total_budget_authority": 0.14,
                 "toptier_code": "200",
             },
             {
@@ -135,10 +142,10 @@ def test_award_type_endpoint(client, create_agency_data):
                 "agency_name": "tta_name",
                 "congressional_justification_url": "test.com/cj",
                 "budget_authority_amount": 2.0,
-                "current_total_budget_authority_amount": 8361447130497.72,
+                "current_total_budget_authority_amount": 100.00,
                 "obligated_amount": 2.0,
                 "outlay_amount": 2.0,
-                "percentage_of_total_budget_authority": 2.391930450298678e-13,
+                "percentage_of_total_budget_authority": 0.02,
                 "toptier_code": "100",
             },
         ]
