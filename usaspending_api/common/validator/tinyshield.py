@@ -241,7 +241,7 @@ class TinyShield:
             # Loop through the request to find the expected key
             value = request
             for subkey in item["key"].split(TINY_SHIELD_SEPARATOR):
-                value = value.get(subkey, {})
+                value = value.get(subkey, {}) if isinstance(value, dict) else {}
             if value != {}:
                 # Key found in provided request dictionary, use the value
                 item["value"] = value
@@ -298,6 +298,8 @@ class TinyShield:
                 except KeyError:
                     if "optional" in v and v["optional"] is False:
                         raise UnprocessableEntityException("Required object fields: {}".format(k))
+                    elif "default" in v:
+                        value = v["default"]
                     else:
                         continue
                 # Start with the sub-rule definition and supplement with parent's key-values as needed

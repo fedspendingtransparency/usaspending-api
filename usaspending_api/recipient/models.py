@@ -96,14 +96,38 @@ class RecipientProfile(models.Model):
         managed = True
         db_table = "recipient_profile"
         unique_together = ("recipient_hash", "recipient_level")
-        # Note:  A custom index was added in the migration because there's
+        # Note:  Two custom indexes were added in migrations because there's
         # currently not a Django native means by which to add a GinIndex with
         # a specific Postgres operator class:
         #
-        #     create index idx_recipient_profile_name on
+        #     MIGRATION: 0001_initial
+        #     SQL: create index idx_recipient_profile_name on
         #         public.recipient_profile using gin (recipient_name public.gin_trgm_ops)
         #
-        indexes = [GinIndex(fields=["award_types"]), models.Index(fields=["recipient_unique_id"])]
+        #     MIGRATION: 0006_auto_20210315_2028
+        #     sql: CREATE INDEX idx_recipient_unique_id_gin ON
+        #         public.recipient_profile USING gin (recipient_unique_id gin_trgm_ops)
+        #
+        # Two addtional indexes were added in a migration because there's
+        # currently not a Django native means by with to add an index with
+        # 'NULLS LAST' as a part of the sort
+        #
+        #     MIGRATION: 0006_auto_20210315_2028
+        #     SQL: CREATE INDEX recipient_profile_recipient_name_d ON
+        #         public.recipient_profile USING btree (recipient_name DESC NULLS LAST)
+        #     SQL: CREATE INDEX recipient_profile_recipient_unique_id_d ON
+        #         public.recipient_profile USING btree (recipient_unique_id DESC NULLS LAST)
+        #
+        indexes = [
+            GinIndex(fields=["award_types"]),
+            models.Index(fields=["recipient_unique_id"]),
+            models.Index(fields=["last_12_months"]),
+            models.Index(fields=["last_12_contracts"]),
+            models.Index(fields=["last_12_grants"]),
+            models.Index(fields=["last_12_direct_payments"]),
+            models.Index(fields=["last_12_loans"]),
+            models.Index(fields=["last_12_other"]),
+        ]
 
 
 class RecipientLookup(models.Model):

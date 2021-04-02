@@ -1679,6 +1679,10 @@ query_paths = {
                     "deobligations_recoveries_refund_pri_program_object_class_cpe",
                 ),
                 (
+                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_fyb_to_period_end",
+                ),  # Column is annotated in account_download.py
+                (
                     "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
                     "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
                 ),  # Column is annotated in account_download.py
@@ -1686,7 +1690,6 @@ query_paths = {
                     "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
                     "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
                 ),  # Column is annotated in account_download.py
-                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1716,6 +1719,10 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                 ),
                 (
+                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_fyb_to_period_end",
+                ),  # Column is annotated in account_download.py
+                (
                     "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
                     "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
                 ),  # Column is annotated in account_download.py
@@ -1723,7 +1730,6 @@ query_paths = {
                     "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
                     "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
                 ),  # Column is annotated in account_download.py
-                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,

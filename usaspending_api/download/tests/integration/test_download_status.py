@@ -170,7 +170,7 @@ def test_download_awards_status(client, download_test_data, monkeypatch, elastic
     dl_resp = client.post(
         "/api/v2/download/awards/",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": []}, "columns": []}),
+        data=json.dumps({"filters": {"award_type_codes": list(award_type_mapping.keys())}, "columns": []}),
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
@@ -188,7 +188,7 @@ def test_download_awards_status(client, download_test_data, monkeypatch, elastic
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"award_type_codes": []},
+                "filters": {"award_type_codes": list(award_type_mapping.keys())},
                 "columns": [
                     "total_obligated_amount",
                     "product_or_service_code",
@@ -338,7 +338,7 @@ def test_download_transactions_limit(client, download_test_data, monkeypatch, el
     dl_resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
-        data=json.dumps({"limit": 1, "filters": {"award_type_codes": []}, "columns": []}),
+        data=json.dumps({"limit": 1, "filters": {"award_type_codes": list(award_type_mapping.keys())}, "columns": []}),
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 

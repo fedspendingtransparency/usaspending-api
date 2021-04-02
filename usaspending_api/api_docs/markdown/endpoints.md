@@ -36,6 +36,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/federal_account/count/](/api/v2/agency/012/federal_account/count/)|GET| Returns the count of Federal Accounts and Treasury Accounts for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/object_class/](/api/v2/agency/012/object_class/)|GET| Returns a list of Object Classes for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/object_class/count/](/api/v2/agency/012/object_class/count/)|GET| Returns the count of Object Classes for the agency in a single fiscal year |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/obligations_by_award_category/](/api/v2/agency/012/obligations_by_award_category/)|GET| Returns a breakdown of obligations by award category within a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/program_activity/](/api/v2/agency/012/program_activity/)|GET| Returns a list of Program Activity categories for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/program_activity/count/](/api/v2/agency/012/program_activity/count/)|GET| Returns the count of Program Activity categories for the agency in a single fiscal year |
 |[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Treasury Account Symbol Availability Type Code (A) filtered by other components provided in the request filter |
@@ -115,6 +116,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/idvs/funding/](/api/v2/idvs/funding/)|POST| Returns File C funding records associated with an IDV |
 |[/api/v2/idvs/funding_rollup/](/api/v2/idvs/funding_rollup/)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for all contracts under an IDV |
 |[/api/v2/recipient/children/<DUNS\>/](/api/v2/recipient/children/006928857/)|GET| Returns recipient details based on DUNS number |
+|[/api/v2/recipient/count/](/api/v2/recipient/count/)|POST| Returns the count of recipents for the given filters |
 |[/api/v2/recipient/duns/<HASH_VALUE\>/](/api/v2/recipient/duns/99a44eeb-23ef-e7c4-1f84-9a695b6f5d2e-R/)|GET| Returns a high-level overview of a specific recipient, given its id |
 |[/api/v2/recipient/duns/](/api/v2/recipient/duns/)|POST| Returns a list of recipients in USAspending DB |
 |[/api/v2/recipient/state/<FIPS\>/](/api/v2/recipient/state/51/)|GET| Returns basic information about the specified state |
