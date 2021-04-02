@@ -1,7 +1,9 @@
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Max, Q
 from django.db.models.functions import Coalesce
-from usaspending_api.references.models import Agency
+
+from usaspending_api.references.models import Agency, GTASSF133Balances
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.references.v2.views.agency import get_total_budgetary_resources
 from usaspending_api.submissions.models import SubmissionAttributes
 
 from rest_framework.response import Response
@@ -9,7 +11,15 @@ from rest_framework.views import APIView
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
-from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY
+
+def get_total_obligations_incurred(fiscal_year, fiscal_period):
+    total_obligations_incurred = (
+        GTASSF133Balances.objects.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
+        .values("fiscal_year")
+        .annotate(total_obligations=Sum("obligations_incurred_total_cpe"))
+        .values("total_obligations")
+    )
+    return total_obligations_incurred[0]["total_obligations"] if len(total_obligations_incurred) > 0 else 0.0
 
 
 class ToptierAgenciesViewSet(APIView):
@@ -50,7 +60,6 @@ class ToptierAgenciesViewSet(APIView):
 
         # get agency queryset, distinct toptier id to avoid duplicates, take first ordered agency id for consistency
         agency_queryset = Agency.objects.order_by("toptier_agency_id", "id").distinct("toptier_agency_id")
-
         for agency in agency_queryset:
             toptier_agency = agency.toptier_agency
             # get corresponding submissions through cgac code
@@ -67,6 +76,7 @@ class ToptierAgenciesViewSet(APIView):
                 continue
             active_fiscal_year = submission.reporting_fiscal_year
             active_fiscal_quarter = submission.fiscal_quarter
+            active_fiscal_period = submission.reporting_fiscal_period
 
             queryset = AppropriationAccountBalances.objects.filter(submission__is_final_balances_for_fy=True)
             # get the incoming agency's toptier agency, because that's what we'll
@@ -83,25 +93,13 @@ class ToptierAgenciesViewSet(APIView):
                 outlay_amount=Coalesce(Sum("gross_outlay_amount_by_tas_cpe"), 0),
             )
 
-            # TODO: Rework this block to calculate the total once consumption of the latest GTAS file is implemented
-            # # get the overall total government budget authority (to craft a budget authority percentage)
-            # total_budget_authority_queryset = OverallTotals.objects.all()
-            # total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
-            #
-            # total_budget_authority_submission = total_budget_authority_queryset.first()
-            # total_budget_authority_amount = -1
-            # percentage = -1
-            #
-            # if total_budget_authority_submission is not None:
-            #     total_budget_authority_amount = total_budget_authority_submission.total_budget_authority
-            #     percentage = (float(aggregate_dict['budget_authority_amount']) / float(total_budget_authority_amount))
-
             abbreviation = ""
             if toptier_agency.abbreviation is not None:
                 abbreviation = toptier_agency.abbreviation
 
             cj = toptier_agency.justification if toptier_agency.justification else None
             # craft response
+            total_obligated = get_total_obligations_incurred(active_fiscal_year, active_fiscal_period)
             response["results"].append(
                 {
                     "agency_id": agency.id,
@@ -114,9 +112,11 @@ class ToptierAgenciesViewSet(APIView):
                     "outlay_amount": float(aggregate_dict["outlay_amount"]),
                     "obligated_amount": float(aggregate_dict["obligated_amount"]),
                     "budget_authority_amount": float(aggregate_dict["budget_authority_amount"]),
-                    "current_total_budget_authority_amount": TOTAL_BUDGET_AUTHORITY,
+                    "current_total_budget_authority_amount": float(get_total_budgetary_resources(active_fiscal_year)),
                     "percentage_of_total_budget_authority": (
-                        float(aggregate_dict["budget_authority_amount"]) / float(TOTAL_BUDGET_AUTHORITY)
+                        (float(aggregate_dict["budget_authority_amount"]) / float(total_obligated))
+                        if total_obligated > 0
+                        else None
                     ),
                 }
             )

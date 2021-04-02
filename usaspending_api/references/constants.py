@@ -1,5 +1,3 @@
-TOTAL_BUDGET_AUTHORITY = 8361447130497.72
-TOTAL_OBLIGATIONS_INCURRED = 4690484214947.31
 WEBSITE_AWARD_BINS = {
     "<1M": {"lower": None, "upper": 1000000, "enums": ["<1M", "1M"]},
     "1M": {"lower": 1000000, "upper": 1000000, "enums": ["1M"]},

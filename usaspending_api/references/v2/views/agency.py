@@ -1,11 +1,30 @@
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Q, Max
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.references.constants import TOTAL_BUDGET_AUTHORITY
-from usaspending_api.references.models import Agency
-from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.common.helpers.date_helper import now
+from usaspending_api.references.models import Agency, GTASSF133Balances
+from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
+
+
+def get_total_budgetary_resources(fiscal_year):
+    submission_window = (
+        DABSSubmissionWindowSchedule.objects.filter(
+            submission_reveal_date__lte=now(), submission_fiscal_year=fiscal_year
+        )
+        .values("submission_fiscal_year")
+        .annotate(fiscal_period=Max("submission_fiscal_month"))
+        .values("fiscal_period")
+    )
+    q = Q(fiscal_year=fiscal_year) & Q(fiscal_period=submission_window[0]["fiscal_period"])
+    total_budgetary_resources = (
+        GTASSF133Balances.objects.filter(q)
+        .values("fiscal_year")
+        .annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe"))
+        .values("total_budgetary_resources")
+    )
+    return total_budgetary_resources[0]["total_budgetary_resources"] if len(total_budgetary_resources) > 0 else 0.0
 
 
 class AgencyViewSet(APIView):
@@ -62,17 +81,6 @@ class AgencyViewSet(APIView):
 
         cj = toptier_agency.justification if toptier_agency.justification else None
 
-        # TODO: Rework this block to calculate the total once consumption of the latest GTAS file is implemented
-        # # get the overall total government budget authority (to craft a budget authority percentage)
-        # total_budget_authority_queryset = OverallTotals.objects.all()
-        # total_budget_authority_queryset = total_budget_authority_queryset.filter(fiscal_year=active_fiscal_year)
-        #
-        # total_budget_authority_submission = total_budget_authority_queryset.first()
-        # total_budget_authority_amount = "-1"
-        #
-        # if total_budget_authority_submission is not None:
-        #     total_budget_authority_amount = str(total_budget_authority_submission.total_budget_authority)
-
         # craft response
         response["results"] = {
             "agency_name": toptier_agency.name,
@@ -81,7 +89,7 @@ class AgencyViewSet(APIView):
             "outlay_amount": str(aggregate_dict["outlay_amount"]),
             "obligated_amount": str(aggregate_dict["obligated_amount"]),
             "budget_authority_amount": str(aggregate_dict["budget_authority_amount"]),
-            "current_total_budget_authority_amount": str(TOTAL_BUDGET_AUTHORITY),
+            "current_total_budget_authority_amount": str(get_total_budgetary_resources(active_fiscal_year)),
             "mission": toptier_agency.mission,
             "website": toptier_agency.website,
             "icon_filename": toptier_agency.icon_filename,
