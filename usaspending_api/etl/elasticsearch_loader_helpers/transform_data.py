@@ -78,7 +78,6 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
         "recipient_location_county_population",
         "recipient_location_congressional_population",
         "recipient_levels",
-        "awarding_toptier_agency_id",
         "funding_toptier_agency_id",
     ]
     return transform_data(worker, records, converters, agg_key_creations, drop_fields, settings.ES_ROUTING_FIELD)
