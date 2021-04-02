@@ -93,9 +93,9 @@ class RetrieveFileFromUri:
         else:
             raise NotImplementedError("No handler for scheme: {}!".format(self.parsed_url_obj.scheme))
 
-    def copy_to_temporary_file(self, suffix=None):
+    def copy_to_temporary_file(self):
         """Sometimes it is super helpful to just have a nice, concrete, local file to work with."""
-        with tempfile.NamedTemporaryFile(suffix=suffix) as tf:
+        with tempfile.NamedTemporaryFile() as tf:
             path = tf.name
         self.copy(path)
         return path
