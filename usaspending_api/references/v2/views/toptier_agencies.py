@@ -1,6 +1,7 @@
-from django.db.models import F, Sum, Max, Q
+from django.db.models import F, Sum
 from django.db.models.functions import Coalesce
 
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.references.models import Agency, GTASSF133Balances
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.references.v2.views.agency import get_total_budgetary_resources
@@ -64,7 +65,9 @@ class ToptierAgenciesViewSet(APIView):
             toptier_agency = agency.toptier_agency
             # get corresponding submissions through cgac code
             queryset = SubmissionAttributes.objects.all()
-            queryset = queryset.filter(toptier_code=toptier_agency.toptier_code)
+            queryset = queryset.filter(
+                toptier_code=toptier_agency.toptier_code, submission_window__submission_reveal_date__lte=now()
+            )
 
             # get the most up to date fy and quarter
             queryset = queryset.order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter")
@@ -112,7 +115,9 @@ class ToptierAgenciesViewSet(APIView):
                     "outlay_amount": float(aggregate_dict["outlay_amount"]),
                     "obligated_amount": float(aggregate_dict["obligated_amount"]),
                     "budget_authority_amount": float(aggregate_dict["budget_authority_amount"]),
-                    "current_total_budget_authority_amount": float(get_total_budgetary_resources(active_fiscal_year)),
+                    "current_total_budget_authority_amount": float(
+                        get_total_budgetary_resources(active_fiscal_year, active_fiscal_period)
+                    ),
                     "percentage_of_total_budget_authority": (
                         (float(aggregate_dict["budget_authority_amount"]) / float(total_obligated))
                         if total_obligated > 0
