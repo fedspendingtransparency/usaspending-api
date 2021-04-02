@@ -1,7 +1,8 @@
 import logging
 
-from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet, DownloadRequestType
+from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
 from usaspending_api.download.v2.request_validations import (
+    AccountDownloadValidator,
     AssistanceDownloadValidator,
     AwardDownloadValidator,
     ContractDownloadValidator,
@@ -84,7 +85,7 @@ class AccountDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         """Push a message to SQS with the validated request JSON"""
 
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.ACCOUNT)
+        return BaseDownloadViewSet.post(self, request, validator_type=AccountDownloadValidator)
 
 
 class DisasterDownloadViewSet(BaseDownloadViewSet):
@@ -98,7 +99,7 @@ class DisasterDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         """Return url to pre-generated zip file"""
 
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.DISASTER)
+        return BaseDownloadViewSet.post(self, request, special_request_type="disaster")
 
 
 class DisasterRecipientDownloadViewSet(BaseDownloadViewSet):
