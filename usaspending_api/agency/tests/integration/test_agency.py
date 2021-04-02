@@ -42,7 +42,9 @@ def agency_data():
         reporting_fiscal_year=current_fiscal_year(),
     )
     mommy.make("submissions.SubmissionAttributes", toptier_code=ta2.toptier_code, submission_window_id=dabs.id)
-    defc = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    defc = mommy.make(
+        "references.DisasterEmergencyFundCode", code="L", group_name="covid_19", public_law="LAW", title="title"
+    )
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
@@ -66,7 +68,9 @@ def test_happy_path(client, agency_data):
     assert resp.data["congressional_justification_url"] == "BECAUSE"
     assert resp.data["icon_filename"] == "HAI.jpg"
     assert resp.data["subtier_agency_count"] == 1
-    assert resp.data["disaster_emergency_fund_codes"] == ["L"]
+    assert resp.data["def_codes"] == [
+        {"code": "L", "public_law": "LAW", "title": "title", "urls": None, "disaster": "covid_19"}
+    ]
     assert resp.data["messages"] == []
 
     resp = client.get(URL.format(code="001", filter=f"?fiscal_year={current_fiscal_year()}"))

@@ -32,7 +32,7 @@ class AgencyOverview(AgencyBase):
                 "congressional_justification_url": self.toptier_agency.justification,
                 "about_agency_data": self.toptier_agency.about_agency_data,
                 "subtier_agency_count": self.get_subtier_agency_count(),
-                "disaster_emergency_fund_codes": list(self.get_defc()),
+                "def_codes": self.get_defc(),
                 "messages": [],  # Currently no applicable messages
             }
         )
@@ -53,13 +53,29 @@ class AgencyOverview(AgencyBase):
         )
 
     def get_defc(self):
-        return (
+        defc = (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(
                 treasury_account__funding_toptier_agency=self.toptier_agency,
                 disaster_emergency_fund_id__isnull=False,
-                disaster_emergency_fund__group_name="covid_19",
                 submission__reporting_fiscal_year=self.fiscal_year,
             )
-            .values_list("disaster_emergency_fund", flat=True)
+            .values(
+                "disaster_emergency_fund",
+                "disaster_emergency_fund__group_name",
+                "disaster_emergency_fund__public_law",
+                "disaster_emergency_fund__title",
+                "disaster_emergency_fund__urls",
+            )
             .distinct()
         )
+        results = [
+            {
+                "code": x["disaster_emergency_fund"],
+                "public_law": x["disaster_emergency_fund__public_law"],
+                "title": x["disaster_emergency_fund__title"],
+                "urls": x["disaster_emergency_fund__urls"],
+                "disaster": x["disaster_emergency_fund__group_name"],
+            }
+            for x in defc
+        ]
+        return results
