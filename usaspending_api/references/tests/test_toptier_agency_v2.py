@@ -32,7 +32,7 @@ def create_agency_data():
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         reporting_fiscal_quarter=2,
-        # reporting_fiscal_period=6,
+        reporting_fiscal_period=6,
         toptier_code="100",
         is_final_balances_for_fy=True,
     )
@@ -41,7 +41,7 @@ def create_agency_data():
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         reporting_fiscal_quarter=2,
-        # reporting_fiscal_period=6,
+        reporting_fiscal_period=6,
         toptier_code="200",
         is_final_balances_for_fy=True,
     )
