@@ -130,9 +130,9 @@ class Command(BaseCommand):
         _log.info(f"Found {doc_count:,} docs in index {self._index}")
         self._num_partitions = ceil(doc_count / self._partition_size)
 
-        # Instantiate a numpy array with the dumber of docs' _id fields we expect to touch
+        # Instantiate a numpy array with the number of docs' _id fields we expect to touch
         all_ids = np.empty(doc_count, dtype=int)
-        _log.info(f"Collecting _ids from all {doc_count:,} in scrolling batch queries of size {self._partition_size}")
+        _log.info(f"Collecting _ids from all {doc_count:,} in scrolling batch queries of size {self._partition_size:,}")
 
         # Create a baseline query used in scrolling, which gets all docs, but doesn't return the doc _source.
         # Use this query in the scan helper, which performs the scrolling
