@@ -32,9 +32,7 @@ def load_glossary(path, append):
 
     logger = logging.getLogger("script")
 
-    file_object = RetrieveFileFromUri(
-        f"{settings.FILES_SERVER_BASE_URL}/docs/USAspendingGlossary.xlsx"
-    ).get_file_object()
+    file_object = RetrieveFileFromUri(path).get_file_object()
     wb = load_workbook(filename=BytesIO(file_object.read()))
     ws = wb.active
     rows = ws.rows
