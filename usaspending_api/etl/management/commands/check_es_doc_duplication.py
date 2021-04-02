@@ -21,14 +21,14 @@ class Command(BaseCommand):
           value to end up on different shards (by default, shard-routing is done using the ``_id`` field)
     """
 
-    help = """
-        Check whether an index has duplicate documents on different shards with the same ``_id`` value.
-        There are two approaches, and one needs to be chosen using either --query-type scroll, or --query-type 
-        partition. See arg info for --query-type for more info. There is no fast way to perform this check, 
-        but these two strategies provide a client-side-intense way to do it or a server-side intense way to do it, 
-        respectively. Each takes a very long time to process (e.g. 8hrs for 100M docs). Trial out performance and 
-        impact to client or server by testing with a small --stop-after value.
-    """
+    help = (
+        "Check whether an index has duplicate documents on different shards with the same ``_id`` value. "
+        "There are two approaches, and one needs to be chosen using either --query-type scroll, or --query-type "
+        "partition. See arg info for --query-type for more info. There is no fast way to perform this check, "
+        "but these two strategies provide a client-side-intense way to do it or a server-side intense way to do it, "
+        "respectively. Each takes a very long time to process (e.g. 8hrs for 100M docs). Trial out performance and "
+        "impact to client or server by testing with a small --stop-after value."
+    )
 
     _es_client_config: dict = None
     _index: str = None
