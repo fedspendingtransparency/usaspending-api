@@ -16,13 +16,17 @@ def setup_test_data(db):
             "submission_fiscal_year": 2019,
             "submission_fiscal_quarter": 1,
             "submission_fiscal_month": 3,
-            "submission_reveal_date": "2019-1-15",
+            "submission_reveal_date": "2019-3-15",
+            "is_quarter": False,
+            "period_end_date": "2019-1-15",
         },
         {
             "submission_fiscal_year": 2020,
             "submission_fiscal_quarter": 1,
             "submission_fiscal_month": 3,
-            "submission_reveal_date": "2020-01-09",
+            "submission_reveal_date": "2019-3-09",
+            "is_quarter": False,
+            "period_end_date": "2020-01-09",
         },
     ]
     dsws = [mommy.make("submissions.DABSSubmissionWindowSchedule", **dabs_window) for dabs_window in dsws_dicts]
@@ -61,30 +65,30 @@ def setup_test_data(db):
     treas_accounts = [
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            awarding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
+            funding_toptier_agency=toptier_agencies[0],
             tas_rendering_label="tas-1-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            awarding_toptier_agency_id=toptier_agencies[0].toptier_agency_id,
+            funding_toptier_agency=toptier_agencies[0],
             tas_rendering_label="tas-2-overview",
         ),
         mommy.make(
             "accounts.TreasuryAppropriationAccount",
-            awarding_toptier_agency_id=toptier_agencies[1].toptier_agency_id,
+            funding_toptier_agency=toptier_agencies[1],
             tas_rendering_label="tas-3-overview",
         ),
     ]
     approps = [
-        {"sub_id": subs[0].submission_id, "treasury_account": treas_accounts[0], "total_resources": 50},
-        {"sub_id": subs[0].submission_id, "treasury_account": treas_accounts[1], "total_resources": 12},
-        {"sub_id": subs[0].submission_id, "treasury_account": treas_accounts[1], "total_resources": 29},
-        {"sub_id": subs[0].submission_id, "treasury_account": treas_accounts[2], "total_resources": 15.5},
+        {"sub": subs[0], "treasury_account": treas_accounts[0], "total_resources": 50},
+        {"sub": subs[0], "treasury_account": treas_accounts[1], "total_resources": 12},
+        {"sub": subs[0], "treasury_account": treas_accounts[1], "total_resources": 29},
+        {"sub": subs[0], "treasury_account": treas_accounts[2], "total_resources": 15.5},
     ]
     for approp in approps:
         mommy.make(
             "accounts.AppropriationAccountBalances",
-            submission_id=approp["sub_id"],
+            submission=approp["sub"],
             treasury_account_identifier=approp["treasury_account"],
             total_budgetary_resources_amount_cpe=approp["total_resources"],
         )
