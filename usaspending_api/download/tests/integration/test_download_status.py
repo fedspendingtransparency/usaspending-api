@@ -127,7 +127,7 @@ def test_download_assistance_status(client, download_test_data):
     dl_resp = client.post(
         "/api/v2/download/assistance/",
         content_type="application/json",
-        data=json.dumps({"award_id": 789, "columns": []}),
+        data=json.dumps({"award_id": 789}),
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
@@ -211,7 +211,7 @@ def test_download_contract_status(client, download_test_data):
 
     # Test without columns specified
     dl_resp = client.post(
-        "/api/v2/download/contract/", content_type="application/json", data=json.dumps({"award_id": 456, "columns": []})
+        "/api/v2/download/contract/", content_type="application/json", data=json.dumps({"award_id": 456})
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
@@ -251,9 +251,7 @@ def test_download_idv_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     # Test without columns specified
-    dl_resp = client.post(
-        "/api/v2/download/idv/", content_type="application/json", data=json.dumps({"award_id": 123, "columns": []})
-    )
+    dl_resp = client.post("/api/v2/download/idv/", content_type="application/json", data=json.dumps({"award_id": 123}))
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
