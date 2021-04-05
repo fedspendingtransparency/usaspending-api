@@ -109,7 +109,7 @@ def test_download_assistance_without_columns(client, download_test_data):
     resp = client.post(
         "/api/v2/download/assistance/",
         content_type="application/json",
-        data=json.dumps({"award_id": 789, "columns": []}),
+        data=json.dumps({"award_id": 789}),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -134,7 +134,7 @@ def test_download_assistance_with_columns(client, download_test_data):
 @pytest.mark.django_db
 def test_download_assistance_bad_award_id_raises(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
-    payload = {"award_id": -1, "columns": []}
+    payload = {"award_id": -1}
     resp = client.post("/api/v2/download/assistance/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Unable to find award matching the provided award id"

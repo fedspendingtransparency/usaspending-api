@@ -38,7 +38,6 @@ class DownloadValidatorBase:
                 "type": "array",
                 "array_type": "text",
                 "text_type": "search",
-                "default": [],
                 "min": 0,
             },
             {
@@ -50,9 +49,11 @@ class DownloadValidatorBase:
             },
         ]
         self._json_request = {
-            "columns": request_data.get("columns", []),
             "file_format": request_data.get("file_format", "csv").lower(),
         }
+        if request_data.get("columns"):
+            self._json_request["columns"] = request_data.get("columns")
+
         self.tinyshield_models = []
 
     def get_validated_request(self):
@@ -533,7 +534,7 @@ class DisasterRecipientDownloadValidator(DownloadValidatorBase):
             award_category = "Other-Financial-Assistance"
 
         self._json_request["award_category"] = award_category
-        self._json_request["columns"] = self._json_request["columns"] or tuple(columns)
+        self._json_request["columns"] = self._json_request.get("columns") or tuple(columns)
 
         # Need to specify the field to use "query" filter on if present
         query_text = self._json_request["filters"].pop("query", None)

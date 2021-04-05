@@ -87,7 +87,7 @@ def _verify_float_value(value):
 
 
 def validate_array(rule):
-    rule["min"] = 1 if rule.get("min") is None else rule.get("min")  # Allows empty arrays
+    rule["min"] = rule.get("min") or 1
     rule["max"] = rule.get("max") or MAX_ITEMS
     value = rule["value"]
     if type(value) is not list:
