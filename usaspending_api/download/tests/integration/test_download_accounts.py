@@ -434,7 +434,7 @@ def test_duplicate_submission_types_success(client, download_test_data):
     assert set(download_types) == set(VALID_ACCOUNT_SUBMISSION_TYPES), "Wrong values in response"
 
 
-def test_empty_submission_types_fail(client, download_test_data):
+def test_empty_submission_types_enum_fail(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     resp = client.post(
@@ -452,4 +452,25 @@ def test_empty_submission_types_fail(client, download_test_data):
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert (
         "Field 'filters|submission_types' value '[]' is below min '1' items" in resp.json()["detail"]
+    ), "Incorrect error message"
+
+
+def test_empty_array_filter_fail(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "treasury_account",
+                "filters": {"submission_types": ["award_financial"], "fy": "2017", "quarter": "3", "def_codes": []},
+                "file_format": "tsv",
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert (
+        "Field 'filters|def_codes' value '[]' is below min '1' items" in resp.json()["detail"]
     ), "Incorrect error message"
