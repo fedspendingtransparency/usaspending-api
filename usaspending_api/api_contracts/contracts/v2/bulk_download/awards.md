@@ -48,7 +48,6 @@ This route sends a request to the backend to begin generating a zipfile of award
                         "09",
                         "11"
                     ],
-                    "sub_award_types": [],
                     "date_type": "action_date",
                     "date_range": {
                         "start_date": "2019-10-01",
@@ -63,7 +62,6 @@ This route sends a request to the backend to begin generating a zipfile of award
                         }
                     ]
                 },
-                "columns": [],
                 "file_format": "csv"
             }
 

@@ -1,7 +1,14 @@
 import logging
 
-from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet, DownloadRequestType
-from usaspending_api.download.v2.request_validations import AwardDownloadValidator
+from usaspending_api.download.v2.base_download_viewset import BaseDownloadViewSet
+from usaspending_api.download.v2.request_validations import (
+    AccountDownloadValidator,
+    AssistanceDownloadValidator,
+    AwardDownloadValidator,
+    ContractDownloadValidator,
+    DisasterRecipientDownloadValidator,
+    IdvDownloadValidator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +35,7 @@ class RowLimitedIDVDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.IDV)
+        return BaseDownloadViewSet.post(self, request, validator_type=IdvDownloadValidator)
 
 
 class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
@@ -40,7 +47,7 @@ class RowLimitedContractDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.CONTRACT)
+        return BaseDownloadViewSet.post(self, request, validator_type=ContractDownloadValidator)
 
 
 class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
@@ -52,7 +59,7 @@ class RowLimitedAssistanceDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         request.data["constraint_type"] = "row_count"
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.ASSISTANCE)
+        return BaseDownloadViewSet.post(self, request, validator_type=AssistanceDownloadValidator)
 
 
 class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
@@ -78,7 +85,7 @@ class AccountDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         """Push a message to SQS with the validated request JSON"""
 
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.ACCOUNT)
+        return BaseDownloadViewSet.post(self, request, validator_type=AccountDownloadValidator)
 
 
 class DisasterDownloadViewSet(BaseDownloadViewSet):
@@ -92,7 +99,7 @@ class DisasterDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         """Return url to pre-generated zip file"""
 
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.DISASTER)
+        return BaseDownloadViewSet.post(self, request, special_request_type="disaster")
 
 
 class DisasterRecipientDownloadViewSet(BaseDownloadViewSet):
@@ -104,4 +111,4 @@ class DisasterRecipientDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/disaster/recipients.md"
 
     def post(self, request):
-        return BaseDownloadViewSet.post(self, request, DownloadRequestType.DISASTER_RECIPIENT)
+        return BaseDownloadViewSet.post(self, request, validator_type=DisasterRecipientDownloadValidator)
