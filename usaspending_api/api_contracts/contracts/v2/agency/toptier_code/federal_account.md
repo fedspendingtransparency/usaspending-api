@@ -49,8 +49,11 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `combined_total_budgetary_resources` (required, number)
+            Total Budgetary Resources associated with any Federal Account
         + `combined_obligations` (required, number)
+            Total Obligations associated with any Federal Account
         + `combined_outlays` (required, number)
+            Total Outlays associated with any Federal Account
         + `results` (required, array[FederalAccount], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.

@@ -48,7 +48,9 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `combined_obligations` (required, number)
+            Total Obligations associated with any Program Activity
         + `combined_outlays` (required, number)
+            Total Outlays associated with any Program Activity
         + `results` (required, array[ProgramActivity], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.

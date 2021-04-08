@@ -48,7 +48,9 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `combined_obligations` (required, number)
+            Total Obligations associated with any Object Class
         + `combined_outlays` (required, number)
+            Total Outlays associated with any Object Class
         + `results` (required, array[ObjectClass], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
