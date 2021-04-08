@@ -47,6 +47,8 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
+        + `combined_obligations` (required, number)
+        + `combined_outlays` (required, number)
         + `results` (required, array[ProgramActivity], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -65,6 +67,8 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                     "hasPrevious": false,
                     "count": 10
                 },
+                "combined_obligations": 36964.8,
+                "combined_outlays": -397853.1,
                 "results": [
                     {
                         "name": "TI INFORMATION TECHNOLOGY",
@@ -73,7 +77,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                     },
                     {
                         "name": "CONTRACT RENEWALS",
-                        "total_obligations": 225.26,
+                        "total_obligations": 18482.4,
                         "total_outlays": -161252.0
                     }
                 ],

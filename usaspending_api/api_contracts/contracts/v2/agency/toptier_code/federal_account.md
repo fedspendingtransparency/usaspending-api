@@ -48,6 +48,9 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
+        + `combined_total_budgetary_resources` (required, number)
+        + `combined_obligations` (required, number)
+        + `combined_outlays` (required, number)
         + `results` (required, array[FederalAccount], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -66,6 +69,9 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                     "hasNext": true,
                     "hasPrevious": false,
                 },
+                "combined_total_budgetary_resources": 66846596521.0,
+                "combined_obligations": 56046596521.0,
+                "combined_outlays": 49589399932.2,
                 "results": [
                     "code": "086-0302",
                     "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
@@ -85,9 +91,9 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                             "total_outlays": 82750874.0
                         }
                     ],
-                    "total_budgetary_resources": 96137999460.0,
-                    "total_obligations": 56137999460.0,
-                    "total_outlays": 49723622085.15
+                    "total_budgetary_resources": 66846596521.0,
+                    "total_obligations": 56046596521.0,
+                    "total_outlays": 49589399932.2
                 ],
                 "messages": []
             }

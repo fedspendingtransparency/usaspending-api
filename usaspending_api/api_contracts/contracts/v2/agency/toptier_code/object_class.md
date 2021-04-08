@@ -47,6 +47,8 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
+        + `combined_obligations` (required, number)
+        + `combined_outlays` (required, number)
         + `results` (required, array[ObjectClass], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -65,21 +67,23 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
                     "hasPrevious": false,
                     "count": 10
                 },
+                "combined_total_obligations": 350.0, 
+                "combined_total_outlays": 200.36
                 "results": [
                     {
                         "name": "Personnel and compensation benefits",
-                        "total_obligations": 12329194065.31,
-                        "total_outlays": 13196218848.88
+                        "total_obligations": 350.0,
+                        "total_outlays": 200.36
                         "children": [
                             {
                                 "name": "Full-time permanent",
-                                "total_obligations": 309194065.19,
-                                "total_outlays": 196218848.0
+                                "total_obligations": 150.0,
+                                "total_outlays": 100.26
                             },
                             {
                                 "name": "Other than full-time permanent",
-                                "total_obligations": 20194065.33,
-                                "total_outlays": 6218848.63
+                                "total_obligations": 200.0,
+                                "total_outlays": 100.10
                             }
                         ]
                     }
