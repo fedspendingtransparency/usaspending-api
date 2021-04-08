@@ -32,7 +32,6 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
             + Default: `total_obligations`
             + Members
                 + `name`
-                + `total_budgetary_resources`
                 + `total_obligations`
                 + `total_outlays`
         + `page` (optional, number)
@@ -69,19 +68,16 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
                 "results": [
                     {
                         "name": "Personnel and compensation benefits",
-                        "total_budgetary_resources": 32329194065.31,
                         "total_obligations": 12329194065.31,
                         "total_outlays": 13196218848.88
                         "children": [
                             {
                                 "name": "Full-time permanent",
-                                "total_budgetary_resources": 329194065.76,
                                 "total_obligations": 309194065.19,
                                 "total_outlays": 196218848.0
                             },
                             {
                                 "name": "Other than full-time permanent",
-                                "total_budgetary_resources": 29194065.52,
                                 "total_obligations": 20194065.33,
                                 "total_outlays": 6218848.63
                             }
@@ -95,14 +91,12 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
 
 ## MajorObjectClass (object)
 + `name` (required, string)
-+ `total_budgetary_resources` (required, number)
 + `total_obligations` (required, number)
 + `total_outlays` (required, number)
 + `children` (required, array[ObjectClass], fixed-type)
 
 ## ObjectClass (object)
 + `name` (required, string)
-+ `total_budgetary_resources` (required, number)
 + `total_obligations` (required, number)
 + `total_outlays` (required, number)
 

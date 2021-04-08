@@ -32,7 +32,6 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
             + Default: `total_obligations`
             + Members
                 + `name`
-                + `total_budgetary_resources`
                 + `total_obligations`
                 + `total_outlays`
         + `page` (optional, number)
@@ -69,13 +68,11 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                 "results": [
                     {
                         "name": "TI INFORMATION TECHNOLOGY",
-                        "total_budgetary_resources": 28482.4,
                         "total_obligations": 18482.4,
                         "total_outlays": -236601.1
                     },
                     {
                         "name": "CONTRACT RENEWALS",
-                        "total_budgetary_resources": 325.26,
                         "total_obligations": 225.26,
                         "total_outlays": -161252.0
                     }
@@ -87,7 +84,6 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 
 ## ProgramActivity (object)
 + `name` (required, string)
-+ `total_budgetary_resources` (required, number)
 + `total_obligations` (required, number)
 + `total_outlays` (required, number)
 
