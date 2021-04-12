@@ -54,7 +54,7 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
             Total Obligations associated with any Disaster Emergency Fund Code
         + `combined_outlays` (required, number)
             Total Outlays associated with any Disaster Emergency Fund Code
-        + `results` (required, array[FederalAccount], fixed-type)
+        + `results` (required, array[DisasterEmergencyFundCode], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
