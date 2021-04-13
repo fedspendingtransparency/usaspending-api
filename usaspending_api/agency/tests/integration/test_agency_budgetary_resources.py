@@ -16,6 +16,7 @@ def data_fixture():
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=1995,
         submission_fiscal_month=2,
+        submission_fiscal_quarter=1,
         submission_reveal_date="2020-10-09",
     )
     ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
@@ -134,6 +135,7 @@ def data_fixture():
             "submissions.DABSSubmissionWindowSchedule",
             submission_fiscal_year=fy,
             submission_fiscal_month=12,
+            submission_fiscal_quarter=4,
             submission_reveal_date="2020-10-09",
             is_quarter=True,
         )

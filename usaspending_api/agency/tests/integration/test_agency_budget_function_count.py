@@ -8,7 +8,8 @@ url = "/api/v2/agency/{code}/budget_function/count/{filter}"
 
 
 @pytest.mark.django_db
-def test_budget_function_count_success(client, agency_account_data):
+def test_budget_function_count_success(client, monkeypatch, agency_account_data, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
     resp = client.get(url.format(code="007", filter=""))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["budget_function_count"] == 3

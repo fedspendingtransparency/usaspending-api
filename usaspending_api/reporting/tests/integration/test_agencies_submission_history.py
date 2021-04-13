@@ -12,6 +12,15 @@ url = "/api/v2/reporting/agencies/{agency}/{fy}/{period}/submission_history/"
 def setup_test_data(db):
     """ Insert data into DB for testing """
     mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2020,
+        submission_fiscal_month=4,
+        submission_fiscal_quarter=2,
+        is_quarter=False,
+        submission_reveal_date="2020-02-01",
+        period_start_date="2020-01-01",
+    )
+    mommy.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         reporting_fiscal_year=2019,
@@ -104,7 +113,7 @@ def test_multiple_submissions(client, setup_test_data):
 
 
 def test_no_data(client, setup_test_data):
-    resp = client.get(url.format(agency="222", fy=2021, period=12))
+    resp = client.get(url.format(agency="222", fy=2021, period=3))
     assert resp.status_code == status.HTTP_204_NO_CONTENT
 
 
