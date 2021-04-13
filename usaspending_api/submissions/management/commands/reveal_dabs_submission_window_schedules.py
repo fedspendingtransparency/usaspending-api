@@ -3,7 +3,7 @@ import pytz
 
 from datetime import datetime
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction
+from django.db import transaction
 
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
