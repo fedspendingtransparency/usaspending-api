@@ -1,5 +1,6 @@
 import logging
 import csv
+from datetime import datetime
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
@@ -43,7 +44,7 @@ select
     period_start as submission_start_date,
     certification_deadline as certification_due_date,
     publish_deadline as submission_due_date,
-    publish_deadline as submission_reveal_date,
+    -- publish_deadline as submission_reveal_date,
     year as submission_fiscal_year,
     (period + 2) / 3 as submission_fiscal_quarter,
     period as submission_fiscal_month,
@@ -66,7 +67,7 @@ select
     period_start as submission_start_date,
     certification_deadline as certification_due_date,
     certification_deadline as submission_due_date,
-    certification_deadline as submission_reveal_date,
+    -- certification_deadline as submission_reveal_date,
     year as submission_fiscal_year,
     (period + 2) / 3 as submission_fiscal_quarter,
     period as submission_fiscal_month,
@@ -76,6 +77,9 @@ from
 where
     period % 3 = 0
 """
+
+
+FUTURE_DATE = datetime.strptime('9999-12-31 00:00:00Z', '%Y-%m-%d %H:%M:%SZ')
 
 
 class Command(BaseCommand):
@@ -100,16 +104,33 @@ class Command(BaseCommand):
 
         if file_path:
             logger.info("Input file provided. Reading schedule from file.")
-            submission_schedule_objs = self.read_schedules_from_csv(file_path)
+            incoming_schedule_objs = self.read_schedules_from_csv(file_path)
         else:
             logger.info("No input file provided. Generating schedule from broker.")
-            submission_schedule_objs = self.generate_schedules_from_broker()
+            incoming_schedule_objs = self.generate_schedules_from_broker()
+
+        logger.info("Loading existing DABS Submission Window Schedules")
+        existing_schedules = DABSSubmissionWindowSchedule.objects.all()
+
+        # Iterate over each incoming schedule object to find a matching existing
+        # schedule. If there is a match, use the existing submission_reveal_date
+        for incoming_schedule in incoming_schedule_objs:
+            for existing_schedule in existing_schedules:
+                if int(incoming_schedule.id) == existing_schedule.id:
+                    incoming_schedule.submission_reveal_date = existing_schedule.submission_reveal_date
+            incoming_submission_due_date = datetime.strptime(incoming_schedule.submission_due_date, '%Y-%m-%d %H:%M:%SZ')
+
+            # Hide future submission windows by setting the reveal date to a distant
+            # future date. Another command #TODO <command_name> is used to set
+            # the reveal date when it is ready.
+            if incoming_submission_due_date > datetime.now():
+                incoming_schedule.submission_reveal_date = FUTURE_DATE
 
         logger.info("Deleting existing DABS Submission Window Schedule")
         DABSSubmissionWindowSchedule.objects.all().delete()
 
         logger.info("Inserting DABS Submission Window Schedule into website")
-        DABSSubmissionWindowSchedule.objects.bulk_create(submission_schedule_objs)
+        DABSSubmissionWindowSchedule.objects.bulk_create(incoming_schedule_objs)
 
         logger.info("DABS Submission Window Schedule loader finished successfully!")
 
