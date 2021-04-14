@@ -19,7 +19,7 @@ from django.db.models import (
     When,
 )
 from usaspending_api.common.helpers.orm_helpers import FiscalYear, ConcatAll
-from usaspending_api.awards.models import Award, FinancialAccountsByAwards
+from usaspending_api.awards.models import Award, FinancialAccountsByAwards, TransactionFABS
 from usaspending_api.disaster.v2.views.disaster_base import (
     filter_by_latest_closed_periods,
     final_submissions_for_all_fy,
@@ -266,6 +266,24 @@ def universal_award_matview_annotations():
             output_field=TextField(),
         ),
         "award_latest_action_date_fiscal_year": FiscalYear(F("award__latest_transaction__action_date")),
+        "cfda_numbers": Subquery(
+            TransactionFABS.objects.filter(transaction__award_id=OuterRef("award_id")).values("cfda_number").annotate(
+                value=ExpressionWrapper(
+                    ConcatAll(
+                        F("cfda_number"),
+                        Value(": "),
+                        F("cfda_title")
+                    ),
+                    output_field=TextField(),
+                ),
+                sum=Sum(Coalesce("federal_action_obligation", "original_loan_subsidy_cost"))
+            )
+            .order_by("sum")
+            .values("transaction__award_id")
+            .annotate(total=StringAgg("value", "; ", distinct=True))
+            .values("total"),
+            output_field=TextField(),
+        ),
     }
     return annotation_fields
 
