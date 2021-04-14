@@ -25,13 +25,12 @@ class RecipientList(AgencyBase):
     def get_recipients_queryset(self):
         SQL="""
         with recipient_cte as (
-            select funding_agency_id, recipient_hash, sum(generated_pragmatic_obligation) as recipient_amount
+            select awarding_agency_id, recipient_hash, sum(generated_pragmatic_obligation) as recipient_amount
             from transaction_search
             where fiscal_year={fiscal_year} and
-                funding_agency_id={agency_id} and
-                action_date >= '2007-10-01' and
-                recipient_hash is not null
-            group by funding_agency_id, recipient_hash
+                awarding_agency_id={agency_id} and
+                action_date >= '2007-10-01'
+            group by awarding_agency_id, recipient_hash
         )
         select
         count(recipient_hash),
@@ -40,7 +39,7 @@ class RecipientList(AgencyBase):
         percentile_disc(0.25) within group (order by recipient_cte.recipient_amount) as "25th_percentile",
         percentile_disc(0.5) within group (order by recipient_cte.recipient_amount) as "50th_percentile",
         percentile_disc(0.75) within group (order by recipient_cte.recipient_amount) as "75th_percentile"
-        from recipient_cte group by funding_agency_id;
+        from recipient_cte group by awarding_agency_id;
         """.format(fiscal_year=self.fiscal_year, agency_id=self.agency_id)
 
         results = execute_sql_to_ordered_dictionary(SQL)
