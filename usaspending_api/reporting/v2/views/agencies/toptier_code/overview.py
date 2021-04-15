@@ -12,7 +12,7 @@ from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingA
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-class AgencyOverview(AgencyBase, PaginationMixin):
+class AgencyOverview(PaginationMixin, AgencyBase):
     """Returns an overview of the specified agency's submission data"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/toptier_code/overview.md"

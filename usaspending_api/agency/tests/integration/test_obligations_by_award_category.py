@@ -14,7 +14,16 @@ url = "/api/v2/agency/{toptier_code}/obligations_by_award_category/{filter}"
 def transaction_search_1():
 
     # Submission
-    dsws = mommy.make("submissions.DABSSubmissionWindowSchedule", id=444, submission_reveal_date="2020-10-09")
+    dsws = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date="2021-04-09",
+        submission_fiscal_year=2021,
+        submission_fiscal_month=7,
+        submission_fiscal_quarter=3,
+        is_quarter=False,
+        period_start_date="2021-03-01",
+        period_end_date="2021-04-01",
+    )
     mommy.make("submissions.SubmissionAttributes", toptier_code="001", submission_window=dsws)
     mommy.make("submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws)
 
