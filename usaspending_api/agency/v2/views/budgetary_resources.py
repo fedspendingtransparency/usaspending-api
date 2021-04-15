@@ -43,6 +43,24 @@ class BudgetaryResources(AgencyBase):
         )
         return results
 
+    def get_periods_by_year(self, fiscal_year):
+        return [
+            {
+                "period": abb["submission__reporting_fiscal_period"],
+                "obligated": abb["obligations_incurred_total_by_tas_cpe__sum"],
+            }
+            for abb in (
+                AppropriationAccountBalances.objects.filter(
+                    submission__reporting_fiscal_year=fiscal_year,
+                    treasury_account_identifier__funding_toptier_agency=self.toptier_agency,
+                    submission__submission_window__submission_reveal_date__lte=now(),
+                )
+                .values("submission__reporting_fiscal_period")
+                .annotate(Sum("obligations_incurred_total_by_tas_cpe"))
+                .order_by("submission__reporting_fiscal_period")
+            )
+        ]
+
     def get_agency_budgetary_resources(self):
         aab = (
             AppropriationAccountBalances.objects.filter(
@@ -56,21 +74,7 @@ class BudgetaryResources(AgencyBase):
                 agency_total_obligated=Sum("obligations_incurred_total_by_tas_cpe"),
             )
         )
-        aab_periods = [
-            {
-                "period": abb["submission__reporting_fiscal_period"],
-                "obligated": abb["obligations_incurred_total_by_tas_cpe__sum"],
-            }
-            for abb in (
-                AppropriationAccountBalances.objects.filter(
-                    submission__reporting_fiscal_year=self.fiscal_year,
-                    treasury_account_identifier__funding_toptier_agency=self.toptier_agency,
-                )
-                .values("submission__reporting_fiscal_period")
-                .annotate(Sum("obligations_incurred_total_by_tas_cpe"))
-                .order_by("submission__reporting_fiscal_period")
-            )
-        ]
+
         fbr = self.get_total_federal_budgetary_resources()
         resources = {}
         for z in fbr:
@@ -81,6 +85,7 @@ class BudgetaryResources(AgencyBase):
                 "agency_budgetary_resources": x["agency_budgetary_resources"],
                 "agency_total_obligated": x["agency_total_obligated"],
                 "total_budgetary_resources": resources.get(x["submission__reporting_fiscal_year"]),
+                "agency_obligation_by_period": self.get_periods_by_year(x["submission__reporting_fiscal_year"]),
             }
             for x in aab
         ]
@@ -93,9 +98,7 @@ class BudgetaryResources(AgencyBase):
                         "agency_budgetary_resources": None,
                         "agency_total_obligated": None,
                         "total_budgetary_resources": resources.get(year),
+                        "agency_obligation_by_period": [],
                     }
                 )
-        for x in results:
-            if x["fiscal_year"] == self.fiscal_year:
-                x.update({"agency_obligation_by_period": aab_periods})
         return sorted(results, key=lambda x: x["fiscal_year"], reverse=True)
