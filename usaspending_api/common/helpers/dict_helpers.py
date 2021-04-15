@@ -1,4 +1,6 @@
 from collections import OrderedDict
+from typing import List
+
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes
 from usaspending_api.search.filters.mixins.psc import PSCCodesMixin
@@ -76,3 +78,15 @@ def order_nested_object(nested_object):
         )
     else:
         return nested_object
+
+
+def update_list_of_dictionaries(to_update: List[dict], update_with: List[dict], common_term: str) -> dict:
+    """
+    Returns a copy of the "to_update" dictionary with the updates from the "update_with" dict.
+    The "common_term" is what the two list of dictionaries will be updated around; assumes that the common_term
+    should be unique to a list of dictionaries.
+    """
+    to_update = {val[common_term]: val for val in to_update}
+    update_with = {val[common_term]: val for val in update_with}
+    to_update.update(update_with)
+    return [val for val in to_update.values()]

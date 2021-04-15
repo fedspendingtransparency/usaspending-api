@@ -84,6 +84,7 @@ def test_calculate_last_completed_fiscal_quarter():
         submission_fiscal_year=2000,
         submission_reveal_date=now,
         submission_fiscal_quarter=1,
+        submission_fiscal_month=3,
         is_quarter=True,
     )
     mommy.make(
@@ -91,6 +92,7 @@ def test_calculate_last_completed_fiscal_quarter():
         submission_fiscal_year=2000,
         submission_reveal_date=now,
         submission_fiscal_quarter=2,
+        submission_fiscal_month=4,
         is_quarter=False,
     )
     mommy.make(
@@ -98,6 +100,7 @@ def test_calculate_last_completed_fiscal_quarter():
         submission_fiscal_year=2010,
         submission_reveal_date=tomorrow,
         submission_fiscal_quarter=2,
+        submission_fiscal_month=6,
         is_quarter=True,
     )
     mommy.make(
@@ -105,6 +108,7 @@ def test_calculate_last_completed_fiscal_quarter():
         submission_fiscal_year=current_fy,
         submission_reveal_date=yesterday,
         submission_fiscal_quarter=3,
+        submission_fiscal_month=9,
         is_quarter=True,
     )
     mommy.make(
@@ -112,6 +116,7 @@ def test_calculate_last_completed_fiscal_quarter():
         submission_fiscal_year=current_fy,
         submission_reveal_date=now,
         submission_fiscal_quarter=4,
+        submission_fiscal_month=12,
         is_quarter=True,
     )
 
