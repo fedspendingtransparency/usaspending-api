@@ -50,9 +50,9 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
             Information used for pagination of results.
         + `combined_total_budgetary_resources` (required, number)
             Total Budgetary Resources associated with any Disaster Emergency Fund Code
-        + `combined_obligations` (required, number)
+        + `combined_obligated_amount` (required, number)
             Total Obligations associated with any Disaster Emergency Fund Code
-        + `combined_outlays` (required, number)
+        + `combined_gross_outlay_amount` (required, number)
             Total Outlays associated with any Disaster Emergency Fund Code
         + `results` (required, array[DisasterEmergencyFundCode], fixed-type)
         + `messages` (required, array[string], fixed-type)
@@ -71,8 +71,8 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
                     "hasPrevious": false,
                 },
                 "combined_total_budgetary_resources": 66846596521.0,
-                "combined_obligations": 76046596521.0,
-                "combined_outlays": 39589399932.2,
+                "combined_obligated_amount": 76046596521.0,
+                "combined_gross_outlay_amount": 39589399932.2,
                 "results": [
                     "code": "N",
                     "public_law": "Emergency P.L. 116-136",

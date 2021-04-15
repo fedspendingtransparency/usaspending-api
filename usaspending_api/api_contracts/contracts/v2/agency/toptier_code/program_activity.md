@@ -47,9 +47,9 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
-        + `combined_obligations` (required, number)
+        + `combined_obligated_amount` (required, number)
             Total Obligations associated with any Program Activity
-        + `combined_outlays` (required, number)
+        + `combined_gross_outlay_amount` (required, number)
             Total Outlays associated with any Program Activity
         + `results` (required, array[ProgramActivity], fixed-type)
         + `messages` (required, array[string], fixed-type)
@@ -69,8 +69,8 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                     "hasPrevious": false,
                     "count": 10
                 },
-                "combined_obligations": 36964.8,
-                "combined_outlays": -397853.1,
+                "combined_obligated_amount": 36964.8,
+                "combined_gross_outlay_amount": -397853.1,
                 "results": [
                     {
                         "name": "TI INFORMATION TECHNOLOGY",

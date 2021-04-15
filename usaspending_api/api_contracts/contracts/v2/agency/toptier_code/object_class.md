@@ -47,9 +47,9 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
-        + `combined_obligations` (required, number)
+        + `combined_obligated_amount` (required, number)
             Total Obligations associated with any Object Class
-        + `combined_outlays` (required, number)
+        + `combined_gross_outlay_amount` (required, number)
             Total Outlays associated with any Object Class
         + `results` (required, array[ObjectClass], fixed-type)
         + `messages` (required, array[string], fixed-type)
