@@ -17,8 +17,10 @@ second of the day (in UTC time) on which queries surfacing data submitted for th
 window should allow the data to be displayed. i.e. if the current date (now() in UTC) is greater
 than or equal to this date and time, show the data related to this submission. If not, don't show it.
 
-Reveal date is derived from the Broker submission_window_schedule.publish_deadline for monthly
-submissions and submission_window_schedule.certification_deadline for quarterly submissions.
+The reveal date is originally set to a future date '9999-12-01'. When a schedules respective
+'due date' (submission_due_date for monthly and certification_deadline for quarterly) has been passed
+its reveal date is set to the current datetime by the 'reveal_dabs_submission_window_schedule'
+command. Any reveal dates on schedules with a 'due date' in the past are not updated.
 
 It is logically intended to be the "next day" after the DABS submission deadline communicated to
 Agency Submitters. That deadline is exactly midnight Pacific Time on the schedule communicated to
@@ -33,7 +35,7 @@ deadline communicated to Agency Submitters.
 """
 
 
-#  SQL to create Month Period Schedules using broker table
+# SQL to create Month Period Schedules using broker table
 # Use all periods after Period 9, Year 2020 from table
 # Submission Due Date comes from 'publish_deadline' column
 MONTH_SCHEDULE_SQL = """
@@ -44,7 +46,6 @@ select
     period_start as submission_start_date,
     certification_deadline as certification_due_date,
     publish_deadline as submission_due_date,
-    -- publish_deadline as submission_reveal_date,
     year as submission_fiscal_year,
     (period + 2) / 3 as submission_fiscal_quarter,
     period as submission_fiscal_month,
@@ -67,7 +68,6 @@ select
     period_start as submission_start_date,
     certification_deadline as certification_due_date,
     certification_deadline as submission_due_date,
-    -- certification_deadline as submission_reveal_date,
     year as submission_fiscal_year,
     (period + 2) / 3 as submission_fiscal_quarter,
     period as submission_fiscal_month,
@@ -79,7 +79,7 @@ where
 """
 
 
-FUTURE_DATE = datetime.strptime('9999-12-31 00:00:00Z', '%Y-%m-%d %H:%M:%SZ')
+FUTURE_DATE = datetime.strptime("9999-12-31 00:00:00Z", "%Y-%m-%d %H:%M:%SZ")
 
 
 class Command(BaseCommand):
@@ -118,7 +118,13 @@ class Command(BaseCommand):
             for existing_schedule in existing_schedules:
                 if int(incoming_schedule.id) == existing_schedule.id:
                     incoming_schedule.submission_reveal_date = existing_schedule.submission_reveal_date
-            incoming_submission_due_date = datetime.strptime(incoming_schedule.submission_due_date, '%Y-%m-%d %H:%M:%SZ')
+
+            if incoming_schedule.is_quarter == "True":
+                incoming_submission_due_date = incoming_schedule.certification_due_date
+            else:
+                incoming_submission_due_date = incoming_schedule.submission_due_date
+
+            incoming_submission_due_date = datetime.strptime(incoming_submission_due_date, "%Y-%m-%d %H:%M:%SZ")
 
             # Hide future submission windows by setting the reveal date to a distant
             # future date. Another command #TODO <command_name> is used to set
