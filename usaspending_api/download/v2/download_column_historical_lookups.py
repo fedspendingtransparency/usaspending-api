@@ -716,8 +716,7 @@ query_paths = {
                     "primary_place_of_performance_foreign_location",
                     "award__latest_transaction__assistance_data__place_of_performance_forei",
                 ),
-                ("cfda_numbers", None),
-                # ("cfda_titles", None),
+                ("cfda_numbers_and_titles", None),  # Annotation is used to create this column
                 ("assistance_type_code", "award__latest_transaction__assistance_data__assistance_type"),
                 ("assistance_type_description", "award__latest_transaction__assistance_data__assistance_type_desc"),
                 ("award_description", "award__description"),
@@ -1475,8 +1474,7 @@ query_paths = {
                     "broker_subaward__place_of_perform_country_na",
                 ),
                 ("prime_award_description", "broker_subaward__award_description"),
-                ("prime_award_cfda_number", "broker_subaward__cfda_numbers"),
-                ("prime_award_cfda_title", "broker_subaward__cfda_titles"),
+                ("prime_award_cfda_numbers_and_titles", None),  # Annotation is used to create this column
                 ("subaward_type", "broker_subaward__subaward_type"),
                 ("subaward_fsrs_report_id", "broker_subaward__internal_id"),
                 ("subaward_fsrs_report_year", "broker_subaward__subaward_report_year"),
