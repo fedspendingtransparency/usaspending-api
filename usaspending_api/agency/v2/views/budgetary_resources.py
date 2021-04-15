@@ -43,23 +43,39 @@ class BudgetaryResources(AgencyBase):
         )
         return results
 
-    def get_periods_by_year(self, fiscal_year):
-        return [
-            {
-                "period": abb["submission__reporting_fiscal_period"],
-                "obligated": abb["obligations_incurred_total_by_tas_cpe__sum"],
-            }
-            for abb in (
-                AppropriationAccountBalances.objects.filter(
-                    submission__reporting_fiscal_year=fiscal_year,
-                    treasury_account_identifier__funding_toptier_agency=self.toptier_agency,
-                    submission__submission_window__submission_reveal_date__lte=now(),
-                )
-                .values("submission__reporting_fiscal_period")
-                .annotate(Sum("obligations_incurred_total_by_tas_cpe"))
-                .order_by("submission__reporting_fiscal_period")
+    def get_periods_by_year(self):
+        periods = {}
+        results = (
+            AppropriationAccountBalances.objects.filter(
+                treasury_account_identifier__funding_toptier_agency=self.toptier_agency,
+                submission__submission_window__submission_reveal_date__lte=now(),
             )
-        ]
+            .values("submission__reporting_fiscal_period")
+            .annotate(
+                sum=Sum("obligations_incurred_total_by_tas_cpe"), fiscal_year=F("submission__reporting_fiscal_year")
+            )
+        )
+
+        for abb in results:
+            if periods.get(abb["fiscal_year"]) is not None:
+                periods[abb["fiscal_year"]].append(
+                    {
+                        "period": abb["submission__reporting_fiscal_period"],
+                        "obligated": abb["sum"],
+                    }
+                )
+            else:
+                periods.update(
+                    {
+                        abb["fiscal_year"]: [
+                            {
+                                "period": abb["submission__reporting_fiscal_period"],
+                                "obligated": abb["sum"],
+                            }
+                        ]
+                    }
+                )
+        return periods
 
     def get_agency_budgetary_resources(self):
         aab = (
@@ -79,13 +95,16 @@ class BudgetaryResources(AgencyBase):
         resources = {}
         for z in fbr:
             resources.update({z["fiscal_year"]: z["total_budgetary_resources"]})
+        periods = self.get_periods_by_year()
         results = [
             {
                 "fiscal_year": x["submission__reporting_fiscal_year"],
                 "agency_budgetary_resources": x["agency_budgetary_resources"],
                 "agency_total_obligated": x["agency_total_obligated"],
                 "total_budgetary_resources": resources.get(x["submission__reporting_fiscal_year"]),
-                "agency_obligation_by_period": self.get_periods_by_year(x["submission__reporting_fiscal_year"]),
+                "agency_obligation_by_period": sorted(
+                    periods[x["submission__reporting_fiscal_year"]], key=lambda z: z["period"]
+                ),
             }
             for x in aab
         ]
