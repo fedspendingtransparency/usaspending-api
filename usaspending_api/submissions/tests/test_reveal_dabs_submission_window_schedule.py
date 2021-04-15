@@ -18,7 +18,7 @@ def test_not_ready_to_reveal(client):
         id=1,
         certification_due_date=FUTURE_DATE,
         submission_reveal_date=FUTURE_DATE,
-        is_quarter=True
+        is_quarter=True,
     )
 
     call_command("reveal_dabs_submission_window_schedule")
@@ -34,7 +34,7 @@ def test_ready_to_reveal(client):
         "submissions.DABSSubmissionWindowSchedule",
         id=1,
         submission_reveal_date=FUTURE_DATE,
-        certification_due_date=PAST_DATE
+        certification_due_date=PAST_DATE,
     )
 
     call_command("reveal_dabs_submission_window_schedule")
@@ -49,7 +49,7 @@ def test_already_revealed(client):
         "submissions.DABSSubmissionWindowSchedule",
         id=1,
         submission_reveal_date=PAST_DATE,
-        certification_due_date=PAST_DATE
+        certification_due_date=PAST_DATE,
     )
 
     call_command("reveal_dabs_submission_window_schedule")
@@ -68,7 +68,7 @@ def test_quarter_vs_month(client):
         submission_reveal_date=FUTURE_DATE,
         certification_due_date=PAST_DATE,
         submission_due_date=FUTURE_DATE,
-        is_quarter=False
+        is_quarter=False,
     )
 
     # Ready to reveal month
@@ -78,7 +78,7 @@ def test_quarter_vs_month(client):
         submission_reveal_date=FUTURE_DATE,
         certification_due_date=FUTURE_DATE,
         submission_due_date=PAST_DATE,
-        is_quarter=False
+        is_quarter=False,
     )
 
     # Not ready to reveal quarter
@@ -88,7 +88,7 @@ def test_quarter_vs_month(client):
         submission_reveal_date=FUTURE_DATE,
         certification_due_date=FUTURE_DATE,
         submission_due_date=PAST_DATE,
-        is_quarter=True
+        is_quarter=True,
     )
 
     # Ready to reveal quarter
@@ -98,7 +98,7 @@ def test_quarter_vs_month(client):
         submission_reveal_date=FUTURE_DATE,
         certification_due_date=PAST_DATE,
         submission_due_date=FUTURE_DATE,
-        is_quarter=True
+        is_quarter=True,
     )
 
     call_command("reveal_dabs_submission_window_schedule")
