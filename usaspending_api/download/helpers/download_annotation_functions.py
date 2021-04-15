@@ -268,15 +268,12 @@ def universal_award_matview_annotations():
         "award_latest_action_date_fiscal_year": FiscalYear(F("award__latest_transaction__action_date")),
         "cfda_numbers_and_titles": Subquery(
             TransactionFABS.objects.filter(transaction__award_id=OuterRef("award_id"))
-            .values("cfda_number")
             .annotate(
                 value=ExpressionWrapper(
                     ConcatAll(F("cfda_number"), Value(": "), F("cfda_title")),
                     output_field=TextField(),
                 ),
-                sum=Sum(Coalesce("federal_action_obligation", "original_loan_subsidy_cost")),
             )
-            .order_by("sum")
             .values("transaction__award_id")
             .annotate(total=StringAgg("value", "; ", distinct=True))
             .values("total"),
@@ -581,15 +578,12 @@ def subaward_annotations():
         "prime_award_latest_action_date_fiscal_year": FiscalYear("award__latest_transaction__action_date"),
         "prime_award_cfda_numbers_and_titles": Subquery(
             TransactionFABS.objects.filter(transaction__award_id=OuterRef("award_id"))
-            .values("cfda_number")
             .annotate(
                 value=ExpressionWrapper(
                     ConcatAll(F("cfda_number"), Value(": "), F("cfda_title")),
                     output_field=TextField(),
                 ),
-                sum=Sum(Coalesce("federal_action_obligation", "original_loan_subsidy_cost")),
             )
-            .order_by("sum")
             .values("transaction__award_id")
             .annotate(total=StringAgg("value", "; ", distinct=True))
             .values("total"),
