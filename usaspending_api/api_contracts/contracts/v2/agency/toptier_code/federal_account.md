@@ -29,12 +29,12 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                 + `asc`
         + `sort` (optional, enum[string])
             Optional parameter indicating what value results should be sorted by.
-            + Default: `total_obligations`
+            + Default: `obligated_amount`
             + Members
                 + `name`
                 + `total_budgetary_resources`
-                + `total_obligations`
-                + `total_outlays`
+                + `obligated_amount`
+                + `gross_outlay_amount`
         + `page` (optional, number)
             The page number that is currently returned.
             + Default: 1
@@ -83,20 +83,20 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                             "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
                             "code": "086-X-0302-000",
                             "total_budgetary_resources": 65926391527.0,
-                            "total_obligations": 55926391527.0,
-                            "total_outlays": 49506649058.15
+                            "obligated_amount": 55926391527.0,
+                            "gross_outlay_amount": 49506649058.15
                         },
                         {
                             "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
                             "code": "086-2019/2020-0302-000",
                             "total_budgetary_resources": 920204994.0,
-                            "total_obligations": 120204994.0,
-                            "total_outlays": 82750874.0
+                            "obligated_amount": 120204994.0,
+                            "gross_outlay_amount": 82750874.0
                         }
                     ],
                     "total_budgetary_resources": 66846596521.0,
-                    "total_obligations": 56046596521.0,
-                    "total_outlays": 49589399932.2
+                    "obligated_amount": 56046596521.0,
+                    "gross_outlay_amount": 49589399932.2
                 ],
                 "messages": []
             }
@@ -107,16 +107,16 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 + `name` (required, string)
 + `code` (required, string)
 + `total_budgetary_resources` (required, number)
-+ `total_obligations` (required, number)
-+ `total_outlays` (required, number)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 + `children` (required, array[TreasuryAccount], fixed-type)
 
 ## TreasuryAccount (object
 + `name` (required, string)
 + `code` (required, string)
 + `total_budgetary_resources` (required, number)
-+ `total_obligations` (required, number)
-+ `total_outlays` (required, number)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## PageMetadata (object)
 + `page` (required, number)

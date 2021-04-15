@@ -29,11 +29,11 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                 + `asc`
         + `sort` (optional, enum[string])
             Optional parameter indicating what value results should be sorted by.
-            + Default: `total_obligations`
+            + Default: `obligated_amount`
             + Members
                 + `name`
-                + `total_obligations`
-                + `total_outlays`
+                + `obligated_amount`
+                + `gross_outlay_amount`
         + `page` (optional, number)
             The page number that is currently returned.
             + Default: 1
@@ -74,13 +74,13 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                 "results": [
                     {
                         "name": "TI INFORMATION TECHNOLOGY",
-                        "total_obligations": 18482.4,
-                        "total_outlays": -236601.1
+                        "obligated_amount": 18482.4,
+                        "gross_outlay_amount": -236601.1
                     },
                     {
                         "name": "CONTRACT RENEWALS",
-                        "total_obligations": 18482.4,
-                        "total_outlays": -161252.0
+                        "obligated_amount": 18482.4,
+                        "gross_outlay_amount": -161252.0
                     }
                 ],
                 "messages": []
@@ -90,8 +90,8 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 
 ## ProgramActivity (object)
 + `name` (required, string)
-+ `total_obligations` (required, number)
-+ `total_outlays` (required, number)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## PageMetadata (object)
 + `limit` (required, number)

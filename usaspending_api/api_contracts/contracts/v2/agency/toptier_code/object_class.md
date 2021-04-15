@@ -29,11 +29,11 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
                 + `asc`
         + `sort` (optional, enum[string])
             Optional parameter indicating what value results should be sorted by.
-            + Default: `total_obligations`
+            + Default: `obligated_amount`
             + Members
                 + `name`
-                + `total_obligations`
-                + `total_outlays`
+                + `obligated_amount`
+                + `gross_outlay_amount`
         + `page` (optional, number)
             The page number that is currently returned.
             + Default: 1
@@ -69,23 +69,23 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
                     "hasPrevious": false,
                     "count": 10
                 },
-                "combined_total_obligations": 350.0, 
-                "combined_total_outlays": 200.36
+                "combined_obligated_amount": 350.0, 
+                "combined_gross_outlay_amount": 200.36
                 "results": [
                     {
                         "name": "Personnel and compensation benefits",
-                        "total_obligations": 350.0,
-                        "total_outlays": 200.36
+                        "obligated_amount": 350.0,
+                        "gross_outlay_amount": 200.36
                         "children": [
                             {
                                 "name": "Full-time permanent",
-                                "total_obligations": 150.0,
-                                "total_outlays": 100.26
+                                "obligated_amount": 150.0,
+                                "gross_outlay_amount": 100.26
                             },
                             {
                                 "name": "Other than full-time permanent",
-                                "total_obligations": 200.0,
-                                "total_outlays": 100.10
+                                "obligated_amount": 200.0,
+                                "gross_outlay_amount": 100.10
                             }
                         ]
                     }
@@ -97,14 +97,14 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
 
 ## MajorObjectClass (object)
 + `name` (required, string)
-+ `total_obligations` (required, number)
-+ `total_outlays` (required, number)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 + `children` (required, array[ObjectClass], fixed-type)
 
 ## ObjectClass (object)
 + `name` (required, string)
-+ `total_obligations` (required, number)
-+ `total_outlays` (required, number)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## PageMetadata (object)
 + `limit` (required, number)

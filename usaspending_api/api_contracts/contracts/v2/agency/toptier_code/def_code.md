@@ -29,12 +29,12 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
                 + `asc`
         + `sort` (optional, enum[string])
             Optional parameter indicating what value results should be sorted by.
-            + Default: `total_obligations`
+            + Default: `obligated_amount`
             + Members
                 + `name`
                 + `total_budgetary_resources`
-                + `total_obligations`
-                + `total_outlays`
+                + `obligated_amount`
+                + `gross_outlay_amount`
         + `page` (optional, number)
             The page number that is currently returned.
             + Default: 1
@@ -78,8 +78,8 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
                     "public_law": "Emergency P.L. 116-136",
                     "title": "Coronavirus Aid, Relief, and Economic Security Act or the CARES Act",
                     "total_budgetary_resources": 66846596521.0,
-                    "total_obligations": 76046596521.0,
-                    "total_outlays": 39589399932.2
+                    "obligated_amount": 76046596521.0,
+                    "gross_outlay_amount": 39589399932.2
                 ],
                 "messages": []
             }
@@ -91,8 +91,8 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
 + `public_law` (required, string)
 + `title` (required, string, nullable)
 + `total_budgetary_resources` (required, number)
-+ `total_obligations` (required, number)
-+ `total_outlays` (required, number)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## PageMetadata (object)
 + `page` (required, number)
