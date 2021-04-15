@@ -7,13 +7,13 @@ from datetime import datetime, timezone
 
 url = "/api/v2/reporting/agencies/overview/"
 
-CURRENT_FISCAL_YEAR = 2021
+CURRENT_FISCAL_YEAR = 2020
 CURRENT_LAST_QUARTER = 2
 CURRENT_LAST_PERIOD = 6
 
 assurance_statement_1 = (
     f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
-    "2019/P06/123%20-%20Test%20Agency%20(ABC)/2019-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
+    "2018/P06/123%20-%20Test%20Agency%20(ABC)/2018-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
 )
 assurance_statement_2 = (
     f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
@@ -35,13 +35,15 @@ def setup_test_data(db):
         submission_fiscal_year=CURRENT_FISCAL_YEAR,
         submission_reveal_date=datetime.now(timezone.utc),
         submission_fiscal_quarter=CURRENT_LAST_QUARTER,
+        submission_fiscal_month=CURRENT_LAST_PERIOD,
         is_quarter=True,
     )
     dabs = mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
-        submission_fiscal_year=2019,
-        submission_reveal_date="2020-10-09",
+        submission_fiscal_year=2018,
+        submission_reveal_date="2018-10-09",
         submission_fiscal_quarter=2,
+        submission_fiscal_month=6,
         is_quarter=True,
     )
     sub = mommy.make(
@@ -49,9 +51,9 @@ def setup_test_data(db):
         submission_id=1,
         toptier_code="123",
         quarter_format_flag=False,
-        reporting_fiscal_year=2019,
+        reporting_fiscal_year=2018,
         reporting_fiscal_period=6,
-        published_date="2019-07-03",
+        published_date="2018-07-03",
         submission_window_id=dabs.id,
     )
     sub2 = mommy.make(
@@ -169,7 +171,7 @@ def setup_test_data(db):
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=1,
         toptier_code="123",
-        fiscal_year=2019,
+        fiscal_year=2018,
         fiscal_period=6,
         total_dollars_obligated_gtas=1788370.03,
         total_budgetary_resources=22478810.97,
@@ -210,7 +212,7 @@ def setup_test_data(db):
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code="123",
-        fiscal_year=2019,
+        fiscal_year=2018,
         fiscal_period=6,
         tas_rendering_label="TAS 1",
         obligated_amount=10.0,
@@ -218,7 +220,7 @@ def setup_test_data(db):
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code="123",
-        fiscal_year=2019,
+        fiscal_year=2018,
         fiscal_period=6,
         tas_rendering_label="TAS 2",
         obligated_amount=1.0,
@@ -241,7 +243,8 @@ def setup_test_data(db):
     )
 
 
-def test_basic_success(setup_test_data, client):
+def test_basic_success(setup_test_data, client, monkeypatch, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
     resp = client.get(url)
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
@@ -308,7 +311,8 @@ def test_basic_success(setup_test_data, client):
     assert response["results"] == expected_results
 
 
-def test_filter(setup_test_data, client):
+def test_filter(setup_test_data, client, monkeypatch, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
     expected_results = [
         {
             "agency_name": "Test Agency 2",
@@ -344,7 +348,8 @@ def test_filter(setup_test_data, client):
     assert response["results"] == expected_results
 
 
-def test_pagination(setup_test_data, client):
+def test_pagination(setup_test_data, client, monkeypatch, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
     resp = client.get(url + "?limit=1")
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
@@ -383,7 +388,7 @@ def test_pagination(setup_test_data, client):
             "toptier_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
-            "recent_publication_date": "2021-07-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-07-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 20.0,
@@ -531,7 +536,7 @@ def test_pagination(setup_test_data, client):
 
 
 def test_fiscal_year_period_selection(setup_test_data, client):
-    resp = client.get(url + "?fiscal_year=2019&fiscal_period=6")
+    resp = client.get(url + "?fiscal_year=2018&fiscal_period=6")
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
     assert len(response["results"]) == 3
@@ -543,7 +548,7 @@ def test_fiscal_year_period_selection(setup_test_data, client):
             "toptier_code": "123",
             "agency_id": 1,
             "current_total_budget_authority_amount": 22478810.97,
-            "recent_publication_date": "2019-07-03T00:00:00Z",
+            "recent_publication_date": "2018-07-03T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 1788370.03,
@@ -596,3 +601,9 @@ def test_fiscal_year_period_selection(setup_test_data, client):
         },
     ]
     assert response["results"] == expected_results
+
+
+def test_fiscal_year_without_revealed_submissions_fails(setup_test_data, client):
+    resp = client.get(f"{url}?fiscal_year=2021")
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.json()["detail"] == "Value for fiscal_year is outside the range of current submissions"

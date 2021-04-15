@@ -11,6 +11,15 @@ url = "/api/v2/reporting/agencies/{agency}/{fy}/{period}/submission_history/"
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
+    dsws1 = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2021,
+        submission_fiscal_month=4,
+        submission_fiscal_quarter=2,
+        is_quarter=False,
+        submission_reveal_date="2020-02-01",
+        period_start_date="2020-01-01",
+    )
     mommy.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
@@ -22,6 +31,7 @@ def setup_test_data(db):
         history=json.loads(
             '[{"certified_date": "2019-07-16T16:09:52.125837Z", "published_date": "2019-07-16T16:09:52.125837Z"}]'
         ),
+        submission_window=dsws1,
     )
     mommy.make(
         "submissions.SubmissionAttributes",
@@ -35,6 +45,7 @@ def setup_test_data(db):
             '[{"certified_date": "2020-08-17T18:37:21.605023Z", "published_date": "2020-08-17T18:37:21.605023Z"},'
             + '{"certified_date": "2017-08-14T14:17:00.729315Z", "published_date": "2017-08-14T14:17:00.729315Z"}]'
         ),
+        submission_window=dsws1,
     )
     mommy.make(
         "submissions.SubmissionAttributes",
@@ -47,6 +58,7 @@ def setup_test_data(db):
         history=json.loads(
             '[{"certified_date": "2017-08-14T14:17:00.729315Z", "published_date": "2017-08-14T14:17:00.729315Z"}]'
         ),
+        submission_window=dsws1,
     )
     mommy.make(
         "submissions.SubmissionAttributes",
@@ -62,6 +74,7 @@ def setup_test_data(db):
             + '{"certified_date": "2021-02-14T14:17:00.729315Z", "published_date": "2021-02-14T14:16:00.729315Z"},'
             + '{"certified_date": "2021-02-16T14:17:00.729315Z", "published_date": "2021-02-16T14:16:00.729315Z"}]'
         ),
+        submission_window=dsws1,
     )
 
 
@@ -104,7 +117,7 @@ def test_multiple_submissions(client, setup_test_data):
 
 
 def test_no_data(client, setup_test_data):
-    resp = client.get(url.format(agency="222", fy=2021, period=12))
+    resp = client.get(url.format(agency="222", fy=2021, period=3))
     assert resp.status_code == status.HTTP_204_NO_CONTENT
 
 

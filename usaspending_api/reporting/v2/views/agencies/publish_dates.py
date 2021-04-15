@@ -21,10 +21,14 @@ from usaspending_api.reporting.models import ReportingAgencyOverview
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-class PublishDates(AgencyBase, PaginationMixin):
+class PublishDates(PaginationMixin, AgencyBase):
     """Returns list of agency submission information, included published and certified dates for the fiscal year"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/publish_dates.md"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.params_to_validate = ["fiscal_year", "filter"]
 
     def validate_publication_sort(self, sort_key):
         regex_string = r"publication_date,([2-9]|1[0-2])"
