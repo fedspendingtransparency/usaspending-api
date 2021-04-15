@@ -126,9 +126,9 @@ class Command(BaseCommand):
 
             incoming_submission_due_date = datetime.strptime(incoming_submission_due_date, "%Y-%m-%d %H:%M:%SZ")
 
-            # Hide future submission windows by setting the reveal date to a distant
-            # future date. Another command #TODO <command_name> is used to set
-            # the reveal date when it is ready.
+            # Hide future submission windows by setting the reveal date to a distant future
+            # date. The command 'reveal_dabs_submission_window_schedules` is used to set the
+            # reveal date when it is ready.
             if incoming_submission_due_date > datetime.now():
                 incoming_schedule.submission_reveal_date = FUTURE_DATE
 
