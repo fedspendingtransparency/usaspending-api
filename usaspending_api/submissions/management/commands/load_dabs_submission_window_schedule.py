@@ -17,9 +17,9 @@ second of the day (in UTC time) on which queries surfacing data submitted for th
 window should allow the data to be displayed. i.e. if the current date (now() in UTC) is greater
 than or equal to this date and time, show the data related to this submission. If not, don't show it.
 
-The reveal date is originally set to a future date '9999-12-01'. When a schedules respective
-'due date' (submission_due_date for monthly and certification_deadline for quarterly) has been passed
-its reveal date is set to the current datetime by the 'reveal_dabs_submission_window_schedule'
+The reveal date is originally set to a future date '9999-12-31'. When a schedules respective
+submission_due_date (submission_due_date for monthly and certification_deadline for quarterly) has
+been passed its reveal date is set to the current datetime by the 'reveal_dabs_submission_window_schedule'
 command. Any reveal dates on schedules with a 'due date' in the past are not updated.
 
 It is logically intended to be the "next day" after the DABS submission deadline communicated to
@@ -79,7 +79,7 @@ where
 """
 
 
-FUTURE_DATE = datetime.strptime("9999-12-31 00:00:00Z", "%Y-%m-%d %H:%M:%SZ")
+FUTURE_DATE = datetime.max
 
 
 class Command(BaseCommand):
@@ -112,24 +112,20 @@ class Command(BaseCommand):
         logger.info("Loading existing DABS Submission Window Schedules")
         existing_schedules = DABSSubmissionWindowSchedule.objects.all()
 
-        # Iterate over each incoming schedule object to find a matching existing
-        # schedule. If there is a match, use the existing submission_reveal_date
         for incoming_schedule in incoming_schedule_objs:
+            # If an incoming schedule has a matching existing schedule, use the existing
+            # schedule's submission_reveal_date
             for existing_schedule in existing_schedules:
                 if int(incoming_schedule.id) == existing_schedule.id:
                     incoming_schedule.submission_reveal_date = existing_schedule.submission_reveal_date
 
-            if incoming_schedule.is_quarter == "True":
-                incoming_submission_due_date = incoming_schedule.certification_due_date
-            else:
-                incoming_submission_due_date = incoming_schedule.submission_due_date
-
-            incoming_submission_due_date = datetime.strptime(incoming_submission_due_date, "%Y-%m-%d %H:%M:%SZ")
-
             # Hide future submission windows by setting the reveal date to a distant future
             # date. The command 'reveal_dabs_submission_window_schedules` is used to set the
             # reveal date when it is ready.
-            if incoming_submission_due_date > datetime.now():
+            incoming_submission_due_date = datetime.strptime(
+                incoming_schedule.submission_due_date, "%Y-%m-%d %H:%M:%SZ"
+            )
+            if incoming_submission_due_date > datetime.utcnow():
                 incoming_schedule.submission_reveal_date = FUTURE_DATE
 
         logger.info("Deleting existing DABS Submission Window Schedule")
