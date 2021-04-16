@@ -137,7 +137,7 @@ def type_filter(_type, filters, limit=None):
             submission_reveal_date__lte=datetime.now(timezone.utc),
         ).first()
     if submission_window is None:
-        return {"total": None}
+        raise InvalidParameterException("Fiscal parameters provided do not belong to a current submission period")
 
     fiscal_date = submission_window.period_end_date
     fiscal_period = submission_window.submission_fiscal_month

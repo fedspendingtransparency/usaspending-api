@@ -1,22 +1,21 @@
 from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value
-from django.utils.functional import cached_property
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
-from usaspending_api.common.helpers.fiscal_year_helpers import (
-    get_final_period_of_quarter,
-    calculate_last_completed_fiscal_quarter,
-)
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.references.models import ToptierAgencyPublishedDABSView, Agency
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-class AgenciesOverview(AgencyBase, PaginationMixin):
+class AgenciesOverview(PaginationMixin, AgencyBase):
     """Return list of all agencies and the overview of their spending data for a provided fiscal year and period"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/overview.md"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.params_to_validate = ["fiscal_year", "fiscal_period", "filter"]
 
     def get(self, request):
         self.sortable_columns = [
@@ -194,14 +193,3 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             for result in result_list
         ]
         return results
-
-    @cached_property
-    def fiscal_period(self):
-        """
-        This is the fiscal period we want to limit our queries to when querying CPE values for
-        self.fiscal_year.  If it's prior to Q1 submission window close date, we will return
-        quarter 1 anyhow and just show what we have (which will likely be incomplete).
-        """
-        return self.request.query_params.get(
-            "fiscal_period", get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(self.fiscal_year)) or 3
-        )
