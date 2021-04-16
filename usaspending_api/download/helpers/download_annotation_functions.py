@@ -275,7 +275,7 @@ def universal_award_matview_annotations():
                 ),
             )
             .values("transaction__award_id")
-            .annotate(total=StringAgg("value", "; ", distinct=True))
+            .annotate(total=StringAgg("value", "; ", distinct=True, ordering="value"))
             .values("total"),
             output_field=TextField(),
         ),
@@ -582,10 +582,10 @@ def subaward_annotations():
                 value=ExpressionWrapper(
                     ConcatAll(F("cfda_number"), Value(": "), F("cfda_title")),
                     output_field=TextField(),
-                ),
+                )
             )
             .values("transaction__award_id")
-            .annotate(total=StringAgg("value", "; ", distinct=True))
+            .annotate(total=StringAgg("value", "; ", distinct=True, ordering="value"))
             .values("total"),
             output_field=TextField(),
         ),
