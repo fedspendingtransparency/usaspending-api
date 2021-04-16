@@ -9,7 +9,8 @@ url = "/api/v2/agency/{code}/program_activity/count/{filter}"
 
 
 @pytest.mark.django_db
-def test_program_activity_count_success(client, agency_account_data):
+def test_program_activity_count_success(client, monkeypatch, agency_account_data, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
     resp = client.get(url.format(code="007", filter=""))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["program_activity_count"] == 3

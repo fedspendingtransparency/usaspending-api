@@ -16,6 +16,7 @@ def data_fixture():
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=1995,
         submission_fiscal_month=2,
+        submission_fiscal_quarter=1,
         submission_reveal_date="2020-10-09",
     )
     ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
@@ -134,6 +135,7 @@ def data_fixture():
             "submissions.DABSSubmissionWindowSchedule",
             submission_fiscal_year=fy,
             submission_fiscal_month=12,
+            submission_fiscal_quarter=4,
             submission_reveal_date="2020-10-09",
             is_quarter=True,
         )
@@ -148,12 +150,19 @@ def test_budgetary_resources(client, data_fixture):
             "agency_budgetary_resources": Decimal("29992.00"),
             "total_budgetary_resources": Decimal(f"{FY}.00"),
             "agency_total_obligated": Decimal("26661.00"),
+            "agency_obligation_by_period": [
+                {"obligated": Decimal("8883.00"), "period": 3},
+                {"obligated": Decimal("8886.00"), "period": 6},
+                {"obligated": Decimal("8889.00"), "period": 9},
+                {"obligated": Decimal("3.00"), "period": 12},
+            ],
         },
         {
             "fiscal_year": PRIOR_FY,
             "agency_budgetary_resources": Decimal("15.00"),
             "total_budgetary_resources": Decimal(f"{PRIOR_FY}.00"),
             "agency_total_obligated": Decimal("5.00"),
+            "agency_obligation_by_period": [{"period": 12, "obligated": Decimal("5.00")}],
         },
     ]
     for year in range(2017, current_fiscal_year() + 1):
@@ -164,6 +173,7 @@ def test_budgetary_resources(client, data_fixture):
                     "agency_budgetary_resources": None,
                     "total_budgetary_resources": Decimal(f"{year}.00"),
                     "agency_total_obligated": None,
+                    "agency_obligation_by_period": [],
                 }
             )
     expected_results = sorted(expected_results, key=lambda x: x["fiscal_year"], reverse=True)

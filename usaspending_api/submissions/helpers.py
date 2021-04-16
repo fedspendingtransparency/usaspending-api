@@ -2,19 +2,54 @@ from dataclasses import dataclass
 from django.db import connection
 from django.db.models import Q
 from typing import Optional, List
+
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import is_final_quarter, is_final_period
 from usaspending_api.common.helpers.sql_helpers import execute_sql
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
-def get_last_closed_submission_date(is_quarter: bool) -> Optional[dict]:
+def get_last_closed_submission_date(is_quarter: Optional[bool] = None) -> Optional[dict]:
+    filters = {"submission_reveal_date__lte": now()}
+    if is_quarter is not None:
+        filters["is_quarter"] = is_quarter
     return (
-        DABSSubmissionWindowSchedule.objects.filter(is_quarter=is_quarter, submission_reveal_date__lte=now())
+        DABSSubmissionWindowSchedule.objects.filter(**filters)
         .order_by("-submission_fiscal_year", "-submission_fiscal_quarter", "-submission_fiscal_month")
         .values()
         .first()
     )
+
+
+def validate_request_within_revealed_submissions(
+    fiscal_year: int,
+    fiscal_quarter: Optional[int] = None,
+    fiscal_period: Optional[int] = None,
+    is_quarter: Optional[bool] = None,
+) -> None:
+
+    latest_submission_period = get_last_closed_submission_date(is_quarter=is_quarter)
+    sub_window_year = latest_submission_period["submission_fiscal_year"]
+    sub_window_quarter = latest_submission_period["submission_fiscal_quarter"]
+    sub_window_period = latest_submission_period["submission_fiscal_month"]
+
+    invalid_submission_date_range = False
+    msg = "Value for {filter} is outside the range of current submissions"
+
+    if fiscal_year > sub_window_year:
+        invalid_submission_date_range = True
+        msg = msg.format(filter="fiscal_year")
+    elif fiscal_year == sub_window_year:
+        if fiscal_quarter and fiscal_quarter > sub_window_quarter:
+            invalid_submission_date_range = True
+            msg = msg.format(filter="fiscal_quarter")
+        elif fiscal_period and fiscal_period > sub_window_period:
+            invalid_submission_date_range = True
+            msg = msg.format(filter="fiscal_period")
+
+    if invalid_submission_date_range:
+        raise InvalidParameterException(msg)
 
 
 @dataclass

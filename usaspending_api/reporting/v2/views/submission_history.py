@@ -13,10 +13,11 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/toptier_code/fiscal_year/fiscal_period/submission_history.md"
 
     def get(self, request, toptier_code, fiscal_year, fiscal_period):
-        self.fiscal_year = int(fiscal_year)
+        validated_params = self.validated_url_params
+        fiscal_year = validated_params["fiscal_year"]
+        fiscal_period = validated_params["fiscal_period"]
         self.sortable_columns = ["publication_date", "certification_date"]
         self.default_sort_column = "publication_date"
-        self.validate_fiscal_period({"fiscal_period": int(fiscal_period)})
         record = list(
             SubmissionAttributes.objects.filter(
                 toptier_code=toptier_code,
