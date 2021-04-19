@@ -90,8 +90,8 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
 
 ## Totals (object)
 + `total_budgetary_resources` (required, number)
-+ `obligation` (required, number)
-+ `outlay` (required, number)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## DisasterEmergencyFundCode (object)
 + `code` (required, string)

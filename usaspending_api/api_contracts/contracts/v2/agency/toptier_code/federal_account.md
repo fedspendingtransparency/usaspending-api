@@ -115,8 +115,8 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 
 ## Totals (object)
 + `total_budgetary_resources` (required, number)
-+ `obligation` (required, number)
-+ `outlay` (required, number)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## TreasuryAccount (object
 + `name` (required, string)

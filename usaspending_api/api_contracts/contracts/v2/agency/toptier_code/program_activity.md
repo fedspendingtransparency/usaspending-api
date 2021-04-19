@@ -91,8 +91,8 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 # Data Structures
 
 ## Totals (object)
-+ `obligation` (required, number)
-+ `outlay` (required, number)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## ProgramActivity (object)
 + `name` (required, string)

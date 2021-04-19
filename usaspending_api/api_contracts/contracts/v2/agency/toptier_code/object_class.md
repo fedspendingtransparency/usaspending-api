@@ -98,8 +98,8 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
 # Data Structures
 
 ## Totals (object)
-+ `obligation` (required, number)
-+ `outlay` (required, number)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## MajorObjectClass (object)
 + `name` (required, string)
