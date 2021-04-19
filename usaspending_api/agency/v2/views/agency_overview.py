@@ -5,6 +5,7 @@ from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import Agency, SubtierAgency
 
 
@@ -31,6 +32,7 @@ class AgencyOverview(AgencyBase):
                 "congressional_justification_url": self.toptier_agency.justification,
                 "about_agency_data": self.toptier_agency.about_agency_data,
                 "subtier_agency_count": self.get_subtier_agency_count(),
+                "def_codes": self.get_defc(),
                 "messages": [],  # Currently no applicable messages
             }
         )
@@ -49,3 +51,31 @@ class AgencyOverview(AgencyBase):
             )
             .count()
         )
+
+    def get_defc(self):
+        defc = (
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(
+                treasury_account__funding_toptier_agency=self.toptier_agency,
+                disaster_emergency_fund_id__isnull=False,
+                submission__reporting_fiscal_year=self.fiscal_year,
+            )
+            .values(
+                "disaster_emergency_fund",
+                "disaster_emergency_fund__group_name",
+                "disaster_emergency_fund__public_law",
+                "disaster_emergency_fund__title",
+                "disaster_emergency_fund__urls",
+            )
+            .distinct()
+        )
+        results = [
+            {
+                "code": x["disaster_emergency_fund"],
+                "public_law": x["disaster_emergency_fund__public_law"],
+                "title": x["disaster_emergency_fund__title"],
+                "urls": x["disaster_emergency_fund__urls"],
+                "disaster": x["disaster_emergency_fund__group_name"],
+            }
+            for x in defc
+        ]
+        return results
