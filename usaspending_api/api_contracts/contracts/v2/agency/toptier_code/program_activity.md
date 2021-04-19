@@ -69,8 +69,10 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                     "hasPrevious": false,
                     "count": 10
                 },
-                "combined_obligated_amount": 36964.8,
-                "combined_gross_outlay_amount": -397853.1,
+                "totals": {
+                    "obligated_amount": 36964.8,
+                    "gross_outlay_amount": -397853.1,
+                },
                 "results": [
                     {
                         "name": "TI INFORMATION TECHNOLOGY",
@@ -87,6 +89,10 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
             }
 
 # Data Structures
+
+## Totals (object)
++ `obligation` (required, number)
++ `outlay` (required, number)
 
 ## ProgramActivity (object)
 + `name` (required, string)

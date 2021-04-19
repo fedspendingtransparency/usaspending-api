@@ -69,8 +69,10 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
                     "hasPrevious": false,
                     "count": 10
                 },
-                "combined_obligated_amount": 350.0, 
-                "combined_gross_outlay_amount": 200.36
+                "totals": {
+                    "obligated_amount": 350.0, 
+                    "gross_outlay_amount": 200.36
+                },
                 "results": [
                     {
                         "name": "Personnel and compensation benefits",
@@ -94,6 +96,10 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
             }
 
 # Data Structures
+
+## Totals (object)
++ `obligation` (required, number)
++ `outlay` (required, number)
 
 ## MajorObjectClass (object)
 + `name` (required, string)

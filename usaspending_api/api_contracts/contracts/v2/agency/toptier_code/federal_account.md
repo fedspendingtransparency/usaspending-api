@@ -72,9 +72,11 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                     "hasNext": true,
                     "hasPrevious": false,
                 },
-                "combined_total_budgetary_resources": 66846596521.0,
-                "combined_obligated_amount": 56046596521.0,
-                "combined_gross_outlay_amount": 49589399932.2,
+                "totals": {
+                    "total_budgetary_resources": 66846596521.0,
+                    "obligated_amount": 56046596521.0,
+                    "gross_outlay_amount": 49589399932.2,
+                },
                 "results": [
                     "code": "086-0302",
                     "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
@@ -110,6 +112,11 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
 + `children` (required, array[TreasuryAccount], fixed-type)
+
+## Totals (object)
++ `total_budgetary_resources` (required, number)
++ `obligation` (required, number)
++ `outlay` (required, number)
 
 ## TreasuryAccount (object
 + `name` (required, string)

@@ -70,9 +70,11 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
                     "hasNext": true,
                     "hasPrevious": false,
                 },
-                "combined_total_budgetary_resources": 66846596521.0,
-                "combined_obligated_amount": 76046596521.0,
-                "combined_gross_outlay_amount": 39589399932.2,
+                "totals": {
+                    "total_budgetary_resources": 66846596521.0,
+                    "obligated_amount": 76046596521.0,
+                    "gross_outlay_amount": 39589399932.2,
+                },
                 "results": [
                     "code": "N",
                     "public_law": "Emergency P.L. 116-136",
@@ -85,6 +87,11 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
             }
 
 # Data Structures
+
+## Totals (object)
++ `total_budgetary_resources` (required, number)
++ `obligation` (required, number)
++ `outlay` (required, number)
 
 ## DisasterEmergencyFundCode (object)
 + `code` (required, string)
