@@ -15,7 +15,7 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
                 "type": "number"
             }
     + Parameters
-        + `toptier_code`: 086 (required, number)
+        + `toptier_code`: `086` (required, string)
             The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY.
@@ -48,12 +48,7 @@ Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations f
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
-        + `combined_total_budgetary_resources` (required, number)
-            Total Budgetary Resources associated with any Disaster Emergency Fund Code
-        + `combined_obligated_amount` (required, number)
-            Total Obligations associated with any Disaster Emergency Fund Code
-        + `combined_gross_outlay_amount` (required, number)
-            Total Outlays associated with any Disaster Emergency Fund Code
+        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[DisasterEmergencyFundCode], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.

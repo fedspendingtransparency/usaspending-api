@@ -15,7 +15,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                 "type": "number"
             }
     + Parameters
-        + `toptier_code`: 086 (required, number)
+        + `toptier_code`: `086` (required, string)
             The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY.
@@ -48,12 +48,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
-        + `combined_total_budgetary_resources` (required, number)
-            Total Budgetary Resources associated with any Federal Account
-        + `combined_obligated_amount` (required, number)
-            Total Obligations associated with any Federal Account
-        + `combined_gross_outlay_amount` (required, number)
-            Total Outlays associated with any Federal Account
+        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[FederalAccount], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
