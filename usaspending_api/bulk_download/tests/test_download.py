@@ -431,49 +431,6 @@ def award_data(transactional_db):
     update_awards()
 
 
-@pytest.mark.skip
-def test_download_transactions_v2_endpoint(client, award_data):
-    """test the transaction endpoint."""
-
-    resp = client.post(
-        "/api/v2/bulk_download/transactions",
-        content_type="application/json",
-        data=json.dumps({"filters": {}, "columns": {}}),
-    )
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["file_url"]
-
-
-@pytest.mark.skip
-def test_download_awards_v2_endpoint(client, award_data):
-    """test the awards endpoint."""
-
-    resp = client.post(
-        "/api/v2/bulk_download/awards", content_type="application/json", data=json.dumps({"filters": {}, "columns": []})
-    )
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["file_url"]
-
-
-@pytest.mark.skip
-def test_download_transactions_v2_status_endpoint(client, award_data):
-    """Test the transaction status endpoint."""
-
-    dl_resp = client.post(
-        "/api/v2/bulk_download/transactions",
-        content_type="application/json",
-        data=json.dumps({"filters": {}, "columns": []}),
-    )
-
-    resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["total_rows"] == 3
-    assert resp.json()["total_columns"] > 100
-
-
 def test_download_awards_with_all_award_types(client, award_data):
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
     filters = {
@@ -718,3 +675,22 @@ def test_list_agencies(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == {"agencies": [], "sub_agencies": [{"subtier_agency_name": "SubBureau of Stuff"}]}
+
+
+def test_empty_array_filter_fail(client, award_data):
+    filters = {
+        "agency": "all",
+        "prime_award_types": [*list(award_type_mapping.keys())],
+        "sub_award_types": [],
+        "date_type": "action_date",
+        "date_range": {"start_date": "2016-10-01", "end_date": "2017-09-30"},
+        "recipient_scope": "foreign",
+    }
+    resp = client.post(
+        "/api/v2/bulk_download/awards", content_type="application/json", data=json.dumps({"filters": filters})
+    )
+
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert (
+        "Field 'filters|sub_award_types' value '[]' is below min '1' items" in resp.json()["detail"]
+    ), "Incorrect error message"
