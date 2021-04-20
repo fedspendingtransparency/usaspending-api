@@ -8,7 +8,8 @@ url = "/api/v2/agency/{code}/object_class/count/{filter}"
 
 
 @pytest.mark.django_db
-def test_object_class_count_success(client, agency_account_data):
+def test_object_class_count_success(client, monkeypatch, agency_account_data, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
     resp = client.get(url.format(code="007", filter=""))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["object_class_count"] == 3

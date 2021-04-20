@@ -7,39 +7,32 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
 
 ## GET
 
-+ Request (application/json)
-    + Schema
-
-            {
-                "$schema": "http://json-schema.org/draft-04/schema#",
-                "type": "number"
-            }
-    + Parameters
-        + `toptier_code`: 086 (required, number)
-            The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
-        + `fiscal_year` (optional, number)
-            The desired appropriations fiscal year. Defaults to the current FY.
-        + `filter` (optional, string)
-            This will filter the Program Activity by their name to those matching the text.
-        + `order` (optional, enum[string])
-            Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
-            + Default: `desc`
-            + Members
-                + `desc`
-                + `asc`
-        + `sort` (optional, enum[string])
-            Optional parameter indicating what value results should be sorted by.
-            + Default: `obligated_amount`
-            + Members
-                + `name`
-                + `obligated_amount`
-                + `gross_outlay_amount`
-        + `page` (optional, number)
-            The page number that is currently returned.
-            + Default: 1
-        + `limit` (optional, number)
-            How many results are returned.
-            + Default: 10
++ Parameters
+    + `toptier_code`: `086` (required, string)
+        The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
+    + `fiscal_year` (optional, number)
+        The desired appropriations fiscal year. Defaults to the current FY.
+    + `filter` (optional, string)
+        This will filter the Program Activity by their name to those matching the text.
+    + `order` (optional, enum[string])
+        Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
+        + Default: `desc`
+        + Members
+            + `desc`
+            + `asc`
+    + `sort` (optional, enum[string])
+        Optional parameter indicating what value results should be sorted by.
+        + Default: `obligated_amount`
+        + Members
+            + `name`
+            + `obligated_amount`
+            + `gross_outlay_amount`
+    + `page` (optional, number)
+        The page number that is currently returned.
+        + Default: 1
+    + `limit` (optional, number)
+        How many results are returned.
+        + Default: 10
 
 + Response 200 (application/json)
     + Attributes
@@ -47,6 +40,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
+        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[ProgramActivity], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -65,6 +59,10 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                     "hasPrevious": false,
                     "count": 10
                 },
+                "totals": {
+                    "obligated_amount": 36964.8,
+                    "gross_outlay_amount": -397853.1,
+                },
                 "results": [
                     {
                         "name": "TI INFORMATION TECHNOLOGY",
@@ -73,7 +71,7 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
                     },
                     {
                         "name": "CONTRACT RENEWALS",
-                        "obligated_amount": 225.26,
+                        "obligated_amount": 18482.4,
                         "gross_outlay_amount": -161252.0
                     }
                 ],
@@ -81,6 +79,10 @@ Returns a list of Program Activity in the Agency's appropriations for a single f
             }
 
 # Data Structures
+
+## Totals (object)
++ `obligated_amount` (required, number)
++ `gross_outlay_amount` (required, number)
 
 ## ProgramActivity (object)
 + `name` (required, string)
