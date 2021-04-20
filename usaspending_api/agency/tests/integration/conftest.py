@@ -1,12 +1,42 @@
 import pytest
 
 from model_mommy import mommy
-from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
+
+CURRENT_FISCAL_YEAR = 2020
+
+
+class Helpers:
+    @staticmethod
+    def get_mocked_current_fiscal_year():
+        return CURRENT_FISCAL_YEAR
+
+    @staticmethod
+    def mock_current_fiscal_year(monkeypatch, path=None):
+        def _mocked_fiscal_year():
+            return CURRENT_FISCAL_YEAR
+
+        if path is None:
+            path = "usaspending_api.agency.v2.views.agency_base.current_fiscal_year"
+        monkeypatch.setattr(path, _mocked_fiscal_year)
+
+
+@pytest.fixture
+def helpers():
+    return Helpers
 
 
 @pytest.fixture
 def agency_account_data():
-    dabs = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-10-09")
+    dabs = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date=f"{CURRENT_FISCAL_YEAR}-10-09",
+        submission_fiscal_year=CURRENT_FISCAL_YEAR,
+        submission_fiscal_month=12,
+        submission_fiscal_quarter=4,
+        is_quarter=False,
+        period_start_date=f"{CURRENT_FISCAL_YEAR}-09-01",
+        period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
+    )
 
     ta1 = mommy.make("references.ToptierAgency", toptier_code="007")
     ta2 = mommy.make("references.ToptierAgency", toptier_code="008")
@@ -20,7 +50,7 @@ def agency_account_data():
 
     sub1 = mommy.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=current_fiscal_year(),
+        reporting_fiscal_year=CURRENT_FISCAL_YEAR,
         toptier_code=ta1.toptier_code,
         is_final_balances_for_fy=True,
         submission_window_id=dabs.id,
@@ -124,10 +154,10 @@ def agency_account_data():
         tas_rendering_label="003-2017/2018-0000-000",
     )
 
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2)
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas3)
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas4)
+    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
+    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub2)
+    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas3, submission=sub3)
+    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas4, submission=sub4)
 
     pa1 = mommy.make("references.RefProgramActivity", program_activity_code="000", program_activity_name="NAME 1")
     pa2 = mommy.make("references.RefProgramActivity", program_activity_code="1000", program_activity_name="NAME 2")
@@ -261,4 +291,4 @@ def agency_account_data():
     )
 
 
-__all__ = ["agency_account_data"]
+__all__ = ["agency_account_data", "helpers"]

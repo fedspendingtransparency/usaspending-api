@@ -1,15 +1,15 @@
 import logging
 import json
+from typing import List
 
 from django.conf import settings
 from django.utils.functional import cached_property
-from re import fullmatch
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.date_helper import fy
+from usaspending_api.common.helpers.dict_helpers import update_list_of_dictionaries
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     calculate_last_completed_fiscal_quarter,
     get_final_period_of_quarter,
@@ -18,11 +18,66 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
 from usaspending_api.references.models import ToptierAgency, Agency
+from usaspending_api.submissions.helpers import validate_request_within_revealed_submissions
 
 logger = logging.getLogger(__name__)
 
 
 class AgencyBase(APIView):
+
+    params_to_validate: List[str]
+    additional_models: dict
+
+    def _validate_params(self, param_values, params_to_validate=None):
+        params_to_validate = params_to_validate or getattr(self, "params_to_validate", [])
+        additional_models = getattr(self, "additional_models", [])
+
+        all_models = [
+            {
+                "key": "fiscal_year",
+                "name": "fiscal_year",
+                "type": "integer",
+                "min": fy(settings.API_SEARCH_MIN_DATE),
+                "max": current_fiscal_year(),
+            },
+            {
+                "key": "fiscal_period",
+                "name": "fiscal_period",
+                "type": "integer",
+                "min": 2,
+                "max": 12,
+            },
+            {"key": "filter", "name": "filter", "type": "text", "text_type": "search"},
+        ]
+        all_models = update_list_of_dictionaries(all_models, additional_models, "key")
+
+        # Empty strings cause issues with TinyShield
+        for val in params_to_validate:
+            if param_values.get(val) == "":
+                param_values.pop(val)
+
+        chosen_models = [model for model in all_models if model["key"] in params_to_validate]
+        param_values = TinyShield(chosen_models).block(param_values)
+
+        if param_values.get("fiscal_year"):
+            validate_request_within_revealed_submissions(
+                fiscal_year=param_values["fiscal_year"], fiscal_period=param_values.get("fiscal_period")
+            )
+        return param_values
+
+    @cached_property
+    def _query_params(self):
+        query_params = self.request.query_params.copy()
+        return self._validate_params(query_params)
+
+    @cached_property
+    def validated_url_params(self):
+        """
+        Used by endpoints that need to validate URL parameters instead of or in addition to the query parameters.
+        "additional_models" is used when a TinyShield models outside of the common ones above are needed.
+        """
+        return self._validate_params(self.kwargs, list(self.kwargs))
+
     @property
     def toptier_code(self):
         # We don't have to do any validation here because Django has already checked this to be
@@ -37,32 +92,6 @@ class AgencyBase(APIView):
         return agency[0]["id"]
 
     @cached_property
-    def fiscal_year(self):
-        fiscal_year = str(self.request.query_params.get("fiscal_year", current_fiscal_year()))
-        if not fullmatch("[0-9]{4}", fiscal_year):
-            raise UnprocessableEntityException("Unrecognized fiscal_year format. Should be YYYY.")
-        min_fiscal_year = fy(settings.API_SEARCH_MIN_DATE)
-        fiscal_year = int(fiscal_year)
-        if fiscal_year < min_fiscal_year:
-            raise UnprocessableEntityException(
-                f"fiscal_year is currently limited to an earliest year of {min_fiscal_year}."
-            )
-        if fiscal_year > current_fiscal_year():
-            raise UnprocessableEntityException(
-                f"fiscal_year may not exceed current fiscal year of {current_fiscal_year()}."
-            )
-        return fiscal_year
-
-    @cached_property
-    def fiscal_period(self):
-        """
-        This is the fiscal period we want to limit our queries to when querying CPE values for
-        self.fiscal_year.  If it's prior to Q1 submission window close date, we will return
-        quarter 1 anyhow and just show what we have (which will likely be incomplete).
-        """
-        return get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(self.fiscal_year)) or 3
-
-    @cached_property
     def toptier_agency(self):
         toptier_agency = ToptierAgency.objects.filter(
             toptieragencypublisheddabsview__toptier_code=self.toptier_code
@@ -71,19 +100,30 @@ class AgencyBase(APIView):
             raise NotFound(f"Agency with a toptier code of '{self.toptier_code}' does not exist")
         return toptier_agency
 
-    @property
-    def standard_response_messages(self):
-        return [get_account_data_time_period_message()] if self.fiscal_year < 2017 else []
+    @cached_property
+    def fiscal_year(self):
+        return self._query_params.get("fiscal_year") or current_fiscal_year()
+
+    @cached_property
+    def fiscal_period(self):
+        """
+        This is the fiscal period we want to limit our queries to when querying CPE values for
+        self.fiscal_year.  If it's prior to Q1 submission window close date, we will return
+        quarter 1 anyhow and just show what we have (which will likely be incomplete).
+        """
+        return (
+            self._query_params.get("fiscal_period")
+            or get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(self.fiscal_year))
+            or 3
+        )
 
     @property
     def filter(self):
-        return self.request.query_params.get("filter")
+        return self._query_params.get("filter")
 
-    @staticmethod
-    def validate_fiscal_period(request_data):
-        fiscal_period = request_data["fiscal_period"]
-        if fiscal_period < 2 or fiscal_period > 12:
-            raise UnprocessableEntityException(f"fiscal_period must be in the range 2-12")
+    @property
+    def standard_response_messages(self):
+        return [get_account_data_time_period_message()] if self.fiscal_year < 2017 else []
 
     @staticmethod
     def create_assurance_statement_url(result):
