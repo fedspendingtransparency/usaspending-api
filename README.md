@@ -34,7 +34,7 @@ Ensure the following dependencies are installed and working prior to continuing:
 ### Cloning the Repository
 Now, navigate to the base file directory where you will store the USAspending repositories
 
-    $ mkdir -p usaspending && cd usaspending
+    $ mkdir usaspending && cd usaspending
     $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
     $ cd usaspending-api
 
