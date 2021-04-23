@@ -1,6 +1,6 @@
 import logging
 import csv
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
@@ -79,7 +79,7 @@ where
 """
 
 
-FUTURE_DATE = datetime.max
+FUTURE_DATE = datetime.max.replace(tzinfo=timezone.utc)
 
 
 class Command(BaseCommand):
@@ -119,13 +119,12 @@ class Command(BaseCommand):
                 if int(incoming_schedule.id) == existing_schedule.id:
                     incoming_schedule.submission_reveal_date = existing_schedule.submission_reveal_date
 
+            incoming_schedule.parse_dates_fields(timezone.utc)
+
             # Hide future submission windows by setting the reveal date to a distant future
             # date. The command 'reveal_dabs_submission_window_schedules` is used to set the
             # reveal date when it is ready.
-            incoming_submission_due_date = datetime.strptime(
-                incoming_schedule.submission_due_date, "%Y-%m-%d %H:%M:%SZ"
-            )
-            if incoming_submission_due_date > datetime.utcnow():
+            if incoming_schedule.submission_due_date > datetime.utcnow().replace(tzinfo=timezone.utc):
                 incoming_schedule.submission_reveal_date = FUTURE_DATE
 
         logger.info("Deleting existing DABS Submission Window Schedule")
