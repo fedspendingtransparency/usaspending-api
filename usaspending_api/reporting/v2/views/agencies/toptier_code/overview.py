@@ -5,6 +5,7 @@ from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, Integ
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
+from usaspending_api.common.helpers.fiscal_year_helpers import is_valid_monthly_period
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.references.models import ToptierAgency
@@ -133,38 +134,13 @@ class AgencyOverview(PaginationMixin, AgencyBase):
         return self.format_results(result_list)
 
     def format_results(self, result_list):
-        results = [
-            {
-                "fiscal_year": result["fiscal_year"],
-                "fiscal_period": result["fiscal_period"],
-                "current_total_budget_authority_amount": result["total_budgetary_resources"],
-                "total_budgetary_resources": result["gtas_total_budgetary_resources"],
-                "percent_of_total_budgetary_resources": round(
-                    result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2
-                )
-                if result["gtas_total_budgetary_resources"]
-                else 0,
-                "recent_publication_date": result["recent_publication_date"],
-                "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
-                "tas_account_discrepancies_totals": {
-                    "gtas_obligation_total": result["total_dollars_obligated_gtas"],
-                    "tas_accounts_total": result["tas_obligations"],
-                    "tas_obligation_not_in_gtas_total": result["tas_obligation_not_in_gtas_total"] or 0.0,
-                    "missing_tas_accounts_count": result["missing_tas_accounts"],
-                },
-                "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
-                "unlinked_contract_award_count": result["unlinked_procurement_c_awards"]
-                + result["unlinked_procurement_d_awards"],
-                "unlinked_assistance_award_count": result["unlinked_assistance_c_awards"]
-                + result["unlinked_assistance_d_awards"],
-                "assurance_statement_url": self.create_assurance_statement_url(result)
-                if result["recent_publication_date"]
-                else None,
-            }
-            for result in result_list
-        ]
+        results = [self.format_result(result) for result in result_list]
+        for result in results:
+            if not result["recent_publication_date"]:
+                result["total_budgetary_resources"] = None
         if self.pagination.sort_key == "fiscal_year":
             self.pagination.secondary_sort_key = "fiscal_period"
+        results = filter(lambda result: is_valid_monthly_period(result["fiscal_year"], result["fiscal_period"]), results)
         results = sorted(
             results,
             key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key] or self.sort_value_when_null
@@ -179,3 +155,47 @@ class AgencyOverview(PaginationMixin, AgencyBase):
             reverse=self.pagination.sort_order == "desc",
         )
         return results
+
+    def format_result(self, result):
+
+        formatted_result = {
+            "fiscal_year": result["fiscal_year"],
+            "fiscal_period": result["fiscal_period"],
+            "current_total_budget_authority_amount": result["total_budgetary_resources"],
+            "total_budgetary_resources": result["gtas_total_budgetary_resources"],
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": result["recent_publication_date"],
+            "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": result["total_dollars_obligated_gtas"],
+                "tas_accounts_total": result["tas_obligations"],
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": None,
+        }
+
+        if result["recent_publication_date"]:
+            formatted_result.update(
+                {
+                    "percent_of_total_budgetary_resources": round(
+                        result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2
+                    )
+                    if result["gtas_total_budgetary_resources"]
+                    else 0,
+                    "unlinked_contract_award_count": result["unlinked_procurement_c_awards"]
+                    + result["unlinked_procurement_d_awards"],
+                    "unlinked_assistance_award_count": result["unlinked_assistance_c_awards"]
+                    + result["unlinked_assistance_d_awards"],
+                    "tas_account_discrepancies_totals": {
+                        "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
+                        "missing_tas_accounts_count": result["missing_tas_accounts"],
+                    },
+                    "assurance_statement_url": self.create_assurance_statement_url(result),
+                }
+            )
+
+        return formatted_result

@@ -12,7 +12,7 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMi
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.common.helpers.fiscal_year_helpers import get_quarter_from_period
+from usaspending_api.common.helpers.fiscal_year_helpers import get_quarter_from_period, is_valid_monthly_period
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
@@ -105,7 +105,8 @@ class PublishDates(PaginationMixin, AgencyBase):
             existing_periods = set([x["period"] for x in periods])
             missing_periods = set({2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}).difference(existing_periods)
             for x in missing_periods:
-                # cannot always infer if the missing periods for 3, 6, 9, 12 should/would have been submitted as a quarterly, so defaulting to monthly for consistency
+                # cannot always infer if the missing periods for 3, 6, 9, 12 should/would have been
+                # submitted as a quarterly, so defaulting to monthly for consistency
                 periods.append(
                     {
                         "period": x,
@@ -114,6 +115,7 @@ class PublishDates(PaginationMixin, AgencyBase):
                         "quarterly": False,
                     }
                 )
+            periods = filter(lambda period: is_valid_monthly_period(self.fiscal_year, period["period"]), periods)
             results.append(
                 {
                     "agency_name": result["name"],

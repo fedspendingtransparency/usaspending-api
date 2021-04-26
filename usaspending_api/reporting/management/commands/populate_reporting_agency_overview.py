@@ -361,22 +361,12 @@ CREATE_OVERVIEW_SQL = f"""
     INSERT INTO public.{OVERVIEW_TABLE_NAME} (
         fiscal_period,
         fiscal_year,
-        toptier_code,
-        total_dollars_obligated_gtas,
-        total_budgetary_resources,
-        total_diff_approp_ocpa_obligated_amounts,
-        unlinked_procurement_c_awards,
-        unlinked_assistance_c_awards,
-        unlinked_procurement_d_awards,
-        unlinked_assistance_d_awards,
-        linked_procurement_awards,
-        linked_assistance_awards
+        toptier_code
     )
     SELECT
         EXTRACT('MONTH' FROM a + INTERVAL '3 months'),
         EXTRACT('YEAR' FROM a + INTERVAL '3 months'),
-        toptier_code,
-        0,0,0,0,0,0,0,0,0
+        toptier_code
     FROM generate_series(
         '2017-03-01'::timestamp,
         (
