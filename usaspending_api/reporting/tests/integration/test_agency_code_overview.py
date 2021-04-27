@@ -770,7 +770,7 @@ def test_invalid_monthly_period_filter(client):
         for period in range(2, 13):
             mommy.make(
                 "reporting.ReportingAgencyOverview",
-                reporting_agency_overview_id=year*100+period,
+                reporting_agency_overview_id=year * 100 + period,
                 toptier_code=123,
                 fiscal_year=year,
                 fiscal_period=period,
