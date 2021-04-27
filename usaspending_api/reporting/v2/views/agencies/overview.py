@@ -192,20 +192,22 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
                 "gtas_obligation_total": result["total_dollars_obligated_gtas"],
                 "tas_accounts_total": None,
                 "tas_obligation_not_in_gtas_total": None,
-                "missing_tas_accounts_count": None
+                "missing_tas_accounts_count": None,
             },
             "obligation_difference": result["obligation_difference"],
             "unlinked_contract_award_count": result["unlinked_contract_award_count"],
             "unlinked_assistance_award_count": result["unlinked_assistance_award_count"],
-            "assurance_statement_url": None
+            "assurance_statement_url": None,
         }
 
         if result["recent_publication_date"]:
-            formatted_result["tas_account_discrepancies_totals"].update({
-                "tas_accounts_total": result["tas_accounts_total"],
-                "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
-                "missing_tas_accounts_count": result["missing_tas_accounts_count"]
-            })
+            formatted_result["tas_account_discrepancies_totals"].update(
+                {
+                    "tas_accounts_total": result["tas_accounts_total"],
+                    "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
+                    "missing_tas_accounts_count": result["missing_tas_accounts_count"],
+                }
+            )
             formatted_result["assurance_statement_url"] = self.create_assurance_statement_url(result)
 
         return formatted_result

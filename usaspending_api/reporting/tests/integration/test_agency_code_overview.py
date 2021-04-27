@@ -440,7 +440,6 @@ def test_secondary_sort(setup_test_data, client):
             "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_6,
         },
-
         {
             "fiscal_year": 2019,
             "fiscal_period": 9,

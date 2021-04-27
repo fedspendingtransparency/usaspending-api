@@ -140,7 +140,9 @@ class AgencyOverview(PaginationMixin, AgencyBase):
                 result["total_budgetary_resources"] = None
         if self.pagination.sort_key == "fiscal_year":
             self.pagination.secondary_sort_key = "fiscal_period"
-        results = filter(lambda result: is_valid_monthly_period(result["fiscal_year"], result["fiscal_period"]), results)
+        results = filter(
+            lambda result: is_valid_monthly_period(result["fiscal_year"], result["fiscal_period"]), results
+        )
         results = sorted(
             results,
             key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key] or self.sort_value_when_null
@@ -202,9 +204,11 @@ class AgencyOverview(PaginationMixin, AgencyBase):
                 }
             )
 
-            formatted_result["tas_account_discrepancies_totals"].update({
-                "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
-                "missing_tas_accounts_count": result["missing_tas_accounts"],
-            })
+            formatted_result["tas_account_discrepancies_totals"].update(
+                {
+                    "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
+                    "missing_tas_accounts_count": result["missing_tas_accounts"],
+                }
+            )
 
         return formatted_result
