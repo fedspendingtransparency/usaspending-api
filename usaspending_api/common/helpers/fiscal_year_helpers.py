@@ -224,14 +224,17 @@ def is_final_period(period: int) -> bool:
 
 def is_valid_monthly_period(year: int, period: int) -> bool:
     """ Returns False for periods before agencies were able to make monthly submissions """
-    if year == 2020 and period in [1, 2, 4, 5]:
-        return False
-    if year < 2020 and period in [1, 2, 4, 5, 7, 8, 10, 11]:
-        return False
-    if year == 2017 and period == 3:
-        return False
 
-    return True
+    is_valid_period = True
+
+    if year == 2020 and period in [1, 2, 4, 5]:
+        is_valid_period = False
+    if year < 2020 and period in [1, 2, 4, 5, 7, 8, 10, 11]:
+        is_valid_period = False
+    if year == 2017 and period == 3:
+        is_valid_period = False
+
+    return is_valid_period
 
 
 def get_final_period_of_quarter(quarter: int) -> Optional[int]:
