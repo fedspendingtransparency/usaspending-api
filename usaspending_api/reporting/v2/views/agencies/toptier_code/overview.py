@@ -157,11 +157,18 @@ class AgencyOverview(PaginationMixin, AgencyBase):
         return results
 
     def format_result(self, result):
+        """
+        Fields coming from ReportingAgencyOverview are already NULL, for periods without
+        submissions. Fields coming from other models, such as ReportingAgencyTas, may
+        include values even without a submission. For this reason, we initalize those
+        fields to NULL in the formatted response, and set them only if a submission exists
+        for the record's period.
+        """
 
         formatted_result = {
             "fiscal_year": result["fiscal_year"],
             "fiscal_period": result["fiscal_period"],
-            "current_total_budget_authority_amount": result["total_budgetary_resources"],
+            "current_total_budget_authority_amount": None,
             "total_budgetary_resources": result["gtas_total_budgetary_resources"],
             "percent_of_total_budgetary_resources": None,
             "recent_publication_date": result["recent_publication_date"],
@@ -181,6 +188,7 @@ class AgencyOverview(PaginationMixin, AgencyBase):
         if result["recent_publication_date"]:
             formatted_result.update(
                 {
+                    "current_total_budget_authority_amount": result["total_budgetary_resources"],
                     "percent_of_total_budgetary_resources": round(
                         result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2
                     )
@@ -190,12 +198,13 @@ class AgencyOverview(PaginationMixin, AgencyBase):
                     + result["unlinked_procurement_d_awards"],
                     "unlinked_assistance_award_count": result["unlinked_assistance_c_awards"]
                     + result["unlinked_assistance_d_awards"],
-                    "tas_account_discrepancies_totals": {
-                        "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
-                        "missing_tas_accounts_count": result["missing_tas_accounts"],
-                    },
                     "assurance_statement_url": self.create_assurance_statement_url(result),
                 }
             )
+
+            formatted_result["tas_account_discrepancies_totals"].update({
+                "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
+                "missing_tas_accounts_count": result["missing_tas_accounts"],
+            })
 
         return formatted_result

@@ -172,6 +172,13 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
         return results
 
     def format_result(self, result, agencies):
+        """
+        Fields coming from ReportingAgencyOverview are already NULL, for periods without
+        submissions. Fields coming from other models, such as ReportingAgencyTas, may
+        include values even without a submission. For this reason, we initalize those
+        fields to NULL in the formatted response, and set them only if a submission exists
+        for the record's period.
+        """
 
         formatted_result = {
             "agency_name": result["agency_name"],
@@ -194,13 +201,11 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
         }
 
         if result["recent_publication_date"]:
-            formatted_result.update({
-                "tas_account_discrepancies_totals": {
-                    "tas_accounts_total": result["tas_accounts_total"],
-                    "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
-                    "missing_tas_accounts_count": result["missing_tas_accounts_count"]
-                },
-                "assurance_statement_url": self.create_assurance_statement_url(result)
+            formatted_result["tas_account_discrepancies_totals"].update({
+                "tas_accounts_total": result["tas_accounts_total"],
+                "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
+                "missing_tas_accounts_count": result["missing_tas_accounts_count"]
             })
+            formatted_result["assurance_statement_url"] = self.create_assurance_statement_url(result)
 
         return formatted_result
