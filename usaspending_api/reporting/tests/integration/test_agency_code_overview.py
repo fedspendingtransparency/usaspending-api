@@ -752,3 +752,38 @@ def test_secondary_period_sort(setup_test_data, client):
         },
     ]
     assert response["results"] == expected_results
+
+
+@pytest.mark.django_db
+def test_invalid_monthly_period_filter(client):
+    """
+    Filters out periods when monthly submissions were not possible.
+    Available Periods:
+    - 2017 - 6, 9, 12
+    - 2018 - 3, 6, 9, 12
+    - 2019 - 3, 6, 9, 12
+    - 2020 - 3, 6, 7, 8, 9, 10, 11, 12
+    - 2021 - 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+    Total: 30 periods
+    """
+    for year in [2017, 2018, 2019, 2020, 2021]:
+        for period in range(2, 13):
+            mommy.make(
+                "reporting.ReportingAgencyOverview",
+                reporting_agency_overview_id=year*100+period,
+                toptier_code=123,
+                fiscal_year=year,
+                fiscal_period=period,
+                total_dollars_obligated_gtas=None,
+                total_budgetary_resources=None,
+                total_diff_approp_ocpa_obligated_amounts=None,
+                unlinked_procurement_c_awards=None,
+                unlinked_assistance_c_awards=None,
+                unlinked_procurement_d_awards=None,
+                unlinked_assistance_d_awards=None,
+            )
+
+    resp = client.get(url + "?limit=100")
+    response = resp.json()
+
+    assert len(response["results"]) == 30
