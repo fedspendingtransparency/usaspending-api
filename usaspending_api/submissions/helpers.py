@@ -52,6 +52,23 @@ def validate_request_within_revealed_submissions(
         raise InvalidParameterException(msg)
 
 
+def is_valid_monthly_period(year: int, period: int) -> bool:
+    """ Returns False for periods before agencies were able to make monthly submissions """
+
+    is_valid_period = True
+
+    if year == 2020 and period in [2, 4, 5]:
+        is_valid_period = False
+    if year < 2020 and period in [2, 4, 5, 7, 8, 10, 11]:
+        is_valid_period = False
+    if year == 2017 and period == 3:
+        is_valid_period = False
+    if period == 1:
+        is_valid_period = False
+
+    return is_valid_period
+
+
 @dataclass
 class ClosedPeriod:
     """ Little convenience class to bundle some common period functionality. """
