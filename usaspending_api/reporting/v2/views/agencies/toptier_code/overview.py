@@ -5,12 +5,12 @@ from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, Integ
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
-from usaspending_api.common.helpers.fiscal_year_helpers import is_valid_monthly_period
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.submissions.helpers import is_valid_monthly_period
 
 
 class AgencyOverview(PaginationMixin, AgencyBase):
@@ -134,15 +134,13 @@ class AgencyOverview(PaginationMixin, AgencyBase):
         return self.format_results(result_list)
 
     def format_results(self, result_list):
-        results = [self.format_result(result) for result in result_list]
-        for result in results:
-            if not result["recent_publication_date"]:
-                result["total_budgetary_resources"] = None
+        results = [
+            self.format_result(result)
+            for result in result_list
+            if is_valid_monthly_period(result["fiscal_year"], result["fiscal_period"])
+        ]
         if self.pagination.sort_key == "fiscal_year":
             self.pagination.secondary_sort_key = "fiscal_period"
-        results = filter(
-            lambda result: is_valid_monthly_period(result["fiscal_year"], result["fiscal_period"]), results
-        )
         results = sorted(
             results,
             key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key] or self.sort_value_when_null
@@ -160,7 +158,7 @@ class AgencyOverview(PaginationMixin, AgencyBase):
 
     def format_result(self, result):
         """
-        Fields coming from ReportingAgencyOverview are already NULL, for periods without
+        Fields coming from ReportingAgencyOverview are already NULL for periods without
         submissions. Fields coming from other models, such as ReportingAgencyTas, may
         include values even without a submission. For this reason, we initalize those
         fields to NULL in the formatted response, and set them only if a submission exists
@@ -171,7 +169,7 @@ class AgencyOverview(PaginationMixin, AgencyBase):
             "fiscal_year": result["fiscal_year"],
             "fiscal_period": result["fiscal_period"],
             "current_total_budget_authority_amount": None,
-            "total_budgetary_resources": result["gtas_total_budgetary_resources"],
+            "total_budgetary_resources": None,
             "percent_of_total_budgetary_resources": None,
             "recent_publication_date": result["recent_publication_date"],
             "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
@@ -191,6 +189,7 @@ class AgencyOverview(PaginationMixin, AgencyBase):
             formatted_result.update(
                 {
                     "current_total_budget_authority_amount": result["total_budgetary_resources"],
+                    "total_budgetary_resources": result["gtas_total_budgetary_resources"],
                     "percent_of_total_budgetary_resources": round(
                         result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2
                     )

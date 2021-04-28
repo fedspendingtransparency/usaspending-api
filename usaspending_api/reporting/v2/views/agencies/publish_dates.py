@@ -12,12 +12,13 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMi
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.common.helpers.fiscal_year_helpers import get_quarter_from_period, is_valid_monthly_period
+from usaspending_api.common.helpers.fiscal_year_helpers import get_quarter_from_period
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.reporting.models import ReportingAgencyOverview
+from usaspending_api.submissions.helpers import is_valid_monthly_period
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
