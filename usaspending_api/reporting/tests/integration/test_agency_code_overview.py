@@ -134,14 +134,15 @@ def setup_test_data(db):
         toptier_code=123,
         fiscal_year=2019,
         fiscal_period=9,
-        total_dollars_obligated_gtas=1788370.04,
-        total_budgetary_resources=22478810.98,
-        total_diff_approp_ocpa_obligated_amounts=84931.96,
-        unlinked_procurement_c_awards=100,
-        unlinked_assistance_c_awards=200,
-        unlinked_procurement_d_awards=300,
-        unlinked_assistance_d_awards=400,
+        total_dollars_obligated_gtas=None,
+        total_budgetary_resources=None,
+        total_diff_approp_ocpa_obligated_amounts=None,
+        unlinked_procurement_c_awards=None,
+        unlinked_assistance_c_awards=None,
+        unlinked_procurement_d_awards=None,
+        unlinked_assistance_d_awards=None,
     )
+
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=123,
@@ -217,25 +218,6 @@ def test_basic_success(setup_test_data, client):
     expected_results = [
         {
             "fiscal_year": 2019,
-            "fiscal_period": 9,
-            "current_total_budget_authority_amount": 22478810.98,
-            "total_budgetary_resources": 150000000,
-            "percent_of_total_budgetary_resources": 14.99,
-            "recent_publication_date": None,
-            "recent_publication_date_certified": False,
-            "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 1788370.04,
-                "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 0.0,
-                "missing_tas_accounts_count": 0,
-            },
-            "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 400,
-            "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": None,
-        },
-        {
-            "fiscal_year": 2019,
             "fiscal_period": 6,
             "current_total_budget_authority_amount": 22478810.97,
             "total_budgetary_resources": 200000000,
@@ -271,6 +253,25 @@ def test_basic_success(setup_test_data, client):
             "unlinked_contract_award_count": 40,
             "unlinked_assistance_award_count": 60,
             "assurance_statement_url": assurance_statement_2020_12,
+        },
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 9,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": None,
         },
     ]
     assert response["results"] == expected_results
@@ -302,6 +303,25 @@ def test_pagination(setup_test_data, client):
     assert len(response["results"]) == 3
     expected_results = [
         {
+            "fiscal_year": 2019,
+            "fiscal_period": 9,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": None,
+        },
+        {
             "fiscal_year": 2020,
             "fiscal_period": 12,
             "current_total_budget_authority_amount": 100.0,
@@ -339,55 +359,10 @@ def test_pagination(setup_test_data, client):
             "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_6,
         },
-        {
-            "fiscal_year": 2019,
-            "fiscal_period": 9,
-            "current_total_budget_authority_amount": 22478810.98,
-            "total_budgetary_resources": 150000000,
-            "percent_of_total_budgetary_resources": 14.99,
-            "recent_publication_date": None,
-            "recent_publication_date_certified": False,
-            "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 1788370.04,
-                "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 0.0,
-                "missing_tas_accounts_count": 0,
-            },
-            "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 400,
-            "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": None,
-        },
     ]
     assert response["results"] == expected_results
 
     resp = client.get(url + "?limit=1")
-    response = resp.json()
-    assert len(response["results"]) == 1
-    expected_results = [
-        {
-            "fiscal_year": 2019,
-            "fiscal_period": 9,
-            "current_total_budget_authority_amount": 22478810.98,
-            "total_budgetary_resources": 150000000,
-            "percent_of_total_budgetary_resources": 14.99,
-            "recent_publication_date": None,
-            "recent_publication_date_certified": False,
-            "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 1788370.04,
-                "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 0.0,
-                "missing_tas_accounts_count": 0,
-            },
-            "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 400,
-            "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": None,
-        }
-    ]
-    assert response["results"] == expected_results
-
-    resp = client.get(url + "?limit=1&page=2")
     response = resp.json()
     assert len(response["results"]) == 1
     expected_results = [
@@ -409,6 +384,32 @@ def test_pagination(setup_test_data, client):
             "unlinked_contract_award_count": 4,
             "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_6,
+        },
+    ]
+    assert response["results"] == expected_results
+
+    resp = client.get(url + "?limit=1&page=2")
+    response = resp.json()
+    assert len(response["results"]) == 1
+    expected_results = [
+        {
+            "fiscal_year": 2020,
+            "fiscal_period": 12,
+            "current_total_budget_authority_amount": 100.0,
+            "total_budgetary_resources": 100000000,
+            "percent_of_total_budgetary_resources": 0,
+            "recent_publication_date": "2021-02-11T00:00:00Z",
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 18.6,
+                "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 12.0,
+                "missing_tas_accounts_count": 1,
+            },
+            "obligation_difference": 0.0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
+            "assurance_statement_url": assurance_statement_2020_12,
         }
     ]
     assert response["results"] == expected_results
@@ -442,20 +443,20 @@ def test_secondary_sort(setup_test_data, client):
         {
             "fiscal_year": 2019,
             "fiscal_period": 9,
-            "current_total_budget_authority_amount": 22478810.98,
-            "total_budgetary_resources": 150000000,
-            "percent_of_total_budgetary_resources": 14.99,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 1788370.04,
+                "gtas_obligation_total": None,
                 "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 0.0,
-                "missing_tas_accounts_count": 0,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
             },
-            "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 400,
-            "unlinked_assistance_award_count": 600,
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
             "assurance_statement_url": None,
         },
         {
@@ -485,25 +486,6 @@ def test_secondary_sort(setup_test_data, client):
     response = resp.json()
     assert len(response["results"]) == 3
     expected_results = [
-        {
-            "fiscal_year": 2019,
-            "fiscal_period": 9,
-            "current_total_budget_authority_amount": 22478810.98,
-            "total_budgetary_resources": 150000000,
-            "percent_of_total_budgetary_resources": 14.99,
-            "recent_publication_date": None,
-            "recent_publication_date_certified": False,
-            "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 1788370.04,
-                "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 0.0,
-                "missing_tas_accounts_count": 0,
-            },
-            "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 400,
-            "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": None,
-        },
         {
             "fiscal_year": 2019,
             "fiscal_period": 6,
@@ -542,6 +524,25 @@ def test_secondary_sort(setup_test_data, client):
             "unlinked_assistance_award_count": 60,
             "assurance_statement_url": assurance_statement_2020_12,
         },
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 9,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": None,
+        },
     ]
     assert response["results"] == expected_results
 
@@ -567,20 +568,20 @@ def test_secondary_period_sort(setup_test_data, client):
         reporting_agency_overview_id=4,
         toptier_code=123,
         fiscal_year=2019,
-        fiscal_period=10,
-        total_dollars_obligated_gtas=0.0,
-        total_budgetary_resources=0.0,
-        total_diff_approp_ocpa_obligated_amounts=0.0,
-        unlinked_procurement_c_awards=1,
-        unlinked_assistance_c_awards=2,
-        unlinked_procurement_d_awards=3,
-        unlinked_assistance_d_awards=4,
+        fiscal_period=3,
+        total_dollars_obligated_gtas=None,
+        total_budgetary_resources=None,
+        total_diff_approp_ocpa_obligated_amounts=None,
+        unlinked_procurement_c_awards=None,
+        unlinked_assistance_c_awards=None,
+        unlinked_procurement_d_awards=None,
+        unlinked_assistance_d_awards=None,
     )
     mommy.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=123,
         fiscal_year=2019,
-        fiscal_period=10,
+        fiscal_period=3,
         tas_rendering_label="TAS 2",
         obligated_amount=1000,
     )
@@ -589,6 +590,25 @@ def test_secondary_period_sort(setup_test_data, client):
     response = resp.json()
     assert len(response["results"]) == 4
     expected_results = [
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 3,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": None,
+        },
         {
             "fiscal_year": 2019,
             "fiscal_period": 6,
@@ -611,39 +631,20 @@ def test_secondary_period_sort(setup_test_data, client):
         {
             "fiscal_year": 2019,
             "fiscal_period": 9,
-            "current_total_budget_authority_amount": 22478810.98,
-            "total_budgetary_resources": 150000000.0,
-            "percent_of_total_budgetary_resources": 14.99,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 1788370.04,
+                "gtas_obligation_total": None,
                 "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 0.0,
-                "missing_tas_accounts_count": 0,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
             },
-            "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 400,
-            "unlinked_assistance_award_count": 600,
-            "assurance_statement_url": None,
-        },
-        {
-            "fiscal_year": 2019,
-            "fiscal_period": 10,
-            "current_total_budget_authority_amount": 0.0,
-            "total_budgetary_resources": 10.0,
-            "percent_of_total_budgetary_resources": 0.0,
-            "recent_publication_date": None,
-            "recent_publication_date_certified": False,
-            "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 0.0,
-                "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 1000,
-                "missing_tas_accounts_count": 1,
-            },
-            "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 4,
-            "unlinked_assistance_award_count": 6,
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
             "assurance_statement_url": None,
         },
         {
@@ -694,40 +695,21 @@ def test_secondary_period_sort(setup_test_data, client):
         },
         {
             "fiscal_year": 2019,
-            "fiscal_period": 10,
-            "current_total_budget_authority_amount": 0.0,
-            "total_budgetary_resources": 10.0,
-            "percent_of_total_budgetary_resources": 0.0,
-            "recent_publication_date": None,
-            "recent_publication_date_certified": False,
-            "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 0.0,
-                "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 1000,
-                "missing_tas_accounts_count": 1,
-            },
-            "obligation_difference": 0.0,
-            "unlinked_contract_award_count": 4,
-            "unlinked_assistance_award_count": 6,
-            "assurance_statement_url": None,
-        },
-        {
-            "fiscal_year": 2019,
             "fiscal_period": 9,
-            "current_total_budget_authority_amount": 22478810.98,
-            "total_budgetary_resources": 150000000.0,
-            "percent_of_total_budgetary_resources": 14.99,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
             "recent_publication_date": None,
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": 1788370.04,
+                "gtas_obligation_total": None,
                 "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": 0.0,
-                "missing_tas_accounts_count": 0,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
             },
-            "obligation_difference": 84931.96,
-            "unlinked_contract_award_count": 400,
-            "unlinked_assistance_award_count": 600,
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
             "assurance_statement_url": None,
         },
         {
@@ -749,5 +731,59 @@ def test_secondary_period_sort(setup_test_data, client):
             "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_6,
         },
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 3,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": None,
+        },
     ]
     assert response["results"] == expected_results
+
+
+@pytest.mark.django_db
+def test_invalid_monthly_period_filter(client):
+    """
+    Filters out periods when monthly submissions were not possible.
+    Available Periods:
+    - 2017 - 6, 9, 12
+    - 2018 - 3, 6, 9, 12
+    - 2019 - 3, 6, 9, 12
+    - 2020 - 3, 6, 7, 8, 9, 10, 11, 12
+    - 2021 - 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+    Total: 30 periods
+    """
+    for year in [2017, 2018, 2019, 2020, 2021]:
+        for period in range(2, 13):
+            mommy.make(
+                "reporting.ReportingAgencyOverview",
+                reporting_agency_overview_id=year * 100 + period,
+                toptier_code=123,
+                fiscal_year=year,
+                fiscal_period=period,
+                total_dollars_obligated_gtas=None,
+                total_budgetary_resources=None,
+                total_diff_approp_ocpa_obligated_amounts=None,
+                unlinked_procurement_c_awards=None,
+                unlinked_assistance_c_awards=None,
+                unlinked_procurement_d_awards=None,
+                unlinked_assistance_d_awards=None,
+            )
+
+    resp = client.get(url + "?limit=100")
+    response = resp.json()
+
+    assert len(response["results"]) == 30
