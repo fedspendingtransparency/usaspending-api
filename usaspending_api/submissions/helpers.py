@@ -63,6 +63,8 @@ def is_valid_monthly_period(year: int, period: int) -> bool:
         is_valid_period = False
     if year == 2017 and period == 3:
         is_valid_period = False
+    if period == 1:
+        is_valid_period = False
 
     return is_valid_period
 
