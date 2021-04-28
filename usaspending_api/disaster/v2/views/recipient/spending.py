@@ -42,7 +42,7 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
                     "description": info["name"] or None,
                     "award_count": int(bucket.get("doc_count", 0)),
                     **{
-                        column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
+                        column: get_summed_value_as_float(bucket.get("nested", {}), self.sum_column_mapping[column])
                         for column in self.sum_column_mapping
                     },
                 }
