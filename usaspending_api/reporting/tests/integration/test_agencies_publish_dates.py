@@ -2,7 +2,6 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-
 url = "/api/v2/reporting/agencies/publish_dates/"
 
 
@@ -37,6 +36,14 @@ def publish_dates_data(db):
         submission_reveal_date="2020-09-02 00:00:00.000000+00",
         submission_fiscal_year=2020,
         submission_fiscal_month=11,
+        submission_fiscal_quarter=1,
+        is_quarter=False,
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date="2021-01-01 00:00:00.000000+00",
+        submission_fiscal_year=2021,
+        submission_fiscal_month=1,
         submission_fiscal_quarter=1,
         is_quarter=False,
     )
@@ -138,26 +145,8 @@ def test_basic_success(client, publish_dates_data):
             "current_total_budget_authority_amount": 50.00,
             "periods": [
                 {
-                    "period": 2,
-                    "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 3,
                     "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 4,
-                    "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 5,
-                    "quarter": 2,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
                     "quarterly": False,
                 },
@@ -218,26 +207,8 @@ def test_basic_success(client, publish_dates_data):
             "current_total_budget_authority_amount": 0.00,
             "periods": [
                 {
-                    "period": 2,
-                    "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 3,
                     "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 4,
-                    "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 5,
-                    "quarter": 2,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
                     "quarterly": False,
                 },
@@ -302,26 +273,8 @@ def test_different_agencies(client, publish_dates_data):
             "current_total_budget_authority_amount": 300.00,
             "periods": [
                 {
-                    "period": 2,
-                    "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 3,
                     "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 4,
-                    "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 5,
-                    "quarter": 2,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
                     "quarterly": False,
                 },
@@ -332,33 +285,9 @@ def test_different_agencies(client, publish_dates_data):
                     "quarterly": False,
                 },
                 {
-                    "period": 7,
-                    "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 8,
-                    "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 9,
                     "quarter": 3,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 10,
-                    "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 11,
-                    "quarter": 4,
-                    "submission_dates": {"certification_date": "", "publication_date": ""},
                     "quarterly": False,
                 },
                 {
@@ -379,26 +308,8 @@ def test_different_agencies(client, publish_dates_data):
             "current_total_budget_authority_amount": 200.00,
             "periods": [
                 {
-                    "period": 2,
-                    "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 3,
                     "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 4,
-                    "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 5,
-                    "quarter": 2,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
                     "quarterly": False,
                 },
@@ -409,32 +320,8 @@ def test_different_agencies(client, publish_dates_data):
                     "quarterly": False,
                 },
                 {
-                    "period": 7,
-                    "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 8,
-                    "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 9,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 10,
-                    "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 11,
-                    "quarter": 4,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
                     "quarterly": False,
                 },
@@ -462,26 +349,8 @@ def test_filter(client, publish_dates_data):
             "current_total_budget_authority_amount": 300.00,
             "periods": [
                 {
-                    "period": 2,
-                    "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 3,
                     "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 4,
-                    "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 5,
-                    "quarter": 2,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
                     "quarterly": False,
                 },
@@ -492,33 +361,9 @@ def test_filter(client, publish_dates_data):
                     "quarterly": False,
                 },
                 {
-                    "period": 7,
-                    "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 8,
-                    "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 9,
                     "quarter": 3,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 10,
-                    "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 11,
-                    "quarter": 4,
-                    "submission_dates": {"certification_date": "", "publication_date": ""},
                     "quarterly": False,
                 },
                 {
@@ -629,12 +474,6 @@ def test_publication_date_sort(client, publish_dates_data):
             "current_total_budget_authority_amount": 200.00,
             "periods": [
                 {
-                    "period": 2,
-                    "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 3,
                     "quarter": 1,
                     "submission_dates": {
@@ -644,50 +483,14 @@ def test_publication_date_sort(client, publish_dates_data):
                     "quarterly": True,
                 },
                 {
-                    "period": 4,
-                    "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 5,
-                    "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 6,
                     "quarter": 2,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
                     "quarterly": False,
                 },
                 {
-                    "period": 7,
-                    "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 8,
-                    "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 9,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 10,
-                    "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 11,
-                    "quarter": 4,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
                     "quarterly": False,
                 },
@@ -709,12 +512,6 @@ def test_publication_date_sort(client, publish_dates_data):
             "current_total_budget_authority_amount": 300.00,
             "periods": [
                 {
-                    "period": 2,
-                    "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 3,
                     "quarter": 1,
                     "submission_dates": {
@@ -724,32 +521,8 @@ def test_publication_date_sort(client, publish_dates_data):
                     "quarterly": False,
                 },
                 {
-                    "period": 4,
-                    "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 5,
-                    "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
                     "period": 6,
                     "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 7,
-                    "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 8,
-                    "quarter": 3,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
                     "quarterly": False,
                 },
@@ -758,18 +531,6 @@ def test_publication_date_sort(client, publish_dates_data):
                     "quarter": 3,
                     "submission_dates": {"publication_date": "", "certification_date": ""},
                     "quarterly": False,
-                },
-                {
-                    "period": 10,
-                    "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
-                    "quarterly": False,
-                },
-                {
-                    "period": 11,
-                    "quarter": 4,
-                    "quarterly": False,
-                    "submission_dates": {"certification_date": "", "publication_date": ""},
                 },
                 {
                     "period": 12,
@@ -784,3 +545,26 @@ def test_publication_date_sort(client, publish_dates_data):
         },
     ]
     assert response["results"] == expected_results
+
+
+def test_invalid_monthly_period_filter(client, publish_dates_data):
+
+    # Filter out monthly periods and period 3
+    response = client.get(url + "?fiscal_year=2017").json()
+    assert len(response["results"][0]["periods"]) == 3
+
+    # Filter out monthly periods
+    response = client.get(url + "?fiscal_year=2018").json()
+    assert len(response["results"][0]["periods"]) == 4
+
+    # Filter out monthly periods
+    response = client.get(url + "?fiscal_year=2019").json()
+    assert len(response["results"][0]["periods"]) == 4
+
+    # Filter out periods 2, 4, 5
+    response = client.get(url + "?fiscal_year=2020").json()
+    assert len(response["results"][0]["periods"]) == 8
+
+    # No period filter
+    response = client.get(url + "?fiscal_year=2021").json()
+    assert len(response["results"][0]["periods"]) == 11
