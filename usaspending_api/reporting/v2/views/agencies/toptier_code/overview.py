@@ -174,12 +174,12 @@ class AgencyOverview(PaginationMixin, AgencyBase):
             "recent_publication_date": result["recent_publication_date"],
             "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
             "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": result["total_dollars_obligated_gtas"],
-                "tas_accounts_total": result["tas_obligations"],
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
                 "tas_obligation_not_in_gtas_total": None,
                 "missing_tas_accounts_count": None,
             },
-            "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
+            "obligation_difference": None,
             "unlinked_contract_award_count": None,
             "unlinked_assistance_award_count": None,
             "assurance_statement_url": None,
@@ -195,6 +195,7 @@ class AgencyOverview(PaginationMixin, AgencyBase):
                     )
                     if result["gtas_total_budgetary_resources"]
                     else 0,
+                    "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
                     "unlinked_contract_award_count": result["unlinked_procurement_c_awards"]
                     + result["unlinked_procurement_d_awards"],
                     "unlinked_assistance_award_count": result["unlinked_assistance_c_awards"]
@@ -205,6 +206,8 @@ class AgencyOverview(PaginationMixin, AgencyBase):
 
             formatted_result["tas_account_discrepancies_totals"].update(
                 {
+                    "gtas_obligation_total": result["total_dollars_obligated_gtas"],
+                    "tas_accounts_total": result["tas_obligations"],
                     "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
                     "missing_tas_accounts_count": result["missing_tas_accounts"],
                 }
