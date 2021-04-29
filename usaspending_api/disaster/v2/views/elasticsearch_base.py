@@ -175,8 +175,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
         filtered_aggs = A("filter", filter_agg_query)
         group_by_dim_agg = A("terms", field=self.agg_key, size=self.bucket_count)
-        sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay")
-        sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation")
+        sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
+        sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
         reverse_nested = A("reverse_nested", **{})
 
         # Apply the aggregations
@@ -184,6 +184,8 @@ class ElasticsearchDisasterBase(DisasterBase):
             "toptier_aggs", reverse_nested
         ).bucket("group_by_dim_agg", group_by_dim_agg).bucket(
             "nested", A("nested", path="covid_spending_by_defc")
+        ).bucket(
+            "filtered_aggs", A("filter", filter_agg_query)
         ).metric(
             "total_covid_obligation", sum_covid_obligation
         ).metric(
@@ -243,15 +245,20 @@ class ElasticsearchDisasterBase(DisasterBase):
         }
 
         # Create the aggregations
-        sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay")
-        sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation")
+        sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
+        sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
         reverse_nested = A("reverse_nested", **{})
+
+        filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
+        filtered_aggs = A("filter", filter_agg_query)
 
         # Apply the aggregations
         search.aggs[self.agg_group_name].aggs["filtered_aggs"].aggs["toptier_aggs"].aggs["group_by_dim_agg"].bucket(
             self.sub_agg_group_name, reverse_nested
         ).bucket("group_by_subtier_dim_agg", sub_group_by_sub_agg_key).bucket(
             "nested", A("nested", path="covid_spending_by_defc")
+        ).bucket(
+            "filtered_aggs", filtered_aggs
         ).metric(
             "total_covid_obligation", sum_covid_obligation
         ).metric(
@@ -296,7 +303,9 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         for bucket in response:
             for key in totals.keys():
-                totals[key] += get_summed_value_as_float(bucket.get("nested", {}), self.sum_column_mapping[key])
+                totals[key] += get_summed_value_as_float(
+                    bucket.get("nested", {}).get("filtered_aggs", {}), self.sum_column_mapping[key]
+                )
             award_count += int(bucket.get("doc_count", 0))
 
         totals["award_count"] = award_count
@@ -311,7 +320,13 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         response = search.handle_execute()
         response = response.aggs.to_dict()
-        buckets = response.get("group_by_agg_key", {}).get("filtered_aggs", {}).get("toptier_aggs", {}).get("group_by_dim_agg", {}).get("buckets", [])
+        buckets = (
+            response.get("group_by_agg_key", {})
+            .get("filtered_aggs", {})
+            .get("toptier_aggs", {})
+            .get("group_by_dim_agg", {})
+            .get("buckets", [])
+        )
 
         totals = self.build_totals(buckets)
 

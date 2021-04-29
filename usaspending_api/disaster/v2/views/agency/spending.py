@@ -237,7 +237,9 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
         results = []
         for bucket in info_buckets:
             result = self._build_json_result(bucket)
-            child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("group_by_subtier_dim_agg", {}).get("buckets", [])
+            child_info_buckets = (
+                bucket.get(self.sub_agg_group_name, {}).get("group_by_subtier_dim_agg", {}).get("buckets", [])
+            )
             children = []
             for child_bucket in child_info_buckets:
                 children.append(self._build_json_result(child_bucket))
@@ -255,7 +257,9 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
-                column: get_summed_value_as_float(bucket.get("nested", {}), self.sum_column_mapping[column])
+                column: get_summed_value_as_float(
+                    bucket.get("nested", {}).get("filtered_aggs", {}), self.sum_column_mapping[column]
+                )
                 for column in self.sum_column_mapping
             },
         }
