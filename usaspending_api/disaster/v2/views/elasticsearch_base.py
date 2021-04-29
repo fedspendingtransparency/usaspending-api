@@ -165,16 +165,10 @@ class ElasticsearchDisasterBase(DisasterBase):
         group_by_agg_key_values.update({"field": self.agg_key, "size": size, "shard_size": shard_size})
         group_by_agg_key = A("terms", **group_by_agg_key_values)
 
-        sum_aggregations = {
-            mapping: get_scaled_sum_aggregations(mapping, self.pagination)
-            for mapping in self.sum_column_mapping.values()
-        }
-
         # Create the aggregations
         financial_accounts_agg = A("nested", path="covid_spending_by_defc")
         filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
         filtered_aggs = A("filter", filter_agg_query)
-        group_by_dim_agg = A("terms", field=self.agg_key, size=self.bucket_count)
         sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
         sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
         reverse_nested = A("reverse_nested", **{})
@@ -182,7 +176,7 @@ class ElasticsearchDisasterBase(DisasterBase):
         # Apply the aggregations
         search.aggs.bucket(self.agg_group_name, financial_accounts_agg).bucket("filtered_aggs", filtered_aggs).bucket(
             "toptier_aggs", reverse_nested
-        ).bucket("group_by_dim_agg", group_by_dim_agg).bucket(
+        ).bucket("group_by_dim_agg", group_by_agg_key).bucket(
             "nested", A("nested", path="covid_spending_by_defc")
         ).bucket(
             "filtered_aggs", A("filter", filter_agg_query)
@@ -192,14 +186,12 @@ class ElasticsearchDisasterBase(DisasterBase):
             "total_covid_outlay", sum_covid_outlay
         )
 
-        # search.aggs.bucket(self.agg_group_name, group_by_agg_key)
-        # for field, sum_aggregations in sum_aggregations.items():
-        #     search.aggs[self.agg_group_name].metric(field, sum_aggregations["sum_field"])
-        # #
-        # if bucket_sort_values:
-        #     bucket_sort_aggregation = A("bucket_sort", **bucket_sort_values)
-        #     search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
-        #
+        if bucket_sort_values:
+            bucket_sort_aggregation = A("bucket_sort", **bucket_sort_values)
+            search.aggs[self.agg_group_name].aggs["filtered_aggs"].aggs["toptier_aggs"].aggs[
+                "group_by_dim_agg"
+            ].pipeline("pagination_aggregation", bucket_sort_aggregation)
+
         # # If provided, break down primary bucket aggregation into sub-aggregations based on a sub_agg_key
         if self.sub_agg_key:
             self.extend_elasticsearch_search_with_sub_aggregation(search)
@@ -240,10 +232,6 @@ class ElasticsearchDisasterBase(DisasterBase):
         )
         sub_group_by_sub_agg_key = A("terms", **sub_group_by_sub_agg_key_values)
 
-        sum_aggregations = {
-            mapping: get_scaled_sum_aggregations(mapping) for mapping in self.sum_column_mapping.values()
-        }
-
         # Create the aggregations
         sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
         sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
@@ -264,11 +252,6 @@ class ElasticsearchDisasterBase(DisasterBase):
         ).metric(
             "total_covid_outlay", sum_covid_outlay
         )
-
-        # # Append sub-agg to primary agg, and include the sub-agg's sum metric aggs too
-        # search.aggs[self.agg_group_name].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key)
-        # for field, sum_aggregations in sum_aggregations.items():
-        #     search.aggs[self.agg_group_name].aggs[self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
 
     def build_totals(self, response: List[dict]) -> dict:
         # Need to use a Postgres in this case since we only look at the first 10k results for Elasticsearch.
