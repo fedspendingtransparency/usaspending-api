@@ -185,29 +185,37 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
             "abbreviation": result["abbreviation"],
             "toptier_code": result["toptier_code"],
             "agency_id": agencies.get(result["toptier_code"]),
-            "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
+            "current_total_budget_authority_amount": None,
             "recent_publication_date": result["recent_publication_date"],
             "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
             "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": result["total_dollars_obligated_gtas"],
+                "gtas_obligation_total": None,
                 "tas_accounts_total": None,
                 "tas_obligation_not_in_gtas_total": None,
                 "missing_tas_accounts_count": None,
             },
-            "obligation_difference": result["obligation_difference"],
-            "unlinked_contract_award_count": result["unlinked_contract_award_count"],
-            "unlinked_assistance_award_count": result["unlinked_assistance_award_count"],
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
             "assurance_statement_url": None,
         }
 
         if result["recent_publication_date"]:
+            formatted_result.update(
+                {
+                    "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
+                    "obligation_difference": result["obligation_difference"],
+                    "unlinked_contract_award_count": result["unlinked_contract_award_count"],
+                    "unlinked_assistance_award_count": result["unlinked_assistance_award_count"],
+                    "assurance_statement_url": self.create_assurance_statement_url(result),
+                }
+            )
             formatted_result["tas_account_discrepancies_totals"].update(
                 {
+                    "gtas_obligation_total": result["total_dollars_obligated_gtas"],
                     "tas_accounts_total": result["tas_accounts_total"],
                     "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
                     "missing_tas_accounts_count": result["missing_tas_accounts_count"],
                 }
             )
-            formatted_result["assurance_statement_url"] = self.create_assurance_statement_url(result)
-
         return formatted_result
