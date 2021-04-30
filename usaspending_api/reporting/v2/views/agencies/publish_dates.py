@@ -122,7 +122,7 @@ class PublishDates(PaginationMixin, AgencyBase):
                     "agency_name": result["name"],
                     "abbreviation": result["abbreviation"],
                     "toptier_code": result["toptier_code"],
-                    "current_total_budget_authority_amount": result["current_total_budget_authority_amount"] or 0.00,
+                    "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
                     "periods": sorted(periods, key=lambda x: x["period"]),
                 }
             )
@@ -143,7 +143,10 @@ class PublishDates(PaginationMixin, AgencyBase):
         else:
             results = sorted(
                 self.get_agency_data(),
-                key=lambda x: x[self.pagination.sort_key],
+                key=lambda x: (
+                    (x[self.pagination.sort_key] is None) == (self.pagination.sort_order == "asc"),
+                    x[self.pagination.sort_key],
+                ),
                 reverse=(self.pagination.sort_order == "desc"),
             )
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
