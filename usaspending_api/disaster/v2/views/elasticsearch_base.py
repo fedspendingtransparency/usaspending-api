@@ -31,7 +31,8 @@ class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
         "description": "_key",  # _key will ultimately sort on description value
         "code": "_key",  # Façade sort behavior, really sorting on description
         "id": "_key",  # Façade sort behavior, really sorting on description
-        **sum_column_mapping,
+        "obligation": "nested>filtered_aggs>total_covid_obligation",
+        "outlay": "nested>filtered_aggs>total_covid_outlay",
     }
 
     @cached_property
@@ -50,7 +51,9 @@ class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
         "description": "_key",  # _key will ultimately sort on description value
         "code": "_key",  # Façade sort behavior, really sorting on description
         "id": "_key",  # Façade sort behavior, really sorting on description
-        **sum_column_mapping,
+        "obligation": "nested>filtered_aggs>total_covid_obligation",
+        "outlay": "nested>filtered_aggs>total_covid_outlay",
+        "face_value_of_loan": "total_loan_value",
     }
 
     @cached_property
