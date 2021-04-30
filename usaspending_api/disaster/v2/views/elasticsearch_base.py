@@ -19,7 +19,6 @@ from usaspending_api.common.helpers.generic_helper import get_pagination_metadat
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, _BasePaginationMixin
 from usaspending_api.search.v2.elasticsearch_helper import (
-    get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_awards,
     get_summed_value_as_float,
 )
@@ -171,12 +170,13 @@ class ElasticsearchDisasterBase(DisasterBase):
         filtered_aggs = A("filter", filter_agg_query)
         sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
         sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
+        sum_loan_value = A("sum", field="total_loan_value", script="_value * 100")
         reverse_nested = A("reverse_nested", **{})
 
         # Apply the aggregations
         search.aggs.bucket(self.agg_group_name, financial_accounts_agg).bucket("filtered_aggs", filtered_aggs).bucket(
             "toptier_aggs", reverse_nested
-        ).bucket("group_by_dim_agg", group_by_agg_key).bucket(
+        ).bucket("group_by_dim_agg", group_by_agg_key).metric("total_loan_value", sum_loan_value).bucket(
             "nested", A("nested", path="covid_spending_by_defc")
         ).bucket(
             "filtered_aggs", A("filter", filter_agg_query)
@@ -236,14 +236,16 @@ class ElasticsearchDisasterBase(DisasterBase):
         sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
         sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
         reverse_nested = A("reverse_nested", **{})
-
+        sum_loan_value = A("sum", field="total_loan_value", script="_value * 100")
         filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
         filtered_aggs = A("filter", filter_agg_query)
 
         # Apply the aggregations
         search.aggs[self.agg_group_name].aggs["filtered_aggs"].aggs["toptier_aggs"].aggs["group_by_dim_agg"].bucket(
             self.sub_agg_group_name, reverse_nested
-        ).bucket("group_by_subtier_dim_agg", sub_group_by_sub_agg_key).bucket(
+        ).bucket("group_by_subtier_dim_agg", sub_group_by_sub_agg_key).metric(
+            "total_loan_value", sum_loan_value
+        ).bucket(
             "nested", A("nested", path="covid_spending_by_defc")
         ).bucket(
             "filtered_aggs", filtered_aggs
@@ -287,7 +289,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         for bucket in response:
             for key in totals.keys():
                 totals[key] += get_summed_value_as_float(
-                    bucket.get("nested", {}).get("filtered_aggs", {}), self.sum_column_mapping[key]
+                    bucket.get("nested", {}).get("filtered_aggs", {}) if key != "face_value_of_loan" else bucket,
+                    self.sum_column_mapping[key],
                 )
             award_count += int(bucket.get("doc_count", 0))
 

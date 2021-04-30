@@ -246,6 +246,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == []
 
+
 @pytest.mark.django_db
 def test_indivdual_defc_filter(client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
