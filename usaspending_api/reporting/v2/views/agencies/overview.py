@@ -156,12 +156,17 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
             )
         )
 
-        if self.pagination.sort_order == "desc":
-            result_list = result_list.order_by(F(self.pagination.sort_key).desc(nulls_last=True), "-toptier_code")
-        else:
-            result_list = result_list.order_by(F(self.pagination.sort_key).asc(nulls_last=True), "toptier_code")
+        formatted_results = sorted(
+            self.format_results(result_list),
+            key=lambda x: (
+                (x[self.pagination.sort_key] is None) == (self.pagination.sort_order == "asc"),
+                x[self.pagination.sort_key],
+                x["toptier_code"],
+            ),
+            reverse=(self.pagination.sort_order == "desc"),
+        )
 
-        return self.format_results(result_list)
+        return formatted_results
 
     def format_results(self, result_list):
         agencies = {
