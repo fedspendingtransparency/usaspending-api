@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.common.exceptions import UnprocessableEntityException, InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import get_quarter_from_period
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
@@ -131,9 +131,14 @@ class PublishDates(PaginationMixin, AgencyBase):
     def get(self, request):
         if "publication_date" in self.pagination.sort_key:
             self.validate_publication_sort(self.pagination.sort_key)
+            displayed_periods = list(
+                filter(lambda period: is_valid_monthly_period(self.fiscal_year, period), list(range(2, 13)))
+            )
             sort_key = deepcopy(self.pagination.sort_key)
-            # we get the index of the periods by subtracting 2, since we index from 0 and have no period 1
-            pub_sort = int(sort_key.split(",")[1]) - 2
+            try:
+                pub_sort = displayed_periods.index(int(sort_key.split(",")[1]))
+            except ValueError:
+                raise InvalidParameterException(f"invalid sort provided for 'publication_date'")
             self.pagination.sort_key = "publication_date"
             results = sorted(
                 self.get_agency_data(),
