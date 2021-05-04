@@ -177,9 +177,13 @@ class ElasticsearchDisasterBase(DisasterBase):
         reverse_nested = A("reverse_nested", **{})
 
         # Apply the aggregations
-        search.aggs.bucket(self.agg_group_name, financial_accounts_agg).bucket("filtered_aggs", filtered_aggs).bucket(
-            "toptier_aggs", reverse_nested
-        ).bucket("group_by_dim_agg", group_by_agg_key).metric("total_loan_value", sum_loan_value).bucket(
+        search.aggs.bucket(self.agg_group_name, financial_accounts_agg).bucket("filtered_aggs", filtered_aggs).metric(
+            "total_covid_obligation", sum_covid_obligation
+        ).metric("total_covid_outlay", sum_covid_outlay).bucket("toptier_aggs", reverse_nested).bucket(
+            "group_by_dim_agg", group_by_agg_key
+        ).metric(
+            "total_loan_value", sum_loan_value
+        ).bucket(
             "nested", A("nested", path="covid_spending_by_defc")
         ).bucket(
             "filtered_aggs", A("filter", filter_agg_query)
@@ -262,40 +266,35 @@ class ElasticsearchDisasterBase(DisasterBase):
         # Need to use a Postgres in this case since we only look at the first 10k results for Elasticsearch.
         # Since the endpoint is performing aggregations on the entire matview with no grouping or joins
         # the query takes minimal time to complete.
-        if self.agg_key == settings.ES_ROUTING_FIELD:
-            annotations = {"cast_def_codes": Cast("def_codes", ArrayField(TextField()))}
-            filters = [
-                Q(cast_def_codes__overlap=self.def_codes),
-                self.has_award_of_provided_type(should_join_awards=False),
-            ]
-            aggregations = {
-                "face_value_of_loan": Sum("total_loan_value"),
-                "obligation": Sum("obligation"),
-                "outlay": Sum("outlay"),
-            }
-            aggregations = {col: aggregations[col] for col in self.sum_column_mapping.keys()}
-            aggregations["award_count"] = Count("award_id")
-
-            if self.filters.get("query"):
-                filters.append(Q(recipient_name__icontains=self.filters["query"]["text"]))
-
-            totals = (
-                CovidFinancialAccountMatview.objects.annotate(**annotations)
-                .filter(*filters)
-                .values()
-                .aggregate(**aggregations)
-            )
-            return totals
+        # if self.agg_key == settings.ES_ROUTING_FIELD:
+        #     annotations = {"cast_def_codes": Cast("def_codes", ArrayField(TextField()))}
+        #     filters = [
+        #         Q(cast_def_codes__overlap=self.def_codes),
+        #         self.has_award_of_provided_type(should_join_awards=False),
+        #     ]
+        #     aggregations = {
+        #         "face_value_of_loan": Sum("total_loan_value"),
+        #         "obligation": Sum("obligation"),
+        #         "outlay": Sum("outlay"),
+        #     }
+        #     aggregations = {col: aggregations[col] for col in self.sum_column_mapping.keys()}
+        #     aggregations["award_count"] = Count("award_id")
+        #
+        #     if self.filters.get("query"):
+        #         filters.append(Q(recipient_name__icontains=self.filters["query"]["text"]))
+        #
+        #     totals = (
+        #         CovidFinancialAccountMatview.objects.annotate(**annotations)
+        #         .filter(*filters)
+        #         .values()
+        #         .aggregate(**aggregations)
+        #     )
+        #     return totals
         totals = {key: 0 for key in self.sum_column_mapping.keys()}
         award_count = 0
-
-        for bucket in response:
-            for key in totals.keys():
-                totals[key] += get_summed_value_as_float(
-                    bucket.get("nested", {}).get("filtered_aggs", {}) if key != "face_value_of_loan" else bucket,
-                    self.sum_column_mapping[key],
-                )
-            award_count += int(bucket.get("doc_count", 0))
+        for key in totals.keys():
+            totals[key] += get_summed_value_as_float(response, self.sum_column_mapping[key])
+        award_count += int(response.get("toptier_aggs", {}).get("doc_count", 0))
 
         totals["award_count"] = award_count
 
@@ -317,7 +316,7 @@ class ElasticsearchDisasterBase(DisasterBase):
             .get("buckets", [])
         )
 
-        totals = self.build_totals(buckets)
+        totals = self.build_totals(response.get("group_by_agg_key", {}).get("filtered_aggs", {}))
 
         results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
 
