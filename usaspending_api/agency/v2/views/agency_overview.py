@@ -17,6 +17,10 @@ class AgencyOverview(AgencyBase):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code.md"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.params_to_validate = ["fiscal_year"]
+
     @cache_response()
     def get(self, request, *args, **kwargs):
         return Response(

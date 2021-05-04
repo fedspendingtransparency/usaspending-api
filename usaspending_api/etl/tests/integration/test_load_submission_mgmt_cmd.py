@@ -44,6 +44,7 @@ class TestWithMultipleDatabases(TestCase):
             id="2000060",
             submission_fiscal_year=0,
             submission_fiscal_month=0,
+            submission_fiscal_quarter=0,
             is_quarter=False,
         )
 

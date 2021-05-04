@@ -1,5 +1,6 @@
 import logging
 import csv
+from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
@@ -16,8 +17,10 @@ second of the day (in UTC time) on which queries surfacing data submitted for th
 window should allow the data to be displayed. i.e. if the current date (now() in UTC) is greater
 than or equal to this date and time, show the data related to this submission. If not, don't show it.
 
-Reveal date is derived from the Broker submission_window_schedule.publish_deadline for monthly
-submissions and submission_window_schedule.certification_deadline for quarterly submissions.
+The reveal date is originally set to a future date '9999-12-31'. When a schedules respective
+submission_due_date (submission_due_date for monthly and certification_deadline for quarterly) has
+been passed its reveal date is set to the current datetime by the 'reveal_dabs_submission_window_schedule'
+command. Any reveal dates on schedules with a 'due date' in the past are not updated.
 
 It is logically intended to be the "next day" after the DABS submission deadline communicated to
 Agency Submitters. That deadline is exactly midnight Pacific Time on the schedule communicated to
@@ -32,7 +35,7 @@ deadline communicated to Agency Submitters.
 """
 
 
-#  SQL to create Month Period Schedules using broker table
+# SQL to create Month Period Schedules using broker table
 # Use all periods after Period 9, Year 2020 from table
 # Submission Due Date comes from 'publish_deadline' column
 MONTH_SCHEDULE_SQL = """
@@ -43,7 +46,6 @@ select
     period_start as submission_start_date,
     certification_deadline as certification_due_date,
     publish_deadline as submission_due_date,
-    publish_deadline as submission_reveal_date,
     year as submission_fiscal_year,
     (period + 2) / 3 as submission_fiscal_quarter,
     period as submission_fiscal_month,
@@ -66,7 +68,6 @@ select
     period_start as submission_start_date,
     certification_deadline as certification_due_date,
     certification_deadline as submission_due_date,
-    certification_deadline as submission_reveal_date,
     year as submission_fiscal_year,
     (period + 2) / 3 as submission_fiscal_quarter,
     period as submission_fiscal_month,
@@ -76,6 +77,9 @@ from
 where
     period % 3 = 0
 """
+
+
+FUTURE_DATE = datetime.max.replace(tzinfo=timezone.utc)
 
 
 class Command(BaseCommand):
@@ -100,16 +104,34 @@ class Command(BaseCommand):
 
         if file_path:
             logger.info("Input file provided. Reading schedule from file.")
-            submission_schedule_objs = self.read_schedules_from_csv(file_path)
+            incoming_schedule_objs = self.read_schedules_from_csv(file_path)
         else:
             logger.info("No input file provided. Generating schedule from broker.")
-            submission_schedule_objs = self.generate_schedules_from_broker()
+            incoming_schedule_objs = self.generate_schedules_from_broker()
+
+        logger.info("Loading existing DABS Submission Window Schedules")
+        existing_schedules = DABSSubmissionWindowSchedule.objects.all()
+
+        for incoming_schedule in incoming_schedule_objs:
+            # If an incoming schedule has a matching existing schedule, use the existing
+            # schedule's submission_reveal_date
+            for existing_schedule in existing_schedules:
+                if int(incoming_schedule.id) == existing_schedule.id:
+                    incoming_schedule.submission_reveal_date = existing_schedule.submission_reveal_date
+
+            incoming_schedule.parse_dates_fields(timezone.utc)
+
+            # Hide future submission windows by setting the reveal date to a distant future
+            # date. The command 'reveal_dabs_submission_window_schedules` is used to set the
+            # reveal date when it is ready.
+            if incoming_schedule.submission_due_date > datetime.utcnow().replace(tzinfo=timezone.utc):
+                incoming_schedule.submission_reveal_date = FUTURE_DATE
 
         logger.info("Deleting existing DABS Submission Window Schedule")
         DABSSubmissionWindowSchedule.objects.all().delete()
 
         logger.info("Inserting DABS Submission Window Schedule into website")
-        DABSSubmissionWindowSchedule.objects.bulk_create(submission_schedule_objs)
+        DABSSubmissionWindowSchedule.objects.bulk_create(incoming_schedule_objs)
 
         logger.info("DABS Submission Window Schedule loader finished successfully!")
 

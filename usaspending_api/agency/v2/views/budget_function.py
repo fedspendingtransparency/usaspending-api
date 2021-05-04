@@ -17,6 +17,10 @@ class BudgetFunctionList(PaginationMixin, AgencyBase):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/budget_function.md"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.params_to_validate = ["fiscal_year", "filter"]
+
     def format_results(self, rows):
         order = self.pagination.sort_order == "desc"
         names = set([row["treasury_account__budget_function_title"] for row in rows])

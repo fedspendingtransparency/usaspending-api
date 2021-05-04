@@ -1,22 +1,21 @@
 from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value
-from django.utils.functional import cached_property
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
-from usaspending_api.common.helpers.fiscal_year_helpers import (
-    get_final_period_of_quarter,
-    calculate_last_completed_fiscal_quarter,
-)
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.references.models import ToptierAgencyPublishedDABSView, Agency
 from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-class AgenciesOverview(AgencyBase, PaginationMixin):
+class AgenciesOverview(PaginationMixin, AgencyBase):
     """Return list of all agencies and the overview of their spending data for a provided fiscal year and period"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/overview.md"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.params_to_validate = ["fiscal_year", "fiscal_period", "filter"]
 
     def get(self, request):
         self.sortable_columns = [
@@ -157,51 +156,85 @@ class AgenciesOverview(AgencyBase, PaginationMixin):
             )
         )
 
-        if self.pagination.sort_order == "desc":
-            result_list = result_list.order_by(F(self.pagination.sort_key).desc(nulls_last=True), "-toptier_code")
-        else:
-            result_list = result_list.order_by(F(self.pagination.sort_key).asc(nulls_last=True), "toptier_code")
+        formatted_results = sorted(
+            self.format_results(result_list),
+            key=lambda x: (
+                *(
+                    (
+                        (x["tas_account_discrepancies_totals"][self.pagination.sort_key] is None)
+                        == (self.pagination.sort_order == "asc"),
+                        x["tas_account_discrepancies_totals"][self.pagination.sort_key],
+                    )
+                    if (
+                        self.pagination.sort_key == "missing_tas_accounts_count"
+                        or self.pagination.sort_key == "tas_accounts_total"
+                        or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
+                    )
+                    else (
+                        (x[self.pagination.sort_key] is None) == (self.pagination.sort_order == "asc"),
+                        x[self.pagination.sort_key],
+                    )
+                ),
+                x["toptier_code"],
+            ),
+            reverse=(self.pagination.sort_order == "desc"),
+        )
 
-        return self.format_results(result_list)
+        return formatted_results
 
     def format_results(self, result_list):
         agencies = {
             a["toptier_agency__toptier_code"]: a["id"]
             for a in Agency.objects.filter(toptier_flag=True).values("toptier_agency__toptier_code", "id")
         }
-        results = [
-            {
-                "agency_name": result["agency_name"],
-                "abbreviation": result["abbreviation"],
-                "toptier_code": result["toptier_code"],
-                "agency_id": agencies.get(result["toptier_code"]),
-                "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
-                "recent_publication_date": result["recent_publication_date"],
-                "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
-                "tas_account_discrepancies_totals": {
-                    "gtas_obligation_total": result["total_dollars_obligated_gtas"],
-                    "tas_accounts_total": result["tas_accounts_total"],
-                    "tas_obligation_not_in_gtas_total": result["tas_obligation_not_in_gtas_total"] or 0.0,
-                    "missing_tas_accounts_count": result["missing_tas_accounts_count"],
-                },
-                "obligation_difference": result["obligation_difference"],
-                "unlinked_contract_award_count": result["unlinked_contract_award_count"],
-                "unlinked_assistance_award_count": result["unlinked_assistance_award_count"],
-                "assurance_statement_url": self.create_assurance_statement_url(result)
-                if result["recent_publication_date"]
-                else None,
-            }
-            for result in result_list
-        ]
+        results = [self.format_result(result, agencies) for result in result_list]
         return results
 
-    @cached_property
-    def fiscal_period(self):
+    def format_result(self, result, agencies):
         """
-        This is the fiscal period we want to limit our queries to when querying CPE values for
-        self.fiscal_year.  If it's prior to Q1 submission window close date, we will return
-        quarter 1 anyhow and just show what we have (which will likely be incomplete).
+        Fields coming from ReportingAgencyOverview are already NULL, for periods without
+        submissions. Fields coming from other models, such as ReportingAgencyTas, may
+        include values even without a submission. For this reason, we initalize those
+        fields to NULL in the formatted response, and set them only if a submission exists
+        for the record's period.
         """
-        return self.request.query_params.get(
-            "fiscal_period", get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(self.fiscal_year)) or 3
-        )
+
+        formatted_result = {
+            "agency_name": result["agency_name"],
+            "abbreviation": result["abbreviation"],
+            "toptier_code": result["toptier_code"],
+            "agency_id": agencies.get(result["toptier_code"]),
+            "current_total_budget_authority_amount": None,
+            "recent_publication_date": result["recent_publication_date"],
+            "recent_publication_date_certified": result["recent_publication_date_certified"] is not None,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": None,
+        }
+
+        if result["recent_publication_date"]:
+            formatted_result.update(
+                {
+                    "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
+                    "obligation_difference": result["obligation_difference"],
+                    "unlinked_contract_award_count": result["unlinked_contract_award_count"],
+                    "unlinked_assistance_award_count": result["unlinked_assistance_award_count"],
+                    "assurance_statement_url": self.create_assurance_statement_url(result),
+                }
+            )
+            formatted_result["tas_account_discrepancies_totals"].update(
+                {
+                    "gtas_obligation_total": result["total_dollars_obligated_gtas"],
+                    "tas_accounts_total": result["tas_accounts_total"],
+                    "tas_obligation_not_in_gtas_total": (result["tas_obligation_not_in_gtas_total"] or 0.0),
+                    "missing_tas_accounts_count": result["missing_tas_accounts_count"],
+                }
+            )
+        return formatted_result

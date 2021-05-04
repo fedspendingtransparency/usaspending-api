@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List Federal Accounts [/api/v2/agency/{toptier_code}/federal_account/{?fiscal_year,filter,order,sort,page,limit}]
+# List Disaster Emergency Fund Codes [/api/v2/agency/{toptier_code}/def_code/{?fiscal_year,filter,order,sort,page,limit}]
 
-Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropriations for a single fiscal year
+Returns a list of Disaster Emergency Fund Codes in the Agency's appropriations for a single fiscal year
 
 ## GET
 
@@ -13,7 +13,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
     + `fiscal_year` (optional, number)
         The desired appropriations fiscal year. Defaults to the current FY.
     + `filter` (optional, string)
-        This will filter the Federal Account by their name to those matching the text.
+        This will filter the Disaster Emergency Fund Codes by their code or title to those matching the text.
     + `order` (optional, enum[string])
         Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
         + Default: `desc`
@@ -42,15 +42,13 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `totals` (required, Totals, fixed-type)
-        + `results` (required, array[FederalAccount], fixed-type)
+        + `results` (required, array[DisasterEmergencyFundCode], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
 
             {
-                "toptier_code": "086",
-                "fiscal_year": 2018,
                 "page_metadata": {
                     "page": 1,
                     "total": 1,
@@ -62,53 +60,31 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                 },
                 "totals": {
                     "total_budgetary_resources": 66846596521.0,
-                    "obligated_amount": 56046596521.0,
-                    "gross_outlay_amount": 49589399932.2,
+                    "obligated_amount": 76046596521.0,
+                    "gross_outlay_amount": 39589399932.2,
                 },
                 "results": [
-                    "code": "086-0302",
-                    "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
-                    "children": [
-                        {
-                            "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
-                            "code": "086-X-0302-000",
-                            "total_budgetary_resources": 65926391527.0,
-                            "obligated_amount": 55926391527.0,
-                            "gross_outlay_amount": 49506649058.15
-                        },
-                        {
-                            "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
-                            "code": "086-2019/2020-0302-000",
-                            "total_budgetary_resources": 920204994.0,
-                            "obligated_amount": 120204994.0,
-                            "gross_outlay_amount": 82750874.0
-                        }
-                    ],
+                    "code": "N",
+                    "public_law": "Emergency P.L. 116-136",
+                    "title": "Coronavirus Aid, Relief, and Economic Security Act or the CARES Act",
                     "total_budgetary_resources": 66846596521.0,
-                    "obligated_amount": 56046596521.0,
-                    "gross_outlay_amount": 49589399932.2
+                    "obligated_amount": 76046596521.0,
+                    "gross_outlay_amount": 39589399932.2
                 ],
                 "messages": []
             }
 
 # Data Structures
 
-## FederalAccount (object)
-+ `name` (required, string)
-+ `code` (required, string)
-+ `total_budgetary_resources` (required, number)
-+ `obligated_amount` (required, number)
-+ `gross_outlay_amount` (required, number)
-+ `children` (required, array[TreasuryAccount], fixed-type)
-
 ## Totals (object)
 + `total_budgetary_resources` (required, number)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
 
-## TreasuryAccount (object
-+ `name` (required, string)
+## DisasterEmergencyFundCode (object)
 + `code` (required, string)
++ `public_law` (required, string)
++ `title` (required, string, nullable)
 + `total_budgetary_resources` (required, number)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)

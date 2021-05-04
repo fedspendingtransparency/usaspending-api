@@ -1,0 +1,4 @@
+id,period_start_date,period_end_date,submission_start_date,submission_due_date,certification_due_date,submission_reveal_date,submission_fiscal_year,submission_fiscal_quarter,submission_fiscal_month,is_quarter
+2020121,2020-07-01 00:00:00Z,2020-09-30 00:00:00Z,2020-10-19 00:00:00Z,2020-11-17 00:00:00Z,2020-11-17 00:00:00Z,2020-11-17 00:00:00Z,2020,4,12,True
+2777121,2777-07-01 00:00:00Z,2777-09-30 00:00:00Z,2777-10-19 00:00:00Z,2777-11-17 00:00:00Z,2777-11-17 00:00:00Z,2777-11-17 00:00:00Z,2777,4,12,True
+2888121,2888-07-01 00:00:00Z,2888-09-30 00:00:00Z,2888-10-19 00:00:00Z,2888-11-17 00:00:00Z,2888-11-17 00:00:00Z,2888-11-17 00:00:00Z,2888,4,12,True

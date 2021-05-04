@@ -9,6 +9,14 @@ url = "/api/v2/reporting/agencies/{toptier_code}/{fiscal_year}/{fiscal_period}/u
 @pytest.fixture
 def setup_test_data(db):
     mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2020,
+        submission_fiscal_month=8,
+        is_quarter=False,
+        submission_reveal_date="2020-06-01",
+        period_start_date="2020-04-01",
+    )
+    mommy.make(
         "reporting.ReportingAgencyOverview",
         toptier_code="043",
         fiscal_year=2020,
@@ -33,7 +41,7 @@ def test_assistance_success(setup_test_data, client):
         "total_linked_award_count": 6,
     }
 
-    assert expected_results == response
+    assert response == expected_results
 
 
 def test_procurement_success(setup_test_data, client):
@@ -47,7 +55,7 @@ def test_procurement_success(setup_test_data, client):
         "total_linked_award_count": 7,
     }
 
-    assert expected_results == response
+    assert response == expected_results
 
 
 def test_no_result_found(setup_test_data, client):

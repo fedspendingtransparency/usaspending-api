@@ -18,13 +18,18 @@ from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
 from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.reporting.models import ReportingAgencyOverview
+from usaspending_api.submissions.helpers import is_valid_monthly_period
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-class PublishDates(AgencyBase, PaginationMixin):
+class PublishDates(PaginationMixin, AgencyBase):
     """Returns list of agency submission information, included published and certified dates for the fiscal year"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/publish_dates.md"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.params_to_validate = ["fiscal_year", "filter"]
 
     def validate_publication_sort(self, sort_key):
         regex_string = r"publication_date,([2-9]|1[0-2])"
@@ -101,7 +106,8 @@ class PublishDates(AgencyBase, PaginationMixin):
             existing_periods = set([x["period"] for x in periods])
             missing_periods = set({2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}).difference(existing_periods)
             for x in missing_periods:
-                # cannot always infer if the missing periods for 3, 6, 9, 12 should/would have been submitted as a quarterly, so defaulting to monthly for consistency
+                # cannot always infer if the missing periods for 3, 6, 9, 12 should/would have been
+                # submitted as a quarterly, so defaulting to monthly for consistency
                 periods.append(
                     {
                         "period": x,
@@ -110,33 +116,47 @@ class PublishDates(AgencyBase, PaginationMixin):
                         "quarterly": False,
                     }
                 )
+            periods = filter(lambda period: period["period"] in self.displayed_periods, periods)
             results.append(
                 {
                     "agency_name": result["name"],
                     "abbreviation": result["abbreviation"],
                     "toptier_code": result["toptier_code"],
-                    "current_total_budget_authority_amount": result["current_total_budget_authority_amount"] or 0.00,
+                    "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
                     "periods": sorted(periods, key=lambda x: x["period"]),
                 }
             )
         return results
 
     def get(self, request):
+        self.displayed_periods = list(
+            filter(lambda period: is_valid_monthly_period(self.fiscal_year, period), list(range(2, 13)))
+        )
         if "publication_date" in self.pagination.sort_key:
             self.validate_publication_sort(self.pagination.sort_key)
             sort_key = deepcopy(self.pagination.sort_key)
-            # we get the index of the periods by subtracting 2, since we index from 0 and have no period 1
-            pub_sort = int(sort_key.split(",")[1]) - 2
+            period_param = int(sort_key.split(",")[1])
+            try:
+                pub_sort = self.displayed_periods.index(period_param)
+            except ValueError:
+                pub_sort = None
             self.pagination.sort_key = "publication_date"
+
+            # If not a valid period for the fiscal year fallback to the agency name
             results = sorted(
                 self.get_agency_data(),
-                key=lambda x: x["periods"][pub_sort]["submission_dates"]["publication_date"],
+                key=lambda x: x["periods"][pub_sort]["submission_dates"]["publication_date"]
+                if pub_sort is not None
+                else x["agency_name"],
                 reverse=(self.pagination.sort_order == "desc"),
             )
         else:
             results = sorted(
                 self.get_agency_data(),
-                key=lambda x: x[self.pagination.sort_key],
+                key=lambda x: (
+                    (x[self.pagination.sort_key] is None) == (self.pagination.sort_order == "asc"),
+                    x[self.pagination.sort_key],
+                ),
                 reverse=(self.pagination.sort_order == "desc"),
             )
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
