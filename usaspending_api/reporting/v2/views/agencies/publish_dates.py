@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.exceptions import UnprocessableEntityException, InvalidParameterException
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.fiscal_year_helpers import get_quarter_from_period
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
@@ -116,7 +116,7 @@ class PublishDates(PaginationMixin, AgencyBase):
                         "quarterly": False,
                     }
                 )
-            periods = filter(lambda period: is_valid_monthly_period(self.fiscal_year, period["period"]), periods)
+            periods = filter(lambda period: period["period"] in self.displayed_periods, periods)
             results.append(
                 {
                     "agency_name": result["name"],
@@ -129,20 +129,25 @@ class PublishDates(PaginationMixin, AgencyBase):
         return results
 
     def get(self, request):
+        self.displayed_periods = list(
+            filter(lambda period: is_valid_monthly_period(self.fiscal_year, period), list(range(2, 13)))
+        )
         if "publication_date" in self.pagination.sort_key:
             self.validate_publication_sort(self.pagination.sort_key)
-            displayed_periods = list(
-                filter(lambda period: is_valid_monthly_period(self.fiscal_year, period), list(range(2, 13)))
-            )
             sort_key = deepcopy(self.pagination.sort_key)
+            period_param = int(sort_key.split(",")[1])
             try:
-                pub_sort = displayed_periods.index(int(sort_key.split(",")[1]))
+                pub_sort = self.displayed_periods.index(period_param)
             except ValueError:
-                raise InvalidParameterException(f"invalid sort provided for 'publication_date'")
+                pub_sort = None
             self.pagination.sort_key = "publication_date"
+
+            # If not a valid period for the fiscal year fallback to the agency name
             results = sorted(
                 self.get_agency_data(),
-                key=lambda x: x["periods"][pub_sort]["submission_dates"]["publication_date"],
+                key=lambda x: x["periods"][pub_sort]["submission_dates"]["publication_date"]
+                if pub_sort is not None
+                else x["agency_name"],
                 reverse=(self.pagination.sort_order == "desc"),
             )
         else:
