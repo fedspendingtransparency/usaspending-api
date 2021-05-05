@@ -303,25 +303,6 @@ def test_pagination(setup_test_data, client):
     assert len(response["results"]) == 3
     expected_results = [
         {
-            "fiscal_year": 2019,
-            "fiscal_period": 9,
-            "current_total_budget_authority_amount": None,
-            "total_budgetary_resources": None,
-            "percent_of_total_budgetary_resources": None,
-            "recent_publication_date": None,
-            "recent_publication_date_certified": False,
-            "tas_account_discrepancies_totals": {
-                "gtas_obligation_total": None,
-                "tas_accounts_total": None,
-                "tas_obligation_not_in_gtas_total": None,
-                "missing_tas_accounts_count": None,
-            },
-            "obligation_difference": None,
-            "unlinked_contract_award_count": None,
-            "unlinked_assistance_award_count": None,
-            "assurance_statement_url": None,
-        },
-        {
             "fiscal_year": 2020,
             "fiscal_period": 12,
             "current_total_budget_authority_amount": 100.0,
@@ -358,6 +339,25 @@ def test_pagination(setup_test_data, client):
             "unlinked_contract_award_count": 4,
             "unlinked_assistance_award_count": 6,
             "assurance_statement_url": assurance_statement_2019_6,
+        },
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 9,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": None,
         },
     ]
     assert response["results"] == expected_results

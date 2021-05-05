@@ -1,6 +1,3 @@
-import sys
-
-from datetime import datetime, timezone
 from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField
 from rest_framework.response import Response
 
@@ -34,12 +31,6 @@ class AgencyOverview(PaginationMixin, AgencyBase):
         ]
 
         self.default_sort_column = "current_total_budget_authority_amount"
-        if self.pagination.sort_key in ("recent_publication_date"):
-            self.sort_value_when_null = datetime(2000, 1, 1, tzinfo=timezone.utc)
-        elif self.pagination.sort_key in ("recent_publication_date_certified"):
-            self.sort_value_when_null = False
-        else:
-            self.sort_value_when_null = -sys.maxsize - 1  # greatest negative int value in Python
         results = self.get_agency_overview()
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
@@ -139,21 +130,30 @@ class AgencyOverview(PaginationMixin, AgencyBase):
             for result in result_list
             if is_valid_monthly_period(result["fiscal_year"], result["fiscal_period"])
         ]
-        if self.pagination.sort_key == "fiscal_year":
-            self.pagination.secondary_sort_key = "fiscal_period"
         results = sorted(
             results,
-            key=lambda x: x["tas_account_discrepancies_totals"][self.pagination.sort_key] or self.sort_value_when_null
-            if (
-                self.pagination.sort_key == "missing_tas_accounts_count"
-                or self.pagination.sort_key == "tas_accounts_total"
-                or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
-            )
-            else (x[self.pagination.sort_key] or self.sort_value_when_null, x[self.pagination.secondary_sort_key])
-            if self.pagination.secondary_sort_key is not None
-            else x[self.pagination.sort_key] or self.sort_value_when_null,
+            key=lambda x: (
+                *(
+                    (
+                        (x["tas_account_discrepancies_totals"][self.pagination.sort_key] is None)
+                        == (self.pagination.sort_order == "asc"),
+                        x["tas_account_discrepancies_totals"][self.pagination.sort_key],
+                    )
+                    if (
+                        self.pagination.sort_key == "missing_tas_accounts_count"
+                        or self.pagination.sort_key == "tas_accounts_total"
+                        or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
+                    )
+                    else (
+                        (x[self.pagination.sort_key] is None) == (self.pagination.sort_order == "asc"),
+                        x[self.pagination.sort_key],
+                    )
+                ),
+                x["fiscal_period"],
+            ),
             reverse=self.pagination.sort_order == "desc",
         )
+
         return results
 
     def format_result(self, result):
