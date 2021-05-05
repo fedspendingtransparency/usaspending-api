@@ -290,8 +290,11 @@ class ElasticsearchDisasterBase(DisasterBase):
         #         .aggregate(**aggregations)
         #     )
         #     return totals
-        # totals = {key: 0 for key in self.sum_column_mapping.keys()}
-        # award_count = 0
+
+
+        totals = {key: 0 for key in self.sum_column_mapping.keys()}
+        award_count = 0
+
         # for key in totals.keys():
         #     totals[key] += get_summed_value_as_float(response, self.sum_column_mapping[key])
         # award_count += int(response.get("toptier_aggs", {}).get("doc_count", 0))
@@ -299,33 +302,7 @@ class ElasticsearchDisasterBase(DisasterBase):
         # totals["award_count"] = award_count
         #
         # return totals
-        if self.agg_key == settings.ES_ROUTING_FIELD:
-            annotations = {"cast_def_codes": Cast("def_codes", ArrayField(TextField()))}
-            filters = [
-                Q(cast_def_codes__overlap=self.def_codes),
-                self.has_award_of_provided_type(should_join_awards=False),
-            ]
-            aggregations = {
-                "face_value_of_loan": Sum("total_loan_value"),
-                "obligation": Sum("obligation"),
-                "outlay": Sum("outlay"),
-            }
-            aggregations = {col: aggregations[col] for col in self.sum_column_mapping.keys()}
-            aggregations["award_count"] = Count("award_id")
 
-            if self.filters.get("query"):
-                filters.append(Q(recipient_name__icontains=self.filters["query"]["text"]))
-
-            totals = (
-                CovidFinancialAccountMatview.objects.annotate(**annotations)
-                .filter(*filters)
-                .values()
-                .aggregate(**aggregations)
-            )
-            return totals
-
-        totals = {key: 0 for key in self.sum_column_mapping.keys()}
-        award_count = 0
 
         for bucket in response:
             for key in totals.keys():
@@ -353,7 +330,7 @@ class ElasticsearchDisasterBase(DisasterBase):
         )
 
         totals = self.build_totals(response.get("group_by_agg_key", {}).get("filtered_aggs", {}))
-
+        # totals = self.build_totals(buckets)
         results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
 
         return {"totals": totals, "results": results}
