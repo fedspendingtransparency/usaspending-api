@@ -116,34 +116,47 @@ class PublishDates(PaginationMixin, AgencyBase):
                         "quarterly": False,
                     }
                 )
-            periods = filter(lambda period: is_valid_monthly_period(self.fiscal_year, period["period"]), periods)
+            periods = filter(lambda period: period["period"] in self.displayed_periods, periods)
             results.append(
                 {
                     "agency_name": result["name"],
                     "abbreviation": result["abbreviation"],
                     "toptier_code": result["toptier_code"],
-                    "current_total_budget_authority_amount": result["current_total_budget_authority_amount"] or 0.00,
+                    "current_total_budget_authority_amount": result["current_total_budget_authority_amount"],
                     "periods": sorted(periods, key=lambda x: x["period"]),
                 }
             )
         return results
 
     def get(self, request):
+        self.displayed_periods = list(
+            filter(lambda period: is_valid_monthly_period(self.fiscal_year, period), list(range(2, 13)))
+        )
         if "publication_date" in self.pagination.sort_key:
             self.validate_publication_sort(self.pagination.sort_key)
             sort_key = deepcopy(self.pagination.sort_key)
-            # we get the index of the periods by subtracting 2, since we index from 0 and have no period 1
-            pub_sort = int(sort_key.split(",")[1]) - 2
+            period_param = int(sort_key.split(",")[1])
+            try:
+                pub_sort = self.displayed_periods.index(period_param)
+            except ValueError:
+                pub_sort = None
             self.pagination.sort_key = "publication_date"
+
+            # If not a valid period for the fiscal year fallback to the agency name
             results = sorted(
                 self.get_agency_data(),
-                key=lambda x: x["periods"][pub_sort]["submission_dates"]["publication_date"],
+                key=lambda x: x["periods"][pub_sort]["submission_dates"]["publication_date"]
+                if pub_sort is not None
+                else x["agency_name"],
                 reverse=(self.pagination.sort_order == "desc"),
             )
         else:
             results = sorted(
                 self.get_agency_data(),
-                key=lambda x: x[self.pagination.sort_key],
+                key=lambda x: (
+                    (x[self.pagination.sort_key] is None) == (self.pagination.sort_order == "asc"),
+                    x[self.pagination.sort_key],
+                ),
                 reverse=(self.pagination.sort_order == "desc"),
             )
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)

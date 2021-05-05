@@ -204,7 +204,7 @@ def test_basic_success(client, publish_dates_data):
             "agency_name": "Test Agency 2",
             "abbreviation": "TA2",
             "toptier_code": "002",
-            "current_total_budget_authority_amount": 0.00,
+            "current_total_budget_authority_amount": None,
             "periods": [
                 {
                     "period": 3,
