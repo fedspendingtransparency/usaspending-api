@@ -130,7 +130,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         """
         Using the provided ES_Q object creates an AwardSearch object with the necessary applied aggregations.
         """
-        # Create the initial search using filters
+        # We need to add an 'exists' query here for the agg key to ensure correct counts for the awards
+        self.filter_query.must.append(ES_Q("exists", field=self.agg_key))
         search = AwardSearch().filter(self.filter_query)
         # As of writing this the value of settings.ES_ROUTING_FIELD is the only high cardinality aggregation that
         # we support. Since the Elasticsearch clusters are routed by this field we don't care to get a count of
@@ -263,54 +264,15 @@ class ElasticsearchDisasterBase(DisasterBase):
         )
 
     def build_totals(self, response: List[dict]) -> dict:
-        # Need to use a Postgres in this case since we only look at the first 10k results for Elasticsearch.
-        # Since the endpoint is performing aggregations on the entire matview with no grouping or joins
-        # the query takes minimal time to complete.
-        # if self.agg_key == settings.ES_ROUTING_FIELD:
-        #     annotations = {"cast_def_codes": Cast("def_codes", ArrayField(TextField()))}
-        #     filters = [
-        #         Q(cast_def_codes__overlap=self.def_codes),
-        #         self.has_award_of_provided_type(should_join_awards=False),
-        #     ]
-        #     aggregations = {
-        #         "face_value_of_loan": Sum("total_loan_value"),
-        #         "obligation": Sum("obligation"),
-        #         "outlay": Sum("outlay"),
-        #     }
-        #     aggregations = {col: aggregations[col] for col in self.sum_column_mapping.keys()}
-        #     aggregations["award_count"] = Count("award_id")
-        #
-        #     if self.filters.get("query"):
-        #         filters.append(Q(recipient_name__icontains=self.filters["query"]["text"]))
-        #
-        #     totals = (
-        #         CovidFinancialAccountMatview.objects.annotate(**annotations)
-        #         .filter(*filters)
-        #         .values()
-        #         .aggregate(**aggregations)
-        #     )
-        #     return totals
-
-
         totals = {key: 0 for key in self.sum_column_mapping.keys()}
-        award_count = 0
+        for key in totals.keys():
+            totals[key] += get_summed_value_as_float(response, self.sum_column_mapping[key])
 
-        # for key in totals.keys():
-        #     totals[key] += get_summed_value_as_float(response, self.sum_column_mapping[key])
-        # award_count += int(response.get("toptier_aggs", {}).get("doc_count", 0))
-        #
-        # totals["award_count"] = award_count
-        #
-        # return totals
-
-
-        for bucket in response:
-            for key in totals.keys():
-                totals[key] += get_summed_value_as_float(bucket, self.sum_column_mapping[key])
-            award_count += int(bucket.get("doc_count", 0))
-
-        totals["award_count"] = award_count
-
+        totals["award_count"] = int(response.get("toptier_aggs", {}).get("doc_count", 0))
+        if self.agg_key == settings.ES_ROUTING_FIELD:
+            totals["award_count"] += int(
+                response.get("toptier_aggs", {}).get("group_by_dim_agg", {}).get("sum_other_doc_count", 0)
+            )
         return totals
 
     def query_elasticsearch(self) -> dict:
