@@ -53,7 +53,7 @@ class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
         "id": "_key",  # Façade sort behavior, really sorting on description
         "obligation": "nested>filtered_aggs>total_covid_obligation",
         "outlay": "nested>filtered_aggs>total_covid_outlay",
-        "face_value_of_loan": "total_loan_value",
+        "face_value_of_loan": "nested>filtered_aggs>reverse_nested>total_loan_value",
     }
 
     @cached_property
@@ -178,27 +178,27 @@ class ElasticsearchDisasterBase(DisasterBase):
         reverse_nested = A("reverse_nested", **{})
 
         # Apply the aggregations
-        search.aggs.bucket(self.agg_group_name, financial_accounts_agg).bucket("filtered_aggs", filtered_aggs).metric(
-            "total_covid_obligation", sum_covid_obligation
-        ).metric("total_covid_outlay", sum_covid_outlay).bucket("toptier_aggs", reverse_nested).bucket(
-            "group_by_dim_agg", group_by_agg_key
-        ).metric(
-            "total_loan_value", sum_loan_value
-        ).bucket(
+        search.aggs.bucket(self.agg_group_name, group_by_agg_key).bucket(
             "nested", A("nested", path="covid_spending_by_defc")
-        ).bucket(
-            "filtered_aggs", A("filter", filter_agg_query)
-        ).metric(
+        ).bucket("filtered_aggs", A("filter", filter_agg_query)).metric(
             "total_covid_obligation", sum_covid_obligation
         ).metric(
             "total_covid_outlay", sum_covid_outlay
+        ).bucket(
+            "reverse_nested", reverse_nested
+        ).metric(
+            "total_loan_value", sum_loan_value
         )
-
+        search.aggs.bucket("totals", A("nested", path="covid_spending_by_defc")).bucket(
+            "filtered_aggs", filtered_aggs
+        ).metric("total_covid_obligation", sum_covid_obligation).metric("total_covid_outlay", sum_covid_outlay).bucket(
+            "reverse_nested", reverse_nested
+        ).metric(
+            "total_loan_value", sum_loan_value
+        )
         if bucket_sort_values:
             bucket_sort_aggregation = A("bucket_sort", **bucket_sort_values)
-            search.aggs[self.agg_group_name].aggs["filtered_aggs"].aggs["toptier_aggs"].aggs[
-                "group_by_dim_agg"
-            ].pipeline("pagination_aggregation", bucket_sort_aggregation)
+            search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
 
         # # If provided, break down primary bucket aggregation into sub-aggregations based on a sub_agg_key
         if self.sub_agg_key:
@@ -249,30 +249,22 @@ class ElasticsearchDisasterBase(DisasterBase):
         filtered_aggs = A("filter", filter_agg_query)
 
         # Apply the aggregations
-        search.aggs[self.agg_group_name].aggs["filtered_aggs"].aggs["toptier_aggs"].aggs["group_by_dim_agg"].bucket(
-            self.sub_agg_group_name, reverse_nested
-        ).bucket("group_by_subtier_dim_agg", sub_group_by_sub_agg_key).metric(
-            "total_loan_value", sum_loan_value
-        ).bucket(
+        search.aggs[self.agg_group_name].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key).bucket(
             "nested", A("nested", path="covid_spending_by_defc")
-        ).bucket(
-            "filtered_aggs", filtered_aggs
-        ).metric(
-            "total_covid_obligation", sum_covid_obligation
-        ).metric(
+        ).bucket("filtered_aggs", filtered_aggs).metric("total_covid_obligation", sum_covid_obligation).metric(
             "total_covid_outlay", sum_covid_outlay
+        ).bucket(
+            "reverse_nested", reverse_nested
+        ).metric(
+            "total_loan_value", sum_loan_value
         )
 
     def build_totals(self, response: List[dict]) -> dict:
         totals = {key: 0 for key in self.sum_column_mapping.keys()}
         for key in totals.keys():
-            totals[key] += get_summed_value_as_float(response, self.sum_column_mapping[key])
+            totals[key] += get_summed_value_as_float(response if key != "face_value_of_loan" else response.get("reverse_nested", {}), self.sum_column_mapping[key])
 
-        totals["award_count"] = int(response.get("toptier_aggs", {}).get("doc_count", 0))
-        if self.agg_key == settings.ES_ROUTING_FIELD:
-            totals["award_count"] += int(
-                response.get("toptier_aggs", {}).get("group_by_dim_agg", {}).get("sum_other_doc_count", 0)
-            )
+        totals["award_count"] = int(response.get("reverse_nested", {}).get("doc_count", 0))
         return totals
 
     def query_elasticsearch(self) -> dict:
@@ -283,15 +275,9 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         response = search.handle_execute()
         response = response.aggs.to_dict()
-        buckets = (
-            response.get("group_by_agg_key", {})
-            .get("filtered_aggs", {})
-            .get("toptier_aggs", {})
-            .get("group_by_dim_agg", {})
-            .get("buckets", [])
-        )
+        buckets = response.get("group_by_agg_key", {}).get("buckets", [])
 
-        totals = self.build_totals(response.get("group_by_agg_key", {}).get("filtered_aggs", {}))
+        totals = self.build_totals(response.get("totals", {}).get("filtered_aggs", {}))
         # totals = self.build_totals(buckets)
         results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
 

@@ -237,9 +237,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
         results = []
         for bucket in info_buckets:
             result = self._build_json_result(bucket)
-            child_info_buckets = (
-                bucket.get(self.sub_agg_group_name, {}).get("group_by_subtier_dim_agg", {}).get("buckets", [])
-            )
+            child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
             children = []
             for child_bucket in child_info_buckets:
                 children.append(self._build_json_result(child_bucket))
