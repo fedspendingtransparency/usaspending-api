@@ -268,7 +268,7 @@ class ElasticsearchDisasterBase(DisasterBase):
     def query_elasticsearch(self) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
         if search is None:
-            totals = self.build_totals(response=[])
+            totals = self.build_totals(response={})
             return {"totals": totals, "results": []}
 
         response = search.handle_execute()
@@ -276,7 +276,6 @@ class ElasticsearchDisasterBase(DisasterBase):
         buckets = response.get("group_by_agg_key", {}).get("buckets", [])
 
         totals = self.build_totals(response.get("totals", {}).get("filtered_aggs", {}))
-        # totals = self.build_totals(buckets)
         results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
 
         return {"totals": totals, "results": results}
