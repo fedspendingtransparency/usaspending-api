@@ -2,15 +2,11 @@ from abc import abstractmethod
 from typing import List, Optional, Dict
 
 from django.conf import settings
-from django.contrib.postgres.fields import ArrayField
-from django.db.models import Sum, Count, TextField, Q
-from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 from elasticsearch_dsl import Q as ES_Q, A
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from usaspending_api.awards.models import CovidFinancialAccountMatview
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
@@ -169,7 +165,6 @@ class ElasticsearchDisasterBase(DisasterBase):
         group_by_agg_key = A("terms", **group_by_agg_key_values)
 
         # Create the aggregations
-        financial_accounts_agg = A("nested", path="covid_spending_by_defc")
         filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
         filtered_aggs = A("filter", filter_agg_query)
         sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
@@ -262,7 +257,10 @@ class ElasticsearchDisasterBase(DisasterBase):
     def build_totals(self, response: List[dict]) -> dict:
         totals = {key: 0 for key in self.sum_column_mapping.keys()}
         for key in totals.keys():
-            totals[key] += get_summed_value_as_float(response if key != "face_value_of_loan" else response.get("reverse_nested", {}), self.sum_column_mapping[key])
+            totals[key] += get_summed_value_as_float(
+                response if key != "face_value_of_loan" else response.get("reverse_nested", {}),
+                self.sum_column_mapping[key],
+            )
 
         totals["award_count"] = int(response.get("reverse_nested", {}).get("doc_count", 0))
         return totals

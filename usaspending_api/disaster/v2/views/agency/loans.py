@@ -129,9 +129,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
         results = []
         for bucket in info_buckets:
             result = self._build_json_result(bucket)
-            child_info_buckets = (
-                bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
-            )
+            child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
             children = []
             for child_bucket in child_info_buckets:
                 children.append(self._build_json_result(child_bucket))
@@ -150,7 +148,9 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
             "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: get_summed_value_as_float(
-                    bucket.get("nested", {}).get("filtered_aggs", {}) if column != "face_value_of_loan" else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested"),
+                    bucket.get("nested", {}).get("filtered_aggs", {})
+                    if column != "face_value_of_loan"
+                    else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested"),
                     self.sum_column_mapping[column],
                 )
                 for column in self.sum_column_mapping

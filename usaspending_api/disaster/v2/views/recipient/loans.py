@@ -45,7 +45,7 @@ class RecipientLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisa
                         column: get_summed_value_as_float(
                             bucket.get("nested", {}).get("filtered_aggs", {})
                             if column != "face_value_of_loan"
-                            else bucket,
+                            else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested", {}),
                             self.sum_column_mapping[column],
                         )
                         for column in self.sum_column_mapping
