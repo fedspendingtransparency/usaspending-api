@@ -55,7 +55,7 @@ class HistoricalAppropriationAccountBalances(models.Model):
     reporting_fiscal_quarter = models.IntegerField(blank=True, null=True)
     reporting_fiscal_period = models.IntegerField(blank=True, null=True)
 
-    owning_toptier_agency = models.ForeignKey("references.ToptierAgency", models.DO_NOTHING, null=True)
+    owning_toptier_agency = models.ForeignKey("references.ToptierAgency", models.CASCADE, null=True)
 
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
