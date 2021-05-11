@@ -343,6 +343,20 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if row.get("Awarding Agency"):
                 code = row.pop("agency_code")
                 row["awarding_agency_id"] = self.get_agency_database_id(code)
+            if row.get("COVID-19 Obligations"):
+                row["COVID-19 Obligations"] = sum(
+                    [
+                        x["obligation"] if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"]) or self.filters.get("def_codes") is None else 0
+                        for x in row.get("COVID-19 Obligations")
+                    ]
+                )
+            if row.get("COVID-19 Outlays"):
+                row["COVID-19 Outlays"] = sum(
+                    [
+                        x["outlay"] if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"]) or self.filters.get("def_codes") is None else 0
+                        for x in row.get("COVID-19 Outlays")
+                    ]
+                )
             row["generated_internal_id"] = hit["generated_unique_award_id"]
             row["recipient_id"] = hit.get("recipient_unique_id")
             row["parent_recipient_unique_id"] = hit.get("parent_recipient_unique_id")
