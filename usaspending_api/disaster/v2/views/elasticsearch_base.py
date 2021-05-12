@@ -195,7 +195,7 @@ class ElasticsearchDisasterBase(DisasterBase):
             bucket_sort_aggregation = A("bucket_sort", **bucket_sort_values)
             search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
 
-        # # If provided, break down primary bucket aggregation into sub-aggregations based on a sub_agg_key
+        # If provided, break down primary bucket aggregation into sub-aggregations based on a sub_agg_key
         if self.sub_agg_key:
             self.extend_elasticsearch_search_with_sub_aggregation(search)
 
@@ -254,7 +254,7 @@ class ElasticsearchDisasterBase(DisasterBase):
             "total_loan_value", sum_loan_value
         )
 
-    def build_totals(self, response: List[dict]) -> dict:
+    def build_totals(self, response: dict) -> dict:
         totals = {key: 0 for key in self.sum_column_mapping.keys()}
         for key in totals.keys():
             totals[key] += get_summed_value_as_float(
