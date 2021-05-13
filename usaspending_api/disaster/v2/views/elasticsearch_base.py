@@ -132,10 +132,14 @@ class ElasticsearchDisasterBase(DisasterBase):
         # As of writing this the value of settings.ES_ROUTING_FIELD is the only high cardinality aggregation that
         # we support. Since the Elasticsearch clusters are routed by this field we don't care to get a count of
         # unique buckets, but instead we use the upper_limit and don't allow an upper_limit > 10k.
+        size = self.bucket_count
         if self.bucket_count == 0:
             return None
+        elif not self.sort_column_mapping:
+            shard_size = size
+            group_by_agg_key_values = {}
+            bucket_sort_values = None
         elif self.agg_key == settings.ES_ROUTING_FIELD:
-            size = self.bucket_count
             shard_size = size
             group_by_agg_key_values = {
                 "order": [
@@ -145,7 +149,6 @@ class ElasticsearchDisasterBase(DisasterBase):
             }
             bucket_sort_values = None
         else:
-            size = self.bucket_count
             shard_size = self.bucket_count + 100
             group_by_agg_key_values = {}
             bucket_sort_values = {
@@ -276,6 +279,6 @@ class ElasticsearchDisasterBase(DisasterBase):
         buckets = response.get("group_by_agg_key", {}).get("buckets", [])
 
         totals = self.build_totals(response.get("totals", {}).get("filtered_aggs", {}))
-        results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
+        results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit: self.pagination.upper_limit])
 
         return {"totals": totals, "results": results}
