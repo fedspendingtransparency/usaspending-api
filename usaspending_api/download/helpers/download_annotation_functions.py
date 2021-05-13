@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import List, Optional
 
 from django.contrib.postgres.aggregates import StringAgg
 from django.db.models.functions import Cast, Coalesce
@@ -45,14 +45,18 @@ def filter_limit_to_closed_periods(submission_query_path: str = "") -> Q:
     return q
 
 
-def _covid_outlay_subquery(award_id_col: Optional[str] = "award_id") -> Q:
+def _covid_outlay_subquery(def_codes: Optional[List[str]] = None, award_id_col: Optional[str] = "award_id") -> Q:
+    filters = [
+        filter_by_latest_closed_periods(),
+        Q(award_id=OuterRef(award_id_col)),
+        Q(submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1))),
+        Q(disaster_emergency_fund__group_name="covid_19"),
+    ]
+    if def_codes:
+        filters.append(Q(disaster_emergency_fund__code__in=def_codes))
+
     return Subquery(
-        FinancialAccountsByAwards.objects.filter(
-            filter_by_latest_closed_periods(),
-            award_id=OuterRef(award_id_col),
-            disaster_emergency_fund__group_name="covid_19",
-            submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
-        )
+        FinancialAccountsByAwards.objects.filter(*filters)
         .values("award_id")
         .annotate(
             sum=Coalesce(Sum("gross_outlay_amount_by_award_cpe"), 0)
@@ -64,14 +68,18 @@ def _covid_outlay_subquery(award_id_col: Optional[str] = "award_id") -> Q:
     )
 
 
-def _covid_obligation_subquery(award_id_col: Optional[str] = "award_id") -> Q:
+def _covid_obligation_subquery(def_codes: Optional[List[str]] = None, award_id_col: Optional[str] = "award_id") -> Q:
+    filters = [
+        filter_limit_to_closed_periods(),
+        Q(award_id=OuterRef(award_id_col)),
+        Q(submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1))),
+        Q(disaster_emergency_fund__group_name="covid_19"),
+    ]
+    if def_codes:
+        filters.append(Q(disaster_emergency_fund__code__in=def_codes))
+
     return Subquery(
-        FinancialAccountsByAwards.objects.filter(
-            filter_limit_to_closed_periods(),
-            award_id=OuterRef(award_id_col),
-            disaster_emergency_fund__group_name="covid_19",
-            submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1)),
-        )
+        FinancialAccountsByAwards.objects.filter(*filters)
         .values("award_id")
         .annotate(sum=Sum("transaction_obligated_amount"))
         .values("sum"),
@@ -79,7 +87,7 @@ def _covid_obligation_subquery(award_id_col: Optional[str] = "award_id") -> Q:
     )
 
 
-def transaction_search_annotations():
+def transaction_search_annotations(filters: dict):
     annotation_fields = {
         "action_date_fiscal_year": FiscalYear("action_date"),
         "treasury_accounts_funding_this_award": Subquery(
@@ -135,13 +143,13 @@ def transaction_search_annotations():
         "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
             When(
                 transaction__action_date__gte=datetime.date(2020, 4, 1),
-                then=_covid_outlay_subquery(),
+                then=_covid_outlay_subquery(def_codes=filters.get("def_codes", [])),
             ),
         ),
         "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
             When(
                 transaction__action_date__gte=datetime.date(2020, 4, 1),
-                then=_covid_obligation_subquery(),
+                then=_covid_obligation_subquery(def_codes=filters.get("def_codes", [])),
             ),
         ),
         "object_classes_funding_this_award": Subquery(
@@ -182,7 +190,7 @@ def transaction_search_annotations():
     return annotation_fields
 
 
-def universal_award_matview_annotations():
+def universal_award_matview_annotations(filters: dict):
     annotation_fields = {
         "award_base_action_date_fiscal_year": FiscalYear("award__date_signed"),
         "treasury_accounts_funding_this_award": Subquery(
@@ -229,8 +237,12 @@ def universal_award_matview_annotations():
             .values("total"),
             output_field=TextField(),
         ),
-        "outlayed_amount_funded_by_COVID-19_supplementals": _covid_outlay_subquery(),
-        "obligated_amount_funded_by_COVID-19_supplementals": _covid_obligation_subquery(),
+        "outlayed_amount_funded_by_COVID-19_supplementals": _covid_outlay_subquery(
+            def_codes=filters.get("def_codes", [])
+        ),
+        "obligated_amount_funded_by_COVID-19_supplementals": _covid_obligation_subquery(
+            def_codes=filters.get("def_codes", [])
+        ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
                 filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
@@ -283,7 +295,7 @@ def universal_award_matview_annotations():
     return annotation_fields
 
 
-def idv_order_annotations():
+def idv_order_annotations(filters: dict):
     annotation_fields = {
         "award_base_action_date_fiscal_year": FiscalYear("date_signed"),
         "treasury_accounts_funding_this_award": Subquery(
@@ -369,7 +381,7 @@ def idv_order_annotations():
     return annotation_fields
 
 
-def idv_transaction_annotations():
+def idv_transaction_annotations(filters: dict):
     annotation_fields = {
         "action_date_fiscal_year": FiscalYear("action_date"),
         "treasury_accounts_funding_this_award": Subquery(
@@ -472,7 +484,7 @@ def idv_transaction_annotations():
     return annotation_fields
 
 
-def subaward_annotations():
+def subaward_annotations(filters: dict):
     annotation_fields = {
         "subaward_action_date_fiscal_year": FiscalYear("subaward__action_date"),
         "prime_award_base_action_date_fiscal_year": FiscalYear("award__date_signed"),
@@ -566,13 +578,13 @@ def subaward_annotations():
         "prime_award_outlayed_amount_funded_by_COVID-19_supplementals": Case(
             When(
                 broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
-                then=_covid_outlay_subquery(),
+                then=_covid_outlay_subquery(def_codes=filters.get("def_codes", [])),
             ),
         ),
         "prime_award_obligated_amount_funded_by_COVID-19_supplementals": Case(
             When(
                 broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
-                then=_covid_obligation_subquery(),
+                then=_covid_obligation_subquery(def_codes=filters.get("def_codes", [])),
             ),
         ),
         "prime_award_latest_action_date_fiscal_year": FiscalYear("award__latest_transaction__action_date"),
