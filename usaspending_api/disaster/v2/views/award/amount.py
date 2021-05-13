@@ -31,6 +31,9 @@ class AmountViewSet(ElasticsearchDisasterBase):
         response = search.handle_execute()
         response = response.aggs.to_dict()
 
-        totals = self.build_totals(response.get("totals", {}).get("filtered_aggs", {}))
+        aggregation = self.build_totals(response.get("totals", {}).get("filtered_aggs", {}))
 
-        return Response(totals)
+        if self.count_only:
+            return Response({"count": aggregation["award_count"]})
+        else:
+            return Response(aggregation)
