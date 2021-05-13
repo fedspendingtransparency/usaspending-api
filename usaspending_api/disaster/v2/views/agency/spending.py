@@ -255,7 +255,9 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
-                column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
+                column: get_summed_value_as_float(
+                    bucket.get("nested", {}).get("filtered_aggs", {}), self.sum_column_mapping[column]
+                )
                 for column in self.sum_column_mapping
             },
         }
