@@ -14,7 +14,7 @@ def mappings_test(download_type, sublevel):
             query_values = [
                 value for value in lookup_mapping.query_paths[table_name][sublevel].values() if value is not None
             ]
-            annotations = annotations_function()
+            annotations = annotations_function({})
         else:
             query_values = [value for value in lookup_mapping.query_paths[table_name][sublevel].values()]
             annotations = {}
