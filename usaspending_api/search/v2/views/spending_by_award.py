@@ -365,7 +365,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 )
             if row.get("def_codes"):
                 if self.filters.get("def_codes"):
-                    row["def_codes"] = filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"])
+                    row["def_codes"] = list(filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"]))
             row["generated_internal_id"] = hit["generated_unique_award_id"]
             row["recipient_id"] = hit.get("recipient_unique_id")
             row["parent_recipient_unique_id"] = hit.get("parent_recipient_unique_id")
