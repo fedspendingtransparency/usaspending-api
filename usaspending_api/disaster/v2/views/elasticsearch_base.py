@@ -2,15 +2,11 @@ from abc import abstractmethod
 from typing import List, Optional, Dict
 
 from django.conf import settings
-from django.contrib.postgres.fields import ArrayField
-from django.db.models import Sum, Count, TextField, Q
-from django.db.models.functions import Cast
 from django.utils.functional import cached_property
 from elasticsearch_dsl import Q as ES_Q, A
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from usaspending_api.awards.models import CovidFinancialAccountMatview
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
@@ -19,7 +15,6 @@ from usaspending_api.common.helpers.generic_helper import get_pagination_metadat
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, _BasePaginationMixin
 from usaspending_api.search.v2.elasticsearch_helper import (
-    get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_awards,
     get_summed_value_as_float,
 )
@@ -32,7 +27,8 @@ class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
         "description": "_key",  # _key will ultimately sort on description value
         "code": "_key",  # Façade sort behavior, really sorting on description
         "id": "_key",  # Façade sort behavior, really sorting on description
-        **sum_column_mapping,
+        "obligation": "nested>filtered_aggs>total_covid_obligation",
+        "outlay": "nested>filtered_aggs>total_covid_outlay",
     }
 
     @cached_property
@@ -51,7 +47,9 @@ class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
         "description": "_key",  # _key will ultimately sort on description value
         "code": "_key",  # Façade sort behavior, really sorting on description
         "id": "_key",  # Façade sort behavior, really sorting on description
-        **sum_column_mapping,
+        "obligation": "nested>filtered_aggs>total_covid_obligation",
+        "outlay": "nested>filtered_aggs>total_covid_outlay",
+        "face_value_of_loan": "nested>filtered_aggs>reverse_nested>total_loan_value",
     }
 
     @cached_property
@@ -128,9 +126,9 @@ class ElasticsearchDisasterBase(DisasterBase):
         """
         Using the provided ES_Q object creates an AwardSearch object with the necessary applied aggregations.
         """
-        # Create the initial search using filters
+        # We need to add an 'exists' query here for the agg key to ensure correct counts for the awards
+        self.filter_query.must.append(ES_Q("exists", field=self.agg_key))
         search = AwardSearch().filter(self.filter_query)
-
         # As of writing this the value of settings.ES_ROUTING_FIELD is the only high cardinality aggregation that
         # we support. Since the Elasticsearch clusters are routed by this field we don't care to get a count of
         # unique buckets, but instead we use the upper_limit and don't allow an upper_limit > 10k.
@@ -166,15 +164,33 @@ class ElasticsearchDisasterBase(DisasterBase):
         group_by_agg_key_values.update({"field": self.agg_key, "size": size, "shard_size": shard_size})
         group_by_agg_key = A("terms", **group_by_agg_key_values)
 
-        sum_aggregations = {
-            mapping: get_scaled_sum_aggregations(mapping, self.pagination)
-            for mapping in self.sum_column_mapping.values()
-        }
+        # Create the aggregations
+        filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
+        filtered_aggs = A("filter", filter_agg_query)
+        sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
+        sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
+        sum_loan_value = A("sum", field="total_loan_value", script="_value * 100")
+        reverse_nested = A("reverse_nested", **{})
 
-        search.aggs.bucket(self.agg_group_name, group_by_agg_key)
-        for field, sum_aggregations in sum_aggregations.items():
-            search.aggs[self.agg_group_name].metric(field, sum_aggregations["sum_field"])
-
+        # Apply the aggregations
+        search.aggs.bucket(self.agg_group_name, group_by_agg_key).bucket(
+            "nested", A("nested", path="covid_spending_by_defc")
+        ).bucket("filtered_aggs", A("filter", filter_agg_query)).metric(
+            "total_covid_obligation", sum_covid_obligation
+        ).metric(
+            "total_covid_outlay", sum_covid_outlay
+        ).bucket(
+            "reverse_nested", reverse_nested
+        ).metric(
+            "total_loan_value", sum_loan_value
+        )
+        search.aggs.bucket("totals", A("nested", path="covid_spending_by_defc")).bucket(
+            "filtered_aggs", filtered_aggs
+        ).metric("total_covid_obligation", sum_covid_obligation).metric("total_covid_outlay", sum_covid_outlay).bucket(
+            "reverse_nested", reverse_nested
+        ).metric(
+            "total_loan_value", sum_loan_value
+        )
         if bucket_sort_values:
             bucket_sort_aggregation = A("bucket_sort", **bucket_sort_values)
             search.aggs[self.agg_group_name].pipeline("pagination_aggregation", bucket_sort_aggregation)
@@ -219,68 +235,47 @@ class ElasticsearchDisasterBase(DisasterBase):
         )
         sub_group_by_sub_agg_key = A("terms", **sub_group_by_sub_agg_key_values)
 
-        sum_aggregations = {
-            mapping: get_scaled_sum_aggregations(mapping) for mapping in self.sum_column_mapping.values()
-        }
+        # Create the aggregations
+        sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
+        sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
+        reverse_nested = A("reverse_nested", **{})
+        sum_loan_value = A("sum", field="total_loan_value", script="_value * 100")
+        filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
+        filtered_aggs = A("filter", filter_agg_query)
 
-        # Append sub-agg to primary agg, and include the sub-agg's sum metric aggs too
-        search.aggs[self.agg_group_name].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key)
-        for field, sum_aggregations in sum_aggregations.items():
-            search.aggs[self.agg_group_name].aggs[self.sub_agg_group_name].metric(field, sum_aggregations["sum_field"])
+        # Apply the aggregations
+        search.aggs[self.agg_group_name].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key).bucket(
+            "nested", A("nested", path="covid_spending_by_defc")
+        ).bucket("filtered_aggs", filtered_aggs).metric("total_covid_obligation", sum_covid_obligation).metric(
+            "total_covid_outlay", sum_covid_outlay
+        ).bucket(
+            "reverse_nested", reverse_nested
+        ).metric(
+            "total_loan_value", sum_loan_value
+        )
 
-    def build_totals(self, response: List[dict]) -> dict:
-        # Need to use a Postgres in this case since we only look at the first 10k results for Elasticsearch.
-        # Since the endpoint is performing aggregations on the entire matview with no grouping or joins
-        # the query takes minimal time to complete.
-        if self.agg_key == settings.ES_ROUTING_FIELD:
-            annotations = {"cast_def_codes": Cast("def_codes", ArrayField(TextField()))}
-            filters = [
-                Q(cast_def_codes__overlap=self.def_codes),
-                self.has_award_of_provided_type(should_join_awards=False),
-            ]
-            aggregations = {
-                "face_value_of_loan": Sum("total_loan_value"),
-                "obligation": Sum("obligation"),
-                "outlay": Sum("outlay"),
-            }
-            aggregations = {col: aggregations[col] for col in self.sum_column_mapping.keys()}
-            aggregations["award_count"] = Count("award_id")
-
-            if self.filters.get("query"):
-                filters.append(Q(recipient_name__icontains=self.filters["query"]["text"]))
-
-            totals = (
-                CovidFinancialAccountMatview.objects.annotate(**annotations)
-                .filter(*filters)
-                .values()
-                .aggregate(**aggregations)
-            )
-            return totals
-
+    def build_totals(self, response: dict) -> dict:
         totals = {key: 0 for key in self.sum_column_mapping.keys()}
-        award_count = 0
+        for key in totals.keys():
+            totals[key] += get_summed_value_as_float(
+                response if key != "face_value_of_loan" else response.get("reverse_nested", {}),
+                self.sum_column_mapping[key],
+            )
 
-        for bucket in response:
-            for key in totals.keys():
-                totals[key] += get_summed_value_as_float(bucket, self.sum_column_mapping[key])
-            award_count += int(bucket.get("doc_count", 0))
-
-        totals["award_count"] = award_count
-
+        totals["award_count"] = int(response.get("reverse_nested", {}).get("doc_count", 0))
         return totals
 
     def query_elasticsearch(self) -> dict:
         search = self.build_elasticsearch_search_with_aggregations()
         if search is None:
-            totals = self.build_totals(response=[])
+            totals = self.build_totals(response={})
             return {"totals": totals, "results": []}
 
         response = search.handle_execute()
         response = response.aggs.to_dict()
         buckets = response.get("group_by_agg_key", {}).get("buckets", [])
 
-        totals = self.build_totals(buckets)
-
+        totals = self.build_totals(response.get("totals", {}).get("filtered_aggs", {}))
         results = self.build_elasticsearch_result(buckets[self.pagination.lower_limit : self.pagination.upper_limit])
 
         return {"totals": totals, "results": results}
