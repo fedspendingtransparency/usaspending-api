@@ -196,10 +196,10 @@ class AgencyOverview(PaginationMixin, AgencyBase):
                     if result["gtas_total_budgetary_resources"] and result["total_budgetary_resources"]
                     else 0,
                     "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
-                    "unlinked_contract_award_count": result["unlinked_procurement_c_awards"]
-                    + result["unlinked_procurement_d_awards"],
-                    "unlinked_assistance_award_count": result["unlinked_assistance_c_awards"]
-                    + result["unlinked_assistance_d_awards"],
+                    "unlinked_contract_award_count": (result["unlinked_procurement_c_awards"] or 0)
+                    + (result["unlinked_procurement_d_awards"] or 0),
+                    "unlinked_assistance_award_count": (result["unlinked_assistance_c_awards"] or 0)
+                    + (result["unlinked_assistance_c_awards"] or 0),
                     "assurance_statement_url": self.create_assurance_statement_url(result),
                 }
             )
