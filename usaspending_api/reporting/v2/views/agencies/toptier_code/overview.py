@@ -193,7 +193,7 @@ class AgencyOverview(PaginationMixin, AgencyBase):
                     "percent_of_total_budgetary_resources": round(
                         result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2
                     )
-                    if result["gtas_total_budgetary_resources"]
+                    if result["gtas_total_budgetary_resources"] and result["total_budgetary_resources"]
                     else 0,
                     "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
                     "unlinked_contract_award_count": result["unlinked_procurement_c_awards"]
