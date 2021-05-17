@@ -112,7 +112,7 @@ class TASFilterTree(FilterTree):
         return sorted(retval, key=lambda x: x["id"])
 
     def toptier_search(self, filter_string=None, tier1_nodes=None):
-        filters = [Q(has_faba=True)]
+        filters = [Q(has_faba=True), Q(federal_account__parent_toptier_agency__isnull=False)]
         query = Q()
         if tier1_nodes:
             agency_ids = [node["ancestors"][0] for node in tier1_nodes]
