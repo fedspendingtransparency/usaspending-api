@@ -186,20 +186,29 @@ class AgencyOverview(PaginationMixin, AgencyBase):
         }
 
         if result["recent_publication_date"]:
+            percent_of_total_budgetary_resources = (
+                round(result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2)
+                if result["gtas_total_budgetary_resources"] and result["total_budgetary_resources"]
+                else None
+            )
+            unlinked_assistance_award_count = (
+                result["unlinked_assistance_c_awards"] + result["unlinked_assistance_d_awards"]
+                if result["unlinked_assistance_c_awards"] and result["unlinked_assistance_d_awards"]
+                else None
+            )
+            unlinked_contract_award_count = (
+                result["unlinked_procurement_c_awards"] + result["unlinked_procurement_d_awards"]
+                if result["unlinked_procurement_c_awards"] and result["unlinked_procurement_d_awards"]
+                else None
+            )
             formatted_result.update(
                 {
                     "current_total_budget_authority_amount": result["total_budgetary_resources"],
                     "total_budgetary_resources": result["gtas_total_budgetary_resources"],
-                    "percent_of_total_budgetary_resources": round(
-                        result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2
-                    )
-                    if result["gtas_total_budgetary_resources"]
-                    else 0,
+                    "percent_of_total_budgetary_resources": percent_of_total_budgetary_resources,
                     "obligation_difference": result["total_diff_approp_ocpa_obligated_amounts"],
-                    "unlinked_contract_award_count": result["unlinked_procurement_c_awards"]
-                    + result["unlinked_procurement_d_awards"],
-                    "unlinked_assistance_award_count": result["unlinked_assistance_c_awards"]
-                    + result["unlinked_assistance_d_awards"],
+                    "unlinked_contract_award_count": unlinked_contract_award_count,
+                    "unlinked_assistance_award_count": unlinked_assistance_award_count,
                     "assurance_statement_url": self.create_assurance_statement_url(result),
                 }
             )
