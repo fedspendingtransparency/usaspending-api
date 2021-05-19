@@ -137,6 +137,12 @@ class LoggingMiddleware(MiddlewareMixin):
         self.log["timestamp"] = now().strftime("%d/%m/%y %H:%M:%S")
         self.log["traceback"] = traceback.format_exc()
 
+        try:
+            # When request body is returned  as <class 'bytes'>
+            self.log["request"] = getattr(request, "_body", request.body).decode("ASCII")
+        except UnicodeDecodeError:
+            self.log["request"] = getattr(request, "_body", request.body)
+
         self.server_logger.error("%s", self.get_message_string(), extra=self.log)
 
     def get_response_ms(self):
