@@ -44,7 +44,9 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
                     "applicant_eligibility": cfda.get("applicant_eligibility"),
                     "beneficiary_eligibility": cfda.get("beneficiary_eligibility"),
                     **{
-                        column: get_summed_value_as_float(bucket, self.sum_column_mapping[column])
+                        column: get_summed_value_as_float(
+                            bucket.get("nested", {}).get("filtered_aggs", {}), self.sum_column_mapping[column]
+                        )
                         for column in self.sum_column_mapping
                     },
                 }

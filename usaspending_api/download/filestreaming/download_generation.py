@@ -192,14 +192,18 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
                 or "procurement" in award_type_codes
             ):
                 # only generate d1 files if the user is asking for contract data
-                d1_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id)
+                d1_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id, filters
+                )
                 d1_filters = {f"{VALUE_MAPPINGS[download_type]['contract_data']}__isnull": False}
                 d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
                 download_sources.append(d1_source)
 
             if award_type_codes & set(assistance_type_mapping.keys()) or ("grant" in award_type_codes):
                 # only generate d2 files if the user is asking for assistance data
-                d2_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d2", download_type, agency_id)
+                d2_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"], "d2", download_type, agency_id, filters
+                )
                 d2_filters = {f"{VALUE_MAPPINGS[download_type]['assistance_data']}__isnull": False}
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
                 download_sources.append(d2_source)

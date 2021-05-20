@@ -5,7 +5,7 @@ from usaspending_api.references.models import ToptierAgency
 
 
 class DownloadSource:
-    def __init__(self, model_type, file_type, source_type, agency_id):
+    def __init__(self, model_type, file_type, source_type, agency_id, filters=None):
         self.model_type = model_type
         self.file_type = file_type
         self.source_type = source_type
@@ -25,6 +25,7 @@ class DownloadSource:
         self.is_for_contract = VALUE_MAPPINGS[source_type].get("is_for_contract", False)
         self.is_for_assistance = VALUE_MAPPINGS[source_type].get("is_for_assistance", False)
         self.award_category = None
+        self.filters = filters or {}
 
     def __repr__(self):
         return "DownloadSource('{}', '{}', '{}', '{}')".format(
@@ -33,6 +34,12 @@ class DownloadSource:
 
     def __str__(self):
         return self.__repr__()
+
+    @property
+    def annotations(self):
+        annotations_function = VALUE_MAPPINGS[self.source_type].get("annotations_function")
+        annotations = annotations_function(self.filters) if annotations_function is not None else {}
+        return annotations
 
     @property
     def queryset(self):
@@ -47,11 +54,9 @@ class DownloadSource:
         which occasionally prevented them from being applied if the queryset was used outside
         of row_emitter (as was the case where a UNION was applied to the queryset).
         """
-        annotations_function = VALUE_MAPPINGS[self.source_type].get("annotations_function")
-        if annotations_function:
-            for field, annotation in annotations_function().items():
-                if field not in queryset.query.annotation_select:
-                    queryset = queryset.annotate(**{field: annotation})
+        for field, annotation in self.annotations.items():
+            if field not in queryset.query.annotation_select:
+                queryset = queryset.annotate(**{field: annotation})
         self._queryset = queryset
 
     def values(self, header):
@@ -69,13 +74,10 @@ class DownloadSource:
 
     def row_emitter(self, headers_requested):
         headers = self.columns(headers_requested)
-        annotations_function = VALUE_MAPPINGS[self.source_type].get("annotations_function")
-        annotations = annotations_function() if annotations_function is not None else {}
-
         query_paths = []
         for hn in headers:
             if self.query_paths[hn] is None:
-                if annotations[hn] is None:
+                if self.annotations[hn] is None:
                     raise Exception("Annotated column {} is not in annotations function".format(hn))
                 query_paths.append(hn)
             else:
