@@ -27,8 +27,8 @@ from (
     select
         ta.toptier_agency_id,
         null, -- subtier_agency_id
-        true, -- toptier_flag
-        false -- user_selectable
+        tlara.toptier_flag,
+        tlara.user_selectable
     from
         toptier_agency as ta
         inner join "{temp_table}" as tlara on
