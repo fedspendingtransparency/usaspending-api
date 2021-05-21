@@ -19,18 +19,18 @@ This endpoint returns a set of award amount statistics received by a toptier age
     + Attributes (object)
         + `results` (required, RecipientAwardStats, fixed-type)
 
-+ Body
+    + Body
 
-        {
-            "results":
-                {
-                    'max': 1484593892,
-                    '75pct': 723892349,
-                    'median': 598274389,
-                    '25pct': 283479234,
-                    'min': -4792034
-                }
-        }
+            {
+                "results":
+                    {
+                        'max': 1484593892,
+                        '75pct': 723892349,
+                        'median': 598274389,
+                        '25pct': 283479234,
+                        'min': -4792034
+                    }
+            }
 
 # Data Structures
 
