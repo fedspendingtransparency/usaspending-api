@@ -7,7 +7,7 @@ This endpoint is used to power USAspending.gov's agency profile pages.
 
 ## GET
 
-This endpoint returns a sorted array of award amount statistics received by a toptier agency/FY combination: greatest single award amount, least award amount (note negative amounts are possible), and amounts of awards at median and 25th & 75th percentile.
+This endpoint returns a set of award amount statistics received by a toptier agency in a fiscal year: greatest single award amount, least award amount (note negative amounts are possible), and amounts of awards at median and 25th & 75th percentile.
 
 + Parameters
     + `toptier_code`: `086` (required, string)
@@ -17,27 +17,26 @@ This endpoint returns a sorted array of award amount statistics received by a to
         
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array[RecipientAwardStats], fixed-type)
-            Sorted by amount, descending.
+        + `results` (required, RecipientAwardStats, fixed-type)
 
-    + Body
++ Body
 
-            {
-                "results":
-                    {
-                        'max': 1484593892,
-                        '75pct': 723892349,
-                        'median': 598274389,
-                        '25pct': 283479234,
-                        'min': -4792034
-                    }
-            }
+        {
+            "results":
+                {
+                    'max': 1484593892,
+                    '75pct': 723892349,
+                    'median': 598274389,
+                    '25pct': 283479234,
+                    'min': -4792034
+                }
+        }
 
 # Data Structures
 
-## RecipientAwardStats (array)
-+ max award amount
-+ 75th percentile amount
-+ median award amount
-+ 25th percentile amount
-+ min award amount
+## RecipientAwardStats (object)
++ `max` (required, number)
++ `75pct` (required, number)
++ `median` (required, number)
++ `25pct` (required, number)
++ `min` (required, number)
