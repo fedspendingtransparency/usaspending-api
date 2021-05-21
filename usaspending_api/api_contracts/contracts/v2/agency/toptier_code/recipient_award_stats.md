@@ -23,13 +23,14 @@ This endpoint returns a sorted array of award amount statistics received by a to
     + Body
 
             {
-                "results": [
-                    1484593892,
-                    723892349,
-                    498274389,
-                    283479234,
-                    -4792034
-                ]
+                "results":
+                    {
+                        'max': 1484593892,
+                        '75pct': 723892349,
+                        'median': 598274389,
+                        '25pct': 283479234,
+                        'min': -4792034
+                    }
             }
 
 # Data Structures
