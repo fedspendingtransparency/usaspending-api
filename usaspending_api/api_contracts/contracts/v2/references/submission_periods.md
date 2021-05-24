@@ -7,6 +7,9 @@ This endpoint provides a list of all fields in the "dabs_submission_window_sched
 
 ## GET
 
++ Parameters
+    + `use_cache`: `false` (optional, boolean) - Whether or not to use a cache when retrieving values. Defaults to false. 
+
 + Response 200 (application/json)
     + Attributes (object)
         + `available_periods` (required, array[AvailablePeriod], fixed-type) 
