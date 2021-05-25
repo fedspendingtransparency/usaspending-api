@@ -267,7 +267,24 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def query_elasticsearch(self) -> list:
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         sort_field = self.get_elastic_sort_by_fields()
-        sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
+        covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
+        if "covid_spending_by_defc" in sort_field:
+            sort_field.remove("covid_spending_by_defc")
+            sorts = [
+                {
+                    f"covid_spending_by_defc.{covid_sort_fields[self.pagination['sort_key']]}": {
+                        "mode": "sum",
+                        "order": self.pagination["sort_order"],
+                        "nested": {
+                            "path": "covid_spending_by_defc",
+                            "filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}},
+                        },
+                    }
+                }
+            ]
+            sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
+        else:
+            sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
         # random page jumping was removed due to performance concerns
         if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
