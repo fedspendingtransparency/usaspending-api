@@ -12,7 +12,13 @@ URL = "/api/v2/reporting/agencies/{code}/differences/{filter}"
 @pytest.fixture
 def differences_data():
     dabs1 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01 00:00:00.000000+00"
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2020,
+        submission_fiscal_month=6,
+        submission_fiscal_quarter=2,
+        is_quarter=False,
+        submission_reveal_date="2020-04-01",
+        period_start_date="2020-04-01",
     )
     mommy.make(
         "submissions.SubmissionAttributes",

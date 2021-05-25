@@ -9,10 +9,11 @@ url = "/api/v2/agency/{code}/budget_function/{query_params}"
 
 
 @pytest.mark.django_db
-def test_budget_function_list_success(client, agency_account_data):
+def test_budget_function_list_success(client, monkeypatch, agency_account_data, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
     resp = client.get(url.format(code="007", query_params=""))
     expected_result = {
-        "fiscal_year": current_fiscal_year(),
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -130,11 +131,12 @@ def test_budget_function_list_bad_order(client, agency_account_data):
 
 
 @pytest.mark.django_db
-def test_budget_function_list_sort_by_name(client, agency_account_data):
-    query_params = f"?fiscal_year={current_fiscal_year()}&order=asc&sort=name"
+def test_budget_function_list_sort_by_name(client, monkeypatch, agency_account_data, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
+    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&order=asc&sort=name"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": current_fiscal_year(),
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -171,10 +173,10 @@ def test_budget_function_list_sort_by_name(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = f"?fiscal_year={current_fiscal_year()}&order=desc&sort=name"
+    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&order=desc&sort=name"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": current_fiscal_year(),
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -213,11 +215,12 @@ def test_budget_function_list_sort_by_name(client, agency_account_data):
 
 
 @pytest.mark.django_db
-def test_budget_function_list_sort_by_obligated_amount(client, agency_account_data):
-    query_params = f"?fiscal_year={current_fiscal_year()}&order=asc&sort=obligated_amount"
+def test_budget_function_list_sort_by_obligated_amount(client, monkeypatch, agency_account_data, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
+    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&order=asc&sort=obligated_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": current_fiscal_year(),
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -254,10 +257,10 @@ def test_budget_function_list_sort_by_obligated_amount(client, agency_account_da
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = f"?fiscal_year={current_fiscal_year()}&order=desc&sort=obligated_amount"
+    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&order=desc&sort=obligated_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": current_fiscal_year(),
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -287,89 +290,6 @@ def test_budget_function_list_sort_by_obligated_amount(client, agency_account_da
                 "name": "NAME 5",
                 "obligated_amount": 10.0,
                 "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
-            },
-        ],
-    }
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json() == expected_result
-
-
-@pytest.mark.django_db
-def test_budget_function_list_sort_by_gross_outlay_amount(client, agency_account_data):
-    query_params = f"?fiscal_year={current_fiscal_year()}&order=asc&sort=gross_outlay_amount"
-    resp = client.get(url.format(code="007", query_params=query_params))
-    expected_result = {
-        "fiscal_year": current_fiscal_year(),
-        "toptier_code": "007",
-        "messages": [],
-        "page_metadata": {
-            "hasNext": False,
-            "hasPrevious": False,
-            "next": None,
-            "page": 1,
-            "previous": None,
-            "total": 3,
-            "limit": 10,
-        },
-        "results": [
-            {
-                "gross_outlay_amount": 100000.0,
-                "name": "NAME 6",
-                "obligated_amount": 100.0,
-                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
-            },
-            {
-                "gross_outlay_amount": 1000000.0,
-                "name": "NAME 5",
-                "obligated_amount": 10.0,
-                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
-            },
-            {
-                "gross_outlay_amount": 11100000.0,
-                "name": "NAME 1",
-                "obligated_amount": 111.0,
-                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
-            },
-        ],
-    }
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json() == expected_result
-
-    query_params = f"?fiscal_year={current_fiscal_year()}&order=desc&sort=gross_outlay_amount"
-    resp = client.get(url.format(code="007", query_params=query_params))
-    expected_result = {
-        "fiscal_year": current_fiscal_year(),
-        "toptier_code": "007",
-        "messages": [],
-        "page_metadata": {
-            "hasNext": False,
-            "hasPrevious": False,
-            "next": None,
-            "page": 1,
-            "previous": None,
-            "total": 3,
-            "limit": 10,
-        },
-        "results": [
-            {
-                "gross_outlay_amount": 11100000.0,
-                "name": "NAME 1",
-                "obligated_amount": 111.0,
-                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
-            },
-            {
-                "gross_outlay_amount": 1000000.0,
-                "name": "NAME 5",
-                "obligated_amount": 10.0,
-                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
-            },
-            {
-                "gross_outlay_amount": 100000.0,
-                "name": "NAME 6",
-                "obligated_amount": 100.0,
-                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
             },
         ],
     }
@@ -379,11 +299,96 @@ def test_budget_function_list_sort_by_gross_outlay_amount(client, agency_account
 
 
 @pytest.mark.django_db
-def test_budget_function_list_search(client, agency_account_data):
-    query_params = f"?fiscal_year={current_fiscal_year()}&filter=NAME 6"
+def test_budget_function_list_sort_by_gross_outlay_amount(client, monkeypatch, agency_account_data, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
+    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&order=asc&sort=gross_outlay_amount"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": current_fiscal_year(),
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
+        "toptier_code": "007",
+        "messages": [],
+        "page_metadata": {
+            "hasNext": False,
+            "hasPrevious": False,
+            "next": None,
+            "page": 1,
+            "previous": None,
+            "total": 3,
+            "limit": 10,
+        },
+        "results": [
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 6",
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
+            },
+            {
+                "gross_outlay_amount": 11100000.0,
+                "name": "NAME 1",
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
+            },
+        ],
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_result
+
+    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&order=desc&sort=gross_outlay_amount"
+    resp = client.get(url.format(code="007", query_params=query_params))
+    expected_result = {
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
+        "toptier_code": "007",
+        "messages": [],
+        "page_metadata": {
+            "hasNext": False,
+            "hasPrevious": False,
+            "next": None,
+            "page": 1,
+            "previous": None,
+            "total": 3,
+            "limit": 10,
+        },
+        "results": [
+            {
+                "gross_outlay_amount": 11100000.0,
+                "name": "NAME 1",
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
+            },
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 6",
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
+            },
+        ],
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_result
+
+
+@pytest.mark.django_db
+def test_budget_function_list_search(client, monkeypatch, agency_account_data, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
+    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&filter=NAME 6"
+    resp = client.get(url.format(code="007", query_params=query_params))
+    expected_result = {
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -408,10 +413,10 @@ def test_budget_function_list_search(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = f"?fiscal_year={current_fiscal_year()}&filter=AME 5"
+    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&filter=AME 5"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": current_fiscal_year(),
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -439,10 +444,10 @@ def test_budget_function_list_search(client, agency_account_data):
 
 @pytest.mark.django_db
 def test_budget_function_list_pagination(client, agency_account_data):
-    query_params = f"?fiscal_year={current_fiscal_year()}&limit=2&page=1"
+    query_params = f"?fiscal_year=2020&limit=2&page=1"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": current_fiscal_year(),
+        "fiscal_year": 2020,
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
@@ -473,10 +478,10 @@ def test_budget_function_list_pagination(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = f"?fiscal_year={current_fiscal_year()}&limit=2&page=2"
+    query_params = f"?fiscal_year=2020&limit=2&page=2"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": current_fiscal_year(),
+        "fiscal_year": 2020,
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {

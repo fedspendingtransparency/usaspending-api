@@ -71,7 +71,6 @@ def delete_stale_fpds(detached_award_procurement_ids):
         cursor.execute(
             f"delete from transaction_search where transaction_id in ({txn_id_str}) returning transaction_id"
         )
-        deleted_ts = set(cursor.fetchall())
 
         cursor.execute(f"delete from transaction_normalized where id in ({txn_id_str}) returning id")
         deleted_transactions = set(cursor.fetchall())
@@ -79,10 +78,6 @@ def delete_stale_fpds(detached_award_procurement_ids):
         if deleted_transactions != deleted_fpds:
             msg = "Delete Mismatch! Counts of transaction_normalized ({}) and transaction_fpds ({}) deletes"
             raise RuntimeError(msg.format(len(deleted_transactions), len(deleted_fpds)))
-
-        if deleted_transactions != deleted_ts:
-            msg = "Delete Mismatch! Counts of transaction_normalized ({}) and transaction_search ({}) deletes"
-            raise RuntimeError(msg.format(len(deleted_transactions), len(deleted_ts)))
 
         logger.info(f"{len(deleted_transactions):,} transactions deleted")
 

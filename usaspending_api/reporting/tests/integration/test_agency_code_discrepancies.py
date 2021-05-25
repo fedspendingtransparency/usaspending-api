@@ -10,6 +10,15 @@ url = "/api/v2/reporting/agencies/123/discrepancies/"
 def setup_test_data(db):
     """ Insert test data into DB """
     mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2020,
+        submission_fiscal_month=6,
+        submission_fiscal_quarter=2,
+        is_quarter=True,
+        submission_reveal_date="2020-04-01",
+        period_start_date="2020-04-01",
+    )
+    mommy.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=123,
         fiscal_year=2020,
@@ -78,3 +87,9 @@ def test_sort(setup_test_data, client):
     assert len(response["results"]) == 1
     expected_results = [{"tas": "TAS 1", "amount": 10.0}]
     assert response["results"] == expected_results
+
+
+def test_fiscal_period_without_revealed_submissions_fails(setup_test_data, client):
+    resp = client.get(f"{url}?fiscal_year=2020&fiscal_period=12")
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.json()["detail"] == "Value for fiscal_period is outside the range of current submissions"
