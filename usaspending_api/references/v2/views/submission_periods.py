@@ -36,7 +36,7 @@ class SubmissionPeriodsViewSet(APIView):
         models = [{"name": "use_cache", "key": "use_cache", "type": "boolean", "default": False}]
         validated_payload = TinyShield(models).block(request.GET)
 
-        if validated_payload['use_cache']:
+        if validated_payload["use_cache"]:
             formatted_results = CachedSubmissionPeriodsViewSet.as_view()(request=request._request).data
         else:
             formatted_results = self.get_closed_submission_windows()
@@ -48,6 +48,7 @@ class CachedSubmissionPeriodsViewSet(APIView):
     """
     This ViewSet is only used internally to provided a cached version of the SubmissionPeriodsViewSet
     """
+
     @cache_response()
     def get(self, request):
         formatted_results = SubmissionPeriodsViewSet.get_closed_submission_windows()
