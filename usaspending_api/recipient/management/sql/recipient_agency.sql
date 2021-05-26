@@ -1,12 +1,12 @@
-DO $$ BEGIN RAISE NOTICE '110 Dropping old recipient_agency'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Dropping old recipient_agency'; END $$;
 
 DROP TABLE IF EXISTS recipient_agency CASCADE;
 
-DO $$ BEGIN RAISE NOTICE '110 Creating recipient_agency table'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Creating recipient_agency table'; END $$;
 
 CREATE TABLE recipient_agency AS (
 	SELECT
-		fiscal_year, toptier_code,COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
+		fiscal_year, toptier_code, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
         CASE
           WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
           ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END
