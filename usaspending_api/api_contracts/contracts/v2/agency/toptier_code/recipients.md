@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Recipients [/api/v2/agency/{toptier_code}/recipients/{?fiscal_year}]
 
-Returns a list of data points of an agencies recipients for a gvien fiscal year
+Returns a list of data points of an agencies recipients for a given fiscal year
 
 ## GET
 

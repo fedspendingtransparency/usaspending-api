@@ -1,12 +1,9 @@
-import numpy
-from django.db.models import Q, Sum, Count, Max, Min, FloatField
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.search.models import TransactionSearch
 
 
 class RecipientList(AgencyBase):
@@ -19,11 +16,12 @@ class RecipientList(AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        self.params_to_validate = ["fiscal_year"]
         results = self.get_recipients_queryset()
         return Response(results)
 
     def get_recipients_queryset(self):
-        SQL="""
+        SQL = """
         select
         count(recipient_hash),
         max(recipient_amount),
@@ -32,13 +30,15 @@ class RecipientList(AgencyBase):
         percentile_disc(0.5) within group (order by recipient_agency.recipient_amount) as "50th_percentile",
         percentile_disc(0.75) within group (order by recipient_agency.recipient_amount) as "75th_percentile"
         from recipient_agency  where fiscal_year={fiscal_year} and toptier_code='{toptier_code}';
-        """.format(fiscal_year=self.fiscal_year, toptier_code=self.toptier_code)
+        """.format(
+            fiscal_year=self.fiscal_year, toptier_code=self.toptier_code
+        )
 
         results = execute_sql_to_ordered_dictionary(SQL)
         return {
             "toptier_code": self.toptier_code,
             "fiscal_year": self.fiscal_year,
             "results": results,
-            "messages": self.standard_response_messages
+            "messages": self.standard_response_messages,
         }
         return results
