@@ -1,11 +1,14 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# DABS Submission Window Dates [/api/v2/references/submission_periods/]
+# DABS Submission Window Dates [/api/v2/references/submission_periods/{?use_cache}]
 
 This endpoint provides a list of all fields in the "dabs_submission_window_schedule" table except 'id'.   
 
 ## GET
+
++ Parameters
+    + `use_cache`: `false` (optional, boolean) - Whether or not to use a cache when retrieving values. Defaults to false. 
 
 + Response 200 (application/json)
     + Attributes (object)
