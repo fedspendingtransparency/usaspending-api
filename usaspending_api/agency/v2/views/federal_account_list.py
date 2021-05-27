@@ -17,6 +17,10 @@ class FederalAccountList(PaginationMixin, AgencyBase):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/federal_account.md"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.params_to_validate = ["fiscal_year", "filter"]
+
     def format_results(self, rows):
         non_distinct = [
             {

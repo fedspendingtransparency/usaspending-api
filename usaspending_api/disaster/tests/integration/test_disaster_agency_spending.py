@@ -248,6 +248,37 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
 
 
 @pytest.mark.django_db
+def test_individual_defc_filter(client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    resp = helpers.post_for_spending_endpoint(
+        client, url, award_type_codes=["A"], def_codes=["Q"], spending_type="award"
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    expected_results = [
+        {
+            "id": 2,
+            "code": "008",
+            "description": "Agency 008",
+            "award_count": 1,
+            "obligation": 2.0,
+            "outlay": 2.0,
+            "children": [
+                {
+                    "id": 2,
+                    "code": "2008",
+                    "description": "Subtier 2008",
+                    "award_count": 1,
+                    "obligation": 2.0,
+                    "outlay": 2.0,
+                }
+            ],
+        }
+    ]
+    assert resp.json()["results"] == expected_results
+
+
+@pytest.mark.django_db
 def test_empty(client, monkeypatch, elasticsearch_award_index, helpers, generic_account_data):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)

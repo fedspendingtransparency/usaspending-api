@@ -16,6 +16,7 @@ from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.references.models import Agency, GTASSF133Balances, ToptierAgency, ObjectClass
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
+
 ENDPOINT_URL = "/api/v2/spending/"
 CONTENT_TYPE = "application/json"
 GLOBAL_MOCK_DICT = [
@@ -95,6 +96,46 @@ GLOBAL_MOCK_DICT = [
         "object_class_id": 1,
     },
 ]
+
+
+@pytest.fixture
+def setup_only_dabs_window():
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2017,
+        submission_fiscal_quarter=1,
+        is_quarter=True,
+        submission_reveal_date="2017-05-01",
+        period_start_date="2017-03-13",
+        period_end_date="2017-04-13",
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2017,
+        submission_fiscal_quarter=3,
+        is_quarter=True,
+        submission_reveal_date="2017-12-01",
+        period_start_date="2017-10-01",
+        period_end_date="2017-09-01",
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2017,
+        submission_fiscal_month=3,
+        is_quarter=False,
+        submission_reveal_date="2017-05-01",
+        period_start_date="2017-03-13",
+        period_end_date="2017-04-13",
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2017,
+        submission_fiscal_month=9,
+        is_quarter=False,
+        submission_reveal_date="2017-12-01",
+        period_start_date="2017-10-01",
+        period_end_date="2017-09-01",
+    )
 
 
 @pytest.mark.django_db
@@ -238,15 +279,8 @@ def test_unreported_data_no_data_available(client):
 
     response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
 
-    assert response.status_code == status.HTTP_200_OK
-
-    json_response = response.json()
-
-    expected_results = {"total": None}
-
-    actual_results = {"total": json_response["total"]}
-
-    assert expected_results == actual_results
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == "Fiscal parameters provided do not belong to a current submission period"
 
 
 @pytest.mark.django_db
@@ -261,7 +295,7 @@ def test_federal_account_linkage(client):
 
 
 @pytest.mark.django_db
-def test_budget_function_filter_success(client):
+def test_budget_function_filter_success(setup_only_dabs_window, client):
 
     # Test for Budget Function Results
     resp = client.post(
@@ -384,7 +418,15 @@ def test_budget_function_failure(client):
 
 
 @pytest.mark.django_db
-def test_object_class_filter_success(client):
+def test_object_class_filter_success(setup_only_dabs_window, client):
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2017,
+        submission_fiscal_quarter=1,
+        is_quarter=True,
+        submission_reveal_date="2017-06-01",
+        period_start_date="2017-04-01",
+    )
 
     # Test for Object Class Results
     resp = client.post(
@@ -472,7 +514,23 @@ def test_object_class_failure(client):
 
 
 @pytest.mark.django_db
-def test_agency_filter_success(client):
+def test_agency_filter_success(setup_only_dabs_window, client):
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2017,
+        submission_fiscal_quarter=1,
+        is_quarter=True,
+        submission_reveal_date="2017-06-01",
+        period_start_date="2017-04-01",
+    )
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2017,
+        submission_fiscal_quarter=3,
+        is_quarter=True,
+        submission_reveal_date="2017-09-01",
+        period_start_date="2017-07-01",
+    )
 
     # Test for Object Class Results
     resp = client.post(
@@ -608,7 +666,7 @@ def test_object_budget_match(client):
 
 
 @pytest.mark.django_db
-def test_period(client):
+def test_period(setup_only_dabs_window, client):
 
     # Test for Object Class Results
     resp = client.post(
