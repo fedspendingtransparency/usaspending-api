@@ -29,7 +29,12 @@ class RecipientList(AgencyBase):
         percentile_disc(0.25) within group (order by recipient_agency.recipient_amount) as "25th_percentile",
         percentile_disc(0.5) within group (order by recipient_agency.recipient_amount) as "50th_percentile",
         percentile_disc(0.75) within group (order by recipient_agency.recipient_amount) as "75th_percentile"
-        from recipient_agency  where fiscal_year={fiscal_year} and toptier_code='{toptier_code}';
+        from recipient_agency  where fiscal_year={fiscal_year} and toptier_code='{toptier_code}' and recipient_name not in ('MULTIPLE RECIPIENTS',
+        'REDACTED DUE TO PII',
+        'MULTIPLE FOREIGN RECIPIENTS',
+        'PRIVATE INDIVIDUAL',
+        'INDIVIDUAL RECIPIENT',
+        'MISCELLANEOUS FOREIGN AWARDEES');
         """.format(
             fiscal_year=self.fiscal_year, toptier_code=self.toptier_code
         )
