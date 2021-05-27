@@ -1,8 +1,4 @@
-DO $$ BEGIN RAISE NOTICE 'Dropping old recipient_agency'; END $$;
-
 DROP TABLE IF EXISTS recipient_agency CASCADE;
-
-DO $$ BEGIN RAISE NOTICE 'Creating recipient_agency table'; END $$;
 
 CREATE TABLE recipient_agency AS (
 	SELECT
@@ -10,7 +6,7 @@ CREATE TABLE recipient_agency AS (
         CASE
           WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
           ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END
-      ))::uuid) AS recipient_hash,
+      ))::uuid) AS recipient_hash, recipient_lookup.legal_business_name as recipient_name,
       SUM(COALESCE(CASE WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost ELSE transaction_normalized.federal_action_obligation END, 0)) AS recipient_amount
 	FROM transaction_normalized
 		LEFT JOIN agency ON awarding_agency_id = agency.id
@@ -21,11 +17,11 @@ CREATE TABLE recipient_agency AS (
 
 	WHERE fiscal_year >= 2017
 
-	GROUP BY toptier_code, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
+	GROUP BY toptier_code,  recipient_lookup.legal_business_name, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
         CASE
           WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
           ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END
       ))::uuid), fiscal_year
 	HAVING SUM(COALESCE(CASE WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost ELSE transaction_normalized.federal_action_obligation END, 0)) > 0);
 
-COMMIT;
+CREATE INDEX agency_fiscal_year ON recipient_agency(toptier_code, fiscal_year, recipient_name);
