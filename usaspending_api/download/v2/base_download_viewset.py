@@ -147,11 +147,12 @@ class BaseDownloadViewSet(APIView):
         ).aggregate(Max("last_load_date"))["last_load_date__max"]
 
         # Conditional put in place for local development where the external dates may not be defined
+        cached_download = None
         if updated_date_timestamp:
             recent_submission_window_date = DABSSubmissionWindowSchedule.objects.filter(
                 submission_reveal_date__lt=datetime.max.replace(tzinfo=timezone.utc)
             ).aggregate(Max("submission_reveal_date"))["submission_reveal_date__max"]
-            return (
+            cached_download = (
                 DownloadJob.objects.filter(
                     json_request=ordered_json_request,
                     update_date__gte=max(updated_date_timestamp, recent_submission_window_date),
@@ -161,7 +162,7 @@ class BaseDownloadViewSet(APIView):
                 .values("download_job_id", "file_name")
                 .first()
             )
-        return None
+        return cached_download
 
 
 def get_file_path(file_name: str) -> str:
