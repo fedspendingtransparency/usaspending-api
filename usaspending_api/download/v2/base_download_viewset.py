@@ -35,7 +35,6 @@ class BaseDownloadViewSet(APIView):
         special_request_type: Optional[str] = None,
         validator_type: Optional[Type[DownloadValidatorBase]] = None,
     ):
-        # commit to refresh codeclimate
         if special_request_type == "disaster":
             filename = (
                 DownloadJob.objects.filter(
