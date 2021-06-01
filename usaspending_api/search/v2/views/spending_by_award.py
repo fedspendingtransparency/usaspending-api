@@ -267,7 +267,24 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def query_elasticsearch(self) -> list:
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         sort_field = self.get_elastic_sort_by_fields()
-        sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
+        covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
+        if "covid_spending_by_defc" in sort_field:
+            sort_field.remove("covid_spending_by_defc")
+            sorts = [
+                {
+                    f"covid_spending_by_defc.{covid_sort_fields[self.pagination['sort_key']]}": {
+                        "mode": "sum",
+                        "order": self.pagination["sort_order"],
+                        "nested": {
+                            "path": "covid_spending_by_defc",
+                            "filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}},
+                        },
+                    }
+                }
+            ]
+            sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
+        else:
+            sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
         # random page jumping was removed due to performance concerns
         if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
@@ -343,6 +360,29 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if row.get("Awarding Agency"):
                 code = row.pop("agency_code")
                 row["awarding_agency_id"] = self.get_agency_database_id(code)
+            if row.get("COVID-19 Obligations"):
+                row["COVID-19 Obligations"] = sum(
+                    [
+                        x["obligation"]
+                        if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
+                        or self.filters.get("def_codes") is None
+                        else 0
+                        for x in row.get("COVID-19 Obligations")
+                    ]
+                )
+            if row.get("COVID-19 Outlays"):
+                row["COVID-19 Outlays"] = sum(
+                    [
+                        x["outlay"]
+                        if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
+                        or self.filters.get("def_codes") is None
+                        else 0
+                        for x in row.get("COVID-19 Outlays")
+                    ]
+                )
+            if row.get("def_codes"):
+                if self.filters.get("def_codes"):
+                    row["def_codes"] = list(filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"]))
             row["generated_internal_id"] = hit["generated_unique_award_id"]
             row["recipient_id"] = hit.get("recipient_unique_id")
             row["parent_recipient_unique_id"] = hit.get("parent_recipient_unique_id")
