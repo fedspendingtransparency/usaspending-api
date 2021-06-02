@@ -46,8 +46,8 @@ class AgencyViewSet(APIView):
             toptier_code=toptier_agency.toptier_code, submission_window__submission_reveal_date__lte=now()
         )
 
-        # get the most up to date fy and quarter
-        queryset = queryset.order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter")
+        # get the most up to date fy, quarter, and period
+        queryset = queryset.order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
         queryset = queryset.annotate(
             fiscal_year=F("reporting_fiscal_year"), fiscal_quarter=F("reporting_fiscal_quarter")
         )

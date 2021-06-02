@@ -6,8 +6,8 @@ from rest_framework import status
 
 @pytest.fixture
 def create_agency_data(db):
-    # Create agency - submission relationship
-    # Create AGENCY AND TopTier AGENCY
+    # Create Agency - Submission relationship
+    # Create Agency AND TopTier Agency
     ttagency1 = mommy.make(
         "references.ToptierAgency",
         name="tta_name",
@@ -20,21 +20,32 @@ def create_agency_data(db):
     )
     mommy.make("references.Agency", id=1, toptier_agency=ttagency1)
 
-    # create TAS
+    # Create TAS
     tas = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
 
-    # CREATE SUBMISSIONS
-    # submission_3 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2015, toptier_code='100')
+    # Create GTAS
+    mommy.make("references.GTASSF133Balances", fiscal_year=2017, fiscal_period=4, total_budgetary_resources_cpe=1000)
+    mommy.make("references.GTASSF133Balances", fiscal_year=2017, fiscal_period=6, total_budgetary_resources_cpe=2000)
+
+    # Create Submissions
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2017,
+        reporting_fiscal_quarter=2,
+        reporting_fiscal_period=4,
+        toptier_code="100",
+        is_final_balances_for_fy=False,
+    )
     submission_1 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         reporting_fiscal_quarter=2,
+        reporting_fiscal_period=6,
         toptier_code="100",
         is_final_balances_for_fy=True,
     )
-    # submission_2 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016, toptier_code='100')
 
-    # CREATE AppropriationAccountBalances
+    # Create AppropriationAccountBalances
     mommy.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
@@ -46,7 +57,7 @@ def create_agency_data(db):
         treasury_account_identifier=tas,
     )
 
-    # CREATE OverallTotals
+    # Create OverallTotals
     mommy.make("references.OverallTotals", fiscal_year=2017, total_budget_authority=3860000000.00)
 
 
@@ -61,6 +72,7 @@ def test_agency_endpoint(client, create_agency_data):
     assert resp.data["results"]["obligated_amount"] == "2.00"
     assert resp.data["results"]["budget_authority_amount"] == "2.00"
     assert resp.data["results"]["congressional_justification_url"] == "test.com/cj"
+    assert resp.data["results"]["current_total_budget_authority_amount"] == "2000.00"
 
     # check for bad request due to missing params
     resp = client.get("/api/v2/references/agency/4/")
