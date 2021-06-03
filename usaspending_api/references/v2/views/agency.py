@@ -1,21 +1,12 @@
 from django.db.models import F, Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.references.models import Agency, GTASSF133Balances
 from usaspending_api.submissions.models import SubmissionAttributes
-
-
-def get_total_budgetary_resources(fiscal_year, fiscal_period):
-    total_budgetary_resources = (
-        GTASSF133Balances.objects.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
-        .values("fiscal_year")
-        .annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe"))
-        .values("total_budgetary_resources")
-    )
-    return total_budgetary_resources[0]["total_budgetary_resources"] if len(total_budgetary_resources) > 0 else 0.0
 
 
 class AgencyViewSet(APIView):
@@ -75,6 +66,13 @@ class AgencyViewSet(APIView):
 
         cj = toptier_agency.justification if toptier_agency.justification else None
 
+        total_budgetary_resources = (
+            GTASSF133Balances.objects.filter(fiscal_year=active_fiscal_year, fiscal_period=active_fiscal_period)
+            .values("fiscal_year")
+            .aggregate(Sum("total_budgetary_resources_cpe"))
+        )
+        total_budgetary_resources = total_budgetary_resources.get("total_budgetary_resources_cpe__sum", 0)
+
         # craft response
         response["results"] = {
             "agency_name": toptier_agency.name,
@@ -83,9 +81,7 @@ class AgencyViewSet(APIView):
             "outlay_amount": str(aggregate_dict["outlay_amount"]),
             "obligated_amount": str(aggregate_dict["obligated_amount"]),
             "budget_authority_amount": str(aggregate_dict["budget_authority_amount"]),
-            "current_total_budget_authority_amount": str(
-                get_total_budgetary_resources(active_fiscal_year, active_fiscal_period)
-            ),
+            "current_total_budget_authority_amount": str(total_budgetary_resources),
             "mission": toptier_agency.mission,
             "website": toptier_agency.website,
             "icon_filename": toptier_agency.icon_filename,

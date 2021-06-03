@@ -27,7 +27,14 @@ def create_agency_data():
     tas2 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency2)
 
     # CREATE SUBMISSIONS
-    # submission_3 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2015, toptier_code='100')
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2017,
+        reporting_fiscal_quarter=2,
+        reporting_fiscal_period=4,
+        toptier_code="100",
+        is_final_balances_for_fy=False,
+    )
     submission_1 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
@@ -36,7 +43,6 @@ def create_agency_data():
         toptier_code="100",
         is_final_balances_for_fy=True,
     )
-    # submission_2 = mommy.make('submissions.SubmissionAttributes', reporting_fiscal_year=2016, toptier_code='100')
     submission_2 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
@@ -71,7 +77,14 @@ def create_agency_data():
     mommy.make(
         "references.GTASSF133Balances",
         total_budgetary_resources_cpe=100.00,
-        obligations_incurred_total_cpe=100.00,
+        obligations_incurred_total_cpe=1000.00,
+        fiscal_year=2017,
+        fiscal_period=4,
+    )
+    mommy.make(
+        "references.GTASSF133Balances",
+        total_budgetary_resources_cpe=200.00,
+        obligations_incurred_total_cpe=2000.00,
         fiscal_year=2017,
         fiscal_period=6,
     )
@@ -93,10 +106,10 @@ def test_award_type_endpoint(client, create_agency_data):
                 "agency_name": "tta_name",
                 "congressional_justification_url": "test.com/cj",
                 "budget_authority_amount": 2.0,
-                "current_total_budget_authority_amount": 100.00,
+                "current_total_budget_authority_amount": 200.00,
                 "obligated_amount": 2.0,
                 "outlay_amount": 2.0,
-                "percentage_of_total_budget_authority": 0.02,
+                "percentage_of_total_budget_authority": 0.01,
                 "toptier_code": "100",
             },
             {
@@ -107,10 +120,10 @@ def test_award_type_endpoint(client, create_agency_data):
                 "agency_name": "tta_name_2",
                 "congressional_justification_url": None,
                 "budget_authority_amount": 14.0,
-                "current_total_budget_authority_amount": 100.00,
+                "current_total_budget_authority_amount": 200.00,
                 "obligated_amount": 14.0,
                 "outlay_amount": 14.00,
-                "percentage_of_total_budget_authority": 0.14,
+                "percentage_of_total_budget_authority": 0.07,
                 "toptier_code": "200",
             },
         ]
@@ -128,10 +141,10 @@ def test_award_type_endpoint(client, create_agency_data):
                 "agency_name": "tta_name_2",
                 "congressional_justification_url": None,
                 "budget_authority_amount": 14.0,
-                "current_total_budget_authority_amount": 100.00,
+                "current_total_budget_authority_amount": 200.00,
                 "obligated_amount": 14.0,
                 "outlay_amount": 14.0,
-                "percentage_of_total_budget_authority": 0.14,
+                "percentage_of_total_budget_authority": 0.07,
                 "toptier_code": "200",
             },
             {
@@ -142,10 +155,10 @@ def test_award_type_endpoint(client, create_agency_data):
                 "agency_name": "tta_name",
                 "congressional_justification_url": "test.com/cj",
                 "budget_authority_amount": 2.0,
-                "current_total_budget_authority_amount": 100.00,
+                "current_total_budget_authority_amount": 200.00,
                 "obligated_amount": 2.0,
                 "outlay_amount": 2.0,
-                "percentage_of_total_budget_authority": 0.02,
+                "percentage_of_total_budget_authority": 0.01,
                 "toptier_code": "100",
             },
         ]
