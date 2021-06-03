@@ -74,18 +74,15 @@ class ToptierAgenciesViewSet(APIView):
         # get the most up to date fy and quarter
         latest_sa_by_toptier = (
             SubmissionAttributes.objects.filter(submission_window__submission_reveal_date__lte=now())
-            .values("toptier_code")
-            .annotate(
-                fiscal_year=Max("reporting_fiscal_year"),
-                fiscal_quarter=Max("reporting_fiscal_quarter"),
-                fiscal_period=Max("reporting_fiscal_period"),
-            )
+            .order_by("toptier_code", "-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
+            .distinct("toptier_code")
+            .values("toptier_code", "reporting_fiscal_year", "reporting_fiscal_quarter", "reporting_fiscal_period")
         )
         latest_sa_by_toptier = {
             val["toptier_code"]: {
-                "fiscal_year": val["fiscal_year"],
-                "fiscal_quarter": val["fiscal_quarter"],
-                "fiscal_period": val["fiscal_period"],
+                "fiscal_year": val["reporting_fiscal_year"],
+                "fiscal_quarter": val["reporting_fiscal_quarter"],
+                "fiscal_period": val["reporting_fiscal_period"],
             }
             for val in latest_sa_by_toptier
         }
@@ -93,9 +90,9 @@ class ToptierAgenciesViewSet(APIView):
         aab_sums_by_toptier = (
             AppropriationAccountBalances.objects.filter(submission__is_final_balances_for_fy=True)
             .values(
+                "treasury_account_identifier__funding_toptier_agency",
                 "submission__reporting_fiscal_year",
                 "submission__reporting_fiscal_quarter",
-                "treasury_account_identifier__funding_toptier_agency",
             )
             .annotate(
                 budget_authority_amount=Coalesce(Sum("total_budgetary_resources_amount_cpe"), 0),
@@ -104,7 +101,11 @@ class ToptierAgenciesViewSet(APIView):
             )
         )
         aab_sums_by_toptier = {
-            val["treasury_account_identifier__funding_toptier_agency"]: {
+            (
+                val["treasury_account_identifier__funding_toptier_agency"],
+                val["submission__reporting_fiscal_year"],
+                val["submission__reporting_fiscal_quarter"],
+            ): {
                 "budget_authority_amount": val["budget_authority_amount"],
                 "obligated_amount": val["obligated_amount"],
                 "outlay_amount": val["outlay_amount"],
@@ -135,7 +136,9 @@ class ToptierAgenciesViewSet(APIView):
             active_fiscal_period = submission["fiscal_period"]
 
             default_aab_sums = {"outlay_amount": 0, "obligated_amount": 0, "budget_authority_amount": 0}
-            aab_sums = aab_sums_by_toptier.get(agency["toptier_agency_id"], default_aab_sums)
+            aab_sums = aab_sums_by_toptier.get(
+                (agency["toptier_agency_id"], active_fiscal_year, active_fiscal_quarter), default_aab_sums
+            )
 
             abbreviation = agency.get("toptier_abbreviation", "")
             cj = agency.get("justification")
@@ -164,7 +167,7 @@ class ToptierAgenciesViewSet(APIView):
             )
 
         response["results"] = sort_with_null_last(
-            to_sort=response["results"], sort_key=sort, sort_order=order, tie_breaker="agency_id"
+            to_sort=response["results"], sort_key=sort, sort_order=order, tie_breaker="agency_name"
         )
 
         return Response(response)
