@@ -28,6 +28,23 @@ def create_agency_data(db):
     mommy.make("references.GTASSF133Balances", fiscal_year=2017, fiscal_period=6, total_budgetary_resources_cpe=2000)
 
     # Create Submissions
+    dsws1 = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2017,
+        submission_reveal_date="2017-02-01",
+        submission_fiscal_quarter=2,
+        submission_fiscal_month=4,
+        is_quarter=False,
+    )
+    dsws2 = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2017,
+        submission_reveal_date="2017-04-01",
+        submission_fiscal_quarter=2,
+        submission_fiscal_month=6,
+        is_quarter=True,
+    )
+
     mommy.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
@@ -35,6 +52,7 @@ def create_agency_data(db):
         reporting_fiscal_period=4,
         toptier_code="100",
         is_final_balances_for_fy=False,
+        submission_window=dsws1,
     )
     submission_1 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -43,6 +61,7 @@ def create_agency_data(db):
         reporting_fiscal_period=6,
         toptier_code="100",
         is_final_balances_for_fy=True,
+        submission_window=dsws2,
     )
 
     # Create AppropriationAccountBalances

@@ -1,4 +1,5 @@
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Q
+from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -6,6 +7,7 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.references.models import Agency, GTASSF133Balances
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -31,20 +33,37 @@ class AgencyViewSet(APIView):
             return Response(response)
 
         toptier_agency = agency.toptier_agency
-        # get corresponding submissions through cgac code
-        queryset = SubmissionAttributes.objects.all()
-        queryset = queryset.filter(
-            toptier_code=toptier_agency.toptier_code, submission_window__submission_reveal_date__lte=now()
+
+        # Get corresponding submissions through cgac code with Submission in latest Quarter / Period
+        submission_queryset = SubmissionAttributes.objects.filter(
+            toptier_code=toptier_agency.toptier_code,
+            submission_window__submission_reveal_date__lte=now(),
         )
 
-        # get the most up to date fy, quarter, and period
-        queryset = queryset.order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
-        queryset = queryset.annotate(
-            fiscal_year=F("reporting_fiscal_year"), fiscal_quarter=F("reporting_fiscal_quarter")
-        )
-        submission = queryset.first()
-        if submission is None:
+        if not submission_queryset.exists():
             return Response(response)
+
+        most_recent_quarter_window_id = get_last_closed_submission_date(is_quarter=True)["id"]
+        most_recent_period_window_id = get_last_closed_submission_date(is_quarter=False)["id"]
+
+        submission = (
+            submission_queryset.filter(
+                Q(submission_window=most_recent_quarter_window_id) | Q(submission_window=most_recent_period_window_id)
+            )
+            .order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
+            .annotate(fiscal_year=F("reporting_fiscal_year"), fiscal_quarter=F("reporting_fiscal_quarter"))
+            .first()
+        )
+        if submission is None:
+            # If there is no Submission for the latest Quarter / Period then get Fiscal Date from latest submission;
+            # Not terminating early as we do above since the Agency does have at least one historical submission
+            submission = (
+                SubmissionAttributes.objects.filter(submission_window__submission_reveal_date__lte=now())
+                .order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
+                .annotate(fiscal_year=F("reporting_fiscal_year"), fiscal_quarter=F("reporting_fiscal_quarter"))
+                .first()
+            )
+
         active_fiscal_year = submission.reporting_fiscal_year
         active_fiscal_quarter = submission.fiscal_quarter
         active_fiscal_period = submission.reporting_fiscal_period
@@ -59,9 +78,9 @@ class AgencyViewSet(APIView):
             submission__reporting_fiscal_quarter=active_fiscal_quarter,
             treasury_account_identifier__funding_toptier_agency=toptier_agency,
         ).aggregate(
-            budget_authority_amount=Sum("total_budgetary_resources_amount_cpe"),
-            obligated_amount=Sum("obligations_incurred_total_by_tas_cpe"),
-            outlay_amount=Sum("gross_outlay_amount_by_tas_cpe"),
+            budget_authority_amount=Coalesce(Sum("total_budgetary_resources_amount_cpe"), 0),
+            obligated_amount=Coalesce(Sum("obligations_incurred_total_by_tas_cpe"), 0),
+            outlay_amount=Coalesce(Sum("gross_outlay_amount_by_tas_cpe"), 0),
         )
 
         cj = toptier_agency.justification if toptier_agency.justification else None

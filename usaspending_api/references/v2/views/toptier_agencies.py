@@ -1,4 +1,4 @@
-from django.db.models import F, Sum, OuterRef, Max
+from django.db.models import F, Sum, OuterRef, Max, Q
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,6 +10,7 @@ from usaspending_api.common.helpers.generic_helper import sort_with_null_last
 from usaspending_api.common.helpers.orm_helpers import AvoidSubqueryInGroupBy
 from usaspending_api.references.models import Agency, GTASSF133Balances
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -71,21 +72,44 @@ class ToptierAgenciesViewSet(APIView):
             for val in tbr_by_year_and_period
         }
 
-        # get the most up to date fy and quarter
-        latest_sa_by_toptier = (
+        # Get list of Agencies that submitted in the most recent Quarter / Period submission window
+        most_recent_quarter_window = get_last_closed_submission_date(is_quarter=True)
+        most_recent_period_window = get_last_closed_submission_date(is_quarter=False)
+
+        all_toptier_with_submission = (
             SubmissionAttributes.objects.filter(submission_window__submission_reveal_date__lte=now())
+            .distinct("toptier_code")
+            .values_list("toptier_code", flat=True)
+        )
+        latest_submission_by_toptier = (
+            SubmissionAttributes.objects.filter(
+                Q(submission_window=most_recent_quarter_window["id"])
+                | Q(submission_window=most_recent_period_window["id"])
+            )
             .order_by("toptier_code", "-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
             .distinct("toptier_code")
             .values("toptier_code", "reporting_fiscal_year", "reporting_fiscal_quarter", "reporting_fiscal_period")
         )
-        latest_sa_by_toptier = {
+        latest_submission_by_toptier = {
             val["toptier_code"]: {
                 "fiscal_year": val["reporting_fiscal_year"],
                 "fiscal_quarter": val["reporting_fiscal_quarter"],
                 "fiscal_period": val["reporting_fiscal_period"],
             }
-            for val in latest_sa_by_toptier
+            for val in latest_submission_by_toptier
         }
+
+        # Add a placeholder for Agencies that have submitted but not in recent Quarter / Period;
+        # Placeholder is most recent Period window to ensure accurate "current_total_budget_authority_amount"
+        placeholder = {
+            "fiscal_year": most_recent_period_window["submission_fiscal_year"],
+            "fiscal_quarter": most_recent_period_window["submission_fiscal_quarter"],
+            "fiscal_period": most_recent_period_window["submission_fiscal_month"],
+        }
+        for toptier_code in all_toptier_with_submission:
+            submission_values = latest_submission_by_toptier.get(toptier_code)
+            if submission_values is None:
+                latest_submission_by_toptier[toptier_code] = placeholder
 
         aab_sums_by_toptier = (
             AppropriationAccountBalances.objects.filter(submission__is_final_balances_for_fy=True)
@@ -127,7 +151,7 @@ class ToptierAgenciesViewSet(APIView):
         )
 
         for agency in agency_list:
-            submission = latest_sa_by_toptier.get(agency["toptier_code"])
+            submission = latest_submission_by_toptier.get(agency["toptier_code"])
 
             if submission is None:
                 continue
