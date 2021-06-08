@@ -1,4 +1,4 @@
-from django.db.models import F, Sum, Q
+from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -51,21 +51,20 @@ class AgencyViewSet(APIView):
                 Q(submission_window=most_recent_quarter_window_id) | Q(submission_window=most_recent_period_window_id)
             )
             .order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
-            .annotate(fiscal_year=F("reporting_fiscal_year"), fiscal_quarter=F("reporting_fiscal_quarter"))
             .first()
         )
         if submission is None:
-            # If there is no Submission for the latest Quarter / Period then get Fiscal Date from latest submission.
+            # If the given agency has no submission in the latest FP or FQ, grab the latest seen submission
+            # (from any arbitrary agency) to derive the "active" (latest closed) FY, FQ, and FP.
             # Not terminating early as we do above since the Agency does have at least one historical submission.
             submission = (
                 SubmissionAttributes.objects.filter(submission_window__submission_reveal_date__lte=now())
                 .order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
-                .annotate(fiscal_year=F("reporting_fiscal_year"), fiscal_quarter=F("reporting_fiscal_quarter"))
                 .first()
             )
 
         active_fiscal_year = submission.reporting_fiscal_year
-        active_fiscal_quarter = submission.fiscal_quarter
+        active_fiscal_quarter = submission.reporting_fiscal_quarter
         active_fiscal_period = submission.reporting_fiscal_period
 
         # If an Agency does not have a Submission in the recent FY, FQ, and FP combination then this query will be
