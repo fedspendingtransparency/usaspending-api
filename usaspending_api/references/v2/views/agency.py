@@ -55,8 +55,8 @@ class AgencyViewSet(APIView):
             .first()
         )
         if submission is None:
-            # If there is no Submission for the latest Quarter / Period then get Fiscal Date from latest submission;
-            # Not terminating early as we do above since the Agency does have at least one historical submission
+            # If there is no Submission for the latest Quarter / Period then get Fiscal Date from latest submission.
+            # Not terminating early as we do above since the Agency does have at least one historical submission.
             submission = (
                 SubmissionAttributes.objects.filter(submission_window__submission_reveal_date__lte=now())
                 .order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
@@ -68,11 +68,10 @@ class AgencyViewSet(APIView):
         active_fiscal_quarter = submission.fiscal_quarter
         active_fiscal_period = submission.reporting_fiscal_period
 
+        # If an Agency does not have a Submission in the recent FY, FQ, and FP combination then this query will be
+        # returning 0s for all sums since it does an INNER JOIN to the Submission pulled by the queries above.
         queryset = AppropriationAccountBalances.objects.filter(submission__is_final_balances_for_fy=True)
-        # get the incoming agency's toptier agency, because that's what we'll
-        # need to filter on
-        # (used filter() instead of get() b/c we likely don't want to raise an
-        # error on a bad agency id)
+
         aggregate_dict = queryset.filter(
             submission__reporting_fiscal_year=active_fiscal_year,
             submission__reporting_fiscal_quarter=active_fiscal_quarter,

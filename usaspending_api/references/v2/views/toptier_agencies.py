@@ -99,8 +99,6 @@ class ToptierAgenciesViewSet(APIView):
             for val in latest_submission_by_toptier
         }
 
-        # Add a placeholder for Agencies that have submitted but not in recent Quarter / Period;
-        # Placeholder is most recent Period window to ensure accurate "current_total_budget_authority_amount"
         placeholder = {
             "fiscal_year": most_recent_period_window["submission_fiscal_year"],
             "fiscal_quarter": most_recent_period_window["submission_fiscal_quarter"],
@@ -108,6 +106,9 @@ class ToptierAgenciesViewSet(APIView):
         }
         for toptier_code in all_toptier_with_submission:
             submission_values = latest_submission_by_toptier.get(toptier_code)
+
+            # Add a placeholder for Agencies that have submitted but not in recent Quarter / Period;
+            # Placeholder is most recent Period window to ensure accurate "current_total_budget_authority_amount"
             if submission_values is None:
                 latest_submission_by_toptier[toptier_code] = placeholder
 
@@ -153,8 +154,10 @@ class ToptierAgenciesViewSet(APIView):
         for agency in agency_list:
             submission = latest_submission_by_toptier.get(agency["toptier_code"])
 
+            # This means we don't have any submissions for that Agency and therefore should not be showing them
             if submission is None:
                 continue
+
             active_fiscal_year = submission["fiscal_year"]
             active_fiscal_quarter = submission["fiscal_quarter"]
             active_fiscal_period = submission["fiscal_period"]
