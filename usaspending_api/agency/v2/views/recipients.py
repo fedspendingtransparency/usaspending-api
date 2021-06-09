@@ -16,7 +16,8 @@ class RecipientList(AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        self.params_to_validate = ["fiscal_year"]
+        self.params_to_validate = ["fiscal_year", "toptier_code"]
+        self.toptier_agency()
         results = self.get_recipients_queryset()
         return Response(results)
 
@@ -39,11 +40,16 @@ class RecipientList(AgencyBase):
             fiscal_year=self.fiscal_year, toptier_code=self.toptier_code
         )
 
-        results = execute_sql_to_ordered_dictionary(SQL)
+        results = execute_sql_to_ordered_dictionary(SQL)[0]
         return {
             "toptier_code": self.toptier_code,
             "fiscal_year": self.fiscal_year,
-            "results": results,
+            "count": results["count"],
+            "max": results["max"],
+            "min": results["min"],
+            "25th_percentile": results["25th_percentile"],
+            "50th_percentile": results["50th_percentile"],
+            "75th_percentile": results["75th_percentile"],
             "messages": self.standard_response_messages,
         }
         return results
