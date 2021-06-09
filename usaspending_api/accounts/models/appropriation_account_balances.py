@@ -3,27 +3,12 @@ from usaspending_api.common.models import DataSourceTrackedModel
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-class AppropriationAccountBalancesManager(models.Manager):
-    def get_queryset(self):
-        """ Get only records from the last submission per TAS per fiscal year. """
-        return super(AppropriationAccountBalancesManager, self).get_queryset().filter(final_of_fy=True)
-
-
-class AppropriationAccountBalances(DataSourceTrackedModel):
-    """
-    Represents Treasury Account Symbol (TAS) balances for each DATA Act
-    broker submission. Each submission provides a snapshot of the most
-    recent numbers for that fiscal year. In other words, the lastest
-    submission for a fiscal year reflects the balances for the entire
-    fiscal year.
-    """
-
+class AbstractAppropriationAccountBalances(DataSourceTrackedModel):
     appropriation_account_balances_id = models.AutoField(primary_key=True)
     treasury_account_identifier = models.ForeignKey(
-        "TreasuryAppropriationAccount",
+        "accounts.TreasuryAppropriationAccount",
         models.CASCADE,
         db_column="treasury_account_identifier",
-        related_name="account_balances",
     )
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(
@@ -55,6 +40,33 @@ class AppropriationAccountBalances(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     final_of_fy = models.BooleanField(blank=False, null=False, default=False, db_index=True)
+
+    class Meta:
+        abstract = True
+
+
+class AppropriationAccountBalancesManager(models.Manager):
+    def get_queryset(self):
+        """ Get only records from the last submission per TAS per fiscal year. """
+        return super(AppropriationAccountBalancesManager, self).get_queryset().filter(final_of_fy=True)
+
+
+class AppropriationAccountBalances(AbstractAppropriationAccountBalances):
+    """
+    Represents Treasury Account Symbol (TAS) balances for each DATA Act
+    broker submission. Each submission provides a snapshot of the most
+    recent numbers for that fiscal year. In other words, the lastest
+    submission for a fiscal year reflects the balances for the entire
+    fiscal year.
+    """
+
+    # Overriding to set the "related_name"
+    treasury_account_identifier = models.ForeignKey(
+        "TreasuryAppropriationAccount",
+        models.CASCADE,
+        db_column="treasury_account_identifier",
+        related_name="account_balances",
+    )
 
     class Meta:
         managed = True

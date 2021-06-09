@@ -5,25 +5,12 @@ from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
-class FinancialAccountsByProgramActivityObjectClassManager(models.Manager):
-    def get_queryset(self):
-        """
-        Get only records from the last submission per TAS per fiscal year.
-        """
-
-        return super(FinancialAccountsByProgramActivityObjectClassManager, self).get_queryset().filter(final_of_fy=True)
-
-
-class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
-    """ Model corresponding to Agency File B """
-
+class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, null=True, db_index=True)
     submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     object_class = models.ForeignKey(ObjectClass, models.DO_NOTHING, null=True, db_index=True)
-    treasury_account = models.ForeignKey(
-        TreasuryAppropriationAccount, models.CASCADE, related_name="program_balances", null=True
-    )
+    treasury_account = models.ForeignKey(TreasuryAppropriationAccount, models.CASCADE, null=True)
     disaster_emergency_fund = models.ForeignKey(
         "references.DisasterEmergencyFundCode",
         models.DO_NOTHING,
@@ -77,6 +64,27 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     final_of_fy = models.BooleanField(blank=False, null=False, default=False, db_index=True)
+
+    class Meta:
+        abstract = True
+
+
+class FinancialAccountsByProgramActivityObjectClassManager(models.Manager):
+    def get_queryset(self):
+        """
+        Get only records from the last submission per TAS per fiscal year.
+        """
+
+        return super(FinancialAccountsByProgramActivityObjectClassManager, self).get_queryset().filter(final_of_fy=True)
+
+
+class FinancialAccountsByProgramActivityObjectClass(AbstractFinancialAccountsByProgramActivityObjectClass):
+    """ Model corresponding to Agency File B """
+
+    # Overriding to set the "related_name"
+    treasury_account = models.ForeignKey(
+        TreasuryAppropriationAccount, models.CASCADE, related_name="program_balances", null=True
+    )
 
     class Meta:
         managed = True

@@ -34,7 +34,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import (
     ConcatAll,
     FiscalYear,
-    get_agency_name_annotation,
     get_fyp_or_q_notation,
 )
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
@@ -187,10 +186,6 @@ def generate_gross_outlay_amount_derived_field(filters, account_type):
 def generate_treasury_account_query(queryset, account_type, tas_id, filters):
     """ Derive necessary fields for a treasury account-grouped query """
     derived_fields = {
-        "allocation_transfer_agency_identifier_name": get_agency_name_annotation(
-            tas_id, "allocation_transfer_agency_id"
-        ),
-        "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "submission_period": get_fyp_or_q_notation("submission"),
         "gross_outlay_amount": generate_gross_outlay_amount_derived_field(filters, account_type),
         "gross_outlay_amount_fyb_to_period_end": generate_gross_outlay_amount_derived_field(filters, account_type),
@@ -228,7 +223,6 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "budget_function": StringAgg(f"{tas_id}__budget_function_title", "; ", distinct=True),
         "budget_subfunction": StringAgg(f"{tas_id}__budget_subfunction_title", "; ", distinct=True),
         "submission_period": get_fyp_or_q_notation("submission"),
-        "agency_identifier_name": get_agency_name_annotation(tas_id, "agency_id"),
         "last_modified_date"
         + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
         "gross_outlay_amount": Sum(generate_gross_outlay_amount_derived_field(filters, account_type)),
