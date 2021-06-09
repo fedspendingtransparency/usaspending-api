@@ -88,6 +88,18 @@ class ConcatAll(Func):
     function = "CONCAT"
 
 
+class AvoidSubqueryInGroupBy(Subquery):
+    """
+    Django currently adds Subqueries to the Group By clause by default when an Aggregation or Annotation is
+    used. This is not always needed and for those queries where it is not needed it can hurt performance.
+    The ability to avoid this was implemented in Django 3.2:
+    https://github.com/django/django/commit/fb3f034f1c63160c0ff13c609acd01c18be12f80
+    """
+
+    def get_group_by_cols(self):
+        return []
+
+
 def get_agency_name_annotation(relation_name: str, cgac_column_name: str) -> Subquery:
     """
     Accepts the Django foreign key relation name for the outer queryset to TreasuryAppropriationAccount
