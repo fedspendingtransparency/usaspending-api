@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS recipient_agency CASCADE;
+DROP TABLE IF EXISTS recipient_agency;
 
 CREATE TABLE recipient_agency AS (
 	SELECT
@@ -24,4 +24,4 @@ CREATE TABLE recipient_agency AS (
       ))::uuid), fiscal_year
 	HAVING SUM(COALESCE(CASE WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost ELSE transaction_normalized.federal_action_obligation END, 0)) > 0);
 
-CREATE INDEX agency_fiscal_year ON recipient_agency(toptier_code, fiscal_year, recipient_name);
+CREATE INDEX recipient_agency_fiscal_year ON recipient_agency(toptier_code, fiscal_year, recipient_name);
