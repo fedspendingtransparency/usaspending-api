@@ -1,11 +1,11 @@
 from django.db import models
 
-from usaspending_api.financial_activities.models import AbstractFinancialAccountsByProgramActivityObjectClass
+from usaspending_api.accounts.models.appropriation_account_balances import AbstractAppropriationAccountBalances
 
 
-class ObjectClassProgramActivityView(AbstractFinancialAccountsByProgramActivityObjectClass):
+class AppropriationAccountBalancesDownloadView(AbstractAppropriationAccountBalances):
     """
-    Model based on a View to support File B downloads. Inherits the File B table's model to ensure that all
+    Model based on a View to support File A downloads. Inherits the File A table's model to ensure that all
     necessary fields are in place to support previous download functionality while also adding additional fields
     that are either:
         * not easily queried through the Django ORM
@@ -16,5 +16,5 @@ class ObjectClassProgramActivityView(AbstractFinancialAccountsByProgramActivityO
     allocation_transfer_agency_identifier_name = models.TextField()
 
     class Meta:
-        db_table = "vw_object_class_program_activity"
+        db_table = "vw_appropriation_account_balances_download"
         managed = False

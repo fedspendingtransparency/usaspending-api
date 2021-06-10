@@ -8,9 +8,9 @@ from usaspending_api.common.models import DataSourceTrackedModel
 class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, null=True, db_index=True)
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    submission = models.ForeignKey(SubmissionAttributes, models.DO_NOTHING)
     object_class = models.ForeignKey(ObjectClass, models.DO_NOTHING, null=True, db_index=True)
-    treasury_account = models.ForeignKey(TreasuryAppropriationAccount, models.CASCADE, null=True)
+    treasury_account = models.ForeignKey(TreasuryAppropriationAccount, models.DO_NOTHING, null=True)
     disaster_emergency_fund = models.ForeignKey(
         "references.DisasterEmergencyFundCode",
         models.DO_NOTHING,
@@ -81,7 +81,9 @@ class FinancialAccountsByProgramActivityObjectClassManager(models.Manager):
 class FinancialAccountsByProgramActivityObjectClass(AbstractFinancialAccountsByProgramActivityObjectClass):
     """ Model corresponding to Agency File B """
 
-    # Overriding to set the "related_name"
+    # Overriding attributes from the Abstract Fields;
+    # This needs to occur primarily for the values of "on_delete" and "related_name"
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     treasury_account = models.ForeignKey(
         TreasuryAppropriationAccount, models.CASCADE, related_name="program_balances", null=True
     )

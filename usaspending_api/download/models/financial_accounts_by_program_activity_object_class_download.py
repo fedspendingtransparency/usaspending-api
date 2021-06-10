@@ -1,11 +1,11 @@
 from django.db import models
 
-from usaspending_api.awards.models import AbstractFinancialAccountsByAwards
+from usaspending_api.financial_activities.models import AbstractFinancialAccountsByProgramActivityObjectClass
 
 
-class AwardFinancialView(AbstractFinancialAccountsByAwards):
+class FinancialAccountsByProgramActivityObjectClassDownloadView(AbstractFinancialAccountsByProgramActivityObjectClass):
     """
-    Model based on a View to support File A downloads. Inherits the File A table's model to ensure that all
+    Model based on a View to support File B downloads. Inherits the File B table's model to ensure that all
     necessary fields are in place to support previous download functionality while also adding additional fields
     that are either:
         * not easily queried through the Django ORM
@@ -16,5 +16,5 @@ class AwardFinancialView(AbstractFinancialAccountsByAwards):
     allocation_transfer_agency_identifier_name = models.TextField()
 
     class Meta:
-        db_table = "vw_award_financial"
+        db_table = "vw_financial_accounts_by_program_activity_object_class_download"
         managed = False

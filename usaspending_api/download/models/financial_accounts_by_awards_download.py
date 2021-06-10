@@ -1,9 +1,9 @@
 from django.db import models
 
-from usaspending_api.accounts.models.appropriation_account_balances import AbstractAppropriationAccountBalances
+from usaspending_api.awards.models import AbstractFinancialAccountsByAwards
 
 
-class AccountBalancesView(AbstractAppropriationAccountBalances):
+class FinancialAccountsByAwardsDownloadView(AbstractFinancialAccountsByAwards):
     """
     Model based on a View to support File A downloads. Inherits the File A table's model to ensure that all
     necessary fields are in place to support previous download functionality while also adding additional fields
@@ -16,5 +16,5 @@ class AccountBalancesView(AbstractAppropriationAccountBalances):
     allocation_transfer_agency_identifier_name = models.TextField()
 
     class Meta:
-        db_table = "vw_account_balances"
+        db_table = "vw_financial_accounts_by_awards_download"
         managed = False

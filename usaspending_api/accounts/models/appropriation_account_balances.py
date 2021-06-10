@@ -7,10 +7,10 @@ class AbstractAppropriationAccountBalances(DataSourceTrackedModel):
     appropriation_account_balances_id = models.AutoField(primary_key=True)
     treasury_account_identifier = models.ForeignKey(
         "accounts.TreasuryAppropriationAccount",
-        models.CASCADE,
+        models.DO_NOTHING,
         db_column="treasury_account_identifier",
     )
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    submission = models.ForeignKey(SubmissionAttributes, models.DO_NOTHING)
     budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
@@ -60,7 +60,9 @@ class AppropriationAccountBalances(AbstractAppropriationAccountBalances):
     fiscal year.
     """
 
-    # Overriding to set the "related_name"
+    # Overriding attributes from the Abstract Fields;
+    # This needs to occur primarily for the values of "on_delete" and "related_name"
+    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
     treasury_account_identifier = models.ForeignKey(
         "TreasuryAppropriationAccount",
         models.CASCADE,
