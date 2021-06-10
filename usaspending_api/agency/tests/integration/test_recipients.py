@@ -259,8 +259,8 @@ def test_basic_success(client, monkeypatch, recipient_agency_data):
         "max": 5113080.0,
         "min": 1079.1,
         "25th_percentile": 30654.0,
-        "50th_percentile": 11721.0,
-        "75th_percentile": 3465.0,
+        "50th_percentile": 3465.0,
+        "75th_percentile": 11721.0,
         "messages": [],
     }
     assert resp.json() == expected_results
