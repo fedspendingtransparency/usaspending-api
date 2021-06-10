@@ -36,7 +36,13 @@ Returns a list of data points of an agencies recipients for a given fiscal year
     + Body
 
             {
-                "whatever": {}
+                "toptier_code": "015",
+                "fiscal_year": 2021,
+                "count": 4,
+                "max": 450000.0,
+                "min": 21532.0,
+                "25th_percentile": 21532.0,
+                "50th_percentile": 34029.61,
+                "75th_percentile": 168000.0,
+                "messages": []
             }
-
-# Data Structures
