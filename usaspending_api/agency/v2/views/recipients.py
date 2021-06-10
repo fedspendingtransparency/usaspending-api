@@ -17,7 +17,6 @@ class RecipientList(AgencyBase):
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         self.params_to_validate = ["fiscal_year", "toptier_code"]
-        self.toptier_agency()
         results = self.get_recipients_queryset()
         return Response(results)
 
