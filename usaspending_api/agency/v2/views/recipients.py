@@ -36,7 +36,7 @@ class RecipientList(AgencyBase):
         'INDIVIDUAL RECIPIENT',
         'MISCELLANEOUS FOREIGN AWARDEES');
         """.format(
-            fiscal_year=self.fiscal_year, toptier_code=self.toptier_code
+            fiscal_year=self.fiscal_year, toptier_code=self.toptier_agency.toptier_code
         )
 
         results = execute_sql_to_ordered_dictionary(SQL)[0]

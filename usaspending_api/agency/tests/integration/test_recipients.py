@@ -187,20 +187,28 @@ recipient_agency_list = [
 ]
 
 
-@pytest.mark.django_db
-def setup_recipient_agency():
+@pytest.fixture
+def recipient_agency_data():
     toptier_agency_1 = mommy.make("references.ToptierAgency", toptier_code="015", name="Agency 1", abbreviation="A1")
 
     toptier_agency_2 = mommy.make("references.ToptierAgency", toptier_code="019", name="Agency 2", abbreviation="A2")
 
-    mommy.make("references.Agency", toptier_agency=toptier_agency_1, toptier_flag=True)
-    mommy.make("references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True)
+    mommy.make("references.Agency", toptier_agency=toptier_agency_1, toptier_flag=True, user_selectable=True)
+    mommy.make("references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True, user_selectable=True)
 
     dabs1 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", submission_fiscal_year=2020, submission_reveal_date="1999-01-01"
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2020,
+        submission_fiscal_month=12,
+        submission_fiscal_quarter=4,
+        submission_reveal_date="1999-01-01",
     )
     dabs2 = mommy.make(
-        "submissions.DABSSubmissionWindowSchedule", submission_fiscal_year=2021, submission_reveal_date="1999-01-01"
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_fiscal_year=2021,
+        submission_fiscal_month=12,
+        submission_fiscal_quarter=4,
+        submission_reveal_date="1999-01-01",
     )
     mommy.make("submissions.SubmissionAttributes", toptier_code=toptier_agency_1.toptier_code, submission_window=dabs1)
     mommy.make("submissions.SubmissionAttributes", toptier_code=toptier_agency_1.toptier_code, submission_window=dabs2)
@@ -211,8 +219,7 @@ def setup_recipient_agency():
 
 
 @pytest.mark.django_db
-def test_basic_success(client):
-    setup_recipient_agency()
+def test_basic_success(client, monkeypatch, recipient_agency_data):
     resp = client.get(url.format(toptier_code="015", filter="?fiscal_year=2021"))
     assert resp.status_code == status.HTTP_200_OK
     expected_results = {
@@ -236,9 +243,9 @@ def test_basic_success(client):
         "count": 10,
         "max": 933821.0,
         "min": 1696.8,
-        "25th_percentile": 21532.0,
-        "50th_percentile": 34029.61,
-        "75th_percentile": 168000.0,
+        "25th_percentile": 2300.6,
+        "50th_percentile": 58937.96,
+        "75th_percentile": 9900.0,
         "messages": [],
     }
     assert resp.json() == expected_results
@@ -251,17 +258,22 @@ def test_basic_success(client):
         "count": 8,
         "max": 5113080.0,
         "min": 1079.1,
-        "25th_percentile": 21532.0,
-        "50th_percentile": 34029.61,
-        "75th_percentile": 168000.0,
+        "25th_percentile": 30654.0,
+        "50th_percentile": 11721.0,
+        "75th_percentile": 3465.0,
         "messages": [],
     }
     assert resp.json() == expected_results
 
 
 @pytest.mark.django_db
-def test_invalid_fiscal_year(client):
-    setup_recipient_agency()
+def test_invalid_fiscal_year(client, recipient_agency_data):
     query_params = f"?fiscal_year={current_fiscal_year() + 1}"
     resp = client.get(url.format(toptier_code="015", filter=query_params))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.django_db
+def test_invalid_agency(client, recipient_agency_data):
+    resp = client.get(url.format(toptier_code="999", filter=""))
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
