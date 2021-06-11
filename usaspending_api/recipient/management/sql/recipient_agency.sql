@@ -24,7 +24,7 @@ FROM (
 		LEFT JOIN transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id AND transaction_normalized.is_fpds = true)
 		LEFT JOIN recipient_lookup ON recipient_lookup.duns = COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AND COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
 
-	WHERE fiscal_year >= 2017
+	WHERE fiscal_year >= 2017 and toptier_code is not NULL
 
 	GROUP BY toptier_code,  recipient_lookup.legal_business_name, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
         CASE
