@@ -277,11 +277,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         "order": self.pagination["sort_order"],
                         "nested": {
                             "path": "covid_spending_by_defc",
-                            "filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}},
                         },
                     }
                 }
             ]
+            if self.filters.get("def_codes") is not None:
+                sorts[0][f"covid_spending_by_defc.{covid_sort_fields[self.pagination['sort_key']]}"]["nested"].update(
+                    {"filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
+                )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
         else:
             sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
