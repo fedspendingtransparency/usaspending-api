@@ -370,6 +370,10 @@ class _AwardIds(_Filter):
 
 
 class _ProgramNumbers(_Filter):
+    """
+    This filter searches by the CFDA from the latest transaction associated with an
+    award. 
+    """
     underscore_name = "program_numbers"
 
     @classmethod
@@ -380,6 +384,25 @@ class _ProgramNumbers(_Filter):
 
         for v in filter_values:
             programs_numbers_query.append(ES_Q("match", cfda_number=v))
+
+        return ES_Q("bool", should=programs_numbers_query, minimum_should_match=1)
+
+
+class _AllProgramNumbers(_Filter):
+    """
+    This filter should only be applied to filters on the Awards index. It searches
+    the cfdas field that contains information about all cfdas associated with an award. 
+    """
+    underscore_name = "all_program_numbers"
+
+    @classmethod
+    def generate_elasticsearch_query(
+        cls, filter_values: List[str], query_type: _QueryType, nested_path: str = ""
+    ) -> ES_Q:
+        programs_numbers_query = []
+
+        for v in filter_values:
+            programs_numbers_query.append(ES_Q("match", cfdas=v))
 
         return ES_Q("bool", should=programs_numbers_query, minimum_should_match=1)
 
