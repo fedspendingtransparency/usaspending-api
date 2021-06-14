@@ -185,6 +185,9 @@ List of table columns
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
+    CFDA Number associated with the latest transaction for the Award
++ `all_program_numbers`: `10.331` (optional, array[string])
+    CFDA Numbers associated with all transactions for the Award
 + `naics_codes` (optional, NAICSCodeObject)
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `psc_codes` (optional, enum[PSCCodeObject, array[string]])
