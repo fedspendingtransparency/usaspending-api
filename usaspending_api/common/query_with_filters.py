@@ -402,7 +402,7 @@ class _AllProgramNumbers(_Filter):
         programs_numbers_query = []
 
         for v in filter_values:
-            programs_numbers_query.append(ES_Q("match", cfdas=v))
+            programs_numbers_query.append(ES_Q("match", **{"cfdas.breakdown": v}))
 
         return ES_Q("bool", should=programs_numbers_query, minimum_should_match=1)
 

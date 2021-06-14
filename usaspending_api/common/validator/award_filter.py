@@ -73,6 +73,7 @@ AWARD_FILTER = [
     },
     {"name": "place_of_performance_scope", "type": "enum", "enum_values": ["domestic", "foreign"]},
     {"name": "program_numbers", "type": "array", "array_type": "text", "text_type": "search"},
+    {"name": "all_program_numbers", "type": "array", "array_type": "text", "text_type": "search"},
     {
         "name": PSCCodes.underscore_name,
         "type": "any",
