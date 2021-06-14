@@ -374,6 +374,7 @@ class _ProgramNumbers(_Filter):
     This filter searches by the CFDA from the latest transaction associated with an
     award.
     """
+
     underscore_name = "program_numbers"
 
     @classmethod
@@ -393,6 +394,7 @@ class _AllProgramNumbers(_Filter):
     This filter should only be applied to filters on the Awards index. It searches
     the cfdas field that contains information about all cfdas associated with an award.
     """
+
     underscore_name = "all_program_numbers"
 
     @classmethod
