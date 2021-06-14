@@ -88,7 +88,7 @@ def account_download_filter(account_type, download_table, filters, account_level
 
     # Make derivations based on the account level
     if account_level == "treasury_account":
-        queryset = generate_treasury_account_query(download_table.objects, account_type, tas_id, filters)
+        queryset = generate_treasury_account_query(download_table.objects, account_type, filters)
     elif account_level == "federal_account":
         queryset = generate_federal_account_query(download_table.objects, account_type, tas_id, filters)
     else:
@@ -193,7 +193,7 @@ def generate_gross_outlay_amount_derived_field(filters, account_type):
     return _generate_closed_period_for_derived_field(filters, column_name)
 
 
-def generate_treasury_account_query(queryset, account_type, tas_id, filters):
+def generate_treasury_account_query(queryset, account_type, filters):
     """ Derive necessary fields for a treasury account-grouped query """
     derived_fields = {
         "submission_period": get_fyp_or_q_notation("submission"),
@@ -206,11 +206,11 @@ def generate_treasury_account_query(queryset, account_type, tas_id, filters):
     if account_type != "account_balances":
         derived_fields.update(
             {
-                "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe": Sum(
-                    generate_ussgl487200_derived_field(filters)
+                "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe": generate_ussgl487200_derived_field(
+                    filters
                 ),
-                "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe": Sum(
-                    generate_ussgl497200_derived_field(filters)
+                "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe": generate_ussgl497200_derived_field(
+                    filters
                 ),
             }
         )
