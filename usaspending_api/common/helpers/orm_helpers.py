@@ -1,6 +1,6 @@
 from datetime import date
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, CharField, Func, IntegerField, Case, When, Value
+from django.db.models import Aggregate, Case, CharField, Func, IntegerField, Subquery, Value, When
 from django.db.models.functions import Concat, LPad, Cast
 
 from usaspending_api.search.models import (
@@ -85,6 +85,18 @@ class ConcatAll(Func):
     """
 
     function = "CONCAT"
+
+
+class AvoidSubqueryInGroupBy(Subquery):
+    """
+    Django currently adds Subqueries to the Group By clause by default when an Aggregation or Annotation is
+    used. This is not always needed and for those queries where it is not needed it can hurt performance.
+    The ability to avoid this was implemented in Django 3.2:
+    https://github.com/django/django/commit/fb3f034f1c63160c0ff13c609acd01c18be12f80
+    """
+
+    def get_group_by_cols(self):
+        return []
 
 
 def get_fyp_notation(relation_name=None):
