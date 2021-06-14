@@ -170,11 +170,11 @@ class SummaryAwardRecipient(models.Model):
 
 
 class RecipientAgency(models.Model):
-    id = models.BigAutoField(primary_key=True)
+    id = models.BigAutoField(auto_created=True, primary_key=True, serialize=False)
     fiscal_year = models.IntegerField(db_index=True)
     toptier_code = models.TextField(db_index=True)
     recipient_hash = models.UUIDField(db_index=True)
-    recipient_name = models.TextField()
+    recipient_name = models.TextField(null=True)
     recipient_amount = models.DecimalField(max_digits=23, decimal_places=2)
 
     class Meta:

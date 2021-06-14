@@ -1,6 +1,15 @@
-DROP TABLE IF EXISTS recipient_agency;
+DELETE FROM public.recipient_agency;
+ALTER SEQUENCE recipient_agency_id_seq RESTART WITH 1;
 
-CREATE TABLE recipient_agency AS (
+INSERT INTO public.recipient_agency (
+    fiscal_year,
+    toptier_code,
+    recipient_hash,
+    recipient_name,
+    recipient_amount
+)
+SELECT *
+FROM (
 	SELECT
 		fiscal_year, toptier_code, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
         CASE
@@ -15,13 +24,12 @@ CREATE TABLE recipient_agency AS (
 		LEFT JOIN transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id AND transaction_normalized.is_fpds = true)
 		LEFT JOIN recipient_lookup ON recipient_lookup.duns = COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AND COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
 
-	WHERE fiscal_year >= 2017
+	WHERE fiscal_year >= 2017 and toptier_code is not NULL
 
 	GROUP BY toptier_code,  recipient_lookup.legal_business_name, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
         CASE
           WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
           ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END
       ))::uuid), fiscal_year
-	HAVING SUM(COALESCE(CASE WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost ELSE transaction_normalized.federal_action_obligation END, 0)) > 0);
+	HAVING SUM(COALESCE(CASE WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost ELSE transaction_normalized.federal_action_obligation END, 0)) > 0) as recipient_agency_content;
 
-CREATE INDEX recipient_agency_fiscal_year ON recipient_agency(toptier_code, fiscal_year, recipient_name);
