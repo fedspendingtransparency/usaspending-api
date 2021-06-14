@@ -6,7 +6,6 @@ from typing import Optional, List
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import is_final_quarter, is_final_period
-from usaspending_api.common.helpers.sql_helpers import execute_sql
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
@@ -107,9 +106,9 @@ class ClosedPeriod:
         return Q(**{f"{prefix}submission_id__in": submission_ids})
 
 
-def get_last_closed_periods_per_year() -> List[ClosedPeriod]:
+def get_last_closed_periods_for_year(fiscal_year: int) -> Optional[ClosedPeriod]:
     """
-    Returns a list of ClosedPeriods.  fiscal_quarter or fiscal_month may be None if the year didn't
+    Returns a ClosedPeriod for provided fiscal year.  fiscal_quarter or fiscal_month may be None if the year didn't
     have a corresponding period or the period hasn't passed its reveal date yet.
     """
     sql = """
@@ -132,8 +131,12 @@ def get_last_closed_periods_per_year() -> List[ClosedPeriod]:
                             submission_reveal_date <= now()
                     order   by submission_fiscal_year, -submission_fiscal_month
                 ) as m on m.submission_fiscal_year = q.submission_fiscal_year
+        where   q.submission_fiscal_year = %(fiscal_year)s
     """
-    return [ClosedPeriod(t[0], t[1], t[2]) for t in execute_sql(sql)]
+    with connection.cursor() as cursor:
+        cursor.execute(sql, {"fiscal_year": fiscal_year})
+        result = cursor.fetchone()
+        return ClosedPeriod(result[0], result[1], result[2]) if result else None
 
 
 def get_last_closed_quarter_relative_to_month(fiscal_year: int, fiscal_month: int) -> Optional[dict]:
