@@ -288,8 +288,10 @@ def _assemble_broker_tas_lookup_records() -> list:
         "reporting_agency_aid": None,
         "reporting_agency_name": None,
     }
-
+    # TODO: Review this section to be more aligned with the actual data
     default_tas_lookup_record = copy.copy(base_record)
+    default_tas_lookup_record["tas"] = '1001100210051006100310071008'
+    default_tas_lookup_record["display_tas"] = '1001-1002-1005/1006-1007-1008'
     default_tas_lookup_record["tas_id"] = -999
     default_tas_lookup_record["account_num"] = -99999
     default_tas_lookup_record["allocation_transfer_agency"] = 1001
