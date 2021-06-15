@@ -14,7 +14,7 @@ from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.v2.request_validations import AwardDownloadValidator
 from usaspending_api.references.models import ToptierAgency
 

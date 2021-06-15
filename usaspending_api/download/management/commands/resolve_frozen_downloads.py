@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Q
 
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.v2.download_admin import DownloadAdministrator
 
 logger = logging.getLogger(__name__)

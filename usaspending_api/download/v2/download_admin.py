@@ -5,7 +5,7 @@ from django.db.models import Q
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.models.download_job import DownloadJob
 
 
 class DownloadAdministrator:

@@ -116,10 +116,12 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     availability_type_code,
                     main_account_code,
                     sub_account_code,
-                    internal_start_date
+                    internal_start_date,
+                    tas,
+                    display_tas
                 ) (values
-                    (1, 1, '111', 'X', '1111', '111', '1900-01-01'),
-                    (2, 2, '222', 'X', '2222', '222', '1900-01-01')
+                    (1, 1, '111', 'X', '1111', '111', '1900-01-01', '00011100000000X1111111', '000-111-X-1111-111'),
+                    (2, 2, '222', 'X', '2222', '222', '1900-01-01', '00022200000000X2222222', '000-222-X-2222-222')
                 )
                 """
             )
