@@ -6,19 +6,11 @@ HOST: https://api.usaspending.gov
 Returns a list of data points of an agencies recipients for a given fiscal year
 
 ## GET
-
-+ Request (application/json)
-    + Schema
-
-            {
-                "$schema": "http://json-schema.org/draft-04/schema#",
-                "type": "number"
-            }
-    + Parameters
-        + `toptier_code`: `086` (required, string)
-            The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
-        + `fiscal_year` (optional, number)
-            The desired appropriations fiscal year. Defaults to the current FY.
++ Parameters
+    + `toptier_code`: 086 (required, string)
+        The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
+    + `fiscal_year` (optional, number)
+        The desired appropriations fiscal year. Defaults to the current FY.
 
 + Response 200 (application/json)
     + Attributes
