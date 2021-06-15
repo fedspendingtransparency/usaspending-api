@@ -111,7 +111,7 @@
     "    ON (awards.latest_transaction_id = transaction_fabs.transaction_id AND latest_transaction.is_fpds = false)",
     "LEFT OUTER JOIN",
     "  (SELECT",
-    "    award_id, jsonb_agg(DISTINCT jsonb_build_object('cfda_number', cfda_number, 'cfda_program_title', cfda_title))::text AS cfdas",
+    "    award_id, array_agg(DISTINCT jsonb_build_object('cfda_number', cfda_number, 'cfda_program_title', cfda_title)::text) as cfdas",
     "  FROM",
     "    transaction_fabs tf",
     "  INNER JOIN transaction_normalized tn ON",

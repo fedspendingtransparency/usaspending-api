@@ -9,10 +9,6 @@
     },
     "analysis": {
       "analyzer": {
-        "cfda_analyzer": {
-          "tokenizer": "standard",
-          "filter": ["cfda_stopwords"]
-        },
         "contains_analyzer": {
           "type": "custom",
           "tokenizer": "ngram",
@@ -26,10 +22,6 @@
         }
       },
       "filter": {
-        "cfda_stopwords": {
-            "type": "stop",
-            "stopwords": ["cfda_number", "cfda_program_title"]
-        },
         "singular_stemmer": {
           "type": "stemmer",
           "name": "minimal_english"
@@ -482,16 +474,7 @@
           }
         },
         "cfdas": {
-          "type": "text",
-          "fields": {
-            "breakdown": {
-              "type": "text",
-              "analyzer": "cfda_analyzer"
-            },
-            "keyword": {
-              "type": "keyword"
-            }
-          }
+          "type": "keyword"
         },
         "sai_number": {
           "type": "text",

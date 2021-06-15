@@ -84,7 +84,7 @@
     "",
     "  NULL::text AS cfda_program_title,",
     "  NULL::text AS cfda_number,",
-    "  NULL::text AS cfdas,",
+    "  NULL::text[] AS cfdas,",
 
     "",
     "  NULL::text AS sai_number,",

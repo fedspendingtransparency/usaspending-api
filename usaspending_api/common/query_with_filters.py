@@ -380,7 +380,9 @@ class _ProgramNumbers(_Filter):
 
         for v in filter_values:
             if query_type == _QueryType.AWARDS:
-                programs_numbers_query.append(ES_Q("match", **{"cfdas.breakdown": v}))
+                escaped_program_number = v.replace(".", "\\.")
+                r = f""".*\\"cfda_number\\": \\"{escaped_program_number}\\".*"""
+                programs_numbers_query.append(ES_Q("regexp", cfdas=r))
             else:
                 programs_numbers_query.append(ES_Q("match", cfda_number=v))
 
