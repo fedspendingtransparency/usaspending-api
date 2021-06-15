@@ -390,7 +390,7 @@ def _assemble_certified_award_financial_records() -> list:
         "ussgl498100_upward_adjustm_cpe": None,
         "ussgl498200_upward_adjustm_cpe": None,
         "tas": None,
-        "tas_id": -99999,
+        "account_num": -99999,
     }
 
     row_with_piid_and_no_parent_piid = copy.copy(base_record)
