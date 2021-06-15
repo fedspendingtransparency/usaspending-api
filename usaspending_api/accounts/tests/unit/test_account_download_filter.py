@@ -2,10 +2,12 @@ import pytest
 
 from datetime import datetime, timezone
 from model_mommy import mommy
-from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
-from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.download.models import (
+    AppropriationAccountBalancesDownloadView,
+    FinancialAccountsByAwardsDownloadView,
+    FinancialAccountsByProgramActivityObjectClassDownloadView,
+)
 
 
 @pytest.fixture
@@ -154,10 +156,14 @@ def test_fyqp_filter(submissions):
     mommy.make("accounts.AppropriationAccountBalances", submission_id=2)
     mommy.make("accounts.AppropriationAccountBalances", submission_id=4)  # Monthly
 
-    queryset = account_download_filter("account_balances", AppropriationAccountBalances, {"fy": 1700, "quarter": 1})
+    queryset = account_download_filter(
+        "account_balances", AppropriationAccountBalancesDownloadView, {"fy": 1700, "quarter": 1}
+    )
     assert queryset.count() == 1
 
-    queryset = account_download_filter("account_balances", AppropriationAccountBalances, {"fy": 1700, "period": 12})
+    queryset = account_download_filter(
+        "account_balances", AppropriationAccountBalancesDownloadView, {"fy": 1700, "period": 12}
+    )
     assert queryset.count() == 1
 
 
@@ -175,7 +181,9 @@ def test_federal_account_filter(submissions):
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission_id=2)
 
     queryset = account_download_filter(
-        "account_balances", AppropriationAccountBalances, {"federal_account": fed_acct1.id, "fy": 1700, "quarter": 1}
+        "account_balances",
+        AppropriationAccountBalancesDownloadView,
+        {"federal_account": fed_acct1.id, "fy": 1700, "quarter": 1},
     )
     assert queryset.count() == 1
 
@@ -191,7 +199,7 @@ def test_tas_account_filter_later_qtr_treasury(submissions):
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission_id=3)
 
     queryset = account_download_filter(
-        "account_balances", AppropriationAccountBalances, {"fy": 1700, "quarter": 3}, "treasury_account"
+        "account_balances", AppropriationAccountBalancesDownloadView, {"fy": 1700, "quarter": 3}, "treasury_account"
     )
     assert queryset.count() == 1
 
@@ -234,7 +242,7 @@ def test_tas_account_filter_later_qtr_award_financial(submissions):
     )
 
     queryset = account_download_filter(
-        "award_financial", FinancialAccountsByAwards, {"fy": 1700, "quarter": 1}, "treasury_account"
+        "award_financial", FinancialAccountsByAwardsDownloadView, {"fy": 1700, "quarter": 1}, "treasury_account"
     )
     assert queryset.count() == 1
 
@@ -254,7 +262,7 @@ def test_tas_account_filter_later_qtr_federal(submissions):
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission_id=3)
 
     queryset = account_download_filter(
-        "account_balances", AppropriationAccountBalances, {"fy": 1700, "quarter": 3}, "federal_account"
+        "account_balances", AppropriationAccountBalancesDownloadView, {"fy": 1700, "quarter": 3}, "federal_account"
     )
 
     # this count is 1 because we only pull account data from the quarter requested
@@ -274,7 +282,7 @@ def test_tas_account_filter_duplicate_tas_account_balances(submissions):
     mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission_id=3)
 
     queryset = account_download_filter(
-        "account_balances", AppropriationAccountBalances, {"fy": 1700, "quarter": 3}, "federal_account"
+        "account_balances", AppropriationAccountBalancesDownloadView, {"fy": 1700, "quarter": 3}, "federal_account"
     )
     assert queryset.count() == 1
 
@@ -300,7 +308,9 @@ def test_tas_account_filter_duplicate_tas_financial_accounts_program_object(subm
     )
 
     queryset = account_download_filter(
-        "object_class_program_activity", FinancialAccountsByProgramActivityObjectClass, {"fy": 1700, "quarter": 3}
+        "object_class_program_activity",
+        FinancialAccountsByProgramActivityObjectClassDownloadView,
+        {"fy": 1700, "quarter": 3},
     )
     assert queryset.count() == 1
 
@@ -325,7 +335,7 @@ def test_budget_function_filter(submissions):
 
     queryset = account_download_filter(
         "object_class_program_activity",
-        FinancialAccountsByProgramActivityObjectClass,
+        FinancialAccountsByProgramActivityObjectClassDownloadView,
         {"budget_function": "BUD", "fy": 1700, "quarter": 1},
     )
     assert queryset.count() == 1
@@ -352,7 +362,9 @@ def test_budget_subfunction_filter(submissions):
     )
 
     queryset = account_download_filter(
-        "award_financial", FinancialAccountsByAwards, {"budget_subfunction": "SUB", "fy": 1700, "quarter": 1}
+        "award_financial",
+        FinancialAccountsByAwardsDownloadView,
+        {"budget_subfunction": "SUB", "fy": 1700, "quarter": 1},
     )
     assert queryset.count() == 1
 
@@ -376,7 +388,7 @@ def test_cgac_agency_filter(submissions):
     # Filter by ToptierAgency (CGAC)
     queryset = account_download_filter(
         "object_class_program_activity",
-        FinancialAccountsByProgramActivityObjectClass,
+        FinancialAccountsByProgramActivityObjectClassDownloadView,
         {"agency": "-9999", "fy": 1700, "quarter": 1},
     )
     assert queryset.count() == 1
@@ -410,6 +422,6 @@ def test_frec_agency_filter(submissions):
 
     # Filter by ToptierAgency (FREC)
     queryset = account_download_filter(
-        "award_financial", FinancialAccountsByAwards, {"agency": "-9999", "fy": 1700, "quarter": 1}
+        "award_financial", FinancialAccountsByAwardsDownloadView, {"agency": "-9999", "fy": 1700, "quarter": 1}
     )
     assert queryset.count() == 1

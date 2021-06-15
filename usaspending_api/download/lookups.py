@@ -9,15 +9,18 @@ used by the db setup scripts *and* the application code.
 
 from collections import namedtuple, OrderedDict
 
-from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
 from usaspending_api.awards.models import Award, TransactionNormalized
-from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.download.helpers.elasticsearch_download_functions import (
     AwardsElasticsearchDownload,
     TransactionsElasticsearchDownload,
 )
 from usaspending_api.download.helpers.disaster_filter_functions import disaster_filter_function
+from usaspending_api.download.models import (
+    AppropriationAccountBalancesDownloadView,
+    FinancialAccountsByAwardsDownloadView,
+    FinancialAccountsByProgramActivityObjectClassDownloadView,
+)
 from usaspending_api.search.models import AwardSearchView, TransactionSearch, SubawardView
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
@@ -34,8 +37,6 @@ from usaspending_api.awards.v2.filters.search import (
     transaction_search_filter,
 )
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
-
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.download.helpers.download_annotation_functions import (
     transaction_search_annotations,
     universal_award_matview_annotations,
@@ -124,7 +125,7 @@ VALUE_MAPPINGS = {
     # Appropriations Account Data
     "account_balances": {
         "source_type": "account",
-        "table": AppropriationAccountBalances,
+        "table": AppropriationAccountBalancesDownloadView,
         "table_name": "account_balances",
         "download_name": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
         "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
@@ -133,7 +134,7 @@ VALUE_MAPPINGS = {
     # Object Class Program Activity Account Data
     "object_class_program_activity": {
         "source_type": "account",
-        "table": FinancialAccountsByProgramActivityObjectClass,
+        "table": FinancialAccountsByProgramActivityObjectClassDownloadView,
         "table_name": "object_class_program_activity",
         "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
         "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
@@ -141,7 +142,7 @@ VALUE_MAPPINGS = {
     },
     "award_financial": {
         "source_type": "account",
-        "table": FinancialAccountsByAwards,
+        "table": FinancialAccountsByAwardsDownloadView,
         "table_name": "award_financial",
         "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByAward_{timestamp}",
         "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByAward_{timestamp}",
@@ -159,7 +160,7 @@ VALUE_MAPPINGS = {
     },
     "idv_federal_account_funding": {
         "source_type": "account",
-        "table": FinancialAccountsByAwards,
+        "table": FinancialAccountsByAwardsDownloadView,
         "table_name": "award_financial",
         "download_name": "IDV_{piid}_FederalAccountFunding",
         "filter_function": idv_treasury_account_funding_filter,
@@ -177,7 +178,7 @@ VALUE_MAPPINGS = {
     },
     "contract_federal_account_funding": {
         "source_type": "account",
-        "table": FinancialAccountsByAwards,
+        "table": FinancialAccountsByAwardsDownloadView,
         "table_name": "award_financial",
         "download_name": "Contract_{piid}_FederalAccountFunding",
         "filter_function": awards_treasury_account_funding_filter,
@@ -185,7 +186,7 @@ VALUE_MAPPINGS = {
     },
     "assistance_federal_account_funding": {
         "source_type": "account",
-        "table": FinancialAccountsByAwards,
+        "table": FinancialAccountsByAwardsDownloadView,
         "table_name": "award_financial",
         "download_name": "Assistance_{assistance_id}_FederalAccountFunding",
         "filter_function": awards_treasury_account_funding_filter,
