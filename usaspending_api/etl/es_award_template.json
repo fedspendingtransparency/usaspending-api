@@ -473,6 +473,9 @@
             }
           }
         },
+        "cfdas": {
+          "type": "keyword"
+        },
         "sai_number": {
           "type": "text",
           "fields": {

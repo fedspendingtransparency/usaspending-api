@@ -84,6 +84,7 @@
     "",
     "  NULL::text AS cfda_program_title,",
     "  NULL::text AS cfda_number,",
+    "  NULL::text[] AS cfdas,",
     "  NULL::text AS sai_number,",
     "  transaction_fpds.type_of_contract_pricing,",
     "  transaction_fpds.extent_competed,",
