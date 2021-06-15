@@ -25,6 +25,7 @@ Returns a list of data points of an agencies recipients for a given fiscal year
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
         + `count` (required, number)
+        + `total_federal_count` (required, number)
         + `max` (required, number)
         + `min` (required, number)
         + `25th_percentile` (required, number)
@@ -39,6 +40,7 @@ Returns a list of data points of an agencies recipients for a given fiscal year
                 "toptier_code": "015",
                 "fiscal_year": 2021,
                 "count": 4,
+                "total_federal_count": 27,
                 "max": 450000.0,
                 "min": 21532.0,
                 "25th_percentile": 21532.0,

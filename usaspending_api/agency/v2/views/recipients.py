@@ -4,6 +4,7 @@ from typing import Any
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
+from usaspending_api.recipient.models import RecipientAgency
 
 
 class RecipientList(AgencyBase):
@@ -44,6 +45,10 @@ class RecipientList(AgencyBase):
             "toptier_code": self.toptier_code,
             "fiscal_year": self.fiscal_year,
             "count": results["count"],
+            "total_federal_count": RecipientAgency.objects.filter(fiscal_year=self.fiscal_year)
+            .values("recipient_hash")
+            .distinct()
+            .count(),
             "max": results["max"],
             "min": results["min"],
             "25th_percentile": results["25th_percentile"],
