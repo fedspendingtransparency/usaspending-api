@@ -5,7 +5,7 @@ from django.db.models import Q
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
-class FinancialAccountsByAwards(DataSourceTrackedModel):
+class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     distinct_award_key = models.TextField(db_index=True)
     treasury_account = models.ForeignKey("accounts.TreasuryAppropriationAccount", models.CASCADE, null=True)
@@ -128,6 +128,12 @@ class FinancialAccountsByAwards(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        abstract = True
+
+
+class FinancialAccountsByAwards(AbstractFinancialAccountsByAwards):
 
     objects = CTEManager()
 
