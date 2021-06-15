@@ -10,7 +10,9 @@ TREASURY_ACCOUNT_LOOKUP = {}
 def bulk_treasury_appropriation_account_tas_lookup(rows, db_cursor):
 
     # Eliminate nulls, 'account_num's we already know about, and remove duplicates.
-    tas_lookup_ids = tuple(set(r["account_num"] for r in rows if (r["account_num"] and r["account_num"] not in TREASURY_ACCOUNT_LOOKUP)))
+    tas_lookup_ids = tuple(
+        set(r["account_num"] for r in rows if (r["account_num"] and r["account_num"] not in TREASURY_ACCOUNT_LOOKUP))
+    )
 
     if not tas_lookup_ids:
         return
