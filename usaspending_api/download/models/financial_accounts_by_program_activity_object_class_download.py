@@ -14,7 +14,7 @@ class FinancialAccountsByProgramActivityObjectClassDownloadView(AbstractFinancia
 
     # Overriding attributes from the Abstract Fields;
     # This needs to occur primarily for the values of "on_delete" and "related_name"
-    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
+    submission = models.ForeignKey("submissions.SubmissionAttributes", models.DO_NOTHING)
     treasury_account = models.ForeignKey("accounts.TreasuryAppropriationAccount", models.DO_NOTHING, null=True)
 
     # Additional values from the View
