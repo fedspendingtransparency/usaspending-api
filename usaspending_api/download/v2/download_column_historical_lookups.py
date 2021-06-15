@@ -1558,11 +1558,8 @@ query_paths = {
                 ("sub_account_code", "treasury_account_identifier__sub_account_code"),
                 ("treasury_account_symbol", "treasury_account_identifier__tas_rendering_label"),
                 ("treasury_account_name", "treasury_account_identifier__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
-                (
-                    "allocation_transfer_agency_identifier_name",
-                    "allocation_transfer_agency_identifier_name",
-                ),  # Column is annotated in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),
+                ("allocation_transfer_agency_identifier_name", "allocation_transfer_agency_identifier_name"),
                 ("budget_function", "treasury_account_identifier__budget_function_title"),
                 ("budget_subfunction", "treasury_account_identifier__budget_subfunction_title"),
                 ("federal_account_symbol", "treasury_account_identifier__federal_account__federal_account_code"),
@@ -1605,7 +1602,7 @@ query_paths = {
                 ("submission_period", "submission_period"),  # Column is annotated in account_download.py
                 ("federal_account_symbol", "treasury_account_identifier__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),
                 ("budget_function", "budget_function"),  # Column is annotated in account_download.py
                 ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
                 (
@@ -1655,11 +1652,8 @@ query_paths = {
                 ("sub_account_code", "treasury_account__sub_account_code"),
                 ("treasury_account_symbol", "treasury_account__tas_rendering_label"),
                 ("treasury_account_name", "treasury_account__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
-                (
-                    "allocation_transfer_agency_identifier_name",
-                    "allocation_transfer_agency_identifier_name",
-                ),  # Column is annotated in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),
+                ("allocation_transfer_agency_identifier_name", "allocation_transfer_agency_identifier_name"),
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
                 ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
@@ -1701,7 +1695,7 @@ query_paths = {
                 ("submission_period", "submission_period"),  # Column is annotated in account_download.py
                 ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),
                 ("budget_function", "budget_function"),  # Column is annotated in account_download.py
                 ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
                 ("program_activity_code", "program_activity__program_activity_code"),
@@ -1751,11 +1745,8 @@ query_paths = {
                 ("sub_account_code", "treasury_account__sub_account_code"),
                 ("treasury_account_symbol", "treasury_account__tas_rendering_label"),
                 ("treasury_account_name", "treasury_account__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
-                (
-                    "allocation_transfer_agency_identifier_name",
-                    "allocation_transfer_agency_identifier_name",
-                ),  # Column is annotated in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),
+                ("allocation_transfer_agency_identifier_name", "allocation_transfer_agency_identifier_name"),
                 ("budget_function", "treasury_account__budget_function_title"),
                 ("budget_subfunction", "treasury_account__budget_subfunction_title"),
                 ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
@@ -1871,7 +1862,7 @@ query_paths = {
                 ("submission_period", "submission_period"),  # Column is annotated in account_download.py
                 ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),
                 ("budget_function", "budget_function"),  # Column is annotated in account_download.py
                 ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
                 ("program_activity_code", "program_activity__program_activity_code"),
