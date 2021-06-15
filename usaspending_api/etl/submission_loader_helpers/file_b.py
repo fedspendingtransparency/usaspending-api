@@ -48,7 +48,7 @@ def get_file_b(submission_attributes, db_cursor):
         select      count(*)
         from        certified_object_class_program_activity
         where       submission_id = %s and length(object_class) = 4
-        group by    tas_id, program_activity_code, object_class, disaster_emergency_fund_code
+        group by    account_num, program_activity_code, object_class, disaster_emergency_fund_code
         having      count(*) > 1
     """
     db_cursor.execute(check_dupe_oc, [submission_id])
@@ -79,7 +79,7 @@ def get_file_b(submission_attributes, db_cursor):
                     else by_direct_reimbursable_fun
                 end as by_direct_reimbursable_fun,
                 tas,
-                tas_id,
+                account_num,
                 program_activity_code,
                 program_activity_name,
                 sub_account_code,
@@ -139,7 +139,7 @@ def get_file_b(submission_attributes, db_cursor):
                 program_activity_name,
                 sub_account_code,
                 tas,
-                tas_id,
+                account_num,
                 disaster_emergency_fund_code
         """
         logger.info(
@@ -162,7 +162,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
     save_manager = BulkCreateManager(FinancialAccountsByProgramActivityObjectClass)
     for row in prg_act_obj_cls_data:
         # Check and see if there is an entry for this TAS
-        treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(row.get("tas_id"))
+        treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(row.get("account_num"))
         if treasury_account is None:
             skipped_tas[tas_rendering_label] += 1
             continue

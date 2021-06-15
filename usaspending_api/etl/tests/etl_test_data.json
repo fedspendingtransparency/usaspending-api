@@ -2613,7 +2613,7 @@
   ],
   "SELECT * FROM submission WHERE submission_id = %s": [
     {
-      "tas_id": 0,
+      "account_num": 0,
       "publish_status_id": null,
       "user_id": 3,
       "reporting_start_date": "2015-10-01",
@@ -2673,7 +2673,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:46.901",
       "row_number": 11,
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
       "gross_outlays_undelivered_fyb": "1000",
@@ -2727,7 +2727,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:45.702",
       "row_number": 10,
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
       "gross_outlays_undelivered_fyb": "1000",
@@ -2781,7 +2781,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:44.597",
       "row_number": 9,
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
       "gross_outlays_undelivered_fyb": "1000",
@@ -2835,7 +2835,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:43.518",
       "row_number": 8,
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
       "gross_outlays_undelivered_fyb": "1000",
@@ -2889,7 +2889,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:42.239",
       "row_number": 7,
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
       "gross_outlays_undelivered_fyb": "1000",
@@ -2943,7 +2943,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:40.959",
       "row_number": 6,
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
       "gross_outlays_undelivered_fyb": "1000",
@@ -2997,7 +2997,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:39.852",
       "row_number": 5,
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
       "gross_outlays_undelivered_fyb": "1000",
@@ -3051,7 +3051,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:38.351",
       "row_number": 4,
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
       "gross_outlays_undelivered_fyb": "1000",
@@ -3105,7 +3105,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:36.588",
       "row_number": 3,
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
       "gross_outlays_undelivered_fyb": "1000",
@@ -3159,7 +3159,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:34.847",
       "row_number": 2,
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
       "gross_outlays_undelivered_fyb": "1000",
@@ -3492,7 +3492,7 @@
     {
       "obligations_delivered_orde_cpe": "26000",
       "transaction_obligated_amou": "6500",
-      "tas_id": 0,
+      "account_num": 0,
       "deobligations_recov_by_awa_cpe": "26000",
       "ussgl493100_delivered_orde_cpe": "6500",
       "ussgl490800_authority_outl_cpe": "6500",
@@ -3549,7 +3549,7 @@
     {
       "obligations_delivered_orde_cpe": "26000",
       "transaction_obligated_amou": "6500",
-      "tas_id": 0,
+      "account_num": 0,
       "deobligations_recov_by_awa_cpe": "26000",
       "ussgl493100_delivered_orde_cpe": "6500",
       "ussgl490800_authority_outl_cpe": "6500",
@@ -3606,7 +3606,7 @@
     {
       "obligations_delivered_orde_cpe": "26000",
       "transaction_obligated_amou": "6500",
-      "tas_id": 0,
+      "account_num": 0,
       "deobligations_recov_by_awa_cpe": "26000",
       "ussgl493100_delivered_orde_cpe": "6500",
       "ussgl490800_authority_outl_cpe": "6500",
@@ -3660,7 +3660,7 @@
       "ussgl480100_undelivered_or_fyb": "6500"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "transaction_obligated_amou": "6500",
       "obligations_delivered_orde_cpe": "26000",
       "deobligations_recov_by_awa_cpe": "26000",
@@ -3719,7 +3719,7 @@
       "ussgl490800_authority_outl_fyb": "6500"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "transaction_obligated_amou": "6500",
       "obligations_delivered_orde_cpe": "26000",
       "deobligations_recov_by_awa_cpe": "26000",
@@ -3778,7 +3778,7 @@
       "ussgl490800_authority_outl_fyb": "6500"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "transaction_obligated_amou": "6500",
       "obligations_delivered_orde_cpe": "26000",
       "deobligations_recov_by_awa_cpe": "26000",
@@ -3837,7 +3837,7 @@
       "ussgl490800_authority_outl_fyb": "6500"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "transaction_obligated_amou": "6500",
       "obligations_delivered_orde_cpe": "26000",
       "deobligations_recov_by_awa_cpe": "26000",
@@ -3896,7 +3896,7 @@
       "ussgl490800_authority_outl_fyb": "6500"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "transaction_obligated_amou": "6500",
       "obligations_delivered_orde_cpe": "26000",
       "deobligations_recov_by_awa_cpe": "26000",
@@ -3955,7 +3955,7 @@
       "ussgl490800_authority_outl_fyb": "6500"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "transaction_obligated_amou": "6500",
       "obligations_delivered_orde_cpe": "26000",
       "deobligations_recov_by_awa_cpe": "26000",
@@ -4014,7 +4014,7 @@
       "ussgl490800_authority_outl_fyb": "6500"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "transaction_obligated_amou": "6500",
       "obligations_delivered_orde_cpe": "26000",
       "deobligations_recov_by_awa_cpe": "26000",
@@ -4073,7 +4073,7 @@
       "ussgl490800_authority_outl_fyb": "6500"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "transaction_obligated_amou": "6500",
       "obligations_delivered_orde_cpe": "26000",
       "deobligations_recov_by_awa_cpe": "26000",
@@ -4132,7 +4132,7 @@
       "ussgl490800_authority_outl_fyb": "6500"
     }
   ],
-  "SELECT count(*) FROM certified_object_class_program_activity WHERE submission_id = %s AND length(object_class) = 4 GROUP BY tas_id, program_activity_code, object_class HAVING COUNT(*) > 1": [
+  "SELECT count(*) FROM certified_object_class_program_activity WHERE submission_id = %s AND length(object_class) = 4 GROUP BY account_num, program_activity_code, object_class HAVING COUNT(*) > 1": [
     {
       "count": 1
     }
@@ -4151,7 +4151,7 @@
   "SELECT * FROM certified_appropriation WHERE submission_id = %s": [
     {
       "borrowing_authority_amount_cpe": "1.51",
-      "tas_id": 0,
+      "account_num": 0,
       "unobligated_balance_cpe": "2.02",
       "total_budgetary_resources_cpe": "10.1",
       "gross_outlay_amount_by_tas_cpe": "3500",
@@ -4389,7 +4389,7 @@
       "cfda_title": "Munchkin Programs",
       "award_financial_assistance_id": 1,
       "funding_sub_tier_agency_na": "ABC",
-      "tas_id": 0,
+      "account_num": 0,
       "fiscal_year_and_quarter_co": "YYYYQ",
       "funding_office_name": "ABC",
       "awarding_agency_code": null,
@@ -4459,7 +4459,7 @@
       "cfda_title": "Munchkin Programs",
       "award_financial_assistance_id": 2,
       "funding_sub_tier_agency_na": "ABC",
-      "tas_id": 0,
+      "account_num": 0,
       "fiscal_year_and_quarter_co": "YYYYQ",
       "funding_office_name": "ABC",
       "awarding_agency_code": "019",
@@ -4529,7 +4529,7 @@
       "cfda_title": "Munchkin Programs",
       "award_financial_assistance_id": 3,
       "funding_sub_tier_agency_na": "ABC",
-      "tas_id": 0,
+      "account_num": 0,
       "fiscal_year_and_quarter_co": "YYYYQ",
       "funding_office_name": "ABC",
       "awarding_agency_code": "019",
@@ -4599,7 +4599,7 @@
       "cfda_title": "Munchkin Programs",
       "award_financial_assistance_id": 4,
       "funding_sub_tier_agency_na": "ABC",
-      "tas_id": 0,
+      "account_num": 0,
       "fiscal_year_and_quarter_co": "YYYYQ",
       "funding_office_name": "ABC",
       "awarding_agency_code": "019",
@@ -4669,7 +4669,7 @@
       "cfda_title": "Munchkin Programs",
       "award_financial_assistance_id": 5,
       "funding_sub_tier_agency_na": "ABC",
-      "tas_id": 0,
+      "account_num": 0,
       "fiscal_year_and_quarter_co": "YYYYQ",
       "funding_office_name": "ABC",
       "awarding_agency_code": "019",
@@ -4739,7 +4739,7 @@
       "cfda_title": "Munchkin Programs",
       "award_financial_assistance_id": 6,
       "funding_sub_tier_agency_na": "ABC",
-      "tas_id": 0,
+      "account_num": 0,
       "fiscal_year_and_quarter_co": "YYYYQ",
       "funding_office_name": "ABC",
       "awarding_agency_code": "019",
@@ -4809,7 +4809,7 @@
       "cfda_title": "Munchkin Programs",
       "award_financial_assistance_id": 7,
       "funding_sub_tier_agency_na": "ABC",
-      "tas_id": 0,
+      "account_num": 0,
       "fiscal_year_and_quarter_co": "YYYYQ",
       "funding_office_name": "ABC",
       "awarding_agency_code": "019",
@@ -4879,7 +4879,7 @@
       "cfda_title": "Munchkin Programs",
       "award_financial_assistance_id": 8,
       "funding_sub_tier_agency_na": "ABC",
-      "tas_id": 0,
+      "account_num": 0,
       "fiscal_year_and_quarter_co": "YYYYQ",
       "funding_office_name": "ABC",
       "awarding_agency_code": "019",
@@ -4949,7 +4949,7 @@
       "cfda_title": "Munchkin Programs",
       "award_financial_assistance_id": 9,
       "funding_sub_tier_agency_na": "ABC",
-      "tas_id": 0,
+      "account_num": 0,
       "fiscal_year_and_quarter_co": "YYYYQ",
       "funding_office_name": "ABC",
       "awarding_agency_code": "019",
@@ -5019,7 +5019,7 @@
       "cfda_title": "Munchkin Programs",
       "award_financial_assistance_id": 10,
       "funding_sub_tier_agency_na": "ABC",
-      "tas_id": 0,
+      "account_num": 0,
       "fiscal_year_and_quarter_co": "YYYYQ",
       "funding_office_name": "ABC",
       "awarding_agency_code": "019",
@@ -5086,9 +5086,9 @@
       "legal_entity_address_line2": "P.O. Box 12345"
     }
   ],
-  "SELECT submission_id, job_id, agency_identifier,allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, RIGHT(object_class, 3) AS object_class, CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, tas, tas_id, program_activity_code, program_activity_name, sub_account_code, SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, SUM(gross_outlays_delivered_or_cpe) AS gross_outlays_delivered_or_cpe, SUM(gross_outlays_delivered_or_fyb) AS gross_outlays_delivered_or_fyb, SUM(gross_outlays_undelivered_cpe) AS gross_outlays_undelivered_cpe, SUM(gross_outlays_undelivered_fyb) AS gross_outlays_undelivered_fyb, SUM(obligations_delivered_orde_cpe) AS obligations_delivered_orde_cpe, SUM(obligations_delivered_orde_fyb) AS obligations_delivered_orde_fyb, SUM(obligations_incurred_by_pr_cpe) AS obligations_incurred_by_pr_cpe, SUM(obligations_undelivered_or_cpe) AS obligations_undelivered_or_cpe, SUM(obligations_undelivered_or_fyb) AS obligations_undelivered_or_fyb, SUM(ussgl480100_undelivered_or_cpe) AS ussgl480100_undelivered_or_cpe, SUM(ussgl480100_undelivered_or_fyb) AS ussgl480100_undelivered_or_fyb, SUM(ussgl480200_undelivered_or_cpe) AS ussgl480200_undelivered_or_cpe, SUM(ussgl480200_undelivered_or_fyb) AS ussgl480200_undelivered_or_fyb, SUM(ussgl483100_undelivered_or_cpe) AS ussgl483100_undelivered_or_cpe, SUM(ussgl483200_undelivered_or_cpe) AS ussgl483200_undelivered_or_cpe, SUM(ussgl487100_downward_adjus_cpe) AS ussgl487100_downward_adjus_cpe, SUM(ussgl487200_downward_adjus_cpe) AS ussgl487200_downward_adjus_cpe, SUM(ussgl488100_upward_adjustm_cpe) AS ussgl488100_upward_adjustm_cpe, SUM(ussgl488200_upward_adjustm_cpe) AS ussgl488200_upward_adjustm_cpe, SUM(ussgl490100_delivered_orde_cpe) AS ussgl490100_delivered_orde_cpe, SUM(ussgl490100_delivered_orde_fyb) AS ussgl490100_delivered_orde_fyb, SUM(ussgl490200_delivered_orde_cpe) AS ussgl490200_delivered_orde_cpe, SUM(ussgl490800_authority_outl_cpe) AS ussgl490800_authority_outl_cpe, SUM(ussgl490800_authority_outl_fyb) AS ussgl490800_authority_outl_fyb, SUM(ussgl493100_delivered_orde_cpe) AS ussgl493100_delivered_orde_cpe, SUM(ussgl497100_downward_adjus_cpe) AS ussgl497100_downward_adjus_cpe, SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe FROM certified_object_class_program_activity WHERE submission_id = %s GROUP BY submission_id, job_id, agency_identifier, allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, RIGHT(object_class, 3), CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' ELSE by_direct_reimbursable_fun END, program_activity_code, program_activity_name, sub_account_code, tas, tas_id": [
+  "SELECT submission_id, job_id, agency_identifier,allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, RIGHT(object_class, 3) AS object_class, CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, tas, account_num, program_activity_code, program_activity_name, sub_account_code, SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, SUM(gross_outlays_delivered_or_cpe) AS gross_outlays_delivered_or_cpe, SUM(gross_outlays_delivered_or_fyb) AS gross_outlays_delivered_or_fyb, SUM(gross_outlays_undelivered_cpe) AS gross_outlays_undelivered_cpe, SUM(gross_outlays_undelivered_fyb) AS gross_outlays_undelivered_fyb, SUM(obligations_delivered_orde_cpe) AS obligations_delivered_orde_cpe, SUM(obligations_delivered_orde_fyb) AS obligations_delivered_orde_fyb, SUM(obligations_incurred_by_pr_cpe) AS obligations_incurred_by_pr_cpe, SUM(obligations_undelivered_or_cpe) AS obligations_undelivered_or_cpe, SUM(obligations_undelivered_or_fyb) AS obligations_undelivered_or_fyb, SUM(ussgl480100_undelivered_or_cpe) AS ussgl480100_undelivered_or_cpe, SUM(ussgl480100_undelivered_or_fyb) AS ussgl480100_undelivered_or_fyb, SUM(ussgl480200_undelivered_or_cpe) AS ussgl480200_undelivered_or_cpe, SUM(ussgl480200_undelivered_or_fyb) AS ussgl480200_undelivered_or_fyb, SUM(ussgl483100_undelivered_or_cpe) AS ussgl483100_undelivered_or_cpe, SUM(ussgl483200_undelivered_or_cpe) AS ussgl483200_undelivered_or_cpe, SUM(ussgl487100_downward_adjus_cpe) AS ussgl487100_downward_adjus_cpe, SUM(ussgl487200_downward_adjus_cpe) AS ussgl487200_downward_adjus_cpe, SUM(ussgl488100_upward_adjustm_cpe) AS ussgl488100_upward_adjustm_cpe, SUM(ussgl488200_upward_adjustm_cpe) AS ussgl488200_upward_adjustm_cpe, SUM(ussgl490100_delivered_orde_cpe) AS ussgl490100_delivered_orde_cpe, SUM(ussgl490100_delivered_orde_fyb) AS ussgl490100_delivered_orde_fyb, SUM(ussgl490200_delivered_orde_cpe) AS ussgl490200_delivered_orde_cpe, SUM(ussgl490800_authority_outl_cpe) AS ussgl490800_authority_outl_cpe, SUM(ussgl490800_authority_outl_fyb) AS ussgl490800_authority_outl_fyb, SUM(ussgl493100_delivered_orde_cpe) AS ussgl493100_delivered_orde_cpe, SUM(ussgl497100_downward_adjus_cpe) AS ussgl497100_downward_adjus_cpe, SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe FROM certified_object_class_program_activity WHERE submission_id = %s GROUP BY submission_id, job_id, agency_identifier, allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, RIGHT(object_class, 3), CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' ELSE by_direct_reimbursable_fun END, program_activity_code, program_activity_name, sub_account_code, tas, account_num": [
     {
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_delivered_orde_cpe": "4500",
       "ussgl493100_delivered_orde_cpe": "1000",
       "ussgl490800_authority_outl_cpe": "1000",
@@ -5138,7 +5138,7 @@
       "by_direct_reimbursable_fun": "R"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_delivered_orde_cpe": "4500",
       "ussgl493100_delivered_orde_cpe": "1000",
       "ussgl490800_authority_outl_cpe": "1000",
@@ -5223,7 +5223,7 @@
       "ussgl490200_delivered_orde_cpe": "1000",
       "created_at": "2016-06-27T12:08:43.518",
       "ussgl487100_downward_adjus_cpe": "1000",
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_undelivered_or_cpe": "4500",
       "ussgl480100_undelivered_or_fyb": "4500",
       "ussgl490100_delivered_orde_cpe": "1500",
@@ -5239,7 +5239,7 @@
       "by_direct_reimbursable_fun": "D"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_delivered_orde_cpe": "4500",
       "ussgl493100_delivered_orde_cpe": "1000",
       "ussgl490800_authority_outl_cpe": "1000",
@@ -5289,7 +5289,7 @@
       "by_direct_reimbursable_fun": "D"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_delivered_orde_cpe": "4500",
       "ussgl493100_delivered_orde_cpe": "1000",
       "ussgl490800_authority_outl_cpe": "1000",
@@ -5339,7 +5339,7 @@
       "by_direct_reimbursable_fun": "D"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_delivered_orde_cpe": "4500",
       "ussgl493100_delivered_orde_cpe": "1000",
       "ussgl490800_authority_outl_cpe": "1000",
@@ -5389,7 +5389,7 @@
       "by_direct_reimbursable_fun": "D"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_delivered_orde_cpe": "4500",
       "ussgl493100_delivered_orde_cpe": "1000",
       "ussgl490800_authority_outl_cpe": "1000",
@@ -5439,7 +5439,7 @@
       "by_direct_reimbursable_fun": "d"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_delivered_orde_cpe": "4500",
       "ussgl493100_delivered_orde_cpe": "1000",
       "ussgl490800_authority_outl_cpe": "1000",
@@ -5489,7 +5489,7 @@
       "by_direct_reimbursable_fun": "d"
     },
     {
-      "tas_id": 0,
+      "account_num": 0,
       "obligations_delivered_orde_cpe": "4500",
       "ussgl493100_delivered_orde_cpe": "1000",
       "ussgl490800_authority_outl_cpe": "1000",

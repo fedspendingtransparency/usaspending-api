@@ -34,7 +34,7 @@ INNER JOIN dblink(
         SELECT    DISTINCT submission_id
         FROM      certified_object_class_program_activity
         WHERE     LENGTH(object_class) = 4
-        GROUP BY  submission_id, tas_id, program_activity_code, object_class, disaster_emergency_fund_code
+        GROUP BY  submission_id, account_num, program_activity_code, object_class, disaster_emergency_fund_code
         HAVING    COUNT(*) > 1
     ), valid_tas AS (
         SELECT account_num
@@ -46,7 +46,7 @@ INNER JOIN dblink(
         submission_id,
         (
             SELECT COUNT(*) FROM certified_appropriation AS ca
-            INNER JOIN valid_tas ON valid_tas.account_num = ca.tas_id
+            INNER JOIN valid_tas ON valid_tas.account_num = ca.account_num
             WHERE (
                 submission_id = s.submission_id
             )
@@ -59,7 +59,7 @@ INNER JOIN dblink(
                     FROM (
                         SELECT 1
                         FROM certified_object_class_program_activity AS cocpa
-                        INNER JOIN valid_tas ON valid_tas.account_num = cocpa.tas_id
+                        INNER JOIN valid_tas ON valid_tas.account_num = cocpa.account_num
                         WHERE (
                             submission_id = s.submission_id
                         )
@@ -82,7 +82,7 @@ INNER JOIN dblink(
                             cocpa.program_activity_name,
                             cocpa.sub_account_code,
                             cocpa.tas,
-                            cocpa.tas_id,
+                            cocpa.account_num,
                             cocpa.disaster_emergency_fund_code
                     ) temp_file_b
                 )
@@ -90,7 +90,7 @@ INNER JOIN dblink(
                     (
                         SELECT COUNT(*)
                         FROM certified_object_class_program_activity AS cocpa
-                        INNER JOIN valid_tas ON valid_tas.account_num = cocpa.tas_id
+                        INNER JOIN valid_tas ON valid_tas.account_num = cocpa.account_num
                         WHERE (
                             submission_id = s.submission_id
                         )
@@ -100,7 +100,7 @@ INNER JOIN dblink(
         (
             SELECT COUNT(*)
             FROM certified_award_financial AS caf
-            INNER JOIN valid_tas ON valid_tas.account_num = caf.tas_id
+            INNER JOIN valid_tas ON valid_tas.account_num = caf.account_num
             WHERE (
                 submission_id = s.submission_id
                 AND (

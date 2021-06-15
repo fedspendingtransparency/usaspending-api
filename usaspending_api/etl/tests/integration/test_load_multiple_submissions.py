@@ -198,7 +198,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 insert into certified_appropriation (
                     certified_appropriation_id,
                     submission_id,
-                    tas_id,
+                    account_num,
                     total_budgetary_resources_cpe
                 ) (values
                     (1, 1, 1, 11),
@@ -217,7 +217,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 insert into certified_object_class_program_activity (
                     certified_object_class_program_activity_id,
                     submission_id,
-                    tas_id,
+                    account_num,
                     object_class,
                     gross_outlay_amount_by_pro_cpe,
                     disaster_emergency_fund_code
@@ -244,7 +244,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 insert into certified_award_financial (
                     certified_award_financial_id,
                     submission_id,
-                    tas_id,
+                    account_num,
                     object_class,
                     gross_outlay_amount_by_awa_cpe,
                     transaction_obligated_amou,
