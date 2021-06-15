@@ -15,7 +15,7 @@ Returns a list of data points of an agencies recipients for a given fiscal year
                 "type": "number"
             }
     + Parameters
-        + `toptier_code`: 086 (required, number)
+        + `toptier_code`: `086` (required, string)
             The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY.
