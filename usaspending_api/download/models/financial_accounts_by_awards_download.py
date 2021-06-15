@@ -12,6 +12,13 @@ class FinancialAccountsByAwardsDownloadView(AbstractFinancialAccountsByAwards):
         * need to be manually defined in the query for performance
     """
 
+    # Overriding attributes from the Abstract Fields;
+    # This needs to occur primarily for the values of "on_delete" and "related_name"
+    award = models.ForeignKey("awards.Award", models.DO_NOTHING, null=True)
+    submission = models.ForeignKey("submissions.SubmissionAttributes", models.DO_NOTHING)
+    treasury_account = models.ForeignKey("accounts.TreasuryAppropriationAccount", models.DO_NOTHING, null=True)
+
+    # Additional values from the View
     agency_identifier_name = models.TextField()
     allocation_transfer_agency_identifier_name = models.TextField()
 

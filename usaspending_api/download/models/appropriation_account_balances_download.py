@@ -12,6 +12,16 @@ class AppropriationAccountBalancesDownloadView(AbstractAppropriationAccountBalan
         * need to be manually defined in the query for performance
     """
 
+    # Overriding attributes from the Abstract Fields;
+    # This needs to occur primarily for the values of "on_delete" and "related_name"
+    submission = models.ForeignKey("submissions.SubmissionAttributes", models.DO_NOTHING)
+    treasury_account_identifier = models.ForeignKey(
+        "accounts.TreasuryAppropriationAccount",
+        models.DO_NOTHING,
+        db_column="treasury_account_identifier",
+    )
+
+    # Additional values from the View
     agency_identifier_name = models.TextField()
     allocation_transfer_agency_identifier_name = models.TextField()
 

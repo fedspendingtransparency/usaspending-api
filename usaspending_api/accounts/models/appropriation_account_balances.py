@@ -1,16 +1,16 @@
 from django.db import models, connection
 from usaspending_api.common.models import DataSourceTrackedModel
-from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class AbstractAppropriationAccountBalances(DataSourceTrackedModel):
     appropriation_account_balances_id = models.AutoField(primary_key=True)
     treasury_account_identifier = models.ForeignKey(
         "accounts.TreasuryAppropriationAccount",
-        models.DO_NOTHING,
+        models.CASCADE,
         db_column="treasury_account_identifier",
+        related_name="account_balances",
     )
-    submission = models.ForeignKey(SubmissionAttributes, models.DO_NOTHING)
+    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
     budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
@@ -59,16 +59,6 @@ class AppropriationAccountBalances(AbstractAppropriationAccountBalances):
     submission for a fiscal year reflects the balances for the entire
     fiscal year.
     """
-
-    # Overriding attributes from the Abstract Fields;
-    # This needs to occur primarily for the values of "on_delete" and "related_name"
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
-    treasury_account_identifier = models.ForeignKey(
-        "TreasuryAppropriationAccount",
-        models.CASCADE,
-        db_column="treasury_account_identifier",
-        related_name="account_balances",
-    )
 
     class Meta:
         managed = True

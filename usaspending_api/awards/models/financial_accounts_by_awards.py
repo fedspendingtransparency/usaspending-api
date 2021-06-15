@@ -8,9 +8,9 @@ from usaspending_api.common.models import DataSourceTrackedModel
 class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     distinct_award_key = models.TextField(db_index=True)
-    treasury_account = models.ForeignKey("accounts.TreasuryAppropriationAccount", models.DO_NOTHING, null=True)
-    submission = models.ForeignKey("submissions.SubmissionAttributes", models.DO_NOTHING)
-    award = models.ForeignKey("awards.Award", models.DO_NOTHING, null=True)
+    treasury_account = models.ForeignKey("accounts.TreasuryAppropriationAccount", models.CASCADE, null=True)
+    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
+    award = models.ForeignKey("awards.Award", models.CASCADE, null=True, related_name="financial_set")
     program_activity = models.ForeignKey("references.RefProgramActivity", models.DO_NOTHING, null=True, db_index=True)
     object_class = models.ForeignKey("references.ObjectClass", models.DO_NOTHING, null=True, db_index=True)
     piid = models.TextField(blank=True, null=True)
@@ -134,11 +134,6 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
 
 
 class FinancialAccountsByAwards(AbstractFinancialAccountsByAwards):
-    # Overriding attributes from the Abstract Fields;
-    # This needs to occur primarily for the values of "on_delete" and "related_name"
-    award = models.ForeignKey("awards.Award", models.CASCADE, null=True, related_name="financial_set")
-    treasury_account = models.ForeignKey("accounts.TreasuryAppropriationAccount", models.CASCADE, null=True)
-    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
 
     objects = CTEManager()
 

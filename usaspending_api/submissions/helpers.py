@@ -106,39 +106,6 @@ class ClosedPeriod:
         return Q(**{f"{prefix}submission_id__in": submission_ids})
 
 
-def get_last_closed_periods_for_year(fiscal_year: int) -> Optional[ClosedPeriod]:
-    """
-    Returns a ClosedPeriod for provided fiscal year.  fiscal_quarter or fiscal_month may be None if the year didn't
-    have a corresponding period or the period hasn't passed its reveal date yet.
-    """
-    sql = """
-        select  coalesce(q.submission_fiscal_year, m.submission_fiscal_year) as fiscal_year,
-                q.submission_fiscal_quarter as fiscal_quarter,
-                m.submission_fiscal_month as fiscal_month
-        from    (
-                    select  distinct on (submission_fiscal_year)
-                            submission_fiscal_year, submission_fiscal_quarter
-                    from    dabs_submission_window_schedule
-                    where   is_quarter is true and
-                            submission_reveal_date <= now()
-                    order   by submission_fiscal_year, -submission_fiscal_quarter
-                ) as q
-                full outer join (
-                    select  distinct on (submission_fiscal_year)
-                            submission_fiscal_year, submission_fiscal_month
-                    from    dabs_submission_window_schedule
-                    where   is_quarter is false and
-                            submission_reveal_date <= now()
-                    order   by submission_fiscal_year, -submission_fiscal_month
-                ) as m on m.submission_fiscal_year = q.submission_fiscal_year
-        where   q.submission_fiscal_year = %(fiscal_year)s
-    """
-    with connection.cursor() as cursor:
-        cursor.execute(sql, {"fiscal_year": fiscal_year})
-        result = cursor.fetchone()
-        return ClosedPeriod(result[0], result[1], result[2]) if result else None
-
-
 def get_last_closed_quarter_relative_to_month(fiscal_year: int, fiscal_month: int) -> Optional[dict]:
     """ Returns the most recently closed fiscal quarter in the fiscal year less than or equal to the fiscal month. """
     return (

@@ -41,7 +41,7 @@ from usaspending_api.download.v2.download_column_historical_lookups import query
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.settings import HOST
 from usaspending_api.submissions.helpers import (
-    get_last_closed_periods_for_year,
+    ClosedPeriod,
     get_submission_ids_for_periods,
 )
 
@@ -102,9 +102,14 @@ def account_download_filter(account_type, download_table, filters, account_level
 
 def get_submission_filter(account_type, filters):
     """
-    Limits the overall File A, B, and C submissions that are looked at. For File A and B we only
-    look at the most recent submissions for the provided filters. For File C we expand this to
-    include all submissions up to the provided filters.
+    Limits the overall File A, B, and C submissions that are looked at.
+    For File A and B we only look at the most recent submissions for
+    the provided filters, because these files' dollar amounts are
+    year-to-date cumulative balances. For File C we expand this to
+    include all submissions up to the provided filters, so that we can
+    get the incremental `transaction_obligated_amount` from each
+    period in the time frame, in addition to the latest periods' cumulative
+    balance.
     """
     filter_year = int(filters.get("fy") or -1)
     filter_quarter = int(filters.get("quarter") or -1)
@@ -156,13 +161,13 @@ def get_nonzero_filter():
 
 def _generate_closed_period_for_derived_field(filters, column_name):
     filter_year = filters.get("fy")
-    closed_period = get_last_closed_periods_for_year(filter_year)
 
-    if closed_period:
-        if closed_period.is_final:
-            q = closed_period.build_period_q("submission")
+    if filter_year:
+        selected_period = ClosedPeriod(filter_year, filters.get("quarter"), filters.get("period"))
+        if selected_period.is_final:
+            q = selected_period.build_period_q("submission")
         else:
-            q = closed_period.build_submission_id_q("submission")
+            q = selected_period.build_submission_id_q("submission")
 
         submission_filter = Case(
             When(q, then=F(column_name)), default=Cast(Value(None), DecimalField(max_digits=23, decimal_places=2))
