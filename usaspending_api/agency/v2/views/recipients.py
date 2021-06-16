@@ -56,4 +56,3 @@ class RecipientList(AgencyBase):
             "75th_percentile": results["75th_percentile"],
             "messages": self.standard_response_messages,
         }
-        return results
