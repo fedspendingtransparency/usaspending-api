@@ -126,16 +126,13 @@ class BaseDownloadViewSet(APIView):
     def _get_cached_download(
         ordered_json_request: str, download_types: Optional[List[str]] = None
     ) -> Optional[QuerySet]:
-        external_data_type_name_list = []
-
         # External data types that directly affect download results
-        if download_types:
-            if "elasticsearch_awards" in download_types:
-                external_data_type_name_list.append("es_awards")
-            elif "elasticsearch_transactions" in download_types:
-                external_data_type_name_list.append("es_transactions")
+        if download_types and "elasticsearch_awards" in download_types:
+            external_data_type_name_list = ["es_awards"]
+        elif download_types and "elasticsearch_transactions" in download_types:
+            external_data_type_name_list = ["es_transactions"]
         else:
-            external_data_type_name_list.extend(["fpds", "fabs", "es_transactions", "es_awards"])
+            external_data_type_name_list = ["fpds", "fabs", "es_transactions", "es_awards"]
 
         external_data_type_id_list = [
             id for name, id in EXTERNAL_DATA_TYPE_DICT.items() if name in external_data_type_name_list
