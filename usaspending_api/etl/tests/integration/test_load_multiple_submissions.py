@@ -116,10 +116,12 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     availability_type_code,
                     main_account_code,
                     sub_account_code,
-                    internal_start_date
+                    internal_start_date,
+                    tas,
+                    display_tas
                 ) (values
-                    (1, 1, '111', 'X', '1111', '111', '1900-01-01'),
-                    (2, 2, '222', 'X', '2222', '222', '1900-01-01')
+                    (1, 1, '111', 'X', '1111', '111', '1900-01-01', '00011100000000X1111111', '000-111-X-1111-111'),
+                    (2, 2, '222', 'X', '2222', '222', '1900-01-01', '00022200000000X2222222', '000-222-X-2222-222')
                 )
                 """
             )
@@ -198,7 +200,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 insert into certified_appropriation (
                     certified_appropriation_id,
                     submission_id,
-                    tas_id,
+                    account_num,
                     total_budgetary_resources_cpe
                 ) (values
                     (1, 1, 1, 11),
@@ -217,7 +219,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 insert into certified_object_class_program_activity (
                     certified_object_class_program_activity_id,
                     submission_id,
-                    tas_id,
+                    account_num,
                     object_class,
                     gross_outlay_amount_by_pro_cpe,
                     disaster_emergency_fund_code
@@ -244,7 +246,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 insert into certified_award_financial (
                     certified_award_financial_id,
                     submission_id,
-                    tas_id,
+                    account_num,
                     object_class,
                     gross_outlay_amount_by_awa_cpe,
                     transaction_obligated_amou,

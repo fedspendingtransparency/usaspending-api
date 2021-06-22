@@ -82,6 +82,7 @@ SELECT
 
   "cfda_number",
   "cfda_program_title" as cfda_title,
+  "cfdas",
 
   "sai_number",
   "type_of_contract_pricing",

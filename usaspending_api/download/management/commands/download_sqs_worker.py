@@ -18,7 +18,7 @@ from usaspending_api.download.filestreaming.download_generation import generate_
 from usaspending_api.common.sqs.sqs_job_logging import log_job_message
 from usaspending_api.download.helpers.monthly_helpers import download_job_to_log_dict
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.models.download_job import DownloadJob
 
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
