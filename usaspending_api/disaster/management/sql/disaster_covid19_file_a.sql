@@ -71,19 +71,19 @@ LEFT OUTER JOIN cgac AS cgac_aid ON (
 	COALESCE(
 		taa."agency_id",
 		CASE
-			WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
-        	THEN SPLIT_PART(gtas."tas_rendering_label", '-', 2)
-        	ELSE SPLIT_PART(gtas."tas_rendering_label", '-', 1)
+            WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
+            THEN SPLIT_PART(gtas."tas_rendering_label", '-', 2)
+            ELSE SPLIT_PART(gtas."tas_rendering_label", '-', 1)
         END
 	) = cgac_aid."cgac_code"
 )
 LEFT OUTER JOIN cgac AS cgac_ata ON (
 	COALESCE(
-		taa."allocation_transfer_agency_id",
-		CASE
-			WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
-        	THEN SPLIT_PART(gtas."tas_rendering_label", '-', 1)
-        	ELSE NULL
+        taa."allocation_transfer_agency_id",
+        CASE
+            WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
+            THEN SPLIT_PART(gtas."tas_rendering_label", '-', 1)
+            ELSE NULL
         END
 	) = cgac_ata."cgac_code"
 )
