@@ -44,21 +44,8 @@ SELECT
     COALESCE(taa."sub_account_code", REVERSE(SPLIT_PART(REVERSE(gtas."tas_rendering_label"), '-', 1))) AS sub_account_code,
     gtas."tas_rendering_label" AS "treasury_account_symbol",
     taa."account_title" AS "treasury_account_name",
-    (SELECT U0."agency_name" FROM "cgac" U0 WHERE U0."cgac_code" = (
-        COALESCE(
-            taa."agency_id",
-                CASE WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
-                THEN SPLIT_PART(gtas."tas_rendering_label", '-', 2)
-                ELSE SPLIT_PART(gtas."tas_rendering_label", '-', 1) END
-        )
-    )) AS "agency_identifier_name",
-    (SELECT U0."agency_name" FROM "cgac" U0 WHERE U0."cgac_code" = (
-    COALESCE(taa."allocation_transfer_agency_id",
-        CASE WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
-        THEN SPLIT_PART(gtas."tas_rendering_label", '-', 1)
-        ELSE NULL END
-        )
-    )) AS "allocation_transfer_agency_identifer_name",
+    cgac_aid."agency_name" AS "agency_identifier_name",
+    cgac_ata."agency_name" AS "allocation_transfer_agency_identifer_name",
     taa."budget_function_title" AS "budget_function",
     taa."budget_subfunction_title" AS "budget_subfunction",
     fa."federal_account_code" AS "federal_account_symbol",
@@ -75,9 +62,29 @@ SELECT
     gtas."unobligated_balance_cpe" AS "unobligated_balance",
     gtas."gross_outlay_amount_by_tas_cpe" AS "gross_outlay_amount"
 FROM gtas_sf133_balances gtas
-INNER JOIN latest_submissions_of_fy sub ON (gtas."fiscal_year" = sub."submission_fiscal_year" AND gtas."fiscal_period" = sub."submission_fiscal_month" AND sub."is_quarter" = False)
-INNER JOIN disaster_emergency_fund_code defc ON (gtas."disaster_emergency_fund_code" = defc."code")
-LEFT OUTER JOIN treasury_appropriation_account taa ON (gtas."treasury_account_identifier" = taa."treasury_account_identifier")
-LEFT OUTER JOIN federal_account fa ON (taa."federal_account_id" = fa."id")
-LEFT OUTER JOIN toptier_agency agency ON (fa."parent_toptier_agency_id" = agency."toptier_agency_id")
+INNER JOIN latest_submissions_of_fy AS sub ON (gtas."fiscal_year" = sub."submission_fiscal_year" AND gtas."fiscal_period" = sub."submission_fiscal_month" AND sub."is_quarter" = False)
+INNER JOIN disaster_emergency_fund_code AS defc ON (gtas."disaster_emergency_fund_code" = defc."code")
+LEFT OUTER JOIN treasury_appropriation_account AS taa ON (gtas."treasury_account_identifier" = taa."treasury_account_identifier")
+LEFT OUTER JOIN federal_account AS fa ON (taa."federal_account_id" = fa."id")
+LEFT OUTER JOIN toptier_agency AS agency ON (fa."parent_toptier_agency_id" = agency."toptier_agency_id")
+LEFT OUTER JOIN cgac AS cgac_aid ON (
+	COALESCE(
+		taa."agency_id",
+		CASE
+			WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
+        	THEN SPLIT_PART(gtas."tas_rendering_label", '-', 2)
+        	ELSE SPLIT_PART(gtas."tas_rendering_label", '-', 1)
+        END
+	) = cgac_aid."cgac_code"
+)
+LEFT OUTER JOIN cgac AS cgac_ata ON (
+	COALESCE(
+		taa."allocation_transfer_agency_id",
+		CASE
+			WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
+        	THEN SPLIT_PART(gtas."tas_rendering_label", '-', 1)
+        	ELSE NULL
+        END
+	) = cgac_ata."cgac_code"
+)
 WHERE defc."group_name" = 'covid_19'
