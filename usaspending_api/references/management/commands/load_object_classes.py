@@ -14,7 +14,7 @@ from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.references.models import ObjectClass
 
 
-OBJECT_CLASS_PATTERN = re.compile("[12]?[0-9]{3}")
+OBJECT_CLASS_PATTERN = re.compile("[0-9]{3}0?")
 
 CREATE_TEMP_TABLE = """
     drop table if exists temp_load_object_classes;
@@ -103,6 +103,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         if len(object_classes) < 1:
             raise RuntimeError("Object class file '{}' appears to be empty".format(self.object_class_file))
 
+        # only importing the 3-digit versions of the codes to prevent unnecessary dups
         self.raw_object_classes = [
             RawObjectClass(
                 row_number=row_number,
@@ -110,7 +111,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 object_class_name=self._prep(object_class["MAX Object Class name"]),
             )
             for row_number, object_class in enumerate(object_classes, start=1)
-            if self._prep(object_class["MAX OC Code"])
+            if self._prep(object_class["MAX OC Code"]) and len(self._prep(object_class["MAX OC Code"])) == 3
         ]
 
         return len(self.raw_object_classes)
@@ -124,7 +125,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             messages.append(
                 f"Invalid object class code '{raw_object_class.object_class}' in row "
                 f"{raw_object_class.row_number:,}.  Object class codes must be three or four numeric "
-                f"digits and, if four digits, must begin with '1' or '2'."
+                f"digits and, if four digits, must end with '0'."
             )
 
         if not raw_object_class.object_class_name:
@@ -151,8 +152,6 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         unknown = ObjectClass.MAJOR_OBJECT_CLASS.UNKNOWN_NAME
         self.raw_object_classes = [
-            RawObjectClass(row_number=None, object_class="1000", object_class_name=unknown),
-            RawObjectClass(row_number=None, object_class="2000", object_class_name=unknown),
             RawObjectClass(row_number=None, object_class="000", object_class_name=unknown),
         ] + self.raw_object_classes
 
@@ -162,15 +161,8 @@ class Command(mixins.ETLMixin, BaseCommand):
         # Alias to cut down on line lengths below.
         ocdr = ObjectClass.DIRECT_REIMBURSABLE
 
-        def derive_remaining_fields(raw_object_class: RawObjectClass) -> FullObjectClass:
-
-            if len(raw_object_class.object_class) == 4:
-                direct_reimbursable = ocdr.LEADING_DIGIT_MAPPING[raw_object_class.object_class[0]]
-                object_class = raw_object_class.object_class[1:]
-            else:
-                direct_reimbursable = None
-                object_class = raw_object_class.object_class
-
+        def derive_remaining_fields(raw_object_class: RawObjectClass, direct_reimbursable: string) -> FullObjectClass:
+            object_class = raw_object_class.object_class
             major_object_class = object_class[0] + "0"
             object_class = f"{object_class[:2]}.{object_class[2:]}"
 
@@ -184,7 +176,10 @@ class Command(mixins.ETLMixin, BaseCommand):
                 direct_reimbursable_name=ocdr.LOOKUP[direct_reimbursable],
             )
 
-        self.full_object_classes = [derive_remaining_fields(roc) for roc in self.raw_object_classes]
+        for roc in self.raw_object_classes:
+            # for each object class, we're including the three possible versions
+            for dr in [ocdr.UNKNOWN, ocdr.DIRECT, ocdr.REIMBURSABLE]:
+                self.full_object_classes.append(derive_remaining_fields(roc, dr))
 
     def _import_object_classes(self):
 
