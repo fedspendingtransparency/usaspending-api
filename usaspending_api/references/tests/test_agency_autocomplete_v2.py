@@ -18,7 +18,9 @@ def agency_data(db):
         subtier_agency__name="ROATSSUIAR subtier",
         _fill_optional=True,
     )
-    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+    mommy.make(
+        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+    )
 
     tn = mommy.make("awards.TransactionNormalized", action_date="2020-01-01")
 
@@ -30,7 +32,9 @@ def agency_data(db):
         subtier_agency=None,
         _fill_optional=True,
     )
-    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+    mommy.make(
+        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+    )
 
     a = mommy.make(
         "references.Agency",
@@ -40,7 +44,9 @@ def agency_data(db):
         subtier_agency__name="Darkside Chapter",
         _fill_optional=True,
     )
-    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+    mommy.make(
+        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+    )
 
     a = mommy.make(
         "references.Agency",
@@ -50,7 +56,9 @@ def agency_data(db):
         subtier_agency__name="Copper Division",
         _fill_optional=True,
     )
-    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+    mommy.make(
+        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+    )
 
     a = mommy.make(
         "references.Agency",
@@ -60,7 +68,9 @@ def agency_data(db):
         toptier_flag=True,
         _fill_optional=True,
     )
-    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+    mommy.make(
+        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+    )
 
     a = mommy.make(
         "references.Agency",
@@ -71,7 +81,9 @@ def agency_data(db):
         toptier_flag=False,
         _fill_optional=True,
     )
-    mommy.make("awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn)
+    mommy.make(
+        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+    )
 
 
 @pytest.mark.django_db
