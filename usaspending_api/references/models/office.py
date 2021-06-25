@@ -10,13 +10,13 @@ class Office(DataSourceTrackedModel):
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     office_code = models.TextField(null=False)
-    office_name = models.TextField(null=False)
+    office_name = models.TextField(null=True)
     sub_tier_code = models.TextField(null=False)
     agency_code = models.TextField(null=False)
-    contract_awards_office = models.BooleanField(null=False)
-    contract_funding_office = models.BooleanField(null=False)
-    financial_assistance_awards_office = models.BooleanField(null=False)
-    financial_assistance_funding_office = models.BooleanField(null=False)
+    contract_awards_office = models.BooleanField()
+    contract_funding_office = models.BooleanField()
+    financial_assistance_awards_office = models.BooleanField()
+    financial_assistance_funding_office = models.BooleanField()
 
     class Meta:
         managed = True

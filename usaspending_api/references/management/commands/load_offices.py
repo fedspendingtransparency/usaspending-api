@@ -35,8 +35,11 @@ class Command(BaseCommand):
         deletes = Office.objects.all().delete()
         logger.info(f"Deleted {deletes[0]:,} records")
 
+        logger.info("Transforming new office records")
+        total_objs = [Office(**values) for values in office_values]
+
         logger.info("Loading new office records into database")
-        new_rec_count = len(Office.objects.bulk_create(office_values))
+        new_rec_count = len(Office.objects.bulk_create(total_objs))
         logger.info(f"Loaded: {new_rec_count:,} records")
         logger.info("Committing transaction to database")
 
