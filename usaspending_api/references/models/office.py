@@ -3,10 +3,6 @@ from usaspending_api.common.models import DataSourceTrackedModel
 
 
 class Office(DataSourceTrackedModel):
-    # op.create_index(op.f('ix_office_agency_code'), 'office', ['agency_code'], unique=False)
-    # op.create_index(op.f('ix_office_office_code'), 'office', ['office_code'], unique=True)
-    # op.create_index(op.f('ix_office_sub_tier_code'), 'office', ['sub_tier_code'], unique=False)
-
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     office_code = models.TextField(null=False)
