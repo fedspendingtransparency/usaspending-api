@@ -51,7 +51,12 @@ def delete_tables_for_tests():
     naming conflict, the unused Django managed table is deleted while testing.
     """
     try:
-        execute_sql_simple("DROP TABLE IF EXISTS transaction_search;")
+        execute_sql_simple(
+            """
+            DROP VIEW IF EXISTS vw_transaction_search_download;
+            DROP TABLE IF EXISTS transaction_search;
+        """
+        )
     except Exception:
         pass
 
@@ -63,6 +68,23 @@ def add_view_protection():
     """
     try:
         execute_sql_simple("CREATE RULE ts_del_protect AS ON DELETE TO transaction_search DO INSTEAD NOTHING;")
+    except Exception:
+        pass
+
+
+def create_download_views():
+    """
+    In some cases the download views are based off of either Tables or Materialized Views that are converted to
+    Views for ease of use with PyTest. In these cases the download view is dropped prior to creation of the base
+    Table/Materialized View/View. This function ensures that all download Views exist in case they were dropped.
+    """
+    try:
+        download_view_dir = Path("usaspending_api/download/sql")
+        download_view_files = [download_view_dir / file_name for file_name in os.listdir(download_view_dir)]
+        sql = ""
+        for view in download_view_files:
+            sql += view.read_text()
+        execute_sql_simple(sql)
     except Exception:
         pass
 
@@ -119,6 +141,7 @@ def django_db_setup(
             generate_matviews(materialized_views_as_traditional_views=True)
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
+            create_download_views()
             add_view_protection()
             ensure_business_categories_functions_exist()
             call_command("load_broker_static_data")
