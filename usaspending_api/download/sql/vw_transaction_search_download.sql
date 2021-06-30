@@ -37,7 +37,7 @@ LEFT OUTER JOIN (
         SELECT 1
         FROM submission_attributes AS sa
         INNER JOIN dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id)
-        WHERE dsws.submission_reveal_date <= NOW()
+        WHERE faba.submission_id = sa.submission_id AND dsws.submission_reveal_date <= NOW()
     )
     GROUP BY faba.award_id
 ) AS all_revealed_faba ON (transaction_search.award_id = all_revealed_faba.award_id)
