@@ -1,8 +1,7 @@
 from django.db import models
-from usaspending_api.common.models import DataSourceTrackedModel
 
 
-class Office(DataSourceTrackedModel):
+class Office(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     office_code = models.TextField(null=False)
