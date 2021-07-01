@@ -20,6 +20,7 @@ from usaspending_api.references.models.rosetta import Rosetta
 from usaspending_api.references.models.subtier_agency import SubtierAgency
 from usaspending_api.references.models.toptier_agency import ToptierAgency
 from usaspending_api.references.models.toptier_agency_published_dabs_view import ToptierAgencyPublishedDABSView
+from usaspending_api.references.models.office import Office
 
 __all__ = [
     "Agency",
@@ -34,6 +35,7 @@ __all__ = [
     "GTASSF133Balances",
     "NAICS",
     "ObjectClass",
+    "Office",
     "OverallTotals",
     "PopCongressionalDistrict",
     "PopCounty",
