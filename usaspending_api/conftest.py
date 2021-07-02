@@ -78,15 +78,12 @@ def create_download_views():
     Views for ease of use with PyTest. In these cases the download view is dropped prior to creation of the base
     Table/Materialized View/View. This function ensures that all download Views exist in case they were dropped.
     """
-    try:
-        download_view_dir = Path("usaspending_api/download/sql")
-        download_view_files = [download_view_dir / file_name for file_name in os.listdir(download_view_dir)]
-        sql = ""
-        for view in download_view_files:
-            sql += view.read_text()
-        execute_sql_simple(sql)
-    except Exception:
-        pass
+    download_view_dir = Path("usaspending_api/download/sql")
+    download_view_files = [download_view_dir / file_name for file_name in os.listdir(download_view_dir)]
+    sql = ""
+    for view in download_view_files:
+        sql += view.read_text()
+    execute_sql_simple(sql)
 
 
 @pytest.fixture(scope="session")
