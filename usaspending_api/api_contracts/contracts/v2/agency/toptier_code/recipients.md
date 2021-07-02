@@ -17,7 +17,9 @@ Returns a list of data points of an agencies recipients for a given fiscal year
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
         + `count` (required, number)
+            The number of recipients that received awards from this agency in the provided fiscal year
         + `total_federal_count` (required, number)
+            The number of receipients that received awards from any agency in the provided fiscal year
         + `max` (required, number)
         + `min` (required, number)
         + `25th_percentile` (required, number)
