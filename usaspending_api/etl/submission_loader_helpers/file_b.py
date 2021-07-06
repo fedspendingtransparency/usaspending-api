@@ -72,12 +72,8 @@ def get_file_b(submission_attributes, db_cursor):
                 beginning_period_of_availa,
                 ending_period_of_availabil,
                 main_account_code,
-                right(object_class, 3) as object_class,
-                case
-                    when length(object_class) = 4 and left(object_class, 1) = '1' then 'D'
-                    when length(object_class) = 4 and left(object_class, 1) = '2' then 'R'
-                    else by_direct_reimbursable_fun
-                end as by_direct_reimbursable_fun,
+                left(object_class, 3) as object_class,
+                by_direct_reimbursable_fun,
                 tas,
                 account_num,
                 program_activity_code,
@@ -129,12 +125,8 @@ def get_file_b(submission_attributes, db_cursor):
                 beginning_period_of_availa,
                 ending_period_of_availabil,
                 main_account_code,
-                right(object_class, 3),
-                case
-                    when length(object_class) = 4 and left(object_class, 1) = '1' then 'D'
-                    when length(object_class) = 4 and left(object_class, 1) = '2' then 'R'
-                    else by_direct_reimbursable_fun
-                end,
+                left(object_class, 3),
+                by_direct_reimbursable_fun,
                 program_activity_code,
                 program_activity_name,
                 sub_account_code,
