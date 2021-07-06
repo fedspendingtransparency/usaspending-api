@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='awarding_office_code',
-            field=models.IntegerField(null=True),
+            field=models.TextField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='funding_office_code',
-            field=models.IntegerField(null=True),
+            field=models.TextField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
