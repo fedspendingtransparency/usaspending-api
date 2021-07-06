@@ -45,9 +45,7 @@ def get_object_class_row(row):
         if object_class[3] == "0":
             object_class = object_class[:3]
         else:
-            raise ValueError(
-                f"Invalid format for object_class={object_class}."
-            )
+            raise ValueError(f"Invalid format for object_class={object_class}.")
 
     # grab direct/reimbursable information from a separate field
     try:
