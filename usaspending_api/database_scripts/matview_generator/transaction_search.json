@@ -269,8 +269,8 @@
     "  GROUP BY",
     "    faba.award_id",
     ") FEDERAL_ACCT ON (FEDERAL_ACCT.award_id = transaction_normalized.award_id)",
-    "INNER JOIN office AO ON COALESCE(transaction_fpds.awarding_office_code, transaction_fabs.awarding_office_code) = AO.office_code",
-    "INNER JOIN office FO ON COALESCE(transaction_fpds.funding_office_code, transaction_fabs.funding_office_code) = FO.office_code",
+    "LEFT OUTER JOIN office AO ON COALESCE(transaction_fpds.awarding_office_code, transaction_fabs.awarding_office_code) = AO.office_code",
+    "LEFT OUTER JOIN office FO ON COALESCE(transaction_fpds.funding_office_code, transaction_fabs.funding_office_code) = FO.office_code",
     "WHERE",
     "  transaction_normalized.action_date >= '2000-10-01'"
   ],
