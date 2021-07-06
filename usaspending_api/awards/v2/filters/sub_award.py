@@ -1,8 +1,9 @@
 import itertools
 import logging
 
-from django.db.models import Q
+from django.db.models import Q, Subquery
 
+from usaspending_api.awards.models.award import Award
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -230,7 +231,11 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "program_numbers":
             if len(value) != 0:
-                queryset &= SubawardView.objects.filter(award__transactions__cfda_number__in=value)
+                queryset &= SubawardView.objects.filter(
+                    award__in=Subquery(
+                        Award.objects.filter(transactions__cfda_number__in=value).values("id").distinct()
+                    )
+                )
 
         elif key in ("set_aside_type_codes", "extent_competed_type_codes"):
             or_queryset = Q()
