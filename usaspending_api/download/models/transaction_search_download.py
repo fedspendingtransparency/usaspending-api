@@ -11,6 +11,7 @@ class TransactionSearchDownloadView(AbstractTransactionSearch):
         * not easily queried through the Django ORM
         * need to be manually defined in the query for performance
     """
+
     award = models.ForeignKey("awards.Award", on_delete=models.DO_NOTHING, null=True)
 
     # Additional values from the View
