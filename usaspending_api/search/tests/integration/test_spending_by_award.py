@@ -836,6 +836,39 @@ def _test_correct_response_for_cfda_program(client):
     assert resp.json().get("results") == expected_result, "CFDA Program filter does not match expected result"
 
 
+def _test_correct_response_for_cfda_program_subawards(client):
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["02", "03", "04", "05"],
+                    "program_numbers": ["10.331"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Sub-Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Sub-Award ID",
+                "order": "desc",
+                "subawards": True,
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "internal_id": "99999",
+            "prime_award_internal_id": 4,
+            "Sub-Award ID": "99999",
+            "prime_award_generated_internal_id": "ASST_NON_TESTING_4",
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results") == expected_result, "CFDA Program filter does not match expected result"
+
+
 def _test_correct_response_for_naics_codes(client):
     resp = client.post(
         "/api/v2/search/spending_by_award",
