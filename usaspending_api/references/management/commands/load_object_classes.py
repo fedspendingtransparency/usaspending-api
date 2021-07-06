@@ -14,7 +14,7 @@ from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.references.models import ObjectClass
 
 
-OBJECT_CLASS_PATTERN = re.compile("[0-9]{3}0?")
+OBJECT_CLASS_PATTERN = re.compile("^[0-9]{3}0?$")
 
 CREATE_TEMP_TABLE = """
     drop table if exists temp_load_object_classes;
@@ -111,7 +111,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 object_class_name=self._prep(object_class["MAX Object Class name"]),
             )
             for row_number, object_class in enumerate(object_classes, start=1)
-            if self._prep(object_class["MAX OC Code"]) and len(self._prep(object_class["MAX OC Code"])) == 3
+            if self._prep(object_class["MAX OC Code"])
         ]
 
         return len(self.raw_object_classes)
@@ -146,6 +146,14 @@ class Command(mixins.ETLMixin, BaseCommand):
             raise RuntimeError(
                 f"{len(messages):,} problem(s) have been found with the raw object class file.  See log for details."
             )
+
+    def _keep_only_3_digit_object_classes(self):
+        """ While the file and users can provide both versions, this loader only needs the 3-digits when processing """
+        print(self.raw_object_classes)
+        self.raw_object_classes = [
+            raw_object_class for raw_object_class in self.raw_object_classes if len(raw_object_class.object_class) == 3
+        ]
+        print(self.raw_object_classes)
 
     def _add_unknown_object_classes(self):
         """ These are not officially sanctioned object classes but we use them on the website. """
@@ -217,6 +225,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         self._execute_dml_sql(CREATE_TEMP_TABLE, "Create object_class temp table")
         self._execute_function_and_log(self._read_raw_object_classes_csv, "Read raw object class csv")
         self._execute_function(self._validate_raw_object_classes, "Validate raw object classes")
+        self._execute_function(self._keep_only_3_digit_object_classes, "Keep 3-digit object classes")
         self._execute_function(self._add_unknown_object_classes, 'Add "unknown" object classes')
         self._execute_function(self._derive_remaining_fields, "Derive remaining fields")
         self._execute_function_and_log(self._import_object_classes, "Import object classes")
