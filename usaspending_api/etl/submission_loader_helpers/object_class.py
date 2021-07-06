@@ -41,9 +41,14 @@ def get_object_class_row(row):
     # Alias this to cut down on line lengths a little below.
     ocdr = ObjectClass.DIRECT_REIMBURSABLE
 
-    if len(object_class) == 4 and object_class[3] == "0":
-        # this is a 4 digit object class, first three digits are the code, last one's a redundant 0
-        object_class = object_class[:3]
+    if len(object_class) == 4:
+        # this is a 4 digit object class, first three digits should be the code and last one's a redundant 0
+        if object_class[3] == "0":
+            object_class = object_class[:3]
+        else:
+            raise ValueError(
+                f"Invalid format for object_class={object_class}, direct_reimbursable={direct_reimbursable}."
+            )
 
     # grab direct/reimbursable information from a separate field
     try:
