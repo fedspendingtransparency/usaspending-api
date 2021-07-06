@@ -119,6 +119,7 @@ class TransactionSearch(AbstractTransactionSearch):
     is directly populated by the contents of a materialized view. The fields used to create the materialized view
     may or may not be nullable, but those constraints are not enforced in this table.
     """
+    award = models.ForeignKey("awards.Award", on_delete=models.DO_NOTHING, null=True, related_name="transactions")
 
     class Meta:
         db_table = "transaction_search"
